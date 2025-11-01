@@ -1,0 +1,296 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\navigation\\inavigationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\navigation\\inavigationservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\settings\\clientsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\settings\\clientsettings.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\models\\customerdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\models\\customerdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\helpers\\converters\\booleantovisibilityconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\helpers\\converters\\booleantovisibilityconverter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\helpers\\jwtutils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\helpers\\jwtutils.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\models\\tokendto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\models\\tokendto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\services\\http\\authenticatedhttphandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\services\\http\\authenticatedhttphandler.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\services\\security\\secretstoragewindows.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\services\\security\\secretstoragewindows.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\services\\security\\isecretstorage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\services\\security\\isecretstorage.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\services\\auth\\authservicestub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\services\\auth\\authservicestub.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\services\\auth\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\services\\auth\\iauthservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\services\\auth\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\services\\auth\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\viewmodels\\customersviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\viewmodels\\customersviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\viewmodels\\mainviewmodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\viewmodels\\viewmodelbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\viewmodels\\viewmodelbase.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|c:\\users\\baemv\\onedrive\\escritorio\\advance\\advance control\\advance control\\views\\customersview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{AC69A80C-5769-4FEB-8FCC-3DF9C0FE3004}|Advance Control\\Advance Control.csproj|solutionrelative:advance control\\views\\customersview.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{40ea2e6b-2121-4bb8-a43e-c83c04b51041}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "INavigationService.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Navigation\\INavigationService.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Navigation\\INavigationService.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Navigation\\INavigationService.cs",
+              "RelativeToolTip": "Advance Control\\Navigation\\INavigationService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:22:00.097Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ClientSettings.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Settings\\ClientSettings.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Settings\\ClientSettings.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Settings\\ClientSettings.cs",
+              "RelativeToolTip": "Advance Control\\Settings\\ClientSettings.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:21:08.257Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CustomerDto.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Models\\CustomerDto.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Models\\CustomerDto.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Models\\CustomerDto.cs",
+              "RelativeToolTip": "Advance Control\\Models\\CustomerDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:18:07.569Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "BooleanToVisibilityConverter.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Helpers\\Converters\\BooleanToVisibilityConverter.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Helpers\\Converters\\BooleanToVisibilityConverter.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Helpers\\Converters\\BooleanToVisibilityConverter.cs",
+              "RelativeToolTip": "Advance Control\\Helpers\\Converters\\BooleanToVisibilityConverter.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:12:57.179Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "JwtUtils.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Helpers\\JwtUtils.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Helpers\\JwtUtils.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Helpers\\JwtUtils.cs",
+              "RelativeToolTip": "Advance Control\\Helpers\\JwtUtils.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:11:46.729Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "TokenDto.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Models\\TokenDto.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Models\\TokenDto.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Models\\TokenDto.cs",
+              "RelativeToolTip": "Advance Control\\Models\\TokenDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:08:16.08Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "AuthenticatedHttpHandler.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Http\\AuthenticatedHttpHandler.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Services\\Http\\AuthenticatedHttpHandler.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Http\\AuthenticatedHttpHandler.cs",
+              "RelativeToolTip": "Advance Control\\Services\\Http\\AuthenticatedHttpHandler.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:07:44.568Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "SecretStorageWindows.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Security\\SecretStorageWindows.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Services\\Security\\SecretStorageWindows.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Security\\SecretStorageWindows.cs",
+              "RelativeToolTip": "Advance Control\\Services\\Security\\SecretStorageWindows.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAACAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:01:19.78Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ISecretStorage.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Security\\ISecretStorage.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Services\\Security\\ISecretStorage.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Security\\ISecretStorage.cs",
+              "RelativeToolTip": "Advance Control\\Services\\Security\\ISecretStorage.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T23:00:21.145Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "AuthServiceStub.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Auth\\AuthServiceStub.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Services\\Auth\\AuthServiceStub.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Auth\\AuthServiceStub.cs",
+              "RelativeToolTip": "Advance Control\\Services\\Auth\\AuthServiceStub.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T22:59:33.796Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "IAuthService.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Auth\\IAuthService.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Services\\Auth\\IAuthService.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Auth\\IAuthService.cs",
+              "RelativeToolTip": "Advance Control\\Services\\Auth\\IAuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T22:59:07.008Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Auth\\AuthService.cs",
+              "RelativeDocumentMoniker": "Advance Control\\Services\\Auth\\AuthService.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Services\\Auth\\AuthService.cs",
+              "RelativeToolTip": "Advance Control\\Services\\Auth\\AuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T22:57:56.516Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "CustomersViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\ViewModels\\CustomersViewModel.cs",
+              "RelativeDocumentMoniker": "Advance Control\\ViewModels\\CustomersViewModel.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\ViewModels\\CustomersViewModel.cs",
+              "RelativeToolTip": "Advance Control\\ViewModels\\CustomersViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T20:39:50.56Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "MainViewModel.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\ViewModels\\MainViewModel.cs",
+              "RelativeDocumentMoniker": "Advance Control\\ViewModels\\MainViewModel.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\ViewModels\\MainViewModel.cs",
+              "RelativeToolTip": "Advance Control\\ViewModels\\MainViewModel.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T20:39:27.247Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "ViewModelBase.cs",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\ViewModels\\ViewModelBase.cs",
+              "RelativeDocumentMoniker": "Advance Control\\ViewModels\\ViewModelBase.cs",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\ViewModels\\ViewModelBase.cs",
+              "RelativeToolTip": "Advance Control\\ViewModels\\ViewModelBase.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-10-31T20:25:11.693Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "CustomersView.xaml",
+              "DocumentMoniker": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Views\\CustomersView.xaml",
+              "RelativeDocumentMoniker": "Advance Control\\Views\\CustomersView.xaml",
+              "ToolTip": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Views\\CustomersView.xaml",
+              "RelativeToolTip": "Advance Control\\Views\\CustomersView.xaml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-10-31T20:20:10.462Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
