@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Advance Control (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Advance Control (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
