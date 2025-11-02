@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Advance Control.csproj": {}
+    "C:\\Users\\ERICK TRIADA\\OneDrive - Ridge point\\Documentos\\GitHub\\AdvanceControl\\Advance Control\\Advance Control.csproj": {}
   },
   "projects": {
-    "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Advance Control.csproj": {
+    "C:\\Users\\ERICK TRIADA\\OneDrive - Ridge point\\Documentos\\GitHub\\AdvanceControl\\Advance Control\\Advance Control.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Advance Control.csproj",
+        "projectUniqueName": "C:\\Users\\ERICK TRIADA\\OneDrive - Ridge point\\Documentos\\GitHub\\AdvanceControl\\Advance Control\\Advance Control.csproj",
         "projectName": "Advance Control",
-        "projectPath": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\Advance Control.csproj",
-        "packagesPath": "C:\\Users\\baemv\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\baemv\\OneDrive\\Escritorio\\Advance\\Advance Control\\Advance Control\\obj\\",
+        "projectPath": "C:\\Users\\ERICK TRIADA\\OneDrive - Ridge point\\Documentos\\GitHub\\AdvanceControl\\Advance Control\\Advance Control.csproj",
+        "packagesPath": "C:\\Users\\ERICK TRIADA\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\ERICK TRIADA\\OneDrive - Ridge point\\Documentos\\GitHub\\AdvanceControl\\Advance Control\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\baemv\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\ERICK TRIADA\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -26,7 +26,6 @@
         ],
         "sources": {
           "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-          "C:\\Program Files\\dotnet\\library-packs": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -45,12 +44,28 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.200"
+        "SdkAnalysisLevel": "9.0.300"
       },
       "frameworks": {
         "net8.0-windows10.0.19041": {
           "targetAlias": "net8.0-windows10.0.19041.0",
           "dependencies": {
+            "CommunityToolkit.Mvvm": {
+              "target": "Package",
+              "version": "[8.4.0, )"
+            },
+            "Microsoft.Extensions.Hosting": {
+              "target": "Package",
+              "version": "[9.0.10, )"
+            },
+            "Microsoft.Extensions.Http": {
+              "target": "Package",
+              "version": "[9.0.10, )"
+            },
+            "Microsoft.IdentityModel.Tokens": {
+              "target": "Package",
+              "version": "[8.14.0, )"
+            },
             "Microsoft.Windows.SDK.BuildTools": {
               "target": "Package",
               "version": "[10.0.26100.6901, )"
@@ -58,6 +73,14 @@
             "Microsoft.WindowsAppSDK": {
               "target": "Package",
               "version": "[1.8.251003001, )"
+            },
+            "System.IdentityModel.Tokens.Jwt": {
+              "target": "Package",
+              "version": "[8.14.0, )"
+            },
+            "System.Text.Json": {
+              "target": "Package",
+              "version": "[9.0.10, )"
             }
           },
           "imports": [
@@ -74,27 +97,27 @@
           "downloadDependencies": [
             {
               "name": "Microsoft.AspNetCore.App.Runtime.win-arm64",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.AspNetCore.App.Runtime.win-x64",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.AspNetCore.App.Runtime.win-x86",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.win-arm64",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.win-x64",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.NETCore.App.Runtime.win-x86",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.Windows.SDK.NET.Ref",
@@ -102,15 +125,15 @@
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Runtime.win-arm64",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Runtime.win-x64",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             },
             {
               "name": "Microsoft.WindowsDesktop.App.Runtime.win-x86",
-              "version": "[8.0.13, 8.0.13]"
+              "version": "[8.0.21, 8.0.21]"
             }
           ],
           "frameworkReferences": {
@@ -121,7 +144,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.200/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       },
       "runtimes": {

@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Advance Control")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6e7a206dcad053fe6559c576a574629bfb584c8f")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3b3c7e06193dcd0fd2fbe6032fb159b164518314")]
 [assembly: System.Reflection.AssemblyProductAttribute("Advance Control")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Advance Control")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

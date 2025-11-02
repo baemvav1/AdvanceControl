@@ -18,7 +18,7 @@ namespace AdvanceControl.Converters
                     boolean = !boolean;
                 }
 
-                return boolean ? (useHidden ? Visibility.Hidden : Visibility.Visible) : Visibility.Collapsed;
+                return boolean ? (useHidden ? Visibility.Collapsed : Visibility.Visible) : Visibility.Collapsed;
             }
             return Visibility.Collapsed;
         }
