@@ -136,6 +136,7 @@ Los siguientes archivos están creados pero requieren implementación:
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Documentación de arquitectura
 - [EMPTY_FILES.md](./EMPTY_FILES.md) - Lista detallada de archivos pendientes de implementación
 - [API.md](./API.md) - Documentación de servicios implementados
+- [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) - Guía para desarrolladores
 
 ## Contribuir
 
