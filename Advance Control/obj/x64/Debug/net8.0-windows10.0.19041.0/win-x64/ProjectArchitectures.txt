@@ -1,1 +1,1 @@
-C:\Users\ERICK TRIADA\OneDrive - Ridge point\Documentos\GitHub\AdvanceControl\Advance Control\Advance Control.csproj;x64
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\Advance Control.csproj;x64
