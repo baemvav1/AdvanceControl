@@ -10,7 +10,9 @@
     Title="Advance Control">
 
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-        <Button x:ConnectionId='2' x:Name="myButton"                       >Click Me</Button>
+        <Button x:ConnectionId='2' x:Name="CheckButton" Content="Comprobar API"                           Width="140"/>
+        <!-- Texto donde mostramos el estado -->
+        <TextBlock x:ConnectionId='3' x:Name="StatusTextBlock" Text="Listo" TextWrapping="Wrap"/>
     </StackPanel>
 </Window>
 

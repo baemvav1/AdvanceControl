@@ -1,36 +1,53 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Advance_Control.Services.OnlineCheck;
 
 namespace Advance_Control
 {
-    /// <summary>
-    /// An empty window that can be used on its own or navigated to within a Frame.
-    /// </summary>
     public sealed partial class MainWindow : Window
     {
-        public MainWindow()
+        private readonly IOnlineCheck _onlineCheck;
+
+        // Constructor adaptado para que DI inyecte IOnlineCheck.
+        public MainWindow(IOnlineCheck onlineCheck)
         {
             this.InitializeComponent();
+            _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
         }
 
-        private void myButton_Click(object sender, RoutedEventArgs e)
+        // Handler del botón que usa _onlineCheck sin bloquear el hilo de UI.
+        private async void CheckButton_Click(object sender, RoutedEventArgs e)
         {
-            myButton.Content = "Clicked";
+            CheckButton.IsEnabled = false;
+            StatusTextBlock.Text = "Comprobando...";
+
+            try
+            {
+                var result = await _onlineCheck.CheckAsync();
+
+                if (result.IsOnline)
+                {
+                    StatusTextBlock.Text = "API ONLINE";
+                }
+                else if (result.StatusCode.HasValue)
+                {
+                    StatusTextBlock.Text = $"API returned status {result.StatusCode}: {result.ErrorMessage}";
+                }
+                else
+                {
+                    StatusTextBlock.Text = $"Network error: {result.ErrorMessage}";
+                }
+            }
+            catch (Exception ex)
+            {
+                // Captura cualquier excepción inesperada y mostrar un mensaje útil.
+                StatusTextBlock.Text = $"Error inesperado: {ex.Message}";
+            }
+            finally
+            {
+                CheckButton.IsEnabled = true;
+            }
         }
     }
 }

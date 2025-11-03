@@ -289,7 +289,6 @@ namespace Advance_Control.Advance_Control_XamlTypeInfo
 
         private object Activate_0_XamlControlsResources() { return new global::Microsoft.UI.Xaml.Controls.XamlControlsResources(); }
         private object Activate_4_CustomersView() { return new global::Advance_Control.Views.CustomersView(); }
-        private object Activate_6_MainWindow() { return new global::Advance_Control.MainWindow(); }
         private object Activate_8_TreeViewNode() { return new global::Microsoft.UI.Xaml.Controls.TreeViewNode(); }
         private void StaticInitializer_0_XamlControlsResources() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Microsoft.UI.Xaml.Controls.XamlControlsResources).TypeHandle);
         private void StaticInitializer_4_CustomersView() => global::System.Runtime.CompilerServices.RuntimeHelpers.RunClassConstructor(typeof(global::Advance_Control.Views.CustomersView).TypeHandle);
@@ -355,7 +354,6 @@ namespace Advance_Control.Advance_Control_XamlTypeInfo
 
             case 6:   //  Advance_Control.MainWindow
                 userType = new global::Advance_Control.Advance_Control_XamlTypeInfo.XamlUserType(this, typeName, type, GetXamlTypeByName("Microsoft.UI.Xaml.Window"));
-                userType.Activator = Activate_6_MainWindow;
                 userType.StaticInitializer = StaticInitializer_6_MainWindow;
                 userType.SetIsLocalType();
                 xamlType = userType;

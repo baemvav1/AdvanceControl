@@ -55,6 +55,10 @@
               "target": "Package",
               "version": "[8.4.0, )"
             },
+            "Microsoft.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[10.0.0-rc.2.25502.107, )"
+            },
             "Microsoft.Extensions.Hosting": {
               "target": "Package",
               "version": "[9.0.10, )"
@@ -62,6 +66,10 @@
             "Microsoft.Extensions.Http": {
               "target": "Package",
               "version": "[9.0.10, )"
+            },
+            "Microsoft.Extensions.Logging": {
+              "target": "Package",
+              "version": "[10.0.0-rc.2.25502.107, )"
             },
             "Microsoft.IdentityModel.Tokens": {
               "target": "Package",

@@ -1,50 +1,78 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Activation;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-using Microsoft.UI.Xaml.Shapes;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using System;
+using System.Threading.Tasks;
+using Advance_Control.Services.OnlineCheck;
+using Advance_Control.Services.EndPointProvider;
+using Microsoft.Extensions.Configuration;
 
 namespace Advance_Control
 {
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
     public partial class App : Application
     {
-        /// <summary>
-        /// Initializes the singleton application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
+        public IHost Host { get; }
+
         public App()
         {
             this.InitializeComponent();
+
+            Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
+                // Asegúrate de que CreateDefaultBuilder cargue appsettings.json desde el output.
+                // En WinUI, el appsettings.json debe estar marcado como "Copy to Output Directory" = "Copy if newer".
+                .ConfigureAppConfiguration(cfg =>
+                {
+                    // Agregar appsettings.json por si no se cargó automáticamente
+                    cfg.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                })
+                .ConfigureServices((context, services) =>
+                {
+                    // Enlazar sección "ExternalApi" de appsettings.json a ExternalApiOptions
+                    services.Configure<ExternalApiOptions>(context.Configuration.GetSection("ExternalApi"));
+
+                    // Registrar el provider que compone endpoints (usa IOptions<ExternalApiOptions>)
+                    services.AddSingleton<IApiEndpointProvider, ApiEndpointProvider>();
+
+                    // Registrar OnlineCheck como typed HttpClient (seguirá usando provider para construir endpoints)
+                    services.AddHttpClient<IOnlineCheck, OnlineCheck>(client =>
+                    {
+                        client.Timeout = TimeSpan.FromSeconds(5);
+                    });
+
+                    // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
+                    services.AddTransient<MainWindow>();
+                })
+                .Build();
         }
 
-        /// <summary>
-        /// Invoked when the application is launched.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
+        protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
-            m_window = new MainWindow();
-            m_window.Activate();
-        }
+            // Iniciar el host (permite que HostedServices si existen arranquen)
+            await Host.StartAsync();
 
-        private Window? m_window;
+            // Resolver MainWindow vía DI (NO crear con new)
+            var window = Host.Services.GetRequiredService<MainWindow>();
+
+            // Suscribirse al evento Closed de la ventana principal para detener y disponer el Host
+            // Esto evita intentar sobrescribir OnExit (no disponible en WinUI 3).
+            window.Closed += async (s, e) =>
+            {
+                try
+                {
+                    // Intentar detener el host de forma ordenada (timeout 5s)
+                    await Host.StopAsync(TimeSpan.FromSeconds(5));
+                }
+                catch
+                {
+                    // Ignorar errores durante el cierre para no bloquear la salida de la app
+                }
+                finally
+                {
+                    Host.Dispose();
+                }
+            };
+
+            window.Activate();
+        }
     }
 }
