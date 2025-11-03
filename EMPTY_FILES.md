@@ -412,9 +412,16 @@ public class ClientSettings
 
 **Estado**: Vacío con comentario de prueba
 
-**Problema**: Existe una versión implementada en `Converters/BooleanToVisibilityConverter.cs`
+**Problema**: Existe una versión implementada y funcional en `Converters/BooleanToVisibilityConverter.cs`
 
-**Acción requerida**: **ELIMINAR** este archivo duplicado
+**Acción requerida**: **ELIMINAR** este archivo duplicado para evitar confusión y mantener una única fuente de verdad.
+
+**Comando para eliminar**:
+```bash
+git rm "Advance Control/Helpers/Converters/BooleanToVisibilityConverter.cs"
+```
+
+**Nota**: Este archivo crea deuda técnica y potencial confusión. Su eliminación debería ser prioritaria antes de continuar con nuevas implementaciones.
 
 ---
 

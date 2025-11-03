@@ -89,8 +89,13 @@ public OnlineCheck(HttpClient httpClient, IApiEndpointProvider endpointProvider)
 
 **Códigos de estado**:
 - `200-299`: Éxito (`IsOnline = true`)
-- Otros: Fallo (`IsOnline = false`, con código de estado)
+- `400-499`: Errores del cliente (`IsOnline = false`)
+  - Ejemplo: 404 Not Found, 401 Unauthorized
+- `500-599`: Errores del servidor (`IsOnline = false`)
+  - Ejemplo: 500 Internal Server Error, 503 Service Unavailable
+- Otros códigos: Fallo (`IsOnline = false`, con código de estado)
 - Excepciones: Fallo (`IsOnline = false`, con mensaje de error)
+  - Ejemplos: DNS failure, connection timeout, SSL errors
 
 **Optimizaciones**:
 - Usa `HttpCompletionOption.ResponseHeadersRead` para no descargar cuerpo de respuesta
