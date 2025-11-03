@@ -133,10 +133,13 @@ Los siguientes archivos están creados pero requieren implementación:
 
 ## Documentación Adicional
 
+📖 **[DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)** - Índice completo de documentación
+
 - [ARCHITECTURE.md](./ARCHITECTURE.md) - Documentación de arquitectura
 - [EMPTY_FILES.md](./EMPTY_FILES.md) - Lista detallada de archivos pendientes de implementación
 - [API.md](./API.md) - Documentación de servicios implementados
 - [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) - Guía para desarrolladores
+- [EMPTY_FILES_SUMMARY.md](./EMPTY_FILES_SUMMARY.md) - Resumen rápido de archivos pendientes
 
 ## Contribuir
 
