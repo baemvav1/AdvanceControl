@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Application
+    x:Class="Advance_Control.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Advance_Control.Converters">
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- WinUI controls resources (necesario para estilos de controles) -->
+                <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
+                <!-- Other merged dictionaries here -->
+            </ResourceDictionary.MergedDictionaries>
+
+            <!-- Global converters / recursos -->
+            <converters:BooleanToSystemColorBrushConverter
+                x:Key="Green_transparentBoolColorConverter"
+                TrueColorName="Green"
+                FalseColorName="Transparent" />
+
+            <converters:BooleanToVisibilityConverter
+                x:Key="BoolToVisibilityConverter" />
+
+            <!-- Other app resources here -->
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
