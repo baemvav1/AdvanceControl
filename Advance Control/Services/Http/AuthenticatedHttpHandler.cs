@@ -44,7 +44,7 @@ namespace Advance_Control.Services.Http
             }
             catch (Exception ex)
             {
-                _logger?.LogWarningAsync("No se pudo obtener el host de la API para AuthenticatedHttpHandler", "AuthenticatedHttpHandler", ".ctor");
+                _ = _logger?.LogWarningAsync("No se pudo obtener el host de la API para AuthenticatedHttpHandler", "AuthenticatedHttpHandler", ".ctor");
                 _apiHost = null;
             }
         }
@@ -117,7 +117,7 @@ namespace Advance_Control.Services.Http
             }
             catch (Exception ex)
             {
-                _logger?.LogWarningAsync($"Error al verificar si se debe adjuntar token a la URI: {requestUri}", "AuthenticatedHttpHandler", "ShouldAttachToken");
+                _ = _logger?.LogWarningAsync($"Error al verificar si se debe adjuntar token a la URI: {requestUri}", "AuthenticatedHttpHandler", "ShouldAttachToken");
                 return false;
             }
         }

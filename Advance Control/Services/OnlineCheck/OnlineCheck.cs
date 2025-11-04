@@ -47,12 +47,13 @@ namespace Advance_Control.Services.OnlineCheck
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                _logger?.LogWarningAsync("Verificación de conectividad cancelada", "OnlineCheck", "CheckAsync");
+                _ = _logger?.LogWarningAsync("Verificación de conectividad cancelada", "OnlineCheck", "CheckAsync");
                 return OnlineCheckResult.FromException("Operation cancelled");
             }
             catch (Exception ex)
             {
-                await _logger?.LogErrorAsync("Error al verificar conectividad con la API", ex, "OnlineCheck", "CheckAsync");
+                if (_logger != null)
+                    await _logger.LogErrorAsync("Error al verificar conectividad con la API", ex, "OnlineCheck", "CheckAsync");
                 // Ejemplos: DNS, connection refused, TLS/SSL, timeout, etc.
                 return OnlineCheckResult.FromException(ex.Message);
             }
