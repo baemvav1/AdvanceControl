@@ -11,7 +11,7 @@
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" />
         <Grid Grid.Row="1">
-            <NavigationView x:Name="nvSample">
+            <NavigationView x:Name="nvSample" IsBackButtonVisible="Auto">
                 <NavigationView.MenuItems>
                     <NavigationViewItem
                         Content="Operaciones" Icon="Calculator" Tag="Operaciones" />

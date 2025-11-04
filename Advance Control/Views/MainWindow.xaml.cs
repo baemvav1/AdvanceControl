@@ -34,8 +34,14 @@ namespace Advance_Control
             // Suscribirse al evento ItemInvoked del NavigationView
             nvSample.ItemInvoked += NavigationView_ItemInvoked;
 
+            // Suscribirse al evento BackRequested del NavigationView
+            nvSample.BackRequested += NavigationView_BackRequested;
+
             // Navegar a la página inicial
             _navigationService.Navigate("Operaciones");
+
+            // Actualizar el estado del botón de retroceso
+            UpdateBackButtonState();
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -46,8 +52,23 @@ namespace Advance_Control
                 if (!string.IsNullOrEmpty(tag))
                 {
                     _navigationService.Navigate(tag);
+                    UpdateBackButtonState();
                 }
             }
+        }
+
+        private void NavigationView_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
+        {
+            if (_navigationService.CanGoBack)
+            {
+                _navigationService.GoBack();
+                UpdateBackButtonState();
+            }
+        }
+
+        private void UpdateBackButtonState()
+        {
+            nvSample.IsBackEnabled = _navigationService.CanGoBack;
         }
 
         // Handler del botón que usa _onlineCheck sin bloquear el hilo de UI.
