@@ -13,13 +13,13 @@
             <NavigationView x:Name="nvSample">
                 <NavigationView.MenuItems>
                     <NavigationViewItem
-                        Content="Menu Item1" Icon="Play" Tag="SamplePage1" />
+                        Content="Operaciones" Icon="Calculator" Tag="Operaciones" />
                     <NavigationViewItem
-                        Content="Menu Item2" Icon="Save" Tag="SamplePage2" />
+                        Content="Asesoría" Icon="ContactInfo" Tag="Asesoria" />
                     <NavigationViewItem
-                        Content="Menu Item3" Icon="Refresh" Tag="SamplePage3" />
+                        Content="Mantenimiento" Icon="Repair" Tag="Mantenimiento" />
                     <NavigationViewItem
-                        Content="Menu Item4" Icon="Download" Tag="SamplePage4" />
+                        Content="Clientes" Icon="People" Tag="Clientes" />
                 </NavigationView.MenuItems>
                 <Frame x:Name="contentFrame" />
             </NavigationView>
