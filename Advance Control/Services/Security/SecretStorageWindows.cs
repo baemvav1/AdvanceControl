@@ -37,7 +37,7 @@ namespace Advance_Control.Services.Security
                 var existing = _vault.Retrieve(resource, key);
                 _vault.Remove(existing);
             }
-            catch (Exception ex)
+            catch
             {
                 _ = _logger?.LogDebugAsync($"Credencial no existe previamente al intentar actualizar: {key}", "SecretStorageWindows", "SetAsync");
                 // Retrieve lanza si no existe; ignorar
@@ -62,7 +62,7 @@ namespace Advance_Control.Services.Security
                 cred.RetrievePassword();
                 return Task.FromResult<string?>(cred.Password);
             }
-            catch (Exception ex)
+            catch
             {
                 _ = _logger?.LogDebugAsync($"No se encontró credencial en almacenamiento seguro: {key}", "SecretStorageWindows", "GetAsync");
                 return Task.FromResult<string?>(null);
@@ -79,7 +79,7 @@ namespace Advance_Control.Services.Security
                 var cred = _vault.Retrieve(resource, key);
                 _vault.Remove(cred);
             }
-            catch (Exception ex)
+            catch
             {
                 _ = _logger?.LogDebugAsync($"Error al eliminar credencial (posiblemente no existe): {key}", "SecretStorageWindows", "RemoveAsync");
                 // Si no existe, ignorar

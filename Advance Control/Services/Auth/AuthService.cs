@@ -189,7 +189,7 @@ namespace Advance_Control.Services.Auth
                 await _secureStorage.RemoveAsync(Key_RefreshToken);
                 await _secureStorage.RemoveAsync(Key_AccessExpiresAt);
             }
-            catch (Exception ex)
+            catch
             {
                 await _logger.LogWarningAsync("Error al limpiar tokens del almacenamiento seguro", "AuthService", "ClearTokenAsync");
                 // ignore storage errors
