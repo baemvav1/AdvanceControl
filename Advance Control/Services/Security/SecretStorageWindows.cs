@@ -4,15 +4,22 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Security.Credentials;
+using Advance_Control.Services.Logging;
 
 namespace Advance_Control.Services.Security
 {
     public class SecretStorageWindows : ISecureStorage
     {
         private readonly PasswordVault _vault = new();
+        private readonly ILoggingService? _logger;
 
         // Prefijo para distinguir entradas de esta app
         private const string ResourcePrefix = "Advance_Control";
+
+        public SecretStorageWindows(ILoggingService? logger = null)
+        {
+            _logger = logger;
+        }
 
         private static string ResourceForKey(string key) =>
             $"{ResourcePrefix}:{key}";
@@ -30,8 +37,9 @@ namespace Advance_Control.Services.Security
                 var existing = _vault.Retrieve(resource, key);
                 _vault.Remove(existing);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogDebugAsync($"Credencial no existe previamente al intentar actualizar: {key}", "SecretStorageWindows", "SetAsync");
                 // Retrieve lanza si no existe; ignorar
             }
 
@@ -54,8 +62,9 @@ namespace Advance_Control.Services.Security
                 cred.RetrievePassword();
                 return Task.FromResult<string?>(cred.Password);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogDebugAsync($"No se encontró credencial en almacenamiento seguro: {key}", "SecretStorageWindows", "GetAsync");
                 return Task.FromResult<string?>(null);
             }
         }
@@ -70,8 +79,9 @@ namespace Advance_Control.Services.Security
                 var cred = _vault.Retrieve(resource, key);
                 _vault.Remove(cred);
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogDebugAsync($"Error al eliminar credencial (posiblemente no existe): {key}", "SecretStorageWindows", "RemoveAsync");
                 // Si no existe, ignorar
             }
 
@@ -92,8 +102,9 @@ namespace Advance_Control.Services.Security
                     _vault.Remove(c);
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogErrorAsync("Error al limpiar almacenamiento seguro", ex, "SecretStorageWindows", "ClearAsync");
                 // ignorar errores
             }
 

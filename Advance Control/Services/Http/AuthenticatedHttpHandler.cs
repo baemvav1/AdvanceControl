@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.EndPointProvider;
+using Advance_Control.Services.Logging;
 
 namespace Advance_Control.Services.Http
 {
@@ -23,12 +24,14 @@ namespace Advance_Control.Services.Http
     {
         private readonly IAuthService _authService;
         private readonly IApiEndpointProvider _endpointProvider;
+        private readonly ILoggingService? _logger;
         private readonly string? _apiHost; // normalized host (lowercase) or null
 
-        public AuthenticatedHttpHandler(IAuthService authService, IApiEndpointProvider endpointProvider)
+        public AuthenticatedHttpHandler(IAuthService authService, IApiEndpointProvider endpointProvider, ILoggingService? logger = null)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _endpointProvider = endpointProvider ?? throw new ArgumentNullException(nameof(endpointProvider));
+            _logger = logger;
 
             // Try to normalize the API host now for quicker comparisons later.
             try
@@ -39,8 +42,9 @@ namespace Advance_Control.Services.Http
                     _apiHost = baseUri.Host?.ToLowerInvariant();
                 }
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarningAsync("No se pudo obtener el host de la API para AuthenticatedHttpHandler", "AuthenticatedHttpHandler", ".ctor");
                 _apiHost = null;
             }
         }
@@ -111,8 +115,9 @@ namespace Advance_Control.Services.Http
                 var host = requestUri.Host?.ToLowerInvariant();
                 return host == _apiHost;
             }
-            catch
+            catch (Exception ex)
             {
+                _logger?.LogWarningAsync($"Error al verificar si se debe adjuntar token a la URI: {requestUri}", "AuthenticatedHttpHandler", "ShouldAttachToken");
                 return false;
             }
         }
