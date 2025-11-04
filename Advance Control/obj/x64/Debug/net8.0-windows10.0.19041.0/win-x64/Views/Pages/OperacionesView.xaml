@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
-    x:Class="Advance_Control.Views.MttoView"
+    x:Class="Advance_Control.Views.OperacionesView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Advance_Control.Views"
@@ -10,7 +10,10 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+            <TextBlock Text="Operaciones" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="Módulo de gestión de operaciones" FontSize="16" HorizontalAlignment="Center"/>
+        </StackPanel>
     </Grid>
 </Page>
 
