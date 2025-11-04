@@ -1,16 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Advance_Control.Services.EndPointProvider
+﻿namespace Advance_Control.Services.EndPointProvider
 {
     public interface IApiEndpointProvider
     {
         /// <summary>
+        /// Devuelve la Base URL de la API, por ejemplo "https://api.example.com" (sin slash final).
+        /// </summary>
+        string GetApiBaseUrl();
+
+        /// <summary>
         /// Devuelve la URI absoluta (string) para la ruta relativa provista.
-        /// Ejemplos de rutaRelative: "Online", "auth/login", "customers/123".
+        /// Ejemplos de routeRelative: "Online", "auth/login", "customers/123".
         /// </summary>
         string GetEndpoint(string routeRelative);
 
@@ -20,3 +19,4 @@ namespace Advance_Control.Services.EndPointProvider
         string GetEndpoint(params string[] routeParts);
     }
 }
+

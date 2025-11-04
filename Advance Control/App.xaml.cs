@@ -2,10 +2,11 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using System;
-using System.Threading.Tasks;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.EndPointProvider;
 using Microsoft.Extensions.Configuration;
+using Advance_Control.Services.Auth;
+using Advance_Control.Services.Security;
 
 namespace Advance_Control
 {
@@ -39,7 +40,27 @@ namespace Advance_Control
                         client.Timeout = TimeSpan.FromSeconds(5);
                     });
 
-                    services.AddSingleton<Advance_Control.Services.Security.ISecureStorage, Advance_Control.Services.Security.SecretStorageWindows>();
+                    // Registrar implementación de almacenamiento seguro (Windows PasswordVault)
+                    services.AddSingleton<ISecureStorage, SecretStorageWindows>();
+
+                    // Registrar AuthenticatedHttpHandler (se inyecta en la pipeline del HttpClient de AuthService)
+                    services.AddTransient<AuthenticatedHttpHandler>();
+
+
+
+                    // Registrar AuthService y su HttpClient pipeline.
+                    // Configuramos BaseAddress usando la IApiEndpointProvider registrada.
+                    services.AddHttpClient<IAuthService, AuthService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Opcional: tiempo de espera por defecto
+                        client.Timeout = TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<AuthenticatedHttpHandler>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
