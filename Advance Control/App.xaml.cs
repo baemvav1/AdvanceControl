@@ -9,6 +9,7 @@ using Advance_Control.Services.Auth;
 using Advance_Control.Services.Security;
 using Advance_Control.Services.Http;
 using Advance_Control.Services.Logging;
+using Advance_Control.Navigation;
 
 namespace Advance_Control
 {
@@ -72,6 +73,9 @@ namespace Advance_Control
                         client.Timeout = TimeSpan.FromSeconds(30);
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar NavigationService
+                    services.AddSingleton<INavigationService, NavigationService>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();

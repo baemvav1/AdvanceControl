@@ -10,6 +10,9 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
     <Grid>
-
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+            <TextBlock Text="Asesoría" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
+            <TextBlock Text="Módulo de asesoría al cliente" FontSize="16" HorizontalAlignment="Center"/>
+        </StackPanel>
     </Grid>
 </Page>
