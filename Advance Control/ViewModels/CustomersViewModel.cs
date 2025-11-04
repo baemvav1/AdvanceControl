@@ -10,8 +10,13 @@ namespace Advance_Control.ViewModels
 {
     public class CustomersViewModel : ViewModelBase
     {
-        private ObservableCollection<CustomerDto> _customers = new();
+        private ObservableCollection<CustomerDto> _customers;
         private bool _isLoading;
+
+        public CustomersViewModel()
+        {
+            _customers = new ObservableCollection<CustomerDto>();
+        }
 
         public ObservableCollection<CustomerDto> Customers
         {

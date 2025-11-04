@@ -54,7 +54,7 @@ namespace Advance_Control.Services.Auth
 
         public async Task<bool> AuthenticateAsync(string username, string password, CancellationToken cancellationToken = default)
         {
-            // Ensure initialization is complete
+            // Wait for token loading from storage to complete before authentication
             await _initTask.ConfigureAwait(false);
             
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
@@ -87,7 +87,6 @@ namespace Advance_Control.Services.Auth
 
         public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
         {
-            // Ensure initialization is complete
             await _initTask.ConfigureAwait(false);
             
             if (!string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow.AddSeconds(15))
