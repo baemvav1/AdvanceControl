@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Security;
+using Advance_Control.Services.Logging;
 
 namespace Advance_Control.Services.Auth
 {
@@ -13,6 +14,7 @@ namespace Advance_Control.Services.Auth
         private readonly HttpClient _http;
         private readonly IApiEndpointProvider _endpoints;
         private readonly ISecureStorage _secureStorage;
+        private readonly ILoggingService _logger;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
         private readonly Task _initTask;
 
@@ -27,11 +29,12 @@ namespace Advance_Control.Services.Auth
 
         public bool IsAuthenticated => _isAuthenticated;
 
-        public AuthService(HttpClient http, IApiEndpointProvider endpoints, ISecureStorage secureStorage)
+        public AuthService(HttpClient http, IApiEndpointProvider endpoints, ISecureStorage secureStorage, ILoggingService logger)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _secureStorage = secureStorage ?? throw new ArgumentNullException(nameof(secureStorage));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _initTask = LoadFromStorageAsync();
         }
 
@@ -45,8 +48,9 @@ namespace Advance_Control.Services.Auth
                 if (DateTime.TryParse(expiresText, out var dt)) _accessExpiresAtUtc = dt;
                 _isAuthenticated = !string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow;
             }
-            catch
+            catch (Exception ex)
             {
+                await _logger.LogErrorAsync("Error al cargar tokens desde el almacenamiento seguro", ex, "AuthService", "LoadFromStorageAsync");
                 // ignore storage errors, treat as not authenticated
                 _isAuthenticated = false;
             }
@@ -79,8 +83,9 @@ namespace Advance_Control.Services.Auth
                 _isAuthenticated = true;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                await _logger.LogErrorAsync($"Error al autenticar usuario: {username}", ex, "AuthService", "AuthenticateAsync");
                 return false;
             }
         }
@@ -136,8 +141,9 @@ namespace Advance_Control.Services.Auth
                 _isAuthenticated = true;
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
+                await _logger.LogErrorAsync("Error al refrescar token de autenticación", ex, "AuthService", "RefreshTokenAsync");
                 return false;
             }
             finally
@@ -163,8 +169,9 @@ namespace Advance_Control.Services.Auth
                 }
                 return false;
             }
-            catch
+            catch (Exception ex)
             {
+                await _logger.LogErrorAsync("Error al validar token de autenticación", ex, "AuthService", "ValidateTokenAsync");
                 return false;
             }
         }
@@ -184,6 +191,7 @@ namespace Advance_Control.Services.Auth
             }
             catch
             {
+                await _logger.LogWarningAsync("Error al limpiar tokens del almacenamiento seguro", "AuthService", "ClearTokenAsync");
                 // ignore storage errors
             }
         }
@@ -199,8 +207,9 @@ namespace Advance_Control.Services.Auth
                 if (_accessExpiresAtUtc.HasValue)
                     await _secureStorage.SetAsync(Key_AccessExpiresAt, _accessExpiresAtUtc.Value.ToString("o")); // ISO
             }
-            catch
+            catch (Exception ex)
             {
+                await _logger.LogErrorAsync("Error al persistir tokens en almacenamiento seguro", ex, "AuthService", "PersistTokensAsync");
                 // ignore
             }
         }

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Security;
 using Advance_Control.Services.Http;
+using Advance_Control.Services.Logging;
 
 namespace Advance_Control
 {
@@ -47,7 +48,16 @@ namespace Advance_Control
                     // Registrar AuthenticatedHttpHandler (se inyecta en la pipeline del HttpClient de AuthService)
                     services.AddTransient<Services.Http.AuthenticatedHttpHandler>();
 
-
+                    // Registrar LoggingService como HttpClient tipado
+                    services.AddHttpClient<ILoggingService, LoggingService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        client.Timeout = TimeSpan.FromSeconds(5);
+                    });
 
                     // Registrar AuthService y su HttpClient pipeline.
                     // Configuramos BaseAddress usando la IApiEndpointProvider registrada.

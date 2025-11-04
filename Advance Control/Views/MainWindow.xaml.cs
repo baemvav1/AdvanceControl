@@ -2,21 +2,24 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Services.OnlineCheck;
+using Advance_Control.Services.Logging;
 
 namespace Advance_Control
 {
     public sealed partial class MainWindow : Window
     {
         private readonly IOnlineCheck _onlineCheck;
+        private readonly ILoggingService _logger;
 
         // Constructor adaptado para que DI inyecte IOnlineCheck.
-        public MainWindow(IOnlineCheck onlineCheck)
+        public MainWindow(IOnlineCheck onlineCheck, ILoggingService logger)
         {
             this.InitializeComponent();
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        // Handler del botón que usa _onlineCheck sin bloquear el hilo de UI.
+        // Handler del botÃ³n que usa _onlineCheck sin bloquear el hilo de UI.
         private async void CheckButton_Click(object sender, RoutedEventArgs e)
         {
             CheckButton.IsEnabled = false;
@@ -41,7 +44,8 @@ namespace Advance_Control
             }
             catch (Exception ex)
             {
-                // Captura cualquier excepción inesperada y mostrar un mensaje útil.
+                await _logger.LogErrorAsync("Error inesperado al verificar conectividad desde UI", ex, "MainWindow", "CheckButton_Click");
+                // Captura cualquier excepciÃ³n inesperada y mostrar un mensaje Ãºtil.
                 StatusTextBlock.Text = $"Error inesperado: {ex.Message}";
             }
             finally

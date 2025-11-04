@@ -1,4 +1,5 @@
 ﻿using Advance_Control.Services.EndPointProvider;
+using Advance_Control.Services.Logging;
 using System;
 using System.Net.Http;
 using System.Threading;
@@ -10,12 +11,14 @@ namespace Advance_Control.Services.OnlineCheck
     {
         private readonly HttpClient _httpClient;
         private readonly IApiEndpointProvider _endpointProvider;
+        private readonly ILoggingService? _logger;
         private const string _relativeEndpoint = "Online"; // ruta relativa que describe el recurso
 
-        public OnlineCheck(HttpClient httpClient, IApiEndpointProvider endpointProvider)
+        public OnlineCheck(HttpClient httpClient, IApiEndpointProvider endpointProvider, ILoggingService? logger = null)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _endpointProvider = endpointProvider ?? throw new ArgumentNullException(nameof(endpointProvider));
+            _logger = logger;
         }
 
         public async Task<OnlineCheckResult> CheckAsync(CancellationToken cancellationToken = default)
@@ -44,10 +47,13 @@ namespace Advance_Control.Services.OnlineCheck
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
+                _ = _logger?.LogWarningAsync("Verificación de conectividad cancelada", "OnlineCheck", "CheckAsync");
                 return OnlineCheckResult.FromException("Operation cancelled");
             }
             catch (Exception ex)
             {
+                if (_logger != null)
+                    await _logger.LogErrorAsync("Error al verificar conectividad con la API", ex, "OnlineCheck", "CheckAsync");
                 // Ejemplos: DNS, connection refused, TLS/SSL, timeout, etc.
                 return OnlineCheckResult.FromException(ex.Message);
             }
