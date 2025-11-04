@@ -1,6 +1,6 @@
 App.xbf
-Views\AcesoriaView.xbf
-Views\ClientesView.xbf
 Views\MainWindow.xbf
-Views\MttoView.xbf
-Views\OperacionesView.xbf
+Views\Pages\Cabeceras\Directorio\ClientesView.xbf
+Views\Pages\Cabeceras\Operaciones\AcesoriaView.xbf
+Views\Pages\Cabeceras\Operaciones\MttoView.xbf
+Views\Pages\Cabeceras\Operaciones\OperacionesView.xbf

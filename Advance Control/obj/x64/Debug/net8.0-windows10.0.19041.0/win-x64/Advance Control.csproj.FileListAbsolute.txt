@@ -544,9 +544,14 @@ C:\Users\ERICK TRIADA\OneDrive - Ridge point\Documentos\GitHub\AdvanceControl\Ad
 C:\Users\ERICK TRIADA\OneDrive - Ridge point\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\MultipleQualifiersPerDimensionFound.txt
 C:\Users\ERICK TRIADA\OneDrive - Ridge point\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\ProjectArchitectures.txt
 C:\Users\ERICK TRIADA\OneDrive - Ridge point\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\.winmd_cache\$Microsoft.Web.WebView2.Core.winmd_638789222360000000.json
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\appsettings.json
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.exe
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\App.xbf
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MainWindow.xbf
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Directorio\ClientesView.xbf
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\AcesoriaView.xbf
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\MttoView.xbf
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\OperacionesView.xbf
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.deps.json
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.runtimeconfig.json
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.dll
@@ -815,13 +820,31 @@ C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\App.g.cs
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MainWindow.g.i.cs
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MainWindow.g.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Directorio\ClientesView.g.i.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Directorio\ClientesView.g.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\AcesoriaView.g.i.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\AcesoriaView.g.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\MttoView.g.i.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\MttoView.g.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\OperacionesView.g.i.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\OperacionesView.g.cs
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\XamlTypeInfo.g.cs
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Directorio\ClientesView.xaml
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\AcesoriaView.xaml
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\MttoView.xaml
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\OperacionesView.xaml
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\App.xaml
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MainWindow.xaml
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Directorio\ClientesView.xbf
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\AcesoriaView.xbf
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\MttoView.xbf
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\Pages\Cabeceras\Operaciones\OperacionesView.xbf
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\App.xbf
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MainWindow.xbf
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\XamlSaveStateFile.xml
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance_Control.Properties.Resources.resources
+C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.csproj.GenerateResource.cache
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.AssemblyInfoInputs.cache
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.AssemblyInfo.cs
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.csproj.CoreCompileInputs.cache
@@ -849,26 +872,3 @@ C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\MultipleQualifiersPerDimensionFound.txt
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\ProjectArchitectures.txt
 C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\.winmd_cache\$Microsoft.Web.WebView2.Core.winmd_638789222360000000.json
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\appsettings.json
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance_Control.Properties.Resources.resources
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.csproj.GenerateResource.cache
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\AcesoriaView.xbf
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ClientesView.xbf
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MttoView.xbf
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\OperacionesView.xbf
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\AcesoriaView.g.i.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\AcesoriaView.g.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ClientesView.g.i.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ClientesView.g.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MttoView.g.i.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MttoView.g.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\OperacionesView.g.i.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\OperacionesView.g.cs
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\AcesoriaView.xaml
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ClientesView.xaml
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MttoView.xaml
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\OperacionesView.xaml
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\AcesoriaView.xbf
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\ClientesView.xbf
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\MttoView.xbf
-C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Views\OperacionesView.xbf

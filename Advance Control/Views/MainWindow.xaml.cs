@@ -20,7 +20,7 @@ namespace Advance_Control
         }
 
         // Handler del botón que usa _onlineCheck sin bloquear el hilo de UI.
-        private async void CheckButton_Click(object sender, RoutedEventArgs e)
+        /*private async void CheckButton_Click(object sender, RoutedEventArgs e)
         {
             CheckButton.IsEnabled = false;
             StatusTextBlock.Text = "Comprobando...";
@@ -52,6 +52,6 @@ namespace Advance_Control
             {
                 CheckButton.IsEnabled = true;
             }
-        }
+        }*/
     }
 }
