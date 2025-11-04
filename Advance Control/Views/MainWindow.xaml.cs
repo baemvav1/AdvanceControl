@@ -37,6 +37,9 @@ namespace Advance_Control
             // Suscribirse al evento BackRequested del NavigationView
             nvSample.BackRequested += NavigationView_BackRequested;
 
+            // Suscribirse al evento Navigated del Frame para actualizar la selección
+            contentFrame.Navigated += ContentFrame_Navigated;
+
             // Navegar a la página inicial
             _navigationService.Navigate("Operaciones");
 
@@ -52,7 +55,6 @@ namespace Advance_Control
                 if (!string.IsNullOrEmpty(tag))
                 {
                     _navigationService.Navigate(tag);
-                    UpdateBackButtonState();
                 }
             }
         }
@@ -62,13 +64,41 @@ namespace Advance_Control
             if (_navigationService.CanGoBack)
             {
                 _navigationService.GoBack();
-                UpdateBackButtonState();
             }
         }
 
         private void UpdateBackButtonState()
         {
             nvSample.IsBackEnabled = _navigationService.CanGoBack;
+        }
+
+        private void ContentFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            // Actualizar la selección del NavigationView cuando el Frame navega
+            UpdateNavigationViewSelection();
+            
+            // Actualizar el estado del botón de retroceso
+            UpdateBackButtonState();
+        }
+
+        private void UpdateNavigationViewSelection()
+        {
+            // Obtener el tag actual desde el servicio de navegación
+            var currentTag = _navigationService.GetCurrentTag();
+            
+            if (string.IsNullOrEmpty(currentTag))
+                return;
+
+            // Buscar el NavigationViewItem que coincida con el tag actual
+            foreach (var menuItem in nvSample.MenuItems)
+            {
+                if (menuItem is NavigationViewItem navItem && 
+                    navItem.Tag?.ToString() == currentTag)
+                {
+                    nvSample.SelectedItem = navItem;
+                    return;
+                }
+            }
         }
 
         // Handler del botón que usa _onlineCheck sin bloquear el hilo de UI.
