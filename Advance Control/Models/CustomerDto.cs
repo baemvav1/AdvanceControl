@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace Advance_Control.Models
 {
-    class CustomerDto
+    public class CustomerDto
     {
+        public int Id { get; set; }
+        public string? Name { get; set; }
+        public string? Email { get; set; }
+        public string? Phone { get; set; }
+        public DateTime? CreatedAt { get; set; }
     }
 }

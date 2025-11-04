@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Advance_Control.Models
 {
-    class TokenDto
+    public class TokenDto
     {
+        public string? AccessToken { get; set; }
+        public string? RefreshToken { get; set; }
+        public int ExpiresIn { get; set; }
+        public string? TokenType { get; set; }
     }
 }

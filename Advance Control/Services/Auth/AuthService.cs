@@ -14,6 +14,7 @@ namespace Advance_Control.Services.Auth
         private readonly IApiEndpointProvider _endpoints;
         private readonly ISecureStorage _secureStorage;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
+        private readonly Task _initTask;
 
         private volatile bool _isAuthenticated;
         private string? _accessToken;
@@ -31,7 +32,7 @@ namespace Advance_Control.Services.Auth
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _secureStorage = secureStorage ?? throw new ArgumentNullException(nameof(secureStorage));
-            _ = LoadFromStorageAsync(); // fire-and-forget load
+            _initTask = LoadFromStorageAsync();
         }
 
         private async Task LoadFromStorageAsync()
@@ -53,6 +54,9 @@ namespace Advance_Control.Services.Auth
 
         public async Task<bool> AuthenticateAsync(string username, string password, CancellationToken cancellationToken = default)
         {
+            // Wait for token loading from storage to complete before authentication
+            await _initTask.ConfigureAwait(false);
+            
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 return false;
 
@@ -83,6 +87,8 @@ namespace Advance_Control.Services.Auth
 
         public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
         {
+            await _initTask.ConfigureAwait(false);
+            
             if (!string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow.AddSeconds(15))
                 return _accessToken;
 
