@@ -39,6 +39,8 @@ namespace Advance_Control
                         client.Timeout = TimeSpan.FromSeconds(5);
                     });
 
+                    services.AddSingleton<Advance_Control.Services.Security.ISecureStorage, Advance_Control.Services.Security.SecretStorageWindows>();
+
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
                 })

@@ -29,7 +29,7 @@
     <AppXManifest Include="C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\bin\x64\Debug\net8.0-windows10.0.19041.0\win-x64\AppxManifest.xml">
       <PackagePath>AppxManifest.xml</PackagePath>
       <ReRegisterAppIfChanged>true</ReRegisterAppIfChanged>
-      <Modified>2025-11-03T22:20:12.070</Modified>
+      <Modified>2025-11-03T23:10:35.236</Modified>
     </AppXManifest>
   </ItemGroup>
   <ItemGroup>
@@ -39,7 +39,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\apphost.exe">
       <PackagePath>Advance Control.exe</PackagePath>
-      <Modified>2025-11-03T22:20:11.553</Modified>
+      <Modified>2025-11-03T23:10:34.434</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\appsettings.json">
       <PackagePath>appsettings.json</PackagePath>
@@ -47,7 +47,7 @@
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\baemv\OneDrive\Documentos\GitHub\AdvanceControl\Advance Control\obj\x64\Debug\net8.0-windows10.0.19041.0\win-x64\Advance Control.dll">
       <PackagePath>Advance Control.dll</PackagePath>
-      <Modified>2025-11-03T22:20:11.549</Modified>
+      <Modified>2025-11-03T23:10:34.356</Modified>
     </AppxPackagedFile>
     <AppxPackagedFile Include="C:\Users\baemv\.nuget\packages\microsoft.netcore.app.runtime.win-x64\8.0.13\runtimes\win-x64\lib\net8.0\Microsoft.CSharp.dll">
       <PackagePath>Microsoft.CSharp.dll</PackagePath>

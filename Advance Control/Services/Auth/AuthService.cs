@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Advance_Control.Services.Auth
 {
-    class AuthService
+    public interface AuthService
     {
     }
 }
