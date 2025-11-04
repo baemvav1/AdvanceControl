@@ -3,13 +3,38 @@
     x:Class="Advance_Control.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Advance_Control" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" Title="Advance Control" mc:Ignorable="d">
 
-    <StackPanel
-        HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal">
-        <Button x:ConnectionId='2'
-            x:Name="CheckButton" Width="140"                           Content="Comprobar API" />
-        <!--  Texto donde mostramos el estado  -->
-        <TextBlock x:ConnectionId='3'
-            x:Name="StatusTextBlock" Text="Listo" TextWrapping="Wrap" />
-    </StackPanel>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="50" />
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" />
+        <Grid Grid.Row="1">
+            <NavigationView x:ConnectionId='2' x:Name="nvSample">
+                <NavigationView.MenuItems>
+                    <NavigationViewItem
+                        Content="Menu Item1" Icon="Play" Tag="SamplePage1" />
+                    <NavigationViewItem
+                        Content="Menu Item2" Icon="Save" Tag="SamplePage2" />
+                    <NavigationViewItem
+                        Content="Menu Item3" Icon="Refresh" Tag="SamplePage3" />
+                    <NavigationViewItem
+                        Content="Menu Item4" Icon="Download" Tag="SamplePage4" />
+                </NavigationView.MenuItems>
+                <Frame x:ConnectionId='3' x:Name="contentFrame">
+                    <StackPanel
+                        HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal">
+                        <Button x:ConnectionId='4'
+                            x:Name="CheckButton" Width="140"                           Content="Comprobar API" />
+                        <!--  Texto donde mostramos el estado  -->
+                        <TextBlock x:ConnectionId='5'
+                            x:Name="StatusTextBlock" Text="Listo" TextWrapping="Wrap" />
+                    </StackPanel>
+                </Frame>
+            </NavigationView>
+        </Grid>
+    </Grid>
+
+
 </Window>
 

@@ -13,7 +13,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
-    <None Remove="Views\CustomersView.xaml" />
+    <None Remove="Views\AcesoriaView.xaml" />
+    <None Remove="Views\ClientesView.xaml" />
+    <None Remove="Views\MttoView.xaml" />
+    <None Remove="Views\OperacionesView.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -57,7 +60,22 @@
     <PackageReference Include="System.Text.Json" Version="9.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\CustomersView.xaml">
+    <Page Update="Views\AcesoriaView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\OperacionesView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\MttoView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\ClientesView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

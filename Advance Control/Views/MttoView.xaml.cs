@@ -18,9 +18,12 @@ using Microsoft.UI.Xaml.Navigation;
 
 namespace Advance_Control.Views
 {
-    public sealed partial class CustomersView : UserControl
+    /// <summary>
+    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// </summary>
+    public sealed partial class MttoView : Page
     {
-        public CustomersView()
+        public MttoView()
         {
             this.InitializeComponent();
         }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.UI.Xaml.Controls;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,22 +9,14 @@ namespace Advance_Control.Navigation
 {
     public interface INavigationService
     {
-        /// <summary>
-        /// Navigate to a specific view type
-        /// </summary>
-        void NavigateTo(Type viewType);
-
-        /// <summary>
-        /// Navigate to a specific view type with parameter
-        /// </summary>
-        void NavigateTo(Type viewType, object? parameter);
-
-        /// <summary>
-        /// Navigate back to the previous view
-        /// </summary>
+        void Initialize(Frame frame);
+        void Configure(string tag, Type pageType);
+        void Configure<TPage>(string tag) where TPage : Page;
+        void ConfigureFactory(string tag, Func<object> factory);
+        bool Navigate(string tag, object parameter = null);
         bool CanGoBack { get; }
-        
         void GoBack();
+        string GetCurrentTag();
     }
 }
  
