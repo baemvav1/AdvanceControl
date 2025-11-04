@@ -2,7 +2,7 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 
-namespace AdvanceControl.Converters
+namespace Advance_Control.Converters
 {
     public class BooleanToVisibilityConverter : IValueConverter
     {

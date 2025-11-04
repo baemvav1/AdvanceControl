@@ -7,6 +7,7 @@ using Advance_Control.Services.EndPointProvider;
 using Microsoft.Extensions.Configuration;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Security;
+using Advance_Control.Services.Http;
 
 namespace Advance_Control
 {
@@ -44,7 +45,7 @@ namespace Advance_Control
                     services.AddSingleton<ISecureStorage, SecretStorageWindows>();
 
                     // Registrar AuthenticatedHttpHandler (se inyecta en la pipeline del HttpClient de AuthService)
-                    services.AddTransient<AuthenticatedHttpHandler>();
+                    services.AddTransient<Services.Http.AuthenticatedHttpHandler>();
 
 
 
@@ -60,7 +61,7 @@ namespace Advance_Control
                         // Opcional: tiempo de espera por defecto
                         client.Timeout = TimeSpan.FromSeconds(30);
                     })
-                    .AddHttpMessageHandler<AuthenticatedHttpHandler>();
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
