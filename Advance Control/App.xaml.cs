@@ -17,6 +17,9 @@ namespace Advance_Control
     public partial class App : Application
     {
         public IHost Host { get; }
+        
+        // Almacena la referencia a la ventana principal para acceder a XamlRoot
+        public static Window? MainWindow { get; private set; }
 
         public App()
         {
@@ -103,6 +106,9 @@ namespace Advance_Control
 
             // Resolver MainWindow vía DI (NO crear con new)
             var window = Host.Services.GetRequiredService<MainWindow>();
+            
+            // Guardar la referencia a la ventana principal para acceder a XamlRoot desde DialogService
+            MainWindow = window;
 
             // Suscribirse al evento Closed de la ventana principal para detener y disponer el Host
             // Esto evita intentar sobrescribir OnExit (no disponible en WinUI 3).
