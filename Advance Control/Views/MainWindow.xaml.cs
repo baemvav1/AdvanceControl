@@ -35,6 +35,15 @@ namespace Advance_Control
             // Subscribe to NavigationView events and delegate to ViewModel
             nvSample.ItemInvoked += (sender, args) => _viewModel.OnNavigationItemInvoked(sender, args);
             nvSample.BackRequested += (sender, args) => _viewModel.OnBackRequested(sender, args);
+
+            // Show LoginView on startup before any AuthService operations
+            this.Loaded += MainWindow_Loaded;
+        }
+
+        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Show the login dialog automatically on startup
+            _viewModel.ShowLoginDialogAsync();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)

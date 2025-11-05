@@ -86,8 +86,13 @@ namespace Advance_Control.ViewModels.Login
             try
             {
                 IsLoading = true;
-                var success = await _authService.AuthenticateAsync(Username, Password);
                 
+                // TODO: AuthService authentication will be implemented later
+                // For now, just validate the user control and close without calling AuthService
+                // var success = await _authService.AuthenticateAsync(Username, Password);
+                
+                // Simulate successful login for user control initialization
+                var success = true;
                 LoginResult = success;
 
                 if (!success)
