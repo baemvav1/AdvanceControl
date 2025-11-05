@@ -45,9 +45,9 @@ namespace Advance_Control.ViewModels
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
-            // Initialize authentication state
-            _isAuthenticated = _authService.IsAuthenticated;
-
+            // TODO: Authentication state check will be implemented later
+            // For now, do not check IsAuthenticated to allow LoginView to show first
+            _isAuthenticated = false;
 
             showLogin = new RelayCommand(ShowLoginDialogAsync);
         }
@@ -132,7 +132,12 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                var success = await _authService.AuthenticateAsync(username, password);
+                // TODO: AuthService authentication will be implemented later
+                // For now, validate that username and password are provided
+                // var success = await _authService.AuthenticateAsync(username, password);
+                
+                // Simulate successful login if credentials are provided
+                var success = !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password);
                 if (success)
                 {
                     IsAuthenticated = true;
@@ -151,7 +156,10 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                await _authService.ClearTokenAsync();
+                // TODO: AuthService ClearTokenAsync will be implemented later
+                // For now, skip token clearing operations
+                // await _authService.ClearTokenAsync();
+                
                 IsAuthenticated = false;
                 await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }
