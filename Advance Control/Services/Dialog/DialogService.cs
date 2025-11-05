@@ -88,4 +88,85 @@ namespace Advance_Control.Services.Dialog
             }
         }
     }
+
+    /* -----------------------------
+       SECCIÓN DOCUMENTADA: Cómo usar DialogService
+       -----------------------------
+       
+       El DialogService permite mostrar diálogos en la aplicación WinUI 3.
+       
+       INICIALIZACIÓN:
+       ---------------
+       El DialogService se registra como Singleton en App.xaml.cs y debe inicializarse
+       con el XamlRoot de un elemento UI antes de usarlo.
+       
+       Ejemplo en MainWindow.xaml.cs o en cualquier ViewModel:
+       
+       public MainWindow(IDialogService dialogService)
+       {
+           InitializeComponent();
+           _dialogService = dialogService;
+           
+           // Inicializar el DialogService con el XamlRoot del elemento principal
+           // Esto debe hacerse después de InitializeComponent()
+           _dialogService.Initialize(this.Content.XamlRoot);
+       }
+       
+       USO BÁSICO:
+       -----------
+       
+       1) Mostrar el LoginView como diálogo:
+          
+          private readonly IDialogService _dialogService;
+          
+          public async void OnShowLoginClicked()
+          {
+              await _dialogService.ShowLoginDialogAsync();
+          }
+       
+       2) Mostrar un mensaje simple:
+          
+          await _dialogService.ShowMessageDialogAsync("Título", "Este es un mensaje de información");
+       
+       3) Mostrar un diálogo de confirmación:
+          
+          bool confirmed = await _dialogService.ShowConfirmationDialogAsync(
+              "Confirmar Acción", 
+              "¿Está seguro que desea continuar?",
+              "Sí, continuar",
+              "No, cancelar"
+          );
+          
+          if (confirmed)
+          {
+              // El usuario confirmó la acción
+          }
+       
+       INYECCIÓN DE DEPENDENCIAS:
+       --------------------------
+       El DialogService está registrado en el contenedor de DI y puede ser inyectado
+       en cualquier ViewModel, servicio o ventana:
+       
+       public class MiViewModel
+       {
+           private readonly IDialogService _dialogService;
+           
+           public MiViewModel(IDialogService dialogService)
+           {
+               _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+           }
+           
+           public async Task MostrarLoginAsync()
+           {
+               await _dialogService.ShowLoginDialogAsync();
+           }
+       }
+       
+       NOTAS IMPORTANTES:
+       ------------------
+       - El DialogService DEBE ser inicializado con Initialize(xamlRoot) antes de usar.
+       - Solo puede mostrarse un ContentDialog a la vez en WinUI 3.
+       - Si intenta mostrar múltiples diálogos simultáneamente, se lanzará una excepción.
+       - El XamlRoot debe pertenecer al árbol visual activo de la aplicación.
+    */
 }
