@@ -7,11 +7,14 @@ namespace Advance_Control.Services.Dialog
     /// <summary>
     /// Servicio para mostrar diálogos con UserControls personalizados.
     /// Permite lanzar cualquier UserControl con o sin parámetros, y obtener resultados genéricos.
+    /// Cuando no se configuran botones, el diálogo se cierra automáticamente al hacer clic fuera (light dismiss).
     /// </summary>
     public interface IDialogService
     {
         /// <summary>
         /// Muestra un diálogo con un UserControl sin parámetros y sin resultado específico.
+        /// Si no se especifican botones (primaryButtonText, secondaryButtonText, closeButtonText),
+        /// el diálogo se mostrará con light dismiss habilitado (se cierra al hacer clic fuera).
         /// </summary>
         /// <typeparam name="TUserControl">El tipo de UserControl a mostrar.</typeparam>
         /// <param name="title">Título del diálogo (opcional).</param>
@@ -31,6 +34,12 @@ namespace Advance_Control.Services.Dialog
         /// {
         ///     // Usuario presionó Aceptar
         /// }
+        /// 
+        /// // Ejemplo: Diálogo con light dismiss (sin botones)
+        /// await _dialogService.ShowDialogAsync&lt;NotificationUserControl&gt;(
+        ///     title: "Notificación"
+        ///     // Sin botones - se cierra al hacer clic fuera
+        /// );
         /// </code>
         /// </example>
         Task<bool> ShowDialogAsync<TUserControl>(
