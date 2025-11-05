@@ -165,7 +165,7 @@ namespace Advance_Control.ViewModels
         }
         public async Task ShowInfoDialogAsync()
         {
-            await _dialogService.ShowDialogAsync<LoginView>(title: "login", primaryButtonText: "OK");
+            await _dialogService.ShowDialogAsync<LoginView>();
         }
     }
 }

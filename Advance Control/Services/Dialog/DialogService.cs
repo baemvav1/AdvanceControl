@@ -464,12 +464,14 @@ namespace Advance_Control.Services.Dialog
             // Crear un Border para contener el contenido con estilo de diálogo
             var border = new Border
             {
-                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
+                Background = new SolidColorBrush(Microsoft.UI.Colors.Transparent),
                 CornerRadius = new CornerRadius(8),
                 Padding = new Thickness(24),
                 MinWidth = 320,
                 MaxWidth = 548,
-                MaxHeight = 756
+                MaxHeight = 756,
+                VerticalAlignment = VerticalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Center
             };
 
             // Si hay título, crear un StackPanel con el título y el contenido
