@@ -22,12 +22,12 @@ namespace Advance_Control.Services.Http
     /// </summary>
     public class AuthenticatedHttpHandler : DelegatingHandler
     {
-        private readonly IAuthService _authService;
+        private readonly Lazy<IAuthService> _authService;
         private readonly IApiEndpointProvider _endpointProvider;
         private readonly ILoggingService? _logger;
         private readonly string? _apiHost; // normalized host (lowercase) or null
 
-        public AuthenticatedHttpHandler(IAuthService authService, IApiEndpointProvider endpointProvider, ILoggingService? logger = null)
+        public AuthenticatedHttpHandler(Lazy<IAuthService> authService, IApiEndpointProvider endpointProvider, ILoggingService? logger = null)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _endpointProvider = endpointProvider ?? throw new ArgumentNullException(nameof(endpointProvider));
@@ -56,7 +56,7 @@ namespace Advance_Control.Services.Http
             // Only attach token for requests that target the API host (prevents token leakage to external domains).
             if (ShouldAttachToken(request.RequestUri))
             {
-                var token = await _authService.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
+                var token = await _authService.Value.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
                 if (!string.IsNullOrEmpty(token))
                 {
                     request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
@@ -71,7 +71,7 @@ namespace Advance_Control.Services.Http
                 // Dispose original response early
                 response.Dispose();
 
-                var refreshed = await _authService.RefreshTokenAsync(cancellationToken).ConfigureAwait(false);
+                var refreshed = await _authService.Value.RefreshTokenAsync(cancellationToken).ConfigureAwait(false);
                 if (!refreshed)
                 {
                     // refresh failed -> return 401 to caller
@@ -82,7 +82,7 @@ namespace Advance_Control.Services.Http
                 }
 
                 // Get new token and retry once
-                var newToken = await _authService.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
+                var newToken = await _authService.Value.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);
                 if (string.IsNullOrEmpty(newToken))
                 {
                     return new HttpResponseMessage(HttpStatusCode.Unauthorized)
