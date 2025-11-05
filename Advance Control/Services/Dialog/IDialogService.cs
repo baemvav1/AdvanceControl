@@ -23,11 +23,29 @@ namespace Advance_Control.Services.Dialog
         /// <param name="title">Optional title for the dialog</param>
         /// <param name="primaryButtonText">Optional text for primary button (default: "OK")</param>
         /// <param name="secondaryButtonText">Optional text for secondary button (default: "Cancel")</param>
+        /// <param name="parameters">Optional parameters to pass to the UserControl via DataContext</param>
         /// <returns>DialogResult containing the result and whether the dialog was confirmed</returns>
         Task<DialogResult<T>> ShowDialogAsync<T>(
             UserControl content,
             string title = "",
             string primaryButtonText = "OK",
-            string secondaryButtonText = "Cancel");
+            string secondaryButtonText = "Cancel",
+            object? parameters = null);
+
+        /// <summary>
+        /// Shows a dialog with the specified UserControl content without returning a typed result
+        /// </summary>
+        /// <param name="content">The UserControl to display in the dialog</param>
+        /// <param name="title">Optional title for the dialog</param>
+        /// <param name="primaryButtonText">Optional text for primary button (default: "OK")</param>
+        /// <param name="secondaryButtonText">Optional text for secondary button (default: "Cancel")</param>
+        /// <param name="parameters">Optional parameters to pass to the UserControl via DataContext</param>
+        /// <returns>True if the dialog was confirmed (primary button clicked), false otherwise</returns>
+        Task<bool> ShowDialogAsync(
+            UserControl content,
+            string title = "",
+            string primaryButtonText = "OK",
+            string secondaryButtonText = "Cancel",
+            object? parameters = null);
     }
 }

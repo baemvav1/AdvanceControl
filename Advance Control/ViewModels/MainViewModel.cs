@@ -17,8 +17,6 @@ namespace Advance_Control.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
-        public ICommand showLogin { get; }
-
         private readonly INavigationService _navigationService;
         private readonly IOnlineCheck _onlineCheck;
         private readonly ILoggingService _logger;
@@ -46,10 +44,7 @@ namespace Advance_Control.ViewModels
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             // TODO: Authentication state check will be implemented later
-            // For now, do not check IsAuthenticated to allow LoginView to show first
             _isAuthenticated = false;
-
-            showLogin = new RelayCommand(ShowLoginDialogAsync);
         }
 
         public string Title
@@ -180,38 +175,6 @@ namespace Advance_Control.ViewModels
             {
                 await _logger.LogErrorAsync("Error al verificar estado online", ex, "MainViewModel", "CheckOnlineStatusAsync");
                 return false;
-            }
-        }
-
-        /// <summary>
-        /// Shows the login dialog and returns the boolean result
-        /// </summary>
-        public async void ShowLoginDialogAsync()
-        {
-            try
-            {
-                // Resolve LoginViewModel from DI container
-                var loginViewModel = _serviceProvider.GetRequiredService<ViewModels.Login.LoginViewModel>();
-                var loginView = new Views.Login.LoginView(loginViewModel);
-
-                // Show the dialog and get the result
-                var result = await _dialogService.ShowDialogAsync<bool>(
-                    content: loginView,
-                    title: "Iniciar Sesión",
-                    primaryButtonText: "Iniciar Sesión",
-                    secondaryButtonText: "Cancelar");
-
-                // Update authentication state if login was successful
-                if (result.IsConfirmed && result.Result)
-                {
-                    IsAuthenticated = true;
-                    await _logger.LogInformationAsync("Usuario autenticado mediante diálogo de login", "MainViewModel", "ShowLoginDialogAsync");
-                }
-
-            }
-            catch (Exception ex)
-            {
-                await _logger.LogErrorAsync("Error al mostrar diálogo de login", ex, "MainViewModel", "ShowLoginDialogAsync");
             }
         }
     }

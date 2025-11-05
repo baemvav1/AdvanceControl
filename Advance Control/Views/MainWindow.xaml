@@ -5,14 +5,10 @@
 
     <Grid x:Name="RootGrid">
         <Grid.RowDefinitions>
-            <RowDefinition Height="100" />
             <RowDefinition />
             <RowDefinition Height="10"/>
         </Grid.RowDefinitions>
-        <Grid Grid.Row="0" Background="Red" >
-            <Button Content="login" Command="{x:Bind _viewModel.showLogin}"></Button>
-        </Grid>
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="0">
             <NavigationView x:Name="nvSample" IsBackButtonVisible="Auto" IsBackEnabled="{Binding IsBackEnabled, Mode=OneWay}">
                 <NavigationView.MenuItems>
                     <NavigationViewItem
@@ -27,7 +23,7 @@
                 <Frame x:Name="contentFrame" />
             </NavigationView>
         </Grid>
-        <Grid Grid.Row="2" Background="Green">
+        <Grid Grid.Row="1" Background="Green">
             
         </Grid>
     </Grid>

@@ -25,17 +25,27 @@ namespace Advance_Control.Services.Dialog
             _xamlRoot = xamlRoot ?? throw new ArgumentNullException(nameof(xamlRoot));
         }
 
+        /// <summary>
+        /// Shows a dialog with the specified UserControl content and returns a result of type T
+        /// </summary>
         public async Task<DialogResult<T>> ShowDialogAsync<T>(
             UserControl content,
             string title = "",
             string primaryButtonText = "OK",
-            string secondaryButtonText = "Cancel")
+            string secondaryButtonText = "Cancel",
+            object? parameters = null)
         {
             if (content == null)
                 throw new ArgumentNullException(nameof(content));
 
             if (_xamlRoot == null)
                 throw new InvalidOperationException("XamlRoot must be set before showing a dialog. Call SetXamlRoot first.");
+
+            // Set parameters as DataContext if provided
+            if (parameters != null)
+            {
+                content.DataContext = parameters;
+            }
 
             var dialog = new ContentDialog
             {
@@ -46,44 +56,50 @@ namespace Advance_Control.Services.Dialog
                 XamlRoot = _xamlRoot
             };
 
-            // Handle primary button click for async operations
-            if (content is IAsyncDialogContent asyncContent)
+            var result = await dialog.ShowAsync();
+
+            // Return the result with the DataContext as the result value
+            // The calling code can cast the result to the expected type
+            return new DialogResult<T>(
+                isConfirmed: result == ContentDialogResult.Primary,
+                result: content.DataContext is T typedResult ? typedResult : default);
+        }
+
+        /// <summary>
+        /// Shows a dialog with the specified UserControl content without returning a typed result
+        /// </summary>
+        public async Task<bool> ShowDialogAsync(
+            UserControl content,
+            string title = "",
+            string primaryButtonText = "OK",
+            string secondaryButtonText = "Cancel",
+            object? parameters = null)
+        {
+            if (content == null)
+                throw new ArgumentNullException(nameof(content));
+
+            if (_xamlRoot == null)
+                throw new InvalidOperationException("XamlRoot must be set before showing a dialog. Call SetXamlRoot first.");
+
+            // Set parameters as DataContext if provided
+            if (parameters != null)
             {
-                dialog.PrimaryButtonClick += async (sender, args) =>
-                {
-                    // Defer closing to allow async operation
-                    var deferral = args.GetDeferral();
-                    try
-                    {
-                        var shouldClose = await asyncContent.OnPrimaryButtonClickAsync();
-                        
-                        // If operation failed, prevent dialog from closing
-                        if (!shouldClose)
-                        {
-                            args.Cancel = true;
-                        }
-                    }
-                    finally
-                    {
-                        deferral.Complete();
-                    }
-                };
+                content.DataContext = parameters;
             }
+
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                PrimaryButtonText = primaryButtonText,
+                SecondaryButtonText = secondaryButtonText,
+                XamlRoot = _xamlRoot
+            };
 
             var result = await dialog.ShowAsync();
 
-            // Check if the content implements IDialogContent<T> to get the result
-            if (content is IDialogContent<T> dialogContent)
-            {
-                return new DialogResult<T>(
-                    isConfirmed: result == ContentDialogResult.Primary,
-                    result: dialogContent.GetResult());
-            }
-
-            // Default behavior: return default value for T
-            return new DialogResult<T>(
-                isConfirmed: result == ContentDialogResult.Primary,
-                result: default);
+            // Return true if primary button was clicked
+            return result == ContentDialogResult.Primary;
         }
     }
 }

@@ -1,13 +1,19 @@
-# DialogService - Servicio de Diálogos Genérico
+# DialogService - Servicio de Diálogos Genérico y Reutilizable
 
 ## Descripción General
 
-El `DialogService` es un servicio genérico y reutilizable que permite mostrar cualquier `UserControl` en un diálogo modal (`ContentDialog`) y obtener resultados de diferentes tipos (bool, string, array, objetos personalizados, etc.).
+El `DialogService` es un servicio genérico y reutilizable que permite mostrar cualquier `UserControl` en un diálogo modal (`ContentDialog`) con soporte para:
+- Resultados tipados de cualquier tipo (bool, string, objetos personalizados, etc.)
+- Uso sin resultado (void)
+- Paso de parámetros al UserControl
+- Total reutilización en toda la aplicación
 
 ## Características Principales
 
 - **Genérico**: Funciona con cualquier `UserControl`
 - **Tipado Fuerte**: Soporte para resultados de cualquier tipo mediante genéricos
+- **Sin Resultado**: También puede usarse sin esperar un resultado tipado
+- **Paso de Parámetros**: Permite enviar parámetros al UserControl vía DataContext
 - **Reutilizable**: Un solo servicio para todos los diálogos de la aplicación
 - **Integración con DI**: Compatible con inyección de dependencias
 
@@ -19,11 +25,21 @@ Interfaz del servicio de diálogos.
 ```csharp
 public interface IDialogService
 {
+    // Muestra un diálogo con resultado tipado
     Task<DialogResult<T>> ShowDialogAsync<T>(
         UserControl content,
         string title = "",
         string primaryButtonText = "OK",
-        string secondaryButtonText = "Cancel");
+        string secondaryButtonText = "Cancel",
+        object? parameters = null);
+
+    // Muestra un diálogo sin resultado tipado
+    Task<bool> ShowDialogAsync(
+        UserControl content,
+        string title = "",
+        string primaryButtonText = "OK",
+        string secondaryButtonText = "Cancel",
+        object? parameters = null);
 }
 ```
 
@@ -35,237 +51,246 @@ Clase que encapsula el resultado de un diálogo:
 - `IsConfirmed`: Indica si se hizo clic en el botón principal
 - `Result`: Valor del resultado de tipo T
 
-### 4. IDialogContent<T>
-Interfaz que deben implementar los UserControls que quieran devolver un resultado:
-
-```csharp
-public interface IDialogContent<T>
-{
-    T GetResult();
-}
-```
-
-### 5. IAsyncDialogContent
-Interfaz opcional que pueden implementar los UserControls que necesitan realizar operaciones asíncronas cuando se hace clic en el botón principal:
-
-```csharp
-public interface IAsyncDialogContent
-{
-    Task<bool> OnPrimaryButtonClickAsync();
-}
-```
-
-El método debe retornar `true` si el diálogo debe cerrarse, o `false` para mantenerlo abierto (útil para validaciones).
-
 ## Uso Básico
 
-### Paso 1: Crear un UserControl con Resultado
+### Opción 1: Diálogo con Resultado Tipado
 
 ```csharp
-public sealed partial class LoginView : UserControl, IDialogContent<bool>, IAsyncDialogContent
-{
-    private readonly LoginViewModel _viewModel;
+// Crear un UserControl
+var myControl = new MyCustomControl();
 
-    public LoginView(LoginViewModel viewModel)
-    {
-        InitializeComponent();
-        _viewModel = viewModel;
-        DataContext = _viewModel;
-    }
-
-    public bool GetResult()
-    {
-        return _viewModel.LoginResult;
-    }
-
-    public async Task<bool> OnPrimaryButtonClickAsync()
-    {
-        await _viewModel.LoginAsync();
-        // Solo cerrar si login fue exitoso
-        return _viewModel.LoginResult;
-    }
-}
-```
-
-### Paso 2: Usar el DialogService
-
-```csharp
-public async Task<bool> ShowLoginDialogAsync()
-{
-    var loginViewModel = new LoginViewModel(_authService, _logger);
-    var loginView = new LoginView(loginViewModel);
-
-    var result = await _dialogService.ShowDialogAsync<bool>(
-        content: loginView,
-        title: "Iniciar Sesión",
-        primaryButtonText: "Iniciar Sesión",
-        secondaryButtonText: "Cancelar");
-
-    if (result.IsConfirmed && result.Result)
-    {
-        // El usuario inició sesión exitosamente
-        return true;
-    }
-    
-    return false;
-}
-```
-
-## Ejemplos de Uso con Diferentes Tipos
-
-### Ejemplo 1: Diálogo con Resultado Booleano (LoginView)
-
-Ya implementado en `LoginView.xaml` y `LoginView.xaml.cs`.
-
-```csharp
-// En MainViewModel
-var success = await ShowLoginDialogAsync();
-if (success)
-{
-    // Usuario autenticado
-}
-```
-
-### Ejemplo 2: Diálogo con Resultado String
-
-```csharp
-// UserControl para input de texto
-public sealed partial class InputDialog : UserControl, IDialogContent<string>
-{
-    private string _inputText = "";
-    
-    public string GetResult() => _inputText;
-    
-    // Binding en XAML: Text="{Binding InputText, Mode=TwoWay}"
-}
-
-// Uso
-var inputView = new InputDialog();
-var result = await _dialogService.ShowDialogAsync<string>(
-    content: inputView,
-    title: "Ingrese un valor",
-    primaryButtonText: "Aceptar",
-    secondaryButtonText: "Cancelar");
+// Mostrar diálogo con parámetros opcionales
+var result = await _dialogService.ShowDialogAsync<CustomerData>(
+    content: myControl,
+    title: "Editar Cliente",
+    primaryButtonText: "Guardar",
+    secondaryButtonText: "Cancelar",
+    parameters: new { CustomerId = 123, Mode = "Edit" });
 
 if (result.IsConfirmed)
 {
-    string userInput = result.Result;
-    // Usar el texto ingresado
+    // El resultado está en el DataContext del UserControl
+    var data = myControl.DataContext as CustomerData;
+    await SaveCustomer(data);
 }
 ```
 
-### Ejemplo 3: Diálogo con Resultado de Objeto Personalizado
+### Opción 2: Diálogo sin Resultado Tipado
 
 ```csharp
-// Clase de datos
-public class CustomerData
+// Crear un UserControl
+var confirmControl = new ConfirmationControl();
+
+// Mostrar diálogo simple que solo retorna true/false
+bool confirmed = await _dialogService.ShowDialogAsync(
+    content: confirmControl,
+    title: "Confirmar Acción",
+    primaryButtonText: "Sí",
+    secondaryButtonText: "No");
+
+if (confirmed)
 {
-    public string Name { get; set; }
-    public string Email { get; set; }
-    public int Age { get; set; }
+    // Usuario confirmó la acción
+    await DeleteItem();
+}
+```
+
+### Opción 3: Diálogo con Parámetros
+
+```csharp
+// Crear un UserControl que espera parámetros
+var editControl = new ProductEditControl();
+
+// Los parámetros se establecen como DataContext
+var parameters = new ProductEditParams
+{
+    ProductId = 456,
+    ProductName = "Widget",
+    Price = 29.99m
+};
+
+var result = await _dialogService.ShowDialogAsync<Product>(
+    content: editControl,
+    title: "Editar Producto",
+    primaryButtonText: "Guardar",
+    secondaryButtonText: "Cancelar",
+    parameters: parameters);
+
+if (result.IsConfirmed)
+{
+    // Obtener el resultado del DataContext
+    var updatedProduct = editControl.DataContext as Product;
+    await UpdateProduct(updatedProduct);
+}
+```
+
+## Ejemplos de Uso Completos
+
+### Ejemplo 1: Diálogo de Confirmación Simple
+
+```csharp
+// UserControl simple (XAML)
+<UserControl x:Class="MyApp.ConfirmDialog">
+    <StackPanel Padding="20">
+        <TextBlock Text="¿Está seguro de eliminar este elemento?" 
+                   TextWrapping="Wrap"/>
+    </StackPanel>
+</UserControl>
+
+// Uso
+var confirmDialog = new ConfirmDialog();
+bool confirmed = await _dialogService.ShowDialogAsync(
+    confirmDialog,
+    "Confirmar Eliminación",
+    "Eliminar",
+    "Cancelar");
+
+if (confirmed)
+{
+    await DeleteItem();
+}
+```
+
+### Ejemplo 2: Diálogo con Input y Resultado
+
+```csharp
+// UserControl con ViewModel (Code-behind)
+public sealed partial class InputDialog : UserControl
+{
+    public InputDialog()
+    {
+        InitializeComponent();
+        // DataContext será establecido por el servicio si se pasan parámetros
+    }
+    
+    public string InputText { get; set; }
 }
 
-// UserControl
-public sealed partial class CustomerDialog : UserControl, IDialogContent<CustomerData>
+// Uso
+var inputDialog = new InputDialog();
+var result = await _dialogService.ShowDialogAsync<string>(
+    inputDialog,
+    "Ingrese un valor",
+    "Aceptar",
+    "Cancelar");
+
+if (result.IsConfirmed)
 {
-    private readonly CustomerViewModel _viewModel;
+    var userInput = inputDialog.InputText;
+    await ProcessInput(userInput);
+}
+```
+
+### Ejemplo 3: Diálogo con Parámetros Complejos
+
+```csharp
+// Clase de parámetros
+public class CustomerEditParams
+{
+    public int CustomerId { get; set; }
+    public string Mode { get; set; } // "Edit" o "Create"
+    public CustomerData InitialData { get; set; }
+}
+
+// UserControl que recibe parámetros
+public sealed partial class CustomerEditDialog : UserControl
+{
+    public CustomerEditDialog()
+    {
+        InitializeComponent();
+        // El DataContext será un CustomerEditParams cuando se pasen parámetros
+        this.DataContextChanged += (s, e) =>
+        {
+            if (DataContext is CustomerEditParams params)
+            {
+                // Inicializar UI con los parámetros
+                LoadCustomerData(params);
+            }
+        };
+    }
+    
+    private void LoadCustomerData(CustomerEditParams params)
+    {
+        // Cargar datos según el modo
+        if (params.Mode == "Edit")
+        {
+            // Cargar para edición
+        }
+        else
+        {
+            // Nuevo cliente
+        }
+    }
     
     public CustomerData GetResult()
     {
+        // Construir y retornar los datos del formulario
         return new CustomerData
         {
-            Name = _viewModel.Name,
-            Email = _viewModel.Email,
-            Age = _viewModel.Age
+            Name = NameTextBox.Text,
+            Email = EmailTextBox.Text,
+            // ... otros campos
         };
     }
 }
 
 // Uso
-var customerView = new CustomerDialog(customerViewModel);
+var editDialog = new CustomerEditDialog();
+var parameters = new CustomerEditParams
+{
+    CustomerId = 123,
+    Mode = "Edit",
+    InitialData = existingCustomer
+};
+
 var result = await _dialogService.ShowDialogAsync<CustomerData>(
-    content: customerView,
-    title: "Datos del Cliente",
+    content: editDialog,
+    title: "Editar Cliente",
     primaryButtonText: "Guardar",
-    secondaryButtonText: "Cancelar");
+    secondaryButtonText: "Cancelar",
+    parameters: parameters);
 
 if (result.IsConfirmed)
 {
-    CustomerData customer = result.Result;
-    await SaveCustomer(customer);
+    var updatedCustomer = editDialog.GetResult();
+    await SaveCustomer(updatedCustomer);
 }
 ```
 
-### Ejemplo 4: Diálogo con Resultado de Lista/Array
+### Ejemplo 4: Diálogo con Lista de Selección
 
 ```csharp
-// UserControl para selección múltiple
-public sealed partial class MultiSelectDialog : UserControl, IDialogContent<List<string>>
+// UserControl con lista de opciones
+public sealed partial class SelectionDialog : UserControl
 {
-    public List<string> GetResult()
+    public List<string> SelectedItems { get; private set; } = new();
+    
+    public SelectionDialog()
     {
-        return SelectedItems.ToList();
+        InitializeComponent();
+    }
+    
+    private void OnSelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        SelectedItems = ItemsListView.SelectedItems.Cast<string>().ToList();
     }
 }
 
-// Uso
-var selectView = new MultiSelectDialog();
+// Uso con parámetros iniciales
+var selectionDialog = new SelectionDialog();
+var availableItems = new List<string> { "Item 1", "Item 2", "Item 3" };
+
 var result = await _dialogService.ShowDialogAsync<List<string>>(
-    content: selectView,
-    title: "Seleccionar elementos",
+    content: selectionDialog,
+    title: "Seleccionar Elementos",
     primaryButtonText: "Confirmar",
-    secondaryButtonText: "Cancelar");
+    secondaryButtonText: "Cancelar",
+    parameters: availableItems);
 
 if (result.IsConfirmed)
 {
-    List<string> selectedItems = result.Result;
-    // Procesar elementos seleccionados
-}
-```
-
-### Ejemplo 5: Diálogo con Validación Asíncrona
-
-```csharp
-// UserControl que valida datos antes de cerrar
-public sealed partial class FormDialog : UserControl, 
-    IDialogContent<CustomerData>, 
-    IAsyncDialogContent
-{
-    private readonly FormViewModel _viewModel;
-
-    public CustomerData GetResult()
-    {
-        return _viewModel.GetCustomerData();
-    }
-
-    public async Task<bool> OnPrimaryButtonClickAsync()
-    {
-        // Validar datos antes de cerrar
-        var isValid = await _viewModel.ValidateAsync();
-        
-        if (!isValid)
-        {
-            // Mostrar errores y mantener diálogo abierto
-            return false;
-        }
-
-        // Validación exitosa, cerrar diálogo
-        return true;
-    }
-}
-
-// Uso
-var formView = new FormDialog(formViewModel);
-var result = await _dialogService.ShowDialogAsync<CustomerData>(
-    content: formView,
-    title: "Formulario",
-    primaryButtonText: "Guardar",
-    secondaryButtonText: "Cancelar");
-
-if (result.IsConfirmed)
-{
-    // Los datos ya están validados
-    await SaveData(result.Result);
+    var selected = selectionDialog.SelectedItems;
+    await ProcessSelection(selected);
 }
 ```
 
@@ -284,41 +309,78 @@ public MainWindow(MainViewModel viewModel, IDialogService dialogService)
 {
     InitializeComponent();
     
-    if (this.Content is FrameworkElement element)
+    if (this.Content is FrameworkElement element && element.XamlRoot != null)
     {
         dialogService.SetXamlRoot(element.XamlRoot);
     }
 }
 ```
 
+## Obtención de Resultados
+
+Hay dos patrones principales para obtener resultados:
+
+### Patrón 1: DataContext
+El UserControl puede modificar su propio DataContext o propiedades que luego se leen:
+
+```csharp
+var dialog = new MyDialog();
+var result = await _dialogService.ShowDialogAsync<MyData>(dialog, "Título");
+
+if (result.IsConfirmed)
+{
+    // Leer del DataContext
+    var data = dialog.DataContext as MyData;
+    
+    // O leer propiedades públicas
+    var value = dialog.SomeProperty;
+}
+```
+
+### Patrón 2: Propiedades Públicas
+El UserControl expone propiedades que el código llamador puede leer:
+
+```csharp
+public sealed partial class InputDialog : UserControl
+{
+    public string UserInput { get; set; }
+}
+
+// Uso
+var dialog = new InputDialog();
+await _dialogService.ShowDialogAsync(dialog, "Input");
+var input = dialog.UserInput; // Leer la propiedad
+```
+
 ## Notas Importantes
 
 1. **XamlRoot**: El servicio necesita un `XamlRoot` para mostrar diálogos en WinUI 3. Esto se configura automáticamente en `MainWindow`.
 
-2. **IDialogContent<T>**: Para que un `UserControl` pueda devolver un resultado, debe implementar `IDialogContent<T>`.
+2. **Parámetros**: Los parámetros pasados se establecen como `DataContext` del UserControl. El UserControl puede reaccionar a esto mediante el evento `DataContextChanged`.
 
-3. **IAsyncDialogContent**: Para operaciones asíncronas al hacer clic en el botón principal (como login, validaciones, llamadas API), implemente esta interfaz. El método `OnPrimaryButtonClickAsync` se ejecutará antes de cerrar el diálogo y puede cancelar el cierre retornando `false`.
+3. **Resultados**: El resultado puede obtenerse:
+   - Del `DataContext` del UserControl
+   - De propiedades públicas del UserControl
+   - De métodos públicos que retornen el resultado
 
-4. **ViewModels**: Es recomendable que los `UserControl` tengan sus propios `ViewModel` para manejar la lógica de negocio.
+4. **Sin Interfaces**: No se requiere implementar interfaces especiales. El UserControl es completamente libre en su implementación.
 
-5. **Validación**: Realice validaciones en el `ViewModel` antes de devolver el resultado.
+5. **Validación**: La validación debe hacerse en el UserControl o su ViewModel antes de que el diálogo se cierre. Si necesita prevenir el cierre, deberá implementar su propia lógica en el UserControl.
 
-6. **Buttons**: El diálogo mostrará dos botones (Primary y Secondary). Puede personalizar sus textos o usar solo uno dejando el otro vacío.
-
-7. **Mantener el diálogo abierto**: Si implementa `IAsyncDialogContent`, puede mantener el diálogo abierto (por ejemplo, si la validación falla) retornando `false` desde `OnPrimaryButtonClickAsync`.
+6. **Botones**: El diálogo mostrará dos botones (Primary y Secondary). Puede personalizar sus textos.
 
 ## Ventajas del Diseño
 
 ✅ **Reutilizable**: Un solo servicio para todos los diálogos
-✅ **Type-Safe**: Resultados fuertemente tipados
-✅ **Flexible**: Soporta cualquier tipo de resultado
+✅ **Type-Safe**: Resultados fuertemente tipados (cuando se usan)
+✅ **Flexible**: Soporta cualquier tipo de resultado o sin resultado
+✅ **Simple**: No requiere interfaces especiales en los UserControls
+✅ **Parámetros**: Fácil paso de parámetros vía DataContext
 ✅ **Testeable**: Fácil de mockear para pruebas unitarias
 ✅ **Mantenible**: Separación clara de responsabilidades
 ✅ **Escalable**: Agregar nuevos diálogos no requiere modificar el servicio
 
 ## Migración de Código Existente
-
-Si tenía código que creaba diálogos directamente, puede migrarlo fácilmente:
 
 **Antes:**
 ```csharp
@@ -332,12 +394,23 @@ var dialog = new ContentDialog
 var result = await dialog.ShowAsync();
 ```
 
-**Después:**
+**Después (con resultado):**
 ```csharp
-var loginView = new LoginView(loginViewModel);
+var loginView = new LoginView();
 var result = await _dialogService.ShowDialogAsync<bool>(
     loginView, 
     "Login", 
     "OK"
+);
+```
+
+**Después (sin resultado):**
+```csharp
+var confirmView = new ConfirmView();
+bool confirmed = await _dialogService.ShowDialogAsync(
+    confirmView, 
+    "Confirmar", 
+    "Sí",
+    "No"
 );
 ```

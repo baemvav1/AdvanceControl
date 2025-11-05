@@ -36,7 +36,7 @@ namespace Advance_Control.Services.Auth
             _secureStorage = secureStorage ?? throw new ArgumentNullException(nameof(secureStorage));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             // TODO: LoadFromStorageAsync will be implemented later
-            // For now, do not load tokens automatically to allow LoginView to show first
+            // For now, do not load tokens automatically
             _initTask = Task.CompletedTask;
         }
 
