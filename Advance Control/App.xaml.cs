@@ -46,8 +46,14 @@ namespace Advance_Control
                     // Registrar implementación de almacenamiento seguro (Windows PasswordVault)
                     services.AddSingleton<ISecureStorage, SecretStorageWindows>();
 
-                    // Registrar AuthenticatedHttpHandler (se inyecta en la pipeline del HttpClient de AuthService)
-                    services.AddTransient<Services.Http.AuthenticatedHttpHandler>();
+                    // Registrar AuthenticatedHttpHandler con Lazy<IAuthService> para romper dependencia circular
+                    services.AddTransient<Services.Http.AuthenticatedHttpHandler>(sp =>
+                    {
+                        var lazyAuthService = new Lazy<IAuthService>(() => sp.GetRequiredService<IAuthService>());
+                        var endpointProvider = sp.GetRequiredService<IApiEndpointProvider>();
+                        var logger = sp.GetService<ILoggingService>(); // optional
+                        return new Services.Http.AuthenticatedHttpHandler(lazyAuthService, endpointProvider, logger);
+                    });
 
                     // Registrar LoggingService como HttpClient tipado
                     services.AddHttpClient<ILoggingService, LoggingService>((sp, client) =>
