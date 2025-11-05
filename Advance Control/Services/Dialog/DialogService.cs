@@ -494,34 +494,49 @@ namespace Advance_Control.Services.Dialog
                 border.Child = content;
             }
 
+            // Obtener XamlRoot una sola vez para evitar llamadas redundantes
+            var xamlRoot = GetXamlRoot();
+
             // Crear el Popup con LightDismissOverlayMode
             var popup = new Popup
             {
                 Child = border,
                 IsLightDismissEnabled = true,
                 LightDismissOverlayMode = LightDismissOverlayMode.On,
-                XamlRoot = GetXamlRoot()
+                XamlRoot = xamlRoot
             };
+
+            // Almacenar event handlers para poder desuscribirlos
+            EventHandler<object>? closedHandler = null;
+            RoutedEventHandler? loadedHandler = null;
 
             // Manejar el evento de cierre
-            popup.Closed += (s, e) =>
+            closedHandler = (s, e) =>
             {
+                // Desuscribir event handlers para prevenir memory leaks
+                if (closedHandler != null)
+                    popup.Closed -= closedHandler;
+                if (loadedHandler != null)
+                    border.Loaded -= loadedHandler;
+                
                 tcs.TrySetResult(false);
             };
+            popup.Closed += closedHandler;
 
             // Centrar el popup en la pantalla
-            var xamlRoot = GetXamlRoot();
-            if (xamlRoot != null)
+            loadedHandler = (s, e) =>
             {
-                border.Loaded += (s, e) =>
-                {
-                    var windowWidth = xamlRoot.Size.Width;
-                    var windowHeight = xamlRoot.Size.Height;
-                    
-                    popup.HorizontalOffset = (windowWidth - border.ActualWidth) / 2;
-                    popup.VerticalOffset = (windowHeight - border.ActualHeight) / 2;
-                };
-            }
+                var windowWidth = xamlRoot.Size.Width;
+                var windowHeight = xamlRoot.Size.Height;
+                
+                popup.HorizontalOffset = (windowWidth - border.ActualWidth) / 2;
+                popup.VerticalOffset = (windowHeight - border.ActualHeight) / 2;
+                
+                // Desuscribir después de la primera ejecución ya que solo necesita ejecutarse una vez
+                if (loadedHandler != null)
+                    border.Loaded -= loadedHandler;
+            };
+            border.Loaded += loadedHandler;
 
             // Mostrar el popup
             popup.IsOpen = true;
