@@ -1,4 +1,7 @@
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +11,7 @@ namespace Advance_Control.Services.Dialog
     /// <summary>
     /// Implementación del servicio de diálogos para WinUI 3.
     /// Permite mostrar UserControls personalizados en diálogos de contenido (ContentDialog).
+    /// Cuando no se configuran botones, el diálogo se cierra automáticamente al hacer clic fuera (light dismiss).
     /// </summary>
     /// <remarks>
     /// Este servicio proporciona una forma flexible de mostrar diálogos con UserControls,
@@ -18,6 +22,7 @@ namespace Advance_Control.Services.Dialog
     ///   <item>Soporte para UserControls con o sin parámetros de entrada</item>
     ///   <item>Resultados genéricos de cualquier tipo (bool, string, List, objetos personalizados, etc.)</item>
     ///   <item>Configuración flexible de botones del diálogo</item>
+    ///   <item>Light dismiss: se cierra al hacer clic fuera cuando no hay botones configurados</item>
     ///   <item>API fluida y fácil de usar</item>
     /// </list>
     /// 
@@ -260,6 +265,15 @@ namespace Advance_Control.Services.Dialog
         ) where TUserControl : UserControl, new()
         {
             var userControl = new TUserControl();
+            
+            // Si no hay botones configurados, usar popup con light dismiss
+            if (string.IsNullOrWhiteSpace(primaryButtonText) && 
+                string.IsNullOrWhiteSpace(secondaryButtonText) && 
+                string.IsNullOrWhiteSpace(closeButtonText))
+            {
+                return await ShowLightDismissDialogAsync(userControl, title);
+            }
+            
             var dialog = CreateContentDialog(userControl, title, primaryButtonText, secondaryButtonText, closeButtonText);
             var result = await dialog.ShowAsync();
             return result == ContentDialogResult.Primary;
@@ -282,6 +296,14 @@ namespace Advance_Control.Services.Dialog
             var userControl = new TUserControl();
             configureControl(userControl);
             
+            // Si no hay botones configurados, usar popup con light dismiss
+            if (string.IsNullOrWhiteSpace(primaryButtonText) && 
+                string.IsNullOrWhiteSpace(secondaryButtonText) && 
+                string.IsNullOrWhiteSpace(closeButtonText))
+            {
+                return await ShowLightDismissDialogAsync(userControl, title);
+            }
+            
             var dialog = CreateContentDialog(userControl, title, primaryButtonText, secondaryButtonText, closeButtonText);
             var result = await dialog.ShowAsync();
             return result == ContentDialogResult.Primary;
@@ -302,6 +324,17 @@ namespace Advance_Control.Services.Dialog
                 throw new ArgumentNullException(nameof(getResult));
 
             var userControl = new TUserControl();
+            
+            // Si no hay botones configurados, usar popup con light dismiss
+            if (string.IsNullOrWhiteSpace(primaryButtonText) && 
+                string.IsNullOrWhiteSpace(secondaryButtonText) && 
+                string.IsNullOrWhiteSpace(closeButtonText))
+            {
+                var dismissed = await ShowLightDismissDialogAsync(userControl, title);
+                // Si el popup fue cerrado por light dismiss, no retornar resultado
+                return default;
+            }
+            
             var dialog = CreateContentDialog(userControl, title, primaryButtonText, secondaryButtonText, closeButtonText);
             var dialogResult = await dialog.ShowAsync();
             
@@ -332,6 +365,16 @@ namespace Advance_Control.Services.Dialog
 
             var userControl = new TUserControl();
             configureControl(userControl);
+            
+            // Si no hay botones configurados, usar popup con light dismiss
+            if (string.IsNullOrWhiteSpace(primaryButtonText) && 
+                string.IsNullOrWhiteSpace(secondaryButtonText) && 
+                string.IsNullOrWhiteSpace(closeButtonText))
+            {
+                var dismissed = await ShowLightDismissDialogAsync(userControl, title);
+                // Si el popup fue cerrado por light dismiss, no retornar resultado
+                return default;
+            }
             
             var dialog = CreateContentDialog(userControl, title, primaryButtonText, secondaryButtonText, closeButtonText);
             var dialogResult = await dialog.ShowAsync();
@@ -379,6 +422,86 @@ namespace Advance_Control.Services.Dialog
                 dialog.CloseButtonText = closeButtonText;
 
             return dialog;
+        }
+
+        /// <summary>
+        /// Muestra un diálogo con light dismiss (se cierra al hacer clic fuera) cuando no hay botones configurados.
+        /// Utiliza un Popup con LightDismissOverlayMode para permitir el cierre al hacer clic fuera.
+        /// </summary>
+        /// <param name="content">El UserControl que se mostrará como contenido.</param>
+        /// <param name="title">Título del diálogo (opcional).</param>
+        /// <returns>Siempre retorna false ya que no hay botón primario en este modo.</returns>
+        private async Task<bool> ShowLightDismissDialogAsync(UserControl content, string? title)
+        {
+            var tcs = new TaskCompletionSource<bool>();
+            
+            // Crear un Border para contener el contenido con estilo de diálogo
+            var border = new Border
+            {
+                Background = new SolidColorBrush(Microsoft.UI.Colors.White),
+                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(24),
+                MinWidth = 320,
+                MaxWidth = 548,
+                MaxHeight = 756
+            };
+
+            // Si hay título, crear un StackPanel con el título y el contenido
+            if (!string.IsNullOrWhiteSpace(title))
+            {
+                var stackPanel = new StackPanel();
+                
+                var titleBlock = new TextBlock
+                {
+                    Text = title,
+                    FontSize = 20,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Margin = new Thickness(0, 0, 0, 16)
+                };
+                
+                stackPanel.Children.Add(titleBlock);
+                stackPanel.Children.Add(content);
+                border.Child = stackPanel;
+            }
+            else
+            {
+                border.Child = content;
+            }
+
+            // Crear el Popup con LightDismissOverlayMode
+            var popup = new Popup
+            {
+                Child = border,
+                IsLightDismissEnabled = true,
+                LightDismissOverlayMode = LightDismissOverlayMode.On,
+                XamlRoot = GetXamlRoot()
+            };
+
+            // Manejar el evento de cierre
+            popup.Closed += (s, e) =>
+            {
+                tcs.TrySetResult(false);
+            };
+
+            // Centrar el popup en la pantalla
+            var xamlRoot = GetXamlRoot();
+            if (xamlRoot != null)
+            {
+                border.Loaded += (s, e) =>
+                {
+                    var windowWidth = xamlRoot.Size.Width;
+                    var windowHeight = xamlRoot.Size.Height;
+                    
+                    popup.HorizontalOffset = (windowWidth - border.ActualWidth) / 2;
+                    popup.VerticalOffset = (windowHeight - border.ActualHeight) / 2;
+                };
+            }
+
+            // Mostrar el popup
+            popup.IsOpen = true;
+
+            // Esperar a que se cierre
+            return await tcs.Task;
         }
 
         /// <summary>
