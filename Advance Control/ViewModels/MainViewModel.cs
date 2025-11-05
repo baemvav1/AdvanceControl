@@ -133,11 +133,11 @@ namespace Advance_Control.ViewModels
             try
             {
                 // TODO: AuthService authentication will be implemented later
-                // For now, skip authentication operations
+                // For now, validate that username and password are provided
                 // var success = await _authService.AuthenticateAsync(username, password);
                 
-                // Simulate successful login
-                var success = true;
+                // Simulate successful login if credentials are provided
+                var success = !string.IsNullOrWhiteSpace(username) && !string.IsNullOrWhiteSpace(password);
                 if (success)
                 {
                     IsAuthenticated = true;

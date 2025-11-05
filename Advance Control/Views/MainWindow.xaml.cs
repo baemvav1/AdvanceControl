@@ -40,9 +40,10 @@ namespace Advance_Control
             this.Loaded += MainWindow_Loaded;
         }
 
-        private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
             // Show the login dialog automatically on startup
+            // Note: ShowLoginDialogAsync is async void, so we don't await it
             _viewModel.ShowLoginDialogAsync();
         }
 
