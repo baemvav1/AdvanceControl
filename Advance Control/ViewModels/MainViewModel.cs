@@ -121,7 +121,7 @@ namespace Advance_Control.ViewModels
                 if (success)
                 {
                     IsAuthenticated = true;
-                    await _logger.LogInfoAsync($"Usuario autenticado exitosamente: {username}", "MainViewModel", "LoginAsync");
+                    await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {username}", "MainViewModel", "LoginAsync");
                 }
                 return success;
             }
@@ -138,7 +138,7 @@ namespace Advance_Control.ViewModels
             {
                 await _authService.ClearTokenAsync();
                 IsAuthenticated = false;
-                await _logger.LogInfoAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
+                await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }
             catch (Exception ex)
             {
