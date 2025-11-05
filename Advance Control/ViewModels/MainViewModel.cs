@@ -7,7 +7,9 @@ using Advance_Control.Navigation;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Auth;
+using Advance_Control.Services.Dialog;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,6 +19,8 @@ namespace Advance_Control.ViewModels
         private readonly IOnlineCheck _onlineCheck;
         private readonly ILoggingService _logger;
         private readonly IAuthService _authService;
+        private readonly IDialogService _dialogService;
+        private readonly IServiceProvider _serviceProvider;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -26,12 +30,16 @@ namespace Advance_Control.ViewModels
             INavigationService navigationService,
             IOnlineCheck onlineCheck,
             ILoggingService logger,
-            IAuthService authService)
+            IAuthService authService,
+            IDialogService dialogService,
+            IServiceProvider serviceProvider)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -156,6 +164,40 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al verificar estado online", ex, "MainViewModel", "CheckOnlineStatusAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Shows the login dialog and returns the boolean result
+        /// </summary>
+        public async Task<bool> ShowLoginDialogAsync()
+        {
+            try
+            {
+                // Resolve LoginViewModel from DI container
+                var loginViewModel = _serviceProvider.GetRequiredService<ViewModels.Login.LoginViewModel>();
+                var loginView = new Views.Login.LoginView(loginViewModel);
+
+                // Show the dialog and get the result
+                var result = await _dialogService.ShowDialogAsync<bool>(
+                    content: loginView,
+                    title: "Iniciar Sesión",
+                    primaryButtonText: "Iniciar Sesión",
+                    secondaryButtonText: "Cancelar");
+
+                // Update authentication state if login was successful
+                if (result.IsConfirmed && result.Result)
+                {
+                    IsAuthenticated = true;
+                    await _logger.LogInformationAsync("Usuario autenticado mediante diálogo de login", "MainViewModel", "ShowLoginDialogAsync");
+                }
+
+                return result.IsConfirmed && result.Result;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al mostrar diálogo de login", ex, "MainViewModel", "ShowLoginDialogAsync");
                 return false;
             }
         }

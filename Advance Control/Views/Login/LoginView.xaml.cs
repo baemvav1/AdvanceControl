@@ -1,28 +1,49 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Advance_Control.Services.Dialog;
+using Advance_Control.ViewModels.Login;
 
 namespace Advance_Control.Views.Login
 {
-    public sealed partial class LoginView : UserControl
+    public sealed partial class LoginView : UserControl, IDialogContent<bool>, IAsyncDialogContent
     {
+        private readonly LoginViewModel? _viewModel;
+
         public LoginView()
         {
             this.InitializeComponent();
         }
+
+        public LoginView(LoginViewModel viewModel) : this()
+        {
+            _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            this.DataContext = _viewModel;
+        }
+
+        /// <summary>
+        /// Gets the boolean result of the login operation
+        /// </summary>
+        public bool GetResult()
+        {
+            return _viewModel?.LoginResult ?? false;
+        }
+
+        /// <summary>
+        /// Called when the dialog's primary button is clicked
+        /// Triggers the login process and returns true only if login succeeded
+        /// </summary>
+        public async Task<bool> OnPrimaryButtonClickAsync()
+        {
+            if (_viewModel != null)
+            {
+                await _viewModel.LoginAsync();
+                // Only close the dialog if login was successful
+                return _viewModel.LoginResult;
+            }
+            return false;
+        }
     }
 }
+
