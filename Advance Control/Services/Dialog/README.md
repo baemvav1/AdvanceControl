@@ -45,12 +45,24 @@ public interface IDialogContent<T>
 }
 ```
 
+### 5. IAsyncDialogContent
+Interfaz opcional que pueden implementar los UserControls que necesitan realizar operaciones asíncronas cuando se hace clic en el botón principal:
+
+```csharp
+public interface IAsyncDialogContent
+{
+    Task<bool> OnPrimaryButtonClickAsync();
+}
+```
+
+El método debe retornar `true` si el diálogo debe cerrarse, o `false` para mantenerlo abierto (útil para validaciones).
+
 ## Uso Básico
 
 ### Paso 1: Crear un UserControl con Resultado
 
 ```csharp
-public sealed partial class LoginView : UserControl, IDialogContent<bool>
+public sealed partial class LoginView : UserControl, IDialogContent<bool>, IAsyncDialogContent
 {
     private readonly LoginViewModel _viewModel;
 
@@ -63,6 +75,13 @@ public sealed partial class LoginView : UserControl, IDialogContent<bool>
 
     public bool GetResult()
     {
+        return _viewModel.LoginResult;
+    }
+
+    public async Task<bool> OnPrimaryButtonClickAsync()
+    {
+        await _viewModel.LoginAsync();
+        // Solo cerrar si login fue exitoso
         return _viewModel.LoginResult;
     }
 }
@@ -204,6 +223,52 @@ if (result.IsConfirmed)
 }
 ```
 
+### Ejemplo 5: Diálogo con Validación Asíncrona
+
+```csharp
+// UserControl que valida datos antes de cerrar
+public sealed partial class FormDialog : UserControl, 
+    IDialogContent<CustomerData>, 
+    IAsyncDialogContent
+{
+    private readonly FormViewModel _viewModel;
+
+    public CustomerData GetResult()
+    {
+        return _viewModel.GetCustomerData();
+    }
+
+    public async Task<bool> OnPrimaryButtonClickAsync()
+    {
+        // Validar datos antes de cerrar
+        var isValid = await _viewModel.ValidateAsync();
+        
+        if (!isValid)
+        {
+            // Mostrar errores y mantener diálogo abierto
+            return false;
+        }
+
+        // Validación exitosa, cerrar diálogo
+        return true;
+    }
+}
+
+// Uso
+var formView = new FormDialog(formViewModel);
+var result = await _dialogService.ShowDialogAsync<CustomerData>(
+    content: formView,
+    title: "Formulario",
+    primaryButtonText: "Guardar",
+    secondaryButtonText: "Cancelar");
+
+if (result.IsConfirmed)
+{
+    // Los datos ya están validados
+    await SaveData(result.Result);
+}
+```
+
 ## Configuración en Dependency Injection
 
 El servicio está registrado en `App.xaml.cs`:
@@ -232,11 +297,15 @@ public MainWindow(MainViewModel viewModel, IDialogService dialogService)
 
 2. **IDialogContent<T>**: Para que un `UserControl` pueda devolver un resultado, debe implementar `IDialogContent<T>`.
 
-3. **ViewModels**: Es recomendable que los `UserControl` tengan sus propios `ViewModel` para manejar la lógica de negocio.
+3. **IAsyncDialogContent**: Para operaciones asíncronas al hacer clic en el botón principal (como login, validaciones, llamadas API), implemente esta interfaz. El método `OnPrimaryButtonClickAsync` se ejecutará antes de cerrar el diálogo y puede cancelar el cierre retornando `false`.
 
-4. **Validación**: Realice validaciones en el `ViewModel` antes de devolver el resultado.
+4. **ViewModels**: Es recomendable que los `UserControl` tengan sus propios `ViewModel` para manejar la lógica de negocio.
 
-5. **Buttons**: El diálogo mostrará dos botones (Primary y Secondary). Puede personalizar sus textos o usar solo uno dejando el otro vacío.
+5. **Validación**: Realice validaciones en el `ViewModel` antes de devolver el resultado.
+
+6. **Buttons**: El diálogo mostrará dos botones (Primary y Secondary). Puede personalizar sus textos o usar solo uno dejando el otro vacío.
+
+7. **Mantener el diálogo abierto**: Si implementa `IAsyncDialogContent`, puede mantener el diálogo abierto (por ejemplo, si la validación falla) retornando `false` desde `OnPrimaryButtonClickAsync`.
 
 ## Ventajas del Diseño
 
