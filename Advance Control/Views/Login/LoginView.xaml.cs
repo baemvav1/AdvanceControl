@@ -7,7 +7,7 @@ using Advance_Control.ViewModels.Login;
 
 namespace Advance_Control.Views.Login
 {
-    public sealed partial class LoginView : UserControl, IDialogContent<bool>
+    public sealed partial class LoginView : UserControl, IDialogContent<bool>, IAsyncDialogContent
     {
         private readonly LoginViewModel? _viewModel;
 
@@ -28,6 +28,21 @@ namespace Advance_Control.Views.Login
         public bool GetResult()
         {
             return _viewModel?.LoginResult ?? false;
+        }
+
+        /// <summary>
+        /// Called when the dialog's primary button is clicked
+        /// Triggers the login process and returns true only if login succeeded
+        /// </summary>
+        public async System.Threading.Tasks.Task<bool> OnPrimaryButtonClickAsync()
+        {
+            if (_viewModel != null)
+            {
+                await _viewModel.LoginAsync();
+                // Only close the dialog if login was successful
+                return _viewModel.LoginResult;
+            }
+            return false;
         }
     }
 
@@ -64,6 +79,26 @@ namespace Advance_Control.Views.Login
         public object ConvertBack(object value, Type targetType, object parameter, string language)
         {
             throw new NotImplementedException();
+        }
+    }
+
+    /// <summary>
+    /// Converter to convert boolean to Visibility
+    /// </summary>
+    public class BoolToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            if (value is bool boolValue)
+                return boolValue ? Visibility.Visible : Visibility.Collapsed;
+            return Visibility.Collapsed;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            if (value is Visibility visibility)
+                return visibility == Visibility.Visible;
+            return false;
         }
     }
 }

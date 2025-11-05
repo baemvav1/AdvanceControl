@@ -53,6 +53,30 @@ namespace Advance_Control.Services.Dialog
                 XamlRoot = xamlRoot
             };
 
+            // Handle primary button click for async operations
+            if (content is IAsyncDialogContent asyncContent)
+            {
+                dialog.PrimaryButtonClick += async (sender, args) =>
+                {
+                    // Defer closing to allow async operation
+                    var deferral = args.GetDeferral();
+                    try
+                    {
+                        var shouldClose = await asyncContent.OnPrimaryButtonClickAsync();
+                        
+                        // If operation failed, prevent dialog from closing
+                        if (!shouldClose)
+                        {
+                            args.Cancel = true;
+                        }
+                    }
+                    finally
+                    {
+                        deferral.Complete();
+                    }
+                };
+            }
+
             var result = await dialog.ShowAsync();
 
             // Check if the content implements IDialogContent<T> to get the result

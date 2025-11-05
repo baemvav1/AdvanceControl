@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     MinWidth="400"
-    MinHeight="300">
+    MinHeight="250">
 
     <Grid Padding="20">
         <Grid.RowDefinitions>
@@ -16,7 +16,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Username -->
@@ -52,8 +51,8 @@
             IsActive="{Binding IsLoading}"
             Width="40"
             Height="40"
-            Margin="0,0,0,16"
-            HorizontalAlignment="Center"/>
+            HorizontalAlignment="Center"
+            Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
     </Grid>
 
@@ -62,5 +61,7 @@
         <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
         <!-- Empty String to Collapsed Converter -->
         <local:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"/>
+        <!-- Bool to Visibility Converter -->
+        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </UserControl.Resources>
 </UserControl>

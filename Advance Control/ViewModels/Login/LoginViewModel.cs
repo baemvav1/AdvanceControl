@@ -67,7 +67,7 @@ namespace Advance_Control.ViewModels.Login
 
         public ICommand LoginCommand { get; }
 
-        private async Task LoginAsync()
+        public async Task LoginAsync()
         {
             ErrorMessage = string.Empty;
 
