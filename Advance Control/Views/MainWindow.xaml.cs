@@ -15,8 +15,9 @@ namespace Advance_Control
             this.InitializeComponent();
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
 
-            // Set the DataContext to the ViewModel
-            this.DataContext = _viewModel;
+            // Set the DataContext to the ViewModel on the root Grid
+            // Note: Window class in WinUI 3 doesn't have a DataContext property
+            RootGrid.DataContext = _viewModel;
 
             // Initialize navigation with the content frame
             _viewModel.InitializeNavigation(contentFrame);
