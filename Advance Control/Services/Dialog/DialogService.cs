@@ -10,7 +10,7 @@ namespace Advance_Control.Services.Dialog
     /// </summary>
     public class DialogService : IDialogService
     {
-        private readonly XamlRoot? _xamlRoot;
+        private XamlRoot? _xamlRoot;
 
         public DialogService(XamlRoot? xamlRoot = null)
         {
@@ -22,14 +22,8 @@ namespace Advance_Control.Services.Dialog
         /// </summary>
         public void SetXamlRoot(XamlRoot xamlRoot)
         {
-            if (xamlRoot == null)
-                throw new ArgumentNullException(nameof(xamlRoot));
-
-            // Store reference to XamlRoot
-            _xamlRootReference = xamlRoot;
+            _xamlRoot = xamlRoot ?? throw new ArgumentNullException(nameof(xamlRoot));
         }
-
-        private XamlRoot? _xamlRootReference;
 
         public async Task<DialogResult<T>> ShowDialogAsync<T>(
             UserControl content,
@@ -40,8 +34,7 @@ namespace Advance_Control.Services.Dialog
             if (content == null)
                 throw new ArgumentNullException(nameof(content));
 
-            var xamlRoot = _xamlRootReference ?? _xamlRoot;
-            if (xamlRoot == null)
+            if (_xamlRoot == null)
                 throw new InvalidOperationException("XamlRoot must be set before showing a dialog. Call SetXamlRoot first.");
 
             var dialog = new ContentDialog
@@ -50,7 +43,7 @@ namespace Advance_Control.Services.Dialog
                 Content = content,
                 PrimaryButtonText = primaryButtonText,
                 SecondaryButtonText = secondaryButtonText,
-                XamlRoot = xamlRoot
+                XamlRoot = _xamlRoot
             };
 
             // Handle primary button click for async operations

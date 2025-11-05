@@ -1,7 +1,7 @@
 using System;
+using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
 using Advance_Control.Services.Dialog;
 using Advance_Control.ViewModels.Login;
 
@@ -34,7 +34,7 @@ namespace Advance_Control.Views.Login
         /// Called when the dialog's primary button is clicked
         /// Triggers the login process and returns true only if login succeeded
         /// </summary>
-        public async System.Threading.Tasks.Task<bool> OnPrimaryButtonClickAsync()
+        public async Task<bool> OnPrimaryButtonClickAsync()
         {
             if (_viewModel != null)
             {
@@ -45,60 +45,5 @@ namespace Advance_Control.Views.Login
             return false;
         }
     }
-
-    /// <summary>
-    /// Converter to invert boolean values
-    /// </summary>
-    public class InverseBooleanConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, string language)
-        {
-            if (value is bool boolValue)
-                return !boolValue;
-            return false;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-        {
-            if (value is bool boolValue)
-                return !boolValue;
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// Converter to collapse element when string is empty
-    /// </summary>
-    public class EmptyStringToCollapsedConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, string language)
-        {
-            return string.IsNullOrWhiteSpace(value as string) ? Visibility.Collapsed : Visibility.Visible;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    /// <summary>
-    /// Converter to convert boolean to Visibility
-    /// </summary>
-    public class BoolToVisibilityConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, string language)
-        {
-            if (value is bool boolValue)
-                return boolValue ? Visibility.Visible : Visibility.Collapsed;
-            return Visibility.Collapsed;
-        }
-
-        public object ConvertBack(object value, Type targetType, object parameter, string language)
-        {
-            if (value is Visibility visibility)
-                return visibility == Visibility.Visible;
-            return false;
-        }
-    }
 }
+

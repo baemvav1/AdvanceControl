@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Advance_Control.Views.Login"
+    xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
@@ -57,11 +58,9 @@
     </Grid>
 
     <UserControl.Resources>
-        <!-- Inverse Boolean Converter -->
-        <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
-        <!-- Empty String to Collapsed Converter -->
-        <local:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"/>
-        <!-- Bool to Visibility Converter -->
-        <local:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+        <!-- Converters -->
+        <converters:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+        <converters:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
     </UserControl.Resources>
 </UserControl>
