@@ -10,6 +10,7 @@ using Advance_Control.Services.Security;
 using Advance_Control.Services.Http;
 using Advance_Control.Services.Logging;
 using Advance_Control.Navigation;
+using Advance_Control.Services.Dialog;
 
 namespace Advance_Control
 {
@@ -82,6 +83,9 @@ namespace Advance_Control
 
                     // Registrar NavigationService
                     services.AddSingleton<INavigationService, NavigationService>();
+
+                    // Registrar DialogService
+                    services.AddSingleton<IDialogService, DialogService>();
 
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();
