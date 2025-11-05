@@ -1,0 +1,72 @@
+using System;
+using System.Threading.Tasks;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+
+namespace Advance_Control.Services.Dialog
+{
+    /// <summary>
+    /// Service for displaying generic dialogs with any UserControl content
+    /// </summary>
+    public class DialogService : IDialogService
+    {
+        private readonly XamlRoot? _xamlRoot;
+
+        public DialogService(XamlRoot? xamlRoot = null)
+        {
+            _xamlRoot = xamlRoot;
+        }
+
+        /// <summary>
+        /// Sets the XamlRoot for the dialog service (required for WinUI 3)
+        /// </summary>
+        public void SetXamlRoot(XamlRoot xamlRoot)
+        {
+            if (xamlRoot == null)
+                throw new ArgumentNullException(nameof(xamlRoot));
+
+            // Store reference to XamlRoot
+            _xamlRootReference = xamlRoot;
+        }
+
+        private XamlRoot? _xamlRootReference;
+
+        public async Task<DialogResult<T>> ShowDialogAsync<T>(
+            UserControl content,
+            string title = "",
+            string primaryButtonText = "OK",
+            string secondaryButtonText = "Cancel")
+        {
+            if (content == null)
+                throw new ArgumentNullException(nameof(content));
+
+            var xamlRoot = _xamlRootReference ?? _xamlRoot;
+            if (xamlRoot == null)
+                throw new InvalidOperationException("XamlRoot must be set before showing a dialog. Call SetXamlRoot first.");
+
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = content,
+                PrimaryButtonText = primaryButtonText,
+                SecondaryButtonText = secondaryButtonText,
+                XamlRoot = xamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            // Check if the content implements IDialogContent<T> to get the result
+            if (content is IDialogContent<T> dialogContent)
+            {
+                return new DialogResult<T>(
+                    isConfirmed: result == ContentDialogResult.Primary,
+                    result: dialogContent.GetResult());
+            }
+
+            // Default behavior: return default value for T
+            return new DialogResult<T>(
+                isConfirmed: result == ContentDialogResult.Primary,
+                result: default);
+        }
+    }
+}

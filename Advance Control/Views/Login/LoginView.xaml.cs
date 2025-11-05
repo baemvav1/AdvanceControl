@@ -1,28 +1,69 @@
 using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Navigation;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Advance_Control.Services.Dialog;
+using Advance_Control.ViewModels.Login;
 
 namespace Advance_Control.Views.Login
 {
-    public sealed partial class LoginView : UserControl
+    public sealed partial class LoginView : UserControl, IDialogContent<bool>
     {
+        private readonly LoginViewModel? _viewModel;
+
         public LoginView()
         {
             this.InitializeComponent();
+        }
+
+        public LoginView(LoginViewModel viewModel) : this()
+        {
+            _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            this.DataContext = _viewModel;
+        }
+
+        /// <summary>
+        /// Gets the boolean result of the login operation
+        /// </summary>
+        public bool GetResult()
+        {
+            return _viewModel?.LoginResult ?? false;
+        }
+    }
+
+    /// <summary>
+    /// Converter to invert boolean values
+    /// </summary>
+    public class InverseBooleanConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            if (value is bool boolValue)
+                return !boolValue;
+            return false;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            if (value is bool boolValue)
+                return !boolValue;
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Converter to collapse element when string is empty
+    /// </summary>
+    public class EmptyStringToCollapsedConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            return string.IsNullOrWhiteSpace(value as string) ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
         }
     }
 }

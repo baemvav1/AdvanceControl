@@ -6,9 +6,61 @@
     xmlns:local="using:Advance_Control.Views.Login"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    MinWidth="400"
+    MinHeight="300">
 
-    <Grid>
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Username -->
+        <TextBox 
+            Grid.Row="0"
+            Header="Usuario"
+            PlaceholderText="Ingrese su usuario"
+            Text="{Binding Username, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+            Margin="0,0,0,16"
+            IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}"/>
+
+        <!-- Password -->
+        <PasswordBox 
+            Grid.Row="1"
+            Header="Contraseña"
+            PlaceholderText="Ingrese su contraseña"
+            Password="{Binding Password, Mode=TwoWay}"
+            Margin="0,0,0,16"
+            IsEnabled="{Binding IsLoading, Converter={StaticResource InverseBoolConverter}}"/>
+
+        <!-- Error Message -->
+        <TextBlock 
+            Grid.Row="2"
+            Text="{Binding ErrorMessage}"
+            Foreground="Red"
+            TextWrapping="Wrap"
+            Margin="0,0,0,16"
+            Visibility="{Binding ErrorMessage, Converter={StaticResource EmptyStringToCollapsedConverter}}"/>
+
+        <!-- Loading Indicator -->
+        <ProgressRing 
+            Grid.Row="3"
+            IsActive="{Binding IsLoading}"
+            Width="40"
+            Height="40"
+            Margin="0,0,0,16"
+            HorizontalAlignment="Center"/>
 
     </Grid>
+
+    <UserControl.Resources>
+        <!-- Inverse Boolean Converter -->
+        <local:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+        <!-- Empty String to Collapsed Converter -->
+        <local:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"/>
+    </UserControl.Resources>
 </UserControl>

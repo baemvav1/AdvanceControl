@@ -2,22 +2,32 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.ViewModels;
+using Advance_Control.Services.Dialog;
 
 namespace Advance_Control
 {
     public sealed partial class MainWindow : Window
     {
         private readonly MainViewModel _viewModel;
+        private readonly IDialogService _dialogService;
 
-        // Constructor adapted for DI to inject MainViewModel
-        public MainWindow(MainViewModel viewModel)
+        // Constructor adapted for DI to inject MainViewModel and DialogService
+        public MainWindow(MainViewModel viewModel, IDialogService dialogService)
         {
             this.InitializeComponent();
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
             // Set the DataContext to the ViewModel on the root Grid
             // Note: Window class in WinUI 3 doesn't have a DataContext property
             RootGrid.DataContext = _viewModel;
+
+            // Initialize the DialogService with the XamlRoot from the window content
+            // This must be done after InitializeComponent
+            if (this.Content is FrameworkElement element)
+            {
+                _dialogService.SetXamlRoot(element.XamlRoot);
+            }
 
             // Initialize navigation with the content frame
             _viewModel.InitializeNavigation(contentFrame);
