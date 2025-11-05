@@ -11,6 +11,13 @@
     MinWidth="400"
     MinHeight="250">
 
+    <UserControl.Resources>
+        <!-- Converters -->
+        <converters:InverseBooleanConverter x:Key="InverseBoolConverter"/>
+        <converters:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"/>
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    </UserControl.Resources>
+
     <Grid Padding="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -56,11 +63,4 @@
             Visibility="{Binding IsLoading, Converter={StaticResource BoolToVisibilityConverter}}"/>
 
     </Grid>
-
-    <UserControl.Resources>
-        <!-- Converters -->
-        <converters:InverseBooleanConverter x:Key="InverseBoolConverter"/>
-        <converters:EmptyStringToCollapsedConverter x:Key="EmptyStringToCollapsedConverter"/>
-        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
-    </UserControl.Resources>
 </UserControl>
