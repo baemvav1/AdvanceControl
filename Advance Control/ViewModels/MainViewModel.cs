@@ -8,6 +8,8 @@ using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Auth;
 using Microsoft.UI.Xaml.Controls;
+using Advance_Control.Services.Dialog;
+using Advance_Control.Views.Login;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,6 +19,7 @@ namespace Advance_Control.ViewModels
         private readonly IOnlineCheck _onlineCheck;
         private readonly ILoggingService _logger;
         private readonly IAuthService _authService;
+        private readonly IDialogService _dialogService;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -26,12 +29,13 @@ namespace Advance_Control.ViewModels
             INavigationService navigationService,
             IOnlineCheck onlineCheck,
             ILoggingService logger,
-            IAuthService authService)
+            IAuthService authService,IDialogService dialogService)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -158,6 +162,10 @@ namespace Advance_Control.ViewModels
                 await _logger.LogErrorAsync("Error al verificar estado online", ex, "MainViewModel", "CheckOnlineStatusAsync");
                 return false;
             }
+        }
+        public async Task ShowInfoDialogAsync()
+        {
+            await _dialogService.ShowDialogAsync<LoginView>(title: "login", primaryButtonText: "OK");
         }
     }
 }

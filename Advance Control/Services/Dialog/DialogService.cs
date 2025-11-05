@@ -390,9 +390,8 @@ namespace Advance_Control.Services.Dialog
         private Microsoft.UI.Xaml.XamlRoot GetXamlRoot()
         {
             // En WinUI 3, necesitamos obtener el XamlRoot de la ventana activa
-            // Una forma común es obtenerlo desde la MainWindow o desde cualquier elemento UI activo
-            var window = Microsoft.UI.Xaml.Application.Current.Windows.FirstOrDefault();
-            if (window?.Content is Microsoft.UI.Xaml.FrameworkElement rootElement)
+            // Cambiamos el enfoque para obtener la ventana activa desde el Application.Current
+            if (Microsoft.UI.Xaml.Window.Current?.Content is Microsoft.UI.Xaml.FrameworkElement rootElement)
             {
                 return rootElement.XamlRoot;
             }
