@@ -389,9 +389,9 @@ namespace Advance_Control.Services.Dialog
         /// <exception cref="InvalidOperationException">Si no se puede obtener el XamlRoot.</exception>
         private Microsoft.UI.Xaml.XamlRoot GetXamlRoot()
         {
-            // En WinUI 3, necesitamos obtener el XamlRoot de la ventana activa
-            // Cambiamos el enfoque para obtener la ventana activa desde el Application.Current
-            if (Microsoft.UI.Xaml.Window.Current?.Content is Microsoft.UI.Xaml.FrameworkElement rootElement)
+            // En WinUI 3, Window.Current no está disponible, por lo que accedemos a la ventana
+            // principal a través de App.MainWindow que fue establecida en App.OnLaunched
+            if (App.MainWindow?.Content is Microsoft.UI.Xaml.FrameworkElement rootElement)
             {
                 return rootElement.XamlRoot;
             }
