@@ -15,6 +15,7 @@
   <ItemGroup>
     <None Remove="Views\AcesoriaView.xaml" />
     <None Remove="Views\ClientesView.xaml" />
+    <None Remove="Views\Login\LoginView.xaml" />
     <None Remove="Views\MttoView.xaml" />
     <None Remove="Views\OperacionesView.xaml" />
   </ItemGroup>
@@ -78,6 +79,14 @@
     <Page Update="Views\ClientesView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Login\LoginView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Services\Dialog\" />
   </ItemGroup>
 
   <!--
