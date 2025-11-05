@@ -9,12 +9,12 @@ namespace Advance_Control.Services.Dialog
         /// <summary>
         /// Gets whether the dialog was confirmed (primary button clicked)
         /// </summary>
-        public bool IsConfirmed { get; set; }
+        public bool IsConfirmed { get; }
 
         /// <summary>
         /// Gets the result value from the dialog
         /// </summary>
-        public T? Result { get; set; }
+        public T? Result { get; }
 
         public DialogResult(bool isConfirmed, T? result = default)
         {

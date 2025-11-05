@@ -24,7 +24,7 @@ namespace Advance_Control
 
             // Initialize the DialogService with the XamlRoot from the window content
             // This must be done after InitializeComponent
-            if (this.Content is FrameworkElement element)
+            if (this.Content is FrameworkElement element && element.XamlRoot != null)
             {
                 _dialogService.SetXamlRoot(element.XamlRoot);
             }
