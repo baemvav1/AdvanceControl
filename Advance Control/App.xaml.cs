@@ -77,6 +77,9 @@ namespace Advance_Control
                     // Registrar NavigationService
                     services.AddSingleton<INavigationService, NavigationService>();
 
+                    // Registrar ViewModels
+                    services.AddTransient<ViewModels.MainViewModel>();
+
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
                 })
