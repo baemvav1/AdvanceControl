@@ -10,11 +10,15 @@ using Advance_Control.Services.Auth;
 using Advance_Control.Services.Dialog;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
+using System.Windows.Input;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Advance_Control.ViewModels
 {
     public class MainViewModel : ViewModelBase
     {
+        public ICommand showLogin { get; }
+
         private readonly INavigationService _navigationService;
         private readonly IOnlineCheck _onlineCheck;
         private readonly ILoggingService _logger;
@@ -43,6 +47,9 @@ namespace Advance_Control.ViewModels
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
+
+
+            showLogin = new RelayCommand(ShowLoginDialogAsync);
         }
 
         public string Title
@@ -171,7 +178,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Shows the login dialog and returns the boolean result
         /// </summary>
-        public async Task<bool> ShowLoginDialogAsync()
+        public async void ShowLoginDialogAsync()
         {
             try
             {
@@ -193,12 +200,10 @@ namespace Advance_Control.ViewModels
                     await _logger.LogInformationAsync("Usuario autenticado mediante diálogo de login", "MainViewModel", "ShowLoginDialogAsync");
                 }
 
-                return result.IsConfirmed && result.Result;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al mostrar diálogo de login", ex, "MainViewModel", "ShowLoginDialogAsync");
-                return false;
             }
         }
     }

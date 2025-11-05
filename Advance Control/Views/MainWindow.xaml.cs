@@ -36,5 +36,10 @@ namespace Advance_Control
             nvSample.ItemInvoked += (sender, args) => _viewModel.OnNavigationItemInvoked(sender, args);
             nvSample.BackRequested += (sender, args) => _viewModel.OnBackRequested(sender, args);
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            _viewModel.ShowLoginDialogAsync();
+        }
     }
 }
