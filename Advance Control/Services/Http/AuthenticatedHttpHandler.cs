@@ -16,6 +16,11 @@ namespace Advance_Control.Services.Http
     /// - adjunta Authorization: Bearer &lt;token&gt; a las requests dirigidas a la API configurada,
     /// - intenta un refresh (a través de IAuthService.RefreshTokenAsync) al recibir 401 y reintenta la petición una vez con el nuevo token.
     /// 
+    /// Nota importante:
+    /// - Usa Lazy&lt;IAuthService&gt; para romper la dependencia circular:
+    ///   AuthService → AuthenticatedHttpHandler → IAuthService
+    /// - El Lazy&lt;T&gt; permite que el servicio se resuelva solo cuando se necesita (lazy loading).
+    /// 
     /// Recomendaciones:
     /// - Registrar en DI como transient y añadir a la pipeline del HttpClient que usas para la API.
     /// - No adjunta token a dominios externos (comprueba host contra el proveedor de endpoints).
