@@ -46,6 +46,11 @@ namespace Advance_Control.Services.Dialog
         /// </summary>
         public async Task ShowMessageDialogAsync(string title, string message)
         {
+            if (string.IsNullOrWhiteSpace(title))
+                throw new ArgumentException("El título no puede estar vacío.", nameof(title));
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentException("El mensaje no puede estar vacío.", nameof(message));
+
             EnsureInitialized();
 
             var dialog = new ContentDialog
@@ -64,6 +69,15 @@ namespace Advance_Control.Services.Dialog
         /// </summary>
         public async Task<bool> ShowConfirmationDialogAsync(string title, string message, string primaryButtonText = "Aceptar", string secondaryButtonText = "Cancelar")
         {
+            if (string.IsNullOrWhiteSpace(title))
+                throw new ArgumentException("El título no puede estar vacío.", nameof(title));
+            if (string.IsNullOrWhiteSpace(message))
+                throw new ArgumentException("El mensaje no puede estar vacío.", nameof(message));
+            if (string.IsNullOrWhiteSpace(primaryButtonText))
+                throw new ArgumentException("El texto del botón principal no puede estar vacío.", nameof(primaryButtonText));
+            if (string.IsNullOrWhiteSpace(secondaryButtonText))
+                throw new ArgumentException("El texto del botón secundario no puede estar vacío.", nameof(secondaryButtonText));
+
             EnsureInitialized();
 
             var dialog = new ContentDialog
