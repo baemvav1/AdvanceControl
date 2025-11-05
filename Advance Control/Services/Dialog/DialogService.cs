@@ -249,6 +249,32 @@ namespace Advance_Control.Services.Dialog
     /// {
     ///     Console.WriteLine($"Nombre: {formData.Name}, Edad: {formData.Age}, Email: {formData.Email}");
     /// }
+    /// 
+    /// 
+    /// // ============================================================================
+    /// // EJEMPLO 7: Diálogo SIN botones (Light Dismiss - se cierra al hacer clic fuera)
+    /// // ============================================================================
+    /// // UserControl: NotificationUserControl.xaml.cs
+    /// public sealed partial class NotificationUserControl : UserControl
+    /// {
+    ///     public string Message { get; set; }
+    ///     
+    ///     public NotificationUserControl()
+    ///     {
+    ///         this.InitializeComponent();
+    ///     }
+    /// }
+    /// 
+    /// // Uso: Sin botones - el diálogo se cierra al hacer clic fuera
+    /// var result = await _dialogService.ShowDialogAsync&lt;NotificationUserControl&gt;(
+    ///     configureControl: control =&gt; 
+    ///     {
+    ///         control.Message = "Esta es una notificación. Haz clic fuera para cerrar.";
+    ///     },
+    ///     title: "Notificación"
+    ///     // No se especifican botones - el usuario puede cerrar haciendo clic fuera
+    /// );
+    /// // result siempre será false porque no hay botón primario
     /// </code>
     /// </example>
     /// </remarks>
