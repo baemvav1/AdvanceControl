@@ -9,6 +9,12 @@ namespace Advance_Control.Services.Dialog
     public interface IDialogService
     {
         /// <summary>
+        /// Sets the XamlRoot for the dialog service (required for WinUI 3)
+        /// Must be called before showing any dialogs
+        /// </summary>
+        void SetXamlRoot(XamlRoot xamlRoot);
+
+        /// <summary>
         /// Shows a dialog with the specified UserControl content and returns a result of type T
         /// </summary>
         /// <typeparam name="T">The type of result to return</typeparam>

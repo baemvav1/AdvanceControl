@@ -9,6 +9,7 @@ using Advance_Control.Services.Logging;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Dialog;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Advance_Control.ViewModels
 {
@@ -19,6 +20,7 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly IAuthService _authService;
         private readonly IDialogService _dialogService;
+        private readonly IServiceProvider _serviceProvider;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -29,13 +31,15 @@ namespace Advance_Control.ViewModels
             IOnlineCheck onlineCheck,
             ILoggingService logger,
             IAuthService authService,
-            IDialogService dialogService)
+            IDialogService dialogService,
+            IServiceProvider serviceProvider)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -171,9 +175,8 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                // Create LoginView with its ViewModel from DI
-                // Note: In a real implementation, you might want to resolve this from DI container
-                var loginViewModel = new ViewModels.Login.LoginViewModel(_authService, _logger);
+                // Resolve LoginViewModel from DI container
+                var loginViewModel = _serviceProvider.GetRequiredService<ViewModels.Login.LoginViewModel>();
                 var loginView = new Views.Login.LoginView(loginViewModel);
 
                 // Show the dialog and get the result
