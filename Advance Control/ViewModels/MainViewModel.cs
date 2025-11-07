@@ -10,6 +10,7 @@ using Advance_Control.Services.Auth;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Services.Dialog;
 using Advance_Control.Views.Login;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Advance_Control.ViewModels
 {
@@ -20,6 +21,7 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly IAuthService _authService;
         private readonly IDialogService _dialogService;
+        private readonly IServiceProvider _serviceProvider;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -29,13 +31,16 @@ namespace Advance_Control.ViewModels
             INavigationService navigationService,
             IOnlineCheck onlineCheck,
             ILoggingService logger,
-            IAuthService authService,IDialogService dialogService)
+            IAuthService authService,
+            IDialogService dialogService,
+            IServiceProvider serviceProvider)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -116,26 +121,6 @@ namespace Advance_Control.ViewModels
             IsBackEnabled = _navigationService.CanGoBack;
         }
 
-        // Prepare for future login implementation
-        public async Task<bool> LoginAsync(string username, string password)
-        {
-            try
-            {
-                var success = await _authService.AuthenticateAsync(username, password);
-                if (success)
-                {
-                    IsAuthenticated = true;
-                    await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {username}", "MainViewModel", "LoginAsync");
-                }
-                return success;
-            }
-            catch (Exception ex)
-            {
-                await _logger.LogErrorAsync($"Error al intentar autenticar usuario: {username}", ex, "MainViewModel", "LoginAsync");
-                return false;
-            }
-        }
-
         public async Task LogoutAsync()
         {
             try
@@ -166,14 +151,53 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Muestra el diálogo de inicio de sesión
         /// </summary>
-        /// <returns>True si el usuario completó el login, false si canceló</returns>
+        /// <returns>True si el usuario completó el login exitosamente, false si canceló</returns>
         public async Task<bool> ShowLoginDialogAsync()
         {
-            return await _dialogService.ShowDialogAsync<LoginView>(
-                title: "Iniciar Sesión",
-                primaryButtonText: "Iniciar Sesión",
-                closeButtonText: "Cancelar"
-            );
+            // La autenticación ahora ocurre completamente dentro de LoginView/LoginViewModel
+            // MainViewModel solo muestra el diálogo y verifica el resultado
+            var loginViewModel = _serviceProvider.GetRequiredService<LoginViewModel>();
+            var loginView = new LoginView(loginViewModel);
+            
+            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = "Iniciar Sesión",
+                Content = loginView,
+                XamlRoot = GetXamlRoot()
+                // No configurar botones del dialog - usar los botones internos de LoginView
+            };
+
+            // Configurar el cierre del diálogo desde el LoginView
+            loginView.CloseDialogAction = () => dialog.Hide();
+
+            // Manejar el cierre automático cuando el login sea exitoso
+            loginViewModel.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
+                {
+                    // Actualizar el estado de autenticación en MainViewModel
+                    IsAuthenticated = true;
+                }
+            };
+
+            var result = await dialog.ShowAsync();
+            
+            // Retornar true si el login fue exitoso, false si fue cancelado
+            return loginViewModel.LoginSuccessful;
+        }
+
+        /// <summary>
+        /// Obtiene el XamlRoot necesario para mostrar diálogos
+        /// </summary>
+        private Microsoft.UI.Xaml.XamlRoot GetXamlRoot()
+        {
+            if (App.MainWindow?.Content is Microsoft.UI.Xaml.FrameworkElement rootElement)
+            {
+                return rootElement.XamlRoot;
+            }
+
+            throw new InvalidOperationException(
+                "No se pudo obtener el XamlRoot. Asegúrese de que existe una ventana activa con contenido.");
         }
     }
 }

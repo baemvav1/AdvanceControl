@@ -63,7 +63,8 @@
                 IsEnabled="{x:Bind ViewModel.CanLogin, Mode=OneWay}"/>
             <Button
                 x:Name="CancelButton"
-                Content="Cancelar" />
+                Content="Cancelar"
+                Click="CancelButton_Click" />
         </StackPanel>
     </Grid>
 </UserControl>
