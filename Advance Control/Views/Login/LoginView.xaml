@@ -11,6 +11,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock
@@ -39,8 +40,17 @@
             PlaceholderText="Ingrese su contraseña"
             Password="{x:Bind ViewModel.Password, Mode=TwoWay}"/>
         
+        <!-- Error Message Display -->
+        <InfoBar
+            Grid.Row="4"
+            x:Name="ErrorInfoBar"
+            Severity="Error"
+            IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+            Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+            Margin="4,0,4,12"/>
+        
         <StackPanel 
-            Grid.Row="4" 
+            Grid.Row="5" 
             Orientation="Horizontal" 
             HorizontalAlignment="Right" 
             Spacing="8"

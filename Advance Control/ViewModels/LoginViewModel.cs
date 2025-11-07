@@ -80,8 +80,20 @@ namespace Advance_Control.ViewModels
         public string ErrorMessage
         {
             get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
+            set
+            {
+                if (SetProperty(ref _errorMessage, value))
+                {
+                    // Notificar cuando cambia el estado de error
+                    OnPropertyChanged(nameof(HasError));
+                }
+            }
         }
+
+        /// <summary>
+        /// Indica si hay un mensaje de error activo
+        /// </summary>
+        public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
         /// <summary>
         /// Indica si se puede realizar el login (validación básica)
