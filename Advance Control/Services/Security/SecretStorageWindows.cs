@@ -37,9 +37,9 @@ namespace Advance_Control.Services.Security
                 var existing = _vault.Retrieve(resource, key);
                 _vault.Remove(existing);
             }
-            catch
+            catch (Exception ex)
             {
-                _ = _logger?.LogDebugAsync($"Credencial no existe previamente al intentar actualizar: {key}", "SecretStorageWindows", "SetAsync");
+                _ = _logger?.LogDebugAsync($"Credencial no existe previamente al intentar actualizar: {key}. Error: {ex.Message}", "SecretStorageWindows", "SetAsync");
                 // Retrieve lanza si no existe; ignorar
             }
 
@@ -62,9 +62,9 @@ namespace Advance_Control.Services.Security
                 cred.RetrievePassword();
                 return Task.FromResult<string?>(cred.Password);
             }
-            catch
+            catch (Exception ex)
             {
-                _ = _logger?.LogDebugAsync($"No se encontró credencial en almacenamiento seguro: {key}", "SecretStorageWindows", "GetAsync");
+                _ = _logger?.LogWarningAsync($"No se encontró credencial en almacenamiento seguro: {key}. Error: {ex.Message}", "SecretStorageWindows", "GetAsync");
                 return Task.FromResult<string?>(null);
             }
         }
@@ -79,9 +79,9 @@ namespace Advance_Control.Services.Security
                 var cred = _vault.Retrieve(resource, key);
                 _vault.Remove(cred);
             }
-            catch
+            catch (Exception ex)
             {
-                _ = _logger?.LogDebugAsync($"Error al eliminar credencial (posiblemente no existe): {key}", "SecretStorageWindows", "RemoveAsync");
+                _ = _logger?.LogDebugAsync($"Error al eliminar credencial (posiblemente no existe): {key}. Error: {ex.Message}", "SecretStorageWindows", "RemoveAsync");
                 // Si no existe, ignorar
             }
 
