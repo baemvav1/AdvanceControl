@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.Security.Credentials;
@@ -37,10 +38,16 @@ namespace Advance_Control.Services.Security
                 var existing = _vault.Retrieve(resource, key);
                 _vault.Remove(existing);
             }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070490))
+            {
+                // HRESULT 0x80070490 = ERROR_NOT_FOUND (Element not found)
+                // Esto es esperado cuando la credencial no existe previamente
+                _ = _logger?.LogDebugAsync($"Credencial no existe previamente (normal para nuevos usuarios): {key}", "SecretStorageWindows", "SetAsync");
+            }
             catch (Exception ex)
             {
-                _ = _logger?.LogDebugAsync($"Credencial no existe previamente al intentar actualizar: {key}. Error: {ex.Message}", "SecretStorageWindows", "SetAsync");
-                // Retrieve lanza si no existe; ignorar
+                _ = _logger?.LogWarningAsync($"Error al verificar credencial existente: {key}. Error: {ex.Message}", "SecretStorageWindows", "SetAsync");
+                // Continuar de todos modos e intentar agregar
             }
 
             // Añadir la nueva credencial
@@ -62,9 +69,16 @@ namespace Advance_Control.Services.Security
                 cred.RetrievePassword();
                 return Task.FromResult<string?>(cred.Password);
             }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070490))
+            {
+                // HRESULT 0x80070490 = ERROR_NOT_FOUND (Element not found)
+                // This is expected when the credential doesn't exist (e.g., first-time user)
+                _ = _logger?.LogDebugAsync($"Credencial no encontrada en almacenamiento seguro: {key}. Esto es normal para usuarios nuevos.", "SecretStorageWindows", "GetAsync");
+                return Task.FromResult<string?>(null);
+            }
             catch (Exception ex)
             {
-                _ = _logger?.LogWarningAsync($"No se encontró credencial en almacenamiento seguro: {key}. Error: {ex.Message}", "SecretStorageWindows", "GetAsync");
+                _ = _logger?.LogWarningAsync($"Error inesperado al recuperar credencial del almacenamiento seguro: {key}. Error: {ex.Message}", "SecretStorageWindows", "GetAsync");
                 return Task.FromResult<string?>(null);
             }
         }
@@ -79,10 +93,15 @@ namespace Advance_Control.Services.Security
                 var cred = _vault.Retrieve(resource, key);
                 _vault.Remove(cred);
             }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070490))
+            {
+                // HRESULT 0x80070490 = ERROR_NOT_FOUND (Element not found)
+                // Esto es esperado cuando la credencial no existe
+                _ = _logger?.LogDebugAsync($"Credencial no encontrada al intentar eliminar: {key}. Esto es normal si ya fue eliminada o nunca existió.", "SecretStorageWindows", "RemoveAsync");
+            }
             catch (Exception ex)
             {
-                _ = _logger?.LogDebugAsync($"Error al eliminar credencial (posiblemente no existe): {key}. Error: {ex.Message}", "SecretStorageWindows", "RemoveAsync");
-                // Si no existe, ignorar
+                _ = _logger?.LogWarningAsync($"Error inesperado al eliminar credencial: {key}. Error: {ex.Message}", "SecretStorageWindows", "RemoveAsync");
             }
 
             return Task.CompletedTask;
