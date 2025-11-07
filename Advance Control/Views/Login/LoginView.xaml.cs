@@ -20,7 +20,7 @@ namespace Advance_Control.Views.Login
 {
     public sealed partial class LoginView : UserControl
     {
-        public LoginView(LoginView loginView)
+        public LoginView()
         {
             this.InitializeComponent();
         }
