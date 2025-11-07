@@ -163,32 +163,20 @@ namespace Advance_Control.ViewModels
             {
                 Title = "Iniciar Sesión",
                 Content = loginView,
-                PrimaryButtonText = "Iniciar Sesión",
-                CloseButtonText = "Cancelar",
-                DefaultButton = Microsoft.UI.Xaml.Controls.ContentDialogButton.Primary,
                 XamlRoot = GetXamlRoot()
+                // No configurar botones del dialog - usar los botones internos de LoginView
             };
 
-            // Vincular el estado del botón primario con la capacidad de login
-            dialog.IsPrimaryButtonEnabled = loginViewModel.CanLogin;
-            loginViewModel.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(LoginViewModel.CanLogin))
-                {
-                    dialog.IsPrimaryButtonEnabled = loginViewModel.CanLogin;
-                }
-            };
+            // Configurar el cierre del diálogo desde el LoginView
+            loginView.CloseDialogAction = () => dialog.Hide();
 
             // Manejar el cierre automático cuando el login sea exitoso
-            loginViewModel.PropertyChanged += async (s, e) =>
+            loginViewModel.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
                 {
                     // Actualizar el estado de autenticación en MainViewModel
                     IsAuthenticated = true;
-                    
-                    // Cerrar el diálogo
-                    dialog.Hide();
                 }
             };
 
