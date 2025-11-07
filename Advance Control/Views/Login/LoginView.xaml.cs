@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.ViewModels;
+using System;
 
 namespace Advance_Control.Views.Login
 {
@@ -13,10 +14,9 @@ namespace Advance_Control.Views.Login
         /// </summary>
         public LoginViewModel ViewModel { get; }
 
-        public LoginView()
+        public LoginView(LoginViewModel viewModel)
         {
-            // Inicializar el ViewModel
-            ViewModel = new LoginViewModel();
+            ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             
             this.InitializeComponent();
             

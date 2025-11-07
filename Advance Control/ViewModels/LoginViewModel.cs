@@ -2,6 +2,8 @@
 using System.Threading.Tasks;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
+using Advance_Control.Services.Auth;
+using Advance_Control.Services.Logging;
 
 namespace Advance_Control.ViewModels
 {
@@ -11,13 +13,20 @@ namespace Advance_Control.ViewModels
     /// </summary>
     public class LoginViewModel : ViewModelBase
     {
+        private readonly IAuthService _authService;
+        private readonly ILoggingService _logger;
+        
         private string _user = string.Empty;
         private string _password = string.Empty;
         private bool _isLoading;
         private string _errorMessage = string.Empty;
+        private bool _loginSuccessful;
 
-        public LoginViewModel()
+        public LoginViewModel(IAuthService authService, ILoggingService logger)
         {
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
             // Inicializar el comando de login
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
         }
@@ -103,6 +112,15 @@ namespace Advance_Control.ViewModels
                                 !IsLoading;
 
         /// <summary>
+        /// Indica si el login fue exitoso
+        /// </summary>
+        public bool LoginSuccessful
+        {
+            get => _loginSuccessful;
+            private set => SetProperty(ref _loginSuccessful, value);
+        }
+
+        /// <summary>
         /// Comando para ejecutar el inicio de sesión
         /// </summary>
         public ICommand LoginCommand { get; }
@@ -160,6 +178,7 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = true;
                 ErrorMessage = string.Empty;
+                LoginSuccessful = false;
 
                 // Validar credenciales
                 if (!ValidateCredentials())
@@ -167,20 +186,24 @@ namespace Advance_Control.ViewModels
                     return;
                 }
 
-                // TODO: Implementar la lógica de autenticación real
-                // Por ahora, este es un placeholder
-                await Task.Delay(1000); // Simular llamada a API
-
-                // Aquí se debería llamar al servicio de autenticación
-                // var success = await _authService.AuthenticateAsync(User, Password);
-                // if (!success)
-                // {
-                //     ErrorMessage = "Usuario o contraseña incorrectos.";
-                // }
+                // Llamar al servicio de autenticación
+                var success = await _authService.AuthenticateAsync(User, Password);
+                
+                if (success)
+                {
+                    LoginSuccessful = true;
+                    await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {User}", "LoginViewModel", "ExecuteLogin");
+                }
+                else
+                {
+                    ErrorMessage = "Usuario o contraseña incorrectos.";
+                    await _logger.LogWarningAsync($"Intento de login fallido para usuario: {User}", "LoginViewModel", "ExecuteLogin");
+                }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error al iniciar sesión: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al intentar autenticar usuario: {User}", ex, "LoginViewModel", "ExecuteLogin");
             }
             finally
             {

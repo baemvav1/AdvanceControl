@@ -10,7 +10,7 @@
             <RowDefinition Height="10"/>
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
-            <Button Content="longin" Click="{x:Bind _viewModel.ShowInfoDialogAsync}"></Button>
+            <Button Content="Login" Click="LoginButton_Click"></Button>
         </Grid>
         <Grid Grid.Row="1">
             <NavigationView x:Name="nvSample" IsBackButtonVisible="Auto" IsBackEnabled="{Binding IsBackEnabled, Mode=OneWay}">
