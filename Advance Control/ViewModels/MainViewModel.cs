@@ -163,9 +163,17 @@ namespace Advance_Control.ViewModels
                 return false;
             }
         }
-        public async Task ShowInfoDialogAsync()
+        /// <summary>
+        /// Muestra el diálogo de inicio de sesión
+        /// </summary>
+        /// <returns>True si el usuario completó el login, false si canceló</returns>
+        public async Task<bool> ShowLoginDialogAsync()
         {
-            await _dialogService.ShowDialogAsync<LoginView>();
+            return await _dialogService.ShowDialogAsync<LoginView>(
+                title: "Iniciar Sesión",
+                primaryButtonText: "Iniciar Sesión",
+                closeButtonText: "Cancelar"
+            );
         }
     }
 }
