@@ -44,6 +44,18 @@ namespace Advance_Control.Services.Security
                 // Esto es esperado cuando la credencial no existe previamente
                 _ = _logger?.LogDebugAsync($"Credencial no existe previamente (normal para nuevos usuarios): {key}", "SecretStorageWindows", "SetAsync");
             }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070005))
+            {
+                // HRESULT 0x80070005 = E_ACCESSDENIED (Access denied)
+                _ = _logger?.LogWarningAsync($"Acceso denegado al verificar credencial existente: {key}. Se intentará agregar de todos modos.", "SecretStorageWindows", "SetAsync");
+                // Continuar e intentar agregar
+            }
+            catch (COMException ex)
+            {
+                // Otros errores COM al verificar
+                _ = _logger?.LogWarningAsync($"Error COM al verificar credencial existente: {key}. HResult: {ex.HResult:X8}. Se intentará agregar de todos modos.", "SecretStorageWindows", "SetAsync");
+                // Continuar e intentar agregar
+            }
             catch (Exception ex)
             {
                 _ = _logger?.LogWarningAsync($"Error al verificar credencial existente: {key}. Error: {ex.Message}", "SecretStorageWindows", "SetAsync");
@@ -51,8 +63,22 @@ namespace Advance_Control.Services.Security
             }
 
             // Añadir la nueva credencial
-            var cred = new PasswordCredential(resource, key, value);
-            _vault.Add(cred);
+            try
+            {
+                var cred = new PasswordCredential(resource, key, value);
+                _vault.Add(cred);
+            }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070005))
+            {
+                // HRESULT 0x80070005 = E_ACCESSDENIED (Access denied)
+                _ = _logger?.LogErrorAsync($"Acceso denegado al guardar credencial: {key}. El usuario puede necesitar permisos adicionales.", ex, "SecretStorageWindows", "SetAsync");
+                throw; // Re-throw porque no se pudo guardar
+            }
+            catch (COMException ex)
+            {
+                _ = _logger?.LogErrorAsync($"Error COM al guardar credencial: {key}. HResult: {ex.HResult:X8}", ex, "SecretStorageWindows", "SetAsync");
+                throw; // Re-throw porque no se pudo guardar
+            }
 
             return Task.CompletedTask;
         }
@@ -74,6 +100,33 @@ namespace Advance_Control.Services.Security
                 // HRESULT 0x80070490 = ERROR_NOT_FOUND (Element not found)
                 // This is expected when the credential doesn't exist (e.g., first-time user)
                 _ = _logger?.LogDebugAsync($"Credencial no encontrada en almacenamiento seguro: {key}. Esto es normal para usuarios nuevos.", "SecretStorageWindows", "GetAsync");
+                return Task.FromResult<string?>(null);
+            }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070005))
+            {
+                // HRESULT 0x80070005 = E_ACCESSDENIED (Access denied)
+                // This can happen if the credential store is locked or permissions are insufficient
+                _ = _logger?.LogWarningAsync($"Acceso denegado al almacenamiento seguro para clave: {key}. El usuario puede necesitar permisos adicionales o el almacén de credenciales está bloqueado.", "SecretStorageWindows", "GetAsync");
+                return Task.FromResult<string?>(null);
+            }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070057))
+            {
+                // HRESULT 0x80070057 = E_INVALIDARG (Invalid argument)
+                // This can happen if the resource or key format is invalid
+                _ = _logger?.LogWarningAsync($"Argumento inválido al recuperar credencial: {key}. HResult: {ex.HResult:X8}", "SecretStorageWindows", "GetAsync");
+                return Task.FromResult<string?>(null);
+            }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80004005))
+            {
+                // HRESULT 0x80004005 = E_FAIL (Unspecified failure)
+                // Generic failure from the PasswordVault API
+                _ = _logger?.LogWarningAsync($"Error genérico al recuperar credencial del almacenamiento seguro: {key}. HResult: {ex.HResult:X8}, Mensaje: {ex.Message}", "SecretStorageWindows", "GetAsync");
+                return Task.FromResult<string?>(null);
+            }
+            catch (COMException ex)
+            {
+                // Catch any other COM exceptions with detailed logging
+                _ = _logger?.LogWarningAsync($"Error COM al recuperar credencial del almacenamiento seguro: {key}. HResult: {ex.HResult:X8}, Mensaje: {ex.Message}", "SecretStorageWindows", "GetAsync");
                 return Task.FromResult<string?>(null);
             }
             catch (Exception ex)
@@ -99,6 +152,15 @@ namespace Advance_Control.Services.Security
                 // Esto es esperado cuando la credencial no existe
                 _ = _logger?.LogDebugAsync($"Credencial no encontrada al intentar eliminar: {key}. Esto es normal si ya fue eliminada o nunca existió.", "SecretStorageWindows", "RemoveAsync");
             }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070005))
+            {
+                // HRESULT 0x80070005 = E_ACCESSDENIED (Access denied)
+                _ = _logger?.LogWarningAsync($"Acceso denegado al eliminar credencial: {key}. El usuario puede necesitar permisos adicionales.", "SecretStorageWindows", "RemoveAsync");
+            }
+            catch (COMException ex)
+            {
+                _ = _logger?.LogWarningAsync($"Error COM al eliminar credencial: {key}. HResult: {ex.HResult:X8}, Mensaje: {ex.Message}", "SecretStorageWindows", "RemoveAsync");
+            }
             catch (Exception ex)
             {
                 _ = _logger?.LogWarningAsync($"Error inesperado al eliminar credencial: {key}. Error: {ex.Message}", "SecretStorageWindows", "RemoveAsync");
@@ -116,10 +178,38 @@ namespace Advance_Control.Services.Security
                 var toRemove = all.Where(c => c.Resource != null && c.Resource.StartsWith(ResourcePrefix + ":")).ToList();
                 foreach (var c in toRemove)
                 {
-                    // Need to call Retrieve to be able to Remove in some runtimes
-                    try { _vault.Retrieve(c.Resource, c.UserName); } catch { }
-                    _vault.Remove(c);
+                    try
+                    {
+                        // Need to call Retrieve to be able to Remove in some runtimes
+                        _vault.Retrieve(c.Resource, c.UserName);
+                        _vault.Remove(c);
+                    }
+                    catch (COMException ex) when (ex.HResult == unchecked((int)0x80070490))
+                    {
+                        // Element not found - ignore, it may have been already removed
+                        _ = _logger?.LogDebugAsync($"Credencial ya eliminada durante ClearAsync: {c.UserName}", "SecretStorageWindows", "ClearAsync");
+                    }
+                    catch (COMException ex)
+                    {
+                        // Log but continue with other credentials
+                        _ = _logger?.LogWarningAsync($"Error COM al eliminar credencial durante ClearAsync: {c.UserName}. HResult: {ex.HResult:X8}", "SecretStorageWindows", "ClearAsync");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but continue with other credentials
+                        _ = _logger?.LogWarningAsync($"Error al eliminar credencial durante ClearAsync: {c.UserName}. Error: {ex.Message}", "SecretStorageWindows", "ClearAsync");
+                    }
                 }
+            }
+            catch (COMException ex) when (ex.HResult == unchecked((int)0x80070490))
+            {
+                // No credentials found - this is normal
+                _ = _logger?.LogDebugAsync("No hay credenciales para limpiar en el almacenamiento seguro", "SecretStorageWindows", "ClearAsync");
+            }
+            catch (COMException ex)
+            {
+                _ = _logger?.LogErrorAsync($"Error COM al obtener lista de credenciales. HResult: {ex.HResult:X8}", ex, "SecretStorageWindows", "ClearAsync");
+                // ignorar errores
             }
             catch (Exception ex)
             {
