@@ -72,6 +72,8 @@ namespace Advance_Control
 
                     // Registrar AuthService y su HttpClient pipeline.
                     // Configuramos BaseAddress usando la IApiEndpointProvider registrada.
+                    // IMPORTANTE: NO agregar AuthenticatedHttpHandler aquí porque AuthService
+                    // maneja autenticación (login/refresh) y no requiere tokens en sus requests.
                     services.AddHttpClient<IAuthService, AuthService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
@@ -81,8 +83,7 @@ namespace Advance_Control
                         }
                         // Opcional: tiempo de espera por defecto
                         client.Timeout = TimeSpan.FromSeconds(30);
-                    })
-                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+                    });
 
                     // Registrar NavigationService
                     services.AddSingleton<INavigationService, NavigationService>();
