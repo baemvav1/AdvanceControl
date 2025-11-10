@@ -11,6 +11,7 @@ using Advance_Control.Services.Http;
 using Advance_Control.Services.Logging;
 using Advance_Control.Navigation;
 using Advance_Control.Services.Dialog;
+using Advance_Control.Services.Clientes;
 
 namespace Advance_Control
 {
@@ -84,6 +85,18 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar ClienteService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IClienteService, ClienteService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        client.Timeout = TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar NavigationService
                     services.AddSingleton<INavigationService, NavigationService>();
 
@@ -93,6 +106,7 @@ namespace Advance_Control
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();
                     services.AddTransient<ViewModels.LoginViewModel>();
+                    services.AddTransient<ViewModels.CustomersViewModel>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
