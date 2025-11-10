@@ -1,31 +1,35 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using Windows.Foundation;
-using Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using Microsoft.Extensions.DependencyInjection;
+using Advance_Control.ViewModels;
 
 namespace Advance_Control.Views
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Página para visualizar y gestionar operaciones de mantenimiento
     /// </summary>
     public sealed partial class MttoView : Page
     {
+        public MttoViewModel ViewModel { get; }
+
         public MttoView()
         {
+            // Resolver el ViewModel desde DI
+            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<MttoViewModel>();
+            
             this.InitializeComponent();
+            
+            // Establecer el DataContext para los bindings
+            this.DataContext = ViewModel;
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            
+            // Inicializar la vista cuando se navega a esta página
+            await ViewModel.InitializeAsync();
         }
     }
 }
