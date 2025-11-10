@@ -9,10 +9,128 @@
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
-    <Grid>
-        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
-            <TextBlock Text="Clientes" FontSize="32" FontWeight="Bold" HorizontalAlignment="Center"/>
-            <TextBlock Text="Módulo de gestión de clientes" FontSize="16" HorizontalAlignment="Center"/>
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,24">
+            <TextBlock Text="Clientes" FontSize="32" FontWeight="Bold"/>
+            <TextBlock Text="Gestión de clientes del sistema" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
         </StackPanel>
+
+        <!-- Filtros -->
+        <StackPanel Grid.Row="1" Spacing="12" Margin="0,0,0,16">
+            <TextBlock Text="Filtros de búsqueda" FontWeight="SemiBold" FontSize="16"/>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBox Grid.Row="0" Grid.Column="0" 
+                         Header="Búsqueda" 
+                         PlaceholderText="Razón social o nombre comercial"
+                         Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,8,8"/>
+
+                <TextBox Grid.Row="0" Grid.Column="1" 
+                         Header="RFC" 
+                         PlaceholderText="RFC del cliente"
+                         Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,8,8"/>
+
+                <TextBox Grid.Row="0" Grid.Column="2" 
+                         Header="CURP" 
+                         PlaceholderText="CURP del cliente"
+                         Text="{x:Bind ViewModel.CurpFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,8,8"/>
+
+                <TextBox Grid.Row="1" Grid.Column="0" 
+                         Header="Notas" 
+                         PlaceholderText="Búsqueda en notas"
+                         Text="{x:Bind ViewModel.NotasFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                         Margin="0,0,8,8"/>
+
+                <NumberBox Grid.Row="1" Grid.Column="1" 
+                           Header="Prioridad" 
+                           PlaceholderText="Prioridad exacta"
+                           Value="{x:Bind ViewModel.PrioridadFilter, Mode=TwoWay}"
+                           SpinButtonPlacementMode="Inline"
+                           Minimum="0"
+                           Margin="0,0,8,8"/>
+
+                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Right" 
+                            VerticalAlignment="Bottom"
+                            Spacing="8">
+                    <Button Content="Buscar" 
+                            Click="SearchButton_Click"
+                            Style="{StaticResource AccentButtonStyle}"/>
+                    <Button Content="Limpiar" 
+                            Click="ClearButton_Click"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!-- Lista de clientes -->
+        <Grid Grid.Row="2">
+            <!-- Loading indicator -->
+            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
+                          Width="50" 
+                          Height="50"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
+
+            <!-- DataGrid or ListView -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ListView ItemsSource="{x:Bind ViewModel.Customers, Mode=OneWay}"
+                          SelectionMode="Single">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="local:CustomerDto" xmlns:local="using:Advance_Control.Models">
+                            <Grid Padding="12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                  BorderThickness="0,0,0,1" MinHeight="80">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="4">
+                                    <TextBlock Text="{x:Bind RazonSocial}" 
+                                               FontWeight="SemiBold" 
+                                               FontSize="16"/>
+                                    <TextBlock Text="{x:Bind NombreComercial}" 
+                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               FontSize="14"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="16">
+                                        <TextBlock FontSize="13">
+                                            <Run Text="RFC: "/>
+                                            <Run Text="{x:Bind Rfc}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="13">
+                                            <Run Text="Prioridad: "/>
+                                            <Run Text="{x:Bind Prioridad}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                        <TextBlock FontSize="13">
+                                            <Run Text="Estado: "/>
+                                            <Run Text="{x:Bind Estatus}" FontWeight="SemiBold"/>
+                                        </TextBlock>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Page>
