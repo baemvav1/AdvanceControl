@@ -154,50 +154,90 @@ namespace Advance_Control.ViewModels
         /// <returns>True si el usuario completó el login exitosamente, false si canceló</returns>
         public async Task<bool> ShowLoginDialogAsync()
         {
-            // La autenticación ahora ocurre completamente dentro de LoginView/LoginViewModel
-            // MainViewModel solo muestra el diálogo y verifica el resultado
-            var loginViewModel = _serviceProvider.GetRequiredService<LoginViewModel>();
-            var loginView = new LoginView(loginViewModel);
-            
-            var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+            try
             {
-                Title = "Iniciar Sesión",
-                Content = loginView,
-                XamlRoot = GetXamlRoot()
-                // No configurar botones del dialog - usar los botones internos de LoginView
-            };
-
-            // Configurar el cierre del diálogo desde el LoginView
-            loginView.CloseDialogAction = () => dialog.Hide();
-
-            // Manejar el cierre automático cuando el login sea exitoso
-            loginViewModel.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
+                // La autenticación ahora ocurre completamente dentro de LoginView/LoginViewModel
+                // MainViewModel solo muestra el diálogo y verifica el resultado
+                var loginViewModel = _serviceProvider.GetRequiredService<LoginViewModel>();
+                var loginView = new LoginView(loginViewModel);
+                
+                var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
                 {
-                    // Actualizar el estado de autenticación en MainViewModel
-                    IsAuthenticated = true;
-                }
-            };
+                    Title = "Iniciar Sesión",
+                    Content = loginView,
+                    XamlRoot = GetXamlRoot()
+                    // No configurar botones del dialog - usar los botones internos de LoginView
+                };
 
-            var result = await dialog.ShowAsync();
-            
-            // Retornar true si el login fue exitoso, false si fue cancelado
-            return loginViewModel.LoginSuccessful;
+                // Configurar el cierre del diálogo desde el LoginView
+                loginView.CloseDialogAction = () => 
+                {
+                    try
+                    {
+                        dialog.Hide();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log pero no propagar - el diálogo ya puede estar cerrado
+                        _ = _logger?.LogWarningAsync($"Error al cerrar diálogo de login: {ex.Message}", "MainViewModel", "ShowLoginDialogAsync");
+                    }
+                };
+
+                // Manejar el cierre automático cuando el login sea exitoso
+                loginViewModel.PropertyChanged += (s, e) =>
+                {
+                    if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
+                    {
+                        // Actualizar el estado de autenticación en MainViewModel
+                        IsAuthenticated = true;
+                    }
+                };
+
+                var result = await dialog.ShowAsync();
+                
+                // Retornar true si el login fue exitoso, false si fue cancelado
+                return loginViewModel.LoginSuccessful;
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Error al obtener XamlRoot o mostrar el diálogo
+                await _logger.LogErrorAsync("Error al mostrar el diálogo de login", ex, "MainViewModel", "ShowLoginDialogAsync");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                // Cualquier otro error inesperado
+                await _logger.LogErrorAsync("Error inesperado al iniciar sesión", ex, "MainViewModel", "ShowLoginDialogAsync");
+                return false;
+            }
         }
 
         /// <summary>
         /// Obtiene el XamlRoot necesario para mostrar diálogos
         /// </summary>
+        /// <returns>XamlRoot de la ventana principal</returns>
+        /// <exception cref="InvalidOperationException">Si no hay ventana activa o XamlRoot disponible</exception>
         private Microsoft.UI.Xaml.XamlRoot GetXamlRoot()
         {
-            if (App.MainWindow?.Content is Microsoft.UI.Xaml.FrameworkElement rootElement)
+            if (App.MainWindow == null)
             {
-                return rootElement.XamlRoot;
+                throw new InvalidOperationException(
+                    "No se pudo obtener el XamlRoot: La ventana principal no está inicializada.");
             }
 
-            throw new InvalidOperationException(
-                "No se pudo obtener el XamlRoot. Asegúrese de que existe una ventana activa con contenido.");
+            if (App.MainWindow.Content is not Microsoft.UI.Xaml.FrameworkElement rootElement)
+            {
+                throw new InvalidOperationException(
+                    "No se pudo obtener el XamlRoot: La ventana principal no tiene contenido.");
+            }
+
+            if (rootElement.XamlRoot == null)
+            {
+                throw new InvalidOperationException(
+                    "No se pudo obtener el XamlRoot: El contenido de la ventana no tiene XamlRoot asignado.");
+            }
+
+            return rootElement.XamlRoot;
         }
     }
 }
