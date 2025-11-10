@@ -13,7 +13,7 @@ namespace Advance_Control.Models
         public int IdCliente { get; set; }
 
         [JsonPropertyName("tipo_persona")]
-        public byte TipoPersona { get; set; }
+        public int TipoPersona { get; set; }
 
         [JsonPropertyName("rfc")]
         public string Rfc { get; set; } = string.Empty;
@@ -40,7 +40,7 @@ namespace Advance_Control.Models
         public decimal? LimiteCredito { get; set; }
 
         [JsonPropertyName("prioridad")]
-        public short Prioridad { get; set; }
+        public int Prioridad { get; set; }
 
         [JsonPropertyName("estatus")]
         public bool Estatus { get; set; }
