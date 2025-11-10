@@ -64,7 +64,7 @@ namespace Advance_Control.Services.Auth
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 return false;
 
-            var url = _endpoints.GetEndpoint("Auth", "login");
+            var url = _endpoints.GetEndpoint("api", "Auth", "login");
             var body = new { usuario = username, pass = password }; // matches server controller
 
             try
@@ -116,7 +116,7 @@ namespace Advance_Control.Services.Auth
                 if (!string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow.AddSeconds(15))
                     return true;
 
-                var url = _endpoints.GetEndpoint("Auth", "refresh");
+                var url = _endpoints.GetEndpoint("api", "Auth", "refresh");
                 var body = new { refreshToken = _refreshToken };
 
                 var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
@@ -159,7 +159,7 @@ namespace Advance_Control.Services.Auth
 
             try
             {
-                var url = _endpoints.GetEndpoint("Auth", "validate");
+                var url = _endpoints.GetEndpoint("api", "Auth", "validate");
                 var body = new { token = token };
                 var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
                 if (resp.IsSuccessStatusCode) return true;

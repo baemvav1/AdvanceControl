@@ -65,7 +65,7 @@ namespace Advance_Control.Services.Logging
             try
             {
                 // Construir URL del endpoint de logging
-                var url = _endpoints.GetEndpoint("Logging", "log");
+                var url = _endpoints.GetEndpoint("api", "Logging", "log");
 
                 // Enviar log al servidor (fire-and-forget con timeout corto)
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
