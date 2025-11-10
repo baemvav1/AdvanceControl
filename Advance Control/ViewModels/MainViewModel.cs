@@ -125,9 +125,18 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                await _authService.ClearTokenAsync();
+                // Call server-side logout to revoke refresh token
+                var success = await _authService.LogoutAsync();
                 IsAuthenticated = false;
-                await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
+                
+                if (success)
+                {
+                    await _logger.LogInformationAsync("Usuario cerró sesión exitosamente", "MainViewModel", "LogoutAsync");
+                }
+                else
+                {
+                    await _logger.LogWarningAsync("Cierre de sesión completado con advertencias", "MainViewModel", "LogoutAsync");
+                }
             }
             catch (Exception ex)
             {

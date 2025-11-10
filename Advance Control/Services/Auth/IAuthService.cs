@@ -30,7 +30,12 @@ namespace Advance_Control.Services.Auth
         Task<bool> ValidateTokenAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Limpia cualquier token y estado de autenticación almacenado.
+        /// Cierra sesión revocando el refresh token en el servidor y limpia el estado local.
+        /// </summary>
+        Task<bool> LogoutAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Limpia cualquier token y estado de autenticación almacenado (solo local).
         /// </summary>
         Task ClearTokenAsync();
 

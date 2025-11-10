@@ -65,7 +65,7 @@ namespace Advance_Control.Services.Auth
                 return false;
 
             var url = _endpoints.GetEndpoint("api", "Auth", "login");
-            var body = new { usuario = username, pass = password }; // matches server controller
+            var body = new { username = username, password = password }; // matches API specification
 
             try
             {
@@ -133,8 +133,15 @@ namespace Advance_Control.Services.Auth
                 var dto = await resp.Content.ReadFromJsonAsync<RefreshResponseDto>(cancellationToken: cancellationToken);
                 if (dto == null || string.IsNullOrEmpty(dto.accessToken)) return false;
 
+                // According to API spec, refresh endpoint ALWAYS returns a new refreshToken (token rotation)
+                if (string.IsNullOrEmpty(dto.refreshToken))
+                {
+                    await _logger.LogErrorAsync("El servidor no devolvió un nuevo refreshToken durante la rotación", null, "AuthService", "RefreshTokenAsync");
+                    return false;
+                }
+
                 _accessToken = dto.accessToken;
-                _refreshToken = dto.refreshToken ?? _refreshToken;
+                _refreshToken = dto.refreshToken;
                 _accessExpiresAtUtc = DateTime.UtcNow.AddSeconds(dto.expiresIn);
 
                 await PersistTokensAsync();
@@ -174,6 +181,51 @@ namespace Advance_Control.Services.Auth
                 await _logger.LogErrorAsync("Error al validar token de autenticación", ex, "AuthService", "ValidateTokenAsync");
                 return false;
             }
+        }
+
+        public async Task<bool> LogoutAsync(CancellationToken cancellationToken = default)
+        {
+            // Get the refresh token to revoke
+            var refreshTokenToRevoke = _refreshToken;
+            if (string.IsNullOrEmpty(refreshTokenToRevoke))
+            {
+                refreshTokenToRevoke = await _secureStorage.GetAsync(Key_RefreshToken);
+            }
+
+            // Clear local state first
+            await ClearTokenAsync();
+
+            // If we have a refresh token, try to revoke it on the server
+            if (!string.IsNullOrEmpty(refreshTokenToRevoke))
+            {
+                try
+                {
+                    var url = _endpoints.GetEndpoint("api", "Auth", "logout");
+                    var body = new { refreshToken = refreshTokenToRevoke };
+
+                    var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
+                    // API returns 204 No Content on success (idempotent operation)
+                    // We consider any response acceptable as local state is already cleared
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        await _logger.LogInformationAsync("Sesión cerrada exitosamente en el servidor", "AuthService", "LogoutAsync");
+                        return true;
+                    }
+                    else
+                    {
+                        await _logger.LogWarningAsync($"El servidor respondió con {resp.StatusCode} al cerrar sesión, pero el estado local fue limpiado", "AuthService", "LogoutAsync");
+                        return true; // Still return true since local state is cleared
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.LogErrorAsync("Error al revocar refresh token en el servidor, pero el estado local fue limpiado", ex, "AuthService", "LogoutAsync");
+                    return true; // Still return true since local state is cleared
+                }
+            }
+
+            // No refresh token to revoke, but local state was cleared
+            return true;
         }
 
         public async Task ClearTokenAsync()

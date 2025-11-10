@@ -13,14 +13,14 @@ namespace Advance_Control.Models
         /// </summary>
         [Required(ErrorMessage = "El nombre de usuario es requerido")]
         [MinLength(3, ErrorMessage = "El usuario debe tener al menos 3 caracteres")]
-        [MaxLength(50, ErrorMessage = "El usuario no puede exceder 50 caracteres")]
+        [MaxLength(150, ErrorMessage = "El usuario no puede exceder 150 caracteres")]
         public string? User { get; set; }
 
         /// <summary>
         /// Contraseña del usuario
         /// </summary>
         [Required(ErrorMessage = "La contraseña es requerida")]
-        [MinLength(6, ErrorMessage = "La contraseña debe tener al menos 6 caracteres")]
+        [MinLength(4, ErrorMessage = "La contraseña debe tener al menos 4 caracteres")]
         [MaxLength(100, ErrorMessage = "La contraseña no puede exceder 100 caracteres")]
         public string? Password { get; set; }
 

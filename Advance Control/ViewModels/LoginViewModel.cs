@@ -139,9 +139,9 @@ namespace Advance_Control.ViewModels
                 return false;
             }
 
-            if (User.Length < 3)
+            if (User.Length < 3 || User.Length > 150)
             {
-                ErrorMessage = "El nombre de usuario debe tener al menos 3 caracteres.";
+                ErrorMessage = "El nombre de usuario debe tener entre 3 y 150 caracteres.";
                 return false;
             }
 
@@ -151,9 +151,9 @@ namespace Advance_Control.ViewModels
                 return false;
             }
 
-            if (Password.Length < 6)
+            if (Password.Length < 4 || Password.Length > 100)
             {
-                ErrorMessage = "La contraseña debe tener al menos 6 caracteres.";
+                ErrorMessage = "La contraseña debe tener entre 4 y 100 caracteres.";
                 return false;
             }
 
