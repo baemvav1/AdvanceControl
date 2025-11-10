@@ -83,7 +83,7 @@ namespace Advance_Control.ViewModels
             try
             {
                 IsLoading = true;
-                await _logger.LogInfoAsync("Cargando clientes...", "CustomersViewModel", "LoadClientesAsync");
+                await _logger.LogInformationAsync("Cargando clientes...", "CustomersViewModel", "LoadClientesAsync");
 
                 var query = new ClienteQueryDto
                 {
@@ -102,7 +102,7 @@ namespace Advance_Control.ViewModels
                     Customers.Add(cliente);
                 }
 
-                await _logger.LogInfoAsync($"Se cargaron {clientes.Count} clientes", "CustomersViewModel", "LoadClientesAsync");
+                await _logger.LogInformationAsync($"Se cargaron {clientes.Count} clientes", "CustomersViewModel", "LoadClientesAsync");
             }
             catch (Exception ex)
             {

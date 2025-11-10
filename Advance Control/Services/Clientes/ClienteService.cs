@@ -63,7 +63,7 @@ namespace Advance_Control.Services.Clientes
                     }
                 }
 
-                await _logger.LogInfoAsync($"Obteniendo clientes desde: {url}", "ClienteService", "GetClientesAsync");
+                await _logger.LogInformationAsync($"Obteniendo clientes desde: {url}", "ClienteService", "GetClientesAsync");
 
                 // Realizar la petición GET
                 var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
@@ -83,7 +83,7 @@ namespace Advance_Control.Services.Clientes
                 // Deserializar la respuesta
                 var clientes = await response.Content.ReadFromJsonAsync<List<CustomerDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                await _logger.LogInfoAsync($"Se obtuvieron {clientes?.Count ?? 0} clientes", "ClienteService", "GetClientesAsync");
+                await _logger.LogInformationAsync($"Se obtuvieron {clientes?.Count ?? 0} clientes", "ClienteService", "GetClientesAsync");
 
                 return clientes ?? new List<CustomerDto>();
             }
