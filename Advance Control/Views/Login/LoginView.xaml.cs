@@ -20,9 +20,20 @@ namespace Advance_Control.Views.Login
         /// </summary>
         public Action? CloseDialogAction { get; set; }
 
+        /// <summary>
+        /// Constructor que recibe el ViewModel por inyección de dependencias
+        /// </summary>
+        /// <param name="viewModel">ViewModel de login</param>
+        /// <exception cref="ArgumentNullException">Si viewModel es null</exception>
         public LoginView(LoginViewModel viewModel)
         {
-            ViewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            if (viewModel == null)
+            {
+                throw new ArgumentNullException(nameof(viewModel), 
+                    "El LoginViewModel no puede ser null. Asegúrese de que está registrado en el contenedor de DI.");
+            }
+
+            ViewModel = viewModel;
             
             this.InitializeComponent();
             
@@ -44,6 +55,9 @@ namespace Advance_Control.Views.Login
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
+            // Limpiar el formulario antes de cerrar
+            ViewModel.ClearForm();
+            
             // Cerrar el diálogo cuando se cancela
             CloseDialogAction?.Invoke();
         }
