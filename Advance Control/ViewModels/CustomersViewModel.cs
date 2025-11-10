@@ -21,7 +21,7 @@ namespace Advance_Control.ViewModels
         private string? _rfcFilter;
         private string? _curpFilter;
         private string? _notasFilter;
-        private int? _prioridadFilter;
+        private double? _prioridadFilter;
 
         public CustomersViewModel(IClienteService clienteService, ILoggingService logger)
         {
@@ -66,7 +66,7 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _notasFilter, value);
         }
 
-        public int? PrioridadFilter
+        public double? PrioridadFilter
         {
             get => _prioridadFilter;
             set => SetProperty(ref _prioridadFilter, value);
@@ -91,7 +91,7 @@ namespace Advance_Control.ViewModels
                     Rfc = RfcFilter,
                     Curp = CurpFilter,
                     Notas = NotasFilter,
-                    Prioridad = PrioridadFilter
+                    Prioridad = PrioridadFilter.HasValue ? (int?)PrioridadFilter.Value : null
                 };
 
                 var clientes = await _clienteService.GetClientesAsync(query, cancellationToken);
