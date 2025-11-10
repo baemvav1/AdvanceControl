@@ -144,11 +144,7 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = "Error de conexión: No se pudo conectar con el servidor. Verifique su conexión a internet.";
                 await _logger.LogErrorAsync("Error de conexión al cargar clientes", ex, "CustomersViewModel", "LoadClientesAsync");
             }
-            catch (TaskCanceledException ex)
-            {
-                ErrorMessage = "La solicitud tardó demasiado tiempo y fue cancelada.";
-                await _logger.LogErrorAsync("Timeout al cargar clientes", ex, "CustomersViewModel", "LoadClientesAsync");
-            }
+            
             catch (Exception ex)
             {
                 ErrorMessage = $"Error inesperado al cargar clientes: {ex.Message}";
