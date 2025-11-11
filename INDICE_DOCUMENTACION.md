@@ -52,6 +52,7 @@
 
 | Documento | Descripción | Audiencia |
 |-----------|-------------|-----------|
+| **[GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md)** | Guía completa de testing (xUnit) | Desarrolladores, QA |
 | **[REPORTE_LOGINVIEW.md](./REPORTE_LOGINVIEW.md)** | Sistema de login | Desarrolladores |
 | **[GUIA_RAPIDA_LOGINVIEW.md](./GUIA_RAPIDA_LOGINVIEW.md)** | Guía rápida del login | Desarrolladores |
 | **[INDICE_LOGINVIEW.md](./INDICE_LOGINVIEW.md)** | Índice de documentación login | Desarrolladores |
@@ -96,7 +97,8 @@
 2. 📖 [RESUMEN_EJECUTIVO.md](./RESUMEN_EJECUTIVO.md) - Contexto general (10 min)
 3. 🏗️ [ARQUITECTURA_Y_ESTADO.md](./ARQUITECTURA_Y_ESTADO.md) - Arquitectura (30 min)
 4. 🏗️ [MVVM_ARQUITECTURA.md](./MVVM_ARQUITECTURA.md) - Patrón MVVM (20 min)
-5. 📚 Revisar código en orden:
+5. 🧪 [GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md) - Cómo ejecutar y escribir tests (15 min)
+6. 📚 Revisar código en orden:
    - `Services/` - Servicios implementados (20 min)
    - `ViewModels/` - ViewModels (15 min)
    - `Views/` - Vistas XAML (15 min)
@@ -104,7 +106,7 @@
 **Próximos Pasos:**
 - Configurar entorno de desarrollo
 - Restaurar paquetes NuGet
-- Ejecutar tests existentes
+- Ejecutar tests existentes (ver GUIA_PRUEBAS.md)
 - Explorar el código
 
 ### 🔧 Tech Lead / Arquitecto
@@ -116,7 +118,8 @@
 3. 🏗️ [ARQUITECTURA_Y_ESTADO.md](./ARQUITECTURA_Y_ESTADO.md) - Arquitectura detallada (30 min)
 4. 🔒 [RESUMEN_SEGURIDAD.md](./RESUMEN_SEGURIDAD.md) - Análisis de seguridad (30 min)
 5. 📋 [LISTA_ERRORES_Y_MEJORAS.md](./LISTA_ERRORES_Y_MEJORAS.md) - Deuda técnica (20 min)
-6. 🧪 Revisar tests en `Advance Control.Tests/` (20 min)
+6. 🧪 [GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md) - Guía de testing completa (15 min)
+7. 🧪 Revisar tests en `Advance Control.Tests/` (20 min)
 
 **Decisiones a Tomar:**
 - Aprobar despliegue a producción
@@ -145,14 +148,16 @@
 **Tiempo Estimado:** 1-2 horas
 
 1. 📊 [RESUMEN_REVISION_Y_PRUEBAS.md](./RESUMEN_REVISION_Y_PRUEBAS.md) - Resumen de tests (15 min)
-2. 🧪 Revisar tests implementados en `Advance Control.Tests/`:
+2. 🧪 [GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md) - Cómo ejecutar y escribir tests (20 min)
+3. 🧪 Revisar tests implementados en `Advance Control.Tests/`:
    - `AuthServiceTests.cs` - 12 tests (15 min)
    - `LoginViewModelTests.cs` - 13 tests (15 min)
    - `CustomersViewModelTests.cs` - 15 tests (15 min)
-3. 📋 [LISTA_ERRORES_Y_MEJORAS.md](./LISTA_ERRORES_Y_MEJORAS.md) - Issues conocidos (20 min)
-4. 📊 [CALIFICACION_SOFTWARE.md](./CALIFICACION_SOFTWARE.md) - Métricas de calidad (20 min)
+4. 📋 [LISTA_ERRORES_Y_MEJORAS.md](./LISTA_ERRORES_Y_MEJORAS.md) - Issues conocidos (20 min)
+5. 📊 [CALIFICACION_SOFTWARE.md](./CALIFICACION_SOFTWARE.md) - Métricas de calidad (20 min)
 
 **Plan de Testing:**
+- Leer GUIA_PRUEBAS.md para entender el framework
 - Ejecutar suite de tests existente
 - Identificar gaps en cobertura
 - Crear tests adicionales si necesario
