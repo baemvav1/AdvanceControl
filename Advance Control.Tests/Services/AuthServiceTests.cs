@@ -8,6 +8,8 @@ using Advance_Control.Services.Auth;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Security;
+using Advance_Control.Settings;
+using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using Xunit;
@@ -24,6 +26,7 @@ namespace Advance_Control.Tests.Services
         private readonly Mock<ILoggingService> _mockLogger;
         private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
         private readonly HttpClient _httpClient;
+        private readonly IOptions<DevelopmentModeOptions> _devModeOptions;
 
         public AuthServiceTests()
         {
@@ -41,6 +44,14 @@ namespace Advance_Control.Tests.Services
             _mockEndpointProvider
                 .Setup(x => x.GetEndpoint(It.IsAny<string[]>()))
                 .Returns("https://test.api.com/api/Auth/login");
+
+            // Setup default development mode options (disabled)
+            _devModeOptions = Options.Create(new DevelopmentModeOptions
+            {
+                Enabled = false,
+                DisableAuthTimeouts = false,
+                DisableHttpTimeouts = false
+            });
         }
 
         [Fact]
@@ -79,7 +90,7 @@ namespace Advance_Control.Tests.Services
                 .ReturnsAsync((string?)null);
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             // Act
             var result = await authService.AuthenticateAsync(username, password);
@@ -96,7 +107,7 @@ namespace Advance_Control.Tests.Services
         {
             // Arrange
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             // Act
             var result = await authService.AuthenticateAsync("", "password");
@@ -111,7 +122,7 @@ namespace Advance_Control.Tests.Services
         {
             // Arrange
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             // Act
             var result = await authService.AuthenticateAsync("username", "");
@@ -141,7 +152,7 @@ namespace Advance_Control.Tests.Services
                 .ReturnsAsync((string?)null);
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             // Act
             var result = await authService.AuthenticateAsync("baduser", "badpass");
@@ -180,7 +191,7 @@ namespace Advance_Control.Tests.Services
                 .ReturnsAsync((string?)null);
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             await authService.AuthenticateAsync("testuser", "testpass");
 
@@ -225,7 +236,7 @@ namespace Advance_Control.Tests.Services
                 .Returns(Task.CompletedTask);
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             await authService.AuthenticateAsync("testuser", "testpass");
 
@@ -296,7 +307,7 @@ namespace Advance_Control.Tests.Services
                 .Returns("https://test.api.com/api/Auth/refresh");
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             await authService.AuthenticateAsync("testuser", "testpass");
 
@@ -362,7 +373,7 @@ namespace Advance_Control.Tests.Services
                 .Returns("https://test.api.com/api/Auth/logout");
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             await authService.AuthenticateAsync("testuser", "testpass");
 
@@ -389,7 +400,7 @@ namespace Advance_Control.Tests.Services
                 .Returns(Task.CompletedTask);
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             // Act
             var result = await authService.LogoutAsync();
@@ -453,7 +464,7 @@ namespace Advance_Control.Tests.Services
                 .Returns("https://test.api.com/api/Auth/logout");
 
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object);
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
 
             await authService.AuthenticateAsync("testuser", "testpass");
 
@@ -465,6 +476,144 @@ namespace Advance_Control.Tests.Services
             Assert.False(authService.IsAuthenticated); // But still clears local tokens
             _mockSecureStorage.Verify(x => x.RemoveAsync("auth.access_token"), Times.Once);
             _mockSecureStorage.Verify(x => x.RemoveAsync("auth.refresh_token"), Times.Once);
+        }
+
+        [Fact]
+        public async Task GetAccessTokenAsync_InDevModeWithExpiredToken_ReturnsTokenWithoutRefresh()
+        {
+            // Arrange
+            var devModeOptions = Options.Create(new DevelopmentModeOptions
+            {
+                Enabled = true,
+                DisableAuthTimeouts = true,
+                DisableHttpTimeouts = false
+            });
+
+            var loginResponse = new
+            {
+                accessToken = "test-access-token",
+                refreshToken = "test-refresh-token",
+                expiresIn = 1, // 1 second expiration
+                tokenType = "Bearer"
+            };
+
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = JsonContent.Create(loginResponse)
+                });
+
+            _mockSecureStorage
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, devModeOptions);
+
+            await authService.AuthenticateAsync("testuser", "testpass");
+            
+            // Wait for token to expire
+            await Task.Delay(2000);
+
+            // Act - In dev mode, should return expired token without refresh
+            var token = await authService.GetAccessTokenAsync();
+
+            // Assert
+            Assert.NotNull(token);
+            Assert.Equal("test-access-token", token);
+        }
+
+        [Fact]
+        public async Task LoadFromStorageAsync_InDevModeWithExpiredToken_ConsidersAuthenticated()
+        {
+            // Arrange
+            var devModeOptions = Options.Create(new DevelopmentModeOptions
+            {
+                Enabled = true,
+                DisableAuthTimeouts = true,
+                DisableHttpTimeouts = false
+            });
+
+            // Setup storage to return expired token
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_token"))
+                .ReturnsAsync("expired-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.refresh_token"))
+                .ReturnsAsync("refresh-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_expires_at_utc"))
+                .ReturnsAsync(DateTime.UtcNow.AddHours(-1).ToString("o")); // Expired 1 hour ago
+
+            // Act
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, devModeOptions);
+
+            // Wait for initialization
+            await Task.Delay(100);
+
+            // Assert - In dev mode, should be authenticated despite expired token
+            Assert.True(authService.IsAuthenticated);
+        }
+
+        [Fact]
+        public async Task RefreshTokenAsync_InDevMode_SkipsRefreshIfTokenExists()
+        {
+            // Arrange
+            var devModeOptions = Options.Create(new DevelopmentModeOptions
+            {
+                Enabled = true,
+                DisableAuthTimeouts = true,
+                DisableHttpTimeouts = false
+            });
+
+            var loginResponse = new
+            {
+                accessToken = "test-access-token",
+                refreshToken = "test-refresh-token",
+                expiresIn = 1,
+                tokenType = "Bearer"
+            };
+
+            var httpCallCount = 0;
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    httpCallCount++;
+                    return new HttpResponseMessage
+                    {
+                        StatusCode = HttpStatusCode.OK,
+                        Content = JsonContent.Create(loginResponse)
+                    };
+                });
+
+            _mockSecureStorage
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, devModeOptions);
+
+            await authService.AuthenticateAsync("testuser", "testpass");
+            var initialCallCount = httpCallCount;
+
+            // Act - Try to refresh in dev mode
+            var result = await authService.RefreshTokenAsync();
+
+            // Assert - Should return true without making HTTP call
+            Assert.True(result);
+            Assert.Equal(initialCallCount, httpCallCount); // No additional HTTP calls
         }
     }
 }

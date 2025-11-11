@@ -39,13 +39,24 @@ namespace Advance_Control
                     // Enlazar sección "ExternalApi" de appsettings.json a ExternalApiOptions
                     services.Configure<ExternalApiOptions>(context.Configuration.GetSection("ExternalApi"));
 
+                    // Enlazar sección "DevelopmentMode" de appsettings.json a DevelopmentModeOptions
+                    services.Configure<Settings.DevelopmentModeOptions>(context.Configuration.GetSection("DevelopmentMode"));
+
                     // Registrar el provider que compone endpoints (usa IOptions<ExternalApiOptions>)
                     services.AddSingleton<IApiEndpointProvider, ApiEndpointProvider>();
 
                     // Registrar OnlineCheck como typed HttpClient (seguirá usando provider para construir endpoints)
-                    services.AddHttpClient<IOnlineCheck, OnlineCheck>(client =>
+                    services.AddHttpClient<IOnlineCheck, OnlineCheck>((sp, client) =>
                     {
-                        client.Timeout = TimeSpan.FromSeconds(5);
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(5);
+                        }
                     });
 
                     // Registrar implementación de almacenamiento seguro (Windows PasswordVault)
@@ -68,7 +79,15 @@ namespace Advance_Control
                         {
                             client.BaseAddress = baseUri;
                         }
-                        client.Timeout = TimeSpan.FromSeconds(5);
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(5);
+                        }
                     });
 
                     // Registrar AuthService y su HttpClient pipeline.
@@ -80,8 +99,16 @@ namespace Advance_Control
                         {
                             client.BaseAddress = baseUri;
                         }
-                        // Opcional: tiempo de espera por defecto
-                        client.Timeout = TimeSpan.FromSeconds(30);
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
@@ -93,7 +120,16 @@ namespace Advance_Control
                         {
                             client.BaseAddress = baseUri;
                         }
-                        client.Timeout = TimeSpan.FromSeconds(30);
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
