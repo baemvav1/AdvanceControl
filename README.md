@@ -35,6 +35,23 @@ dotnet restore
 dotnet build "Advance Control.sln"
 ```
 
+### Ejecutar las Pruebas
+
+```bash
+# Ejecutar todas las pruebas
+dotnet test
+
+# Ejecutar con información detallada
+dotnet test --verbosity normal
+
+# Ejecutar una prueba específica
+dotnet test --filter "FullyQualifiedName~AuthService"
+```
+
+**Documentación de Testing:**
+- **[COMO_USAR_TESTS.md](./COMO_USAR_TESTS.md)** - ⚡ Guía rápida para empezar ya
+- **[GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md)** - 📚 Guía completa y detallada
+
 ## 📚 Documentación
 
 ### Documentación Completa del Proyecto
@@ -43,6 +60,7 @@ dotnet build "Advance Control.sln"
 - **[ARQUITECTURA_Y_ESTADO.md](./ARQUITECTURA_Y_ESTADO.md)** - Documentación técnica completa de arquitectura
 - **[DIAGRAMA_FLUJO_SISTEMA.md](./DIAGRAMA_FLUJO_SISTEMA.md)** - Diagramas de flujo de todos los procesos
 - **[LISTA_ERRORES_Y_MEJORAS.md](./LISTA_ERRORES_Y_MEJORAS.md)** - Lista priorizada de errores y mejoras
+- **[GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md)** - Guía completa para ejecutar y escribir pruebas
 
 ## 📊 Estado Actual
 
@@ -55,7 +73,7 @@ dotnet build "Advance Control.sln"
 | Sistema de Navegación | ✅ | 100% |
 | Logging | ✅ | 100% |
 | Módulos de Negocio | 🔄 | 25% |
-| Testing | ❌ | 0% |
+| Testing | 🔄 | 30% |
 
 ### Servicios Implementados ✅
 
