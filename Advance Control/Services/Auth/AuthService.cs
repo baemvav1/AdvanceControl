@@ -65,7 +65,7 @@ namespace Advance_Control.Services.Auth
                 return false;
 
             var url = _endpoints.GetEndpoint("api", "Auth", "login");
-            var body = new { usuario = username, pass = password }; // matches server controller
+            var body = new { username = username, password = password }; // matches API specification
 
             try
             {
@@ -172,6 +172,39 @@ namespace Advance_Control.Services.Auth
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al validar token de autenticación", ex, "AuthService", "ValidateTokenAsync");
+                return false;
+            }
+        }
+
+        public async Task<bool> LogoutAsync(CancellationToken cancellationToken = default)
+        {
+            await _initTask.ConfigureAwait(false);
+
+            if (string.IsNullOrEmpty(_refreshToken))
+            {
+                // No hay refresh token, solo limpiar localmente
+                await ClearTokenAsync();
+                return true;
+            }
+
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "Auth", "logout");
+                var body = new { refreshToken = _refreshToken };
+
+                var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
+                
+                // El logout es idempotente - 204 No Content indica éxito
+                // Limpiamos los tokens localmente independientemente del resultado del servidor
+                await ClearTokenAsync();
+                
+                return resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al cerrar sesión en el servidor", ex, "AuthService", "LogoutAsync");
+                // Aún así limpiamos los tokens localmente
+                await ClearTokenAsync();
                 return false;
             }
         }
