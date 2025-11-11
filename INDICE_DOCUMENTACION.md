@@ -52,6 +52,7 @@
 
 | Documento | Descripción | Audiencia |
 |-----------|-------------|-----------|
+| **[COMO_USAR_TESTS.md](./COMO_USAR_TESTS.md)** | Guía rápida de testing (Quick Start) | Todos |
 | **[GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md)** | Guía completa de testing (xUnit) | Desarrolladores, QA |
 | **[REPORTE_LOGINVIEW.md](./REPORTE_LOGINVIEW.md)** | Sistema de login | Desarrolladores |
 | **[GUIA_RAPIDA_LOGINVIEW.md](./GUIA_RAPIDA_LOGINVIEW.md)** | Guía rápida del login | Desarrolladores |

@@ -48,7 +48,9 @@ dotnet test --verbosity normal
 dotnet test --filter "FullyQualifiedName~AuthService"
 ```
 
-Para más información sobre cómo usar las pruebas, consulta la **[GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md)**.
+**Documentación de Testing:**
+- **[COMO_USAR_TESTS.md](./COMO_USAR_TESTS.md)** - ⚡ Guía rápida para empezar ya
+- **[GUIA_PRUEBAS.md](./GUIA_PRUEBAS.md)** - 📚 Guía completa y detallada
 
 ## 📚 Documentación
 
