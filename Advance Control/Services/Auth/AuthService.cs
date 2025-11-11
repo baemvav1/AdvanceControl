@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Security;
 using Advance_Control.Services.Logging;
+using Microsoft.Extensions.Options;
+using Advance_Control.Settings;
 
 namespace Advance_Control.Services.Auth
 {
@@ -15,6 +17,7 @@ namespace Advance_Control.Services.Auth
         private readonly IApiEndpointProvider _endpoints;
         private readonly ISecureStorage _secureStorage;
         private readonly ILoggingService _logger;
+        private readonly DevelopmentModeOptions _devMode;
         private readonly SemaphoreSlim _refreshLock = new(1, 1);
         private readonly Task _initTask;
 
@@ -29,13 +32,28 @@ namespace Advance_Control.Services.Auth
 
         public bool IsAuthenticated => _isAuthenticated;
 
-        public AuthService(HttpClient http, IApiEndpointProvider endpoints, ISecureStorage secureStorage, ILoggingService logger)
+        public AuthService(
+            HttpClient http, 
+            IApiEndpointProvider endpoints, 
+            ISecureStorage secureStorage, 
+            ILoggingService logger,
+            IOptions<DevelopmentModeOptions> devModeOptions)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _secureStorage = secureStorage ?? throw new ArgumentNullException(nameof(secureStorage));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _devMode = devModeOptions?.Value ?? new DevelopmentModeOptions();
             _initTask = LoadFromStorageAsync();
+
+            // Log warning if development mode is enabled
+            if (_devMode.Enabled && _devMode.DisableAuthTimeouts)
+            {
+                _ = _logger.LogWarningAsync(
+                    "⚠️ MODO DESARROLLO ACTIVO: Los timeouts de autenticación están deshabilitados", 
+                    "AuthService", 
+                    ".ctor");
+            }
         }
 
         private async Task LoadFromStorageAsync()
@@ -46,7 +64,16 @@ namespace Advance_Control.Services.Auth
                 _refreshToken = await _secureStorage.GetAsync(Key_RefreshToken);
                 var expiresText = await _secureStorage.GetAsync(Key_AccessExpiresAt);
                 if (DateTime.TryParse(expiresText, out var dt)) _accessExpiresAtUtc = dt;
-                _isAuthenticated = !string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow;
+                
+                // En modo desarrollo con timeouts deshabilitados, considerar autenticado si hay token
+                if (_devMode.Enabled && _devMode.DisableAuthTimeouts)
+                {
+                    _isAuthenticated = !string.IsNullOrEmpty(_accessToken);
+                }
+                else
+                {
+                    _isAuthenticated = !string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow;
+                }
             }
             catch (Exception ex)
             {
@@ -94,6 +121,12 @@ namespace Advance_Control.Services.Auth
         {
             await _initTask.ConfigureAwait(false);
             
+            // En modo desarrollo con timeouts deshabilitados, devolver el token sin verificar expiración
+            if (_devMode.Enabled && _devMode.DisableAuthTimeouts)
+            {
+                return !string.IsNullOrEmpty(_accessToken) ? _accessToken : null;
+            }
+            
             if (!string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow.AddSeconds(15))
                 return _accessToken;
 
@@ -113,6 +146,12 @@ namespace Advance_Control.Services.Auth
             await _refreshLock.WaitAsync(cancellationToken);
             try
             {
+                // En modo desarrollo con timeouts deshabilitados, no refrescar si hay token
+                if (_devMode.Enabled && _devMode.DisableAuthTimeouts)
+                {
+                    return !string.IsNullOrEmpty(_accessToken);
+                }
+
                 if (!string.IsNullOrEmpty(_accessToken) && _accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow.AddSeconds(15))
                     return true;
 

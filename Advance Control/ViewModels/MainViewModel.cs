@@ -175,7 +175,26 @@ namespace Advance_Control.ViewModels
                 {
                     try
                     {
-                        dialog.Hide();
+                        // Asegurar que Hide() se ejecute en el hilo de UI
+                        var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                        if (dispatcherQueue != null)
+                        {
+                            _ = dispatcherQueue.TryEnqueue(() =>
+                            {
+                                try
+                                {
+                                    dialog.Hide();
+                                }
+                                catch
+                                {
+                                    // El diálogo ya puede estar cerrado
+                                }
+                            });
+                        }
+                        else
+                        {
+                            dialog.Hide();
+                        }
                     }
                     catch (Exception ex)
                     {
