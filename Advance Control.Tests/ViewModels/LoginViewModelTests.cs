@@ -194,7 +194,7 @@ namespace Advance_Control.Tests.ViewModels
         [InlineData("", "password123", "El nombre de usuario es requerido.")]
         [InlineData("ab", "password123", "El nombre de usuario debe tener al menos 3 caracteres.")]
         [InlineData("user", "", "La contraseña es requerida.")]
-        [InlineData("user", "12345", "La contraseña debe tener al menos 6 caracteres.")]
+        [InlineData("user", "123", "La contraseña debe tener al menos 4 caracteres.")]
         public void ExecuteLogin_WithInvalidCredentials_SetsErrorMessage(string user, string password, string expectedError)
         {
             // Arrange

@@ -125,7 +125,8 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                await _authService.ClearTokenAsync();
+                // Logout revoca el refresh token en el servidor y limpia tokens locales
+                await _authService.LogoutAsync();
                 IsAuthenticated = false;
                 await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }

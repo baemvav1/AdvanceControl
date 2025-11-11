@@ -307,5 +307,164 @@ namespace Advance_Control.Tests.Services
             Assert.True(result);
             Assert.True(authService.IsAuthenticated);
         }
+
+        [Fact]
+        public async Task LogoutAsync_WithValidRefreshToken_ReturnsTrue()
+        {
+            // Arrange
+            var loginResponse = new
+            {
+                accessToken = "test-access-token",
+                refreshToken = "test-refresh-token",
+                expiresIn = 3600,
+                tokenType = "Bearer"
+            };
+
+            var sequence = 0;
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    sequence++;
+                    if (sequence == 1)
+                    {
+                        // First call is login
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.OK,
+                            Content = JsonContent.Create(loginResponse)
+                        };
+                    }
+                    else
+                    {
+                        // Second call is logout
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.NoContent
+                        };
+                    }
+                });
+
+            _mockSecureStorage
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            _mockSecureStorage
+                .Setup(x => x.RemoveAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            _mockEndpointProvider
+                .Setup(x => x.GetEndpoint("api", "Auth", "logout"))
+                .Returns("https://test.api.com/api/Auth/logout");
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object);
+
+            await authService.AuthenticateAsync("testuser", "testpass");
+
+            // Act
+            var result = await authService.LogoutAsync();
+
+            // Assert
+            Assert.True(result);
+            Assert.False(authService.IsAuthenticated);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("auth.access_token"), Times.Once);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("auth.refresh_token"), Times.Once);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WithoutRefreshToken_ClearsTokensAndReturnsTrue()
+        {
+            // Arrange
+            _mockSecureStorage
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            _mockSecureStorage
+                .Setup(x => x.RemoveAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object);
+
+            // Act
+            var result = await authService.LogoutAsync();
+
+            // Assert
+            Assert.True(result);
+            Assert.False(authService.IsAuthenticated);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_WhenServerFails_StillClearsLocalTokens()
+        {
+            // Arrange
+            var loginResponse = new
+            {
+                accessToken = "test-access-token",
+                refreshToken = "test-refresh-token",
+                expiresIn = 3600,
+                tokenType = "Bearer"
+            };
+
+            var sequence = 0;
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(() =>
+                {
+                    sequence++;
+                    if (sequence == 1)
+                    {
+                        // First call is login
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.OK,
+                            Content = JsonContent.Create(loginResponse)
+                        };
+                    }
+                    else
+                    {
+                        // Second call is logout - server error
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.InternalServerError
+                        };
+                    }
+                });
+
+            _mockSecureStorage
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            _mockSecureStorage
+                .Setup(x => x.RemoveAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            _mockEndpointProvider
+                .Setup(x => x.GetEndpoint("api", "Auth", "logout"))
+                .Returns("https://test.api.com/api/Auth/logout");
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object);
+
+            await authService.AuthenticateAsync("testuser", "testpass");
+
+            // Act
+            var result = await authService.LogoutAsync();
+
+            // Assert
+            Assert.False(result); // Returns false because server failed
+            Assert.False(authService.IsAuthenticated); // But still clears local tokens
+            _mockSecureStorage.Verify(x => x.RemoveAsync("auth.access_token"), Times.Once);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("auth.refresh_token"), Times.Once);
+        }
     }
 }

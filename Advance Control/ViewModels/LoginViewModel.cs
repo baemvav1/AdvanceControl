@@ -145,15 +145,27 @@ namespace Advance_Control.ViewModels
                 return false;
             }
 
+            if (User.Length > 150)
+            {
+                ErrorMessage = "El nombre de usuario no puede tener más de 150 caracteres.";
+                return false;
+            }
+
             if (string.IsNullOrWhiteSpace(Password))
             {
                 ErrorMessage = "La contraseña es requerida.";
                 return false;
             }
 
-            if (Password.Length < 6)
+            if (Password.Length < 4)
             {
-                ErrorMessage = "La contraseña debe tener al menos 6 caracteres.";
+                ErrorMessage = "La contraseña debe tener al menos 4 caracteres.";
+                return false;
+            }
+
+            if (Password.Length > 100)
+            {
+                ErrorMessage = "La contraseña no puede tener más de 100 caracteres.";
                 return false;
             }
 

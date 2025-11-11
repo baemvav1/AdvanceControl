@@ -35,6 +35,11 @@ namespace Advance_Control.Services.Auth
         Task ClearTokenAsync();
 
         /// <summary>
+        /// Cierra la sesión del usuario, revocando el refresh token en el servidor.
+        /// </summary>
+        Task<bool> LogoutAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Indica si actualmente hay un token válido.
         /// </summary>
         bool IsAuthenticated { get; }
