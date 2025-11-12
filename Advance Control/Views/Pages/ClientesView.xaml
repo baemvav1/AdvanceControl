@@ -94,26 +94,33 @@
                           HorizontalAlignment="Center"
                           VerticalAlignment="Center"/>
 
-            <!-- DataGrid or ListView -->
+            <!-- ItemsRepeater con ScrollViewer -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ListView ItemsSource="{x:Bind ViewModel.Customers, Mode=OneWay}"
-                          SelectionMode="Single">
-                    <ListView.ItemTemplate>
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Customers, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="0"/>
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
                         <DataTemplate x:DataType="local:CustomerDto" xmlns:local="using:Advance_Control.Models">
-                            <Grid Padding="12" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                                  BorderThickness="0,0,0,1" MinHeight="80">
+                            <Grid Padding="16" 
+                                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
+                                  BorderThickness="0,0,0,1" 
+                                  MinHeight="90"
+                                  Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="4">
+                                
+                                <!-- Información principal del cliente -->
+                                <StackPanel Grid.Column="0" Spacing="6">
                                     <TextBlock Text="{x:Bind RazonSocial}" 
                                                FontWeight="SemiBold" 
                                                FontSize="16"/>
                                     <TextBlock Text="{x:Bind NombreComercial}" 
                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                FontSize="14"/>
-                                    <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Orientation="Horizontal" Spacing="20">
                                         <TextBlock FontSize="13">
                                             <Run Text="RFC: "/>
                                             <Run Text="{x:Bind Rfc}" FontWeight="SemiBold"/>
@@ -122,16 +129,12 @@
                                             <Run Text="Prioridad: "/>
                                             <Run Text="{x:Bind Prioridad}" FontWeight="SemiBold"/>
                                         </TextBlock>
-                                        <TextBlock FontSize="13">
-                                            <Run Text="Estado: "/>
-                                            <Run Text="{x:Bind Estatus}" FontWeight="SemiBold"/>
-                                        </TextBlock>
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
                         </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
             </ScrollViewer>
         </Grid>
     </Grid>
