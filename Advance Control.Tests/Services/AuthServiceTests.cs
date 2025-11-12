@@ -615,5 +615,95 @@ namespace Advance_Control.Tests.Services
             Assert.True(result);
             Assert.Equal(initialCallCount, httpCallCount); // No additional HTTP calls
         }
+
+        [Fact]
+        public async Task RefreshTokenAsync_WithoutCircularDependency_CompletesSuccessfully()
+        {
+            // Arrange
+            // This test verifies that RefreshTokenAsync can be called without causing
+            // circular dependencies or infinite loops that would cause timeouts.
+            var loginResponse = new
+            {
+                accessToken = "initial-access-token",
+                refreshToken = "test-refresh-token",
+                expiresIn = 1, // Short expiration to trigger refresh
+                tokenType = "Bearer"
+            };
+
+            var refreshResponse = new
+            {
+                accessToken = "new-access-token",
+                refreshToken = "new-refresh-token",
+                expiresIn = 3600
+            };
+
+            var callCount = 0;
+            var lastRequestUri = "";
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync((HttpRequestMessage req, CancellationToken ct) =>
+                {
+                    callCount++;
+                    lastRequestUri = req.RequestUri?.ToString() ?? "";
+                    
+                    // First call is login
+                    if (callCount == 1)
+                    {
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.OK,
+                            Content = JsonContent.Create(loginResponse)
+                        };
+                    }
+                    // Second call should be refresh
+                    else if (callCount == 2)
+                    {
+                        // Verify we're not stuck in a loop - should only be called once
+                        return new HttpResponseMessage
+                        {
+                            StatusCode = HttpStatusCode.OK,
+                            Content = JsonContent.Create(refreshResponse)
+                        };
+                    }
+                    else
+                    {
+                        // If we get here, there's a circular dependency issue
+                        throw new InvalidOperationException("Unexpected additional HTTP call - possible circular dependency");
+                    }
+                });
+
+            _mockSecureStorage
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            _mockEndpointProvider
+                .Setup(x => x.GetEndpoint("api", "Auth", "login"))
+                .Returns("https://test.api.com/api/Auth/login");
+            
+            _mockEndpointProvider
+                .Setup(x => x.GetEndpoint("api", "Auth", "refresh"))
+                .Returns("https://test.api.com/api/Auth/refresh");
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
+
+            await authService.AuthenticateAsync("testuser", "testpass");
+            
+            // Wait for token to expire
+            await Task.Delay(1500);
+
+            // Act - This should complete without timeout or infinite loop
+            var result = await authService.RefreshTokenAsync();
+
+            // Assert
+            Assert.True(result);
+            Assert.Equal(2, callCount); // Only 2 calls: login + refresh (no circular calls)
+            Assert.Contains("refresh", lastRequestUri, StringComparison.OrdinalIgnoreCase);
+            Assert.True(authService.IsAuthenticated);
+        }
     }
 }
