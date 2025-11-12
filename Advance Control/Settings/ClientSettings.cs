@@ -12,6 +12,11 @@ namespace Advance_Control.Settings
         public string? Language { get; set; }
         public bool RememberLogin { get; set; }
         public int DefaultTimeoutSeconds { get; set; } = 30;
+        
+        /// <summary>
+        /// Timeout para operaciones de autenticación en segundos
+        /// </summary>
+        public int AuthTimeoutSeconds { get; set; } = 60;
     }
 
     /// <summary>

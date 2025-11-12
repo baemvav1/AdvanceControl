@@ -107,7 +107,9 @@ namespace Advance_Control
                         }
                         else
                         {
-                            client.Timeout = TimeSpan.FromSeconds(30);
+                            // Timeout aumentado a 60 segundos para evitar fallos en autenticación
+                            // por conexiones lentas o servidor bajo carga
+                            client.Timeout = TimeSpan.FromSeconds(60);
                         }
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
@@ -128,7 +130,8 @@ namespace Advance_Control
                         }
                         else
                         {
-                            client.Timeout = TimeSpan.FromSeconds(30);
+                            // Timeout aumentado a 60 segundos para operaciones con autenticación
+                            client.Timeout = TimeSpan.FromSeconds(60);
                         }
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
