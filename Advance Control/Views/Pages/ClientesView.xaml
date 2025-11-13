@@ -6,8 +6,13 @@
     xmlns:local="using:Advance_Control.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:Advance_Control.Converters"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    
+    <Page.Resources>
+        <converters:PriorityToBackgroundConverter x:Key="PriorityToBackgroundConverter"/>
+    </Page.Resources>
 
     <Grid Padding="24">
         <Grid.RowDefinitions>
@@ -106,7 +111,7 @@
                                   BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
                                   BorderThickness="0,0,0,1" 
                                   MinHeight="90"
-                                  Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                                  Background="{x:Bind Prioridad, Converter={StaticResource PriorityToBackgroundConverter}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
