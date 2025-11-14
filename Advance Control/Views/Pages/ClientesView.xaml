@@ -12,6 +12,7 @@
     
     <Page.Resources>
         <converters:PriorityToBackgroundConverter x:Key="PriorityToBackgroundConverter"/>
+        <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter"/>
     </Page.Resources>
 
     <Grid Padding="24">
@@ -121,16 +122,19 @@
                                 <StackPanel Grid.Column="0" Spacing="6">
                                     <TextBlock Text="{x:Bind RazonSocial}" 
                                                FontWeight="SemiBold" 
-                                               FontSize="16"/>
+                                               FontSize="16"
+                                               Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"/>
                                     <TextBlock Text="{x:Bind NombreComercial}" 
-                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                               FontSize="14"/>
+                                               FontSize="14"
+                                               Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"/>
                                     <StackPanel Orientation="Horizontal" Spacing="20">
-                                        <TextBlock FontSize="13">
+                                        <TextBlock FontSize="13"
+                                                   Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
                                             <Run Text="RFC: "/>
                                             <Run Text="{x:Bind Rfc}" FontWeight="SemiBold"/>
                                         </TextBlock>
-                                        <TextBlock FontSize="13">
+                                        <TextBlock FontSize="13"
+                                                   Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
                                             <Run Text="Prioridad: "/>
                                             <Run Text="{x:Bind Prioridad}" FontWeight="SemiBold"/>
                                         </TextBlock>
