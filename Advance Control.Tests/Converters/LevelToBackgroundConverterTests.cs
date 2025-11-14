@@ -5,15 +5,15 @@ using Xunit;
 namespace Advance_Control.Tests.Converters
 {
     /// <summary>
-    /// Pruebas unitarias para el convertidor de prioridad a color de fondo
+    /// Pruebas unitarias para el convertidor de nivel a color de fondo
     /// </summary>
-    public class PriorityToBackgroundConverterTests
+    public class LevelToBackgroundConverterTests
     {
-        private readonly PriorityToBackgroundConverter _converter;
+        private readonly LevelToBackgroundConverter _converter;
 
-        public PriorityToBackgroundConverterTests()
+        public LevelToBackgroundConverterTests()
         {
-            _converter = new PriorityToBackgroundConverter();
+            _converter = new LevelToBackgroundConverter();
         }
 
         [Theory]

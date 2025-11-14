@@ -11,7 +11,7 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
     
     <Page.Resources>
-        <converters:PriorityToBackgroundConverter x:Key="PriorityToBackgroundConverter"/>
+        <converters:LevelToBackgroundConverter x:Key="LevelToBackgroundConverter"/>
         <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter"/>
     </Page.Resources>
 
@@ -112,7 +112,7 @@
                                   BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
                                   BorderThickness="0,0,0,1" 
                                   MinHeight="90"
-                                  Background="{x:Bind Prioridad, Converter={StaticResource PriorityToBackgroundConverter}}">
+                                  Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
