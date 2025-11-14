@@ -11,6 +11,7 @@ using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Services.Dialog;
 using Advance_Control.Views.Login;
 using Microsoft.Extensions.DependencyInjection;
+using Advance_Control.Services.Notificacion;
 
 namespace Advance_Control.ViewModels
 {
@@ -22,6 +23,7 @@ namespace Advance_Control.ViewModels
         private readonly IAuthService _authService;
         private readonly IDialogService _dialogService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly INotificationService _notificationService;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -33,7 +35,8 @@ namespace Advance_Control.ViewModels
             ILoggingService logger,
             IAuthService authService,
             IDialogService dialogService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            INotificationService notificationService)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
@@ -41,6 +44,7 @@ namespace Advance_Control.ViewModels
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -65,6 +69,8 @@ namespace Advance_Control.ViewModels
         }
 
         public INavigationService NavigationService => _navigationService;
+
+        public INotificationService NotificationService => _notificationService;
 
         public void InitializeNavigation(Frame contentFrame)
         {
@@ -204,12 +210,18 @@ namespace Advance_Control.ViewModels
                 };
 
                 // Manejar el cierre automático cuando el login sea exitoso
-                loginViewModel.PropertyChanged += (s, e) =>
+                loginViewModel.PropertyChanged += async (s, e) =>
                 {
                     if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
                     {
                         // Actualizar el estado de autenticación en MainViewModel
                         IsAuthenticated = true;
+                        
+                        // Agregar notificación de bienvenida
+                        await _notificationService.AgregarNotificacionAsync(
+                            titulo: "Bienvenido",
+                            nota: $"Inicio de sesión exitoso. Usuario: {loginViewModel.User}",
+                            fechaHoraInicio: DateTime.Now);
                     }
                 };
 

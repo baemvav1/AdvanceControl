@@ -22,6 +22,15 @@
             <converters:BooleanToVisibilityConverter
                 x:Key="BoolToVisibilityConverter" />
 
+            <converters:NullToVisibilityConverter
+                x:Key="NullToVisibilityConverter" />
+
+            <converters:CountToVisibilityConverter
+                x:Key="CountToVisibilityConverter" />
+
+            <converters:CountToCollapsedConverter
+                x:Key="CountToCollapsedConverter" />
+
             <!-- Other app resources here -->
         </ResourceDictionary>
     </Application.Resources>

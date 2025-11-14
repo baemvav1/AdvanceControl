@@ -31,5 +31,28 @@ namespace Advance_Control
         {
             await _viewModel.ShowLoginDialogAsync();
         }
+
+        private void ToggleNotifications_Click(object sender, RoutedEventArgs e)
+        {
+            // Toggle visibility of the Notificaciones grid
+            Notificaciones.Visibility = Notificaciones.Visibility == Visibility.Visible 
+                ? Visibility.Collapsed 
+                : Visibility.Visible;
+        }
+
+        private void ClearNotifications_Click(object sender, RoutedEventArgs e)
+        {
+            // Clear all notifications
+            _viewModel.NotificationService.LimpiarNotificaciones();
+        }
+
+        private void RemoveNotification_Click(object sender, RoutedEventArgs e)
+        {
+            // Remove specific notification
+            if (sender is Button button && button.Tag is Models.Notificacion notificacion)
+            {
+                _viewModel.NotificationService.EliminarNotificacion(notificacion);
+            }
+        }
     }
 }
