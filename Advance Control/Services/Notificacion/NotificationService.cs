@@ -60,11 +60,20 @@ namespace Advance_Control.Services.Notificacion
                     Leida = false
                 };
 
-                // Agregar a la colección en el hilo de UI
-                await Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread().EnqueueAsync(() =>
+                // Agregar a la colección en el hilo de UI si está disponible
+                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                if (dispatcherQueue != null)
                 {
+                    await dispatcherQueue.EnqueueAsync(() =>
+                    {
+                        _notificaciones.Add(notificacion);
+                    });
+                }
+                else
+                {
+                    // Si no hay dispatcher (ej: en pruebas), agregar directamente
                     _notificaciones.Add(notificacion);
-                });
+                }
 
                 // Log de la notificación
                 await _logger.LogInformationAsync(
