@@ -4,6 +4,12 @@
 
 Se ha implementado un servicio completo para recuperar información de clientes desde el endpoint de la API: `https://localhost:7055/api/Clientes`
 
+## Corrección Aplicada (2025-11-13)
+
+**Problema identificado**: El servicio de clientes no funcionaba correctamente debido a que los nombres de las propiedades JSON en `CustomerDto` estaban configurados en formato snake_case (ej: `id_cliente`, `tipo_persona`), pero la API devuelve los datos en formato camelCase (ej: `idCliente`, `tipoPersona`). Esto causaba que la deserialización de JSON fallara y no se cargaran los datos de clientes.
+
+**Solución aplicada**: Se actualizaron todos los atributos `[JsonPropertyName]` en la clase `CustomerDto` para usar el formato camelCase que coincide con la respuesta de la API. Además, se corrigió un error tipográfico en el nombre de la propiedad `idUsuarioAct` (anteriormente era `id_usuaio_act`).
+
 ## Componentes Implementados
 
 ### 1. Modelos
@@ -189,3 +195,30 @@ Los logs se envían al servicio `ILoggingService` que puede enviarlos a la API o
 - Los parámetros nulos o vacíos no se incluyen en la URL
 - El servicio es thread-safe
 - Soporta `CancellationToken` para cancelar operaciones
+
+## Mapeo de Propiedades JSON
+
+Las propiedades del modelo `CustomerDto` se mapean a los nombres JSON de la API de la siguiente manera:
+
+| Propiedad C# | Nombre JSON en API | Tipo |
+|--------------|-------------------|------|
+| `IdCliente` | `idCliente` | int |
+| `TipoPersona` | `tipoPersona` | int |
+| `Rfc` | `rfc` | string |
+| `RazonSocial` | `razonSocial` | string |
+| `NombreComercial` | `nombreComercial` | string |
+| `Curp` | `curp` | string? |
+| `RegimenFiscal` | `regimenFiscal` | string |
+| `UsoCfdi` | `usoCfdi` | string |
+| `DiasCredito` | `diasCredito` | int? |
+| `LimiteCredito` | `limiteCredito` | decimal? |
+| `Prioridad` | `prioridad` | int |
+| `Estatus` | `estatus` | bool |
+| `CredencialId` | `credencialId` | int? |
+| `Notas` | `notas` | string |
+| `CreadoEn` | `creadoEn` | DateTime |
+| `ActualizadoEn` | `actualizadoEn` | DateTime? |
+| `IdUsuarioCreador` | `idUsuarioCreador` | int |
+| `IdUsuarioAct` | `idUsuarioAct` | int? |
+
+**Nota**: El formato de la API usa camelCase consistentemente para todos los nombres de propiedades.

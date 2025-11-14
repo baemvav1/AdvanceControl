@@ -9,34 +9,34 @@ namespace Advance_Control.Models
 {
     public class CustomerDto
     {
-        [JsonPropertyName("id_cliente")]
+        [JsonPropertyName("idCliente")]
         public int IdCliente { get; set; }
 
-        [JsonPropertyName("tipo_persona")]
+        [JsonPropertyName("tipoPersona")]
         public int TipoPersona { get; set; }
 
         [JsonPropertyName("rfc")]
         public string Rfc { get; set; } = string.Empty;
 
-        [JsonPropertyName("razon_social")]
+        [JsonPropertyName("razonSocial")]
         public string RazonSocial { get; set; } = string.Empty;
 
-        [JsonPropertyName("nombre_comercial")]
+        [JsonPropertyName("nombreComercial")]
         public string NombreComercial { get; set; } = string.Empty;
 
         [JsonPropertyName("curp")]
         public string? Curp { get; set; }
 
-        [JsonPropertyName("regimen_fiscal")]
+        [JsonPropertyName("regimenFiscal")]
         public string RegimenFiscal { get; set; } = string.Empty;
 
-        [JsonPropertyName("uso_cfdi")]
+        [JsonPropertyName("usoCfdi")]
         public string UsoCfdi { get; set; } = string.Empty;
 
-        [JsonPropertyName("dias_credito")]
+        [JsonPropertyName("diasCredito")]
         public int? DiasCredito { get; set; }
 
-        [JsonPropertyName("limite_credito")]
+        [JsonPropertyName("limiteCredito")]
         public decimal? LimiteCredito { get; set; }
 
         [JsonPropertyName("prioridad")]
@@ -45,22 +45,22 @@ namespace Advance_Control.Models
         [JsonPropertyName("estatus")]
         public bool Estatus { get; set; }
 
-        [JsonPropertyName("credencial_id")]
+        [JsonPropertyName("credencialId")]
         public int? CredencialId { get; set; }
 
         [JsonPropertyName("notas")]
         public string Notas { get; set; } = string.Empty;
 
-        [JsonPropertyName("creado_en")]
+        [JsonPropertyName("creadoEn")]
         public DateTime CreadoEn { get; set; }
 
-        [JsonPropertyName("actualizado_en")]
+        [JsonPropertyName("actualizadoEn")]
         public DateTime? ActualizadoEn { get; set; }
 
-        [JsonPropertyName("id_usuario_creador")]
+        [JsonPropertyName("idUsuarioCreador")]
         public int IdUsuarioCreador { get; set; }
 
-        [JsonPropertyName("id_usuaio_act")]
+        [JsonPropertyName("idUsuarioAct")]
         public int? IdUsuarioAct { get; set; }
     }
 }
