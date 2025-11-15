@@ -12,6 +12,7 @@ using Advance_Control.Services.Logging;
 using Advance_Control.Navigation;
 using Advance_Control.Services.Dialog;
 using Advance_Control.Services.Clientes;
+using Advance_Control.Services.Notificacion;
 
 namespace Advance_Control
 {
@@ -139,6 +140,9 @@ namespace Advance_Control
 
                     // Registrar DialogService
                     services.AddSingleton<IDialogService, DialogService>();
+
+                    // Registrar NotificacionService
+                    services.AddSingleton<INotificacionService, NotificacionService>();
 
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();

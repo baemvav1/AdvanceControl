@@ -22,6 +22,12 @@
             <converters:BooleanToVisibilityConverter
                 x:Key="BoolToVisibilityConverter" />
 
+            <converters:NullToVisibilityConverter
+                x:Key="NullToVisibilityConverter" />
+
+            <converters:DateTimeFormatConverter
+                x:Key="DateTimeFormatConverter" />
+
             <!-- Other app resources here -->
         </ResourceDictionary>
     </Application.Resources>
