@@ -11,6 +11,9 @@ using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Services.Dialog;
 using Advance_Control.Views.Login;
 using Microsoft.Extensions.DependencyInjection;
+using Advance_Control.Services.Notificacion;
+using System.Collections.ObjectModel;
+using Advance_Control.Models;
 
 namespace Advance_Control.ViewModels
 {
@@ -22,11 +25,13 @@ namespace Advance_Control.ViewModels
         private readonly IAuthService _authService;
         private readonly IDialogService _dialogService;
         private readonly IServiceProvider _serviceProvider;
+        private readonly INotificacionService _notificacionService;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
         private bool _isBackEnabled;
         private bool _isNotificacionesVisible = true;
+        private ObservableCollection<NotificacionDto> _notificaciones;
 
         public MainViewModel(
             INavigationService navigationService,
@@ -34,7 +39,8 @@ namespace Advance_Control.ViewModels
             ILoggingService logger,
             IAuthService authService,
             IDialogService dialogService,
-            IServiceProvider serviceProvider)
+            IServiceProvider serviceProvider,
+            INotificacionService notificacionService)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
@@ -42,9 +48,19 @@ namespace Advance_Control.ViewModels
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
+
+            // Initialize notifications collection
+            _notificaciones = new ObservableCollection<NotificacionDto>();
+            
+            // Subscribe to notification service events if the implementation supports it
+            if (_notificacionService is NotificacionService notifService)
+            {
+                _notificaciones = notifService.NotificacionesObservable;
+            }
         }
 
         public string Title
@@ -69,6 +85,12 @@ namespace Advance_Control.ViewModels
         {
             get => _isNotificacionesVisible;
             set => SetProperty(ref _isNotificacionesVisible, value);
+        }
+
+        public ObservableCollection<NotificacionDto> Notificaciones
+        {
+            get => _notificaciones;
+            set => SetProperty(ref _notificaciones, value);
         }
 
         public INavigationService NavigationService => _navigationService;

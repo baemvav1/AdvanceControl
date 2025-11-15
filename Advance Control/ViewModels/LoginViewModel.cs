@@ -4,6 +4,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Notificacion;
 
 namespace Advance_Control.ViewModels
 {
@@ -15,6 +16,7 @@ namespace Advance_Control.ViewModels
     {
         private readonly IAuthService _authService;
         private readonly ILoggingService _logger;
+        private readonly INotificacionService _notificacionService;
         
         private string _user = string.Empty;
         private string _password = string.Empty;
@@ -22,10 +24,11 @@ namespace Advance_Control.ViewModels
         private string _errorMessage = string.Empty;
         private bool _loginSuccessful;
 
-        public LoginViewModel(IAuthService authService, ILoggingService logger)
+        public LoginViewModel(IAuthService authService, ILoggingService logger, INotificacionService notificacionService)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
             
             // Inicializar el comando de login
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
@@ -205,6 +208,12 @@ namespace Advance_Control.ViewModels
                 {
                     LoginSuccessful = true;
                     await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {User}", "LoginViewModel", "ExecuteLogin");
+                    
+                    // Mostrar notificación de bienvenida
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Bienvenido",
+                        nota: $"Usuario {User} ha iniciado sesión exitosamente",
+                        fechaHoraInicio: DateTime.Now);
                 }
                 else
                 {

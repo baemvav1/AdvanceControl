@@ -44,8 +44,79 @@
         </Grid>
         <Grid
             x:Name="Notificaciones" Grid.Row="0" Grid.Column="1"
-            Visibility="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-            <TextBlock FontFamily="Consolas" Text="NOTIFICACIONES" />
+            Visibility="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToVisibilityConverter}}"
+            Padding="10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            
+            <!-- Header -->
+            <TextBlock 
+                Grid.Row="0"
+                FontFamily="Consolas" 
+                FontWeight="Bold"
+                FontSize="16"
+                Text="NOTIFICACIONES"
+                Margin="0,0,0,10" />
+            
+            <!-- Notification List -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding Notificaciones}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border 
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="10"
+                                Margin="0,0,0,8">
+                                <StackPanel Spacing="4">
+                                    <!-- Título -->
+                                    <TextBlock 
+                                        Text="{Binding Titulo}"
+                                        FontWeight="Bold"
+                                        FontSize="14"
+                                        TextWrapping="Wrap" />
+                                    
+                                    <!-- Nota -->
+                                    <TextBlock 
+                                        Text="{Binding Nota}"
+                                        FontSize="12"
+                                        TextWrapping="Wrap"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Visibility="{Binding Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                    
+                                    <!-- Fecha de Inicio -->
+                                    <TextBlock 
+                                        FontSize="11"
+                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                        Visibility="{Binding FechaHoraInicio, Converter={StaticResource NullToVisibilityConverter}}">
+                                        <Run Text="Inicio: " />
+                                        <Run Text="{Binding FechaHoraInicio, Converter={StaticResource DateTimeFormatConverter}}" />
+                                    </TextBlock>
+                                    
+                                    <!-- Fecha Final -->
+                                    <TextBlock 
+                                        FontSize="11"
+                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                        Visibility="{Binding FechaHoraFinal, Converter={StaticResource NullToVisibilityConverter}}">
+                                        <Run Text="Final: " />
+                                        <Run Text="{Binding FechaHoraFinal, Converter={StaticResource DateTimeFormatConverter}}" />
+                                    </TextBlock>
+                                    
+                                    <!-- Fecha de Creación -->
+                                    <TextBlock 
+                                        Text="{Binding FechaCreacion, Converter={StaticResource DateTimeFormatConverter}}"
+                                        FontSize="10"
+                                        Foreground="{ThemeResource TextFillColorDisabledBrush}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
         </Grid>
         <Grid
             Grid.Row="1" Grid.ColumnSpan="2" Background="Green">

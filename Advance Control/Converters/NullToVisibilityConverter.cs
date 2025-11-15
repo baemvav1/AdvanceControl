@@ -1,0 +1,33 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Data;
+using System;
+
+namespace Advance_Control.Converters
+{
+    /// <summary>
+    /// Convierte un valor null a Visibility.Collapsed y un valor no-null a Visibility.Visible.
+    /// </summary>
+    public class NullToVisibilityConverter : IValueConverter
+    {
+        public object Convert(object value, Type targetType, object parameter, string language)
+        {
+            if (value == null)
+            {
+                return Visibility.Collapsed;
+            }
+
+            // Para strings, verificar si está vacío o solo whitespace
+            if (value is string str)
+            {
+                return string.IsNullOrWhiteSpace(str) ? Visibility.Collapsed : Visibility.Visible;
+            }
+
+            return Visibility.Visible;
+        }
+
+        public object ConvertBack(object value, Type targetType, object parameter, string language)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
