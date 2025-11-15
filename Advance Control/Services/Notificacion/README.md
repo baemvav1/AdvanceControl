@@ -7,6 +7,8 @@ El servicio de notificaciones (`NotificacionService`) proporciona una forma cent
 ## Características
 
 - **Notificaciones con parámetros flexibles**: Solo el título es requerido, los demás campos son opcionales
+- **Tiempo de vida configurable**: Las notificaciones pueden ser estáticas o auto-eliminarse después de un tiempo
+- **Eliminación manual**: Botón de eliminar en cada notificación para eliminarlas manualmente
 - **Almacenamiento en memoria**: Las notificaciones se mantienen durante la sesión de la aplicación
 - **Observable Collection**: Soporte para binding MVVM automático
 - **Eventos**: Sistema de eventos para notificar cuando se agregan notificaciones
@@ -51,6 +53,25 @@ public class MiViewModel
             fechaHoraFinal: DateTime.Now.AddHours(3)
         );
     }
+    
+    public async Task MostrarNotificacionTemporal()
+    {
+        // Notificación que se auto-elimina después de 30 segundos
+        await _notificacionService.MostrarNotificacionAsync(
+            titulo: "Notificación Temporal",
+            nota: "Esta notificación desaparecerá en 30 segundos",
+            tiempoDeVidaSegundos: 30
+        );
+    }
+    
+    public async Task MostrarNotificacionEstatica()
+    {
+        // Notificación sin tiempo de vida (estática hasta que se elimine manualmente)
+        await _notificacionService.MostrarNotificacionAsync(
+            titulo: "Notificación Estática",
+            nota: "Esta notificación permanecerá hasta que la elimines manualmente"
+        );
+    }
 }
 ```
 
@@ -83,14 +104,26 @@ _notificacionService.LimpiarNotificaciones();
 ```csharp
 public class NotificacionDto
 {
-    public Guid Id { get; set; }              // Generado automáticamente
-    public string Titulo { get; set; }         // Requerido
-    public string? Nota { get; set; }          // Opcional
-    public DateTime? FechaHoraInicio { get; set; }  // Opcional
-    public DateTime? FechaHoraFinal { get; set; }   // Opcional
-    public DateTime FechaCreacion { get; set; }     // Asignado automáticamente
+    public Guid Id { get; set; }                      // Generado automáticamente
+    public string Titulo { get; set; }                // Requerido
+    public string? Nota { get; set; }                 // Opcional
+    public DateTime? FechaHoraInicio { get; set; }    // Opcional
+    public DateTime? FechaHoraFinal { get; set; }     // Opcional
+    public DateTime FechaCreacion { get; set; }       // Asignado automáticamente
+    public int? TiempoDeVidaSegundos { get; set; }   // Opcional - null = estática
 }
 ```
+
+### Tiempo de Vida de Notificaciones
+
+- **`TiempoDeVidaSegundos = null`**: La notificación es estática y permanecerá visible hasta que el usuario la elimine manualmente
+- **`TiempoDeVidaSegundos > 0`**: La notificación se auto-eliminará después del tiempo especificado en segundos
+- **`TiempoDeVidaSegundos = 0`**: Se trata como estática (no se auto-elimina)
+
+Ejemplos:
+- `tiempoDeVidaSegundos: 5` → Se elimina después de 5 segundos
+- `tiempoDeVidaSegundos: 30` → Se elimina después de 30 segundos
+- `tiempoDeVidaSegundos: null` → Permanece hasta eliminación manual
 
 ## Ejemplo de Uso: Notificación de Bienvenida
 
@@ -120,10 +153,18 @@ Las notificaciones se muestran automáticamente en el panel de notificaciones de
 - Nota (si está disponible)
 - Fechas de inicio y fin (si están disponibles)
 - Fecha de creación
+- **Botón de eliminar** en cada notificación con icono de papelera
 - Estilo de tarjeta con borde y fondo
 - Scroll automático cuando hay muchas notificaciones
 
 Para activar/desactivar el panel de notificaciones, usa el botón "Toggle Notificaciones" en la barra superior.
+
+### Eliminar Notificaciones
+
+Cada notificación incluye un botón de eliminar (icono de papelera) en la esquina superior derecha. Al hacer clic:
+- La notificación se elimina inmediatamente
+- Si la notificación tenía un tiempo de vida, el timer se cancela automáticamente
+- El cambio se refleja instantáneamente en la UI gracias a ObservableCollection
 
 ## Migración a Endpoint Real
 
@@ -168,7 +209,11 @@ El servicio incluye pruebas unitarias completas en `NotificacionServiceTests.cs`
 - Funcionalidad con parámetros opcionales
 - Eventos y observables
 - Operaciones de gestión (agregar, eliminar, limpiar)
+- **Funcionalidad de tiempo de vida y auto-eliminación**
+- **Cancelación de timers al eliminar notificaciones**
 - Integración con logging
+
+Total: 20+ tests que cubren todos los escenarios
 
 Ejecutar tests:
 ```bash

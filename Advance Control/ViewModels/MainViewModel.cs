@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Advance_Control.Navigation;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.Logging;
@@ -14,6 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.Services.Notificacion;
 using System.Collections.ObjectModel;
 using Advance_Control.Models;
+using CommunityToolkit.Mvvm.Input;
 
 namespace Advance_Control.ViewModels
 {
@@ -61,6 +63,9 @@ namespace Advance_Control.ViewModels
             {
                 _notificaciones = notifService.NotificacionesObservable;
             }
+
+            // Initialize commands
+            EliminarNotificacionCommand = new RelayCommand<Guid>(EliminarNotificacion);
         }
 
         public string Title
@@ -92,6 +97,8 @@ namespace Advance_Control.ViewModels
             get => _notificaciones;
             set => SetProperty(ref _notificaciones, value);
         }
+
+        public ICommand EliminarNotificacionCommand { get; }
 
         public INavigationService NavigationService => _navigationService;
 
@@ -287,6 +294,15 @@ namespace Advance_Control.ViewModels
             }
 
             return rootElement.XamlRoot;
+        }
+
+        /// <summary>
+        /// Elimina una notificación específica
+        /// </summary>
+        /// <param name="notificacionId">ID de la notificación a eliminar</param>
+        private void EliminarNotificacion(Guid notificacionId)
+        {
+            _notificacionService.EliminarNotificacion(notificacionId);
         }
     }
 }

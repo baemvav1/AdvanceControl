@@ -72,46 +72,69 @@
                                 CornerRadius="4"
                                 Padding="10"
                                 Margin="0,0,0,8">
-                                <StackPanel Spacing="4">
-                                    <!-- Título -->
-                                    <TextBlock 
-                                        Text="{Binding Titulo}"
-                                        FontWeight="Bold"
-                                        FontSize="14"
-                                        TextWrapping="Wrap" />
-                                    
-                                    <!-- Nota -->
-                                    <TextBlock 
-                                        Text="{Binding Nota}"
-                                        FontSize="12"
-                                        TextWrapping="Wrap"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Visibility="{Binding Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-                                    
-                                    <!-- Fecha de Inicio -->
-                                    <TextBlock 
-                                        FontSize="11"
-                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                        Visibility="{Binding FechaHoraInicio, Converter={StaticResource NullToVisibilityConverter}}">
-                                        <Run Text="Inicio: " />
-                                        <Run Text="{Binding FechaHoraInicio, Converter={StaticResource DateTimeFormatConverter}}" />
-                                    </TextBlock>
-                                    
-                                    <!-- Fecha Final -->
-                                    <TextBlock 
-                                        FontSize="11"
-                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                        Visibility="{Binding FechaHoraFinal, Converter={StaticResource NullToVisibilityConverter}}">
-                                        <Run Text="Final: " />
-                                        <Run Text="{Binding FechaHoraFinal, Converter={StaticResource DateTimeFormatConverter}}" />
-                                    </TextBlock>
-                                    
-                                    <!-- Fecha de Creación -->
-                                    <TextBlock 
-                                        Text="{Binding FechaCreacion, Converter={StaticResource DateTimeFormatConverter}}"
-                                        FontSize="10"
-                                        Foreground="{ThemeResource TextFillColorDisabledBrush}" />
-                                </StackPanel>
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Spacing="4">
+                                        <!-- Título -->
+                                        <TextBlock 
+                                            Text="{Binding Titulo}"
+                                            FontWeight="Bold"
+                                            FontSize="14"
+                                            TextWrapping="Wrap" />
+                                        
+                                        <!-- Nota -->
+                                        <TextBlock 
+                                            Text="{Binding Nota}"
+                                            FontSize="12"
+                                            TextWrapping="Wrap"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Visibility="{Binding Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                        
+                                        <!-- Fecha de Inicio -->
+                                        <TextBlock 
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                            Visibility="{Binding FechaHoraInicio, Converter={StaticResource NullToVisibilityConverter}}">
+                                            <Run Text="Inicio: " />
+                                            <Run Text="{Binding FechaHoraInicio, Converter={StaticResource DateTimeFormatConverter}}" />
+                                        </TextBlock>
+                                        
+                                        <!-- Fecha Final -->
+                                        <TextBlock 
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                            Visibility="{Binding FechaHoraFinal, Converter={StaticResource NullToVisibilityConverter}}">
+                                            <Run Text="Final: " />
+                                            <Run Text="{Binding FechaHoraFinal, Converter={StaticResource DateTimeFormatConverter}}" />
+                                        </TextBlock>
+                                        
+                                        <!-- Fecha de Creación -->
+                                        <TextBlock 
+                                            Text="{Binding FechaCreacion, Converter={StaticResource DateTimeFormatConverter}}"
+                                            FontSize="10"
+                                            Foreground="{ThemeResource TextFillColorDisabledBrush}" />
+                                    </StackPanel>
+
+                                    <!-- Delete Button -->
+                                    <Button 
+                                        Grid.Column="1"
+                                        VerticalAlignment="Top"
+                                        Padding="8"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{Binding DataContext.EliminarNotificacionCommand, ElementName=RootGrid}"
+                                        CommandParameter="{Binding Id}"
+                                        ToolTipService.ToolTip="Eliminar notificación">
+                                        <SymbolIcon Symbol="Delete" />
+                                    </Button>
+                                </Grid>
                             </Border>
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>

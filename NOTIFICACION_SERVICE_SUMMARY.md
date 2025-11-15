@@ -12,7 +12,7 @@ Este documento resume la implementación del servicio de notificaciones (`Notifi
 - ✅ Preparado para futuro endpoint (estructura lista para migración)
 
 ### 2. Función de Notificación
-La función `MostrarNotificacionAsync` acepta 4 parámetros:
+La función `MostrarNotificacionAsync` acepta 5 parámetros:
 
 | Parámetro | Tipo | Requerido | Descripción |
 |-----------|------|-----------|-------------|
@@ -20,6 +20,7 @@ La función `MostrarNotificacionAsync` acepta 4 parámetros:
 | `nota` | string? | ❌ No | Contenido/nota de la notificación |
 | `fechaHoraInicio` | DateTime? | ❌ No | Fecha y hora de inicio |
 | `fechaHoraFinal` | DateTime? | ❌ No | Fecha y hora final |
+| `tiempoDeVidaSegundos` | int? | ❌ No | Tiempo de vida en segundos (null = estática) |
 
 ### 3. Mensaje de Bienvenida
 - ✅ Se muestra automáticamente en login exitoso
@@ -54,12 +55,12 @@ Advance Control/Converters/
 ```
 Advance Control.Tests/
 ├── Services/
-│   └── NotificacionServiceTests.cs           (15 tests)
+│   └── NotificacionServiceTests.cs           (20 tests)
 └── Converters/
     ├── NullToVisibilityConverterTests.cs     (7 tests)
     └── DateTimeFormatConverterTests.cs       (6 tests)
 ```
-**Total: 28 tests unitarios**
+**Total: 33 tests unitarios**
 
 ## 📝 Archivos Modificados
 
@@ -94,26 +95,29 @@ El panel muestra cada notificación como una tarjeta con:
 - **Fecha de Inicio** (si existe) con formato "Inicio: DD/MM/YYYY HH:MM"
 - **Fecha Final** (si existe) con formato "Final: DD/MM/YYYY HH:MM"
 - **Fecha de Creación** en texto gris claro
+- **Botón de Eliminar** con icono de papelera en la esquina superior derecha
 
 ### Ejemplo Visual
 ```
 ┌─────────────────────────────────────┐
 │ NOTIFICACIONES                       │
 ├─────────────────────────────────────┤
-│ ┌─────────────────────────────────┐ │
-│ │ Bienvenido                       │ │
-│ │ Usuario admin ha iniciado sesión │ │
-│ │ Inicio: 15/11/2025 14:30        │ │
-│ │ 15/11/2025 14:30                │ │
-│ └─────────────────────────────────┘ │
+│ ┌───────────────────────────────┬─┐ │
+│ │ Bienvenido                     │🗑│ │
+│ │ Usuario admin ha iniciado      │ │ │
+│ │ sesión                         │ │ │
+│ │ Inicio: 15/11/2025 14:30       │ │ │
+│ │ 15/11/2025 14:30               │ │ │
+│ └───────────────────────────────┴─┘ │
 │                                      │
-│ ┌─────────────────────────────────┐ │
-│ │ Reunión Importante               │ │
-│ │ Reunión de equipo sprint review  │ │
-│ │ Inicio: 15/11/2025 16:00        │ │
-│ │ Final: 15/11/2025 17:00         │ │
-│ │ 15/11/2025 14:45                │ │
-│ └─────────────────────────────────┘ │
+│ ┌───────────────────────────────┬─┐ │
+│ │ Reunión Importante             │🗑│ │
+│ │ Reunión de equipo sprint       │ │ │
+│ │ review                         │ │ │
+│ │ Inicio: 15/11/2025 16:00       │ │ │
+│ │ Final: 15/11/2025 17:00        │ │ │
+│ │ 15/11/2025 14:45               │ │ │
+│ └───────────────────────────────┴─┘ │
 └─────────────────────────────────────┘
 ```
 
@@ -139,6 +143,19 @@ await _notificacionService.MostrarNotificacionAsync(
     fechaHoraInicio: DateTime.Now.AddHours(2),
     fechaHoraFinal: DateTime.Now.AddHours(3)
 );
+
+// Mostrar notificación temporal (se auto-elimina después de 30 segundos)
+await _notificacionService.MostrarNotificacionAsync(
+    titulo: "Notificación Temporal",
+    nota: "Esta se eliminará automáticamente",
+    tiempoDeVidaSegundos: 30
+);
+
+// Mostrar notificación estática (permanece hasta eliminación manual)
+await _notificacionService.MostrarNotificacionAsync(
+    titulo: "Notificación Estática",
+    nota: "Esta permanecerá hasta que la elimines"
+);
 ```
 
 ## 🧪 Testing
@@ -150,6 +167,8 @@ await _notificacionService.MostrarNotificacionAsync(
 - ✅ Sistema de eventos
 - ✅ Colecciones observables
 - ✅ Operaciones de gestión (eliminar, limpiar)
+- ✅ **Tiempo de vida y auto-eliminación**
+- ✅ **Cancelación de timers al eliminar**
 - ✅ Integración con logging
 - ✅ Converters de UI
 
