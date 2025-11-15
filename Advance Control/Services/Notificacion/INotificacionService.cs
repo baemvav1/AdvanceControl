@@ -17,12 +17,14 @@ namespace Advance_Control.Services.Notificacion
         /// <param name="nota">Nota o contenido de la notificación (opcional).</param>
         /// <param name="fechaHoraInicio">Fecha y hora de inicio (opcional).</param>
         /// <param name="fechaHoraFinal">Fecha y hora final (opcional).</param>
+        /// <param name="tiempoDeVidaSegundos">Tiempo de vida en segundos (opcional). Si es null, la notificación será estática.</param>
         /// <returns>La notificación creada.</returns>
         Task<NotificacionDto> MostrarNotificacionAsync(
             string titulo, 
             string? nota = null, 
             DateTime? fechaHoraInicio = null, 
-            DateTime? fechaHoraFinal = null);
+            DateTime? fechaHoraFinal = null,
+            int? tiempoDeVidaSegundos = null);
 
         /// <summary>
         /// Obtiene todas las notificaciones.

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Logging;
@@ -16,6 +17,7 @@ namespace Advance_Control.Services.Notificacion
     {
         private readonly ILoggingService _logger;
         private readonly ObservableCollection<NotificacionDto> _notificaciones;
+        private readonly Dictionary<Guid, CancellationTokenSource> _timers;
 
         /// <summary>
         /// Evento que se dispara cuando se agrega una nueva notificación.
@@ -26,6 +28,7 @@ namespace Advance_Control.Services.Notificacion
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _notificaciones = new ObservableCollection<NotificacionDto>();
+            _timers = new Dictionary<Guid, CancellationTokenSource>();
         }
 
         /// <summary>
@@ -35,7 +38,8 @@ namespace Advance_Control.Services.Notificacion
             string titulo, 
             string? nota = null, 
             DateTime? fechaHoraInicio = null, 
-            DateTime? fechaHoraFinal = null)
+            DateTime? fechaHoraFinal = null,
+            int? tiempoDeVidaSegundos = null)
         {
             if (string.IsNullOrWhiteSpace(titulo))
             {
@@ -48,7 +52,8 @@ namespace Advance_Control.Services.Notificacion
                 Nota = nota,
                 FechaHoraInicio = fechaHoraInicio,
                 FechaHoraFinal = fechaHoraFinal,
-                FechaCreacion = DateTime.Now
+                FechaCreacion = DateTime.Now,
+                TiempoDeVidaSegundos = tiempoDeVidaSegundos
             };
 
             // Agregar a la colección
@@ -62,6 +67,29 @@ namespace Advance_Control.Services.Notificacion
 
             // Disparar evento
             NotificacionAgregada?.Invoke(this, notificacion);
+
+            // Si tiene tiempo de vida, programar auto-eliminación
+            if (tiempoDeVidaSegundos.HasValue && tiempoDeVidaSegundos.Value > 0)
+            {
+                var cts = new CancellationTokenSource();
+                _timers[notificacion.Id] = cts;
+                
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromSeconds(tiempoDeVidaSegundos.Value), cts.Token);
+                        if (!cts.Token.IsCancellationRequested)
+                        {
+                            EliminarNotificacion(notificacion.Id);
+                        }
+                    }
+                    catch (TaskCanceledException)
+                    {
+                        // Timer cancelado, no hacer nada
+                    }
+                });
+            }
 
             return notificacion;
         }
@@ -94,6 +122,14 @@ namespace Advance_Control.Services.Notificacion
             var notificacion = _notificaciones.FirstOrDefault(n => n.Id == id);
             if (notificacion != null)
             {
+                // Cancelar el timer si existe
+                if (_timers.TryGetValue(id, out var cts))
+                {
+                    cts.Cancel();
+                    cts.Dispose();
+                    _timers.Remove(id);
+                }
+
                 _notificaciones.Remove(notificacion);
                 _logger.LogInformationAsync(
                     $"Notificación eliminada: {notificacion.Titulo}", 
