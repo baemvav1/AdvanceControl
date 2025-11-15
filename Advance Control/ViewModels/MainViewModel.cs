@@ -26,6 +26,7 @@ namespace Advance_Control.ViewModels
         private string _title = "Advance Control";
         private bool _isAuthenticated;
         private bool _isBackEnabled;
+        private bool _isNotificacionesVisible = true;
 
         public MainViewModel(
             INavigationService navigationService,
@@ -62,6 +63,12 @@ namespace Advance_Control.ViewModels
         {
             get => _isBackEnabled;
             set => SetProperty(ref _isBackEnabled, value);
+        }
+
+        public bool IsNotificacionesVisible
+        {
+            get => _isNotificacionesVisible;
+            set => SetProperty(ref _isNotificacionesVisible, value);
         }
 
         public INavigationService NavigationService => _navigationService;
