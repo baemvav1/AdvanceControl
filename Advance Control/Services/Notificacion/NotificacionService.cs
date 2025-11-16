@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace Advance_Control.Services.Notificacion
     {
         private readonly ILoggingService _logger;
         private readonly ObservableCollection<NotificacionDto> _notificaciones;
-        private readonly Dictionary<Guid, CancellationTokenSource> _timers;
+        private readonly ConcurrentDictionary<Guid, CancellationTokenSource> _timers;
 
         /// <summary>
         /// Evento que se dispara cuando se agrega una nueva notificación.
@@ -28,7 +29,7 @@ namespace Advance_Control.Services.Notificacion
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _notificaciones = new ObservableCollection<NotificacionDto>();
-            _timers = new Dictionary<Guid, CancellationTokenSource>();
+            _timers = new ConcurrentDictionary<Guid, CancellationTokenSource>();
         }
 
         /// <summary>
@@ -87,6 +88,11 @@ namespace Advance_Control.Services.Notificacion
                     catch (TaskCanceledException)
                     {
                         // Timer cancelado, no hacer nada
+                    }
+                    catch (Exception ex)
+                    {
+                        // Loguear cualquier otro error inesperado
+                        _ = _logger.LogErrorAsync($"Error inesperado en auto-eliminación de notificación: {notificacion.Titulo}", ex, "NotificacionService", "MostrarNotificacionAsync");
                     }
                 });
             }

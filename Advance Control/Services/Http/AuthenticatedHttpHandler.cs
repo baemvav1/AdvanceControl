@@ -114,7 +114,13 @@ namespace Advance_Control.Services.Http
         private bool ShouldAttachToken(Uri? requestUri)
         {
             if (requestUri == null) return false;
-            if (!_apiHost.HasValue()) return true; // if we couldn't determine API host, be permissive (optional policy)
+            // SEGURIDAD: Si no pudimos determinar el API host, ser restrictivo por defecto
+            // para prevenir fuga de tokens a dominios no autorizados
+            if (!_apiHost.HasValue()) 
+            {
+                _ = _logger?.LogWarningAsync("No se pudo determinar el host de la API. No se adjuntará token por seguridad.", "AuthenticatedHttpHandler", "ShouldAttachToken");
+                return false;
+            }
             try
             {
                 var host = requestUri.Host?.ToLowerInvariant();

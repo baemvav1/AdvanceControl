@@ -160,9 +160,9 @@ namespace Advance_Control.ViewModels
                 return false;
             }
 
-            if (Password.Length < 4)
+            if (Password.Length < 8)
             {
-                ErrorMessage = "La contraseña debe tener al menos 4 caracteres.";
+                ErrorMessage = "La contraseña debe tener al menos 8 caracteres.";
                 return false;
             }
 

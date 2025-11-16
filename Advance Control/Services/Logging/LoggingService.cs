@@ -76,10 +76,13 @@ namespace Advance_Control.Services.Logging
                 // No lanzar excepción si falla, para evitar que el logging cause problemas
                 // en la aplicación principal
             }
-            catch
+            catch (Exception ex)
             {
                 // Silenciar errores de logging para no afectar el flujo principal
-                // En producción, podríamos guardar en un archivo local o cola
+                // TODO: Implementar fallback a archivo local en versión futura
+                // Por ahora, escribir a Debug para diagnóstico en desarrollo
+                System.Diagnostics.Debug.WriteLine($"[LoggingService] Error al enviar log al servidor: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"[LoggingService] Log no enviado - Level: {logEntry.Level}, Message: {logEntry.Message}");
             }
         }
 

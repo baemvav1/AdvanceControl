@@ -88,8 +88,22 @@ namespace Advance_Control.Services.Auth
             // Wait for token loading from storage to complete before authentication
             await _initTask.ConfigureAwait(false);
             
+            // Validar credenciales
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 return false;
+            
+            // Validación adicional de seguridad para prevenir inyección
+            if (username.Length < 3 || username.Length > 150)
+            {
+                await _logger.LogWarningAsync($"Intento de autenticación con username de longitud inválida: {username.Length}", "AuthService", "AuthenticateAsync");
+                return false;
+            }
+            
+            if (password.Length < 4 || password.Length > 100)
+            {
+                await _logger.LogWarningAsync("Intento de autenticación con password de longitud inválida", "AuthService", "AuthenticateAsync");
+                return false;
+            }
 
             var url = _endpoints.GetEndpoint("api", "Auth", "login");
             var body = new { username = username, password = password }; // matches API specification

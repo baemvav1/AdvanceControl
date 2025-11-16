@@ -27,8 +27,16 @@ namespace Advance_Control.Services.Security
 
         public Task SetAsync(string key, string value)
         {
-            if (string.IsNullOrEmpty(key)) throw new ArgumentException(nameof(key));
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty", nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
+            
+            // Validar que la key no contenga caracteres que puedan causar problemas
+            if (key.Length > 255)
+                throw new ArgumentException("Key length cannot exceed 255 characters", nameof(key));
+            
+            // Validar caracteres seguros (alfanuméricos, punto, guión bajo)
+            if (!System.Text.RegularExpressions.Regex.IsMatch(key, @"^[a-zA-Z0-9._-]+$"))
+                throw new ArgumentException("Key can only contain alphanumeric characters, dots, underscores, and hyphens", nameof(key));
 
             var resource = ResourceForKey(key);
 
@@ -85,7 +93,12 @@ namespace Advance_Control.Services.Security
 
         public Task<string?> GetAsync(string key)
         {
-            if (string.IsNullOrEmpty(key)) throw new ArgumentException(nameof(key));
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty", nameof(key));
+            
+            // Validar formato de key (misma validación que en SetAsync)
+            if (key.Length > 255 || !System.Text.RegularExpressions.Regex.IsMatch(key, @"^[a-zA-Z0-9._-]+$"))
+                throw new ArgumentException("Invalid key format", nameof(key));
+            
             var resource = ResourceForKey(key);
 
             try
@@ -138,7 +151,12 @@ namespace Advance_Control.Services.Security
 
         public Task RemoveAsync(string key)
         {
-            if (string.IsNullOrEmpty(key)) throw new ArgumentException(nameof(key));
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty", nameof(key));
+            
+            // Validar formato de key (misma validación que en SetAsync)
+            if (key.Length > 255 || !System.Text.RegularExpressions.Regex.IsMatch(key, @"^[a-zA-Z0-9._-]+$"))
+                throw new ArgumentException("Invalid key format", nameof(key));
+            
             var resource = ResourceForKey(key);
 
             try

@@ -15,6 +15,21 @@ namespace Advance_Control.Services.EndPointProvider
             if (string.IsNullOrWhiteSpace(_options.BaseUrl))
                 throw new ArgumentException("ExternalApi:BaseUrl must be configured in appsettings.json");
 
+            // Validar que BaseUrl sea una URL válida
+            if (!Uri.TryCreate(_options.BaseUrl, UriKind.Absolute, out var uri))
+                throw new ArgumentException($"ExternalApi:BaseUrl is not a valid absolute URI: {_options.BaseUrl}");
+            
+            // SEGURIDAD: Validar que use HTTPS en producción (permitir HTTP solo para localhost/desarrollo)
+            if (uri.Scheme != "https" && uri.Scheme != "http")
+                throw new ArgumentException($"ExternalApi:BaseUrl must use HTTP or HTTPS scheme: {_options.BaseUrl}");
+            
+            // Advertencia si se usa HTTP en un host que no es localhost
+            if (uri.Scheme == "http" && !uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase) && !uri.Host.StartsWith("127."))
+            {
+                // En un entorno real, esto debería ser un error. Por ahora solo advertencia.
+                System.Diagnostics.Debug.WriteLine($"ADVERTENCIA DE SEGURIDAD: BaseUrl usa HTTP en lugar de HTTPS para host no-local: {_options.BaseUrl}");
+            }
+
             // Normalize base URL (remove trailing slash)
             _baseUrlNormalized = _options.BaseUrl.Trim();
             if (_baseUrlNormalized.EndsWith("/"))

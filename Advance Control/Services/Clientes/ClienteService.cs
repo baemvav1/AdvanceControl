@@ -72,12 +72,26 @@ namespace Advance_Control.Services.Clientes
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                    await _logger.LogErrorAsync(
-                        $"Error al obtener clientes. Status: {response.StatusCode}, Content: {errorContent}",
-                        null,
-                        "ClienteService",
-                        "GetClientesAsync");
-                    return new List<CustomerDto>();
+                    var errorMessage = $"Error al obtener clientes. Status: {response.StatusCode}, Content: {errorContent}";
+                    await _logger.LogErrorAsync(errorMessage, null, "ClienteService", "GetClientesAsync");
+                    
+                    // Lanzar excepción específica según el código de estado para permitir manejo diferenciado
+                    if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                    {
+                        throw new UnauthorizedAccessException("No autorizado para obtener clientes. Por favor, inicie sesión nuevamente.");
+                    }
+                    else if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    {
+                        throw new UnauthorizedAccessException("No tiene permisos para obtener la lista de clientes.");
+                    }
+                    else if ((int)response.StatusCode >= 500)
+                    {
+                        throw new InvalidOperationException($"Error del servidor al obtener clientes: {response.StatusCode}");
+                    }
+                    else
+                    {
+                        throw new InvalidOperationException($"Error al obtener clientes: {response.StatusCode}");
+                    }
                 }
 
                 // Deserializar la respuesta
