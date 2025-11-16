@@ -159,6 +159,29 @@ namespace Advance_Control.Navigation
         }
 
         public string GetCurrentTag() => _currentTag;
+
+        /// <summary>
+        /// Recarga la página actual si implementa IReloadable.
+        /// Devuelve true si la recarga se inició con éxito.
+        /// </summary>
+        public bool Reload()
+        {
+            if (_frame == null) throw new InvalidOperationException("NavigationService no inicializado.");
+            
+            // Obtener la página actual desde el Frame
+            if (_frame.Content is IReloadable reloadablePage)
+            {
+                // Llamar al método ReloadAsync de la página de forma asíncrona sin await
+                // para mantener la firma del método sincrónica
+                _ = reloadablePage.ReloadAsync();
+                return true;
+            }
+            else
+            {
+                Debug.WriteLine($"NavigationService: la página actual no implementa IReloadable.");
+                return false;
+            }
+        }
     }
 
     /* -----------------------------

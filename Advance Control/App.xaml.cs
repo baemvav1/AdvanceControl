@@ -144,13 +144,16 @@ namespace Advance_Control
                     // Registrar NotificacionService
                     services.AddSingleton<INotificacionService, NotificacionService>();
 
-                    // Registrar ViewModels
+                    // Registrar ViewModels como Singleton para preservar el estado entre navegaciones
+                    // MainViewModel y LoginViewModel permanecen como Transient ya que son de nivel de aplicación/diálogo
                     services.AddTransient<ViewModels.MainViewModel>();
                     services.AddTransient<ViewModels.LoginViewModel>();
-                    services.AddTransient<ViewModels.CustomersViewModel>();
-                    services.AddTransient<ViewModels.OperacionesViewModel>();
-                    services.AddTransient<ViewModels.AcesoriaViewModel>();
-                    services.AddTransient<ViewModels.MttoViewModel>();
+                    
+                    // ViewModels de páginas se registran como Singleton para mantener su estado
+                    services.AddSingleton<ViewModels.CustomersViewModel>();
+                    services.AddSingleton<ViewModels.OperacionesViewModel>();
+                    services.AddSingleton<ViewModels.AcesoriaViewModel>();
+                    services.AddSingleton<ViewModels.MttoViewModel>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();

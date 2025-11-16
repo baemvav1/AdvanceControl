@@ -14,6 +14,7 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private bool _isLoading;
         private string? _errorMessage;
+        private bool _isInitialized;
 
         public OperacionesViewModel(ILoggingService logger)
         {
@@ -50,10 +51,14 @@ namespace Advance_Control.ViewModels
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
         /// <summary>
-        /// Inicializa los datos de la vista
+        /// Inicializa los datos de la vista (solo se ejecuta en la primera carga)
+        /// Para forzar una recarga, use InitializeAsync(forceReload: true)
         /// </summary>
-        public async Task InitializeAsync(CancellationToken cancellationToken = default)
+        public async Task InitializeAsync(bool forceReload = false, CancellationToken cancellationToken = default)
         {
+            // Prevenir inicialización redundante ya que ahora es Singleton
+            if (_isInitialized && !forceReload) return;
+            
             try
             {
                 IsLoading = true;
@@ -62,6 +67,8 @@ namespace Advance_Control.ViewModels
                 await _logger.LogInformationAsync("Vista de Operaciones inicializada", "OperacionesViewModel", "InitializeAsync");
                 
                 // TODO: Cargar datos iniciales si es necesario
+                
+                _isInitialized = true;
             }
             catch (Exception ex)
             {

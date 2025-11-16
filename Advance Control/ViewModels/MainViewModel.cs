@@ -66,6 +66,7 @@ namespace Advance_Control.ViewModels
 
             // Initialize commands
             EliminarNotificacionCommand = new RelayCommand<Guid>(EliminarNotificacion);
+            ReloadCommand = new RelayCommand(ReloadCurrentPage);
         }
 
         public string Title
@@ -99,6 +100,7 @@ namespace Advance_Control.ViewModels
         }
 
         public ICommand EliminarNotificacionCommand { get; }
+        public ICommand ReloadCommand { get; }
 
         public INavigationService NavigationService => _navigationService;
 
@@ -303,6 +305,14 @@ namespace Advance_Control.ViewModels
         private void EliminarNotificacion(Guid notificacionId)
         {
             _notificacionService.EliminarNotificacion(notificacionId);
+        }
+
+        /// <summary>
+        /// Recarga la página actual
+        /// </summary>
+        private void ReloadCurrentPage()
+        {
+            _navigationService.Reload();
         }
     }
 }
