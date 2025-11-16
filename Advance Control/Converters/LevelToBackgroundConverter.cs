@@ -14,11 +14,11 @@ namespace Advance_Control.Converters
             {
                 Color color = priority switch
                 {
-                    1 => ColorHelper.FromArgb(255, 225, 225, 225), // lightcoral
-                    2 => ColorHelper.FromArgb(255, 175, 175, 175),   // orange
+                    5 => ColorHelper.FromArgb(255, 225, 225, 225), // lightcoral
+                    4 => ColorHelper.FromArgb(255, 175, 175, 175),   // orange
                     3 => ColorHelper.FromArgb(255, 125, 125, 125),  // goldenrod
-                    4 => ColorHelper.FromArgb(255, 75, 75, 75),     // green
-                    5 => ColorHelper.FromArgb(255, 25, 25, 25),  // greenyellow
+                    2 => ColorHelper.FromArgb(255, 75, 75, 75),     // green
+                    1 => ColorHelper.FromArgb(255, 25, 25, 25),  // greenyellow
                     _ => ColorHelper.FromArgb(0, 0, 0, 0)          // transparent for invalid values
                 };
                 

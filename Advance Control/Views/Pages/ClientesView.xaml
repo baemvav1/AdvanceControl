@@ -1,142 +1,131 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
-    x:Class="Advance_Control.Views.ClientesView"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Advance_Control.Views"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:converters="using:Advance_Control.Converters"
-    mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    
+    x:Class="Advance_Control.Views.ClientesView" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Advance_Control.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:local="using:Advance_Control.Views" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
+
     <Page.Resources>
-        <converters:LevelToBackgroundConverter x:Key="LevelToBackgroundConverter"/>
-        <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter"/>
+        <converters:LevelToBackgroundConverter x:Key="LevelToBackgroundConverter" />
+        <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel Grid.Row="0" Spacing="8" Margin="0,0,0,24">
-            <TextBlock Text="Clientes" FontSize="32" FontWeight="Bold"/>
-            <TextBlock Text="Gestión de clientes del sistema" FontSize="16" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+        <!--  Header  -->
+        <StackPanel
+            Grid.Row="0" Margin="0,0,0,24" Spacing="8">
+            <TextBlock
+                FontSize="32" FontWeight="Bold" Text="Clientes" />
+            <TextBlock
+                FontSize="16"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Gestión de clientes del sistema" />
         </StackPanel>
 
-        <!-- Filtros -->
-        <StackPanel Grid.Row="1" Spacing="12" Margin="0,0,0,16">
-            <TextBlock Text="Filtros de búsqueda" FontWeight="SemiBold" FontSize="16"/>
+        <!--  Filtros  -->
+        <StackPanel
+            Grid.Row="1" Margin="0,0,0,16" Spacing="12">
+            <TextBlock
+                FontSize="16" FontWeight="SemiBold" Text="Filtros de búsqueda" />
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBox Grid.Row="0" Grid.Column="0" 
-                         Header="Búsqueda" 
-                         PlaceholderText="Razón social o nombre comercial"
-                         Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,8,8"/>
+                <TextBox
+                    Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Búsqueda"
+                    PlaceholderText="Razón social o nombre comercial"
+                    Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox Grid.Row="0" Grid.Column="1" 
-                         Header="RFC" 
-                         PlaceholderText="RFC del cliente"
-                         Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,8,8"/>
+                <TextBox
+                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="RFC"
+                    PlaceholderText="RFC del cliente"
+                    Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox Grid.Row="0" Grid.Column="2" 
-                         Header="CURP" 
-                         PlaceholderText="CURP del cliente"
-                         Text="{x:Bind ViewModel.CurpFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,8,8"/>
+                <TextBox
+                    Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="CURP"
+                    PlaceholderText="CURP del cliente"
+                    Text="{x:Bind ViewModel.CurpFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox Grid.Row="1" Grid.Column="0" 
-                         Header="Notas" 
-                         PlaceholderText="Búsqueda en notas"
-                         Text="{x:Bind ViewModel.NotasFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                         Margin="0,0,8,8"/>
-                
-                
-                <!--Value="{x:Bind ViewModel.PrioridadFilter, Mode=TwoWay}"-->
+                <TextBox
+                    Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="Notas"
+                    PlaceholderText="Búsqueda en notas"
+                    Text="{x:Bind ViewModel.NotasFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <NumberBox Grid.Row="1" Grid.Column="1" 
-                           Header="Prioridad" 
-                           PlaceholderText="Prioridad exacta"
-                           SpinButtonPlacementMode="Inline"
-                           Minimum="0"
-                           Margin="0,0,8,8"/>
 
-                <StackPanel Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" 
-                            Orientation="Horizontal" 
-                            HorizontalAlignment="Right" 
-                            VerticalAlignment="Bottom"
-                            Spacing="8">
-                    <Button Content="Buscar" 
-                            Click="SearchButton_Click"
-                            Style="{StaticResource AccentButtonStyle}"/>
-                    <Button Content="Limpiar" 
-                            Click="ClearButton_Click"/>
+                <!--  Value="{x:Bind ViewModel.PrioridadFilter, Mode=TwoWay}"  -->
+
+                <NumberBox
+                    Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Prioridad"
+                    Minimum="0" PlaceholderText="Prioridad exacta" SpinButtonPlacementMode="Inline" />
+
+                <StackPanel
+                    Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
+                    <Button
+                        Click="SearchButton_Click" Content="Buscar"
+                        Style="{StaticResource AccentButtonStyle}" />
+                    <Button Click="ClearButton_Click" Content="Limpiar" />
                 </StackPanel>
             </Grid>
         </StackPanel>
 
-        <!-- Lista de clientes -->
+        <!--  Lista de clientes  -->
         <Grid Grid.Row="2">
-            <!-- Loading indicator -->
-            <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" 
-                          Width="50" 
-                          Height="50"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"/>
+            <!--  Loading indicator  -->
+            <ProgressRing
+                Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
 
-            <!-- ItemsRepeater con ScrollViewer -->
+            <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Customers, Mode=OneWay}">
                     <ItemsRepeater.Layout>
-                        <StackLayout Spacing="0"/>
+                        <StackLayout Spacing="0" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="local:CustomerDto" xmlns:local="using:Advance_Control.Models">
-                            <Grid Padding="16" 
-                                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" 
-                                  BorderThickness="0,0,0,1" 
-                                  MinHeight="90"
-                                  Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}">
+                        <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:CustomerDto">
+                            <Grid
+                                MinHeight="90" Padding="16"
+                                Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="0,0,0,1">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                
-                                <!-- Información principal del cliente -->
+
+                                <!--  Información principal del cliente  -->
                                 <StackPanel Grid.Column="0" Spacing="6">
-                                    <TextBlock Text="{x:Bind RazonSocial}" 
-                                               FontWeight="SemiBold" 
-                                               FontSize="16"
-                                               Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"/>
-                                    <TextBlock Text="{x:Bind NombreComercial}" 
-                                               FontSize="14"
-                                               Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"/>
+                                    <TextBlock
+                                        FontSize="16" FontWeight="SemiBold"
+                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                        Text="{x:Bind RazonSocial}" />
+                                    <TextBlock
+                                        FontSize="14"
+                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                        Text="{x:Bind NombreComercial}" />
                                     <StackPanel Orientation="Horizontal" Spacing="20">
-                                        <TextBlock FontSize="13"
-                                                   Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="RFC: "/>
-                                            <Run Text="{x:Bind Rfc}" FontWeight="SemiBold"/>
+                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                            <Run Text="RFC: " />
+                                            <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
                                         </TextBlock>
-                                        <TextBlock FontSize="13"
-                                                   Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="Prioridad: "/>
-                                            <Run Text="{x:Bind Prioridad}" FontWeight="SemiBold"/>
+                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                            <Run Text="Prioridad: " />
+                                            <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
                                         </TextBlock>
                                     </StackPanel>
                                 </StackPanel>
