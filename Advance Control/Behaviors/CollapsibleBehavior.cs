@@ -37,6 +37,14 @@ namespace Advance_Control.Behaviors
                 typeof(CollapsibleBehavior),
                 new PropertyMetadata(200));
 
+        // Attached property for the visual indicator element (like an icon that rotates)
+        public static readonly DependencyProperty IndicatorElementProperty =
+            DependencyProperty.RegisterAttached(
+                "IndicatorElement",
+                typeof(FrameworkElement),
+                typeof(CollapsibleBehavior),
+                new PropertyMetadata(null));
+
         // Getter and Setter for TargetElement
         public static FrameworkElement GetTargetElement(DependencyObject obj)
         {
@@ -70,6 +78,17 @@ namespace Advance_Control.Behaviors
             obj.SetValue(AnimationDurationProperty, value);
         }
 
+        // Getter and Setter for IndicatorElement
+        public static FrameworkElement GetIndicatorElement(DependencyObject obj)
+        {
+            return (FrameworkElement)obj.GetValue(IndicatorElementProperty);
+        }
+
+        public static void SetIndicatorElement(DependencyObject obj, FrameworkElement value)
+        {
+            obj.SetValue(IndicatorElementProperty, value);
+        }
+
         private static void OnTargetElementChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is FrameworkElement triggerElement)
@@ -90,7 +109,7 @@ namespace Advance_Control.Behaviors
 
                     // Initialize the target to collapsed state
                     bool isCollapsed = GetIsCollapsed(triggerElement);
-                    ApplyCollapsedState(targetElement, isCollapsed, false);
+                    ApplyCollapsedState(triggerElement, targetElement, isCollapsed, false);
                 }
             }
         }
@@ -103,7 +122,7 @@ namespace Advance_Control.Behaviors
                 if (targetElement != null)
                 {
                     bool isCollapsed = (bool)e.NewValue;
-                    ApplyCollapsedState(targetElement, isCollapsed, true);
+                    ApplyCollapsedState(triggerElement, targetElement, isCollapsed, true);
                 }
             }
         }
@@ -136,7 +155,7 @@ namespace Advance_Control.Behaviors
             }
         }
 
-        private static void ApplyCollapsedState(FrameworkElement targetElement, bool isCollapsed, bool animate)
+        private static void ApplyCollapsedState(FrameworkElement triggerElement, FrameworkElement targetElement, bool isCollapsed, bool animate)
         {
             if (targetElement == null) return;
 
@@ -199,6 +218,29 @@ namespace Advance_Control.Behaviors
                 Storyboard.SetTargetProperty(opacityAnimation, "Opacity");
                 storyboard.Children.Add(opacityAnimation);
 
+                // Rotate the indicator element if specified
+                var indicatorElement = GetIndicatorElement(triggerElement);
+                if (indicatorElement != null)
+                {
+                    // Ensure the indicator has a RenderTransform
+                    if (indicatorElement.RenderTransform == null || !(indicatorElement.RenderTransform is RotateTransform))
+                    {
+                        indicatorElement.RenderTransform = new RotateTransform();
+                        indicatorElement.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
+                    }
+
+                    var rotateAnimation = new DoubleAnimation
+                    {
+                        Duration = TimeSpan.FromMilliseconds(duration),
+                        To = isCollapsed ? 0 : 180,  // Rotate 180 degrees when expanded
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseInOut }
+                    };
+
+                    Storyboard.SetTarget(rotateAnimation, indicatorElement);
+                    Storyboard.SetTargetProperty(rotateAnimation, "(UIElement.RenderTransform).(RotateTransform.Angle)");
+                    storyboard.Children.Add(rotateAnimation);
+                }
+
                 // Handle completion
                 storyboard.Completed += (s, e) =>
                 {
@@ -225,6 +267,18 @@ namespace Advance_Control.Behaviors
                 // Instant state change without animation
                 targetElement.Visibility = isCollapsed ? Visibility.Collapsed : Visibility.Visible;
                 targetElement.Opacity = isCollapsed ? 0 : 1;
+
+                // Set indicator rotation instantly
+                var indicatorElement = GetIndicatorElement(triggerElement);
+                if (indicatorElement != null)
+                {
+                    if (indicatorElement.RenderTransform == null || !(indicatorElement.RenderTransform is RotateTransform))
+                    {
+                        indicatorElement.RenderTransform = new RotateTransform();
+                        indicatorElement.RenderTransformOrigin = new Windows.Foundation.Point(0.5, 0.5);
+                    }
+                    ((RotateTransform)indicatorElement.RenderTransform).Angle = isCollapsed ? 0 : 180;
+                }
             }
         }
     }
