@@ -17,6 +17,7 @@ namespace Advance_Control.Navigation
         bool CanGoBack { get; }
         void GoBack();
         string GetCurrentTag();
+        bool Reload();
     }
 }
  

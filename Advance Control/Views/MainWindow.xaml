@@ -21,6 +21,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <Button Click="LoginButton_Click" Content="Login" />
                     <Button Click="ToggleNotificaciones_Click" Content="Toggle Notificaciones" />
+                    <Button Command="{Binding ReloadCommand}" Content="Reload" ToolTipService.ToolTip="Recargar la página actual" />
                 </StackPanel>
             </Grid>
             <Grid Grid.Row="1">
