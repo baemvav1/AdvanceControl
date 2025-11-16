@@ -6,7 +6,7 @@ using Windows.UI;
 
 namespace Advance_Control.Converters
 {
-    public class PriorityToBackgroundConverter : IValueConverter
+    public class LevelToBackgroundConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
@@ -14,11 +14,11 @@ namespace Advance_Control.Converters
             {
                 Color color = priority switch
                 {
-                    1 => ColorHelper.FromArgb(255, 240, 128, 128), // lightcoral
-                    2 => ColorHelper.FromArgb(255, 255, 165, 0),   // orange
-                    3 => ColorHelper.FromArgb(255, 218, 165, 32),  // goldenrod
-                    4 => ColorHelper.FromArgb(255, 0, 128, 0),     // green
-                    5 => ColorHelper.FromArgb(255, 173, 255, 47),  // greenyellow
+                    1 => ColorHelper.FromArgb(255, 225, 225, 225), // lightcoral
+                    2 => ColorHelper.FromArgb(255, 175, 175, 175),   // orange
+                    3 => ColorHelper.FromArgb(255, 125, 125, 125),  // goldenrod
+                    4 => ColorHelper.FromArgb(255, 75, 75, 75),     // green
+                    5 => ColorHelper.FromArgb(255, 25, 25, 25),  // greenyellow
                     _ => ColorHelper.FromArgb(0, 0, 0, 0)          // transparent for invalid values
                 };
                 
