@@ -42,7 +42,7 @@ namespace Advance_Control.Views
         /// </summary>
         public async Task ReloadAsync()
         {
-            await ViewModel.InitializeAsync();
+            await ViewModel.InitializeAsync(forceReload: true);
         }
     }
 }
