@@ -139,12 +139,21 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = "La operación fue cancelada.";
                 await _logger.LogInformationAsync("Operación de carga de clientes cancelada por el usuario", "CustomersViewModel", "LoadClientesAsync");
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                ErrorMessage = "Error de autenticación: " + ex.Message;
+                await _logger.LogWarningAsync("Error de autorización al cargar clientes", "CustomersViewModel", "LoadClientesAsync");
+            }
             catch (HttpRequestException ex)
             {
                 ErrorMessage = "Error de conexión: No se pudo conectar con el servidor. Verifique su conexión a internet.";
                 await _logger.LogErrorAsync("Error de conexión al cargar clientes", ex, "CustomersViewModel", "LoadClientesAsync");
             }
-            
+            catch (InvalidOperationException ex)
+            {
+                ErrorMessage = ex.Message;
+                await _logger.LogErrorAsync("Error de operación al cargar clientes", ex, "CustomersViewModel", "LoadClientesAsync");
+            }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error inesperado al cargar clientes: {ex.Message}";
