@@ -98,37 +98,50 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:CustomerDto">
-                            <Grid
-                                MinHeight="90" Padding="16"
-                                Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,0,0,1">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                            <Grid Margin="5">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
 
-                                <!--  Información principal del cliente  -->
-                                <StackPanel Grid.Column="0" Spacing="6">
-                                    <TextBlock
-                                        FontSize="16" FontWeight="SemiBold"
-                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
-                                        Text="{x:Bind RazonSocial}" />
-                                    <TextBlock
-                                        FontSize="14"
-                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
-                                        Text="{x:Bind NombreComercial}" />
-                                    <StackPanel Orientation="Horizontal" Spacing="20">
-                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="RFC: " />
-                                            <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
-                                        </TextBlock>
-                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="Prioridad: " />
-                                            <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
-                                        </TextBlock>
-                                    </StackPanel>
-                                </StackPanel>
+                                <Grid Grid.Row="0" x:Name="Cliente" CornerRadius="5,5,0,0">
+                                    <Grid
+                                        MinHeight="90" Padding="16"
+                                        Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="0,0,0,1">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!--  Información principal del cliente  -->
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock
+                                                FontSize="16" FontWeight="SemiBold"
+                                                Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                                Text="{x:Bind RazonSocial}" />
+                                            <TextBlock
+                                                FontSize="14"
+                                                Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                                Text="{x:Bind NombreComercial}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                                <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                                    <Run Text="RFC: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                                    <Run Text="Prioridad: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                </Grid>
+
+                                <Grid Grid.Row="1" x:Name="Operaciones" Background="DarkGray" CornerRadius="0,0,5,5">
+                                    <TextBlock Text="Operaciones:" />
+                                </Grid>
                             </Grid>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
