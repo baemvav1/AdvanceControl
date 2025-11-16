@@ -1,4 +1,5 @@
 using System;
+using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -132,7 +133,7 @@ namespace Advance_Control.Behaviors
             if (sender is FrameworkElement element)
             {
                 // Change cursor to hand to indicate clickability
-                element.CursorProtected = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+                element.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
             }
         }
 
@@ -141,7 +142,7 @@ namespace Advance_Control.Behaviors
             if (sender is FrameworkElement element)
             {
                 // Reset cursor
-                element.CursorProtected = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+                element.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
             }
         }
 
