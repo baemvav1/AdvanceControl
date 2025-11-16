@@ -215,5 +215,88 @@ namespace Advance_Control.Tests.Services
                     "MostrarNotificacionAsync"),
                 Times.Once);
         }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_ConTiempoDeVida_CreaNotificacionConTiempoDeVida()
+        {
+            // Arrange
+            var titulo = "Notificación temporal";
+            var tiempoDeVida = 5;
+
+            // Act
+            var resultado = await _service.MostrarNotificacionAsync(titulo, tiempoDeVidaSegundos: tiempoDeVida);
+
+            // Assert
+            Assert.NotNull(resultado);
+            Assert.Equal(titulo, resultado.Titulo);
+            Assert.Equal(tiempoDeVida, resultado.TiempoDeVidaSegundos);
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_SinTiempoDeVida_CreaNotificacionEstatica()
+        {
+            // Arrange
+            var titulo = "Notificación estática";
+
+            // Act
+            var resultado = await _service.MostrarNotificacionAsync(titulo);
+
+            // Assert
+            Assert.NotNull(resultado);
+            Assert.Null(resultado.TiempoDeVidaSegundos);
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_ConTiempoDeVida_SeEliminaAutomaticamente()
+        {
+            // Arrange
+            var titulo = "Notificación auto-eliminable";
+            var tiempoDeVida = 1; // 1 segundo
+
+            // Act
+            await _service.MostrarNotificacionAsync(titulo, tiempoDeVidaSegundos: tiempoDeVida);
+            Assert.Single(_service.ObtenerNotificaciones());
+
+            // Wait for auto-deletion
+            await Task.Delay(TimeSpan.FromSeconds(tiempoDeVida + 0.5));
+
+            // Assert
+            Assert.Empty(_service.ObtenerNotificaciones());
+        }
+
+        [Fact]
+        public async Task EliminarNotificacion_ConNotificacionTemporal_CancelaTimerYEliminaNotificacion()
+        {
+            // Arrange
+            var titulo = "Notificación temporal a eliminar";
+            var tiempoDeVida = 5; // 5 segundos
+            var notificacion = await _service.MostrarNotificacionAsync(titulo, tiempoDeVidaSegundos: tiempoDeVida);
+
+            // Act
+            var resultado = _service.EliminarNotificacion(notificacion.Id);
+
+            // Assert
+            Assert.True(resultado);
+            Assert.Empty(_service.ObtenerNotificaciones());
+
+            // Verificar que el timer fue cancelado esperando más tiempo del configurado
+            await Task.Delay(TimeSpan.FromSeconds(tiempoDeVida + 1));
+            Assert.Empty(_service.ObtenerNotificaciones()); // Sigue vacío, no se agregó de nuevo
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_ConTiempoDeVidaCero_NoSeEliminaAutomaticamente()
+        {
+            // Arrange
+            var titulo = "Notificación con tiempo cero";
+            var tiempoDeVida = 0;
+
+            // Act
+            await _service.MostrarNotificacionAsync(titulo, tiempoDeVidaSegundos: tiempoDeVida);
+            await Task.Delay(TimeSpan.FromSeconds(1));
+
+            // Assert
+            Assert.Single(_service.ObtenerNotificaciones());
+        }
     }
 }

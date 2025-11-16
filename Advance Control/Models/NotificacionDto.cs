@@ -36,5 +36,11 @@ namespace Advance_Control.Models
         /// Identificador único de la notificación.
         /// </summary>
         public Guid Id { get; set; } = Guid.NewGuid();
+
+        /// <summary>
+        /// Tiempo de vida de la notificación en segundos (opcional).
+        /// Si es null, la notificación será estática hasta que el usuario la elimine.
+        /// </summary>
+        public int? TiempoDeVidaSegundos { get; set; }
     }
 }
