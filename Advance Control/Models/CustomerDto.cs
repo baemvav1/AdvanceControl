@@ -1,14 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Advance_Control.Models
 {
-    public class CustomerDto
+    public class CustomerDto : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
         [JsonPropertyName("idCliente")]
         public int IdCliente { get; set; }
 
@@ -63,10 +71,23 @@ namespace Advance_Control.Models
         [JsonPropertyName("idUsuarioAct")]
         public int? IdUsuarioAct { get; set; }
 
+        private bool _expand = false;
+
         /// <summary>
         /// Propiedad interna para controlar el estado de expansión en la UI.
         /// No se deserializa desde el endpoint.
         /// </summary>
-        public bool Expand { get; set; } = false;
+        public bool Expand
+        {
+            get => _expand;
+            set
+            {
+                if (_expand != value)
+                {
+                    _expand = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }

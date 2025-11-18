@@ -8,6 +8,9 @@
     <Page.Resources>
         <converters:LevelToBackgroundConverter x:Key="LevelToBackgroundConverter" />
         <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter" />
+        <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -98,38 +101,98 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:CustomerDto">
-                            <Grid
-                                MinHeight="90" Padding="16"
-                                Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,0,0,1">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <!--  Head Grid  -->
+                                <Grid
+                                    x:Name="Head"
+                                    MinHeight="90" Padding="16"
+                                    Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1,1,1,0"
+                                    CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
+                                    Tapped="HeadGrid_Tapped">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
 
-                                <!--  Información principal del cliente  -->
-                                <StackPanel Grid.Column="0" Spacing="6">
-                                    <TextBlock
-                                        FontSize="16" FontWeight="SemiBold"
-                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
-                                        Text="{x:Bind RazonSocial}" />
-                                    <TextBlock
-                                        FontSize="14"
-                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
-                                        Text="{x:Bind NombreComercial}" />
-                                    <StackPanel Orientation="Horizontal" Spacing="20">
-                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="RFC: " />
-                                            <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
+                                    <!--  Información principal del cliente  -->
+                                    <StackPanel Grid.Column="0" Spacing="6">
+                                        <TextBlock
+                                            FontSize="16" FontWeight="SemiBold"
+                                            Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                            Text="{x:Bind RazonSocial}" />
+                                        <TextBlock
+                                            FontSize="14"
+                                            Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                            Text="{x:Bind NombreComercial}" />
+                                        <StackPanel Orientation="Horizontal" Spacing="20">
+                                            <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                                <Run Text="RFC: " />
+                                                <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
+                                            </TextBlock>
+                                            <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                                <Run Text="Prioridad: " />
+                                                <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!--  Expand/Collapse Indicator  -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <FontIcon
+                                            FontFamily="Segoe MDL2 Assets"
+                                            FontSize="16"
+                                            Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                            Glyph="&#xE70D;"
+                                            Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                        <FontIcon
+                                            FontFamily="Segoe MDL2 Assets"
+                                            FontSize="16"
+                                            Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                            Glyph="&#xE70E;"
+                                            Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter='invert', Mode=OneWay}" />
+                                    </StackPanel>
+                                </Grid>
+
+                                <!--  Body Grid  -->
+                                <Grid
+                                    x:Name="Body"
+                                    Padding="16"
+                                    Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1,0,1,1"
+                                    CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|8', Mode=OneWay}"
+                                    Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock FontSize="14" FontWeight="SemiBold" Text="Detalles adicionales" />
+                                        <TextBlock FontSize="13">
+                                            <Run Text="CURP: " />
+                                            <Run FontWeight="SemiBold" Text="{x:Bind Curp}" />
                                         </TextBlock>
-                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="Prioridad: " />
-                                            <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
+                                        <TextBlock FontSize="13">
+                                            <Run Text="Régimen Fiscal: " />
+                                            <Run FontWeight="SemiBold" Text="{x:Bind RegimenFiscal}" />
+                                        </TextBlock>
+                                        <TextBlock FontSize="13">
+                                            <Run Text="Uso CFDI: " />
+                                            <Run FontWeight="SemiBold" Text="{x:Bind UsoCfdi}" />
+                                        </TextBlock>
+                                        <TextBlock FontSize="13" Visibility="{x:Bind DiasCredito, Converter={StaticResource NullToVisibilityConverter}}">
+                                            <Run Text="Días de Crédito: " />
+                                            <Run FontWeight="SemiBold" Text="{x:Bind DiasCredito}" />
+                                        </TextBlock>
+                                        <TextBlock FontSize="13" Visibility="{x:Bind LimiteCredito, Converter={StaticResource NullToVisibilityConverter}}">
+                                            <Run Text="Límite de Crédito: " />
+                                            <Run FontWeight="SemiBold" Text="{x:Bind LimiteCredito}" />
+                                        </TextBlock>
+                                        <TextBlock FontSize="13">
+                                            <Run Text="Notas: " />
+                                            <Run Text="{x:Bind Notas}" />
                                         </TextBlock>
                                     </StackPanel>
-                                </StackPanel>
-                            </Grid>
+                                </Grid>
+                            </StackPanel>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
