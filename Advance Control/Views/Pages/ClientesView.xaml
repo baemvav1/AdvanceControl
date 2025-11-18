@@ -8,9 +8,6 @@
     <Page.Resources>
         <converters:LevelToBackgroundConverter x:Key="LevelToBackgroundConverter" />
         <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter" />
-        <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
-        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
-        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -113,27 +110,34 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                <!--  Información principal del cliente  -->
-                                <StackPanel Grid.Column="0" Spacing="6">
-                                    <TextBlock
-                                        FontSize="16" FontWeight="SemiBold"
-                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
-                                        Text="{x:Bind RazonSocial}" />
-                                    <TextBlock
-                                        FontSize="14"
-                                        Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
-                                        Text="{x:Bind NombreComercial}" />
-                                    <StackPanel Orientation="Horizontal" Spacing="20">
-                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="RFC: " />
-                                            <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
-                                        </TextBlock>
-                                        <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                            <Run Text="Prioridad: " />
-                                            <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
-                                        </TextBlock>
-                                    </StackPanel>
+                                        <!--  Información principal del cliente  -->
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock
+                                                FontSize="16" FontWeight="SemiBold"
+                                                Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                                Text="{x:Bind RazonSocial}" />
+                                            <TextBlock
+                                                FontSize="14"
+                                                Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}"
+                                                Text="{x:Bind NombreComercial}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                                <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                                    <Run Text="RFC: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
+                                                    <Run Text="Prioridad: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid
+                                        Grid.Row="1" Background="WhiteSmoke" Visibility="Collapsed" x:Name="Body">
+                                        <TextBlock Foreground="Black" Text="Hola" />
+                                    </Grid>
                                 </StackPanel>
+
                             </Grid>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
