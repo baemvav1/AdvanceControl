@@ -130,7 +130,7 @@ namespace Advance_Control.Behaviors
 
         private static void OnPointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            if (sender is FrameworkElement element)
+            if (sender is UIElement element)
             {
                 // Change cursor to hand to indicate clickability
                 element.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
@@ -139,7 +139,7 @@ namespace Advance_Control.Behaviors
 
         private static void OnPointerExited(object sender, PointerRoutedEventArgs e)
         {
-            if (sender is FrameworkElement element)
+            if (sender is UIElement element)
             {
                 // Reset cursor
                 element.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
@@ -160,11 +160,8 @@ namespace Advance_Control.Behaviors
         {
             if (targetElement == null) return;
 
-            int duration = 200;
-            if (targetElement.Parent is DependencyObject parent)
-            {
-                duration = GetAnimationDuration(parent);
-            }
+            // Get animation duration from trigger element
+            int duration = GetAnimationDuration(triggerElement);
 
             if (animate)
             {
@@ -191,15 +188,17 @@ namespace Advance_Control.Behaviors
                 }
                 else
                 {
-                    // Restore to original height or auto
+                    // Restore to original height
                     heightAnimation.From = 0;
-                    if (targetElement.Tag is double originalHeight)
+                    if (targetElement.Tag is double originalHeight && originalHeight > 0)
                     {
                         heightAnimation.To = originalHeight;
                     }
                     else
                     {
-                        heightAnimation.To = double.NaN; // Auto height
+                        // If no stored height, measure the content
+                        targetElement.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+                        heightAnimation.To = targetElement.DesiredSize.Height;
                     }
                 }
 
