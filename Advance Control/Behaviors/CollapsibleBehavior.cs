@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.Versioning;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,6 +13,7 @@ namespace Advance_Control.Behaviors
     /// Behavior that makes a target element collapsible by clicking on a trigger element.
     /// Attach this behavior to the trigger element and specify the target element to collapse.
     /// </summary>
+    [SupportedOSPlatform("windows10.0.17763.0")]
     public static class CollapsibleBehavior
     {
         // Attached property for the target element to collapse
