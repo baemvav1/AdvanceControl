@@ -62,5 +62,11 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("idUsuarioAct")]
         public int? IdUsuarioAct { get; set; }
+
+        /// <summary>
+        /// Propiedad interna para controlar el estado de expansión en la UI.
+        /// No se deserializa desde el endpoint.
+        /// </summary>
+        public bool Expand { get; set; } = false;
     }
 }
