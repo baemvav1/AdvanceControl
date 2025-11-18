@@ -135,7 +135,7 @@ namespace Advance_Control.Behaviors
             if (sender is UIElement element)
             {
                 // Change cursor to hand to indicate clickability
-                element.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
+                element.Cursor = InputSystemCursor.Create(InputSystemCursorShape.Hand);
             }
         }
 
@@ -144,7 +144,7 @@ namespace Advance_Control.Behaviors
             if (sender is UIElement element)
             {
                 // Reset cursor
-                element.ProtectedCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+                element.Cursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
             }
         }
 
