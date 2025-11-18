@@ -335,5 +335,20 @@ namespace Advance_Control.Tests.ViewModels
             Assert.Contains(true, isLoadingStates); // Should have been true during loading
             Assert.False(viewModel.IsLoading); // Should be false after completion
         }
+
+        [Fact]
+        public void CustomerDto_ExpandProperty_IsInitializedToFalse()
+        {
+            // Arrange & Act
+            var customer = new CustomerDto
+            {
+                IdCliente = 1,
+                RazonSocial = "Test Cliente",
+                Rfc = "TEST123456ABC"
+            };
+
+            // Assert
+            Assert.False(customer.Expand);
+        }
     }
 }
