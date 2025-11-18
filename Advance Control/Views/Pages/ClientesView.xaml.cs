@@ -55,5 +55,13 @@ namespace Advance_Control.Views
         {
             await ViewModel.ClearFiltersAsync();
         }
+
+        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is Models.CustomerDto customer)
+            {
+                customer.Expand = !customer.Expand;
+            }
+        }
     }
 }
