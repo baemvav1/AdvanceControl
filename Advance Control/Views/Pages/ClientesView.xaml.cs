@@ -58,7 +58,8 @@ namespace Advance_Control.Views
 
         private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Models.CustomerDto customer)
+            // Get the CustomerDto from the sender's Tag property
+            if (sender is FrameworkElement element && element.Tag is Models.CustomerDto customer)
             {
                 customer.Expand = !customer.Expand;
             }
@@ -66,7 +67,8 @@ namespace Advance_Control.Views
 
         private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement element && element.DataContext is Models.CustomerDto customer)
+            // Get the CustomerDto from the sender's Tag property
+            if (sender is FrameworkElement element && element.Tag is Models.CustomerDto customer)
             {
                 customer.Expand = !customer.Expand;
             }
