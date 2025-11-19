@@ -63,5 +63,13 @@ namespace Advance_Control.Views
                 customer.Expand = !customer.Expand;
             }
         }
+
+        private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.DataContext is Models.CustomerDto customer)
+            {
+                customer.Expand = !customer.Expand;
+            }
+        }
     }
 }

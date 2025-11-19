@@ -10,6 +10,7 @@
         <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter" />
         <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -136,6 +137,15 @@
                                                 </TextBlock>
                                             </StackPanel>
                                         </StackPanel>
+
+                                        <!--  Botón para expandir/colapsar  -->
+                                        <Button
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Click="ToggleExpandButton_Click"
+                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
                                     </Grid>
                                     <Grid
                                         Grid.Row="1" 
