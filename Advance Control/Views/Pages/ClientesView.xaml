@@ -110,6 +110,7 @@
                                         BorderThickness="0,0,0,1" 
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
                                         Tapped="HeadGrid_Tapped"
+                                        Tag="{x:Bind}"
                                         x:Name="Head">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -145,6 +146,7 @@
                                             Background="Transparent"
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
+                                            Tag="{x:Bind}"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
                                     </Grid>
                                     <Grid
