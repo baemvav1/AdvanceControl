@@ -8,6 +8,8 @@
     <Page.Resources>
         <converters:LevelToBackgroundConverter x:Key="LevelToBackgroundConverter" />
         <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter" />
+        <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -104,7 +106,10 @@
                                         Grid.Row="0" MinHeight="90" Padding="16"
                                         Background="{x:Bind Prioridad, Converter={StaticResource LevelToBackgroundConverter}}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                        BorderThickness="0,0,0,1" x:Name="Head">
+                                        BorderThickness="0,0,0,1" 
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
+                                        Tapped="HeadGrid_Tapped"
+                                        x:Name="Head">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
@@ -133,7 +138,11 @@
                                         </StackPanel>
                                     </Grid>
                                     <Grid
-                                        Grid.Row="1" Background="WhiteSmoke" Visibility="Collapsed" x:Name="Body">
+                                        Grid.Row="1" 
+                                        Background="WhiteSmoke" 
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
+                                        Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                                        x:Name="Body">
                                         <TextBlock Foreground="Black" Text="Hola" />
                                     </Grid>
                                 </StackPanel>
