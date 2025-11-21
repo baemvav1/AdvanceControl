@@ -154,8 +154,123 @@
                                         Background="WhiteSmoke" 
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                                        Padding="16"
                                         x:Name="Body">
-                                        <TextBlock Foreground="Black" Text="Hola" />
+                                        <StackPanel Spacing="12">
+                                            <!-- Información fiscal y legal -->
+                                            <StackPanel Spacing="6">
+                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Información Fiscal y Legal" Foreground="Black" />
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="CURP:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Curp}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Tipo de Persona:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind TipoPersona}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Régimen Fiscal:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind RegimenFiscal}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Uso CFDI:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind UsoCfdi}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Estatus:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Estatus}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Cliente:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdCliente}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                            
+                                            <!-- Información de crédito -->
+                                            <StackPanel Spacing="6">
+                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Información de Crédito" Foreground="Black" />
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    
+                                                    <StackPanel Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Días de Crédito:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind DiasCredito}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Límite de Crédito:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind LimiteCredito}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                            
+                                            <!-- Notas -->
+                                            <StackPanel Spacing="6">
+                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Notas" Foreground="Black" />
+                                                <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Notas}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            
+                                            <!-- Información de auditoría -->
+                                            <StackPanel Spacing="6">
+                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Información de Auditoría" Foreground="Black" />
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Creado En:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind CreadoEn}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Usuario Creador:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdUsuarioCreador}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Actualizado En:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind ActualizadoEn}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Usuario Actualizador:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdUsuarioAct}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Credencial ID:" />
+                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind CredencialId}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </StackPanel>
+                                        </StackPanel>
                                     </Grid>
                                 </StackPanel>
 
