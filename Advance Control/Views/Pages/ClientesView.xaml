@@ -171,32 +171,29 @@
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
                                                     
-                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="CURP:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Curp}" TextWrapping="Wrap" />
-                                                    </StackPanel>
                                                     
-                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Tipo de Persona:" />
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind TipoPersona}" />
                                                     </StackPanel>
                                                     
-                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
+                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Régimen Fiscal:" />
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind RegimenFiscal}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                     
-                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
+                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Uso CFDI:" />
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind UsoCfdi}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                     
-                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,8,0">
+                                                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Estatus:" />
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                     
-                                                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,4,0,0">
+                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="ID Cliente:" />
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdCliente}" />
                                                     </StackPanel>
