@@ -76,7 +76,18 @@ namespace Advance_Control.ViewModels
             // Load user info if already authenticated
             if (_isAuthenticated)
             {
-                _ = LoadUserInfoAsync();
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await LoadUserInfoAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error but don't propagate to avoid crashing during initialization
+                        await _logger.LogErrorAsync("Error al cargar información del usuario durante la inicialización", ex, "MainViewModel", ".ctor");
+                    }
+                });
             }
         }
 
@@ -269,15 +280,26 @@ namespace Advance_Control.ViewModels
                 };
 
                 // Manejar el cierre automático cuando el login sea exitoso
-                loginViewModel.PropertyChanged += async (s, e) =>
+                loginViewModel.PropertyChanged += (s, e) =>
                 {
                     if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
                     {
                         // Actualizar el estado de autenticación en MainViewModel
                         IsAuthenticated = true;
                         
-                        // Cargar información del usuario
-                        await LoadUserInfoAsync();
+                        // Cargar información del usuario de forma asíncrona sin bloquear
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await LoadUserInfoAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't propagate to avoid crashing the app
+                                await _logger.LogErrorAsync("Error al cargar información del usuario después del login", ex, "MainViewModel", "ShowLoginDialogAsync");
+                            }
+                        });
                     }
                 };
 
