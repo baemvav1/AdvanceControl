@@ -18,7 +18,7 @@
                 <RowDefinition />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
-                <StackPanel Orientation="Horizontal" Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="10" x:Name="TopBar">
                     <Button Click="LoginButton_Click" Content="Login" />
                     <Button Click="ToggleNotificaciones_Click" Content="Toggle Notificaciones" />
                 </StackPanel>
