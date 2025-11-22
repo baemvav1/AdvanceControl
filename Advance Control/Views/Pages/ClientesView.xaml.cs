@@ -56,15 +56,6 @@ namespace Advance_Control.Views
             await ViewModel.ClearFiltersAsync();
         }
 
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            // Get the CustomerDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.CustomerDto customer)
-            {
-                customer.Expand = !customer.Expand;
-            }
-        }
-
         private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
             // Get the CustomerDto from the sender's Tag property
