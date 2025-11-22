@@ -16,6 +16,7 @@ using Advance_Control.Services.Notificacion;
 using System.Collections.ObjectModel;
 using Advance_Control.Models;
 using CommunityToolkit.Mvvm.Input;
+using Advance_Control.Services.UserInfo;
 
 namespace Advance_Control.ViewModels
 {
@@ -28,12 +29,15 @@ namespace Advance_Control.ViewModels
         private readonly IDialogService _dialogService;
         private readonly IServiceProvider _serviceProvider;
         private readonly INotificacionService _notificacionService;
+        private readonly IUserInfoService _userInfoService;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
         private bool _isBackEnabled;
         private bool _isNotificacionesVisible = true;
         private ObservableCollection<NotificacionDto> _notificaciones;
+        private string _userInitials = "";
+        private string _userType = "";
 
         public MainViewModel(
             INavigationService navigationService,
@@ -42,7 +46,8 @@ namespace Advance_Control.ViewModels
             IAuthService authService,
             IDialogService dialogService,
             IServiceProvider serviceProvider,
-            INotificacionService notificacionService)
+            INotificacionService notificacionService,
+            IUserInfoService userInfoService)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
@@ -51,6 +56,7 @@ namespace Advance_Control.ViewModels
             _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
+            _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -66,6 +72,23 @@ namespace Advance_Control.ViewModels
 
             // Initialize commands
             EliminarNotificacionCommand = new RelayCommand<Guid>(EliminarNotificacion);
+
+            // Load user info if already authenticated
+            if (_isAuthenticated)
+            {
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await LoadUserInfoAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log error but don't propagate to avoid crashing during initialization
+                        await _logger.LogErrorAsync("Error al cargar información del usuario durante la inicialización", ex, "MainViewModel", ".ctor");
+                    }
+                });
+            }
         }
 
         public string Title
@@ -96,6 +119,18 @@ namespace Advance_Control.ViewModels
         {
             get => _notificaciones;
             set => SetProperty(ref _notificaciones, value);
+        }
+
+        public string UserInitials
+        {
+            get => _userInitials;
+            set => SetProperty(ref _userInitials, value);
+        }
+
+        public string UserType
+        {
+            get => _userType;
+            set => SetProperty(ref _userType, value);
         }
 
         public ICommand EliminarNotificacionCommand { get; }
@@ -164,6 +199,11 @@ namespace Advance_Control.ViewModels
                 // Logout revoca el refresh token en el servidor y limpia tokens locales
                 await _authService.LogoutAsync();
                 IsAuthenticated = false;
+                
+                // Limpiar información del usuario
+                UserInitials = string.Empty;
+                UserType = string.Empty;
+                
                 await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }
             catch (Exception ex)
@@ -246,6 +286,20 @@ namespace Advance_Control.ViewModels
                     {
                         // Actualizar el estado de autenticación en MainViewModel
                         IsAuthenticated = true;
+                        
+                        // Cargar información del usuario de forma asíncrona sin bloquear
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await LoadUserInfoAsync();
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't propagate to avoid crashing the app
+                                await _logger.LogErrorAsync("Error al cargar información del usuario después del login", ex, "MainViewModel", "ShowLoginDialogAsync");
+                            }
+                        });
                     }
                 };
 
@@ -303,6 +357,60 @@ namespace Advance_Control.ViewModels
         private void EliminarNotificacion(Guid notificacionId)
         {
             _notificacionService.EliminarNotificacion(notificacionId);
+        }
+
+        /// <summary>
+        /// Carga la información del usuario autenticado
+        /// </summary>
+        public async Task LoadUserInfoAsync()
+        {
+            try
+            {
+                var userInfo = await _userInfoService.GetUserInfoAsync();
+                
+                if (userInfo != null)
+                {
+                    // Extraer iniciales del nombre completo
+                    UserInitials = GetInitials(userInfo.NombreCompleto);
+                    UserType = userInfo.TipoUsuario ?? string.Empty;
+                    
+                    await _logger.LogInformationAsync($"Información de usuario cargada: {userInfo.NombreCompleto} ({userInfo.TipoUsuario})", "MainViewModel", "LoadUserInfoAsync");
+                }
+                else
+                {
+                    // Limpiar información si no se pudo obtener
+                    UserInitials = string.Empty;
+                    UserType = string.Empty;
+                    await _logger.LogWarningAsync("No se pudo obtener la información del usuario", "MainViewModel", "LoadUserInfoAsync");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al cargar información del usuario", ex, "MainViewModel", "LoadUserInfoAsync");
+                UserInitials = string.Empty;
+                UserType = string.Empty;
+            }
+        }
+
+        /// <summary>
+        /// Extrae las iniciales de un nombre completo
+        /// </summary>
+        /// <param name="nombreCompleto">Nombre completo del usuario</param>
+        /// <returns>Iniciales en mayúsculas</returns>
+        private string GetInitials(string? nombreCompleto)
+        {
+            if (string.IsNullOrWhiteSpace(nombreCompleto))
+                return string.Empty;
+
+            var words = nombreCompleto.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            if (words.Length == 0)
+                return string.Empty;
+
+            // Tomar la primera letra de cada palabra (máximo 3 iniciales)
+            var initials = string.Join("", words.Take(3).Select(w => w[0].ToString().ToUpper()));
+            
+            return initials;
         }
     }
 }
