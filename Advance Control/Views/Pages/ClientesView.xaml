@@ -101,7 +101,7 @@
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:CustomerDto">
-                            <Grid>
+                            <Grid Margin="0,5,20,5">
                                 <StackPanel Orientation="Vertical">
                                     <Grid
                                         Grid.Row="0" MinHeight="90" Padding="16"
@@ -131,10 +131,6 @@
                                                 <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
                                                     <Run Text="RFC: " />
                                                     <Run FontWeight="SemiBold" Text="{x:Bind Rfc}" />
-                                                </TextBlock>
-                                                <TextBlock FontSize="13" Foreground="{x:Bind Prioridad, Converter={StaticResource LevelToForegroundConverter}}">
-                                                    <Run Text="Prioridad: " />
-                                                    <Run FontWeight="SemiBold" Text="{x:Bind Prioridad}" />
                                                 </TextBlock>
                                             </StackPanel>
                                         </StackPanel>
