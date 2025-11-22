@@ -1,0 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Advance_Control.Models
+{
+    public class UserInfoDto
+    {
+        public int CredencialId { get; set; }
+        public string? NombreCompleto { get; set; }
+        public string? Correo { get; set; }
+        public string? Telefono { get; set; }
+        public int Nivel { get; set; }
+        public string? TipoUsuario { get; set; }
+    }
+}
