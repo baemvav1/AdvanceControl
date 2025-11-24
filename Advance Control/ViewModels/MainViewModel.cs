@@ -457,6 +457,11 @@ namespace Advance_Control.ViewModels
             else
             {
                 // If we can't get the dispatcher, execute directly (might be on UI thread already)
+                // This can happen during testing or before the main window is initialized
+                await _logger.LogWarningAsync(
+                    "DispatcherQueue not available, executing property update directly. This may cause threading issues if not on UI thread.",
+                    "MainViewModel",
+                    "UpdateUIPropertiesAsync");
                 action();
             }
         }
