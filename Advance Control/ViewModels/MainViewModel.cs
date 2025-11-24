@@ -30,6 +30,7 @@ namespace Advance_Control.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
+        private Microsoft.UI.Dispatching.DispatcherQueue? _uiDispatcherQueue;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -141,6 +142,9 @@ namespace Advance_Control.ViewModels
         {
             if (contentFrame == null)
                 throw new ArgumentNullException(nameof(contentFrame));
+
+            // Capture the UI thread's DispatcherQueue
+            _uiDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
 
             // Initialize the navigation service with the Frame
             _navigationService.Initialize(contentFrame);
@@ -437,24 +441,38 @@ namespace Advance_Control.ViewModels
         /// <param name="action">Action to execute on the UI thread</param>
         private void RunOnUIThread(Action action)
         {
-            var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-            if (dispatcherQueue != null && dispatcherQueue.HasThreadAccess)
+            // If we have the UI DispatcherQueue, use it
+            if (_uiDispatcherQueue != null)
             {
-                // Already on the UI thread, execute directly
-                action();
-            }
-            else if (dispatcherQueue != null)
-            {
-                // On a thread with a DispatcherQueue but not the UI thread, enqueue
-                if (!dispatcherQueue.TryEnqueue(() => action()))
+                if (_uiDispatcherQueue.HasThreadAccess)
                 {
-                    // If enqueue fails, log a warning but don't throw to avoid breaking the app
-                    _ = _logger?.LogWarningAsync("Failed to enqueue action on UI thread", "MainViewModel", "RunOnUIThread");
+                    // Already on the UI thread, execute directly
+                    action();
+                }
+                else
+                {
+                    // Not on UI thread, enqueue the action
+                    if (!_uiDispatcherQueue.TryEnqueue(() => action()))
+                    {
+                        // If enqueue fails, log a warning but don't throw to avoid breaking the app
+                        Task.Run(async () => 
+                        {
+                            try
+                            {
+                                await _logger.LogWarningAsync("Failed to enqueue action on UI thread", "MainViewModel", "RunOnUIThread");
+                            }
+                            catch
+                            {
+                                // Suppress exceptions in logging to prevent further issues
+                            }
+                        });
+                    }
                 }
             }
             else
             {
-                // No DispatcherQueue available, execute directly (may happen during tests or startup)
+                // No UI DispatcherQueue available (may happen during tests or before initialization)
+                // Execute directly as a fallback
                 action();
             }
         }
