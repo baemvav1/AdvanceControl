@@ -199,23 +199,13 @@ namespace Advance_Control.ViewModels
                 // Logout revoca el refresh token en el servidor y limpia tokens locales
                 await _authService.LogoutAsync();
                 
-                // Ensure property updates happen on the UI thread
-                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-                if (dispatcherQueue != null)
-                {
-                    dispatcherQueue.TryEnqueue(() =>
-                    {
-                        IsAuthenticated = false;
-                        UserInitials = string.Empty;
-                        UserType = string.Empty;
-                    });
-                }
-                else
+                // Limpiar información del usuario en el hilo de UI
+                RunOnUIThread(() =>
                 {
                     IsAuthenticated = false;
                     UserInitials = string.Empty;
                     UserType = string.Empty;
-                }
+                });
                 
                 await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }
@@ -381,47 +371,29 @@ namespace Advance_Control.ViewModels
             {
                 var userInfo = await _userInfoService.GetUserInfoAsync();
                 
-                // Ensure property updates happen on the UI thread
-                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-                
                 if (userInfo != null)
                 {
                     // Extraer iniciales del nombre completo
                     var initials = GetInitials(userInfo.NombreCompleto);
                     var userType = userInfo.TipoUsuario ?? string.Empty;
                     
-                    if (dispatcherQueue != null)
-                    {
-                        dispatcherQueue.TryEnqueue(() =>
-                        {
-                            UserInitials = initials;
-                            UserType = userType;
-                        });
-                    }
-                    else
+                    // Actualizar propiedades en el hilo de UI
+                    RunOnUIThread(() =>
                     {
                         UserInitials = initials;
                         UserType = userType;
-                    }
+                    });
                     
                     await _logger.LogInformationAsync($"Información de usuario cargada: {userInfo.NombreCompleto} ({userInfo.TipoUsuario})", "MainViewModel", "LoadUserInfoAsync");
                 }
                 else
                 {
                     // Limpiar información si no se pudo obtener
-                    if (dispatcherQueue != null)
-                    {
-                        dispatcherQueue.TryEnqueue(() =>
-                        {
-                            UserInitials = string.Empty;
-                            UserType = string.Empty;
-                        });
-                    }
-                    else
+                    RunOnUIThread(() =>
                     {
                         UserInitials = string.Empty;
                         UserType = string.Empty;
-                    }
+                    });
                     await _logger.LogWarningAsync("No se pudo obtener la información del usuario", "MainViewModel", "LoadUserInfoAsync");
                 }
             }
@@ -429,21 +401,12 @@ namespace Advance_Control.ViewModels
             {
                 await _logger.LogErrorAsync("Error al cargar información del usuario", ex, "MainViewModel", "LoadUserInfoAsync");
                 
-                // Ensure property updates happen on the UI thread
-                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-                if (dispatcherQueue != null)
-                {
-                    dispatcherQueue.TryEnqueue(() =>
-                    {
-                        UserInitials = string.Empty;
-                        UserType = string.Empty;
-                    });
-                }
-                else
+                // Limpiar información en caso de error en el hilo de UI
+                RunOnUIThread(() =>
                 {
                     UserInitials = string.Empty;
                     UserType = string.Empty;
-                }
+                });
             }
         }
 
@@ -466,6 +429,23 @@ namespace Advance_Control.ViewModels
             var initials = string.Join("", words.Take(3).Select(w => w[0].ToString().ToUpper()));
             
             return initials;
+        }
+
+        /// <summary>
+        /// Ejecuta una acción en el hilo de UI, encolándola si es necesario
+        /// </summary>
+        /// <param name="action">Acción a ejecutar en el hilo de UI</param>
+        private void RunOnUIThread(Action action)
+        {
+            var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            if (dispatcherQueue != null)
+            {
+                dispatcherQueue.TryEnqueue(() => action());
+            }
+            else
+            {
+                action();
+            }
         }
     }
 }
