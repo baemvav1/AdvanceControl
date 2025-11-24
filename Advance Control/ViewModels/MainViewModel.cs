@@ -198,11 +198,24 @@ namespace Advance_Control.ViewModels
             {
                 // Logout revoca el refresh token en el servidor y limpia tokens locales
                 await _authService.LogoutAsync();
-                IsAuthenticated = false;
                 
-                // Limpiar información del usuario
-                UserInitials = string.Empty;
-                UserType = string.Empty;
+                // Ensure property updates happen on the UI thread
+                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                if (dispatcherQueue != null)
+                {
+                    dispatcherQueue.TryEnqueue(() =>
+                    {
+                        IsAuthenticated = false;
+                        UserInitials = string.Empty;
+                        UserType = string.Empty;
+                    });
+                }
+                else
+                {
+                    IsAuthenticated = false;
+                    UserInitials = string.Empty;
+                    UserType = string.Empty;
+                }
                 
                 await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }
@@ -368,27 +381,69 @@ namespace Advance_Control.ViewModels
             {
                 var userInfo = await _userInfoService.GetUserInfoAsync();
                 
+                // Ensure property updates happen on the UI thread
+                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                
                 if (userInfo != null)
                 {
                     // Extraer iniciales del nombre completo
-                    UserInitials = GetInitials(userInfo.NombreCompleto);
-                    UserType = userInfo.TipoUsuario ?? string.Empty;
+                    var initials = GetInitials(userInfo.NombreCompleto);
+                    var userType = userInfo.TipoUsuario ?? string.Empty;
+                    
+                    if (dispatcherQueue != null)
+                    {
+                        dispatcherQueue.TryEnqueue(() =>
+                        {
+                            UserInitials = initials;
+                            UserType = userType;
+                        });
+                    }
+                    else
+                    {
+                        UserInitials = initials;
+                        UserType = userType;
+                    }
                     
                     await _logger.LogInformationAsync($"Información de usuario cargada: {userInfo.NombreCompleto} ({userInfo.TipoUsuario})", "MainViewModel", "LoadUserInfoAsync");
                 }
                 else
                 {
                     // Limpiar información si no se pudo obtener
-                    UserInitials = string.Empty;
-                    UserType = string.Empty;
+                    if (dispatcherQueue != null)
+                    {
+                        dispatcherQueue.TryEnqueue(() =>
+                        {
+                            UserInitials = string.Empty;
+                            UserType = string.Empty;
+                        });
+                    }
+                    else
+                    {
+                        UserInitials = string.Empty;
+                        UserType = string.Empty;
+                    }
                     await _logger.LogWarningAsync("No se pudo obtener la información del usuario", "MainViewModel", "LoadUserInfoAsync");
                 }
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al cargar información del usuario", ex, "MainViewModel", "LoadUserInfoAsync");
-                UserInitials = string.Empty;
-                UserType = string.Empty;
+                
+                // Ensure property updates happen on the UI thread
+                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                if (dispatcherQueue != null)
+                {
+                    dispatcherQueue.TryEnqueue(() =>
+                    {
+                        UserInitials = string.Empty;
+                        UserType = string.Empty;
+                    });
+                }
+                else
+                {
+                    UserInitials = string.Empty;
+                    UserType = string.Empty;
+                }
             }
         }
 
