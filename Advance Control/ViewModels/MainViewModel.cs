@@ -432,18 +432,29 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Ejecuta una acción en el hilo de UI, encolándola si es necesario
+        /// Executes an action on the UI thread, enqueueing it if necessary
         /// </summary>
-        /// <param name="action">Acción a ejecutar en el hilo de UI</param>
+        /// <param name="action">Action to execute on the UI thread</param>
         private void RunOnUIThread(Action action)
         {
             var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-            if (dispatcherQueue != null)
+            if (dispatcherQueue != null && dispatcherQueue.HasThreadAccess)
             {
-                dispatcherQueue.TryEnqueue(() => action());
+                // Already on the UI thread, execute directly
+                action();
+            }
+            else if (dispatcherQueue != null)
+            {
+                // On a thread with a DispatcherQueue but not the UI thread, enqueue
+                if (!dispatcherQueue.TryEnqueue(() => action()))
+                {
+                    // If enqueue fails, log a warning but don't throw to avoid breaking the app
+                    _ = _logger?.LogWarningAsync("Failed to enqueue action on UI thread", "MainViewModel", "RunOnUIThread");
+                }
             }
             else
             {
+                // No DispatcherQueue available, execute directly (may happen during tests or startup)
                 action();
             }
         }
