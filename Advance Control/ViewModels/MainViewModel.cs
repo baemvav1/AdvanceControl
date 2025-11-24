@@ -260,25 +260,17 @@ namespace Advance_Control.ViewModels
                     try
                     {
                         // Asegurar que Hide() se ejecute en el hilo de UI
-                        var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-                        if (dispatcherQueue != null)
+                        RunOnUIThread(() =>
                         {
-                            _ = dispatcherQueue.TryEnqueue(() =>
+                            try
                             {
-                                try
-                                {
-                                    dialog.Hide();
-                                }
-                                catch
-                                {
-                                    // El diálogo ya puede estar cerrado
-                                }
-                            });
-                        }
-                        else
-                        {
-                            dialog.Hide();
-                        }
+                                dialog.Hide();
+                            }
+                            catch
+                            {
+                                // El diálogo ya puede estar cerrado
+                            }
+                        });
                     }
                     catch (Exception ex)
                     {
@@ -453,18 +445,16 @@ namespace Advance_Control.ViewModels
                 else
                 {
                     // Not on UI thread, enqueue the action
-                    if (!_uiDispatcherQueue.TryEnqueue(action))
-                    {
-                        // If enqueue fails (queue is shutting down), execute directly as last resort
-                        // This is better than losing the update entirely
-                        action();
-                    }
+                    _ = _uiDispatcherQueue.TryEnqueue(action);
+                    // Note: If TryEnqueue fails (returns false), it means the queue is shutting down.
+                    // In this case, we intentionally do nothing to maintain thread safety.
+                    // The app is likely closing anyway, so losing this update is acceptable.
                 }
             }
             else
             {
                 // No UI DispatcherQueue available (may happen during tests or before initialization)
-                // Execute directly as a fallback
+                // Execute directly as a fallback - tests don't have UI thread restrictions
                 action();
             }
         }
