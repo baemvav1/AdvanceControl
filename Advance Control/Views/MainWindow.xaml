@@ -45,7 +45,22 @@
                     </Grid>
 
                     <Grid Grid.Column="2">
-                        <Button Click="ToggleNotificaciones_Click" Content="Toggle Notificaciones" HorizontalAlignment="Right" />
+                        <Button 
+                            x:Name="ToggleNotificacionesButton"
+                            Click="ToggleNotificaciones_Click" 
+                            HorizontalAlignment="Right"
+                            Width="32"
+                            Height="32"
+                            Padding="0"
+                            CornerRadius="16"
+                            Background="{Binding HasUnseenNotifications, Converter={StaticResource NotificationColorConverter}}">
+                            <TextBlock 
+                                Text="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToArrowConverter}}"
+                                FontSize="18"
+                                FontWeight="Bold"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                        </Button>
                     </Grid>
                 </Grid>
             </Grid>

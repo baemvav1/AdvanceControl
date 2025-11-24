@@ -38,6 +38,8 @@ namespace Advance_Control.ViewModels
         private ObservableCollection<NotificacionDto> _notificaciones;
         private string _userInitials = "";
         private string _userType = "";
+        private bool _hasUnseenNotifications;
+        private int _lastSeenNotificationCount;
 
         public MainViewModel(
             INavigationService navigationService,
@@ -68,6 +70,7 @@ namespace Advance_Control.ViewModels
             if (_notificacionService is NotificacionService notifService)
             {
                 _notificaciones = notifService.NotificacionesObservable;
+                notifService.NotificacionAgregada += OnNotificacionAgregada;
             }
 
             // Initialize commands
@@ -91,6 +94,27 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        /// <summary>
+        /// Handler for when a new notification is added
+        /// </summary>
+        private void OnNotificacionAgregada(object? sender, NotificacionDto e)
+        {
+            // Only update HasUnseenNotifications if the panel is collapsed
+            if (!_isNotificacionesVisible)
+            {
+                UpdateHasUnseenNotifications();
+            }
+        }
+
+        /// <summary>
+        /// Updates the HasUnseenNotifications property based on current notification count
+        /// </summary>
+        private void UpdateHasUnseenNotifications()
+        {
+            // When panel is collapsed, if there are notifications we haven't seen, show green
+            HasUnseenNotifications = (_notificaciones?.Count ?? 0) > 0;
+        }
+
         public string Title
         {
             get => _title;
@@ -112,7 +136,23 @@ namespace Advance_Control.ViewModels
         public bool IsNotificacionesVisible
         {
             get => _isNotificacionesVisible;
-            set => SetProperty(ref _isNotificacionesVisible, value);
+            set
+            {
+                if (SetProperty(ref _isNotificacionesVisible, value))
+                {
+                    if (value)
+                    {
+                        // When panel is expanded, mark as seen (gray)
+                        HasUnseenNotifications = false;
+                        _lastSeenNotificationCount = _notificaciones?.Count ?? 0;
+                    }
+                    else
+                    {
+                        // When panel is collapsed, check for unseen notifications
+                        UpdateHasUnseenNotifications();
+                    }
+                }
+            }
         }
 
         public ObservableCollection<NotificacionDto> Notificaciones
@@ -131,6 +171,15 @@ namespace Advance_Control.ViewModels
         {
             get => _userType;
             set => SetProperty(ref _userType, value);
+        }
+
+        /// <summary>
+        /// Indicates if there are unseen notifications (button should be green)
+        /// </summary>
+        public bool HasUnseenNotifications
+        {
+            get => _hasUnseenNotifications;
+            set => SetProperty(ref _hasUnseenNotifications, value);
         }
 
         public ICommand EliminarNotificacionCommand { get; }

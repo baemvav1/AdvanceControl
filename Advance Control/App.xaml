@@ -20,6 +20,11 @@
 
             <converters:DateTimeFormatConverter x:Key="DateTimeFormatConverter" />
 
+            <converters:BooleanToArrowConverter x:Key="BoolToArrowConverter" />
+
+            <converters:BooleanToSystemColorBrushConverter
+                x:Key="NotificationColorConverter" TrueColorName="Green" FalseColorName="Gray" />
+
             <!--  Other app resources here  -->
         </ResourceDictionary>
     </Application.Resources>
