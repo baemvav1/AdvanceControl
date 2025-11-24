@@ -55,10 +55,6 @@ namespace Advance_Control.Services.UserInfo
                 // Deserializar la respuesta
                 var userInfo = await response.Content.ReadFromJsonAsync<UserInfoDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                if (userInfo != null)
-                {
-                    await _logger.LogInformationAsync($"Información del usuario obtenida exitosamente: {userInfo.NombreCompleto}", "UserInfoService", "GetUserInfoAsync");
-                }
 
                 return userInfo;
             }
