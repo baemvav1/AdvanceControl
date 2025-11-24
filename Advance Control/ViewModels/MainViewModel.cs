@@ -17,6 +17,7 @@ using System.Collections.ObjectModel;
 using Advance_Control.Models;
 using CommunityToolkit.Mvvm.Input;
 using Advance_Control.Services.UserInfo;
+using Microsoft.UI.Dispatching;
 
 namespace Advance_Control.ViewModels
 {
@@ -30,7 +31,7 @@ namespace Advance_Control.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
-        private Microsoft.UI.Dispatching.DispatcherQueue? _uiDispatcherQueue;
+        private DispatcherQueue? _uiDispatcherQueue;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -144,7 +145,7 @@ namespace Advance_Control.ViewModels
                 throw new ArgumentNullException(nameof(contentFrame));
 
             // Capture the UI thread's DispatcherQueue
-            _uiDispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            _uiDispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
             // Initialize the navigation service with the Frame
             _navigationService.Initialize(contentFrame);
@@ -452,20 +453,11 @@ namespace Advance_Control.ViewModels
                 else
                 {
                     // Not on UI thread, enqueue the action
-                    if (!_uiDispatcherQueue.TryEnqueue(() => action()))
+                    if (!_uiDispatcherQueue.TryEnqueue(action))
                     {
-                        // If enqueue fails, log a warning but don't throw to avoid breaking the app
-                        Task.Run(async () => 
-                        {
-                            try
-                            {
-                                await _logger.LogWarningAsync("Failed to enqueue action on UI thread", "MainViewModel", "RunOnUIThread");
-                            }
-                            catch
-                            {
-                                // Suppress exceptions in logging to prevent further issues
-                            }
-                        });
+                        // If enqueue fails (queue is shutting down), execute directly as last resort
+                        // This is better than losing the update entirely
+                        action();
                     }
                 }
             }
