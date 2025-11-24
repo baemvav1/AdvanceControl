@@ -194,5 +194,46 @@ namespace Advance_Control.Tests.Services
             Assert.NotNull(capturedUri);
             Assert.Contains("UserInfo/infoUsuario", capturedUri);
         }
+
+        [Fact]
+        public async Task GetUserInfoAsync_DeserializesCamelCaseJson()
+        {
+            // Arrange - Simulate actual API response with camelCase property names
+            var camelCaseJson = @"{
+                ""credencialId"": 1,
+                ""nombreCompleto"": ""Braulio Emiliano Vazquez Valdez"",
+                ""correo"": ""baemvav@gmail.com"",
+                ""telefono"": ""5655139308"",
+                ""nivel"": 6,
+                ""tipoUsuario"": ""Devs""
+            }";
+
+            var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent(camelCaseJson, System.Text.Encoding.UTF8, "application/json")
+            };
+
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(responseMessage);
+
+            var service = new UserInfoService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
+
+            // Act
+            var result = await service.GetUserInfoAsync();
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Equal(1, result.CredencialId);
+            Assert.Equal("Braulio Emiliano Vazquez Valdez", result.NombreCompleto);
+            Assert.Equal("baemvav@gmail.com", result.Correo);
+            Assert.Equal("5655139308", result.Telefono);
+            Assert.Equal(6, result.Nivel);
+            Assert.Equal("Devs", result.TipoUsuario);
+        }
     }
 }
