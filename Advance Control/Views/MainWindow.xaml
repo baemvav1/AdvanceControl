@@ -17,43 +17,37 @@
                 <RowDefinition Height="50" />
                 <RowDefinition />
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0">
-                <StackPanel Orientation="Horizontal" Spacing="10" x:Name="TopBar">
-                    <Button Click="LoginButton_Click" Content="Login" />
-                    <Button Click="ToggleNotificaciones_Click" Content="Toggle Notificaciones" />
-                    
-                    <!-- User Info Display -->
-                    <StackPanel 
-                        Orientation="Horizontal" 
-                        Spacing="8" 
-                        VerticalAlignment="Center"
-                        Visibility="{Binding IsAuthenticated, Converter={StaticResource BoolToVisibilityConverter}}">
-                        
-                        <!-- User Initials Circle -->
-                        <Border 
-                            Width="32" 
-                            Height="32" 
-                            CornerRadius="16"
+            <Grid x:Name="TopBar" Grid.Row="0">
+                <Grid Margin="10,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                        <ColumnDefinition Width="1*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Grid.Column="0">
+                        <!--  Boton login/logout  -->
+                        <Button
+                            x:Name="LogIn" Width="50" Height="32" VerticalAlignment="Center"
                             Background="{ThemeResource AccentFillColorDefaultBrush}"
-                            VerticalAlignment="Center">
-                            <TextBlock 
-                                Text="{Binding UserInitials}"
-                                FontWeight="Bold"
-                                FontSize="14"
+                            Click="LoginButton_Click" CornerRadius="16">
+                            <TextBlock
+                                HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"
                                 Foreground="White"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center" />
-                        </Border>
-                        
-                        <!-- User Type -->
-                        <TextBlock 
-                            Text="{Binding UserType}"
-                            FontSize="14"
-                            FontWeight="SemiBold"
-                            VerticalAlignment="Center"
-                            Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                    </StackPanel>
-                </StackPanel>
+                                Text="{Binding UserInitials}" />
+                        </Button>
+                    </Grid>
+
+                    <Grid Grid.Column="1"> 
+                        <TextBlock
+                            VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"
+                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                            Text="{Binding UserType}" HorizontalAlignment="Center"/>
+                    </Grid>
+
+                    <Grid Grid.Column="2">
+                        <Button Click="ToggleNotificaciones_Click" Content="Toggle Notificaciones" HorizontalAlignment="Right" />
+                    </Grid>
+                </Grid>
             </Grid>
             <Grid Grid.Row="1">
                 <NavigationView
@@ -75,35 +69,28 @@
 
         </Grid>
         <Grid
-            x:Name="Notificaciones" Grid.Row="0" Grid.Column="1"
-            Visibility="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToVisibilityConverter}}"
-            Padding="10">
+            x:Name="Notificaciones" Grid.Row="0" Grid.Column="1" Padding="10"
+            Visibility="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            
-            <!-- Header -->
-            <TextBlock 
-                Grid.Row="0"
-                FontFamily="Consolas" 
-                FontWeight="Bold"
-                FontSize="16"
-                Text="NOTIFICACIONES"
-                Margin="0,0,0,10" />
-            
-            <!-- Notification List -->
+
+            <!--  Header  -->
+            <TextBlock
+                Grid.Row="0" Margin="0,0,0,10" FontFamily="Consolas" FontSize="16"
+                FontWeight="Bold" Text="NOTIFICACIONES" />
+
+            <!--  Notification List  -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Notificaciones}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <Border 
+                            <Border
+                                Margin="0,0,0,8" Padding="10"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4"
-                                Padding="10"
-                                Margin="0,0,0,8">
+                                BorderThickness="1" CornerRadius="4">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="*" />
@@ -114,52 +101,48 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0" Spacing="4">
-                                        <!-- Título -->
-                                        <TextBlock 
+                                        <!--  Título  -->
+                                        <TextBlock
+                                            FontSize="14" FontWeight="Bold"
                                             Text="{Binding Titulo}"
-                                            FontWeight="Bold"
-                                            FontSize="14"
                                             TextWrapping="Wrap" />
-                                        
-                                        <!-- Nota -->
-                                        <TextBlock 
-                                            Text="{Binding Nota}"
+
+                                        <!--  Nota  -->
+                                        <TextBlock
                                             FontSize="12"
-                                            TextWrapping="Wrap"
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{Binding Nota}"
+                                            TextWrapping="Wrap"
                                             Visibility="{Binding Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-                                        
-                                        <!-- Fecha de Inicio -->
-                                        <TextBlock 
+
+                                        <!--  Fecha de Inicio  -->
+                                        <TextBlock
                                             FontSize="11"
                                             Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                             Visibility="{Binding FechaHoraInicio, Converter={StaticResource NullToVisibilityConverter}}">
                                             <Run Text="Inicio: " />
                                             <Run Text="{Binding FechaHoraInicio, Converter={StaticResource DateTimeFormatConverter}}" />
                                         </TextBlock>
-                                        
-                                        <!-- Fecha Final -->
-                                        <TextBlock 
+
+                                        <!--  Fecha Final  -->
+                                        <TextBlock
                                             FontSize="11"
                                             Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                             Visibility="{Binding FechaHoraFinal, Converter={StaticResource NullToVisibilityConverter}}">
                                             <Run Text="Final: " />
                                             <Run Text="{Binding FechaHoraFinal, Converter={StaticResource DateTimeFormatConverter}}" />
                                         </TextBlock>
-                                        
-                                        <!-- Fecha de Creación -->
-                                        <TextBlock 
-                                            Text="{Binding FechaCreacion, Converter={StaticResource DateTimeFormatConverter}}"
+
+                                        <!--  Fecha de Creación  -->
+                                        <TextBlock
                                             FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorDisabledBrush}" />
+                                            Foreground="{ThemeResource TextFillColorDisabledBrush}"
+                                            Text="{Binding FechaCreacion, Converter={StaticResource DateTimeFormatConverter}}" />
                                     </StackPanel>
 
-                                    <!-- Delete Button -->
-                                    <Button 
-                                        Grid.Column="1"
-                                        VerticalAlignment="Top"
-                                        Padding="8"
-                                        Background="Transparent"
+                                    <!--  Delete Button  -->
+                                    <Button
+                                        Grid.Column="1" Padding="8" VerticalAlignment="Top" Background="Transparent"
                                         BorderThickness="0"
                                         Command="{Binding DataContext.EliminarNotificacionCommand, ElementName=RootGrid}"
                                         CommandParameter="{Binding Id}"
