@@ -60,6 +60,9 @@ namespace Advance_Control.ViewModels
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
             _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
 
+            // Try to capture the UI thread's DispatcherQueue if we're being constructed on the UI thread
+            _uiDispatcherQueue = DispatcherQueue.GetForCurrentThread();
+
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
 
@@ -144,8 +147,9 @@ namespace Advance_Control.ViewModels
             if (contentFrame == null)
                 throw new ArgumentNullException(nameof(contentFrame));
 
-            // Capture the UI thread's DispatcherQueue
-            _uiDispatcherQueue = DispatcherQueue.GetForCurrentThread();
+            // Capture the UI thread's DispatcherQueue if not already set
+            // (in case constructor wasn't called on UI thread)
+            _uiDispatcherQueue ??= DispatcherQueue.GetForCurrentThread();
 
             // Initialize the navigation service with the Frame
             _navigationService.Initialize(contentFrame);
@@ -445,15 +449,27 @@ namespace Advance_Control.ViewModels
                 else
                 {
                     // Not on UI thread, enqueue the action
-                    _ = _uiDispatcherQueue.TryEnqueue(action);
-                    // Note: If TryEnqueue fails (returns false), it means the queue is shutting down.
-                    // In this case, we intentionally do nothing to maintain thread safety.
-                    // The app is likely closing anyway, so losing this update is acceptable.
+                    if (!_uiDispatcherQueue.TryEnqueue(action))
+                    {
+                        // TryEnqueue failed - queue is shutting down
+                        // Log for debugging but don't throw to avoid crashing during shutdown
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await _logger.LogWarningAsync("Failed to enqueue action on UI thread - queue may be shutting down", "MainViewModel", "RunOnUIThread");
+                            }
+                            catch
+                            {
+                                // Suppress exceptions in logging to prevent cascading failures
+                            }
+                        });
+                    }
                 }
             }
             else
             {
-                // No UI DispatcherQueue available (may happen during tests or before initialization)
+                // No UI DispatcherQueue available (may happen during tests)
                 // Execute directly as a fallback - tests don't have UI thread restrictions
                 action();
             }
