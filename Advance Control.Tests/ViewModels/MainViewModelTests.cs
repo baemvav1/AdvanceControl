@@ -279,6 +279,57 @@ namespace Advance_Control.Tests.ViewModels
             Assert.Equal(string.Empty, viewModel.UserType);
         }
 
+        [Fact]
+        public async Task LoadUserInfoAsync_CalledFromBackgroundThread_CompletesSuccessfully()
+        {
+            // Arrange
+            var userInfo = new UserInfoDto
+            {
+                NombreCompleto = "Background Thread Test",
+                TipoUsuario = "Worker"
+            };
+
+            _mockUserInfoService
+                .Setup(x => x.GetUserInfoAsync(default))
+                .ReturnsAsync(userInfo);
+
+            var viewModel = CreateViewModel();
+
+            // Act - Call from a background thread (simulating Task.Run scenario)
+            await Task.Run(async () =>
+            {
+                await viewModel.LoadUserInfoAsync();
+            });
+
+            // Assert - Should not throw and properties should be set
+            Assert.Equal("BTT", viewModel.UserInitials);
+            Assert.Equal("Worker", viewModel.UserType);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_UpdatesPropertiesSuccessfully()
+        {
+            // Arrange
+            _mockAuthService
+                .Setup(x => x.LogoutAsync(default))
+                .ReturnsAsync(true);
+
+            var viewModel = CreateViewModel();
+            viewModel.UserInitials = "TEST";
+            viewModel.UserType = "TestType";
+
+            // Act - Call from a background thread to test thread safety
+            await Task.Run(async () =>
+            {
+                await viewModel.LogoutAsync();
+            });
+
+            // Assert
+            Assert.Equal(string.Empty, viewModel.UserInitials);
+            Assert.Equal(string.Empty, viewModel.UserType);
+            Assert.False(viewModel.IsAuthenticated);
+        }
+
         private MainViewModel CreateViewModel()
         {
             return new MainViewModel(
