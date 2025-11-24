@@ -10,15 +10,18 @@ namespace Advance_Control.Converters
     /// </summary>
     public class BooleanToArrowConverter : IValueConverter
     {
+        private const string RightArrow = "→";
+        private const string LeftArrow = "←";
+
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             if (value is bool boolValue)
             {
                 // When panel is visible (expanded), show right arrow (to collapse)
                 // When panel is hidden (collapsed), show left arrow (to expand)
-                return boolValue ? "→" : "←";
+                return boolValue ? RightArrow : LeftArrow;
             }
-            return "←";
+            return LeftArrow;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

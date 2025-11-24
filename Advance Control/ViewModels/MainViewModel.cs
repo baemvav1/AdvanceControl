@@ -100,7 +100,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Handler for when a new notification is added
         /// </summary>
-        private void OnNotificacionAgregada(object? sender, NotificacionDto e)
+        private void OnNotificacionAgregada(object? sender, NotificacionDto _)
         {
             // Only update HasUnseenNotifications if the panel is collapsed
             if (!_isNotificacionesVisible)
