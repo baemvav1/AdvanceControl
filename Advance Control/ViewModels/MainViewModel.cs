@@ -198,11 +198,14 @@ namespace Advance_Control.ViewModels
             {
                 // Logout revoca el refresh token en el servidor y limpia tokens locales
                 await _authService.LogoutAsync();
-                IsAuthenticated = false;
                 
-                // Limpiar información del usuario
-                UserInitials = string.Empty;
-                UserType = string.Empty;
+                // Update properties on UI thread to avoid cross-thread exceptions
+                await UpdateUIPropertiesAsync(() =>
+                {
+                    IsAuthenticated = false;
+                    UserInitials = string.Empty;
+                    UserType = string.Empty;
+                });
                 
                 await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }
@@ -371,24 +374,37 @@ namespace Advance_Control.ViewModels
                 if (userInfo != null)
                 {
                     // Extraer iniciales del nombre completo
-                    UserInitials = GetInitials(userInfo.NombreCompleto);
-                    UserType = userInfo.TipoUsuario ?? string.Empty;
+                    var initials = GetInitials(userInfo.NombreCompleto);
+                    var userType = userInfo.TipoUsuario ?? string.Empty;
+                    
+                    // Update properties on UI thread to avoid cross-thread exceptions
+                    await UpdateUIPropertiesAsync(() =>
+                    {
+                        UserInitials = initials;
+                        UserType = userType;
+                    });
                     
                     await _logger.LogInformationAsync($"Información de usuario cargada: {userInfo.NombreCompleto} ({userInfo.TipoUsuario})", "MainViewModel", "LoadUserInfoAsync");
                 }
                 else
                 {
                     // Limpiar información si no se pudo obtener
-                    UserInitials = string.Empty;
-                    UserType = string.Empty;
+                    await UpdateUIPropertiesAsync(() =>
+                    {
+                        UserInitials = string.Empty;
+                        UserType = string.Empty;
+                    });
                     await _logger.LogWarningAsync("No se pudo obtener la información del usuario", "MainViewModel", "LoadUserInfoAsync");
                 }
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al cargar información del usuario", ex, "MainViewModel", "LoadUserInfoAsync");
-                UserInitials = string.Empty;
-                UserType = string.Empty;
+                await UpdateUIPropertiesAsync(() =>
+                {
+                    UserInitials = string.Empty;
+                    UserType = string.Empty;
+                });
             }
         }
 
@@ -411,6 +427,43 @@ namespace Advance_Control.ViewModels
             var initials = string.Join("", words.Take(3).Select(w => w[0].ToString().ToUpper()));
             
             return initials;
+        }
+
+        /// <summary>
+        /// Updates UI properties safely on the UI thread
+        /// </summary>
+        /// <param name="action">Action to execute on UI thread</param>
+        private async Task UpdateUIPropertiesAsync(Action action)
+        {
+            if (App.MainWindow?.DispatcherQueue != null)
+            {
+                var tcs = new TaskCompletionSource<bool>();
+                
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        action();
+                        tcs.SetResult(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                });
+                
+                await tcs.Task;
+            }
+            else
+            {
+                // If we can't get the dispatcher, execute directly (might be on UI thread already)
+                // This can happen during testing or before the main window is initialized
+                await _logger.LogWarningAsync(
+                    "DispatcherQueue not available, executing property update directly. This may cause threading issues if not on UI thread.",
+                    "MainViewModel",
+                    "UpdateUIPropertiesAsync");
+                action();
+            }
         }
     }
 }
