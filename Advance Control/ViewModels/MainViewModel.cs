@@ -20,7 +20,7 @@ using Advance_Control.Services.UserInfo;
 
 namespace Advance_Control.ViewModels
 {
-    public class MainViewModel : ViewModelBase
+    public class MainViewModel : ViewModelBase, IDisposable
     {
         private readonly INavigationService _navigationService;
         private readonly IOnlineCheck _onlineCheck;
@@ -30,6 +30,8 @@ namespace Advance_Control.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
+        private NotificacionService? _notifServiceReference;
+        private bool _disposed;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -70,6 +72,7 @@ namespace Advance_Control.ViewModels
             if (_notificacionService is NotificacionService notifService)
             {
                 _notificaciones = notifService.NotificacionesObservable;
+                _notifServiceReference = notifService;
                 notifService.NotificacionAgregada += OnNotificacionAgregada;
             }
 
@@ -111,8 +114,9 @@ namespace Advance_Control.ViewModels
         /// </summary>
         private void UpdateHasUnseenNotifications()
         {
-            // When panel is collapsed, if there are notifications we haven't seen, show green
-            HasUnseenNotifications = (_notificaciones?.Count ?? 0) > 0;
+            // When panel is collapsed, if there are more notifications than we've seen, show green
+            var currentCount = _notificaciones?.Count ?? 0;
+            HasUnseenNotifications = currentCount > _lastSeenNotificationCount;
         }
 
         public string Title
@@ -513,6 +517,37 @@ namespace Advance_Control.ViewModels
                     "UpdateUIPropertiesAsync");
                 action();
             }
+        }
+
+        /// <summary>
+        /// Releases unmanaged resources and unsubscribes from events
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        /// Releases unmanaged resources and unsubscribes from events
+        /// </summary>
+        /// <param name="disposing">True if disposing managed resources</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (_disposed)
+                return;
+
+            if (disposing)
+            {
+                // Unsubscribe from NotificacionAgregada event to prevent memory leaks
+                if (_notifServiceReference != null)
+                {
+                    _notifServiceReference.NotificacionAgregada -= OnNotificacionAgregada;
+                    _notifServiceReference = null;
+                }
+            }
+
+            _disposed = true;
         }
     }
 }
