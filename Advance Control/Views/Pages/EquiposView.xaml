@@ -23,8 +23,11 @@
         <!--  Header  -->
         <StackPanel
             Grid.Row="0" Margin="0,0,0,24" Spacing="8">
-            <TextBlock
-                FontSize="32" FontWeight="Bold" Text="Equipos" />
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock
+                    FontSize="32" FontWeight="Bold" Text="Equipos" />
+                <Button VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Content="Nuevo"/>
+            </StackPanel>
             <TextBlock
                 FontSize="16"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -55,8 +58,7 @@
 
                 <TextBox
                     Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Año de Creación"
-                    InputScope="Number"
-                    PlaceholderText="Año de creación"
+                    InputScope="Number" PlaceholderText="Año de creación"
                     Text="{x:Bind ViewModel.CreadoFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
@@ -98,14 +100,13 @@
                             <Grid Margin="0,5,20,5">
                                 <StackPanel Orientation="Vertical">
                                     <Grid
-                                        Grid.Row="0" MinHeight="90" Padding="16"
+                                        x:Name="Head" Grid.Row="0" MinHeight="90" Padding="16"
                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                        BorderThickness="0,0,0,1" 
+                                        BorderThickness="0,0,0,1"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
-                                        Tapped="HeadGrid_Tapped"
                                         Tag="{x:Bind}"
-                                        x:Name="Head">
+                                        Tapped="HeadGrid_Tapped">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
@@ -130,25 +131,20 @@
 
                                         <!--  Botón para expandir/colapsar  -->
                                         <Button
-                                            Grid.Column="1"
-                                            VerticalAlignment="Center"
-                                            Background="Transparent"
-                                            BorderThickness="0"
+                                            Grid.Column="1" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
-                                            Tag="{x:Bind}"
-                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
+                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
+                                            Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        Grid.Row="1" 
-                                        Background="WhiteSmoke" 
+                                        x:Name="Body" Grid.Row="1" Padding="16" Background="WhiteSmoke"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
-                                        Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
-                                        Padding="16"
-                                        x:Name="Body">
+                                        Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <StackPanel Spacing="12">
-                                            <!-- Información del equipo -->
+                                            <!--  Información del equipo  -->
                                             <StackPanel Spacing="6">
-                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Información del Equipo" Foreground="Black" />
+                                                <TextBlock
+                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Información del Equipo" />
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
@@ -159,38 +155,62 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
-                                                    
-                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Equipo:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdEquipo}" />
+
+                                                    <StackPanel
+                                                        Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="Gray" Text="ID Equipo:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="Black"
+                                                            Text="{x:Bind IdEquipo}" />
                                                     </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Marca:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Marca}" />
+
+                                                    <StackPanel
+                                                        Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="Gray" Text="Marca:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="Black"
+                                                            Text="{x:Bind Marca}" />
                                                     </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Año de Creación:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Creado}" />
+
+                                                    <StackPanel
+                                                        Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="Gray" Text="Año de Creación:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="Black"
+                                                            Text="{x:Bind Creado}" />
                                                     </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Identificador:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Identificador}" />
+
+                                                    <StackPanel
+                                                        Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="Gray" Text="Identificador:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="Black"
+                                                            Text="{x:Bind Identificador}" />
                                                     </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Estatus:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Estatus}" />
+
+                                                    <StackPanel
+                                                        Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="Gray" Text="Estatus:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="Black"
+                                                            Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </StackPanel>
-                                            
-                                            <!-- Descripción -->
+
+                                            <!--  Descripción  -->
                                             <StackPanel Spacing="6">
-                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Descripción" Foreground="Black" />
-                                                <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Descripcion}" TextWrapping="Wrap" />
+                                                <TextBlock
+                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Descripción" />
+                                                <TextBlock
+                                                    FontSize="13" Foreground="Black"
+                                                    Text="{x:Bind Descripcion}"
+                                                    TextWrapping="Wrap" />
                                             </StackPanel>
                                         </StackPanel>
                                     </Grid>
