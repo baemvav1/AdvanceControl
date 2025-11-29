@@ -108,13 +108,6 @@ namespace Advance_Control.ViewModels
 
                 var equipos = await _equipoService.GetEquiposAsync(query, cancellationToken);
 
-                if (equipos == null)
-                {
-                    ErrorMessage = "Error: El servicio no devolvió datos válidos.";
-                    await _logger.LogWarningAsync("GetEquiposAsync devolvió null", "EquiposViewModel", "LoadEquiposAsync");
-                    return;
-                }
-
                 Equipos.Clear();
                 foreach (var equipo in equipos)
                 {
