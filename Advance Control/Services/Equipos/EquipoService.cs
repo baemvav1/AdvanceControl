@@ -192,5 +192,60 @@ namespace Advance_Control.Services.Equipos
                 throw;
             }
         }
+
+        /// <summary>
+        /// Crea un nuevo equipo
+        /// </summary>
+        public async Task<bool> CreateEquipoAsync(string marca, int creado, string? descripcion, string identificador, bool estatus = true, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Construir la URL base usando el endpoint correcto
+                var url = _endpoints.GetEndpoint("api", "equipo_crud");
+
+                // Agregar parámetros de consulta
+                var queryParams = new List<string>
+                {
+                    $"marca={Uri.EscapeDataString(marca)}",
+                    $"creado={creado}",
+                    $"identificador={Uri.EscapeDataString(identificador)}",
+                    $"estatus={estatus.ToString().ToLower()}"
+                };
+
+                if (!string.IsNullOrWhiteSpace(descripcion))
+                    queryParams.Add($"descripcion={Uri.EscapeDataString(descripcion)}");
+
+                url = $"{url}?{string.Join("&", queryParams)}";
+
+                await _logger.LogInformationAsync($"Creando equipo en: {url}", "EquipoService", "CreateEquipoAsync");
+
+                // Realizar la petición POST
+                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al crear equipo. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "EquipoService",
+                        "CreateEquipoAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync("Equipo creado correctamente", "EquipoService", "CreateEquipoAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al crear equipo", ex, "EquipoService", "CreateEquipoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al crear equipo", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al crear equipo", ex, "EquipoService", "CreateEquipoAsync");
+                throw;
+            }
+        }
     }
 }

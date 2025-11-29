@@ -14,6 +14,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
+using Advance_Control.Views.Equipos;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -56,6 +57,66 @@ namespace Advance_Control.Views
             await ViewModel.ClearFiltersAsync();
         }
 
+        private async void NuevoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Resolver el ViewModel desde DI
+            var nuevoEquipoViewModel = ((App)Application.Current).Host.Services.GetRequiredService<NuevoEquipoViewModel>();
+            var nuevoEquipoView = new NuevoEquipoView(nuevoEquipoViewModel);
+            
+            // Crear el diálogo similar a como lo hace el Login
+            var dialog = new ContentDialog
+            {
+                Title = "Nuevo Equipo",
+                Content = nuevoEquipoView,
+                XamlRoot = this.XamlRoot
+            };
+
+            // Configurar el cierre del diálogo desde el NuevoEquipoView
+            nuevoEquipoView.CloseDialogAction = () => 
+            {
+                try
+                {
+                    var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                    if (dispatcherQueue != null)
+                    {
+                        _ = dispatcherQueue.TryEnqueue(() =>
+                        {
+                            try
+                            {
+                                dialog.Hide();
+                            }
+                            catch
+                            {
+                                // El diálogo ya puede estar cerrado
+                            }
+                        });
+                    }
+                    else
+                    {
+                        dialog.Hide();
+                    }
+                }
+                catch
+                {
+                    // El diálogo ya puede estar cerrado
+                }
+            };
+
+            await dialog.ShowAsync();
+
+            // Si se guardó exitosamente, crear el equipo en el servidor
+            if (nuevoEquipoView.SaveSuccessful && nuevoEquipoViewModel.Creado.HasValue)
+            {
+                await ViewModel.CreateEquipoAsync(
+                    nuevoEquipoViewModel.Marca,
+                    nuevoEquipoViewModel.Creado.Value,
+                    string.IsNullOrWhiteSpace(nuevoEquipoViewModel.Descripcion) ? null : nuevoEquipoViewModel.Descripcion,
+                    nuevoEquipoViewModel.Identificador,
+                    nuevoEquipoViewModel.Estatus
+                );
+            }
+        }
+
         private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
             // Get the EquipoDto from the sender's Tag property
@@ -75,3 +136,4 @@ namespace Advance_Control.Views
         }
     }
 }
+
