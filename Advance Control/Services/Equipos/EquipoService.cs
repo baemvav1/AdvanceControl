@@ -218,7 +218,7 @@ namespace Advance_Control.Services.Equipos
 
                 await _logger.LogInformationAsync($"Creando equipo en: {url}", "EquipoService", "CreateEquipoAsync");
 
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                var response = await _http.PostAsync(url, new StringContent(string.Empty), cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
