@@ -77,6 +77,8 @@
                             Content="Mantenimiento" Icon="Repair" Tag="Mantenimiento" />
                         <NavigationViewItem
                             Content="Clientes" Icon="People" Tag="Clientes" />
+                        <NavigationViewItem
+                            Content="Equipos" Icon="AllApps" Tag="Equipos" />
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>
