@@ -17,7 +17,7 @@ namespace Advance_Control.ViewModels
         private bool _isLoading;
         private string? _errorMessage;
         private string? _marcaFilter;
-        private int? _creadoFilter;
+        private string? _creadoFilterText;
         private string? _descripcionFilter;
         private string? _identificadorFilter;
 
@@ -66,10 +66,26 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _marcaFilter, value);
         }
 
-        public int? CreadoFilter
+        public string? CreadoFilterText
         {
-            get => _creadoFilter;
-            set => SetProperty(ref _creadoFilter, value);
+            get => _creadoFilterText;
+            set => SetProperty(ref _creadoFilterText, value);
+        }
+
+        /// <summary>
+        /// Gets the integer value of the CreadoFilterText, or null if empty/invalid.
+        /// Values must be between 1900 and 2100 to be considered valid.
+        /// </summary>
+        private int? CreadoFilter
+        {
+            get
+            {
+                if (int.TryParse(CreadoFilterText, out var result) && result >= 1900 && result <= 2100)
+                {
+                    return result;
+                }
+                return null;
+            }
         }
 
         public string? DescripcionFilter
@@ -145,7 +161,7 @@ namespace Advance_Control.ViewModels
             try
             {
                 MarcaFilter = null;
-                CreadoFilter = null;
+                CreadoFilterText = null;
                 DescripcionFilter = null;
                 IdentificadorFilter = null;
                 ErrorMessage = null;
