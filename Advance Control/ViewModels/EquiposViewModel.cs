@@ -1,0 +1,227 @@
+using System;
+using System.Collections.ObjectModel;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Advance_Control.Models;
+using Advance_Control.Services.Equipos;
+using Advance_Control.Services.Logging;
+
+namespace Advance_Control.ViewModels
+{
+    public class EquiposViewModel : ViewModelBase
+    {
+        private readonly IEquipoService _equipoService;
+        private readonly ILoggingService _logger;
+        private ObservableCollection<EquipoDto> _equipos;
+        private bool _isLoading;
+        private string? _errorMessage;
+        private string? _marcaFilter;
+        private int? _creadoFilter;
+        private string? _descripcionFilter;
+        private string? _identificadorFilter;
+
+        public EquiposViewModel(IEquipoService equipoService, ILoggingService logger)
+        {
+            _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _equipos = new ObservableCollection<EquipoDto>();
+        }
+
+        public ObservableCollection<EquipoDto> Equipos
+        {
+            get => _equipos;
+            set => SetProperty(ref _equipos, value);
+        }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set => SetProperty(ref _isLoading, value);
+        }
+
+        /// <summary>
+        /// Mensaje de error para mostrar al usuario
+        /// </summary>
+        public string? ErrorMessage
+        {
+            get => _errorMessage;
+            set
+            {
+                if (SetProperty(ref _errorMessage, value))
+                {
+                    OnPropertyChanged(nameof(HasError));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si hay un mensaje de error activo
+        /// </summary>
+        public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+        public string? MarcaFilter
+        {
+            get => _marcaFilter;
+            set => SetProperty(ref _marcaFilter, value);
+        }
+
+        public int? CreadoFilter
+        {
+            get => _creadoFilter;
+            set => SetProperty(ref _creadoFilter, value);
+        }
+
+        public string? DescripcionFilter
+        {
+            get => _descripcionFilter;
+            set => SetProperty(ref _descripcionFilter, value);
+        }
+
+        public string? IdentificadorFilter
+        {
+            get => _identificadorFilter;
+            set => SetProperty(ref _identificadorFilter, value);
+        }
+
+        /// <summary>
+        /// Carga los equipos desde el servicio con los filtros aplicados
+        /// </summary>
+        public async Task LoadEquiposAsync(CancellationToken cancellationToken = default)
+        {
+            if (IsLoading)
+                return;
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null; // Limpiar errores anteriores
+                await _logger.LogInformationAsync("Cargando equipos...", "EquiposViewModel", "LoadEquiposAsync");
+
+                var query = new EquipoQueryDto
+                {
+                    Marca = MarcaFilter,
+                    Creado = CreadoFilter,
+                    Descripcion = DescripcionFilter,
+                    Identificador = IdentificadorFilter
+                };
+
+                var equipos = await _equipoService.GetEquiposAsync(query, cancellationToken);
+
+                Equipos.Clear();
+                foreach (var equipo in equipos)
+                {
+                    Equipos.Add(equipo);
+                }
+
+                await _logger.LogInformationAsync($"Se cargaron {equipos.Count} equipos exitosamente", "EquiposViewModel", "LoadEquiposAsync");
+            }
+            catch (OperationCanceledException)
+            {
+                ErrorMessage = "La operación fue cancelada.";
+                await _logger.LogInformationAsync("Operación de carga de equipos cancelada por el usuario", "EquiposViewModel", "LoadEquiposAsync");
+            }
+            catch (HttpRequestException ex)
+            {
+                ErrorMessage = "Error de conexión: No se pudo conectar con el servidor. Verifique su conexión a internet.";
+                await _logger.LogErrorAsync("Error de conexión al cargar equipos", ex, "EquiposViewModel", "LoadEquiposAsync");
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error inesperado al cargar equipos: {ex.Message}";
+                await _logger.LogErrorAsync("Error inesperado al cargar equipos", ex, "EquiposViewModel", "LoadEquiposAsync");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Limpia los filtros y recarga todos los equipos
+        /// </summary>
+        public async Task ClearFiltersAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                MarcaFilter = null;
+                CreadoFilter = null;
+                DescripcionFilter = null;
+                IdentificadorFilter = null;
+                ErrorMessage = null;
+                await LoadEquiposAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Error al limpiar filtros y recargar equipos.";
+                await _logger.LogErrorAsync("Error al limpiar filtros", ex, "EquiposViewModel", "ClearFiltersAsync");
+            }
+        }
+
+        /// <summary>
+        /// Elimina un equipo por su ID
+        /// </summary>
+        public async Task<bool> DeleteEquipoAsync(int id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Eliminando equipo {id}...", "EquiposViewModel", "DeleteEquipoAsync");
+
+                var result = await _equipoService.DeleteEquipoAsync(id, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync($"Equipo {id} eliminado exitosamente", "EquiposViewModel", "DeleteEquipoAsync");
+                    // Recargar la lista de equipos
+                    await LoadEquiposAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo eliminar el equipo.";
+                    await _logger.LogWarningAsync($"No se pudo eliminar el equipo {id}", "EquiposViewModel", "DeleteEquipoAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al eliminar equipo: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al eliminar equipo {id}", ex, "EquiposViewModel", "DeleteEquipoAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un equipo existente
+        /// </summary>
+        public async Task<bool> UpdateEquipoAsync(int id, EquipoQueryDto updateData, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Actualizando equipo {id}...", "EquiposViewModel", "UpdateEquipoAsync");
+
+                var result = await _equipoService.UpdateEquipoAsync(id, updateData, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync($"Equipo {id} actualizado exitosamente", "EquiposViewModel", "UpdateEquipoAsync");
+                    // Recargar la lista de equipos
+                    await LoadEquiposAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo actualizar el equipo.";
+                    await _logger.LogWarningAsync($"No se pudo actualizar el equipo {id}", "EquiposViewModel", "UpdateEquipoAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al actualizar equipo: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al actualizar equipo {id}", ex, "EquiposViewModel", "UpdateEquipoAsync");
+                return false;
+            }
+        }
+    }
+}

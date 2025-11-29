@@ -12,6 +12,7 @@ using Advance_Control.Services.Logging;
 using Advance_Control.Navigation;
 using Advance_Control.Services.Dialog;
 using Advance_Control.Services.Clientes;
+using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
 
@@ -136,6 +137,27 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar EquipoService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IEquipoService, EquipoService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar UserInfoService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IUserInfoService, UserInfoService>((sp, client) =>
                     {
@@ -170,6 +192,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.MainViewModel>();
                     services.AddTransient<ViewModels.LoginViewModel>();
                     services.AddTransient<ViewModels.CustomersViewModel>();
+                    services.AddTransient<ViewModels.EquiposViewModel>();
                     services.AddTransient<ViewModels.OperacionesViewModel>();
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
                     services.AddTransient<ViewModels.MttoViewModel>();
