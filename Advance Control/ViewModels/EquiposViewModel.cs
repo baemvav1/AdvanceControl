@@ -239,5 +239,38 @@ namespace Advance_Control.ViewModels
                 return false;
             }
         }
+
+        /// <summary>
+        /// Crea un nuevo equipo
+        /// </summary>
+        public async Task<bool> CreateEquipoAsync(string marca, int creado, string? descripcion, string identificador, bool estatus = true, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Creando nuevo equipo...", "EquiposViewModel", "CreateEquipoAsync");
+
+                var result = await _equipoService.CreateEquipoAsync(marca, creado, descripcion, identificador, estatus, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync($"Equipo creado exitosamente", "EquiposViewModel", "CreateEquipoAsync");
+                    // Recargar la lista de equipos
+                    await LoadEquiposAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo crear el equipo.";
+                    await _logger.LogWarningAsync($"No se pudo crear el equipo", "EquiposViewModel", "CreateEquipoAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al crear equipo: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al crear equipo", ex, "EquiposViewModel", "CreateEquipoAsync");
+                return false;
+            }
+        }
     }
 }
