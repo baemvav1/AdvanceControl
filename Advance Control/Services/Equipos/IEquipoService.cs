@@ -34,5 +34,17 @@ namespace Advance_Control.Services.Equipos
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<bool> UpdateEquipoAsync(int id, EquipoQueryDto query, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Crea un nuevo equipo
+        /// </summary>
+        /// <param name="marca">Marca del equipo (obligatorio)</param>
+        /// <param name="creado">Año de creación (obligatorio)</param>
+        /// <param name="descripcion">Descripción del equipo (opcional)</param>
+        /// <param name="identificador">Identificador único del equipo (obligatorio)</param>
+        /// <param name="estatus">Estatus del equipo (opcional, default true)</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado de la operación</returns>
+        Task<bool> CreateEquipoAsync(string marca, int creado, string? descripcion, string identificador, bool estatus = true, CancellationToken cancellationToken = default);
     }
 }

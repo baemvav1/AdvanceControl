@@ -26,7 +26,12 @@
             <StackPanel Orientation="Horizontal" Spacing="5">
                 <TextBlock
                     FontSize="32" FontWeight="Bold" Text="Equipos" />
-                <Button VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Content="Nuevo"/>
+                <Button x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Click="NuevoButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <SymbolIcon Symbol="Add" />
+                        <TextBlock Text="Nuevo" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
             <TextBlock
                 FontSize="16"
