@@ -173,6 +173,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.OperacionesViewModel>();
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
                     services.AddTransient<ViewModels.MttoViewModel>();
+                    services.AddTransient<ViewModels.EquiposViewModel>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
