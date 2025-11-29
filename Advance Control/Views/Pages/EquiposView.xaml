@@ -53,10 +53,11 @@
                     PlaceholderText="Marca del equipo"
                     Text="{x:Bind ViewModel.MarcaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <NumberBox
+                <TextBox
                     Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Año de Creación"
-                    Minimum="1900" Maximum="2100" PlaceholderText="Año de creación"
-                    Value="{x:Bind ViewModel.CreadoFilter, Mode=TwoWay}" />
+                    InputScope="Number"
+                    PlaceholderText="Año de creación"
+                    Text="{x:Bind ViewModel.CreadoFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
                     Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="Identificador"
