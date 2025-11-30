@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
+using Advance_Control.Services.Relaciones;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -27,11 +28,15 @@ namespace Advance_Control.Views
     public sealed partial class EquiposView : Page
     {
         public EquiposViewModel ViewModel { get; }
+        private readonly IRelacionService _relacionService;
 
         public EquiposView()
         {
             // Resolver el ViewModel desde DI
             ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<EquiposViewModel>();
+            
+            // Resolver el servicio de relaciones desde DI
+            _relacionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionService>();
             
             this.InitializeComponent();
             
@@ -117,21 +122,65 @@ namespace Advance_Control.Views
             }
         }
 
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
             // Get the EquipoDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is Models.EquipoDto equipo)
             {
                 equipo.Expand = !equipo.Expand;
+                
+                // Load relaciones when expanding if not already loaded
+                if (equipo.Expand && !equipo.RelacionesLoaded && !string.IsNullOrWhiteSpace(equipo.Identificador))
+                {
+                    await LoadRelacionesForEquipoAsync(equipo);
+                }
             }
         }
 
-        private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
+        private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
             // Get the EquipoDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is Models.EquipoDto equipo)
             {
                 equipo.Expand = !equipo.Expand;
+                
+                // Load relaciones when expanding if not already loaded
+                if (equipo.Expand && !equipo.RelacionesLoaded && !string.IsNullOrWhiteSpace(equipo.Identificador))
+                {
+                    await LoadRelacionesForEquipoAsync(equipo);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadRelacionesForEquipoAsync(Models.EquipoDto equipo)
+        {
+            if (equipo.IsLoadingRelaciones || string.IsNullOrWhiteSpace(equipo.Identificador))
+                return;
+
+            try
+            {
+                equipo.IsLoadingRelaciones = true;
+                
+                var relaciones = await _relacionService.GetRelacionesAsync(equipo.Identificador, 0);
+                
+                equipo.Relaciones.Clear();
+                foreach (var relacion in relaciones)
+                {
+                    equipo.Relaciones.Add(relacion);
+                }
+                
+                equipo.RelacionesLoaded = true;
+                equipo.NotifyNoRelacionesMessageChanged();
+            }
+            catch (Exception)
+            {
+                // Log error silently - the UI will show empty list
+                equipo.RelacionesLoaded = true;
+                equipo.NotifyNoRelacionesMessageChanged();
+            }
+            finally
+            {
+                equipo.IsLoadingRelaciones = false;
             }
         }
     }
