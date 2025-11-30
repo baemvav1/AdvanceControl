@@ -70,6 +70,7 @@ namespace Advance_Control.Models
                 {
                     _relaciones = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoRelacionesMessage));
                 }
             }
         }
@@ -89,6 +90,7 @@ namespace Advance_Control.Models
                 {
                     _relacionesLoaded = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoRelacionesMessage));
                 }
             }
         }
