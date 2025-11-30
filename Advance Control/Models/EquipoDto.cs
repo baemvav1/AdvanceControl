@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -51,6 +52,80 @@ namespace Advance_Control.Models
                     OnPropertyChanged();
                 }
             }
+        }
+
+        private ObservableCollection<RelacionClienteDto> _relaciones = new ObservableCollection<RelacionClienteDto>();
+
+        /// <summary>
+        /// Colección de relaciones cliente para este equipo.
+        /// Se carga desde el endpoint de relaciones cuando se expande el item.
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<RelacionClienteDto> Relaciones
+        {
+            get => _relaciones;
+            set
+            {
+                if (_relaciones != value)
+                {
+                    _relaciones = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _relacionesLoaded = false;
+
+        /// <summary>
+        /// Indica si las relaciones ya han sido cargadas para este equipo.
+        /// </summary>
+        [JsonIgnore]
+        public bool RelacionesLoaded
+        {
+            get => _relacionesLoaded;
+            set
+            {
+                if (_relacionesLoaded != value)
+                {
+                    _relacionesLoaded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isLoadingRelaciones = false;
+
+        /// <summary>
+        /// Indica si las relaciones están siendo cargadas.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingRelaciones
+        {
+            get => _isLoadingRelaciones;
+            set
+            {
+                if (_isLoadingRelaciones != value)
+                {
+                    _isLoadingRelaciones = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se debe mostrar el mensaje de que no hay relaciones.
+        /// True cuando RelacionesLoaded es true y Relaciones está vacía.
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoRelacionesMessage => RelacionesLoaded && Relaciones.Count == 0;
+
+        /// <summary>
+        /// Actualiza el estado del mensaje de no relaciones.
+        /// Debe llamarse después de modificar Relaciones o RelacionesLoaded.
+        /// </summary>
+        public void NotifyNoRelacionesMessageChanged()
+        {
+            OnPropertyChanged(nameof(ShowNoRelacionesMessage));
         }
     }
 }

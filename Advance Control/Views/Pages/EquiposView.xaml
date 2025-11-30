@@ -217,6 +217,60 @@
                                                     Text="{x:Bind Descripcion}"
                                                     TextWrapping="Wrap" />
                                             </StackPanel>
+
+                                            <!--  Relaciones Cliente  -->
+                                            <StackPanel Spacing="6">
+                                                <TextBlock
+                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
+                                                
+                                                <!--  Loading indicator for relaciones  -->
+                                                <ProgressRing
+                                                    Width="20" Height="20" HorizontalAlignment="Left"
+                                                    IsActive="{x:Bind IsLoadingRelaciones, Mode=OneWay}"
+                                                    Visibility="{x:Bind IsLoadingRelaciones, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                
+                                                <!--  Lista de relaciones  -->
+                                                <ItemsRepeater ItemsSource="{x:Bind Relaciones, Mode=OneWay}">
+                                                    <ItemsRepeater.Layout>
+                                                        <StackLayout Spacing="4" />
+                                                    </ItemsRepeater.Layout>
+                                                    <ItemsRepeater.ItemTemplate>
+                                                        <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionClienteDto">
+                                                            <Border
+                                                                Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                BorderThickness="1" CornerRadius="4">
+                                                                <Grid>
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="Auto" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <StackPanel Grid.Column="0" Spacing="2">
+                                                                        <TextBlock
+                                                                            FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                            Text="{x:Bind RazonSocial}" />
+                                                                        <TextBlock
+                                                                            FontSize="12" Foreground="Gray"
+                                                                            Text="{x:Bind NombreComercial}" />
+                                                                    </StackPanel>
+                                                                    <TextBlock
+                                                                        Grid.Column="1" VerticalAlignment="Center"
+                                                                        FontSize="11" Foreground="Gray">
+                                                                        <Run Text="ID: " />
+                                                                        <Run Text="{x:Bind IdCliente}" />
+                                                                    </TextBlock>
+                                                                </Grid>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsRepeater.ItemTemplate>
+                                                </ItemsRepeater>
+                                                
+                                                <!--  Mensaje cuando no hay relaciones  -->
+                                                <TextBlock
+                                                    FontSize="12" FontStyle="Italic" Foreground="Gray"
+                                                    Text="No hay clientes relacionados"
+                                                    Visibility="{x:Bind ShowNoRelacionesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                            </StackPanel>
                                         </StackPanel>
                                     </Grid>
                                 </StackPanel>
