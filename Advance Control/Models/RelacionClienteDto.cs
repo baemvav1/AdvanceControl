@@ -18,5 +18,8 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("nombreComercial")]
         public string? NombreComercial { get; set; }
+
+        [JsonPropertyName("nota")]
+        public string? Nota { get; set; }
     }
 }

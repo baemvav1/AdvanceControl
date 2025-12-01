@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
 using Advance_Control.Services.Relaciones;
+using Advance_Control.Services.Notificacion;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -29,6 +30,7 @@ namespace Advance_Control.Views
     {
         public EquiposViewModel ViewModel { get; }
         private readonly IRelacionService _relacionService;
+        private readonly INotificacionService _notificacionService;
 
         public EquiposView()
         {
@@ -37,6 +39,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de relaciones desde DI
             _relacionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionService>();
+            
+            // Resolver el servicio de notificaciones desde DI
+            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
             
             this.InitializeComponent();
             
@@ -220,17 +225,134 @@ namespace Advance_Control.Views
                         // Eliminar la relación de la colección local
                         equipo.Relaciones.Remove(relacion);
                         equipo.NotifyNoRelacionesMessageChanged();
+                        
+                        // Mostrar notificación de éxito
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Relación eliminada",
+                            nota: "Relación eliminada correctamente",
+                            fechaHoraInicio: DateTime.Now);
                     }
                     else
                     {
-                        await ShowErrorDialogAsync("No se pudo eliminar la relación. Por favor, intente nuevamente.");
+                        // Mostrar notificación de error
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo eliminar la relación. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
                     }
                 }
                 catch (Exception ex)
                 {
                     // Log exception details for debugging (exception is logged by RelacionService)
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar relación: {ex.GetType().Name} - {ex.Message}");
-                    await ShowErrorDialogAsync("Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.");
+                    
+                    // Mostrar notificación de error
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async void EditRelacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la relación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.RelacionClienteDto relacion)
+                return;
+
+            // Buscar el equipo que contiene esta relación
+            var equipo = ViewModel.Equipos.FirstOrDefault(eq => eq.Relaciones.Contains(relacion));
+            if (equipo == null || string.IsNullOrWhiteSpace(equipo.Identificador))
+                return;
+
+            // Crear el TextBox para editar la nota
+            var notaTextBox = new TextBox
+            {
+                Text = relacion.Nota ?? string.Empty,
+                PlaceholderText = "Ingrese una nota...",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 100,
+                MaxHeight = 200
+            };
+
+            // Crear el contenido del diálogo
+            var dialogContent = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = $"Cliente: {relacion.RazonSocial}",
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                    },
+                    new TextBlock
+                    {
+                        Text = "Nota:",
+                        Margin = new Thickness(0, 8, 0, 4)
+                    },
+                    notaTextBox
+                }
+            };
+
+            // Mostrar diálogo para editar la nota
+            var dialog = new ContentDialog
+            {
+                Title = "Editar Nota",
+                Content = dialogContent,
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var nuevaNota = notaTextBox.Text;
+
+                    // Llamar al servicio para actualizar la nota
+                    var success = await _relacionService.UpdateNotaAsync(equipo.Identificador, relacion.IdCliente, nuevaNota);
+
+                    if (success)
+                    {
+                        // Actualizar la nota en el objeto local
+                        relacion.Nota = nuevaNota;
+                        
+                        // Recargar las relaciones para actualizar la UI (necesario porque x:Bind es OneTime por defecto)
+                        equipo.RelacionesLoaded = false;
+                        await LoadRelacionesForEquipoAsync(equipo);
+                        
+                        // Mostrar notificación de éxito
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Nota actualizada",
+                            nota: "Nota actualizada correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        // Mostrar notificación de error
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo actualizar la nota. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log exception details for debugging
+                    System.Diagnostics.Debug.WriteLine($"Error al actualizar nota: {ex.GetType().Name} - {ex.Message}");
+                    
+                    // Mostrar notificación de error
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al actualizar la nota. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
                 }
             }
         }
