@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Views.Equipos;
 
 namespace Advance_Control.Views
 {
@@ -49,78 +50,15 @@ namespace Advance_Control.Views
             await ViewModel.ClearFiltersAsync();
         }
 
-        /// <summary>
-        /// Validates that a NumberBox has a positive value greater than zero
-        /// </summary>
-        /// <param name="value">The value to validate</param>
-        /// <returns>True if the value is valid (non-NaN and greater than zero)</returns>
-        private static bool IsValidPositiveNumber(double value)
-        {
-            return !double.IsNaN(value) && value > 0;
-        }
-
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
         {
-            // Crear el contenido del diálogo para nuevo mantenimiento
-            var idTipoMantenimientoBox = new NumberBox
-            {
-                Header = "ID Tipo Mantenimiento",
-                PlaceholderText = "Ingrese el ID del tipo",
-                Minimum = 1,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact
-            };
-
-            var idClienteBox = new NumberBox
-            {
-                Header = "ID Cliente",
-                PlaceholderText = "Ingrese el ID del cliente",
-                Minimum = 1,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact
-            };
-
-            var idEquipoBox = new NumberBox
-            {
-                Header = "ID Equipo",
-                PlaceholderText = "Ingrese el ID del equipo",
-                Minimum = 1,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact
-            };
-
-            var costoBox = new NumberBox
-            {
-                Header = "Costo",
-                PlaceholderText = "Ingrese el costo",
-                Minimum = 0.01,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact
-            };
-
-            var notaBox = new TextBox
-            {
-                Header = "Nota (opcional)",
-                PlaceholderText = "Ingrese una nota...",
-                AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap,
-                MinHeight = 60,
-                MaxHeight = 120
-            };
-
-            var dialogContent = new StackPanel
-            {
-                Spacing = 12,
-                Children =
-                {
-                    idTipoMantenimientoBox,
-                    idClienteBox,
-                    idEquipoBox,
-                    costoBox,
-                    notaBox
-                }
-            };
+            // Crear el UserControl para el nuevo mantenimiento
+            var nuevoMantenimientoControl = new NuevoMantenimientoUserControl();
 
             var dialog = new ContentDialog
             {
                 Title = "Nuevo Mantenimiento",
-                Content = dialogContent,
+                Content = nuevoMantenimientoControl,
                 PrimaryButtonText = "Crear",
                 CloseButtonText = "Cancelar",
                 DefaultButton = ContentDialogButton.Primary,
@@ -131,35 +69,35 @@ namespace Advance_Control.Views
 
             if (result == ContentDialogResult.Primary)
             {
-                // Validar campos obligatorios usando el método auxiliar
-                if (!IsValidPositiveNumber(idTipoMantenimientoBox.Value))
+                // Validar campos obligatorios
+                if (!nuevoMantenimientoControl.IdTipoMantenimiento.HasValue)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
-                        nota: "El ID del tipo de mantenimiento es obligatorio y debe ser mayor que 0.",
+                        nota: "Debe seleccionar un tipo de mantenimiento.",
                         fechaHoraInicio: DateTime.Now);
                     return;
                 }
 
-                if (!IsValidPositiveNumber(idClienteBox.Value))
+                if (!nuevoMantenimientoControl.IdEquipo.HasValue)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
-                        nota: "El ID del cliente es obligatorio y debe ser mayor que 0.",
+                        nota: "Debe seleccionar un equipo.",
                         fechaHoraInicio: DateTime.Now);
                     return;
                 }
 
-                if (!IsValidPositiveNumber(idEquipoBox.Value))
+                if (!nuevoMantenimientoControl.IdCliente.HasValue)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
-                        nota: "El ID del equipo es obligatorio y debe ser mayor que 0.",
+                        nota: "Debe seleccionar un cliente.",
                         fechaHoraInicio: DateTime.Now);
                     return;
                 }
 
-                if (!IsValidPositiveNumber(costoBox.Value))
+                if (!nuevoMantenimientoControl.Costo.HasValue || nuevoMantenimientoControl.Costo.Value <= 0)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
@@ -171,11 +109,11 @@ namespace Advance_Control.Views
                 try
                 {
                     var success = await ViewModel.CreateMantenimientoAsync(
-                        (int)idTipoMantenimientoBox.Value,
-                        (int)idClienteBox.Value,
-                        (int)idEquipoBox.Value,
-                        costoBox.Value,
-                        string.IsNullOrWhiteSpace(notaBox.Text) ? null : notaBox.Text
+                        nuevoMantenimientoControl.IdTipoMantenimiento.Value,
+                        nuevoMantenimientoControl.IdCliente.Value,
+                        nuevoMantenimientoControl.IdEquipo.Value,
+                        nuevoMantenimientoControl.Costo.Value,
+                        nuevoMantenimientoControl.Nota
                     );
 
                     if (success)
