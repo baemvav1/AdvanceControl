@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -48,6 +47,16 @@ namespace Advance_Control.Views
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.ClearFiltersAsync();
+        }
+
+        /// <summary>
+        /// Validates that a NumberBox has a positive value greater than zero
+        /// </summary>
+        /// <param name="value">The value to validate</param>
+        /// <returns>True if the value is valid (non-NaN and greater than zero)</returns>
+        private static bool IsValidPositiveNumber(double value)
+        {
+            return !double.IsNaN(value) && value > 0;
         }
 
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
@@ -122,8 +131,8 @@ namespace Advance_Control.Views
 
             if (result == ContentDialogResult.Primary)
             {
-                // Validar campos obligatorios
-                if (double.IsNaN(idTipoMantenimientoBox.Value) || idTipoMantenimientoBox.Value <= 0)
+                // Validar campos obligatorios usando el método auxiliar
+                if (!IsValidPositiveNumber(idTipoMantenimientoBox.Value))
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
@@ -132,7 +141,7 @@ namespace Advance_Control.Views
                     return;
                 }
 
-                if (double.IsNaN(idClienteBox.Value) || idClienteBox.Value <= 0)
+                if (!IsValidPositiveNumber(idClienteBox.Value))
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
@@ -141,7 +150,7 @@ namespace Advance_Control.Views
                     return;
                 }
 
-                if (double.IsNaN(idEquipoBox.Value) || idEquipoBox.Value <= 0)
+                if (!IsValidPositiveNumber(idEquipoBox.Value))
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
@@ -150,7 +159,7 @@ namespace Advance_Control.Views
                     return;
                 }
 
-                if (double.IsNaN(costoBox.Value) || costoBox.Value <= 0)
+                if (!IsValidPositiveNumber(costoBox.Value))
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error de validación",
