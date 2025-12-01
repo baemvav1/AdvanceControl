@@ -99,9 +99,11 @@ namespace Advance_Control.Views.Equipos
 
                 _allEquipos = await _equipoService.GetEquiposAsync(null, CancellationToken.None);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // En caso de error, mostrar lista vacía
                 _allEquipos = new List<EquipoDto>();
+                System.Diagnostics.Debug.WriteLine($"Error al cargar equipos: {ex.GetType().Name} - {ex.Message}");
             }
             finally
             {
@@ -248,11 +250,12 @@ namespace Advance_Control.Views.Equipos
                     NoClientesMessage.Visibility = Visibility.Visible;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 ClientesListView.Visibility = Visibility.Collapsed;
                 NoClientesMessage.Text = "Error al cargar clientes relacionados";
                 NoClientesMessage.Visibility = Visibility.Visible;
+                System.Diagnostics.Debug.WriteLine($"Error al cargar clientes relacionados: {ex.GetType().Name} - {ex.Message}");
             }
             finally
             {
