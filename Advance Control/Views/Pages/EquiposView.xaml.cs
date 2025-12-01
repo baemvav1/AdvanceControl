@@ -183,6 +183,69 @@ namespace Advance_Control.Views
                 equipo.IsLoadingRelaciones = false;
             }
         }
+
+        private async void DeleteRelacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la relación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.RelacionClienteDto relacion)
+                return;
+
+            // Buscar el equipo que contiene esta relación
+            var equipo = ViewModel.Equipos.FirstOrDefault(eq => eq.Relaciones.Contains(relacion));
+            if (equipo == null || string.IsNullOrWhiteSpace(equipo.Identificador))
+                return;
+
+            // Mostrar diálogo de confirmación usando ContentDialog directamente
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea eliminar la relación con el cliente \"{relacion.RazonSocial}\"?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    // Llamar al servicio para eliminar la relación
+                    var success = await _relacionService.DeleteRelacionAsync(equipo.Identificador, relacion.IdCliente);
+
+                    if (success)
+                    {
+                        // Eliminar la relación de la colección local
+                        equipo.Relaciones.Remove(relacion);
+                        equipo.NotifyNoRelacionesMessageChanged();
+                    }
+                    else
+                    {
+                        await ShowErrorDialogAsync("No se pudo eliminar la relación. Por favor, intente nuevamente.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log exception details for debugging (exception is logged by RelacionService)
+                    System.Diagnostics.Debug.WriteLine($"Error al eliminar relación: {ex.GetType().Name} - {ex.Message}");
+                    await ShowErrorDialogAsync("Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.");
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task ShowErrorDialogAsync(string message)
+        {
+            var errorDialog = new ContentDialog
+            {
+                Title = "Error",
+                Content = message,
+                CloseButtonText = "Aceptar",
+                XamlRoot = this.XamlRoot
+            };
+            await errorDialog.ShowAsync();
+        }
     }
 }
 

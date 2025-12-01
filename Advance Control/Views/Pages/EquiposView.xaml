@@ -270,6 +270,8 @@
                                                                         <Button
                                                                             AutomationProperties.Name="Eliminar relación"
                                                                             Background="Transparent" BorderThickness="0"
+                                                                            Click="DeleteRelacionButton_Click"
+                                                                            Tag="{x:Bind}"
                                                                             ToolTipService.ToolTip="Eliminar relación">
                                                                             <SymbolIcon Symbol="Delete" />
                                                                         </Button>
