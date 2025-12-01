@@ -84,5 +84,95 @@ namespace Advance_Control.Services.Relaciones
                 throw;
             }
         }
+
+        /// <summary>
+        /// Elimina una relación entre un equipo y un cliente
+        /// </summary>
+        public async Task<bool> DeleteRelacionAsync(string identificador, int idCliente, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Construir la URL usando el endpoint correcto
+                var url = _endpoints.GetEndpoint("api", "Relaciones");
+
+                // Agregar parámetros de consulta
+                url = $"{url}?identificador={Uri.EscapeDataString(identificador)}&idCliente={idCliente}";
+
+                await _logger.LogInformationAsync($"Eliminando relación desde: {url}", "RelacionService", "DeleteRelacionAsync");
+
+                // Realizar la petición DELETE
+                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+
+                // Verificar si la respuesta fue exitosa
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al eliminar relación. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "RelacionService",
+                        "DeleteRelacionAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Relación eliminada exitosamente", "RelacionService", "DeleteRelacionAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al eliminar relación", ex, "RelacionService", "DeleteRelacionAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al eliminar relación", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al eliminar relación", ex, "RelacionService", "DeleteRelacionAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza la nota de una relación entre un equipo y un cliente
+        /// </summary>
+        public async Task<bool> UpdateRelacionNotaAsync(string identificador, int idCliente, string nota, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Construir la URL usando el endpoint correcto
+                var url = _endpoints.GetEndpoint("api", "Relaciones", "nota");
+
+                // Agregar parámetros de consulta
+                url = $"{url}?identificador={Uri.EscapeDataString(identificador)}&idCliente={idCliente}&nota={Uri.EscapeDataString(nota ?? string.Empty)}";
+
+                await _logger.LogInformationAsync($"Actualizando nota de relación desde: {url}", "RelacionService", "UpdateRelacionNotaAsync");
+
+                // Realizar la petición PUT (sin body ya que todo va en query string)
+                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                // Verificar si la respuesta fue exitosa
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al actualizar nota de relación. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "RelacionService",
+                        "UpdateRelacionNotaAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Nota de relación actualizada exitosamente", "RelacionService", "UpdateRelacionNotaAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al actualizar nota de relación", ex, "RelacionService", "UpdateRelacionNotaAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al actualizar nota de relación", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al actualizar nota de relación", ex, "RelacionService", "UpdateRelacionNotaAsync");
+                throw;
+            }
+        }
     }
 }

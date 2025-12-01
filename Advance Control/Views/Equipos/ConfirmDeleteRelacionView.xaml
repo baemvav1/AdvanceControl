@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Advance_Control.Views.Equipos.ConfirmDeleteRelacionView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Advance_Control.Views.Equipos"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid
+        Padding="20"
+        Background="{ThemeResource LayerFillColorDefaultBrush}"
+        CornerRadius="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Spacing="8">
+            <TextBlock
+                FontSize="14"
+                Text="¿Está seguro que desea eliminar la relación con el siguiente cliente?"
+                TextWrapping="Wrap" />
+            <TextBlock
+                Margin="0,8,0,0"
+                FontWeight="SemiBold"
+                Text="{x:Bind ClienteNombre, Mode=OneWay}" />
+        </StackPanel>
+
+        <InfoBar
+            x:Name="WarningInfoBar"
+            Grid.Row="1"
+            Margin="0,12,0,0"
+            IsClosable="False"
+            IsOpen="True"
+            Message="Esta acción no se puede deshacer."
+            Severity="Warning" />
+
+        <StackPanel
+            Grid.Row="2"
+            Margin="4,16,4,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            Spacing="8">
+            <Button
+                x:Name="DeleteButton"
+                Click="DeleteButton_Click"
+                Content="Eliminar"
+                Style="{StaticResource AccentButtonStyle}" />
+            <Button
+                x:Name="CancelButton"
+                Click="CancelButton_Click"
+                Content="Cancelar" />
+        </StackPanel>
+    </Grid>
+</UserControl>

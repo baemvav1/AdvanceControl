@@ -183,6 +183,184 @@ namespace Advance_Control.Views
                 equipo.IsLoadingRelaciones = false;
             }
         }
+
+        private async void EditRelacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.Tag is Models.RelacionClienteDto relacion)
+            {
+                // Find the parent equipo by traversing the visual tree to find the EquipoDto context
+                var equipo = FindParentEquipo(element);
+                if (equipo == null || string.IsNullOrWhiteSpace(equipo.Identificador))
+                    return;
+
+                // Create the edit nota view
+                var editNotaView = new EditNotaRelacionView
+                {
+                    ClienteNombre = $"{relacion.RazonSocial} ({relacion.NombreComercial})",
+                    Nota = string.Empty // Start with empty note, API will update it
+                };
+
+                // Create the dialog
+                var dialog = new ContentDialog
+                {
+                    Title = "Editar Nota de Relación",
+                    Content = editNotaView,
+                    XamlRoot = this.XamlRoot
+                };
+
+                // Configure dialog close action
+                editNotaView.CloseDialogAction = () =>
+                {
+                    try
+                    {
+                        var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                        if (dispatcherQueue != null)
+                        {
+                            _ = dispatcherQueue.TryEnqueue(() =>
+                            {
+                                try
+                                {
+                                    dialog.Hide();
+                                }
+                                catch
+                                {
+                                    // Dialog may already be closed
+                                }
+                            });
+                        }
+                        else
+                        {
+                            dialog.Hide();
+                        }
+                    }
+                    catch
+                    {
+                        // Dialog may already be closed
+                    }
+                };
+
+                await dialog.ShowAsync();
+
+                // If saved successfully, call the API to update the note
+                if (editNotaView.SaveSuccessful)
+                {
+                    try
+                    {
+                        var success = await _relacionService.UpdateRelacionNotaAsync(
+                            equipo.Identificador,
+                            relacion.IdCliente,
+                            editNotaView.Nota);
+
+                        if (!success)
+                        {
+                            // Show error notification (silent fail for now)
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Handle error silently or show notification
+                    }
+                }
+            }
+        }
+
+        private async void DeleteRelacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.Tag is Models.RelacionClienteDto relacion)
+            {
+                // Find the parent equipo by traversing the visual tree to find the EquipoDto context
+                var equipo = FindParentEquipo(element);
+                if (equipo == null || string.IsNullOrWhiteSpace(equipo.Identificador))
+                    return;
+
+                // Create the confirmation view
+                var confirmView = new ConfirmDeleteRelacionView
+                {
+                    ClienteNombre = $"{relacion.RazonSocial} ({relacion.NombreComercial})"
+                };
+
+                // Create the dialog
+                var dialog = new ContentDialog
+                {
+                    Title = "Confirmar Eliminación",
+                    Content = confirmView,
+                    XamlRoot = this.XamlRoot
+                };
+
+                // Configure dialog close action
+                confirmView.CloseDialogAction = () =>
+                {
+                    try
+                    {
+                        var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                        if (dispatcherQueue != null)
+                        {
+                            _ = dispatcherQueue.TryEnqueue(() =>
+                            {
+                                try
+                                {
+                                    dialog.Hide();
+                                }
+                                catch
+                                {
+                                    // Dialog may already be closed
+                                }
+                            });
+                        }
+                        else
+                        {
+                            dialog.Hide();
+                        }
+                    }
+                    catch
+                    {
+                        // Dialog may already be closed
+                    }
+                };
+
+                await dialog.ShowAsync();
+
+                // If deletion confirmed, call the API to delete the relation
+                if (confirmView.DeleteConfirmed)
+                {
+                    try
+                    {
+                        var success = await _relacionService.DeleteRelacionAsync(
+                            equipo.Identificador,
+                            relacion.IdCliente);
+
+                        if (success)
+                        {
+                            // Remove the relation from the local collection
+                            equipo.Relaciones.Remove(relacion);
+                            equipo.NotifyNoRelacionesMessageChanged();
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        // Handle error silently or show notification
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Finds the parent EquipoDto by traversing up the visual tree
+        /// </summary>
+        private Models.EquipoDto? FindParentEquipo(DependencyObject element)
+        {
+            var current = element;
+            while (current != null)
+            {
+                // Check if we found a Grid with a Tag that is an EquipoDto (the Head or Body grid)
+                if (current is FrameworkElement fe && fe.Tag is Models.EquipoDto equipo)
+                {
+                    return equipo;
+                }
+                current = VisualTreeHelper.GetParent(current);
+            }
+            return null;
+        }
     }
 }
 

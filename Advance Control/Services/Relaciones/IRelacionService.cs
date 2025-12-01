@@ -18,5 +18,24 @@ namespace Advance_Control.Services.Relaciones
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Lista de relaciones cliente</returns>
         Task<List<RelacionClienteDto>> GetRelacionesAsync(string identificador, int idCliente = 0, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Elimina una relación entre un equipo y un cliente
+        /// </summary>
+        /// <param name="identificador">Identificador del equipo</param>
+        /// <param name="idCliente">ID del cliente</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>True si se eliminó correctamente, false en caso contrario</returns>
+        Task<bool> DeleteRelacionAsync(string identificador, int idCliente, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Actualiza la nota de una relación entre un equipo y un cliente
+        /// </summary>
+        /// <param name="identificador">Identificador del equipo</param>
+        /// <param name="idCliente">ID del cliente</param>
+        /// <param name="nota">Nueva nota para la relación</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>True si se actualizó correctamente, false en caso contrario</returns>
+        Task<bool> UpdateRelacionNotaAsync(string identificador, int idCliente, string nota, CancellationToken cancellationToken = default);
     }
 }
