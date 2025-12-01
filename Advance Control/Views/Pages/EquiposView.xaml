@@ -255,6 +255,10 @@
                                                                         <TextBlock
                                                                             FontSize="12" Foreground="Gray"
                                                                             Text="{x:Bind NombreComercial}" />
+                                                                        <TextBlock
+                                                                            FontSize="11" FontStyle="Italic" Foreground="DimGray"
+                                                                            Text="{x:Bind Nota}"
+                                                                            TextWrapping="Wrap" />
                                                                     </StackPanel>
                                                                     <TextBlock
                                                                         Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
@@ -265,7 +269,10 @@
                                                                     <StackPanel
                                                                         Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
                                                                         <Button
-                                                                            AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Editar relación">
+                                                                            AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0"
+                                                                            Click="EditRelacionButton_Click"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Editar nota">
                                                                             <SymbolIcon Foreground="Black" Symbol="Edit" />
                                                                         </Button>
                                                                         <Button
