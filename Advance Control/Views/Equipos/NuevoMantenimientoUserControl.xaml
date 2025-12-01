@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Advance_Control.Views.Equipos.NuevoMantenimientoUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    MinWidth="400"
+    MinHeight="400">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Tipo de Mantenimiento (ComboBox) -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+            <TextBlock
+                Text="Tipo de Mantenimiento"
+                FontWeight="SemiBold"
+                Margin="0,0,0,4" />
+            <ComboBox
+                x:Name="TipoMantenimientoComboBox"
+                HorizontalAlignment="Stretch"
+                PlaceholderText="Seleccione el tipo de mantenimiento">
+                <ComboBoxItem Content="Correctivo" Tag="1" />
+                <ComboBoxItem Content="Preventivo" Tag="2" />
+            </ComboBox>
+        </StackPanel>
+
+        <!-- Equipo (Searchable dropdown) -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+            <TextBlock
+                Text="Equipo"
+                FontWeight="SemiBold"
+                Margin="0,0,0,4" />
+            <AutoSuggestBox
+                x:Name="EquipoAutoSuggestBox"
+                PlaceholderText="Buscar equipo por identificador, marca..."
+                QueryIcon="Find"
+                TextChanged="EquipoAutoSuggestBox_TextChanged"
+                SuggestionChosen="EquipoAutoSuggestBox_SuggestionChosen"
+                GotFocus="EquipoAutoSuggestBox_GotFocus" />
+            
+            <!-- Loading indicator for equipment -->
+            <ProgressRing
+                x:Name="EquipoLoadingRing"
+                Width="20"
+                Height="20"
+                HorizontalAlignment="Left"
+                IsActive="False"
+                Margin="0,4,0,0" />
+            
+            <!-- Selected equipment info -->
+            <Border
+                x:Name="SelectedEquipoInfo"
+                Visibility="Collapsed"
+                Margin="0,8,0,0"
+                Padding="12"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                CornerRadius="4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock
+                            x:Name="SelectedEquipoIdentificador"
+                            FontWeight="SemiBold"
+                            FontSize="14" />
+                        <TextBlock
+                            x:Name="SelectedEquipoMarca"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            FontSize="12" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        Content="✕"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="ClearEquipoSelection_Click"
+                        ToolTipService.ToolTip="Limpiar selección" />
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- Cliente (filtered by equipment) -->
+        <StackPanel Grid.Row="2" Margin="0,0,0,12">
+            <TextBlock
+                Text="Cliente"
+                FontWeight="SemiBold"
+                Margin="0,0,0,4" />
+            
+            <!-- Loading indicator for clients -->
+            <ProgressRing
+                x:Name="ClienteLoadingRing"
+                Width="20"
+                Height="20"
+                HorizontalAlignment="Left"
+                IsActive="False" />
+            
+            <!-- Message when no equipment selected -->
+            <TextBlock
+                x:Name="NoEquipoSelectedMessage"
+                Text="Seleccione un equipo para ver los clientes relacionados"
+                FontStyle="Italic"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                FontSize="12" />
+            
+            <!-- Client list -->
+            <ListView
+                x:Name="ClientesListView"
+                Visibility="Collapsed"
+                MaxHeight="150"
+                SelectionMode="Single"
+                SelectionChanged="ClientesListView_SelectionChanged">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!-- ID Badge -->
+                            <Border
+                                Grid.Row="0"
+                                Grid.RowSpan="2"
+                                Grid.Column="0"
+                                Margin="0,0,12,0"
+                                Padding="8,4"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                CornerRadius="4"
+                                VerticalAlignment="Center">
+                                <TextBlock
+                                    Text="{Binding IdCliente}"
+                                    Foreground="White"
+                                    FontWeight="SemiBold"
+                                    FontSize="12" />
+                            </Border>
+
+                            <!-- Nombre Comercial -->
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Text="{Binding NombreComercial}"
+                                FontWeight="SemiBold"
+                                FontSize="14"
+                                TextTrimming="CharacterEllipsis" />
+
+                            <!-- Razón Social -->
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Text="{Binding RazonSocial}"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                FontSize="12"
+                                TextTrimming="CharacterEllipsis" />
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+            
+            <!-- Message when no clients found -->
+            <TextBlock
+                x:Name="NoClientesMessage"
+                Text="No hay clientes relacionados con este equipo"
+                FontStyle="Italic"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                FontSize="12"
+                Visibility="Collapsed" />
+        </StackPanel>
+
+        <!-- Costo -->
+        <StackPanel Grid.Row="3" Margin="0,0,0,12">
+            <TextBlock
+                Text="Costo"
+                FontWeight="SemiBold"
+                Margin="0,0,0,4" />
+            <NumberBox
+                x:Name="CostoNumberBox"
+                PlaceholderText="Ingrese el costo"
+                Minimum="0.01"
+                SpinButtonPlacementMode="Compact" />
+        </StackPanel>
+
+        <!-- Nota -->
+        <StackPanel Grid.Row="4">
+            <TextBlock
+                Text="Nota (opcional)"
+                FontWeight="SemiBold"
+                Margin="0,0,0,4" />
+            <TextBox
+                x:Name="NotaTextBox"
+                PlaceholderText="Ingrese una nota..."
+                AcceptsReturn="True"
+                TextWrapping="Wrap"
+                MinHeight="60"
+                MaxHeight="120" />
+        </StackPanel>
+    </Grid>
+</UserControl>
