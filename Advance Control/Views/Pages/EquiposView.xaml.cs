@@ -368,6 +368,12 @@ namespace Advance_Control.Views
             };
             await errorDialog.ShowAsync();
         }
+
+        private void NuevaRelacion_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
     }
 }
 

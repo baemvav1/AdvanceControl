@@ -32,7 +32,7 @@
                     Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo equipo">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <SymbolIcon Symbol="Add" />
-                        <TextBlock VerticalAlignment="Center" Text="Nuevo" />
+                        <TextBlock VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -223,8 +223,17 @@
 
                                             <!--  Relaciones Cliente  -->
                                             <StackPanel Spacing="6">
-                                                <TextBlock
-                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <TextBlock
+                                                        FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
+                                                    <Button
+                                                        x:Name="NuevaRelacion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                        Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <SymbolIcon Symbol="Add" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
 
                                                 <!--  Loading indicator for relaciones  -->
                                                 <ProgressRing
@@ -271,15 +280,13 @@
                                                                     <StackPanel
                                                                         Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
                                                                         <Button
-                                                                            AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0"
-                                                                            Click="EditRelacionButton_Click"
+                                                                            AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" Click="EditRelacionButton_Click"
                                                                             Tag="{x:Bind}"
                                                                             ToolTipService.ToolTip="Editar nota">
                                                                             <SymbolIcon Foreground="Black" Symbol="Edit" />
                                                                         </Button>
                                                                         <Button
-                                                                            AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0"
-                                                                            Click="DeleteRelacionButton_Click"
+                                                                            AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0" Click="DeleteRelacionButton_Click"
                                                                             Tag="{x:Bind}"
                                                                             ToolTipService.ToolTip="Eliminar relación">
                                                                             <SymbolIcon Foreground="Black" Symbol="Delete" />
