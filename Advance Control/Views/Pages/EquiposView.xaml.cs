@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
 using Advance_Control.Services.Relaciones;
+using Advance_Control.Services.Notificacion;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -29,6 +30,7 @@ namespace Advance_Control.Views
     {
         public EquiposViewModel ViewModel { get; }
         private readonly IRelacionService _relacionService;
+        private readonly INotificacionService _notificacionService;
 
         public EquiposView()
         {
@@ -37,6 +39,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de relaciones desde DI
             _relacionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionService>();
+            
+            // Resolver el servicio de notificaciones desde DI
+            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
             
             this.InitializeComponent();
             
@@ -197,7 +202,7 @@ namespace Advance_Control.Views
                 var editNotaView = new EditNotaRelacionView
                 {
                     ClienteNombre = $"{relacion.RazonSocial} ({relacion.NombreComercial})",
-                    Nota = string.Empty // Start with empty note, API will update it
+                    Nota = string.Empty
                 };
 
                 // Create the dialog
@@ -208,36 +213,8 @@ namespace Advance_Control.Views
                     XamlRoot = this.XamlRoot
                 };
 
-                // Configure dialog close action
-                editNotaView.CloseDialogAction = () =>
-                {
-                    try
-                    {
-                        var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-                        if (dispatcherQueue != null)
-                        {
-                            _ = dispatcherQueue.TryEnqueue(() =>
-                            {
-                                try
-                                {
-                                    dialog.Hide();
-                                }
-                                catch
-                                {
-                                    // Dialog may already be closed
-                                }
-                            });
-                        }
-                        else
-                        {
-                            dialog.Hide();
-                        }
-                    }
-                    catch
-                    {
-                        // Dialog may already be closed
-                    }
-                };
+                // Configure dialog close action using helper method
+                editNotaView.CloseDialogAction = () => HideDialogSafely(dialog);
 
                 await dialog.ShowAsync();
 
@@ -251,14 +228,27 @@ namespace Advance_Control.Views
                             relacion.IdCliente,
                             editNotaView.Nota);
 
-                        if (!success)
+                        if (success)
                         {
-                            // Show error notification (silent fail for now)
+                            await _notificacionService.MostrarNotificacionAsync(
+                                "Nota Actualizada",
+                                "La nota de la relación se actualizó correctamente.",
+                                tiempoDeVidaSegundos: 3);
+                        }
+                        else
+                        {
+                            await _notificacionService.MostrarNotificacionAsync(
+                                "Error",
+                                "No se pudo actualizar la nota de la relación.",
+                                tiempoDeVidaSegundos: 5);
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // Handle error silently or show notification
+                        await _notificacionService.MostrarNotificacionAsync(
+                            "Error",
+                            $"Error al actualizar la nota: {ex.Message}",
+                            tiempoDeVidaSegundos: 5);
                     }
                 }
             }
@@ -287,36 +277,8 @@ namespace Advance_Control.Views
                     XamlRoot = this.XamlRoot
                 };
 
-                // Configure dialog close action
-                confirmView.CloseDialogAction = () =>
-                {
-                    try
-                    {
-                        var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
-                        if (dispatcherQueue != null)
-                        {
-                            _ = dispatcherQueue.TryEnqueue(() =>
-                            {
-                                try
-                                {
-                                    dialog.Hide();
-                                }
-                                catch
-                                {
-                                    // Dialog may already be closed
-                                }
-                            });
-                        }
-                        else
-                        {
-                            dialog.Hide();
-                        }
-                    }
-                    catch
-                    {
-                        // Dialog may already be closed
-                    }
-                };
+                // Configure dialog close action using helper method
+                confirmView.CloseDialogAction = () => HideDialogSafely(dialog);
 
                 await dialog.ShowAsync();
 
@@ -334,13 +296,61 @@ namespace Advance_Control.Views
                             // Remove the relation from the local collection
                             equipo.Relaciones.Remove(relacion);
                             equipo.NotifyNoRelacionesMessageChanged();
+                            
+                            await _notificacionService.MostrarNotificacionAsync(
+                                "Relación Eliminada",
+                                "La relación se eliminó correctamente.",
+                                tiempoDeVidaSegundos: 3);
+                        }
+                        else
+                        {
+                            await _notificacionService.MostrarNotificacionAsync(
+                                "Error",
+                                "No se pudo eliminar la relación.",
+                                tiempoDeVidaSegundos: 5);
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        // Handle error silently or show notification
+                        await _notificacionService.MostrarNotificacionAsync(
+                            "Error",
+                            $"Error al eliminar la relación: {ex.Message}",
+                            tiempoDeVidaSegundos: 5);
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Safely hides a dialog using the dispatcher queue
+        /// </summary>
+        private void HideDialogSafely(ContentDialog dialog)
+        {
+            try
+            {
+                var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                if (dispatcherQueue != null)
+                {
+                    _ = dispatcherQueue.TryEnqueue(() =>
+                    {
+                        try
+                        {
+                            dialog.Hide();
+                        }
+                        catch
+                        {
+                            // Dialog may already be closed
+                        }
+                    });
+                }
+                else
+                {
+                    dialog.Hide();
+                }
+            }
+            catch
+            {
+                // Dialog may already be closed
             }
         }
 

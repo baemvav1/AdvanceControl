@@ -145,8 +145,9 @@ namespace Advance_Control.Services.Relaciones
 
                 await _logger.LogInformationAsync($"Actualizando nota de relación desde: {url}", "RelacionService", "UpdateRelacionNotaAsync");
 
-                // Realizar la petición PUT (sin body ya que todo va en query string)
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                // Realizar la petición PUT (usando contenido vacío ya que los datos van en query string)
+                using var emptyContent = new StringContent(string.Empty);
+                var response = await _http.PutAsync(url, emptyContent, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
