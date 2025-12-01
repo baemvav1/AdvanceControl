@@ -369,9 +369,80 @@ namespace Advance_Control.Views
             await errorDialog.ShowAsync();
         }
 
-        private void NuevaRelacion_Click(object sender, RoutedEventArgs e)
+        private async void NuevaRelacion_Click(object sender, RoutedEventArgs e)
         {
+            // Obtener el equipo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
+                return;
 
+            if (string.IsNullOrWhiteSpace(equipo.Identificador))
+                return;
+
+            // Crear el UserControl para seleccionar cliente
+            var seleccionarClienteControl = new SeleccionarClienteUserControl();
+
+            // Crear el diálogo
+            var dialog = new ContentDialog
+            {
+                Title = "Nueva Relación",
+                Content = seleccionarClienteControl,
+                PrimaryButtonText = "Aceptar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary && seleccionarClienteControl.HasSelection)
+            {
+                var selectedCliente = seleccionarClienteControl.SelectedCliente;
+                var nota = seleccionarClienteControl.Nota;
+
+                if (selectedCliente == null)
+                    return;
+
+                try
+                {
+                    // Llamar al servicio para crear la relación
+                    var success = await _relacionService.CreateRelacionAsync(
+                        equipo.Identificador,
+                        selectedCliente.IdCliente,
+                        nota);
+
+                    if (success)
+                    {
+                        // Recargar las relaciones para actualizar la UI
+                        equipo.RelacionesLoaded = false;
+                        await LoadRelacionesForEquipoAsync(equipo);
+
+                        // Mostrar notificación de éxito
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Relación creada",
+                            nota: $"Relación con el cliente \"{selectedCliente.RazonSocial}\" creada correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        // Mostrar notificación de error
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo crear la relación. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log exception details for debugging
+                    System.Diagnostics.Debug.WriteLine($"Error al crear relación: {ex.GetType().Name} - {ex.Message}");
+
+                    // Mostrar notificación de error
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al crear la relación. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
         }
 
     }

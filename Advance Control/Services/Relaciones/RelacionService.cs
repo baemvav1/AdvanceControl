@@ -200,5 +200,66 @@ namespace Advance_Control.Services.Relaciones
                 throw;
             }
         }
+
+        /// <summary>
+        /// Crea una nueva relación equipo-cliente
+        /// </summary>
+        public async Task<bool> CreateRelacionAsync(string identificador, int idCliente, string? nota, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(identificador))
+                {
+                    await _logger.LogWarningAsync("El identificador es requerido para crear relación", "RelacionService", "CreateRelacionAsync");
+                    return false;
+                }
+
+                if (idCliente <= 0)
+                {
+                    await _logger.LogWarningAsync("El idCliente debe ser mayor que 0 para crear relación", "RelacionService", "CreateRelacionAsync");
+                    return false;
+                }
+
+                // Construir la URL usando el endpoint correcto
+                var url = _endpoints.GetEndpoint("api", "Relaciones");
+                url = $"{url}?identificador={Uri.EscapeDataString(identificador)}&idCliente={idCliente}";
+                
+                // Agregar el parámetro nota solo si no está vacío
+                if (!string.IsNullOrWhiteSpace(nota))
+                {
+                    url = $"{url}&nota={Uri.EscapeDataString(nota)}";
+                }
+
+                await _logger.LogInformationAsync($"Creando relación: {url}", "RelacionService", "CreateRelacionAsync");
+
+                // Realizar la petición POST
+                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                // Verificar si la respuesta fue exitosa
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al crear relación. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "RelacionService",
+                        "CreateRelacionAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Relación creada exitosamente: identificador={identificador}, idCliente={idCliente}", "RelacionService", "CreateRelacionAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al crear relación", ex, "RelacionService", "CreateRelacionAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al crear relación", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al crear relación", ex, "RelacionService", "CreateRelacionAsync");
+                throw;
+            }
+        }
     }
 }
