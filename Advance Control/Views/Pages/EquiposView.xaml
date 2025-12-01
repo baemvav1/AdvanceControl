@@ -228,7 +228,8 @@
                                                         FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
                                                     <Button
                                                         x:Name="NuevaRelacion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
-                                                        Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray">
+                                                        Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray"
+                                                        Tag="{x:Bind}">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="Add" />
                                                         </StackPanel>

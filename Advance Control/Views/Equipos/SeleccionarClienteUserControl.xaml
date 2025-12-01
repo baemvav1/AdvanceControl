@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Class="Advance_Control.Views.Equipos.SeleccionarClienteUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    MinWidth="400"
+    MinHeight="300">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Search box -->
+        <TextBox
+            x:Name="SearchTextBox"
+            Grid.Row="0"
+            Margin="0,0,0,8"
+            PlaceholderText="Buscar cliente..."
+            TextChanged="SearchTextBox_TextChanged" />
+
+        <!-- Loading indicator -->
+        <ProgressRing
+            x:Name="LoadingRing"
+            Grid.Row="1"
+            Width="50"
+            Height="50"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsActive="False" />
+
+        <!-- Lista de clientes -->
+        <ListView
+            x:Name="ClientesListView"
+            Grid.Row="1"
+            SelectionMode="Single"
+            SelectionChanged="ClientesListView_SelectionChanged">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <Grid Padding="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- ID Badge -->
+                        <Border
+                            Grid.Row="0"
+                            Grid.RowSpan="2"
+                            Grid.Column="0"
+                            Margin="0,0,12,0"
+                            Padding="8,4"
+                            Background="{ThemeResource AccentFillColorDefaultBrush}"
+                            CornerRadius="4"
+                            VerticalAlignment="Center">
+                            <TextBlock
+                                Text="{Binding IdCliente}"
+                                Foreground="White"
+                                FontWeight="SemiBold"
+                                FontSize="12" />
+                        </Border>
+
+                        <!-- Nombre Comercial -->
+                        <TextBlock
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Text="{Binding NombreComercial}"
+                            FontWeight="SemiBold"
+                            FontSize="14"
+                            TextTrimming="CharacterEllipsis" />
+
+                        <!-- Razón Social -->
+                        <TextBlock
+                            Grid.Row="1"
+                            Grid.Column="1"
+                            Text="{Binding RazonSocial}"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            FontSize="12"
+                            TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+
+        <!-- Nota TextBox (visible when client is selected) -->
+        <StackPanel
+            x:Name="NotaPanel"
+            Grid.Row="2"
+            Margin="0,12,0,0"
+            Visibility="Collapsed">
+            <TextBlock
+                Text="Nota:"
+                FontWeight="SemiBold"
+                Margin="0,0,0,4" />
+            <TextBox
+                x:Name="NotaTextBox"
+                PlaceholderText="Ingrese una nota (opcional)..."
+                AcceptsReturn="True"
+                TextWrapping="Wrap"
+                MinHeight="60"
+                MaxHeight="120" />
+        </StackPanel>
+    </Grid>
+</UserControl>

@@ -37,5 +37,15 @@ namespace Advance_Control.Services.Relaciones
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>True si la actualización fue exitosa, False en caso contrario</returns>
         Task<bool> UpdateNotaAsync(string identificador, int idCliente, string? nota, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Crea una nueva relación equipo-cliente
+        /// </summary>
+        /// <param name="identificador">Identificador del equipo</param>
+        /// <param name="idCliente">ID del cliente</param>
+        /// <param name="nota">Nota asociada a la relación (opcional)</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>True si la creación fue exitosa, False en caso contrario</returns>
+        Task<bool> CreateRelacionAsync(string identificador, int idCliente, string? nota, CancellationToken cancellationToken = default);
     }
 }
