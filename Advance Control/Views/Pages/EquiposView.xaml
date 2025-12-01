@@ -26,10 +26,12 @@
             <StackPanel Orientation="Horizontal" Spacing="5">
                 <TextBlock
                     FontSize="32" FontWeight="Bold" Text="Equipos" />
-                <Button x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0" Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo equipo">
+                <Button
+                    x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo equipo">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <SymbolIcon Symbol="Add" />
-                        <TextBlock Text="Nuevo" VerticalAlignment="Center" />
+                        <TextBlock VerticalAlignment="Center" Text="Nuevo" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -222,13 +224,13 @@
                                             <StackPanel Spacing="6">
                                                 <TextBlock
                                                     FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
-                                                
+
                                                 <!--  Loading indicator for relaciones  -->
                                                 <ProgressRing
                                                     Width="20" Height="20" HorizontalAlignment="Left"
                                                     IsActive="{x:Bind IsLoadingRelaciones, Mode=OneWay}"
                                                     Visibility="{x:Bind IsLoadingRelaciones, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                                                
+
                                                 <!--  Lista de relaciones  -->
                                                 <ItemsRepeater ItemsSource="{x:Bind Relaciones, Mode=OneWay}">
                                                     <ItemsRepeater.Layout>
@@ -237,7 +239,7 @@
                                                     <ItemsRepeater.ItemTemplate>
                                                         <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionClienteDto">
                                                             <Border
-                                                                Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                Padding="12" Background="DarkGray"
                                                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                                 BorderThickness="1" CornerRadius="4">
                                                                 <Grid>
@@ -255,25 +257,20 @@
                                                                             Text="{x:Bind NombreComercial}" />
                                                                     </StackPanel>
                                                                     <TextBlock
-                                                                        Grid.Column="1" VerticalAlignment="Center"
-                                                                        FontSize="11" Foreground="Gray" Margin="0,0,8,0">
+                                                                        Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
+                                                                        Foreground="Gray">
                                                                         <Run Text="ID: " />
                                                                         <Run Text="{x:Bind IdCliente}" />
                                                                     </TextBlock>
-                                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                    <StackPanel
+                                                                        Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
                                                                         <Button
-                                                                            AutomationProperties.Name="Editar relación"
-                                                                            Background="Transparent" BorderThickness="0"
-                                                                            ToolTipService.ToolTip="Editar relación">
-                                                                            <SymbolIcon Symbol="Edit" />
+                                                                            AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Editar relación">
+                                                                            <SymbolIcon Foreground="Black" Symbol="Edit" />
                                                                         </Button>
                                                                         <Button
-                                                                            AutomationProperties.Name="Eliminar relación"
-                                                                            Background="Transparent" BorderThickness="0"
-                                                                            Click="DeleteRelacionButton_Click"
-                                                                            Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Eliminar relación">
-                                                                            <SymbolIcon Symbol="Delete" />
+                                                                            AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0" ToolTipService.ToolTip="Eliminar relación">
+                                                                            <SymbolIcon Foreground="Black" Symbol="Delete" />
                                                                         </Button>
                                                                     </StackPanel>
                                                                 </Grid>
@@ -281,11 +278,10 @@
                                                         </DataTemplate>
                                                     </ItemsRepeater.ItemTemplate>
                                                 </ItemsRepeater>
-                                                
+
                                                 <!--  Mensaje cuando no hay relaciones  -->
                                                 <TextBlock
-                                                    FontSize="12" FontStyle="Italic" Foreground="Gray"
-                                                    Text="No hay clientes relacionados"
+                                                    FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay clientes relacionados"
                                                     Visibility="{x:Bind ShowNoRelacionesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                             </StackPanel>
                                         </StackPanel>
