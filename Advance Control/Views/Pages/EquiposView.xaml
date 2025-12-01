@@ -244,6 +244,7 @@
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="*" />
                                                                         <ColumnDefinition Width="Auto" />
+                                                                        <ColumnDefinition Width="Auto" />
                                                                     </Grid.ColumnDefinitions>
                                                                     <StackPanel Grid.Column="0" Spacing="2">
                                                                         <TextBlock
@@ -255,10 +256,24 @@
                                                                     </StackPanel>
                                                                     <TextBlock
                                                                         Grid.Column="1" VerticalAlignment="Center"
-                                                                        FontSize="11" Foreground="Gray">
+                                                                        FontSize="11" Foreground="Gray" Margin="0,0,8,0">
                                                                         <Run Text="ID: " />
                                                                         <Run Text="{x:Bind IdCliente}" />
                                                                     </TextBlock>
+                                                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                        <Button
+                                                                            AutomationProperties.Name="Editar relación"
+                                                                            Background="Transparent" BorderThickness="0"
+                                                                            ToolTipService.ToolTip="Editar relación">
+                                                                            <SymbolIcon Symbol="Edit" />
+                                                                        </Button>
+                                                                        <Button
+                                                                            AutomationProperties.Name="Eliminar relación"
+                                                                            Background="Transparent" BorderThickness="0"
+                                                                            ToolTipService.ToolTip="Eliminar relación">
+                                                                            <SymbolIcon Symbol="Delete" />
+                                                                        </Button>
+                                                                    </StackPanel>
                                                                 </Grid>
                                                             </Border>
                                                         </DataTemplate>
