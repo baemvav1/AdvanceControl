@@ -18,7 +18,6 @@ namespace Advance_Control.Views.Equipos
     {
         private readonly IClienteService _clienteService;
         private List<CustomerDto> _allClientes = new();
-        private CancellationTokenSource? _searchCts;
 
         public SeleccionarClienteUserControl()
         {
@@ -63,10 +62,13 @@ namespace Advance_Control.Views.Equipos
             }
             catch (Exception)
             {
-                // En caso de error, mostrar lista vacía
+                // En caso de error, mostrar lista vacía con mensaje informativo
                 _allClientes = new List<CustomerDto>();
                 ClientesListView.ItemsSource = _allClientes;
                 ClientesListView.Visibility = Visibility.Visible;
+                
+                // Mostrar mensaje de error en el placeholder de búsqueda
+                SearchTextBox.PlaceholderText = "Error al cargar clientes. Intente nuevamente.";
             }
             finally
             {
@@ -79,10 +81,6 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // Cancelar búsqueda anterior
-            _searchCts?.Cancel();
-            _searchCts = new CancellationTokenSource();
-
             var searchText = SearchTextBox.Text?.Trim().ToLowerInvariant() ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(searchText))
