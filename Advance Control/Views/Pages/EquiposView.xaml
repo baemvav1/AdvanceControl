@@ -11,6 +11,7 @@
         <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -258,7 +259,8 @@
                                                                         <TextBlock
                                                                             FontSize="11" FontStyle="Italic" Foreground="DimGray"
                                                                             Text="{x:Bind Nota}"
-                                                                            TextWrapping="Wrap" />
+                                                                            TextWrapping="Wrap"
+                                                                            Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
                                                                     </StackPanel>
                                                                     <TextBlock
                                                                         Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"

@@ -324,7 +324,7 @@ namespace Advance_Control.Views
                         // Actualizar la nota en el objeto local
                         relacion.Nota = nuevaNota;
                         
-                        // Recargar las relaciones para actualizar la UI
+                        // Recargar las relaciones para actualizar la UI (necesario porque x:Bind es OneTime por defecto)
                         equipo.RelacionesLoaded = false;
                         await LoadRelacionesForEquipoAsync(equipo);
                         

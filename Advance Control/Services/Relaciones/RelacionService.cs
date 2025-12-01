@@ -164,7 +164,7 @@ namespace Advance_Control.Services.Relaciones
                 url = $"{url}?identificador={Uri.EscapeDataString(identificador)}&idCliente={idCliente}";
                 
                 // Agregar el parámetro nota solo si no está vacío
-                if (!string.IsNullOrEmpty(nota))
+                if (!string.IsNullOrWhiteSpace(nota))
                 {
                     url = $"{url}&nota={Uri.EscapeDataString(nota)}";
                 }
