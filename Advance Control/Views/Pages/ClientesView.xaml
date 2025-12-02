@@ -147,7 +147,7 @@
                                     </Grid>
                                     <Grid
                                         Grid.Row="1" 
-                                        Background="WhiteSmoke" 
+                                        Background="Black" 
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                                         Padding="8"
@@ -168,27 +168,27 @@
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Tipo de Persona:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind TipoPersona}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind TipoPersona}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Régimen Fiscal:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind RegimenFiscal}" TextWrapping="Wrap" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind RegimenFiscal}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Uso CFDI:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind UsoCfdi}" TextWrapping="Wrap" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind UsoCfdi}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Estatus:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Estatus}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="ID Cliente:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdCliente}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdCliente}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
@@ -203,12 +203,12 @@
                                                     
                                                     <StackPanel Grid.Column="0" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Días de Crédito:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind DiasCredito}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind DiasCredito}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Column="1" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Límite de Crédito:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind LimiteCredito}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind LimiteCredito}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
@@ -216,7 +216,7 @@
                                             <!-- Notas -->
                                             <PivotItem Header="Notas">
                                                 <StackPanel Padding="8">
-                                                    <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Notas}" TextWrapping="Wrap" />
+                                                    <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Notas}" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </PivotItem>
                                             
@@ -235,27 +235,27 @@
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Creado En:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind CreadoEn}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind CreadoEn}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="ID Usuario Creador:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdUsuarioCreador}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdUsuarioCreador}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Actualizado En:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind ActualizadoEn}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind ActualizadoEn}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="ID Usuario Actualizador:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdUsuarioAct}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdUsuarioAct}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Credencial ID:" />
-                                                        <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind CredencialId}" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind CredencialId}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>

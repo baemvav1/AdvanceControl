@@ -132,7 +132,7 @@
                                             Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        x:Name="Body" Grid.Row="1" Padding="8" Background="WhiteSmoke"
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="Black"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
@@ -155,7 +155,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="ID Mantenimiento:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind IdMantenimiento}" />
                                                     </StackPanel>
 
@@ -164,7 +164,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Tipo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind TipoMantenimiento}" />
                                                     </StackPanel>
 
@@ -173,7 +173,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Razón Social:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind RazonSocial}" />
                                                     </StackPanel>
 
@@ -182,7 +182,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Nombre Comercial:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind NombreComercial}" />
                                                     </StackPanel>
 
@@ -191,7 +191,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Identificador Equipo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Identificador}" />
                                                     </StackPanel>
 
@@ -200,7 +200,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Costo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Costo}" />
                                                     </StackPanel>
 
@@ -209,7 +209,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Costo Total:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind CostoTotal}" />
                                                     </StackPanel>
                                                 </Grid>
@@ -219,7 +219,7 @@
                                             <PivotItem Header="Nota">
                                                 <StackPanel Padding="8">
                                                     <TextBlock
-                                                        FontSize="13" Foreground="Black"
+                                                        FontSize="13" Foreground="WhiteSmoke"
                                                         Text="{x:Bind Nota}"
                                                         TextWrapping="Wrap"
                                                         Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />

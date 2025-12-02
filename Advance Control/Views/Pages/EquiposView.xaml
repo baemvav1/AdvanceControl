@@ -145,7 +145,7 @@
                                             Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        x:Name="Body" Grid.Row="1" Padding="8" Background="WhiteSmoke"
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="Black"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
@@ -167,7 +167,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="ID Equipo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind IdEquipo}" />
                                                     </StackPanel>
 
@@ -176,7 +176,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Marca:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Marca}" />
                                                     </StackPanel>
 
@@ -185,7 +185,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Año de Creación:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Creado}" />
                                                     </StackPanel>
 
@@ -194,7 +194,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Identificador:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Identificador}" />
                                                     </StackPanel>
 
@@ -203,7 +203,7 @@
                                                         <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Estatus:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="Black"
+                                                            FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                 </Grid>
@@ -213,7 +213,7 @@
                                             <PivotItem Header="Descripción">
                                                 <StackPanel Padding="8">
                                                     <TextBlock
-                                                        FontSize="13" Foreground="Black"
+                                                        FontSize="13" Foreground="WhiteSmoke"
                                                         Text="{x:Bind Descripcion}"
                                                         TextWrapping="Wrap" />
                                                 </StackPanel>
@@ -283,13 +283,13 @@
                                                                                 AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" Click="EditRelacionButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 ToolTipService.ToolTip="Editar nota">
-                                                                                <SymbolIcon Foreground="Black" Symbol="Edit" />
+                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Edit" />
                                                                             </Button>
                                                                             <Button
                                                                                 AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0" Click="DeleteRelacionButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 ToolTipService.ToolTip="Eliminar relación">
-                                                                                <SymbolIcon Foreground="Black" Symbol="Delete" />
+                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Delete" />
                                                                             </Button>
                                                                         </StackPanel>
                                                                     </Grid>
