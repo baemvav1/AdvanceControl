@@ -214,7 +214,90 @@
                                                 </StackPanel>
                                             </PivotItem>
 
-                                            <PivotItem Header="Equipos" />
+                                            <PivotItem Header="Equipos">
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <TextBlock
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Equipos Relacionados" />
+                                                        <Button
+                                                            x:Name="NuevaRelacionEquipo" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                            Click="NuevaRelacionEquipo_Click" ToolTipService.ToolTip="Crear nueva relacion con equipo" Foreground="DarkGray"
+                                                            Tag="{x:Bind}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!--  Loading indicator for relaciones equipo  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingRelacionesEquipo, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingRelacionesEquipo, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Lista de relaciones equipo  -->
+                                                    <ItemsRepeater ItemsSource="{x:Bind RelacionesEquipo, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="4" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionEquipoDto">
+                                                                <Border
+                                                                    Padding="12" Background="DarkGray"
+                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                    BorderThickness="1" CornerRadius="4">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                                            <TextBlock
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                                Text="{x:Bind Marca}" />
+                                                                            <TextBlock
+                                                                                FontSize="12" Foreground="Gray"
+                                                                                Text="{x:Bind Identificador}" />
+                                                                            <TextBlock
+                                                                                FontSize="11" FontStyle="Italic" Foreground="DimGray"
+                                                                                Text="{x:Bind Nota}"
+                                                                                TextWrapping="Wrap"
+                                                                                Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        </StackPanel>
+                                                                        <TextBlock
+                                                                            Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
+                                                                            Foreground="Gray">
+                                                                            <Run Text="ID: " />
+                                                                            <Run Text="{x:Bind IdEquipo}" />
+                                                                        </TextBlock>
+                                                                        <StackPanel
+                                                                            Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                                            <Button
+                                                                                AutomationProperties.Name="Editar relación equipo" Background="Transparent" BorderThickness="0" Click="EditRelacionEquipoButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Editar nota">
+                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Edit" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                AutomationProperties.Name="Eliminar relación equipo" Background="Transparent" BorderThickness="0" Click="DeleteRelacionEquipoButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Eliminar relación">
+                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+
+                                                    <!--  Mensaje cuando no hay relaciones equipo  -->
+                                                    <TextBlock
+                                                        FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay equipos relacionados"
+                                                        Visibility="{x:Bind ShowNoRelacionesEquipoMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </PivotItem>
 
                                             <!--  Acciones  -->
                                             <PivotItem Header="Acciones">

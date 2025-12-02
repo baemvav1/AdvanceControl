@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -7,6 +8,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.RelacionesRefaccionEquipo;
 using Advance_Control.Models;
 
 namespace Advance_Control.Views
@@ -18,6 +20,7 @@ namespace Advance_Control.Views
     {
         public RefaccionesViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
+        private readonly IRelacionRefaccionEquipoService _relacionRefaccionEquipoService;
 
         public RefaaccionView()
         {
@@ -26,6 +29,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de notificaciones desde DI
             _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            
+            // Resolver el servicio de relaciones refacción-equipo desde DI
+            _relacionRefaccionEquipoService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionRefaccionEquipoService>();
             
             this.InitializeComponent();
             
@@ -159,21 +165,65 @@ namespace Advance_Control.Views
             }
         }
 
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
             // Get the RefaccionDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is RefaccionDto refaccion)
             {
                 refaccion.Expand = !refaccion.Expand;
+                
+                // Load relaciones equipo when expanding if not already loaded
+                if (refaccion.Expand && !refaccion.RelacionesEquipoLoaded)
+                {
+                    await LoadRelacionesEquipoForRefaccionAsync(refaccion);
+                }
             }
         }
 
-        private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
+        private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
             // Get the RefaccionDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is RefaccionDto refaccion)
             {
                 refaccion.Expand = !refaccion.Expand;
+                
+                // Load relaciones equipo when expanding if not already loaded
+                if (refaccion.Expand && !refaccion.RelacionesEquipoLoaded)
+                {
+                    await LoadRelacionesEquipoForRefaccionAsync(refaccion);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadRelacionesEquipoForRefaccionAsync(RefaccionDto refaccion)
+        {
+            if (refaccion.IsLoadingRelacionesEquipo)
+                return;
+
+            try
+            {
+                refaccion.IsLoadingRelacionesEquipo = true;
+                
+                var relaciones = await _relacionRefaccionEquipoService.GetRelacionesAsync(refaccion.IdRefaccion, 0);
+                
+                refaccion.RelacionesEquipo.Clear();
+                foreach (var relacion in relaciones)
+                {
+                    refaccion.RelacionesEquipo.Add(relacion);
+                }
+                
+                refaccion.RelacionesEquipoLoaded = true;
+                refaccion.NotifyNoRelacionesEquipoMessageChanged();
+            }
+            catch (Exception)
+            {
+                // Log error silently - the UI will show empty list
+                refaccion.RelacionesEquipoLoaded = true;
+                refaccion.NotifyNoRelacionesEquipoMessageChanged();
+            }
+            finally
+            {
+                refaccion.IsLoadingRelacionesEquipo = false;
             }
         }
 
@@ -373,6 +423,270 @@ namespace Advance_Control.Views
             }
 
             return null;
+        }
+
+        private async void NuevaRelacionEquipo_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la refacción desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not RefaccionDto refaccion)
+                return;
+
+            // Crear los campos del formulario
+            var idEquipoTextBox = new TextBox
+            {
+                PlaceholderText = "Ingrese el ID del equipo",
+                InputScope = new InputScope { Names = { new InputScopeName(InputScopeNameValue.Number) } },
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var notaTextBox = new TextBox
+            {
+                PlaceholderText = "Ingrese una nota (opcional)",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 100,
+                MaxHeight = 200,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var dialogContent = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "ID Equipo:" },
+                    idEquipoTextBox,
+                    new TextBlock { Text = "Nota:" },
+                    notaTextBox
+                }
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "Nueva Relación con Equipo",
+                Content = dialogContent,
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    if (!int.TryParse(idEquipoTextBox.Text, out var idEquipo) || idEquipo <= 0)
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "El ID del equipo debe ser un número mayor que 0.",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    var nota = string.IsNullOrWhiteSpace(notaTextBox.Text) ? null : notaTextBox.Text;
+
+                    var success = await _relacionRefaccionEquipoService.CreateRelacionAsync(refaccion.IdRefaccion, idEquipo, nota);
+
+                    if (success)
+                    {
+                        // Recargar las relaciones para actualizar la UI
+                        refaccion.RelacionesEquipoLoaded = false;
+                        await LoadRelacionesEquipoForRefaccionAsync(refaccion);
+
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Relación creada",
+                            nota: $"Relación con el equipo ID {idEquipo} creada correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo crear la relación. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al crear relación equipo: {ex.GetType().Name} - {ex.Message}");
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al crear la relación. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async void EditRelacionEquipoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la relación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not RelacionEquipoDto relacion)
+                return;
+
+            // Buscar la refacción que contiene esta relación
+            var refaccion = ViewModel.Refacciones.FirstOrDefault(r => r.RelacionesEquipo.Contains(relacion));
+            if (refaccion == null)
+                return;
+
+            // Crear el TextBox para editar la nota
+            var notaTextBox = new TextBox
+            {
+                Text = relacion.Nota ?? string.Empty,
+                PlaceholderText = "Ingrese una nota...",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 100,
+                MaxHeight = 200
+            };
+
+            // Crear el contenido del diálogo
+            var dialogContent = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = $"Equipo: {relacion.Marca} - {relacion.Identificador}",
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                    },
+                    new TextBlock
+                    {
+                        Text = "Nota:",
+                        Margin = new Thickness(0, 8, 0, 4)
+                    },
+                    notaTextBox
+                }
+            };
+
+            // Mostrar diálogo para editar la nota
+            var dialog = new ContentDialog
+            {
+                Title = "Editar Nota",
+                Content = dialogContent,
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var nuevaNota = notaTextBox.Text;
+
+                    // Llamar al servicio para actualizar la nota
+                    var success = await _relacionRefaccionEquipoService.UpdateNotaAsync(relacion.IdRelacionRefaccion, nuevaNota);
+
+                    if (success)
+                    {
+                        // Actualizar la nota en el objeto local
+                        relacion.Nota = nuevaNota;
+
+                        // Recargar las relaciones para actualizar la UI (necesario porque x:Bind es OneTime por defecto)
+                        refaccion.RelacionesEquipoLoaded = false;
+                        await LoadRelacionesEquipoForRefaccionAsync(refaccion);
+
+                        // Mostrar notificación de éxito
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Nota actualizada",
+                            nota: "Nota actualizada correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        // Mostrar notificación de error
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo actualizar la nota. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log exception details for debugging
+                    System.Diagnostics.Debug.WriteLine($"Error al actualizar nota: {ex.GetType().Name} - {ex.Message}");
+
+                    // Mostrar notificación de error
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al actualizar la nota. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async void DeleteRelacionEquipoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la relación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not RelacionEquipoDto relacion)
+                return;
+
+            // Buscar la refacción que contiene esta relación
+            var refaccion = ViewModel.Refacciones.FirstOrDefault(r => r.RelacionesEquipo.Contains(relacion));
+            if (refaccion == null)
+                return;
+
+            // Mostrar diálogo de confirmación
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea eliminar la relación con el equipo \"{relacion.Marca} - {relacion.Identificador}\"?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    // Llamar al servicio para eliminar la relación
+                    var success = await _relacionRefaccionEquipoService.DeleteRelacionAsync(relacion.IdRelacionRefaccion);
+
+                    if (success)
+                    {
+                        // Eliminar la relación de la colección local
+                        refaccion.RelacionesEquipo.Remove(relacion);
+                        refaccion.NotifyNoRelacionesEquipoMessageChanged();
+
+                        // Mostrar notificación de éxito
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Relación eliminada",
+                            nota: "Relación eliminada correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        // Mostrar notificación de error
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo eliminar la relación. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log exception details for debugging
+                    System.Diagnostics.Debug.WriteLine($"Error al eliminar relación: {ex.GetType().Name} - {ex.Message}");
+
+                    // Mostrar notificación de error
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
         }
     }
 }
