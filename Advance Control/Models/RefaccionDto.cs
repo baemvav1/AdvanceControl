@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -51,6 +52,82 @@ namespace Advance_Control.Models
                     OnPropertyChanged();
                 }
             }
+        }
+
+        private ObservableCollection<RelacionEquipoDto> _relacionesEquipo = new ObservableCollection<RelacionEquipoDto>();
+
+        /// <summary>
+        /// Colección de relaciones equipo para esta refacción.
+        /// Se carga desde el endpoint de relaciones cuando se expande el item.
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<RelacionEquipoDto> RelacionesEquipo
+        {
+            get => _relacionesEquipo;
+            set
+            {
+                if (_relacionesEquipo != value)
+                {
+                    _relacionesEquipo = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoRelacionesEquipoMessage));
+                }
+            }
+        }
+
+        private bool _relacionesEquipoLoaded = false;
+
+        /// <summary>
+        /// Indica si las relaciones equipo ya han sido cargadas para esta refacción.
+        /// </summary>
+        [JsonIgnore]
+        public bool RelacionesEquipoLoaded
+        {
+            get => _relacionesEquipoLoaded;
+            set
+            {
+                if (_relacionesEquipoLoaded != value)
+                {
+                    _relacionesEquipoLoaded = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoRelacionesEquipoMessage));
+                }
+            }
+        }
+
+        private bool _isLoadingRelacionesEquipo = false;
+
+        /// <summary>
+        /// Indica si las relaciones equipo están siendo cargadas.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingRelacionesEquipo
+        {
+            get => _isLoadingRelacionesEquipo;
+            set
+            {
+                if (_isLoadingRelacionesEquipo != value)
+                {
+                    _isLoadingRelacionesEquipo = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se debe mostrar el mensaje de que no hay relaciones equipo.
+        /// True cuando RelacionesEquipoLoaded es true y RelacionesEquipo está vacía.
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoRelacionesEquipoMessage => RelacionesEquipoLoaded && RelacionesEquipo.Count == 0;
+
+        /// <summary>
+        /// Actualiza el estado del mensaje de no relaciones equipo.
+        /// Debe llamarse después de modificar RelacionesEquipo o RelacionesEquipoLoaded.
+        /// </summary>
+        public void NotifyNoRelacionesEquipoMessageChanged()
+        {
+            OnPropertyChanged(nameof(ShowNoRelacionesEquipoMessage));
         }
     }
 }
