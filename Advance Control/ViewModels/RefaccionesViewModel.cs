@@ -120,7 +120,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error inesperado al cargar refacciones: {ex.Message}";
+                ErrorMessage = "Error inesperado al cargar refacciones. Por favor, intente nuevamente.";
                 await _logger.LogErrorAsync("Error inesperado al cargar refacciones", ex, "RefaccionesViewModel", "LoadRefaccionesAsync");
             }
             finally
@@ -176,7 +176,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error al eliminar refacción: {ex.Message}";
+                ErrorMessage = "Error al eliminar refacción. Por favor, intente nuevamente.";
                 await _logger.LogErrorAsync($"Error al eliminar refacción {id}", ex, "RefaccionesViewModel", "DeleteRefaccionAsync");
                 return false;
             }
@@ -209,7 +209,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error al actualizar refacción: {ex.Message}";
+                ErrorMessage = "Error al actualizar refacción. Por favor, intente nuevamente.";
                 await _logger.LogErrorAsync($"Error al actualizar refacción {id}", ex, "RefaccionesViewModel", "UpdateRefaccionAsync");
                 return false;
             }
@@ -242,7 +242,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error al crear refacción: {ex.Message}";
+                ErrorMessage = "Error al crear refacción. Por favor, intente nuevamente.";
                 await _logger.LogErrorAsync($"Error al crear refacción", ex, "RefaccionesViewModel", "CreateRefaccionAsync");
                 return false;
             }

@@ -159,7 +159,7 @@ namespace Advance_Control.Services.Refacciones
                 if (!string.IsNullOrWhiteSpace(query.Descripcion))
                     queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
 
-                queryParams.Add($"estatus={query.Estatus.ToString().ToLower()}");
+                queryParams.Add($"estatus={query.Estatus.ToString().ToLowerInvariant()}");
 
                 url = $"{url}?{string.Join("&", queryParams)}";
 
@@ -206,7 +206,7 @@ namespace Advance_Control.Services.Refacciones
                 // Agregar parámetros de consulta
                 var queryParams = new List<string>
                 {
-                    $"estatus={estatus.ToString().ToLower()}"
+                    $"estatus={estatus.ToString().ToLowerInvariant()}"
                 };
 
                 if (!string.IsNullOrWhiteSpace(marca))

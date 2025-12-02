@@ -1,5 +1,5 @@
 using System;
-using System.Linq;
+using System.Globalization;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -122,11 +122,7 @@ namespace Advance_Control.Views
             {
                 try
                 {
-                    double? costo = null;
-                    if (!string.IsNullOrWhiteSpace(costoTextBox.Text) && double.TryParse(costoTextBox.Text, out var parsedCosto))
-                    {
-                        costo = parsedCosto;
-                    }
+                    var costo = ParseCosto(costoTextBox.Text);
 
                     var success = await ViewModel.CreateRefaccionAsync(
                         string.IsNullOrWhiteSpace(marcaTextBox.Text) ? null : marcaTextBox.Text,
@@ -312,11 +308,7 @@ namespace Advance_Control.Views
             {
                 try
                 {
-                    double? costo = null;
-                    if (!string.IsNullOrWhiteSpace(costoTextBox.Text) && double.TryParse(costoTextBox.Text, out var parsedCosto))
-                    {
-                        costo = parsedCosto;
-                    }
+                    var costo = ParseCosto(costoTextBox.Text);
 
                     var updateData = new RefaccionQueryDto
                     {
@@ -355,6 +347,32 @@ namespace Advance_Control.Views
                         fechaHoraInicio: DateTime.Now);
                 }
             }
+        }
+
+        /// <summary>
+        /// Parses a cost string value using invariant culture for consistent number parsing.
+        /// </summary>
+        /// <param name="costoText">The cost text to parse</param>
+        /// <returns>The parsed cost value, or null if the text is empty or invalid</returns>
+        private static double? ParseCosto(string costoText)
+        {
+            if (string.IsNullOrWhiteSpace(costoText))
+            {
+                return null;
+            }
+
+            if (double.TryParse(costoText, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsedCosto))
+            {
+                return parsedCosto;
+            }
+
+            // Also try parsing with current culture as fallback for user-friendly input
+            if (double.TryParse(costoText, NumberStyles.Any, CultureInfo.CurrentCulture, out parsedCosto))
+            {
+                return parsedCosto;
+            }
+
+            return null;
         }
     }
 }
