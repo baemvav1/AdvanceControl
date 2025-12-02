@@ -224,7 +224,7 @@ namespace Advance_Control.Services.RelacionesRefaccionEquipo
                 // Realizar la petición POST
                 var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
-                // Verificar si la respuesta fue exitosa
+                // Verificar si la respuesta fue exitosa a nivel HTTP
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -234,6 +234,30 @@ namespace Advance_Control.Services.RelacionesRefaccionEquipo
                         "RelacionRefaccionEquipoService",
                         "CreateRelacionAsync");
                     return false;
+                }
+
+                // Verificar el campo success en el cuerpo de la respuesta
+                // La API puede retornar HTTP 200 pero con success=false si la relación ya existe
+                try
+                {
+                    var apiResponse = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                    if (apiResponse != null && !apiResponse.Success)
+                    {
+                        await _logger.LogWarningAsync(
+                            $"La API retornó success=false: {apiResponse.Message}",
+                            "RelacionRefaccionEquipoService",
+                            "CreateRelacionAsync");
+                        return false;
+                    }
+                }
+                catch (System.Text.Json.JsonException ex)
+                {
+                    // Si la respuesta no es JSON válido o no tiene el formato esperado,
+                    // asumimos que la operación fue exitosa (HTTP 200 OK)
+                    await _logger.LogWarningAsync(
+                        $"No se pudo parsear la respuesta JSON: {ex.Message}",
+                        "RelacionRefaccionEquipoService",
+                        "CreateRelacionAsync");
                 }
 
                 await _logger.LogInformationAsync($"Relación refacción-equipo creada exitosamente: idRefaccion={idRefaccion}, idEquipo={idEquipo}", "RelacionRefaccionEquipoService", "CreateRelacionAsync");

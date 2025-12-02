@@ -677,9 +677,10 @@ namespace Advance_Control.Views
                     }
                     else
                     {
+                        // Mostrar notificación de error - la relación puede que ya exista
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Error",
-                            nota: "No se pudo crear la relación. Por favor, intente nuevamente.",
+                            nota: "No se pudo crear la relación. Es posible que ya exista una relación con este equipo.",
                             fechaHoraInicio: DateTime.Now);
                     }
                 }
