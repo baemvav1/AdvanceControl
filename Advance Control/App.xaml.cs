@@ -17,6 +17,7 @@ using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Mantenimiento;
+using Advance_Control.Services.Refacciones;
 
 namespace Advance_Control
 {
@@ -223,6 +224,27 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar RefaccionService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IRefaccionService, RefaccionService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar NavigationService
                     services.AddSingleton<INavigationService, NavigationService>();
 
@@ -241,6 +263,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
                     services.AddTransient<ViewModels.MttoViewModel>();
                     services.AddTransient<ViewModels.NuevoEquipoViewModel>();
+                    services.AddTransient<ViewModels.RefaccionesViewModel>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
