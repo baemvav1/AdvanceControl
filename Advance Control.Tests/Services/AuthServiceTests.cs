@@ -705,5 +705,212 @@ namespace Advance_Control.Tests.Services
             Assert.Contains("refresh", lastRequestUri, StringComparison.OrdinalIgnoreCase);
             Assert.True(authService.IsAuthenticated);
         }
+
+        [Fact]
+        public async Task TryRestoreSessionAsync_WithNoTokens_ReturnsFalse()
+        {
+            // Arrange
+            _mockSecureStorage
+                .Setup(x => x.GetAsync(It.IsAny<string>()))
+                .ReturnsAsync((string?)null);
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
+
+            // Act
+            var result = await authService.TryRestoreSessionAsync();
+
+            // Assert
+            Assert.False(result);
+            Assert.False(authService.IsAuthenticated);
+        }
+
+        [Fact]
+        public async Task TryRestoreSessionAsync_WithValidStoredToken_ReturnsTrue()
+        {
+            // Arrange - Setup storage with valid token
+            var validExpiry = DateTime.UtcNow.AddHours(1).ToString("o");
+            
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_token"))
+                .ReturnsAsync("stored-access-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.refresh_token"))
+                .ReturnsAsync("stored-refresh-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_expires_at_utc"))
+                .ReturnsAsync(validExpiry);
+
+            // Setup validate endpoint to return success
+            var validateResponse = new { valid = true };
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = JsonContent.Create(validateResponse)
+                });
+
+            _mockEndpointProvider
+                .Setup(x => x.GetEndpoint("api", "Auth", "validate"))
+                .Returns("https://test.api.com/api/Auth/validate");
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
+
+            // Wait for initialization
+            await Task.Delay(100);
+
+            // Act
+            var result = await authService.TryRestoreSessionAsync();
+
+            // Assert
+            Assert.True(result);
+            Assert.True(authService.IsAuthenticated);
+        }
+
+        [Fact]
+        public async Task TryRestoreSessionAsync_WithExpiredTokenAndValidRefresh_ReturnsTrue()
+        {
+            // Arrange - Setup storage with expired access token but valid refresh token
+            var expiredExpiry = DateTime.UtcNow.AddHours(-1).ToString("o");
+            
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_token"))
+                .ReturnsAsync("expired-access-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.refresh_token"))
+                .ReturnsAsync("valid-refresh-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_expires_at_utc"))
+                .ReturnsAsync(expiredExpiry);
+
+            // Setup refresh endpoint to return new tokens
+            var refreshResponse = new
+            {
+                accessToken = "new-access-token",
+                refreshToken = "new-refresh-token",
+                expiresIn = 3600
+            };
+
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = JsonContent.Create(refreshResponse)
+                });
+
+            _mockEndpointProvider
+                .Setup(x => x.GetEndpoint("api", "Auth", "refresh"))
+                .Returns("https://test.api.com/api/Auth/refresh");
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
+
+            // Wait for initialization
+            await Task.Delay(100);
+
+            // Act
+            var result = await authService.TryRestoreSessionAsync();
+
+            // Assert
+            Assert.True(result);
+            Assert.True(authService.IsAuthenticated);
+        }
+
+        [Fact]
+        public async Task TryRestoreSessionAsync_WithExpiredTokenAndExpiredRefresh_ReturnsFalse()
+        {
+            // Arrange - Setup storage with expired tokens
+            var expiredExpiry = DateTime.UtcNow.AddHours(-1).ToString("o");
+            
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_token"))
+                .ReturnsAsync("expired-access-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.refresh_token"))
+                .ReturnsAsync("expired-refresh-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_expires_at_utc"))
+                .ReturnsAsync(expiredExpiry);
+
+            // Setup refresh endpoint to return 401 (refresh token also expired)
+            _mockHttpMessageHandler
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.Unauthorized
+                });
+
+            _mockEndpointProvider
+                .Setup(x => x.GetEndpoint("api", "Auth", "refresh"))
+                .Returns("https://test.api.com/api/Auth/refresh");
+
+            _mockSecureStorage
+                .Setup(x => x.RemoveAsync(It.IsAny<string>()))
+                .Returns(Task.CompletedTask);
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
+
+            // Wait for initialization
+            await Task.Delay(100);
+
+            // Act
+            var result = await authService.TryRestoreSessionAsync();
+
+            // Assert
+            Assert.False(result);
+            Assert.False(authService.IsAuthenticated);
+        }
+
+        [Fact]
+        public async Task TryRestoreSessionAsync_InDevMode_RestoresWithoutValidation()
+        {
+            // Arrange
+            var devModeOptions = Options.Create(new DevelopmentModeOptions
+            {
+                Enabled = true,
+                DisableAuthTimeouts = true,
+                DisableHttpTimeouts = false
+            });
+
+            // Setup storage with a token (doesn't matter if expired)
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_token"))
+                .ReturnsAsync("dev-mode-token");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.refresh_token"))
+                .ReturnsAsync("dev-mode-refresh");
+            _mockSecureStorage
+                .Setup(x => x.GetAsync("auth.access_expires_at_utc"))
+                .ReturnsAsync(DateTime.UtcNow.AddHours(-1).ToString("o")); // Expired
+
+            var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
+                _mockSecureStorage.Object, _mockLogger.Object, devModeOptions);
+
+            // Wait for initialization
+            await Task.Delay(100);
+
+            // Act
+            var result = await authService.TryRestoreSessionAsync();
+
+            // Assert - Should succeed in dev mode without server validation
+            Assert.True(result);
+            Assert.True(authService.IsAuthenticated);
+        }
     }
 }
