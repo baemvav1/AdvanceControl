@@ -33,8 +33,8 @@ namespace Advance_Control.Services.RelacionesRefaccionEquipo
         {
             try
             {
-                // Construir la URL base usando el endpoint correcto
-                var url = _endpoints.GetEndpoint("api", "RelacionesRefaccionEquipo");
+                // Construir la URL base usando el endpoint correcto con la ruta /equipos
+                var url = _endpoints.GetEndpoint("api", "RelacionesRefaccionEquipo/equipos");
 
                 // Agregar parámetros de consulta
                 var queryParams = new List<string>();
