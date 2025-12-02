@@ -145,15 +145,13 @@
                                             Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        x:Name="Body" Grid.Row="1" Padding="16" Background="WhiteSmoke"
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="WhiteSmoke"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                        <StackPanel Spacing="12">
-                                            <!--  Información del equipo  -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock
-                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Información del Equipo" />
-                                                <Grid>
+                                        <Pivot>
+                                            <!-- Información del Equipo -->
+                                            <PivotItem Header="Información">
+                                                <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="*" />
@@ -209,102 +207,104 @@
                                                             Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                 </Grid>
-                                            </StackPanel>
+                                            </PivotItem>
 
-                                            <!--  Descripción  -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock
-                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Descripción" />
-                                                <TextBlock
-                                                    FontSize="13" Foreground="Black"
-                                                    Text="{x:Bind Descripcion}"
-                                                    TextWrapping="Wrap" />
-                                            </StackPanel>
-
-                                            <!--  Relaciones Cliente  -->
-                                            <StackPanel Spacing="6">
-                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                            <!-- Descripción -->
+                                            <PivotItem Header="Descripción">
+                                                <StackPanel Padding="8">
                                                     <TextBlock
-                                                        FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
-                                                    <Button
-                                                        x:Name="NuevaRelacion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
-                                                        Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray"
-                                                        Tag="{x:Bind}">
-                                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                                            <SymbolIcon Symbol="Add" />
-                                                        </StackPanel>
-                                                    </Button>
+                                                        FontSize="13" Foreground="Black"
+                                                        Text="{x:Bind Descripcion}"
+                                                        TextWrapping="Wrap" />
                                                 </StackPanel>
+                                            </PivotItem>
 
-                                                <!--  Loading indicator for relaciones  -->
-                                                <ProgressRing
-                                                    Width="20" Height="20" HorizontalAlignment="Left"
-                                                    IsActive="{x:Bind IsLoadingRelaciones, Mode=OneWay}"
-                                                    Visibility="{x:Bind IsLoadingRelaciones, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                            <!-- Clientes Relacionados -->
+                                            <PivotItem Header="Clientes">
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <TextBlock
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
+                                                        <Button
+                                                            x:Name="NuevaRelacion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                            Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray"
+                                                            Tag="{x:Bind}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
 
-                                                <!--  Lista de relaciones  -->
-                                                <ItemsRepeater ItemsSource="{x:Bind Relaciones, Mode=OneWay}">
-                                                    <ItemsRepeater.Layout>
-                                                        <StackLayout Spacing="4" />
-                                                    </ItemsRepeater.Layout>
-                                                    <ItemsRepeater.ItemTemplate>
-                                                        <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionClienteDto">
-                                                            <Border
-                                                                Padding="12" Background="DarkGray"
-                                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                                BorderThickness="1" CornerRadius="4">
-                                                                <Grid>
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="*" />
-                                                                        <ColumnDefinition Width="Auto" />
-                                                                        <ColumnDefinition Width="Auto" />
-                                                                    </Grid.ColumnDefinitions>
-                                                                    <StackPanel Grid.Column="0" Spacing="2">
-                                                                        <TextBlock
-                                                                            FontSize="13" FontWeight="SemiBold" Foreground="Black"
-                                                                            Text="{x:Bind RazonSocial}" />
-                                                                        <TextBlock
-                                                                            FontSize="12" Foreground="Gray"
-                                                                            Text="{x:Bind NombreComercial}" />
-                                                                        <TextBlock
-                                                                            FontSize="11" FontStyle="Italic" Foreground="DimGray"
-                                                                            Text="{x:Bind Nota}"
-                                                                            TextWrapping="Wrap"
-                                                                            Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-                                                                    </StackPanel>
-                                                                    <TextBlock
-                                                                        Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
-                                                                        Foreground="Gray">
-                                                                        <Run Text="ID: " />
-                                                                        <Run Text="{x:Bind IdCliente}" />
-                                                                    </TextBlock>
-                                                                    <StackPanel
-                                                                        Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
-                                                                        <Button
-                                                                            AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" Click="EditRelacionButton_Click"
-                                                                            Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Editar nota">
-                                                                            <SymbolIcon Foreground="Black" Symbol="Edit" />
-                                                                        </Button>
-                                                                        <Button
-                                                                            AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0" Click="DeleteRelacionButton_Click"
-                                                                            Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Eliminar relación">
-                                                                            <SymbolIcon Foreground="Black" Symbol="Delete" />
-                                                                        </Button>
-                                                                    </StackPanel>
-                                                                </Grid>
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </ItemsRepeater.ItemTemplate>
-                                                </ItemsRepeater>
+                                                    <!--  Loading indicator for relaciones  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingRelaciones, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingRelaciones, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
 
-                                                <!--  Mensaje cuando no hay relaciones  -->
-                                                <TextBlock
-                                                    FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay clientes relacionados"
-                                                    Visibility="{x:Bind ShowNoRelacionesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
-                                            </StackPanel>
-                                        </StackPanel>
+                                                    <!--  Lista de relaciones  -->
+                                                    <ItemsRepeater ItemsSource="{x:Bind Relaciones, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="4" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionClienteDto">
+                                                                <Border
+                                                                    Padding="12" Background="DarkGray"
+                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                    BorderThickness="1" CornerRadius="4">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                                            <TextBlock
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                                Text="{x:Bind RazonSocial}" />
+                                                                            <TextBlock
+                                                                                FontSize="12" Foreground="Gray"
+                                                                                Text="{x:Bind NombreComercial}" />
+                                                                            <TextBlock
+                                                                                FontSize="11" FontStyle="Italic" Foreground="DimGray"
+                                                                                Text="{x:Bind Nota}"
+                                                                                TextWrapping="Wrap"
+                                                                                Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        </StackPanel>
+                                                                        <TextBlock
+                                                                            Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
+                                                                            Foreground="Gray">
+                                                                            <Run Text="ID: " />
+                                                                            <Run Text="{x:Bind IdCliente}" />
+                                                                        </TextBlock>
+                                                                        <StackPanel
+                                                                            Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                                            <Button
+                                                                                AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" Click="EditRelacionButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Editar nota">
+                                                                                <SymbolIcon Foreground="Black" Symbol="Edit" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0" Click="DeleteRelacionButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Eliminar relación">
+                                                                                <SymbolIcon Foreground="Black" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+
+                                                    <!--  Mensaje cuando no hay relaciones  -->
+                                                    <TextBlock
+                                                        FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay clientes relacionados"
+                                                        Visibility="{x:Bind ShowNoRelacionesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </PivotItem>
+                                        </Pivot>
                                     </Grid>
                                 </StackPanel>
 

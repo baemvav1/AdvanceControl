@@ -150,13 +150,12 @@
                                         Background="WhiteSmoke" 
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
-                                        Padding="16"
+                                        Padding="8"
                                         x:Name="Body">
-                                        <StackPanel Spacing="12">
-                                            <!-- Información fiscal y legal -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Información Fiscal y Legal" Foreground="Black" />
-                                                <Grid>
+                                        <Pivot>
+                                            <!-- Información Fiscal y Legal -->
+                                            <PivotItem Header="Fiscal y Legal">
+                                                <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="*" />
@@ -166,8 +165,6 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
-                                                    
-                                                    
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="Gray" Text="Tipo de Persona:" />
@@ -194,12 +191,11 @@
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind IdCliente}" />
                                                     </StackPanel>
                                                 </Grid>
-                                            </StackPanel>
+                                            </PivotItem>
                                             
-                                            <!-- Información de crédito -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Información de Crédito" Foreground="Black" />
-                                                <Grid>
+                                            <!-- Información de Crédito -->
+                                            <PivotItem Header="Crédito">
+                                                <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="*" />
@@ -215,18 +211,18 @@
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind LimiteCredito}" />
                                                     </StackPanel>
                                                 </Grid>
-                                            </StackPanel>
+                                            </PivotItem>
                                             
                                             <!-- Notas -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Notas" Foreground="Black" />
-                                                <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Notas}" TextWrapping="Wrap" />
-                                            </StackPanel>
+                                            <PivotItem Header="Notas">
+                                                <StackPanel Padding="8">
+                                                    <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind Notas}" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </PivotItem>
                                             
-                                            <!-- Información de auditoría -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="Información de Auditoría" Foreground="Black" />
-                                                <Grid>
+                                            <!-- Información de Auditoría -->
+                                            <PivotItem Header="Auditoría">
+                                                <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="*" />
@@ -262,8 +258,8 @@
                                                         <TextBlock FontSize="13" Foreground="Black" Text="{x:Bind CredencialId}" />
                                                     </StackPanel>
                                                 </Grid>
-                                            </StackPanel>
-                                        </StackPanel>
+                                            </PivotItem>
+                                        </Pivot>
                                     </Grid>
                                 </StackPanel>
 

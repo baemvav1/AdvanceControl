@@ -132,15 +132,13 @@
                                             Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        x:Name="Body" Grid.Row="1" Padding="16" Background="WhiteSmoke"
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="WhiteSmoke"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                        <StackPanel Spacing="12">
-                                            <!--  Información del mantenimiento  -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock
-                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Información del Mantenimiento" />
-                                                <Grid>
+                                        <Pivot>
+                                            <!-- Información del Mantenimiento -->
+                                            <PivotItem Header="Información">
+                                                <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="*" />
@@ -215,33 +213,35 @@
                                                             Text="{x:Bind CostoTotal}" />
                                                     </StackPanel>
                                                 </Grid>
-                                            </StackPanel>
+                                            </PivotItem>
 
-                                            <!--  Nota  -->
-                                            <StackPanel Spacing="6">
-                                                <TextBlock
-                                                    FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Nota" />
-                                                <TextBlock
-                                                    FontSize="13" Foreground="Black"
-                                                    Text="{x:Bind Nota}"
-                                                    TextWrapping="Wrap"
-                                                    Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-                                            </StackPanel>
+                                            <!-- Nota -->
+                                            <PivotItem Header="Nota">
+                                                <StackPanel Padding="8">
+                                                    <TextBlock
+                                                        FontSize="13" Foreground="Black"
+                                                        Text="{x:Bind Nota}"
+                                                        TextWrapping="Wrap"
+                                                        Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                </StackPanel>
+                                            </PivotItem>
 
-                                            <!--  Acciones  -->
-                                            <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                                                <Button
-                                                    AutomationProperties.Name="Eliminar mantenimiento"
-                                                    Click="DeleteMantenimientoButton_Click"
-                                                    Tag="{x:Bind}"
-                                                    ToolTipService.ToolTip="Eliminar mantenimiento">
-                                                    <StackPanel Orientation="Horizontal" Spacing="4">
-                                                        <SymbolIcon Symbol="Delete" />
-                                                        <TextBlock Text="Eliminar" />
-                                                    </StackPanel>
-                                                </Button>
-                                            </StackPanel>
-                                        </StackPanel>
+                                            <!-- Acciones -->
+                                            <PivotItem Header="Acciones">
+                                                <StackPanel Padding="8" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                                    <Button
+                                                        AutomationProperties.Name="Eliminar mantenimiento"
+                                                        Click="DeleteMantenimientoButton_Click"
+                                                        Tag="{x:Bind}"
+                                                        ToolTipService.ToolTip="Eliminar mantenimiento">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <SymbolIcon Symbol="Delete" />
+                                                            <TextBlock Text="Eliminar" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                </StackPanel>
+                                            </PivotItem>
+                                        </Pivot>
                                     </Grid>
                                 </StackPanel>
 
