@@ -79,6 +79,8 @@
                             Content="Clientes" Icon="People" Tag="Clientes" />
                         <NavigationViewItem
                             Content="Equipos" Icon="AllApps" Tag="Equipos" />
+                        <NavigationViewItem
+                            Content="Refacciones" Icon="Setting" Tag="Refacciones" />
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>
