@@ -204,6 +204,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.MttoView>("Mantenimiento");
             _navigationService.Configure<Views.ClientesView>("Clientes");
             _navigationService.Configure<Views.EquiposView>("Equipos");
+            _navigationService.Configure<Views.RefaaccionView>("Refacciones");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
