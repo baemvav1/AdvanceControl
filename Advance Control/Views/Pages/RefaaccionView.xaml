@@ -144,7 +144,7 @@
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
-                                            <!-- Información de la Refacción -->
+                                            <!--  Información de la Refacción  -->
                                             <PivotItem Header="Información">
                                                 <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
@@ -204,7 +204,7 @@
                                                 </Grid>
                                             </PivotItem>
 
-                                            <!-- Descripción -->
+                                            <!--  Descripción  -->
                                             <PivotItem Header="Descripción">
                                                 <StackPanel Padding="8">
                                                     <TextBlock
@@ -214,21 +214,18 @@
                                                 </StackPanel>
                                             </PivotItem>
 
-                                            <PivotItem Header="Refacciones">
-                                                
-                                            </PivotItem>
+                                            <PivotItem Header="Equipos" />
 
-                                            <!-- Acciones -->
+                                            <!--  Acciones  -->
                                             <PivotItem Header="Acciones">
-                                                <StackPanel Padding="8" Spacing="8" Orientation="Horizontal">
+                                                <StackPanel
+                                                    Padding="8" Orientation="Horizontal" Spacing="8">
                                                     <Button
-                                                        Click="EditRefaccionButton_Click"
-                                                        Content="Editar"
+                                                        Click="EditRefaccionButton_Click" Content="Editar"
                                                         Tag="{x:Bind}"
                                                         ToolTipService.ToolTip="Editar refacción" />
                                                     <Button
-                                                        Click="DeleteRefaccionButton_Click"
-                                                        Content="Eliminar"
+                                                        Click="DeleteRefaccionButton_Click" Content="Eliminar"
                                                         Tag="{x:Bind}"
                                                         ToolTipService.ToolTip="Eliminar refacción" />
                                                 </StackPanel>
