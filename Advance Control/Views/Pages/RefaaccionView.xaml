@@ -214,6 +214,10 @@
                                                 </StackPanel>
                                             </PivotItem>
 
+                                            <PivotItem Header="Refacciones">
+                                                
+                                            </PivotItem>
+
                                             <!-- Acciones -->
                                             <PivotItem Header="Acciones">
                                                 <StackPanel Padding="8" Spacing="8" Orientation="Horizontal">
