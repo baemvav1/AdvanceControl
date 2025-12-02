@@ -21,5 +21,8 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("nota")]
         public string? Nota { get; set; }
+
+        [JsonPropertyName("creado")]
+        public int? Creado { get; set; }
     }
 }
