@@ -283,6 +283,51 @@ namespace Advance_Control.ViewModels
                 return false;
             }
         }
+
+        /// <summary>
+        /// Intenta iniciar sesión automáticamente usando los tokens almacenados.
+        /// Si los tokens son válidos, carga la información del usuario.
+        /// Si los tokens están expirados o no existen, muestra el diálogo de login.
+        /// </summary>
+        /// <returns>True si se autenticó exitosamente (ya sea automáticamente o mediante diálogo), false si el usuario canceló el login</returns>
+        public async Task<bool> TryAutoLoginAsync()
+        {
+            try
+            {
+                await _logger.LogInformationAsync("Intentando inicio de sesión automático", "MainViewModel", "TryAutoLoginAsync");
+
+                // Intentar restaurar la sesión desde los tokens almacenados
+                var sessionRestored = await _authService.TryRestoreSessionAsync();
+
+                if (sessionRestored)
+                {
+                    // Sesión restaurada exitosamente - actualizar estado de autenticación
+                    await UpdateUIPropertiesAsync(() =>
+                    {
+                        IsAuthenticated = true;
+                    });
+
+                    // Cargar información del usuario
+                    await LoadUserInfoAsync();
+
+                    await _logger.LogInformationAsync("Inicio de sesión automático exitoso", "MainViewModel", "TryAutoLoginAsync");
+                    return true;
+                }
+                else
+                {
+                    // No se pudo restaurar la sesión - mostrar diálogo de login
+                    await _logger.LogInformationAsync("No se pudo restaurar sesión, mostrando diálogo de login", "MainViewModel", "TryAutoLoginAsync");
+                    return await ShowLoginDialogAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error durante inicio de sesión automático", ex, "MainViewModel", "TryAutoLoginAsync");
+                // En caso de error, mostrar el diálogo de login
+                return await ShowLoginDialogAsync();
+            }
+        }
+
         /// <summary>
         /// Muestra el diálogo de inicio de sesión
         /// </summary>

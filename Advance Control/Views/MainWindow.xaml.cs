@@ -8,6 +8,7 @@ namespace Advance_Control
     public sealed partial class MainWindow : Window
     {
         private readonly MainViewModel _viewModel;
+        private bool _autoLoginAttempted;
 
         // Constructor adapted for DI to inject MainViewModel
         public MainWindow(MainViewModel viewModel)
@@ -25,6 +26,21 @@ namespace Advance_Control
             // Subscribe to NavigationView events and delegate to ViewModel
             nvSample.ItemInvoked += (sender, args) => _viewModel.OnNavigationItemInvoked(sender, args);
             nvSample.BackRequested += (sender, args) => _viewModel.OnBackRequested(sender, args);
+
+            // Subscribe to Loaded event to attempt auto-login after the window is ready
+            RootGrid.Loaded += RootGrid_Loaded;
+        }
+
+        private async void RootGrid_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Only attempt auto-login once
+            if (_autoLoginAttempted)
+                return;
+
+            _autoLoginAttempted = true;
+
+            // Attempt auto-login when the window is loaded
+            await _viewModel.TryAutoLoginAsync();
         }
 
         private async void LoginButton_Click(object sender, RoutedEventArgs e)

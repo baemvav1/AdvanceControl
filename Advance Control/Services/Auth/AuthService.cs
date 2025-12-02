@@ -268,6 +268,68 @@ namespace Advance_Control.Services.Auth
             }
         }
 
+        public async Task<bool> TryRestoreSessionAsync(CancellationToken cancellationToken = default)
+        {
+            // Esperar a que se complete la carga inicial de tokens desde storage
+            await _initTask.ConfigureAwait(false);
+
+            // Si no hay access token ni refresh token, no hay sesión que restaurar
+            if (string.IsNullOrEmpty(_accessToken) && string.IsNullOrEmpty(_refreshToken))
+            {
+                await _logger.LogInformationAsync("No hay tokens almacenados para restaurar sesión", "AuthService", "TryRestoreSessionAsync");
+                return false;
+            }
+
+            try
+            {
+                // Si hay access token y no ha expirado (con margen de 15 segundos), validar con el servidor
+                if (!string.IsNullOrEmpty(_accessToken))
+                {
+                    // En modo desarrollo con timeouts deshabilitados, considerar válido sin validar
+                    if (_devMode.Enabled && _devMode.DisableAuthTimeouts)
+                    {
+                        _isAuthenticated = true;
+                        await _logger.LogInformationAsync("Sesión restaurada exitosamente (modo desarrollo)", "AuthService", "TryRestoreSessionAsync");
+                        return true;
+                    }
+
+                    // Verificar si el token aún es válido
+                    if (_accessExpiresAtUtc.HasValue && _accessExpiresAtUtc > DateTime.UtcNow.AddSeconds(15))
+                    {
+                        // Token aún válido, validar con el servidor
+                        var isValid = await ValidateTokenAsync(cancellationToken);
+                        if (isValid)
+                        {
+                            _isAuthenticated = true;
+                            await _logger.LogInformationAsync("Sesión restaurada exitosamente con token válido", "AuthService", "TryRestoreSessionAsync");
+                            return true;
+                        }
+                    }
+                }
+
+                // Si el access token está expirado o es inválido, intentar refrescar
+                if (!string.IsNullOrEmpty(_refreshToken))
+                {
+                    var refreshed = await RefreshTokenAsync(cancellationToken);
+                    if (refreshed)
+                    {
+                        _isAuthenticated = true;
+                        await _logger.LogInformationAsync("Sesión restaurada exitosamente mediante refresh token", "AuthService", "TryRestoreSessionAsync");
+                        return true;
+                    }
+                }
+
+                // No se pudo restaurar la sesión
+                await _logger.LogInformationAsync("No se pudo restaurar la sesión: tokens inválidos o expirados", "AuthService", "TryRestoreSessionAsync");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al intentar restaurar sesión", ex, "AuthService", "TryRestoreSessionAsync");
+                return false;
+            }
+        }
+
         private async Task PersistTokensAsync()
         {
             try

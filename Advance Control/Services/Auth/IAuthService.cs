@@ -43,5 +43,12 @@ namespace Advance_Control.Services.Auth
         /// Indica si actualmente hay un token válido.
         /// </summary>
         bool IsAuthenticated { get; }
+
+        /// <summary>
+        /// Intenta restaurar la sesión desde los tokens almacenados.
+        /// Valida el token con el servidor y actualiza el estado de autenticación.
+        /// </summary>
+        /// <returns>True si la sesión fue restaurada exitosamente, false si los tokens no existen o están expirados/inválidos.</returns>
+        Task<bool> TryRestoreSessionAsync(CancellationToken cancellationToken = default);
     }
 }
