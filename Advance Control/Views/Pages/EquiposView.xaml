@@ -224,7 +224,7 @@
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <StackPanel Orientation="Horizontal" Spacing="5">
                                                         <TextBlock
-                                                            FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Clientes Relacionados" />
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="WhiteSmoke" Text="Clientes Relacionados" />
                                                         <Button
                                                             x:Name="NuevaRelacion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
                                                             Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray"
