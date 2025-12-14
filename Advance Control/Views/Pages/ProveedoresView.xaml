@@ -176,14 +176,13 @@
                                             <PivotItem Header="Refacciones">
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <StackPanel Orientation="Horizontal" Spacing="5">
-                                                        <TextBlock
-                                                            FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Refacciones Relacionadas" />
+                                                        
                                                         <Button
-                                                            x:Name="NuevaRelacionRefaccion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                            x:Name="NuevaRelacionRefaccion" VerticalAlignment="Center" Background="WhiteSmoke" BorderThickness="0"
                                                             Click="NuevaRelacionRefaccion_Click" ToolTipService.ToolTip="Crear nueva relacion con refacción" Foreground="DarkGray"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <SymbolIcon Symbol="Add" />
+                                                                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Nueva Refaccion" VerticalAlignment="Center" />
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>
@@ -216,7 +215,7 @@
                                                                                 FontSize="13" FontWeight="SemiBold" Foreground="Black"
                                                                                 Text="{x:Bind Marca}" />
                                                                             <TextBlock
-                                                                                FontSize="12" Foreground="Gray"
+                                                                                FontSize="12" Foreground="Black"
                                                                                 Text="{x:Bind Serie}" />
                                                                             <TextBlock
                                                                                 FontSize="12" Foreground="Black">

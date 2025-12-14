@@ -19,7 +19,7 @@ namespace Advance_Control.Models
         [JsonPropertyName("serie")]
         public string? Serie { get; set; }
 
-        [JsonPropertyName("precio")]
+        [JsonPropertyName("costo")]
         public double? Precio { get; set; }
 
         [JsonPropertyName("nota")]
