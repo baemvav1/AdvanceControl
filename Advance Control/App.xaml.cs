@@ -19,6 +19,7 @@ using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Services.Refacciones;
 using Advance_Control.Services.RelacionesRefaccionEquipo;
+using Advance_Control.Services.Proveedores;
 
 namespace Advance_Control
 {
@@ -122,6 +123,27 @@ namespace Advance_Control
 
                     // Registrar ClienteService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IClienteService, ClienteService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar ProveedorService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IProveedorService, ProveedorService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
@@ -280,6 +302,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.MainViewModel>();
                     services.AddTransient<ViewModels.LoginViewModel>();
                     services.AddTransient<ViewModels.CustomersViewModel>();
+                    services.AddTransient<ViewModels.ProveedoresViewModel>();
                     services.AddTransient<ViewModels.EquiposViewModel>();
                     services.AddTransient<ViewModels.OperacionesViewModel>();
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
