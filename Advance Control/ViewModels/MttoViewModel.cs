@@ -212,5 +212,38 @@ namespace Advance_Control.ViewModels
                 return false;
             }
         }
+
+        /// <summary>
+        /// Actualiza el estado de atendido de un mantenimiento
+        /// </summary>
+        public async Task<bool> UpdateAtendidoAsync(int idMantenimiento, int idAtendio, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Actualizando estado atendido del mantenimiento {idMantenimiento}...", "MttoViewModel", "UpdateAtendidoAsync");
+
+                var result = await _mantenimientoService.UpdateAtendidoAsync(idMantenimiento, idAtendio, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync($"Estado atendido del mantenimiento {idMantenimiento} actualizado exitosamente", "MttoViewModel", "UpdateAtendidoAsync");
+                    // Recargar la lista de mantenimientos
+                    await LoadMantenimientosAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo actualizar el estado atendido del mantenimiento.";
+                    await _logger.LogWarningAsync($"No se pudo actualizar el estado atendido del mantenimiento {idMantenimiento}", "MttoViewModel", "UpdateAtendidoAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al actualizar estado atendido: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al actualizar estado atendido del mantenimiento {idMantenimiento}", ex, "MttoViewModel", "UpdateAtendidoAsync");
+                return false;
+            }
+        }
     }
 }

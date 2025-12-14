@@ -207,6 +207,16 @@
                                             <PivotItem Header="Acciones">
                                                 <StackPanel Padding="8" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                                                     <Button
+                                                        AutomationProperties.Name="Atender mantenimiento"
+                                                        Click="AtenderMantenimientoButton_Click"
+                                                        Tag="{x:Bind}"
+                                                        ToolTipService.ToolTip="Atender mantenimiento">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <SymbolIcon Symbol="Accept" />
+                                                            <TextBlock Text="Atender" />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button
                                                         AutomationProperties.Name="Eliminar mantenimiento"
                                                         Click="DeleteMantenimientoButton_Click"
                                                         Tag="{x:Bind}"

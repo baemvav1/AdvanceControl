@@ -182,5 +182,47 @@ namespace Advance_Control.Services.Mantenimiento
                 throw;
             }
         }
+
+        /// <summary>
+        /// Actualiza el estado de atendido de un mantenimiento
+        /// </summary>
+        public async Task<bool> UpdateAtendidoAsync(int idMantenimiento, int idAtendio, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Construir la URL con parámetros de consulta escapados
+                var baseUrl = _endpoints.GetEndpoint("api", "Mantenimiento");
+                var url = $"{baseUrl}/atendido?idMantenimiento={Uri.EscapeDataString(idMantenimiento.ToString())}&idAtendio={Uri.EscapeDataString(idAtendio.ToString())}";
+
+                await _logger.LogInformationAsync($"Actualizando estado atendido del mantenimiento {idMantenimiento} en: {url}", "MantenimientoService", "UpdateAtendidoAsync");
+
+                // Realizar la petición PATCH
+                var response = await _http.PatchAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al actualizar estado atendido. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "MantenimientoService",
+                        "UpdateAtendidoAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Estado atendido del mantenimiento {idMantenimiento} actualizado correctamente", "MantenimientoService", "UpdateAtendidoAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al actualizar estado atendido", ex, "MantenimientoService", "UpdateAtendidoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al actualizar estado atendido", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al actualizar estado atendido", ex, "MantenimientoService", "UpdateAtendidoAsync");
+                throw;
+            }
+        }
     }
 }
