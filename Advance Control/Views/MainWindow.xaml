@@ -81,6 +81,8 @@
                             Content="Equipos" Icon="AllApps" Tag="Equipos" />
                         <NavigationViewItem
                             Content="Refacciones" Icon="Setting" Tag="Refacciones" />
+                        <NavigationViewItem
+                            Content="Proveedores" Icon="Contact" Tag="Proveedores" />
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>
