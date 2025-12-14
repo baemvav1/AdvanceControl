@@ -259,6 +259,10 @@
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
+
+                                            <PivotItem Header="Facturas">
+                                                
+                                            </PivotItem>
                                         </Pivot>
                                     </Grid>
                                 </StackPanel>
