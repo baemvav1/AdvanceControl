@@ -183,13 +183,13 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Crea un nuevo mantenimiento
         /// </summary>
-        public async Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, double costo, string? nota = null, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, CancellationToken cancellationToken = default)
         {
             try
             {
                 await _logger.LogInformationAsync($"Creando nuevo mantenimiento...", "MttoViewModel", "CreateMantenimientoAsync");
 
-                var result = await _mantenimientoService.CreateMantenimientoAsync(idTipoMantenimiento, idCliente, idEquipo, costo, nota, cancellationToken);
+                var result = await _mantenimientoService.CreateMantenimientoAsync(idTipoMantenimiento, idCliente, idEquipo, nota, cancellationToken);
 
                 if (result)
                 {

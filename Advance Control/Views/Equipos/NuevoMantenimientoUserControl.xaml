@@ -15,7 +15,6 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Tipo de Mantenimiento (ComboBox) -->
@@ -181,21 +180,8 @@
                 Visibility="Collapsed" />
         </StackPanel>
 
-        <!-- Costo -->
-        <StackPanel Grid.Row="3" Margin="0,0,0,12">
-            <TextBlock
-                Text="Costo"
-                FontWeight="SemiBold"
-                Margin="0,0,0,4" />
-            <NumberBox
-                x:Name="CostoNumberBox"
-                PlaceholderText="Ingrese el costo"
-                Minimum="0.01"
-                SpinButtonPlacementMode="Compact" />
-        </StackPanel>
-
         <!-- Nota -->
-        <StackPanel Grid.Row="4">
+        <StackPanel Grid.Row="3">
             <TextBlock
                 Text="Nota (opcional)"
                 FontWeight="SemiBold"

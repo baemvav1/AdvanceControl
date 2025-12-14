@@ -117,10 +117,6 @@
                                                     <Run Text="Cliente: " />
                                                     <Run FontWeight="SemiBold" Text="{x:Bind RazonSocial}" />
                                                 </TextBlock>
-                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                                                    <Run Text="Costo: $" />
-                                                    <Run FontWeight="SemiBold" Text="{x:Bind Costo}" />
-                                                </TextBlock>
                                             </StackPanel>
                                         </StackPanel>
 
@@ -144,7 +140,6 @@
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
                                                     <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
@@ -193,24 +188,6 @@
                                                         <TextBlock
                                                             FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Identificador}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="2" Grid.Column="1" Margin="0,4,8,0">
-                                                        <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Costo:" />
-                                                        <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
-                                                            Text="{x:Bind Costo}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="3" Grid.Column="0" Margin="0,4,0,0">
-                                                        <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Costo Total:" />
-                                                        <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
-                                                            Text="{x:Bind CostoTotal}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>

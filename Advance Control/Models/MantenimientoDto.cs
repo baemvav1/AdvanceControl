@@ -52,18 +52,6 @@ namespace Advance_Control.Models
         [JsonPropertyName("identificador")]
         public string? Identificador { get; set; }
 
-        /// <summary>
-        /// Costo del mantenimiento
-        /// </summary>
-        [JsonPropertyName("costo")]
-        public double? Costo { get; set; }
-
-        /// <summary>
-        /// Costo total del mantenimiento
-        /// </summary>
-        [JsonPropertyName("costoTotal")]
-        public double? CostoTotal { get; set; }
-
         private bool _expand = false;
 
         /// <summary>

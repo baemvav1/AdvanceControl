@@ -97,22 +97,12 @@ namespace Advance_Control.Views
                     return;
                 }
 
-                if (!nuevoMantenimientoControl.Costo.HasValue || nuevoMantenimientoControl.Costo.Value <= 0)
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error de validación",
-                        nota: "El costo es obligatorio y debe ser mayor que 0.",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
                 try
                 {
                     var success = await ViewModel.CreateMantenimientoAsync(
                         nuevoMantenimientoControl.IdTipoMantenimiento.Value,
                         nuevoMantenimientoControl.IdCliente.Value,
                         nuevoMantenimientoControl.IdEquipo.Value,
-                        nuevoMantenimientoControl.Costo.Value,
                         nuevoMantenimientoControl.Nota
                     );
 
