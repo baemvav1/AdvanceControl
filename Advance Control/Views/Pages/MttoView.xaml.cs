@@ -233,10 +233,11 @@ namespace Advance_Control.Views
                 }
 
                 // Mostrar diálogo de confirmación
+                var tipoMantenimiento = mantenimiento.TipoMantenimiento ?? "sin tipo especificado";
                 var dialog = new ContentDialog
                 {
                     Title = "Confirmar atención",
-                    Content = $"¿Está seguro de que desea marcar como atendido el mantenimiento #{mantenimiento.IdMantenimiento} ({mantenimiento.TipoMantenimiento})?",
+                    Content = $"¿Está seguro de que desea marcar como atendido el mantenimiento #{mantenimiento.IdMantenimiento} ({tipoMantenimiento})?",
                     PrimaryButtonText = "Atender",
                     CloseButtonText = "Cancelar",
                     DefaultButton = ContentDialogButton.Primary,
