@@ -6,7 +6,7 @@ using Advance_Control.Models;
 namespace Advance_Control.Services.Operaciones
 {
     /// <summary>
-    /// Servicio para gestionar operaciones con operaciones del sistema
+    /// Servicio para gestionar operaciones del sistema
     /// </summary>
     public interface IOperacionService
     {

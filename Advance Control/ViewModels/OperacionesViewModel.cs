@@ -105,22 +105,12 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                IsLoading = true;
-                ErrorMessage = null;
-                
                 await _logger.LogInformationAsync("Vista de Operaciones inicializada", "OperacionesViewModel", "InitializeAsync");
-                
-                // Cargar operaciones al inicializar
-                await LoadOperacionesAsync(cancellationToken);
             }
             catch (Exception ex)
             {
                 ErrorMessage = "Error al inicializar la vista de Operaciones.";
                 await _logger.LogErrorAsync("Error al inicializar OperacionesViewModel", ex, "OperacionesViewModel", "InitializeAsync");
-            }
-            finally
-            {
-                IsLoading = false;
             }
         }
 
