@@ -32,10 +32,9 @@ namespace Advance_Control.Services.Mantenimiento
         /// <param name="idTipoMantenimiento">ID del tipo de mantenimiento (obligatorio)</param>
         /// <param name="idCliente">ID del cliente (obligatorio)</param>
         /// <param name="idEquipo">ID del equipo (obligatorio)</param>
-        /// <param name="costo">Costo del mantenimiento (obligatorio)</param>
         /// <param name="nota">Nota asociada al mantenimiento (opcional)</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, double costo, string? nota = null, CancellationToken cancellationToken = default);
+        Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, CancellationToken cancellationToken = default);
     }
 }

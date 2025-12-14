@@ -65,11 +65,6 @@ namespace Advance_Control.Views.Equipos
         public int? IdCliente => _selectedCliente?.IdCliente;
 
         /// <summary>
-        /// Gets the cost value
-        /// </summary>
-        public double? Costo => double.IsNaN(CostoNumberBox.Value) ? null : CostoNumberBox.Value;
-
-        /// <summary>
         /// Gets the note text
         /// </summary>
         public string? Nota => string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text;
@@ -80,9 +75,7 @@ namespace Advance_Control.Views.Equipos
         public bool IsValid =>
             IdTipoMantenimiento.HasValue &&
             IdEquipo.HasValue &&
-            IdCliente.HasValue &&
-            Costo.HasValue &&
-            Costo.Value > 0;
+            IdCliente.HasValue;
 
         #endregion
 
