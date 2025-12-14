@@ -289,6 +289,27 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar RelacionProveedorRefaccionService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<Services.RelacionesProveedorRefaccion.IRelacionProveedorRefaccionService, Services.RelacionesProveedorRefaccion.RelacionProveedorRefaccionService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar NavigationService
                     services.AddSingleton<INavigationService, NavigationService>();
 

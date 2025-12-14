@@ -9,6 +9,7 @@
         <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -171,10 +172,94 @@
                                                 </Grid>
                                             </PivotItem>
 
-                                            <!-- Refacciones (vacío por ahora) -->
+                                            <!-- Refacciones -->
                                             <PivotItem Header="Refacciones">
-                                                <StackPanel Padding="8">
-                                                    <TextBlock FontSize="13" Foreground="Gray" Text="Este módulo estará disponible próximamente." TextWrapping="Wrap" />
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <TextBlock
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Refacciones Relacionadas" />
+                                                        <Button
+                                                            x:Name="NuevaRelacionRefaccion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                            Click="NuevaRelacionRefaccion_Click" ToolTipService.ToolTip="Crear nueva relacion con refacción" Foreground="DarkGray"
+                                                            Tag="{x:Bind}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!--  Loading indicator for relaciones refaccion  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingRelacionesRefaccion, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingRelacionesRefaccion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Lista de relaciones refaccion  -->
+                                                    <ItemsRepeater ItemsSource="{x:Bind RelacionesRefaccion, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="4" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionProveedorRefaccionDto">
+                                                                <Border
+                                                                    Padding="12" Background="DarkGray"
+                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                    BorderThickness="1" CornerRadius="4">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                                            <TextBlock
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                                Text="{x:Bind Marca}" />
+                                                                            <TextBlock
+                                                                                FontSize="12" Foreground="Gray"
+                                                                                Text="{x:Bind Serie}" />
+                                                                            <TextBlock
+                                                                                FontSize="12" Foreground="Black">
+                                                                                <Run Text="Precio: $" />
+                                                                                <Run FontWeight="SemiBold" Text="{x:Bind Precio}" />
+                                                                            </TextBlock>
+                                                                            <TextBlock
+                                                                                FontSize="11" FontStyle="Italic" Foreground="DimGray"
+                                                                                Text="{x:Bind Nota}"
+                                                                                TextWrapping="Wrap"
+                                                                                Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        </StackPanel>
+                                                                        <TextBlock
+                                                                            Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
+                                                                            Foreground="Gray">
+                                                                            <Run Text="ID: " />
+                                                                            <Run Text="{x:Bind IdRefaccion}" />
+                                                                        </TextBlock>
+                                                                        <StackPanel
+                                                                            Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                                            <Button
+                                                                                AutomationProperties.Name="Editar relación refacción" Background="Transparent" BorderThickness="0" Click="EditRelacionRefaccionButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Editar precio/nota">
+                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Edit" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                AutomationProperties.Name="Eliminar relación refacción" Background="Transparent" BorderThickness="0" Click="DeleteRelacionRefaccionButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Eliminar relación">
+                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+
+                                                    <!--  Mensaje cuando no hay relaciones refaccion  -->
+                                                    <TextBlock
+                                                        FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay refacciones relacionadas"
+                                                        Visibility="{x:Bind ShowNoRelacionesRefaccionMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                                 </StackPanel>
                                             </PivotItem>
                                         </Pivot>
