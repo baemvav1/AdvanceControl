@@ -223,7 +223,7 @@ namespace Advance_Control.Views
                 // Obtener la información del usuario autenticado
                 var userInfo = await _userInfoService.GetUserInfoAsync();
 
-                if (userInfo == null || userInfo.CredencialId <= 0)
+                if (userInfo == null)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
@@ -265,9 +265,9 @@ namespace Advance_Control.Views
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al atender mantenimiento: {ex.GetType().Name} - {ex.Message}");
+                // Error is already logged in ViewModel and Service layers
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
                     nota: "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.",

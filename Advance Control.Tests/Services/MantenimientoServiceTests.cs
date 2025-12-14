@@ -106,7 +106,7 @@ namespace Advance_Control.Tests.Services
         public async Task UpdateAtendidoAsync_WhenBadRequest_ReturnsFalse()
         {
             // Arrange
-            int idMantenimiento = 0;  // Invalid ID
+            int idMantenimiento = -1;  // Invalid ID (negative values are not allowed by API)
             int idAtendio = 5;
 
             var responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest)

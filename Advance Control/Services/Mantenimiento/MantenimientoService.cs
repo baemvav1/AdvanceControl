@@ -190,8 +190,9 @@ namespace Advance_Control.Services.Mantenimiento
         {
             try
             {
-                // Construir la URL con parámetros de consulta
-                var url = $"{_endpoints.GetEndpoint("api", "Mantenimiento")}/atendido?idMantenimiento={idMantenimiento}&idAtendio={idAtendio}";
+                // Construir la URL con parámetros de consulta escapados
+                var baseUrl = _endpoints.GetEndpoint("api", "Mantenimiento");
+                var url = $"{baseUrl}/atendido?idMantenimiento={Uri.EscapeDataString(idMantenimiento.ToString())}&idAtendio={Uri.EscapeDataString(idAtendio.ToString())}";
 
                 await _logger.LogInformationAsync($"Actualizando estado atendido del mantenimiento {idMantenimiento} en: {url}", "MantenimientoService", "UpdateAtendidoAsync");
 
