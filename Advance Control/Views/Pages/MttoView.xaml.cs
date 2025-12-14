@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.UserInfo;
 using Advance_Control.Views.Equipos;
 
 namespace Advance_Control.Views
@@ -17,6 +18,7 @@ namespace Advance_Control.Views
     {
         public MttoViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
+        private readonly IUserInfoService _userInfoService;
 
         public MttoView()
         {
@@ -25,6 +27,9 @@ namespace Advance_Control.Views
 
             // Resolver el servicio de notificaciones desde DI
             _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+
+            // Resolver el servicio de información de usuario desde DI
+            _userInfoService = ((App)Application.Current).Host.Services.GetRequiredService<IUserInfoService>();
 
             this.InitializeComponent();
             
@@ -201,6 +206,72 @@ namespace Advance_Control.Views
                         nota: "Ocurrió un error al eliminar el mantenimiento. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
+            }
+        }
+
+        private async void AtenderMantenimientoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el mantenimiento desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.MantenimientoDto mantenimiento)
+                return;
+
+            if (!mantenimiento.IdMantenimiento.HasValue)
+                return;
+
+            try
+            {
+                // Obtener la información del usuario autenticado
+                var userInfo = await _userInfoService.GetUserInfoAsync();
+
+                if (userInfo == null || userInfo.CredencialId <= 0)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo obtener la información del usuario autenticado.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                // Mostrar diálogo de confirmación
+                var dialog = new ContentDialog
+                {
+                    Title = "Confirmar atención",
+                    Content = $"¿Está seguro de que desea marcar como atendido el mantenimiento #{mantenimiento.IdMantenimiento} ({mantenimiento.TipoMantenimiento})?",
+                    PrimaryButtonText = "Atender",
+                    CloseButtonText = "Cancelar",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await dialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    var success = await ViewModel.UpdateAtendidoAsync(mantenimiento.IdMantenimiento.Value, userInfo.CredencialId);
+
+                    if (success)
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Mantenimiento atendido",
+                            nota: "El mantenimiento se ha marcado como atendido correctamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo marcar el mantenimiento como atendido. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al atender mantenimiento: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
             }
         }
     }

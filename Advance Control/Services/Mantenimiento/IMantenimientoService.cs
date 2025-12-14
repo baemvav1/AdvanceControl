@@ -36,5 +36,14 @@ namespace Advance_Control.Services.Mantenimiento
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Actualiza el estado de atendido de un mantenimiento
+        /// </summary>
+        /// <param name="idMantenimiento">ID del mantenimiento (obligatorio)</param>
+        /// <param name="idAtendio">ID del usuario que atendió (obligatorio)</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado de la operación</returns>
+        Task<bool> UpdateAtendidoAsync(int idMantenimiento, int idAtendio, CancellationToken cancellationToken = default);
     }
 }
