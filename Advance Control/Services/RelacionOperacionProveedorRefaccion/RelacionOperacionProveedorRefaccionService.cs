@@ -209,7 +209,7 @@ namespace Advance_Control.Services.RelacionOperacionProveedorRefaccion
 
                 // Construir la URL usando el endpoint correcto
                 var url = _endpoints.GetEndpoint("api", "RelacionOperacionProveedorRefaccion");
-                url = $"{url}?idOperacion={idOperacion}&idProveedorRefaccion={idProveedorRefaccion}&precio={precio}";
+                url = $"{url}?idOperacion={idOperacion}&idProveedorRefaccion={idProveedorRefaccion}&precio={Uri.EscapeDataString(precio.ToString(System.Globalization.CultureInfo.InvariantCulture))}";
                 
                 // Agregar el parámetro nota solo si no está vacío
                 if (!string.IsNullOrWhiteSpace(nota))

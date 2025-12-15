@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.RelacionOperacionProveedorRefaccion;
+using Advance_Control.Services.RelacionesProveedorRefaccion;
 using Advance_Control.Services.Proveedores;
 using Advance_Control.Views.Equipos;
 using Advance_Control.Models;
@@ -24,6 +25,7 @@ namespace Advance_Control.Views
         public OperacionesViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly IRelacionOperacionProveedorRefaccionService _relacionOperacionProveedorRefaccionService;
+        private readonly IRelacionProveedorRefaccionService _relacionProveedorRefaccionService;
         private readonly IProveedorService _proveedorService;
 
         public OperacionesView()
@@ -36,6 +38,9 @@ namespace Advance_Control.Views
 
             // Resolver el servicio de relaciones operación-proveedor-refacción desde DI
             _relacionOperacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionOperacionProveedorRefaccionService>();
+
+            // Resolver el servicio de relaciones proveedor-refacción desde DI
+            _relacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionProveedorRefaccionService>();
 
             // Resolver el servicio de proveedores desde DI
             _proveedorService = ((App)Application.Current).Host.Services.GetRequiredService<IProveedorService>();
@@ -418,7 +423,7 @@ namespace Advance_Control.Views
                     }
 
                     // Obtener todas las relaciones del proveedor seleccionado
-                    allRelacionesProveedorRefaccion = await _relacionOperacionProveedorRefaccionService.GetRelacionesAsync(operacion.IdOperacion.Value);
+                    allRelacionesProveedorRefaccion = await _relacionProveedorRefaccionService.GetRelacionesAsync(selectedProveedor.IdProveedor, 0);
 
                     // Filtrar por marca y serie si es necesario
                     filteredRelacionesProveedorRefaccion = allRelacionesProveedorRefaccion;
@@ -452,7 +457,7 @@ namespace Advance_Control.Views
             }
 
             // Función para cargar proveedores inicialmente
-            async void LoadProveedoresInitiallyAsync()
+            async System.Threading.Tasks.Task LoadProveedoresInitiallyAsync()
             {
                 try
                 {
