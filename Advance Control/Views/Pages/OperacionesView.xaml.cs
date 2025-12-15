@@ -25,6 +25,7 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly IRelacionOperacionProveedorRefaccionService _relacionOperacionProveedorRefaccionService;
         private readonly IProveedorService _proveedorService;
+        private readonly Services.RelacionesProveedorRefaccion.IRelacionProveedorRefaccionService _relacionProveedorRefaccionService;
 
         public OperacionesView()
         {
@@ -39,6 +40,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de proveedores desde DI
             _proveedorService = ((App)Application.Current).Host.Services.GetRequiredService<IProveedorService>();
+            
+            // Resolver el servicio de relaciones proveedor-refacción desde DI
+            _relacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<Services.RelacionesProveedorRefaccion.IRelacionProveedorRefaccionService>();
             
             this.InitializeComponent();
             
@@ -389,8 +393,7 @@ namespace Advance_Control.Views
 
                 try
                 {
-                    var relacionService = ((App)Application.Current).Host.Services.GetRequiredService<Services.RelacionesProveedorRefaccion.IRelacionProveedorRefaccionService>();
-                    proveedorRefacciones = await relacionService.GetRelacionesAsync(idProveedor);
+                    proveedorRefacciones = await _relacionProveedorRefaccionService.GetRelacionesAsync(idProveedor);
                     UpdateRefaccionesListView();
                 }
                 catch (Exception ex)
