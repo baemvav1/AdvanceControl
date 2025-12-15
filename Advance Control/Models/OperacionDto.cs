@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -17,34 +18,22 @@ namespace Advance_Control.Models
         }
 
         /// <summary>
-        /// ID de la operación
+        /// ID único de la operación (requerido para operaciones de eliminación)
         /// </summary>
         [JsonPropertyName("idOperacion")]
         public int? IdOperacion { get; set; }
 
         /// <summary>
-        /// Tipo de operación
+        /// ID del tipo de operación
         /// </summary>
-        [JsonPropertyName("tipoOperacion")]
-        public string? TipoOperacion { get; set; }
-
-        /// <summary>
-        /// Nombre comercial del cliente
-        /// </summary>
-        [JsonPropertyName("nombreComercial")]
-        public string? NombreComercial { get; set; }
+        [JsonPropertyName("idTipo")]
+        public int? IdTipo { get; set; }
 
         /// <summary>
         /// Razón social del cliente
         /// </summary>
         [JsonPropertyName("razonSocial")]
         public string? RazonSocial { get; set; }
-
-        /// <summary>
-        /// Nota asociada a la operación
-        /// </summary>
-        [JsonPropertyName("nota")]
-        public string? Nota { get; set; }
 
         /// <summary>
         /// Identificador del equipo
@@ -57,6 +46,36 @@ namespace Advance_Control.Models
         /// </summary>
         [JsonPropertyName("atiende")]
         public string? Atiende { get; set; }
+
+        /// <summary>
+        /// Monto de la operación
+        /// </summary>
+        [JsonPropertyName("monto")]
+        public decimal Monto { get; set; }
+
+        /// <summary>
+        /// Nota asociada a la operación
+        /// </summary>
+        [JsonPropertyName("nota")]
+        public string? Nota { get; set; }
+
+        /// <summary>
+        /// Fecha de inicio de la operación
+        /// </summary>
+        [JsonPropertyName("fechaInicio")]
+        public DateTime? FechaInicio { get; set; }
+
+        /// <summary>
+        /// Fecha de finalización de la operación
+        /// </summary>
+        [JsonPropertyName("fechaFinal")]
+        public DateTime? FechaFinal { get; set; }
+
+        /// <summary>
+        /// Indica si la operación ha finalizado
+        /// </summary>
+        [JsonPropertyName("finalizado")]
+        public bool Finalizado { get; set; }
 
         private bool _expand = false;
 
