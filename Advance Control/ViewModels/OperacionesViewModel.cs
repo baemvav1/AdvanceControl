@@ -25,6 +25,8 @@ namespace Advance_Control.ViewModels
         private int _idEquipoFilter;
         private int _idAtiendeFilter;
         private string? _notaFilter;
+        private string? _selectedClienteText;
+        private string? _selectedEquipoText;
 
         public OperacionesViewModel(IOperacionService operacionService, ILoggingService logger)
         {
@@ -96,6 +98,24 @@ namespace Advance_Control.ViewModels
         {
             get => _notaFilter;
             set => SetProperty(ref _notaFilter, value);
+        }
+
+        /// <summary>
+        /// Texto que muestra el cliente seleccionado
+        /// </summary>
+        public string? SelectedClienteText
+        {
+            get => _selectedClienteText;
+            set => SetProperty(ref _selectedClienteText, value);
+        }
+
+        /// <summary>
+        /// Texto que muestra el equipo seleccionado
+        /// </summary>
+        public string? SelectedEquipoText
+        {
+            get => _selectedEquipoText;
+            set => SetProperty(ref _selectedEquipoText, value);
         }
 
         /// <summary>
@@ -180,6 +200,8 @@ namespace Advance_Control.ViewModels
                 IdEquipoFilter = 0;
                 IdAtiendeFilter = 0;
                 NotaFilter = null;
+                SelectedClienteText = null;
+                SelectedEquipoText = null;
                 ErrorMessage = null;
                 await LoadOperacionesAsync(cancellationToken);
             }

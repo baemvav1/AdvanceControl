@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Views.Equipos;
 
 namespace Advance_Control.Views
 {
@@ -118,6 +119,64 @@ namespace Advance_Control.Views
                         titulo: "Error",
                         nota: "Ocurrió un error al eliminar la operación. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async void SelectClienteButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Crear el UserControl para seleccionar cliente
+            var seleccionarClienteControl = new SeleccionarClienteUserControl();
+
+            // Crear el diálogo
+            var dialog = new ContentDialog
+            {
+                Title = "Seleccionar Cliente",
+                Content = seleccionarClienteControl,
+                PrimaryButtonText = "Aceptar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary && seleccionarClienteControl.HasSelection)
+            {
+                var selectedCliente = seleccionarClienteControl.SelectedCliente;
+                if (selectedCliente != null)
+                {
+                    ViewModel.IdClienteFilter = selectedCliente.IdCliente;
+                    ViewModel.SelectedClienteText = $"{selectedCliente.RazonSocial} (ID: {selectedCliente.IdCliente})";
+                }
+            }
+        }
+
+        private async void SelectEquipoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Crear el UserControl para seleccionar equipo
+            var seleccionarEquipoControl = new SeleccionarEquipoUserControl();
+
+            // Crear el diálogo
+            var dialog = new ContentDialog
+            {
+                Title = "Seleccionar Equipo",
+                Content = seleccionarEquipoControl,
+                PrimaryButtonText = "Aceptar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary && seleccionarEquipoControl.HasSelection)
+            {
+                var selectedEquipo = seleccionarEquipoControl.SelectedEquipo;
+                if (selectedEquipo != null)
+                {
+                    ViewModel.IdEquipoFilter = selectedEquipo.IdEquipo;
+                    ViewModel.SelectedEquipoText = $"{selectedEquipo.Marca} - {selectedEquipo.Identificador} (ID: {selectedEquipo.IdEquipo})";
                 }
             }
         }
