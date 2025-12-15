@@ -54,20 +54,37 @@
                 </Grid.RowDefinitions>
 
                 <!-- First row of filters -->
-                <TextBox
-                    Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="ID Tipo"
-                    PlaceholderText="Buscar por ID tipo"
-                    Text="{x:Bind ViewModel.IdTipoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,0,8,8">
+                    <TextBlock Text="ID Tipo" Margin="0,0,0,4" />
+                    <ComboBox
+                        x:Name="IdTipoComboBox"
+                        HorizontalAlignment="Stretch"
+                        SelectedIndex="{x:Bind ViewModel.IdTipoFilter, Mode=TwoWay}">
+                        <ComboBoxItem Content="0 : Todos" />
+                        <ComboBoxItem Content="1 : Correctivo" />
+                        <ComboBoxItem Content="2 : Preventivo" />
+                    </ComboBox>
+                </StackPanel>
 
-                <TextBox
-                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="ID Cliente"
-                    PlaceholderText="Buscar por ID cliente"
-                    Text="{x:Bind ViewModel.IdClienteFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,0,8,8">
+                    <TextBlock Text="Cliente" Margin="0,0,0,4" />
+                    <Button
+                        x:Name="SelectClienteButton"
+                        HorizontalAlignment="Stretch"
+                        Click="SelectClienteButton_Click">
+                        <TextBlock Text="{x:Bind ViewModel.SelectedClienteText, Mode=OneWay, FallbackValue='Seleccionar cliente...'}" />
+                    </Button>
+                </StackPanel>
 
-                <TextBox
-                    Grid.Row="0" Grid.Column="2" Margin="0,0,0,8" Header="ID Equipo"
-                    PlaceholderText="Buscar por ID equipo"
-                    Text="{x:Bind ViewModel.IdEquipoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <StackPanel Grid.Row="0" Grid.Column="2" Margin="0,0,0,8">
+                    <TextBlock Text="Equipo" Margin="0,0,0,4" />
+                    <Button
+                        x:Name="SelectEquipoButton"
+                        HorizontalAlignment="Stretch"
+                        Click="SelectEquipoButton_Click">
+                        <TextBlock Text="{x:Bind ViewModel.SelectedEquipoText, Mode=OneWay, FallbackValue='Seleccionar equipo...'}" />
+                    </Button>
+                </StackPanel>
 
                 <!-- Second row of filters -->
                 <TextBox
