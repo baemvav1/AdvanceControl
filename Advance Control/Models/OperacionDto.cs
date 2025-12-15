@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -94,6 +95,77 @@ namespace Advance_Control.Models
                     OnPropertyChanged();
                 }
             }
+        }
+
+        // Propiedades para gestionar las relaciones con refacciones
+        private ObservableCollection<RelacionOperacionProveedorRefaccionDto> _relacionesRefaccion = new ObservableCollection<RelacionOperacionProveedorRefaccionDto>();
+        private bool _isLoadingRelacionesRefaccion = false;
+        private bool _relacionesRefaccionLoaded = false;
+
+        /// <summary>
+        /// Colección de relaciones operación-proveedor-refacción
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<RelacionOperacionProveedorRefaccionDto> RelacionesRefaccion
+        {
+            get => _relacionesRefaccion;
+            set
+            {
+                if (_relacionesRefaccion != value)
+                {
+                    _relacionesRefaccion = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoRelacionesRefaccionMessage));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se están cargando las relaciones refacción
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingRelacionesRefaccion
+        {
+            get => _isLoadingRelacionesRefaccion;
+            set
+            {
+                if (_isLoadingRelacionesRefaccion != value)
+                {
+                    _isLoadingRelacionesRefaccion = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si las relaciones refacción ya fueron cargadas
+        /// </summary>
+        [JsonIgnore]
+        public bool RelacionesRefaccionLoaded
+        {
+            get => _relacionesRefaccionLoaded;
+            set
+            {
+                if (_relacionesRefaccionLoaded != value)
+                {
+                    _relacionesRefaccionLoaded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se debe mostrar el mensaje de "no hay relaciones refacción"
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoRelacionesRefaccionMessage => RelacionesRefaccionLoaded && RelacionesRefaccion.Count == 0;
+
+        /// <summary>
+        /// Notifica el cambio en el mensaje de no relaciones refacción
+        /// </summary>
+        public void NotifyNoRelacionesRefaccionMessageChanged()
+        {
+            OnPropertyChanged(nameof(ShowNoRelacionesRefaccionMessage));
         }
     }
 }
