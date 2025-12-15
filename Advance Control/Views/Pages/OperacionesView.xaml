@@ -46,16 +46,42 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- First row of filters -->
+                <TextBox
+                    Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="ID Tipo"
+                    PlaceholderText="Buscar por ID tipo"
+                    Text="{x:Bind ViewModel.IdTipoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
-                    Grid.Column="0" Margin="0,0,8,8" Header="Nota"
+                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="ID Cliente"
+                    PlaceholderText="Buscar por ID cliente"
+                    Text="{x:Bind ViewModel.IdClienteFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="2" Margin="0,0,0,8" Header="ID Equipo"
+                    PlaceholderText="Buscar por ID equipo"
+                    Text="{x:Bind ViewModel.IdEquipoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <!-- Second row of filters -->
+                <TextBox
+                    Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="ID Atiende"
+                    PlaceholderText="Buscar por ID atiende"
+                    Text="{x:Bind ViewModel.IdAtiendeFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Nota"
                     PlaceholderText="Buscar por nota"
                     Text="{x:Bind ViewModel.NotaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <StackPanel
-                    Grid.Column="2" HorizontalAlignment="Right"
+                    Grid.Row="1" Grid.Column="2" HorizontalAlignment="Right"
                     VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
                     <Button
                         Click="SearchButton_Click" Content="Buscar"
@@ -99,15 +125,15 @@
                                         <StackPanel Grid.Column="0" Spacing="6">
                                             <TextBlock
                                                 FontSize="16" FontWeight="SemiBold"
-                                                Text="{x:Bind TipoOperacion}" />
-                                            <TextBlock
-                                                FontSize="14"
-                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Text="{x:Bind Identificador}" />
                                             <StackPanel Orientation="Horizontal" Spacing="20">
                                                 <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                                     <Run Text="Cliente: " />
                                                     <Run FontWeight="SemiBold" Text="{x:Bind RazonSocial}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Atiende: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Atiende}" />
                                                 </TextBlock>
                                             </StackPanel>
                                         </StackPanel>
@@ -141,19 +167,19 @@
                                                     <StackPanel
                                                         Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="ID Operación:" />
+                                                            FontSize="12" Foreground="Gray" Text="ID Tipo:" />
                                                         <TextBlock
                                                             FontSize="13" Foreground="WhiteSmoke"
-                                                            Text="{x:Bind IdOperacion}" />
+                                                            Text="{x:Bind IdTipo}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Tipo:" />
+                                                            FontSize="12" Foreground="Gray" Text="Monto:" />
                                                         <TextBlock
                                                             FontSize="13" Foreground="WhiteSmoke"
-                                                            Text="{x:Bind TipoOperacion}" />
+                                                            Text="{x:Bind Monto}" />
                                                     </StackPanel>
 
                                                     <StackPanel
@@ -168,10 +194,10 @@
                                                     <StackPanel
                                                         Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Nombre Comercial:" />
+                                                            FontSize="12" Foreground="Gray" Text="Fecha Inicio:" />
                                                         <TextBlock
                                                             FontSize="13" Foreground="WhiteSmoke"
-                                                            Text="{x:Bind NombreComercial}" />
+                                                            Text="{x:Bind FechaInicio}" />
                                                     </StackPanel>
 
                                                     <StackPanel
@@ -186,10 +212,28 @@
                                                     <StackPanel
                                                         Grid.Row="2" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
+                                                            FontSize="12" Foreground="Gray" Text="Fecha Final:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            Text="{x:Bind FechaFinal}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="3" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
                                                             FontSize="12" Foreground="Gray" Text="Atiende:" />
                                                         <TextBlock
                                                             FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Atiende}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="3" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="Gray" Text="Finalizado:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            Text="{x:Bind Finalizado}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>

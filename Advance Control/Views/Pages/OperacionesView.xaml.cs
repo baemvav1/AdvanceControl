@@ -77,11 +77,11 @@ namespace Advance_Control.Views
                 return;
 
             // Mostrar diálogo de confirmación
-            var tipoOperacion = operacion.TipoOperacion ?? "sin tipo especificado";
+            var identificador = operacion.Identificador ?? "sin identificador";
             var dialog = new ContentDialog
             {
                 Title = "Confirmar eliminación",
-                Content = $"¿Está seguro de que desea eliminar la operación #{operacion.IdOperacion} ({tipoOperacion})?",
+                Content = $"¿Está seguro de que desea eliminar la operación del equipo {identificador}?",
                 PrimaryButtonText = "Eliminar",
                 CloseButtonText = "Cancelar",
                 DefaultButton = ContentDialogButton.Close,
