@@ -317,31 +317,33 @@ namespace Advance_Control.Services.Auth
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 await _logger.LogWarningAsync("Logout cancelado por el usuario", "AuthService", "LogoutAsync");
-                // Aún así limpiamos los tokens localmente
-                await ClearTokenAsync();
-                return true; // Return true since local cleanup succeeded
+                return await HandleLogoutFailureAsync();
             }
             catch (OperationCanceledException)
             {
                 await _logger.LogWarningAsync("Logout excedió el tiempo de espera (15 segundos)", "AuthService", "LogoutAsync");
-                // Aún así limpiamos los tokens localmente
-                await ClearTokenAsync();
-                return true; // Return true since local cleanup succeeded
+                return await HandleLogoutFailureAsync();
             }
             catch (HttpRequestException ex)
             {
                 await _logger.LogErrorAsync("Error de conexión al cerrar sesión en el servidor", ex, "AuthService", "LogoutAsync");
-                // Aún así limpiamos los tokens localmente
-                await ClearTokenAsync();
-                return true; // Return true since local cleanup succeeded
+                return await HandleLogoutFailureAsync();
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al cerrar sesión en el servidor", ex, "AuthService", "LogoutAsync");
-                // Aún así limpiamos los tokens localmente
-                await ClearTokenAsync();
-                return true; // Return true since local cleanup succeeded - logout should always succeed locally
+                return await HandleLogoutFailureAsync();
             }
+        }
+
+        /// <summary>
+        /// Handles logout failures by clearing local tokens.
+        /// Logout should always succeed locally even if the server call fails (idempotent behavior).
+        /// </summary>
+        private async Task<bool> HandleLogoutFailureAsync()
+        {
+            await ClearTokenAsync();
+            return true; // Return true since local cleanup succeeded
         }
 
         public async Task ClearTokenAsync()

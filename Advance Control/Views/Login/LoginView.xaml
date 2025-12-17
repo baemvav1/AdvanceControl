@@ -9,7 +9,7 @@
         CornerRadius="8">
         
         <!-- Login Form (visible when not authenticated) -->
-        <Grid Visibility="{x:Bind ViewModel.IsAuthenticated, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=invert}">
+        <Grid Visibility="{x:Bind ViewModel.IsNotAuthenticated, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />

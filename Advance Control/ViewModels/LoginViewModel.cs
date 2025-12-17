@@ -33,7 +33,7 @@ namespace Advance_Control.ViewModels
             
             // Inicializar el comando de login y logout
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
-            LogoutCommand = new RelayCommand(ExecuteLogout, CanExecuteLogout);
+            LogoutCommand = new AsyncRelayCommand(ExecuteLogoutAsync, CanExecuteLogout);
             
             // Verificar si el usuario ya está autenticado
             _isAuthenticated = _authService.IsAuthenticated;
@@ -138,10 +138,16 @@ namespace Advance_Control.ViewModels
             {
                 if (SetProperty(ref _isAuthenticated, value))
                 {
-                    (LogoutCommand as RelayCommand)?.NotifyCanExecuteChanged();
+                    (LogoutCommand as AsyncRelayCommand)?.NotifyCanExecuteChanged();
+                    OnPropertyChanged(nameof(IsNotAuthenticated));
                 }
             }
         }
+
+        /// <summary>
+        /// Indica si el usuario NO está autenticado (inverso de IsAuthenticated para bindings)
+        /// </summary>
+        public bool IsNotAuthenticated => !IsAuthenticated;
 
         /// <summary>
         /// Comando para ejecutar el inicio de sesión
@@ -279,7 +285,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Ejecuta el proceso de cierre de sesión
         /// </summary>
-        private async void ExecuteLogout()
+        private async Task ExecuteLogoutAsync()
         {
             try
             {
@@ -293,7 +299,7 @@ namespace Advance_Control.ViewModels
                 {
                     IsAuthenticated = false;
                     LoginSuccessful = false;
-                    await _logger.LogInformationAsync($"Usuario cerró sesión exitosamente: {User}", "LoginViewModel", "ExecuteLogout");
+                    await _logger.LogInformationAsync($"Usuario cerró sesión exitosamente: {User}", "LoginViewModel", "ExecuteLogoutAsync");
                     
                     // Mostrar notificación de cierre de sesión
                     await _notificacionService.MostrarNotificacionAsync(
@@ -307,13 +313,13 @@ namespace Advance_Control.ViewModels
                 else
                 {
                     ErrorMessage = "Error al cerrar sesión. Por favor, intente nuevamente.";
-                    await _logger.LogWarningAsync("Error al ejecutar logout", "LoginViewModel", "ExecuteLogout");
+                    await _logger.LogWarningAsync("Error al ejecutar logout", "LoginViewModel", "ExecuteLogoutAsync");
                 }
             }
             catch (Exception ex)
             {
                 ErrorMessage = $"Error al cerrar sesión: {ex.Message}";
-                await _logger.LogErrorAsync("Error al intentar cerrar sesión", ex, "LoginViewModel", "ExecuteLogout");
+                await _logger.LogErrorAsync("Error al intentar cerrar sesión", ex, "LoginViewModel", "ExecuteLogoutAsync");
             }
             finally
             {

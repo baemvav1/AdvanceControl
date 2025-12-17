@@ -43,18 +43,8 @@ namespace Advance_Control.Views.Login
             // Actualizar el estado de autenticación cuando se carga la vista
             ViewModel.RefreshAuthenticationState();
 
-            // Suscribirse a cambios de LoginSuccessful para cerrar el diálogo automáticamente
+            // Suscribirse a cambios de LoginSuccessful y IsAuthenticated para cerrar el diálogo automáticamente
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
-            
-            // También suscribirse a IsAuthenticated para cerrar cuando se hace logout
-            ViewModel.PropertyChanged += (s, e) =>
-            {
-                if (e.PropertyName == nameof(LoginViewModel.IsAuthenticated) && !ViewModel.IsAuthenticated)
-                {
-                    // Si se cerró sesión exitosamente, cerrar el diálogo
-                    CloseDialogAction?.Invoke();
-                }
-            };
         }
 
         private void ViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -62,6 +52,11 @@ namespace Advance_Control.Views.Login
             if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && ViewModel.LoginSuccessful)
             {
                 // Cerrar el diálogo cuando el login sea exitoso
+                CloseDialogAction?.Invoke();
+            }
+            else if (e.PropertyName == nameof(LoginViewModel.IsAuthenticated) && !ViewModel.IsAuthenticated)
+            {
+                // Si se cerró sesión exitosamente, cerrar el diálogo
                 CloseDialogAction?.Invoke();
             }
         }
