@@ -405,6 +405,31 @@ namespace Advance_Control.ViewModels
                             }
                         });
                     }
+                    
+                    // Manejar cuando el usuario cierra sesión desde el diálogo
+                    if (e.PropertyName == nameof(LoginViewModel.IsAuthenticated) && !loginViewModel.IsAuthenticated)
+                    {
+                        // Actualizar el estado de autenticación en MainViewModel
+                        IsAuthenticated = false;
+                        
+                        // Limpiar información del usuario de forma asíncrona
+                        _ = Task.Run(async () =>
+                        {
+                            try
+                            {
+                                await UpdateUIPropertiesAsync(() =>
+                                {
+                                    UserInitials = string.Empty;
+                                    UserType = string.Empty;
+                                });
+                            }
+                            catch (Exception ex)
+                            {
+                                // Log error but don't propagate to avoid crashing the app
+                                await _logger.LogErrorAsync("Error al limpiar información del usuario después del logout", ex, "MainViewModel", "ShowLoginDialogAsync");
+                            }
+                        });
+                    }
                 };
 
                 var result = await dialog.ShowAsync();

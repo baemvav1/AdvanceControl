@@ -40,7 +40,10 @@ namespace Advance_Control.Views.Login
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
 
-            // Suscribirse a cambios de LoginSuccessful para cerrar el diálogo automáticamente
+            // Actualizar el estado de autenticación cuando se carga la vista
+            ViewModel.RefreshAuthenticationState();
+
+            // Suscribirse a cambios de LoginSuccessful y IsAuthenticated para cerrar el diálogo automáticamente
             ViewModel.PropertyChanged += ViewModel_PropertyChanged;
         }
 
@@ -49,6 +52,11 @@ namespace Advance_Control.Views.Login
             if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && ViewModel.LoginSuccessful)
             {
                 // Cerrar el diálogo cuando el login sea exitoso
+                CloseDialogAction?.Invoke();
+            }
+            else if (e.PropertyName == nameof(LoginViewModel.IsAuthenticated) && !ViewModel.IsAuthenticated)
+            {
+                // Si se cerró sesión exitosamente, cerrar el diálogo
                 CloseDialogAction?.Invoke();
             }
         }

@@ -96,10 +96,20 @@ namespace Advance_Control.Services.Auth
 
             try
             {
-                var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
-                if (!resp.IsSuccessStatusCode) return false;
+                // Use a timeout for the HTTP request if development mode timeouts are not disabled
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                
+                var effectiveToken = (_devMode.Enabled && _devMode.DisableHttpTimeouts) ? cancellationToken : linkedCts.Token;
+                
+                var resp = await _http.PostAsJsonAsync(url, body, effectiveToken);
+                if (!resp.IsSuccessStatusCode) 
+                {
+                    await _logger.LogWarningAsync($"Autenticación falló con código de estado: {resp.StatusCode}", "AuthService", "AuthenticateAsync");
+                    return false;
+                }
 
-                var dto = await resp.Content.ReadFromJsonAsync<LoginResponseDto>(cancellationToken: cancellationToken);
+                var dto = await resp.Content.ReadFromJsonAsync<LoginResponseDto>(cancellationToken: effectiveToken);
                 if (dto == null || string.IsNullOrEmpty(dto.accessToken)) return false;
 
                 _accessToken = dto.accessToken;
@@ -109,6 +119,21 @@ namespace Advance_Control.Services.Auth
                 await PersistTokensAsync();
                 _isAuthenticated = true;
                 return true;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                await _logger.LogWarningAsync("Autenticación cancelada por el usuario", "AuthService", "AuthenticateAsync");
+                return false;
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Autenticación excedió el tiempo de espera (30 segundos)", "AuthService", "AuthenticateAsync");
+                return false;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync($"Error de conexión al autenticar usuario: {username}", ex, "AuthService", "AuthenticateAsync");
+                return false;
             }
             catch (Exception ex)
             {
@@ -158,7 +183,13 @@ namespace Advance_Control.Services.Auth
                 var url = _endpoints.GetEndpoint("api", "Auth", "refresh");
                 var body = new { refreshToken = _refreshToken };
 
-                var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
+                // Use a timeout for the HTTP request if development mode timeouts are not disabled
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                
+                var effectiveToken = (_devMode.Enabled && _devMode.DisableHttpTimeouts) ? cancellationToken : linkedCts.Token;
+
+                var resp = await _http.PostAsJsonAsync(url, body, effectiveToken);
                 if (!resp.IsSuccessStatusCode)
                 {
                     if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized)
@@ -166,6 +197,7 @@ namespace Advance_Control.Services.Auth
                         await ClearTokenAsync();
                         return false;
                     }
+                    await _logger.LogWarningAsync($"Refresh token falló con código de estado: {resp.StatusCode}", "AuthService", "RefreshTokenAsync");
                     return false;
                 }
 
@@ -179,6 +211,21 @@ namespace Advance_Control.Services.Auth
                 await PersistTokensAsync();
                 _isAuthenticated = true;
                 return true;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                await _logger.LogWarningAsync("Refresh token cancelado por el usuario", "AuthService", "RefreshTokenAsync");
+                return false;
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Refresh token excedió el tiempo de espera (15 segundos)", "AuthService", "RefreshTokenAsync");
+                return false;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de conexión al refrescar token de autenticación", ex, "AuthService", "RefreshTokenAsync");
+                return false;
             }
             catch (Exception ex)
             {
@@ -200,12 +247,34 @@ namespace Advance_Control.Services.Auth
             {
                 var url = _endpoints.GetEndpoint("api", "Auth", "validate");
                 var body = new { token = token };
-                var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
+                
+                // Use a timeout for the HTTP request if development mode timeouts are not disabled
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                
+                var effectiveToken = (_devMode.Enabled && _devMode.DisableHttpTimeouts) ? cancellationToken : linkedCts.Token;
+                
+                var resp = await _http.PostAsJsonAsync(url, body, effectiveToken);
                 if (resp.IsSuccessStatusCode) return true;
                 if (resp.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                 {
                     return await RefreshTokenAsync(cancellationToken);
                 }
+                return false;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                await _logger.LogWarningAsync("Validación de token cancelada por el usuario", "AuthService", "ValidateTokenAsync");
+                return false;
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Validación de token excedió el tiempo de espera (10 segundos)", "AuthService", "ValidateTokenAsync");
+                return false;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de conexión al validar token de autenticación", ex, "AuthService", "ValidateTokenAsync");
                 return false;
             }
             catch (Exception ex)
@@ -231,7 +300,13 @@ namespace Advance_Control.Services.Auth
                 var url = _endpoints.GetEndpoint("api", "Auth", "logout");
                 var body = new { refreshToken = _refreshToken };
 
-                var resp = await _http.PostAsJsonAsync(url, body, cancellationToken);
+                // Use a timeout for the HTTP request if development mode timeouts are not disabled
+                using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+                
+                var effectiveToken = (_devMode.Enabled && _devMode.DisableHttpTimeouts) ? cancellationToken : linkedCts.Token;
+
+                var resp = await _http.PostAsJsonAsync(url, body, effectiveToken);
                 
                 // El logout es idempotente - 204 No Content indica éxito
                 // Limpiamos los tokens localmente independientemente del resultado del servidor
@@ -239,13 +314,36 @@ namespace Advance_Control.Services.Auth
                 
                 return resp.IsSuccessStatusCode || resp.StatusCode == System.Net.HttpStatusCode.NoContent;
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                await _logger.LogWarningAsync("Logout cancelado por el usuario", "AuthService", "LogoutAsync");
+                return await HandleLogoutFailureAsync();
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Logout excedió el tiempo de espera (15 segundos)", "AuthService", "LogoutAsync");
+                return await HandleLogoutFailureAsync();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de conexión al cerrar sesión en el servidor", ex, "AuthService", "LogoutAsync");
+                return await HandleLogoutFailureAsync();
+            }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al cerrar sesión en el servidor", ex, "AuthService", "LogoutAsync");
-                // Aún así limpiamos los tokens localmente
-                await ClearTokenAsync();
-                return false;
+                return await HandleLogoutFailureAsync();
             }
+        }
+
+        /// <summary>
+        /// Handles logout failures by clearing local tokens.
+        /// Logout should always succeed locally even if the server call fails (idempotent behavior).
+        /// </summary>
+        private async Task<bool> HandleLogoutFailureAsync()
+        {
+            await ClearTokenAsync();
+            return true; // Return true since local cleanup succeeded
         }
 
         public async Task ClearTokenAsync()
