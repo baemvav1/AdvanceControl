@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Notificacion;
 using Advance_Control.ViewModels;
 using Moq;
 using Xunit;
@@ -15,11 +16,13 @@ namespace Advance_Control.Tests.ViewModels
     {
         private readonly Mock<IAuthService> _mockAuthService;
         private readonly Mock<ILoggingService> _mockLogger;
+        private readonly Mock<INotificacionService> _mockNotificationService;
 
         public LoginViewModelTests()
         {
             _mockAuthService = new Mock<IAuthService>();
             _mockLogger = new Mock<ILoggingService>();
+            _mockNotificationService = new Mock<INotificacionService>();
         }
 
         [Fact]
@@ -27,7 +30,7 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new LoginViewModel(null!, _mockLogger.Object));
+                new LoginViewModel(null!, _mockLogger.Object, _mockNotificationService.Object));
         }
 
         [Fact]
@@ -35,14 +38,22 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new LoginViewModel(_mockAuthService.Object, null!));
+                new LoginViewModel(_mockAuthService.Object, null!, _mockNotificationService.Object));
+        }
+
+        [Fact]
+        public void Constructor_WithNullNotificationService_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => 
+                new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, null!));
         }
 
         [Fact]
         public void User_WhenSet_UpdatesCanLogin()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
             var canLoginChangedCount = 0;
             viewModel.PropertyChanged += (s, e) =>
             {
@@ -62,7 +73,7 @@ namespace Advance_Control.Tests.ViewModels
         public void Password_WhenSet_UpdatesCanLogin()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
             var canLoginChangedCount = 0;
             viewModel.PropertyChanged += (s, e) =>
             {
@@ -82,7 +93,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WithValidCredentials_ReturnsTrue()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "testuser",
                 Password = "password123"
@@ -96,7 +107,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WithEmptyUser_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "",
                 Password = "password123"
@@ -110,7 +121,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WithEmptyPassword_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "testuser",
                 Password = ""
@@ -124,7 +135,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WhenLoading_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "testuser",
                 Password = "password123"
@@ -141,7 +152,7 @@ namespace Advance_Control.Tests.ViewModels
         public void HasError_WithErrorMessage_ReturnsTrue()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
 
             // Act
             viewModel.GetType().GetProperty("ErrorMessage")!.SetValue(viewModel, "Test error");
@@ -154,7 +165,7 @@ namespace Advance_Control.Tests.ViewModels
         public void HasError_WithoutErrorMessage_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
 
             // Assert
             Assert.False(viewModel.HasError);
@@ -164,7 +175,7 @@ namespace Advance_Control.Tests.ViewModels
         public void ClearForm_ResetsAllFields()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "testuser",
                 Password = "password123"
@@ -184,10 +195,20 @@ namespace Advance_Control.Tests.ViewModels
         public void LoginCommand_IsNotNull()
         {
             // Arrange & Act
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
 
             // Assert
             Assert.NotNull(viewModel.LoginCommand);
+        }
+
+        [Fact]
+        public void LogoutCommand_IsNotNull()
+        {
+            // Arrange & Act
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+
+            // Assert
+            Assert.NotNull(viewModel.LogoutCommand);
         }
 
         [Theory]
@@ -198,7 +219,7 @@ namespace Advance_Control.Tests.ViewModels
         public void ExecuteLogin_WithInvalidCredentials_SetsErrorMessage(string user, string password, string expectedError)
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = user,
                 Password = password
@@ -222,7 +243,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(true);
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "validuser",
                 Password = "validpassword"
@@ -246,7 +267,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(false);
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "validuser",
                 Password = "validpassword"
@@ -271,7 +292,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ThrowsAsync(new Exception("Network error"));
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
             {
                 User = "validuser",
                 Password = "validpassword"
@@ -286,6 +307,102 @@ namespace Advance_Control.Tests.ViewModels
             // Assert
             Assert.False(viewModel.LoginSuccessful);
             Assert.Contains("Error al iniciar sesión", viewModel.ErrorMessage);
+        }
+
+        [Fact]
+        public void IsAuthenticated_InitializedFromAuthService()
+        {
+            // Arrange
+            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
+
+            // Act
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+
+            // Assert
+            Assert.True(viewModel.IsAuthenticated);
+        }
+
+        [Fact]
+        public void RefreshAuthenticationState_UpdatesIsAuthenticated()
+        {
+            // Arrange
+            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(false);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            
+            // Act - change the auth state
+            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
+            viewModel.RefreshAuthenticationState();
+
+            // Assert
+            Assert.True(viewModel.IsAuthenticated);
+        }
+
+        [Fact]
+        public async Task ExecuteLogout_WithSuccessfulLogout_ClearsAuthenticationState()
+        {
+            // Arrange
+            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
+            _mockAuthService
+                .Setup(x => x.LogoutAsync(default))
+                .ReturnsAsync(true);
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            viewModel.RefreshAuthenticationState(); // Set IsAuthenticated to true
+
+            // Act
+            viewModel.LogoutCommand.Execute(null);
+            
+            // Wait for async operation to complete
+            await Task.Delay(500);
+
+            // Assert
+            Assert.False(viewModel.IsAuthenticated);
+            Assert.False(viewModel.LoginSuccessful);
+            _mockAuthService.Verify(x => x.LogoutAsync(default), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExecuteLogout_WithFailedLogout_SetsErrorMessage()
+        {
+            // Arrange
+            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
+            _mockAuthService
+                .Setup(x => x.LogoutAsync(default))
+                .ReturnsAsync(false);
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            viewModel.RefreshAuthenticationState();
+
+            // Act
+            viewModel.LogoutCommand.Execute(null);
+            
+            // Wait for async operation to complete
+            await Task.Delay(500);
+
+            // Assert
+            Assert.Contains("Error al cerrar sesión", viewModel.ErrorMessage);
+        }
+
+        [Fact]
+        public async Task ExecuteLogout_WhenException_SetsErrorMessage()
+        {
+            // Arrange
+            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
+            _mockAuthService
+                .Setup(x => x.LogoutAsync(default))
+                .ThrowsAsync(new Exception("Network error"));
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            viewModel.RefreshAuthenticationState();
+
+            // Act
+            viewModel.LogoutCommand.Execute(null);
+            
+            // Wait for async operation to complete
+            await Task.Delay(500);
+
+            // Assert
+            Assert.Contains("Error al cerrar sesión", viewModel.ErrorMessage);
         }
     }
 }
