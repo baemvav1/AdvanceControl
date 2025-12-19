@@ -65,7 +65,7 @@
                     Text="{x:Bind ViewModel.MarcaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
-                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Serie"
+                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Serie/Km"
                     PlaceholderText="Serie de la refacción"
                     Text="{x:Bind ViewModel.SerieFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -217,14 +217,12 @@
                                             <PivotItem Header="Equipos">
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <StackPanel Orientation="Horizontal" Spacing="5">
-                                                        <TextBlock
-                                                            FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Equipos Relacionados" />
                                                         <Button
-                                                            x:Name="NuevaRelacionEquipo" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                            x:Name="NuevaRelacionEquipo" VerticalAlignment="Center" Background="WhiteSmoke" BorderThickness="0"
                                                             Click="NuevaRelacionEquipo_Click" ToolTipService.ToolTip="Crear nueva relacion con equipo" Foreground="DarkGray"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <SymbolIcon Symbol="Add" />
+                                                                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Nueva Relacion" VerticalAlignment="Center" />
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>
