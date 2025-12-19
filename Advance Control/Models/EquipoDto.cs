@@ -26,6 +26,15 @@ namespace Advance_Control.Models
         [JsonPropertyName("creado")]
         public int? Creado { get; set; }
 
+        [JsonPropertyName("paradas")]
+        public int? Paradas { get; set; }
+
+        [JsonPropertyName("kilogramos")]
+        public int? Kilogramos { get; set; }
+
+        [JsonPropertyName("personas")]
+        public int? Personas { get; set; }
+
         [JsonPropertyName("descripcion")]
         public string? Descripcion { get; set; }
 

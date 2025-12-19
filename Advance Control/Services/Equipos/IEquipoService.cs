@@ -39,12 +39,15 @@ namespace Advance_Control.Services.Equipos
         /// Crea un nuevo equipo
         /// </summary>
         /// <param name="marca">Marca del equipo (obligatorio)</param>
-        /// <param name="creado">Año de creación (obligatorio)</param>
+        /// <param name="creado">Año de creación (opcional, default 0)</param>
+        /// <param name="paradas">Número de paradas (opcional, default 0)</param>
+        /// <param name="kilogramos">Capacidad en kilogramos (opcional, default 0)</param>
+        /// <param name="personas">Capacidad de personas (opcional, default 0)</param>
         /// <param name="descripcion">Descripción del equipo (opcional)</param>
         /// <param name="identificador">Identificador único del equipo (obligatorio)</param>
         /// <param name="estatus">Estatus del equipo (opcional, default true)</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<bool> CreateEquipoAsync(string marca, int creado, string? descripcion, string identificador, bool estatus = true, CancellationToken cancellationToken = default);
+        Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, CancellationToken cancellationToken = default);
     }
 }

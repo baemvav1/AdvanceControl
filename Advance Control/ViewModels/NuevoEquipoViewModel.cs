@@ -13,6 +13,9 @@ namespace Advance_Control.ViewModels
         
         private string _marca = string.Empty;
         private string _creadoText = string.Empty;
+        private string _paradasText = string.Empty;
+        private string _kilogramosText = string.Empty;
+        private string _personasText = string.Empty;
         private string _descripcion = string.Empty;
         private string _identificador = string.Empty;
         private bool _estatus = true;
@@ -65,6 +68,78 @@ namespace Advance_Control.ViewModels
                     return result;
                 }
                 return null;
+            }
+        }
+
+        /// <summary>
+        /// Número de paradas (como texto para el TextBox)
+        /// </summary>
+        public string ParadasText
+        {
+            get => _paradasText;
+            set => SetProperty(ref _paradasText, value);
+        }
+
+        /// <summary>
+        /// Obtiene el número de paradas como entero, o 0 si no es válido
+        /// </summary>
+        public int Paradas
+        {
+            get
+            {
+                if (int.TryParse(ParadasText, out var result) && result >= 0)
+                {
+                    return result;
+                }
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Capacidad en kilogramos (como texto para el TextBox)
+        /// </summary>
+        public string KilogramosText
+        {
+            get => _kilogramosText;
+            set => SetProperty(ref _kilogramosText, value);
+        }
+
+        /// <summary>
+        /// Obtiene la capacidad en kilogramos como entero, o 0 si no es válido
+        /// </summary>
+        public int Kilogramos
+        {
+            get
+            {
+                if (int.TryParse(KilogramosText, out var result) && result >= 0)
+                {
+                    return result;
+                }
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// Capacidad de personas (como texto para el TextBox)
+        /// </summary>
+        public string PersonasText
+        {
+            get => _personasText;
+            set => SetProperty(ref _personasText, value);
+        }
+
+        /// <summary>
+        /// Obtiene la capacidad de personas como entero, o 0 si no es válido
+        /// </summary>
+        public int Personas
+        {
+            get
+            {
+                if (int.TryParse(PersonasText, out var result) && result >= 0)
+                {
+                    return result;
+                }
+                return 0;
             }
         }
 
@@ -182,6 +257,9 @@ namespace Advance_Control.ViewModels
         {
             Marca = string.Empty;
             CreadoText = string.Empty;
+            ParadasText = string.Empty;
+            KilogramosText = string.Empty;
+            PersonasText = string.Empty;
             Descripcion = string.Empty;
             Identificador = string.Empty;
             Estatus = true;

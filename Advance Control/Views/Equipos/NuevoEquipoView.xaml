@@ -24,6 +24,12 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock
@@ -57,23 +63,65 @@
             Grid.Row="4"
             Margin="4"
             FontWeight="SemiBold"
+            Text="Número de Paradas:" />
+        <TextBox
+            x:Name="ParadasTextBox"
+            Grid.Row="5"
+            Width="300"
+            Margin="4,4,4,12"
+            InputScope="Number"
+            PlaceholderText="Ej: 10"
+            Text="{x:Bind ViewModel.ParadasText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="6"
+            Margin="4"
+            FontWeight="SemiBold"
+            Text="Capacidad en Kilogramos:" />
+        <TextBox
+            x:Name="KilogramosTextBox"
+            Grid.Row="7"
+            Width="300"
+            Margin="4,4,4,12"
+            InputScope="Number"
+            PlaceholderText="Ej: 500"
+            Text="{x:Bind ViewModel.KilogramosText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="8"
+            Margin="4"
+            FontWeight="SemiBold"
+            Text="Capacidad de Personas:" />
+        <TextBox
+            x:Name="PersonasTextBox"
+            Grid.Row="9"
+            Width="300"
+            Margin="4,4,4,12"
+            InputScope="Number"
+            PlaceholderText="Ej: 8"
+            Text="{x:Bind ViewModel.PersonasText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="10"
+            Margin="4"
+            FontWeight="SemiBold"
             Text="Identificador: *" />
         <TextBox
             x:Name="IdentificadorTextBox"
-            Grid.Row="5"
+            Grid.Row="11"
             Width="300"
             Margin="4,4,4,12"
             PlaceholderText="Identificador único del equipo"
             Text="{x:Bind ViewModel.Identificador, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <TextBlock
-            Grid.Row="6"
+            Grid.Row="12"
             Margin="4"
             FontWeight="SemiBold"
             Text="Descripción:" />
         <TextBox
             x:Name="DescripcionTextBox"
-            Grid.Row="7"
+            Grid.Row="13"
             Width="300"
             Height="80"
             Margin="4,4,4,12"
@@ -85,14 +133,14 @@
         <!--  Error Message Display  -->
         <InfoBar
             x:Name="ErrorInfoBar"
-            Grid.Row="8"
+            Grid.Row="14"
             Margin="4,0,4,12"
             IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
             Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
             Severity="Error" />
 
         <StackPanel
-            Grid.Row="9"
+            Grid.Row="15"
             Margin="4"
             HorizontalAlignment="Right"
             Orientation="Horizontal"

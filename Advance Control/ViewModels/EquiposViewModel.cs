@@ -18,6 +18,9 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private string? _marcaFilter;
         private string? _creadoFilterText;
+        private string? _paradasFilterText;
+        private string? _kilogramosFilterText;
+        private string? _personasFilterText;
         private string? _descripcionFilter;
         private string? _identificadorFilter;
 
@@ -88,6 +91,69 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public string? ParadasFilterText
+        {
+            get => _paradasFilterText;
+            set => SetProperty(ref _paradasFilterText, value);
+        }
+
+        /// <summary>
+        /// Gets the integer value of the ParadasFilterText, or null if empty/invalid
+        /// </summary>
+        private int? ParadasFilter
+        {
+            get
+            {
+                if (int.TryParse(ParadasFilterText, out var result) && result >= 0)
+                {
+                    return result;
+                }
+                return null;
+            }
+        }
+
+        public string? KilogramosFilterText
+        {
+            get => _kilogramosFilterText;
+            set => SetProperty(ref _kilogramosFilterText, value);
+        }
+
+        /// <summary>
+        /// Gets the integer value of the KilogramosFilterText, or null if empty/invalid
+        /// </summary>
+        private int? KilogramosFilter
+        {
+            get
+            {
+                if (int.TryParse(KilogramosFilterText, out var result) && result >= 0)
+                {
+                    return result;
+                }
+                return null;
+            }
+        }
+
+        public string? PersonasFilterText
+        {
+            get => _personasFilterText;
+            set => SetProperty(ref _personasFilterText, value);
+        }
+
+        /// <summary>
+        /// Gets the integer value of the PersonasFilterText, or null if empty/invalid
+        /// </summary>
+        private int? PersonasFilter
+        {
+            get
+            {
+                if (int.TryParse(PersonasFilterText, out var result) && result >= 0)
+                {
+                    return result;
+                }
+                return null;
+            }
+        }
+
         public string? DescripcionFilter
         {
             get => _descripcionFilter;
@@ -118,6 +184,9 @@ namespace Advance_Control.ViewModels
                 {
                     Marca = MarcaFilter,
                     Creado = CreadoFilter,
+                    Paradas = ParadasFilter,
+                    Kilogramos = KilogramosFilter,
+                    Personas = PersonasFilter,
                     Descripcion = DescripcionFilter,
                     Identificador = IdentificadorFilter
                 };
@@ -162,6 +231,9 @@ namespace Advance_Control.ViewModels
             {
                 MarcaFilter = null;
                 CreadoFilterText = null;
+                ParadasFilterText = null;
+                KilogramosFilterText = null;
+                PersonasFilterText = null;
                 DescripcionFilter = null;
                 IdentificadorFilter = null;
                 ErrorMessage = null;
@@ -243,13 +315,13 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Crea un nuevo equipo
         /// </summary>
-        public async Task<bool> CreateEquipoAsync(string marca, int creado, string? descripcion, string identificador, bool estatus = true, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, CancellationToken cancellationToken = default)
         {
             try
             {
                 await _logger.LogInformationAsync($"Creando nuevo equipo...", "EquiposViewModel", "CreateEquipoAsync");
 
-                var result = await _equipoService.CreateEquipoAsync(marca, creado, descripcion, identificador, estatus, cancellationToken);
+                var result = await _equipoService.CreateEquipoAsync(marca, creado, paradas, kilogramos, personas, descripcion, identificador, estatus, cancellationToken);
 
                 if (result)
                 {
