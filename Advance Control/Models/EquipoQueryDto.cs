@@ -16,6 +16,21 @@ namespace Advance_Control.Models
         public int? Creado { get; set; }
 
         /// <summary>
+        /// Filtro exacto por número de paradas
+        /// </summary>
+        public int? Paradas { get; set; }
+
+        /// <summary>
+        /// Filtro exacto por capacidad en kilogramos
+        /// </summary>
+        public int? Kilogramos { get; set; }
+
+        /// <summary>
+        /// Filtro exacto por capacidad de personas
+        /// </summary>
+        public int? Personas { get; set; }
+
+        /// <summary>
         /// Búsqueda parcial en descripción (LIKE)
         /// </summary>
         public string? Descripcion { get; set; }

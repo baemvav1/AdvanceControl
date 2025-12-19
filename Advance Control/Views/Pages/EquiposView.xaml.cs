@@ -120,6 +120,9 @@ namespace Advance_Control.Views
                 await ViewModel.CreateEquipoAsync(
                     nuevoEquipoViewModel.Marca,
                     nuevoEquipoViewModel.Creado.Value,
+                    nuevoEquipoViewModel.Paradas,
+                    nuevoEquipoViewModel.Kilogramos,
+                    nuevoEquipoViewModel.Personas,
                     string.IsNullOrWhiteSpace(nuevoEquipoViewModel.Descripcion) ? null : nuevoEquipoViewModel.Descripcion,
                     nuevoEquipoViewModel.Identificador,
                     nuevoEquipoViewModel.Estatus

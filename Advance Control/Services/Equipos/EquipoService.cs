@@ -47,6 +47,15 @@ namespace Advance_Control.Services.Equipos
                     if (query.Creado.HasValue)
                         queryParams.Add($"creado={query.Creado.Value}");
 
+                    if (query.Paradas.HasValue)
+                        queryParams.Add($"paradas={query.Paradas.Value}");
+
+                    if (query.Kilogramos.HasValue)
+                        queryParams.Add($"kilogramos={query.Kilogramos.Value}");
+
+                    if (query.Personas.HasValue)
+                        queryParams.Add($"personas={query.Personas.Value}");
+
                     if (!string.IsNullOrWhiteSpace(query.Descripcion))
                         queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
 
@@ -152,6 +161,15 @@ namespace Advance_Control.Services.Equipos
                 if (query.Creado.HasValue)
                     queryParams.Add($"creado={query.Creado.Value}");
 
+                if (query.Paradas.HasValue)
+                    queryParams.Add($"paradas={query.Paradas.Value}");
+
+                if (query.Kilogramos.HasValue)
+                    queryParams.Add($"kilogramos={query.Kilogramos.Value}");
+
+                if (query.Personas.HasValue)
+                    queryParams.Add($"personas={query.Personas.Value}");
+
                 if (!string.IsNullOrWhiteSpace(query.Descripcion))
                     queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
 
@@ -196,7 +214,7 @@ namespace Advance_Control.Services.Equipos
         /// <summary>
         /// Crea un nuevo equipo
         /// </summary>
-        public async Task<bool> CreateEquipoAsync(string marca, int creado, string? descripcion, string identificador, bool estatus = true, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -208,6 +226,9 @@ namespace Advance_Control.Services.Equipos
                 {
                     $"marca={Uri.EscapeDataString(marca)}",
                     $"creado={creado}",
+                    $"paradas={paradas}",
+                    $"kilogramos={kilogramos}",
+                    $"personas={personas}",
                     $"identificador={Uri.EscapeDataString(identificador)}",
                     $"estatus={estatus.ToString().ToLower()}"
                 };
