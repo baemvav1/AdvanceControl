@@ -102,7 +102,7 @@ namespace Advance_Control.Services.Clientes
         /// <summary>
         /// Crea un nuevo cliente usando el procedimiento almacenado sp_cliente_edit
         /// </summary>
-        public async Task<object> CreateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default)
+        public async Task<ClienteOperationResponse> CreateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default)
         {
             if (query == null)
                 throw new ArgumentNullException(nameof(query));
@@ -125,15 +125,15 @@ namespace Advance_Control.Services.Clientes
                         null,
                         "ClienteService",
                         "CreateClienteAsync");
-                    return new { success = false, message = errorContent };
+                    return new ClienteOperationResponse { Success = false, Message = errorContent };
                 }
 
                 // Deserializar la respuesta
-                var result = await response.Content.ReadFromJsonAsync<object>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                var result = await response.Content.ReadFromJsonAsync<ClienteOperationResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 await _logger.LogInformationAsync("Cliente creado exitosamente", "ClienteService", "CreateClienteAsync");
 
-                return result ?? new { success = true, message = "Cliente creado correctamente" };
+                return result ?? new ClienteOperationResponse { Success = true, Message = "Cliente creado correctamente" };
             }
             catch (HttpRequestException ex)
             {
@@ -150,7 +150,7 @@ namespace Advance_Control.Services.Clientes
         /// <summary>
         /// Actualiza un cliente por su ID
         /// </summary>
-        public async Task<object> UpdateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default)
+        public async Task<ClienteOperationResponse> UpdateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default)
         {
             if (query == null)
                 throw new ArgumentNullException(nameof(query));
@@ -173,15 +173,15 @@ namespace Advance_Control.Services.Clientes
                         null,
                         "ClienteService",
                         "UpdateClienteAsync");
-                    return new { success = false, message = errorContent };
+                    return new ClienteOperationResponse { Success = false, Message = errorContent };
                 }
 
                 // Deserializar la respuesta
-                var result = await response.Content.ReadFromJsonAsync<object>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                var result = await response.Content.ReadFromJsonAsync<ClienteOperationResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 await _logger.LogInformationAsync($"Cliente {query.IdCliente} actualizado exitosamente", "ClienteService", "UpdateClienteAsync");
 
-                return result ?? new { success = true, message = "Cliente actualizado exitosamente" };
+                return result ?? new ClienteOperationResponse { Success = true, Message = "Cliente actualizado exitosamente" };
             }
             catch (HttpRequestException ex)
             {
@@ -198,7 +198,7 @@ namespace Advance_Control.Services.Clientes
         /// <summary>
         /// Elimina (soft delete) un cliente por su ID
         /// </summary>
-        public async Task<object> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default)
+        public async Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -223,15 +223,15 @@ namespace Advance_Control.Services.Clientes
                         null,
                         "ClienteService",
                         "DeleteClienteAsync");
-                    return new { success = false, message = errorContent };
+                    return new ClienteOperationResponse { Success = false, Message = errorContent };
                 }
 
                 // Deserializar la respuesta
-                var result = await response.Content.ReadFromJsonAsync<object>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                var result = await response.Content.ReadFromJsonAsync<ClienteOperationResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 await _logger.LogInformationAsync($"Cliente {idCliente} eliminado exitosamente", "ClienteService", "DeleteClienteAsync");
 
-                return result ?? new { success = true, message = "Cliente eliminado exitosamente" };
+                return result ?? new ClienteOperationResponse { Success = true, Message = "Cliente eliminado exitosamente" };
             }
             catch (HttpRequestException ex)
             {

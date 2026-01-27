@@ -24,7 +24,7 @@ namespace Advance_Control.Services.Clientes
         /// <param name="query">Datos del cliente a crear</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<object> CreateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
+        Task<ClienteOperationResponse> CreateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Actualiza un cliente por su ID
@@ -32,7 +32,7 @@ namespace Advance_Control.Services.Clientes
         /// <param name="query">Datos del cliente a actualizar</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<object> UpdateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
+        Task<ClienteOperationResponse> UpdateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Elimina (soft delete) un cliente por su ID
@@ -41,6 +41,6 @@ namespace Advance_Control.Services.Clientes
         /// <param name="idUsuario">ID del usuario que realiza la operación</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<object> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default);
+        Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default);
     }
 }
