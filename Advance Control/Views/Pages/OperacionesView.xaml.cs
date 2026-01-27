@@ -101,7 +101,7 @@ namespace Advance_Control.Views
                 {
                     var query = new CargoEditDto
                     {
-                        IdRelacionCargo = operacion.IdOperacion.Value
+                        IdOperacion = operacion.IdOperacion.Value
                     };
 
                     var cargos = await _cargoService.GetCargosAsync(query);
@@ -254,10 +254,11 @@ namespace Advance_Control.Views
 
             var idRelacionCargoNumberBox = new NumberBox
             {
-                PlaceholderText = "ID Relación Cargo (requerido)",
+                PlaceholderText = "ID Relación Cargo",
                 Minimum = 0,
                 SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                Margin = new Thickness(0, 0, 0, 8)
+                Margin = new Thickness(0, 0, 0, 8),
+                Value = operacion.IdOperacion.Value  // Default to current operation ID
             };
 
             var montoNumberBox = new NumberBox
