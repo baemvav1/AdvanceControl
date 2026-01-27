@@ -107,33 +107,49 @@ namespace Advance_Control.Services.Cargos
         /// </summary>
         public async Task<CargoDto?> CreateCargoAsync(CargoEditDto query, CancellationToken cancellationToken = default)
         {
+            // Validar parámetros requeridos
+            if (query == null)
+            {
+                throw new ArgumentNullException(nameof(query));
+            }
+
+            if (!query.IdTipoCargo.HasValue)
+            {
+                throw new ArgumentException("IdTipoCargo es requerido", nameof(query));
+            }
+
+            if (!query.IdOperacion.HasValue)
+            {
+                throw new ArgumentException("IdOperacion es requerido", nameof(query));
+            }
+
+            if (!query.IdRelacionCargo.HasValue)
+            {
+                throw new ArgumentException("IdRelacionCargo es requerido", nameof(query));
+            }
+
+            if (!query.Monto.HasValue)
+            {
+                throw new ArgumentException("Monto es requerido", nameof(query));
+            }
+
             try
             {
                 // Construir la URL con parámetros de consulta
                 var url = _endpoints.GetEndpoint("api", "Cargos");
-                var queryParams = new List<string>();
-
-                // Parámetros requeridos
-                if (query.IdTipoCargo.HasValue)
-                    queryParams.Add($"idTipoCargo={query.IdTipoCargo.Value}");
-
-                if (query.IdOperacion.HasValue)
-                    queryParams.Add($"idOperacion={query.IdOperacion.Value}");
-
-                if (query.IdRelacionCargo.HasValue)
-                    queryParams.Add($"idRelacionCargo={query.IdRelacionCargo.Value}");
-
-                if (query.Monto.HasValue)
-                    queryParams.Add($"monto={query.Monto.Value}");
+                var queryParams = new List<string>
+                {
+                    $"idTipoCargo={query.IdTipoCargo.Value}",
+                    $"idOperacion={query.IdOperacion.Value}",
+                    $"idRelacionCargo={query.IdRelacionCargo.Value}",
+                    $"monto={query.Monto.Value}"
+                };
 
                 // Parámetro opcional
                 if (!string.IsNullOrWhiteSpace(query.Nota))
                     queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
 
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = $"{url}?{string.Join("&", queryParams)}";
 
                 await _logger.LogInformationAsync($"Creando cargo en: {url}", "CargoService", "CreateCargoAsync");
 

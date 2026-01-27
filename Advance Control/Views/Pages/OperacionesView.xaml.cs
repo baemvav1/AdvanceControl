@@ -323,15 +323,6 @@ namespace Advance_Control.Views
                     return;
                 }
 
-                if (double.IsNaN(idRelacionCargoNumberBox.Value))
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "El ID Relación Cargo es obligatorio",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
                 if (double.IsNaN(montoNumberBox.Value))
                 {
                     await _notificacionService.MostrarNotificacionAsync(
