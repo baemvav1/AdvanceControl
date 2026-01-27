@@ -12,7 +12,7 @@ This document describes the implementation of CRUD (Create, Read, Update, Delete
 
 A new Data Transfer Object (DTO) was created to support the updated API endpoint that uses the `sp_cliente_edit` stored procedure. This DTO includes:
 
-- **Operacion**: Operation type ('select', 'create', 'update', 'delete')
+- **Operacion**: Operation type ('select', 'create', 'update', 'delete') - Note: This property is defined for DTO completeness but is not set by the client. The operation type is implicit in the HTTP method used (POST for create, PUT for update, DELETE for delete).
 - **IdCliente**: Customer ID (required for update and delete operations)
 - **Rfc**: Customer RFC (tax identification)
 - **RazonSocial**: Legal business name
@@ -34,9 +34,9 @@ A new Data Transfer Object (DTO) was created to support the updated API endpoint
 Three new methods were added to the interface:
 
 ```csharp
-Task<object> CreateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
-Task<object> UpdateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
-Task<object> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default);
+Task<ClienteOperationResponse> CreateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
+Task<ClienteOperationResponse> UpdateClienteAsync(ClienteEditDto query, CancellationToken cancellationToken = default);
+Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default);
 ```
 
 ### 3. Service Implementation
@@ -47,19 +47,19 @@ Task<object> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken
 - **HTTP Method**: POST
 - **Endpoint**: `/api/Clientes`
 - **Purpose**: Creates a new customer
-- **Returns**: Object with operation result (success/failure with message)
+- **Returns**: `ClienteOperationResponse` with operation result (success/failure with message and optional id_cliente)
 
 #### UpdateClienteAsync
 - **HTTP Method**: PUT
 - **Endpoint**: `/api/Clientes/{idCliente}`
 - **Purpose**: Updates an existing customer by ID
-- **Returns**: Object with operation result (success/failure with message)
+- **Returns**: `ClienteOperationResponse` with operation result (success/failure with message)
 
 #### DeleteClienteAsync
 - **HTTP Method**: DELETE
 - **Endpoint**: `/api/Clientes/{idCliente}?idUsuario={idUsuario}`
 - **Purpose**: Performs soft delete on a customer
-- **Returns**: Object with operation result (success/failure with message)
+- **Returns**: `ClienteOperationResponse` with operation result (success/failure with message)
 
 ## Implementation Details
 
