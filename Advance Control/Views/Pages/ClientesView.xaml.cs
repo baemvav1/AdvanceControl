@@ -15,6 +15,7 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Logging;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -28,6 +29,7 @@ namespace Advance_Control.Views
     {
         public CustomersViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
+        private readonly ILoggingService _loggingService;
 
         public ClientesView()
         {
@@ -36,6 +38,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de notificaciones desde DI
             _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            
+            // Resolver el servicio de logging desde DI
+            _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
             
             this.InitializeComponent();
             
@@ -211,15 +216,34 @@ namespace Advance_Control.Views
 
                 try
                 {
+                    // Convertir valores de NumberBox de manera segura
+                    int? diasCredito = null;
+                    if (!double.IsNaN(diasCreditoNumberBox.Value))
+                    {
+                        diasCredito = Convert.ToInt32(Math.Round(diasCreditoNumberBox.Value));
+                    }
+
+                    decimal? limiteCredito = null;
+                    if (!double.IsNaN(limiteCreditoNumberBox.Value))
+                    {
+                        limiteCredito = Convert.ToDecimal(limiteCreditoNumberBox.Value);
+                    }
+
+                    int? prioridad = null;
+                    if (!double.IsNaN(prioridadNumberBox.Value))
+                    {
+                        prioridad = Convert.ToInt32(Math.Round(prioridadNumberBox.Value));
+                    }
+
                     var success = await ViewModel.CreateClienteAsync(
                         rfc: rfcTextBox.Text.Trim(),
                         razonSocial: razonSocialTextBox.Text.Trim(),
                         nombreComercial: nombreComercialTextBox.Text.Trim(),
                         regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim(),
                         usoCfdi: string.IsNullOrWhiteSpace(usoCfdiTextBox.Text) ? null : usoCfdiTextBox.Text.Trim(),
-                        diasCredito: double.IsNaN(diasCreditoNumberBox.Value) ? null : (int?)diasCreditoNumberBox.Value,
-                        limiteCredito: double.IsNaN(limiteCreditoNumberBox.Value) ? null : (decimal?)limiteCreditoNumberBox.Value,
-                        prioridad: double.IsNaN(prioridadNumberBox.Value) ? null : (int?)prioridadNumberBox.Value,
+                        diasCredito: diasCredito,
+                        limiteCredito: limiteCredito,
+                        prioridad: prioridad,
                         notas: string.IsNullOrWhiteSpace(notasTextBox.Text) ? null : notasTextBox.Text.Trim(),
                         estatus: estatusCheckBox.IsChecked ?? true
                     );
@@ -241,7 +265,7 @@ namespace Advance_Control.Views
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error al crear cliente: {ex.GetType().Name} - {ex.Message}");
+                    await _loggingService.LogErrorAsync("Error al crear cliente desde la UI", ex, "ClientesView", "NuevoButton_Click");
                     
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
