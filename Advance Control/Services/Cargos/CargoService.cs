@@ -48,6 +48,9 @@ namespace Advance_Control.Services.Cargos
                     if (query.IdTipoCargo.HasValue)
                         queryParams.Add($"idTipoCargo={query.IdTipoCargo.Value}");
 
+                    if (query.IdOperacion.HasValue)
+                        queryParams.Add($"idOperacion={query.IdOperacion.Value}");
+
                     if (query.IdRelacionCargo.HasValue)
                         queryParams.Add($"idRelacionCargo={query.IdRelacionCargo.Value}");
 
@@ -110,8 +113,12 @@ namespace Advance_Control.Services.Cargos
                 var url = _endpoints.GetEndpoint("api", "Cargos");
                 var queryParams = new List<string>();
 
+                // Parámetros requeridos
                 if (query.IdTipoCargo.HasValue)
                     queryParams.Add($"idTipoCargo={query.IdTipoCargo.Value}");
+
+                if (query.IdOperacion.HasValue)
+                    queryParams.Add($"idOperacion={query.IdOperacion.Value}");
 
                 if (query.IdRelacionCargo.HasValue)
                     queryParams.Add($"idRelacionCargo={query.IdRelacionCargo.Value}");
@@ -119,6 +126,7 @@ namespace Advance_Control.Services.Cargos
                 if (query.Monto.HasValue)
                     queryParams.Add($"monto={query.Monto.Value}");
 
+                // Parámetro opcional
                 if (!string.IsNullOrWhiteSpace(query.Nota))
                     queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
 
