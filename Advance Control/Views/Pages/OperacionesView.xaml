@@ -7,6 +7,7 @@
     xmlns:local="using:Advance_Control.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
@@ -280,6 +281,80 @@
                                                         </StackPanel>
                                                     </Button>
                                                 </StackPanel>
+                                            </PivotItem>
+
+                                            <!-- Cargos -->
+                                            <PivotItem Header="Cargos">
+                                                <Grid Padding="8">
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="*" />
+                                                    </Grid.RowDefinitions>
+
+                                                    <!-- Buttons for Add/Delete -->
+                                                    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+                                                        <Button
+                                                            Click="AddCargoButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            Style="{StaticResource AccentButtonStyle}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Add" />
+                                                                <TextBlock Text="Agregar Cargo" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!-- DataGrid for Cargos -->
+                                                    <controls:DataGrid
+                                                        Grid.Row="1"
+                                                        x:Name="CargosDataGrid"
+                                                        ItemsSource="{x:Bind Cargos, Mode=OneWay}"
+                                                        AutoGenerateColumns="False"
+                                                        CanUserReorderColumns="False"
+                                                        CanUserSortColumns="True"
+                                                        GridLinesVisibility="All"
+                                                        HeadersVisibility="Column"
+                                                        IsReadOnly="False"
+                                                        SelectionMode="Single"
+                                                        KeyDown="CargosDataGrid_KeyDown"
+                                                        Tag="{x:Bind}">
+                                                        <controls:DataGrid.Columns>
+                                                            <controls:DataGridTextColumn
+                                                                Header="ID Cargo"
+                                                                Binding="{Binding IdCargo}"
+                                                                IsReadOnly="True"
+                                                                Width="100" />
+                                                            <controls:DataGridTextColumn
+                                                                Header="ID Tipo Cargo"
+                                                                Binding="{Binding IdTipoCargo, Mode=TwoWay}"
+                                                                Width="120" />
+                                                            <controls:DataGridTextColumn
+                                                                Header="ID Relación Cargo"
+                                                                Binding="{Binding IdRelacionCargo, Mode=TwoWay}"
+                                                                Width="150" />
+                                                            <controls:DataGridTextColumn
+                                                                Header="Monto"
+                                                                Binding="{Binding Monto, Mode=TwoWay}"
+                                                                Width="100" />
+                                                            <controls:DataGridTextColumn
+                                                                Header="Nota"
+                                                                Binding="{Binding Nota, Mode=TwoWay}"
+                                                                Width="*" />
+                                                            <controls:DataGridTemplateColumn Header="Acciones" Width="100">
+                                                                <controls:DataGridTemplateColumn.CellTemplate>
+                                                                    <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CargoDto">
+                                                                        <Button
+                                                                            Click="DeleteCargoButton_Click"
+                                                                            Tag="{x:Bind}"
+                                                                            Background="Transparent">
+                                                                            <SymbolIcon Symbol="Delete" />
+                                                                        </Button>
+                                                                    </DataTemplate>
+                                                                </controls:DataGridTemplateColumn.CellTemplate>
+                                                            </controls:DataGridTemplateColumn>
+                                                        </controls:DataGrid.Columns>
+                                                    </controls:DataGrid>
+                                                </Grid>
                                             </PivotItem>
                                         </Pivot>
                                     </Grid>

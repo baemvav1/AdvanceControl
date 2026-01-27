@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -91,6 +92,25 @@ namespace Advance_Control.Models
                 if (_expand != value)
                 {
                     _expand = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private ObservableCollection<CargoDto> _cargos = new ObservableCollection<CargoDto>();
+
+        /// <summary>
+        /// Colección de cargos asociados a esta operación
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<CargoDto> Cargos
+        {
+            get => _cargos;
+            set
+            {
+                if (_cargos != value)
+                {
+                    _cargos = value;
                     OnPropertyChanged();
                 }
             }
