@@ -115,5 +115,24 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        private bool _cargosLoaded = false;
+
+        /// <summary>
+        /// Indica si los cargos ya fueron cargados desde el servidor
+        /// </summary>
+        [JsonIgnore]
+        public bool CargosLoaded
+        {
+            get => _cargosLoaded;
+            set
+            {
+                if (_cargosLoaded != value)
+                {
+                    _cargosLoaded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }

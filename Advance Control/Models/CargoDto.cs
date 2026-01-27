@@ -21,7 +21,6 @@ namespace Advance_Control.Models
         private int? _idRelacionCargo;
         private double? _monto;
         private string? _nota;
-        private bool _isEditing;
 
         /// <summary>
         /// ID único del cargo
@@ -103,23 +102,6 @@ namespace Advance_Control.Models
                 if (_nota != value)
                 {
                     _nota = value;
-                    OnPropertyChanged();
-                }
-            }
-        }
-
-        /// <summary>
-        /// Indica si el cargo está en modo de edición
-        /// </summary>
-        [JsonIgnore]
-        public bool IsEditing
-        {
-            get => _isEditing;
-            set
-            {
-                if (_isEditing != value)
-                {
-                    _isEditing = value;
                     OnPropertyChanged();
                 }
             }

@@ -59,21 +59,65 @@ namespace Advance_Control.Views
             await ViewModel.ClearFiltersAsync();
         }
 
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
             // Get the OperacionDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is Models.OperacionDto operacion)
             {
                 operacion.Expand = !operacion.Expand;
+                
+                // Load cargos when expanding
+                if (operacion.Expand && operacion.IdOperacion.HasValue)
+                {
+                    await LoadCargosForOperacionAsync(operacion);
+                }
             }
         }
 
-        private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
+        private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
             // Get the OperacionDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is Models.OperacionDto operacion)
             {
                 operacion.Expand = !operacion.Expand;
+                
+                // Load cargos when expanding
+                if (operacion.Expand && operacion.IdOperacion.HasValue)
+                {
+                    await LoadCargosForOperacionAsync(operacion);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadCargosForOperacionAsync(Models.OperacionDto operacion)
+        {
+            if (!operacion.IdOperacion.HasValue)
+                return;
+
+            try
+            {
+                // Only load cargos if they haven't been loaded yet
+                if (!operacion.CargosLoaded)
+                {
+                    var query = new CargoEditDto
+                    {
+                        IdRelacionCargo = operacion.IdOperacion.Value
+                    };
+
+                    var cargos = await _cargoService.GetCargosAsync(query);
+                    
+                    operacion.Cargos.Clear();
+                    foreach (var cargo in cargos)
+                    {
+                        operacion.Cargos.Add(cargo);
+                    }
+                    
+                    operacion.CargosLoaded = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar cargos: {ex.GetType().Name} - {ex.Message}");
             }
         }
 

@@ -164,17 +164,15 @@ namespace Advance_Control.Services.Cargos
                             Nota = query.Nota
                         };
                     }
+                    else
+                    {
+                        await _logger.LogWarningAsync("Cargo creado pero no se devolvió el ID", "CargoService", "CreateCargoAsync");
+                        return null;
+                    }
                 }
 
-                await _logger.LogInformationAsync("Cargo creado correctamente", "CargoService", "CreateCargoAsync");
-                return new CargoDto
-                {
-                    IdCargo = 0,
-                    IdTipoCargo = query.IdTipoCargo,
-                    IdRelacionCargo = query.IdRelacionCargo,
-                    Monto = query.Monto,
-                    Nota = query.Nota
-                };
+                await _logger.LogWarningAsync("Respuesta de crear cargo no indica éxito", "CargoService", "CreateCargoAsync");
+                return null;
             }
             catch (HttpRequestException ex)
             {
