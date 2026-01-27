@@ -177,5 +177,64 @@ namespace Advance_Control.ViewModels
                 await _logger.LogErrorAsync("Error al limpiar filtros", ex, "CustomersViewModel", "ClearFiltersAsync");
             }
         }
+
+        /// <summary>
+        /// Crea un nuevo cliente
+        /// </summary>
+        public async Task<bool> CreateClienteAsync(
+            string rfc,
+            string razonSocial,
+            string nombreComercial,
+            string? regimenFiscal = null,
+            string? usoCfdi = null,
+            int? diasCredito = null,
+            decimal? limiteCredito = null,
+            int? prioridad = null,
+            string? notas = null,
+            bool estatus = true,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Creando cliente: {nombreComercial}", "CustomersViewModel", "CreateClienteAsync");
+
+                var clienteDto = new ClienteEditDto
+                {
+                    Operacion = "create",
+                    Rfc = rfc,
+                    RazonSocial = razonSocial,
+                    NombreComercial = nombreComercial,
+                    RegimenFiscal = regimenFiscal,
+                    UsoCfdi = usoCfdi,
+                    DiasCredito = diasCredito,
+                    LimiteCredito = limiteCredito,
+                    Prioridad = prioridad,
+                    Notas = notas,
+                    Estatus = estatus,
+                    IdUsuario = null // TODO: Obtener del contexto de autenticación
+                };
+
+                var response = await _clienteService.CreateClienteAsync(clienteDto, cancellationToken);
+
+                if (response.Success)
+                {
+                    await _logger.LogInformationAsync($"Cliente creado exitosamente: {nombreComercial}", "CustomersViewModel", "CreateClienteAsync");
+                    
+                    // Recargar la lista de clientes
+                    await LoadClientesAsync(cancellationToken);
+                    return true;
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"No se pudo crear el cliente: {response.Message}", "CustomersViewModel", "CreateClienteAsync");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al crear cliente", ex, "CustomersViewModel", "CreateClienteAsync");
+                return false;
+            }
+        }
     }
 }

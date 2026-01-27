@@ -23,8 +23,18 @@
         <!--  Header  -->
         <StackPanel
             Grid.Row="0" Margin="0,0,0,24" Spacing="8">
-            <TextBlock
-                FontSize="32" FontWeight="Bold" Text="Clientes" />
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock
+                    FontSize="32" FontWeight="Bold" Text="Clientes" />
+                <Button
+                    x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo cliente">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <SymbolIcon Symbol="Add" />
+                        <TextBlock VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
             <TextBlock
                 FontSize="16"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
