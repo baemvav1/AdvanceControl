@@ -20,9 +20,6 @@ namespace Advance_Control.Models
         [JsonPropertyName("idCliente")]
         public int IdCliente { get; set; }
 
-        [JsonPropertyName("tipoPersona")]
-        public int TipoPersona { get; set; }
-
         [JsonPropertyName("rfc")]
         public string Rfc { get; set; } = string.Empty;
 
