@@ -247,15 +247,15 @@ namespace Advance_Control.Views
             var idTipoCargoNumberBox = new NumberBox
             {
                 PlaceholderText = "ID Tipo Cargo (requerido)",
-                Minimum = 0,
+                Minimum = 1,
                 SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
                 Margin = new Thickness(0, 0, 0, 8)
             };
 
             var idRelacionCargoNumberBox = new NumberBox
             {
-                PlaceholderText = "ID Relación Cargo",
-                Minimum = 0,
+                PlaceholderText = "ID Relación Cargo (requerido)",
+                Minimum = 1,
                 SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
                 Margin = new Thickness(0, 0, 0, 8),
                 Value = operacion.IdOperacion.Value  // Default to current operation ID
@@ -264,7 +264,7 @@ namespace Advance_Control.Views
             var montoNumberBox = new NumberBox
             {
                 PlaceholderText = "Monto (requerido)",
-                Minimum = 0,
+                Minimum = 0.01,
                 SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
                 Margin = new Thickness(0, 0, 0, 8)
             };
@@ -314,20 +314,29 @@ namespace Advance_Control.Views
             if (result == ContentDialogResult.Primary)
             {
                 // Validar campos requeridos
-                if (double.IsNaN(idTipoCargoNumberBox.Value))
+                if (double.IsNaN(idTipoCargoNumberBox.Value) || idTipoCargoNumberBox.Value <= 0)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Validación",
-                        nota: "El ID Tipo Cargo es obligatorio",
+                        nota: "El ID Tipo Cargo es obligatorio y debe ser mayor que 0",
                         fechaHoraInicio: DateTime.Now);
                     return;
                 }
 
-                if (double.IsNaN(montoNumberBox.Value))
+                if (double.IsNaN(idRelacionCargoNumberBox.Value) || idRelacionCargoNumberBox.Value <= 0)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Validación",
-                        nota: "El Monto es obligatorio",
+                        nota: "El ID Relación Cargo es obligatorio y debe ser mayor que 0",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                if (double.IsNaN(montoNumberBox.Value) || montoNumberBox.Value <= 0)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Validación",
+                        nota: "El Monto es obligatorio y debe ser mayor que 0",
                         fechaHoraInicio: DateTime.Now);
                     return;
                 }
