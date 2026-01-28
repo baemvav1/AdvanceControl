@@ -273,7 +273,7 @@
                                                     <Button
                                                         AutomationProperties.Name="Eliminar operación"
                                                         Click="DeleteOperacionButton_Click"
-                                                        Tag="{Binding}"
+                                                        Tag="{x:Bind}"
                                                         ToolTipService.ToolTip="Eliminar operación">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="Delete" />
@@ -317,7 +317,7 @@
                                                         IsReadOnly="False"
                                                         SelectionMode="Single"
                                                         KeyDown="CargosDataGrid_KeyDown"
-                                                        Tag="{Binding}">
+                                                        Tag="{x:Bind}">
                                                         <controls:DataGrid.Columns>
                                                             <controls:DataGridTextColumn
                                                                 Header="ID Cargo"
