@@ -22,6 +22,7 @@
     <None Remove="Views\Pages\EquiposView.xaml" />
     <None Remove="Views\Pages\ProveedoresView.xaml" />
     <None Remove="Views\Pages\RefaaccionView.xaml" />
+    <None Remove="Views\Servicios.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -64,6 +65,11 @@
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251003001" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Servicios.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\Pages\ProveedoresView.xaml">
