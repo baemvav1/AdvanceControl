@@ -243,60 +243,23 @@ namespace Advance_Control.Views
             if (!operacion.IdOperacion.HasValue)
                 return;
 
-            // Crear los campos del formulario
-            var idTipoCargoNumberBox = new NumberBox
+            // Crear el contenido del diálogo que solo muestra el ID de la operación
+            var dialogContent = new StackPanel
             {
-                PlaceholderText = "ID Tipo Cargo (requerido)",
-                Minimum = 1,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var idRelacionCargoNumberBox = new NumberBox
-            {
-                PlaceholderText = "ID Relación Cargo (requerido)",
-                Minimum = 1,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                Margin = new Thickness(0, 0, 0, 8),
-                Value = operacion.IdOperacion.Value  // Default to current operation ID
-            };
-
-            var montoNumberBox = new NumberBox
-            {
-                PlaceholderText = "Monto (requerido)",
-                Minimum = 0.01,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var notaTextBox = new TextBox
-            {
-                PlaceholderText = "Nota (opcional)",
-                AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap,
-                MinHeight = 60,
-                MaxHeight = 120,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var dialogContent = new ScrollViewer
-            {
-                Content = new StackPanel
+                Spacing = 8,
+                Children =
                 {
-                    Spacing = 8,
-                    Children =
-                    {
-                        new TextBlock { Text = "ID Tipo Cargo:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
-                        idTipoCargoNumberBox,
-                        new TextBlock { Text = "ID Relación Cargo:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
-                        idRelacionCargoNumberBox,
-                        new TextBlock { Text = "Monto:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
-                        montoNumberBox,
-                        new TextBlock { Text = "Nota:" },
-                        notaTextBox
+                    new TextBlock 
+                    { 
+                        Text = "ID de la Operación:", 
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold 
+                    },
+                    new TextBlock 
+                    { 
+                        Text = operacion.IdOperacion.Value.ToString(),
+                        FontSize = 16
                     }
-                },
-                MaxHeight = 400
+                }
             };
 
             var dialog = new ContentDialog
@@ -313,72 +276,11 @@ namespace Advance_Control.Views
 
             if (result == ContentDialogResult.Primary)
             {
-                // Validar campos requeridos
-                if (double.IsNaN(idTipoCargoNumberBox.Value) || idTipoCargoNumberBox.Value <= 0)
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "El ID Tipo Cargo es obligatorio y debe ser mayor que 0",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
-                if (double.IsNaN(idRelacionCargoNumberBox.Value) || idRelacionCargoNumberBox.Value <= 0)
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "El ID Relación Cargo es obligatorio y debe ser mayor que 0",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
-                if (double.IsNaN(montoNumberBox.Value) || montoNumberBox.Value <= 0)
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "El Monto es obligatorio y debe ser mayor que 0",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
-                try
-                {
-                    // Crear el cargo
-                    var query = new CargoEditDto
-                    {
-                        IdTipoCargo = Convert.ToInt32(Math.Round(idTipoCargoNumberBox.Value)),
-                        IdOperacion = operacion.IdOperacion.Value,
-                        IdRelacionCargo = Convert.ToInt32(Math.Round(idRelacionCargoNumberBox.Value)),
-                        Monto = montoNumberBox.Value,
-                        Nota = string.IsNullOrWhiteSpace(notaTextBox.Text) ? null : notaTextBox.Text.Trim()
-                    };
-
-                    var newCargo = await _cargoService.CreateCargoAsync(query);
-
-                    if (newCargo != null)
-                    {
-                        operacion.Cargos.Add(newCargo);
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Cargo agregado",
-                            nota: "El cargo se ha agregado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
-                    }
-                    else
-                    {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo agregar el cargo. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error al agregar cargo: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al agregar el cargo. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
-                }
+                // Por ahora solo mostramos una notificación
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Agregar Cargo",
+                    nota: $"Funcionalidad pendiente de implementación para la operación ID: {operacion.IdOperacion.Value}",
+                    fechaHoraInicio: DateTime.Now);
             }
         }
 
