@@ -273,7 +273,7 @@
                                                     <Button
                                                         AutomationProperties.Name="Eliminar operación"
                                                         Click="DeleteOperacionButton_Click"
-                                                        Tag="{Binding}"
+                                                        Tag="{x:Bind}"
                                                         ToolTipService.ToolTip="Eliminar operación">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="Delete" />
@@ -295,7 +295,7 @@
                                                     <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
                                                         <Button
                                                             Click="AddCargoButton_Click"
-                                                            Tag="{Binding}"
+                                                            Tag="{x:Bind}"
                                                             Style="{StaticResource AccentButtonStyle}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Add" />
@@ -317,7 +317,7 @@
                                                         IsReadOnly="False"
                                                         SelectionMode="Single"
                                                         KeyDown="CargosDataGrid_KeyDown"
-                                                        Tag="{Binding}">
+                                                        Tag="{x:Bind}">
                                                         <controls:DataGrid.Columns>
                                                             <controls:DataGridTextColumn
                                                                 Header="ID Cargo"
