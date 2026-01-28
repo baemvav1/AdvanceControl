@@ -58,7 +58,7 @@ _navigationService.Configure<Views.ProveedoresView>("Proveedores");
 
 ### 4. **Manejador de Eventos de Navegación**
 - **Ubicación**: `/Advance Control/ViewModels/MainViewModel.cs`
-- **Método**: `OnNavigationItemInvoked` (líneas 220-230)
+- **Método**: `OnNavigationItemInvoked` (líneas 221-231)
 
 ```csharp
 public void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -96,30 +96,33 @@ public void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInv
   - `OperacionesViewModel.cs`
   - `AcesoriaViewModel.cs`
   - `MttoViewModel.cs`
-  - `ClientesViewModel.cs`
+  - `CustomersViewModel.cs` (para ClientesView)
   - `EquiposViewModel.cs`
-  - `RefaaccionViewModel.cs`
+  - `RefaccionesViewModel.cs`
   - `ServiciosViewModel.cs`
   - `ProveedoresViewModel.cs`
 
 ### 7. **Registro de Dependencias (DI)**
 - **Ubicación**: `/Advance Control/App.xaml.cs`
-- **Línea del Servicio de Navegación**: ~380
-- **Líneas de ViewModels**: ~390-400
+- **Línea del Servicio de Navegación**: 380
+- **Líneas de ViewModels**: 388-399
 
 ```csharp
-// Servicio de navegación
+// Servicio de navegación (línea 380)
 services.AddSingleton<INavigationService, NavigationService>();
 
-// ViewModels
+// ViewModels (líneas 388-399)
+services.AddTransient<ViewModels.MainViewModel>();
+services.AddTransient<ViewModels.LoginViewModel>();
+services.AddTransient<ViewModels.CustomersViewModel>();
+services.AddTransient<ViewModels.ProveedoresViewModel>();
+services.AddTransient<ViewModels.EquiposViewModel>();
 services.AddTransient<ViewModels.OperacionesViewModel>();
 services.AddTransient<ViewModels.AcesoriaViewModel>();
 services.AddTransient<ViewModels.MttoViewModel>();
-services.AddTransient<ViewModels.ClientesViewModel>();
-services.AddTransient<ViewModels.EquiposViewModel>();
-services.AddTransient<ViewModels.RefaaccionViewModel>();
+services.AddTransient<ViewModels.NuevoEquipoViewModel>();
+services.AddTransient<ViewModels.RefaccionesViewModel>();
 services.AddTransient<ViewModels.ServiciosViewModel>();
-services.AddTransient<ViewModels.ProveedoresViewModel>();
 ```
 
 ---
@@ -216,8 +219,8 @@ Para mantener el sistema de navegación funcionando correctamente:
 | Servicio de Navegación | `Navigation/NavigationService.cs` | Todo el archivo |
 | Configuración de Rutas | `ViewModels/MainViewModel.cs` | 201-209 |
 | Menú de Navegación | `Views/MainWindow.xaml` | 71-88 |
-| Manejador de Eventos | `ViewModels/MainViewModel.cs` | 220-230 |
-| Registro DI | `App.xaml.cs` | 380, 390-400 |
+| Manejador de Eventos | `ViewModels/MainViewModel.cs` | 221-231 |
+| Registro DI | `App.xaml.cs` | 380, 388-399 |
 
 ---
 
