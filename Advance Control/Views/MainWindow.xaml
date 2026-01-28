@@ -82,6 +82,8 @@
                         <NavigationViewItem
                             Content="Refacciones" Icon="Setting" Tag="Refacciones" />
                         <NavigationViewItem
+                            Content="Servicios" Icon="Repair" Tag="Servicios" />
+                        <NavigationViewItem
                             Content="Proveedores" Icon="Contact" Tag="Proveedores" />
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
