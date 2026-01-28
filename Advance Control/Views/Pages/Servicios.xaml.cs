@@ -219,6 +219,12 @@ namespace Advance_Control.Views
                     Margin = new Thickness(0, 0, 0, 8)
                 };
 
+                var estatusCheckBox = new CheckBox
+                {
+                    Content = "Activo",
+                    IsChecked = servicio.Estatus ?? true
+                };
+
                 var dialogContent = new StackPanel
                 {
                     Spacing = 8,
@@ -229,7 +235,8 @@ namespace Advance_Control.Views
                         new TextBlock { Text = "Descripción:" },
                         descripcionTextBox,
                         new TextBlock { Text = "Costo:" },
-                        costoTextBox
+                        costoTextBox,
+                        estatusCheckBox
                     }
                 };
 
@@ -249,13 +256,35 @@ namespace Advance_Control.Views
                 {
                     try
                     {
+                        // Validar campos obligatorios
+                        if (string.IsNullOrWhiteSpace(conceptoTextBox.Text))
+                        {
+                            await _notificacionService.MostrarNotificacionAsync(
+                                titulo: "Campo requerido",
+                                mensaje: "El concepto es obligatorio.",
+                                tipo: TipoNotificacion.Error
+                            );
+                            return;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(descripcionTextBox.Text))
+                        {
+                            await _notificacionService.MostrarNotificacionAsync(
+                                titulo: "Campo requerido",
+                                mensaje: "La descripción es obligatoria.",
+                                tipo: TipoNotificacion.Error
+                            );
+                            return;
+                        }
+
                         var costo = ParseCosto(costoTextBox.Text);
 
                         var updateData = new ServicioQueryDto
                         {
-                            Concepto = string.IsNullOrWhiteSpace(conceptoTextBox.Text) ? null : conceptoTextBox.Text,
-                            Descripcion = string.IsNullOrWhiteSpace(descripcionTextBox.Text) ? null : descripcionTextBox.Text,
-                            Costo = costo
+                            Concepto = conceptoTextBox.Text,
+                            Descripcion = descripcionTextBox.Text,
+                            Costo = costo,
+                            Estatus = estatusCheckBox.IsChecked ?? true
                         };
 
                         var success = await ViewModel.UpdateServicioAsync(servicio.IdServicio, updateData);

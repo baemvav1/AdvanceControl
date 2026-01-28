@@ -18,7 +18,7 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private string? _conceptoFilter;
         private string? _descripcionFilter;
-        private double? _costoFilter;
+        private string? _costoFilter;
 
         public ServiciosViewModel(IServicioService servicioService, ILoggingService logger)
         {
@@ -71,7 +71,7 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _descripcionFilter, value);
         }
 
-        public double? CostoFilter
+        public string? CostoFilter
         {
             get => _costoFilter;
             set => SetProperty(ref _costoFilter, value);
@@ -91,11 +91,21 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = null; // Limpiar errores anteriores
                 await _logger.LogInformationAsync("Cargando servicios...", "ServiciosViewModel", "LoadServiciosAsync");
 
+                // Parse costo filter if provided
+                double? costoValue = null;
+                if (!string.IsNullOrWhiteSpace(CostoFilter))
+                {
+                    if (double.TryParse(CostoFilter, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsedCosto))
+                    {
+                        costoValue = parsedCosto;
+                    }
+                }
+
                 var query = new ServicioQueryDto
                 {
                     Concepto = ConceptoFilter,
                     Descripcion = DescripcionFilter,
-                    Costo = CostoFilter
+                    Costo = costoValue
                 };
 
                 var servicios = await _servicioService.GetServiciosAsync(query, cancellationToken);

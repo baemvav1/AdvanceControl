@@ -27,10 +27,7 @@
                 <Button
                     x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
                     Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo servicio">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                        <SymbolIcon Symbol="Add" />
-                        <TextBlock VerticalAlignment="Center" />
-                    </StackPanel>
+                    <SymbolIcon Symbol="Add" />
                 </Button>
             </StackPanel>
             <TextBlock
