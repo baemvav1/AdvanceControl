@@ -205,6 +205,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.ClientesView>("Clientes");
             _navigationService.Configure<Views.EquiposView>("Equipos");
             _navigationService.Configure<Views.RefaaccionView>("Refacciones");
+            _navigationService.Configure<Views.Servicios>("Servicios");
             _navigationService.Configure<Views.ProveedoresView>("Proveedores");
 
             // Subscribe to Frame navigation events
