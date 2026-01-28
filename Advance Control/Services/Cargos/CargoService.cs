@@ -183,6 +183,7 @@ namespace Advance_Control.Services.Cargos
                         {
                             IdCargo = idCargo,
                             IdTipoCargo = query.IdTipoCargo,
+                            IdOperacion = query.IdOperacion,
                             IdRelacionCargo = query.IdRelacionCargo,
                             Monto = query.Monto,
                             Nota = query.Nota
