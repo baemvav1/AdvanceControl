@@ -1,34 +1,46 @@
-using System;
-using System.Globalization;
+using Advance_Control.Models;
+using Advance_Control.Services.Notificacion;
+using Advance_Control.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
-using Microsoft.Extensions.DependencyInjection;
-using Advance_Control.ViewModels;
-using Advance_Control.Services.Notificacion;
-using Advance_Control.Models;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.Foundation;
+using Windows.Foundation.Collections;
 
-namespace Advance_Control.Views
+// To learn more about WinUI, the WinUI project structure,
+// and more about our project templates, see: http://aka.ms/winui-project-info.
+
+namespace Advance_Control.Views.Pages
 {
     /// <summary>
-    /// PÃ¡gina para visualizar y gestionar servicios
+    /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class Servicios : Page
+    public sealed partial class ServiciosView : Page
     {
         public ServiciosViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
 
-        public Servicios()
+        public ServiciosView()
         {
             // Resolver el ViewModel desde DI
             ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<ServiciosViewModel>();
-            
+
             // Resolver el servicio de notificaciones desde DI
             _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
-            
+
             this.InitializeComponent();
-            
+
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
         }
@@ -36,8 +48,8 @@ namespace Advance_Control.Views
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            
-            // Cargar los servicios cuando se navega a esta pÃ¡gina
+
+            // Cargar los servicios cuando se navega a esta página
             await ViewModel.LoadServiciosAsync();
         }
 
@@ -62,7 +74,7 @@ namespace Advance_Control.Views
 
             var descripcionTextBox = new TextBox
             {
-                PlaceholderText = "Ingrese la descripciÃ³n",
+                PlaceholderText = "Ingrese la descripción",
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 MinHeight = 100,
@@ -90,7 +102,7 @@ namespace Advance_Control.Views
                 {
                     new TextBlock { Text = "Concepto:" },
                     conceptoTextBox,
-                    new TextBlock { Text = "DescripciÃ³n:" },
+                    new TextBlock { Text = "Descripción:" },
                     descripcionTextBox,
                     new TextBlock { Text = "Costo:" },
                     costoTextBox,
@@ -119,8 +131,8 @@ namespace Advance_Control.Views
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Campo requerido",
-                            mensaje: "El concepto es obligatorio.",
-                            tipo: TipoNotificacion.Error
+                            nota: "El concepto es obligatorio.",
+                            fechaHoraInicio: DateTime.Now
                         );
                         return;
                     }
@@ -129,8 +141,8 @@ namespace Advance_Control.Views
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Campo requerido",
-                            mensaje: "La descripciÃ³n es obligatoria.",
-                            tipo: TipoNotificacion.Error
+                            nota: "La descripción es obligatoria.",
+                            fechaHoraInicio: DateTime.Now
                         );
                         return;
                     }
@@ -148,16 +160,16 @@ namespace Advance_Control.Views
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Servicio creado",
-                            mensaje: "El servicio se creÃ³ exitosamente.",
-                            tipo: TipoNotificacion.Success
+                            nota: "El servicio se creó exitosamente.",
+                            fechaHoraInicio: DateTime.Now
                         );
                     }
                     else
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Error",
-                            mensaje: "No se pudo crear el servicio.",
-                            tipo: TipoNotificacion.Error
+                            nota: "No se pudo crear el servicio.",
+                            fechaHoraInicio: DateTime.Now
                         );
                     }
                 }
@@ -165,8 +177,8 @@ namespace Advance_Control.Views
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        mensaje: $"Error al crear servicio: {ex.Message}",
-                        tipo: TipoNotificacion.Error
+                        nota: $"Error al crear servicio: {ex.Message}",
+                        fechaHoraInicio: DateTime.Now
                     );
                 }
             }
@@ -203,7 +215,7 @@ namespace Advance_Control.Views
                 var descripcionTextBox = new TextBox
                 {
                     Text = servicio.Descripcion,
-                    PlaceholderText = "Ingrese la descripciÃ³n",
+                    PlaceholderText = "Ingrese la descripción",
                     AcceptsReturn = true,
                     TextWrapping = TextWrapping.Wrap,
                     MinHeight = 100,
@@ -232,7 +244,7 @@ namespace Advance_Control.Views
                     {
                         new TextBlock { Text = "Concepto:" },
                         conceptoTextBox,
-                        new TextBlock { Text = "DescripciÃ³n:" },
+                        new TextBlock { Text = "Descripción:" },
                         descripcionTextBox,
                         new TextBlock { Text = "Costo:" },
                         costoTextBox,
@@ -261,8 +273,8 @@ namespace Advance_Control.Views
                         {
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Campo requerido",
-                                mensaje: "El concepto es obligatorio.",
-                                tipo: TipoNotificacion.Error
+                                nota: "El concepto es obligatorio.",
+                                fechaHoraInicio: DateTime.Now
                             );
                             return;
                         }
@@ -271,8 +283,8 @@ namespace Advance_Control.Views
                         {
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Campo requerido",
-                                mensaje: "La descripciÃ³n es obligatoria.",
-                                tipo: TipoNotificacion.Error
+                                nota: "La descripción es obligatoria.",
+                                fechaHoraInicio: DateTime.Now
                             );
                             return;
                         }
@@ -293,16 +305,16 @@ namespace Advance_Control.Views
                         {
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Servicio actualizado",
-                                mensaje: "El servicio se actualizÃ³ exitosamente.",
-                                tipo: TipoNotificacion.Success
+                                nota: "El servicio se actualizó exitosamente.",
+                                fechaHoraInicio: DateTime.Now
                             );
                         }
                         else
                         {
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Error",
-                                mensaje: "No se pudo actualizar el servicio.",
-                                tipo: TipoNotificacion.Error
+                                nota: "No se pudo actualizar el servicio.",
+                                fechaHoraInicio: DateTime.Now
                             );
                         }
                     }
@@ -310,8 +322,8 @@ namespace Advance_Control.Views
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Error",
-                            mensaje: $"Error al actualizar servicio: {ex.Message}",
-                            tipo: TipoNotificacion.Error
+                            nota: $"Error al actualizar servicio: {ex.Message}",
+                            fechaHoraInicio: DateTime.Now
                         );
                     }
                 }
@@ -322,12 +334,12 @@ namespace Advance_Control.Views
         {
             if (sender is Button button && button.Tag is ServicioDto servicio)
             {
-                // Mostrar confirmaciÃ³n
+                // Mostrar confirmación
                 var confirmDialog = new ContentDialog
                 {
-                    Title = "Confirmar eliminaciÃ³n",
-                    Content = $"Â¿EstÃ¡ seguro de que desea eliminar el servicio '{servicio.Concepto}'?",
-                    PrimaryButtonText = "SÃ­, eliminar",
+                    Title = "Confirmar eliminación",
+                    Content = $"¿Está seguro de que desea eliminar el servicio '{servicio.Concepto}'?",
+                    PrimaryButtonText = "Sí, eliminar",
                     CloseButtonText = "Cancelar",
                     DefaultButton = ContentDialogButton.Close,
                     XamlRoot = this.XamlRoot
@@ -345,16 +357,16 @@ namespace Advance_Control.Views
                         {
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Servicio eliminado",
-                                mensaje: "El servicio se eliminÃ³ exitosamente.",
-                                tipo: TipoNotificacion.Success
+                                nota: "El servicio se eliminó exitosamente.",
+                                fechaHoraInicio: DateTime.Now
                             );
                         }
                         else
                         {
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Error",
-                                mensaje: "No se pudo eliminar el servicio.",
-                                tipo: TipoNotificacion.Error
+                                nota: "No se pudo eliminar el servicio.",
+                                fechaHoraInicio: DateTime.Now
                             );
                         }
                     }
@@ -362,8 +374,8 @@ namespace Advance_Control.Views
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Error",
-                            mensaje: $"Error al eliminar servicio: {ex.Message}",
-                            tipo: TipoNotificacion.Error
+                            nota: $"Error al eliminar servicio: {ex.Message}",
+                            fechaHoraInicio: DateTime.Now
                         );
                     }
                 }
@@ -379,7 +391,7 @@ namespace Advance_Control.Views
 
             if (!double.TryParse(costoText, NumberStyles.Any, CultureInfo.InvariantCulture, out var costo))
             {
-                throw new ArgumentException("El costo debe ser un nÃºmero vÃ¡lido.");
+                throw new ArgumentException("El costo debe ser un número válido.");
             }
 
             if (costo < 0)
@@ -391,4 +403,5 @@ namespace Advance_Control.Views
         }
     }
 }
+
 

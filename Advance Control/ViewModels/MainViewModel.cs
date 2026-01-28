@@ -206,6 +206,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.EquiposView>("Equipos");
             _navigationService.Configure<Views.RefaaccionView>("Refacciones");
             _navigationService.Configure<Views.ProveedoresView>("Proveedores");
+            _navigationService.Configure<Views.Pages.ServiciosView>("Servicios");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
