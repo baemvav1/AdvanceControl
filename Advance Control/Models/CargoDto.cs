@@ -18,6 +18,7 @@ namespace Advance_Control.Models
 
         private int _idCargo;
         private int? _idTipoCargo;
+        private int? _idOperacion;
         private int? _idRelacionCargo;
         private double? _monto;
         private string? _nota;
@@ -51,6 +52,23 @@ namespace Advance_Control.Models
                 if (_idTipoCargo != value)
                 {
                     _idTipoCargo = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// ID de la operación asociada al cargo
+        /// </summary>
+        [JsonPropertyName("idOperacion")]
+        public int? IdOperacion
+        {
+            get => _idOperacion;
+            set
+            {
+                if (_idOperacion != value)
+                {
+                    _idOperacion = value;
                     OnPropertyChanged();
                 }
             }
