@@ -19,12 +19,19 @@ namespace Advance_Control.Services.Cargos
         private readonly HttpClient _http;
         private readonly IApiEndpointProvider _endpoints;
         private readonly ILoggingService _logger;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public CargoService(HttpClient http, IApiEndpointProvider endpoints, ILoggingService logger)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
+            // Configurar opciones de JSON para ser case-insensitive
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
         }
 
         /// <summary>
@@ -84,7 +91,7 @@ namespace Advance_Control.Services.Cargos
                 }
 
                 // Deserializar la respuesta
-                var cargos = await response.Content.ReadFromJsonAsync<List<CargoDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                var cargos = await response.Content.ReadFromJsonAsync<List<CargoDto>>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 await _logger.LogInformationAsync($"Se obtuvieron {cargos?.Count ?? 0} cargos", "CargoService", "GetCargosAsync");
 
