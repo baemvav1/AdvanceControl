@@ -21,6 +21,11 @@ namespace Advance_Control.Models
         public int? IdTipoCargo { get; set; }
 
         /// <summary>
+        /// ID de la operación
+        /// </summary>
+        public int? IdOperacion { get; set; }
+
+        /// <summary>
         /// ID de la relación del cargo
         /// </summary>
         public int? IdRelacionCargo { get; set; }
