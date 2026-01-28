@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
@@ -18,12 +19,19 @@ namespace Advance_Control.Services.Operaciones
         private readonly HttpClient _http;
         private readonly IApiEndpointProvider _endpoints;
         private readonly ILoggingService _logger;
+        private readonly JsonSerializerOptions _jsonOptions;
 
         public OperacionService(HttpClient http, IApiEndpointProvider endpoints, ILoggingService logger)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            
+            // Configurar opciones de JSON para ser case-insensitive
+            _jsonOptions = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
         }
 
         /// <summary>
@@ -80,7 +88,7 @@ namespace Advance_Control.Services.Operaciones
                 }
 
                 // Deserializar la respuesta
-                var operaciones = await response.Content.ReadFromJsonAsync<List<OperacionDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                var operaciones = await response.Content.ReadFromJsonAsync<List<OperacionDto>>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 await _logger.LogInformationAsync($"Se obtuvieron {operaciones?.Count ?? 0} operaciones", "OperacionService", "GetOperacionesAsync");
 
