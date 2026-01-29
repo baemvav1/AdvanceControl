@@ -24,6 +24,7 @@ namespace Advance_Control.Models
         private string? _nota;
         private string? _detalleRelacionado;
         private string? _tipoCargo;
+        private string? _proveedor;
 
         /// <summary>
         /// ID único del cargo
@@ -158,6 +159,23 @@ namespace Advance_Control.Models
                 if (_tipoCargo != value)
                 {
                     _tipoCargo = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Proveedor asociado al cargo
+        /// </summary>
+        [JsonPropertyName("proveedor")]
+        public string? Proveedor
+        {
+            get => _proveedor;
+            set
+            {
+                if (_proveedor != value)
+                {
+                    _proveedor = value;
                     OnPropertyChanged();
                 }
             }

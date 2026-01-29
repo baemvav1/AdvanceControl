@@ -39,5 +39,10 @@ namespace Advance_Control.Models
         /// Nota del cargo
         /// </summary>
         public string? Nota { get; set; }
+
+        /// <summary>
+        /// ID del proveedor
+        /// </summary>
+        public int? IdProveedor { get; set; }
     }
 }
