@@ -121,6 +121,29 @@ namespace Advance_Control.Views.Equipos
         private void ServiciosListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             SelectedServicio = ServiciosListView.SelectedItem as ServicioDto;
+            
+            if (SelectedServicio != null)
+            {
+                // Show proveedores panel when a service is selected
+                ProveedoresPanel.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                // Hide proveedores panel when no service is selected
+                ProveedoresPanel.Visibility = Visibility.Collapsed;
+                ProveedoresGrid.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de Proveedores
+        /// </summary>
+        private void ProveedoresButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Toggle proveedores grid visibility
+            ProveedoresGrid.Visibility = ProveedoresGrid.Visibility == Visibility.Visible 
+                ? Visibility.Collapsed 
+                : Visibility.Visible;
         }
     }
 }
