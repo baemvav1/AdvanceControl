@@ -22,6 +22,8 @@ namespace Advance_Control.Views.Equipos
         private List<RefaccionDto> _allRefacciones = new();
         private bool _isDataLoaded = false;
         private bool _hasProveedores = false;
+        private bool _proveedoresLoaded = false;
+        private bool _isLoadingProveedores = false;
 
         public SeleccionarRefaccionUserControl()
         {
@@ -150,6 +152,9 @@ namespace Advance_Control.Views.Equipos
                     // Notify costo change
                     CostoChanged?.Invoke(this, SelectedRefaccion.Costo);
                     
+                    // Reset provider state when changing refaccion
+                    _proveedoresLoaded = false;
+                    
                     // Check if proveedor exists
                     try
                     {
@@ -191,6 +196,9 @@ namespace Advance_Control.Views.Equipos
             ProveedoresPanel.Visibility = Visibility.Collapsed;
             ProveedoresGrid.Visibility = Visibility.Collapsed;
             
+            // Reset provider state
+            _proveedoresLoaded = false;
+            
             // Clear selection
             RefaccionesListView.SelectedItem = null;
             SelectedRefaccion = null;
@@ -204,12 +212,21 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private async void ProveedoresButton_Click(object sender, RoutedEventArgs e)
         {
+            // Prevent concurrent operations
+            if (_isLoadingProveedores)
+                return;
+
             // Toggle proveedores grid visibility
             if (ProveedoresGrid.Visibility == Visibility.Collapsed)
             {
-                // Show and load providers
+                // Show grid
                 ProveedoresGrid.Visibility = Visibility.Visible;
-                await LoadProveedoresAsync();
+                
+                // Load providers only if not already loaded
+                if (!_proveedoresLoaded)
+                {
+                    await LoadProveedoresAsync();
+                }
             }
             else
             {
@@ -223,16 +240,18 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private async Task LoadProveedoresAsync()
         {
-            if (SelectedRefaccion == null)
+            if (SelectedRefaccion == null || _isLoadingProveedores)
                 return;
 
             try
             {
+                _isLoadingProveedores = true;
+                ProveedoresButton.IsEnabled = false;
                 ProveedoresLoadingRing.IsActive = true;
                 ProveedoresListView.Visibility = Visibility.Collapsed;
 
                 // Get provider relations for this refaccion
-                // Note: We pass 0 as idProveedor to get all providers for this refaccion
+                // Pass 0 as idProveedor to query only by idRefaccion
                 var relaciones = await _relacionService.GetRelacionesAsync(
                     idProveedor: 0, 
                     idRefaccion: SelectedRefaccion.IdRefaccion, 
@@ -240,6 +259,9 @@ namespace Advance_Control.Views.Equipos
 
                 ProveedoresListView.ItemsSource = relaciones;
                 ProveedoresListView.Visibility = Visibility.Visible;
+                
+                // Mark as loaded to avoid reloading
+                _proveedoresLoaded = true;
             }
             catch (Exception ex)
             {
@@ -250,6 +272,8 @@ namespace Advance_Control.Views.Equipos
             finally
             {
                 ProveedoresLoadingRing.IsActive = false;
+                ProveedoresButton.IsEnabled = true;
+                _isLoadingProveedores = false;
             }
         }
     }
