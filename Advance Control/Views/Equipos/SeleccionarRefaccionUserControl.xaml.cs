@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Models;
 using Advance_Control.Services.Refacciones;
+using Advance_Control.Services.RelacionesProveedorRefaccion;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Advance_Control.Views.Equipos
@@ -17,7 +18,9 @@ namespace Advance_Control.Views.Equipos
     public sealed partial class SeleccionarRefaccionUserControl : UserControl
     {
         private readonly IRefaccionService _refaccionService;
+        private readonly IRelacionProveedorRefaccionService _relacionProveedorRefaccionService;
         private List<RefaccionDto> _allRefacciones = new();
+        private List<ProveedorPorRefaccionDto> _proveedores = new();
         private bool _isDataLoaded = false;
         private bool _hasProveedores = false;
 
@@ -25,8 +28,9 @@ namespace Advance_Control.Views.Equipos
         {
             this.InitializeComponent();
             
-            // Resolver el servicio de refacciones desde DI
+            // Resolver los servicios desde DI
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
+            _relacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionProveedorRefaccionService>();
             
             // Cargar refacciones al inicializar
             this.Loaded += OnLoaded;
@@ -46,6 +50,11 @@ namespace Advance_Control.Views.Equipos
         /// Refacción seleccionada actualmente
         /// </summary>
         public RefaccionDto? SelectedRefaccion { get; private set; }
+
+        /// <summary>
+        /// Proveedor seleccionado actualmente
+        /// </summary>
+        public ProveedorPorRefaccionDto? SelectedProveedor { get; private set; }
 
         /// <summary>
         /// Indica si hay una refacción seleccionada
@@ -190,6 +199,11 @@ namespace Advance_Control.Views.Equipos
             RefaccionesListView.SelectedItem = null;
             SelectedRefaccion = null;
             
+            // Clear provider selection
+            ProveedoresListView.SelectedItem = null;
+            SelectedProveedor = null;
+            _proveedores.Clear();
+            
             // Notify costo cleared
             CostoChanged?.Invoke(this, null);
         }
@@ -197,12 +211,62 @@ namespace Advance_Control.Views.Equipos
         /// <summary>
         /// Maneja el clic en el botón de Proveedores
         /// </summary>
-        private void ProveedoresButton_Click(object sender, RoutedEventArgs e)
+        private async void ProveedoresButton_Click(object sender, RoutedEventArgs e)
         {
             // Toggle proveedores grid visibility
-            ProveedoresGrid.Visibility = ProveedoresGrid.Visibility == Visibility.Visible 
-                ? Visibility.Collapsed 
-                : Visibility.Visible;
+            if (ProveedoresGrid.Visibility == Visibility.Collapsed)
+            {
+                // Show the grid and load providers if not already loaded
+                ProveedoresGrid.Visibility = Visibility.Visible;
+                
+                if (_proveedores.Count == 0 && SelectedRefaccion != null)
+                {
+                    await LoadProveedoresAsync(SelectedRefaccion.IdRefaccion);
+                }
+            }
+            else
+            {
+                ProveedoresGrid.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Carga la lista de proveedores para la refacción seleccionada
+        /// </summary>
+        private async Task LoadProveedoresAsync(int idRefaccion)
+        {
+            try
+            {
+                ProveedoresLoadingRing.IsActive = true;
+                ProveedoresListView.Visibility = Visibility.Collapsed;
+
+                _proveedores = await _relacionProveedorRefaccionService.GetProveedoresByRefaccionAsync(idRefaccion, CancellationToken.None);
+
+                ProveedoresListView.ItemsSource = _proveedores;
+                ProveedoresListView.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                // En caso de error, mostrar lista vacía
+                _proveedores = new List<ProveedorPorRefaccionDto>();
+                ProveedoresListView.ItemsSource = _proveedores;
+                ProveedoresListView.Visibility = Visibility.Visible;
+                
+                // Log del error para diagnóstico
+                System.Diagnostics.Debug.WriteLine($"Error al cargar proveedores: {ex.GetType().Name} - {ex.Message}");
+            }
+            finally
+            {
+                ProveedoresLoadingRing.IsActive = false;
+            }
+        }
+
+        /// <summary>
+        /// Maneja el cambio de selección en la lista de proveedores
+        /// </summary>
+        private void ProveedoresListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            SelectedProveedor = ProveedoresListView.SelectedItem as ProveedorPorRefaccionDto;
         }
     }
 }

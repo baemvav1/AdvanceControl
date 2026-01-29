@@ -153,10 +153,68 @@
                     Padding="12"
                     MinHeight="100"
                     Visibility="Collapsed">
-                <TextBlock Text="Lista de proveedores" 
-                           HorizontalAlignment="Center" 
-                           VerticalAlignment="Center"
-                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <Grid>
+                    <!-- Loading indicator for providers -->
+                    <ProgressRing
+                        x:Name="ProveedoresLoadingRing"
+                        Width="40"
+                        Height="40"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsActive="False" />
+                    
+                    <!-- Lista de proveedores -->
+                    <ListView
+                        x:Name="ProveedoresListView"
+                        SelectionMode="Single"
+                        SelectionChanged="ProveedoresListView_SelectionChanged">
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    
+                                    <!-- ID Badge -->
+                                    <Border
+                                        Grid.Column="0"
+                                        Margin="0,0,12,0"
+                                        Padding="8,4"
+                                        Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                        CornerRadius="4"
+                                        VerticalAlignment="Center">
+                                        <TextBlock
+                                            Text="{Binding IdProveedor}"
+                                            Foreground="White"
+                                            FontWeight="SemiBold"
+                                            FontSize="12" />
+                                    </Border>
+                                    
+                                    <!-- Nombre Comercial -->
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Text="{Binding NombreComercial}"
+                                        FontWeight="SemiBold"
+                                        FontSize="14"
+                                        VerticalAlignment="Center"
+                                        TextTrimming="CharacterEllipsis" />
+                                    
+                                    <!-- Costo -->
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        FontSize="12">
+                                        <Run Text="$" />
+                                        <Run Text="{Binding Costo}" />
+                                    </TextBlock>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
             </Border>
         </StackPanel>
     </Grid>

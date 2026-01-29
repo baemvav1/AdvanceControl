@@ -130,6 +130,8 @@ namespace Advance_Control.Views.Equipos
             if (idTipoCargo == TIPO_CARGO_REFACCION && _refaccionSelector?.HasSelection == true)
             {
                 idRelacionCargo = _refaccionSelector.SelectedRefaccion?.IdRefaccion ?? 0;
+                // Use the selected provider from refaccion selector if one was selected
+                idProveedor = _refaccionSelector.SelectedProveedor?.IdProveedor;
             }
             else if (idTipoCargo == TIPO_CARGO_SERVICIO && _servicioSelector?.HasSelection == true)
             {
