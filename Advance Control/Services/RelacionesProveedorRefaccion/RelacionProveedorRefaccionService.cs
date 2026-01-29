@@ -335,5 +335,58 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 throw;
             }
         }
+
+        /// <summary>
+        /// Obtiene proveedores que tienen una refacción específica con sus precios
+        /// </summary>
+        public async Task<List<ProveedorPorRefaccionDto>> GetProveedoresByRefaccionAsync(int idRefaccion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (idRefaccion <= 0)
+                {
+                    await _logger.LogWarningAsync("El idRefaccion debe ser mayor que 0 para obtener proveedores", "RelacionProveedorRefaccionService", "GetProveedoresByRefaccionAsync");
+                    return new List<ProveedorPorRefaccionDto>();
+                }
+
+                // Construir la URL usando el endpoint correcto
+                var url = _endpoints.GetEndpoint("api", "RelacionProveedorRefaccion/proveedores-por-refaccion");
+                url = $"{url}?idRefaccion={idRefaccion}";
+
+                await _logger.LogInformationAsync($"Obteniendo proveedores por refacción desde: {url}", "RelacionProveedorRefaccionService", "GetProveedoresByRefaccionAsync");
+
+                // Realizar la petición GET
+                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                // Verificar si la respuesta fue exitosa
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al obtener proveedores por refacción. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "RelacionProveedorRefaccionService",
+                        "GetProveedoresByRefaccionAsync");
+                    return new List<ProveedorPorRefaccionDto>();
+                }
+
+                // Deserializar la respuesta
+                var proveedores = await response.Content.ReadFromJsonAsync<List<ProveedorPorRefaccionDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                await _logger.LogInformationAsync($"Se obtuvieron {proveedores?.Count ?? 0} proveedores para la refacción {idRefaccion}", "RelacionProveedorRefaccionService", "GetProveedoresByRefaccionAsync");
+
+                return proveedores ?? new List<ProveedorPorRefaccionDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al obtener proveedores por refacción", ex, "RelacionProveedorRefaccionService", "GetProveedoresByRefaccionAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al obtener proveedores por refacción", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al obtener proveedores por refacción", ex, "RelacionProveedorRefaccionService", "GetProveedoresByRefaccionAsync");
+                throw;
+            }
+        }
     }
 }
