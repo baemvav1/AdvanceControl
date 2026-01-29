@@ -256,20 +256,19 @@ namespace Advance_Control.Views
                 XamlRoot = this.XamlRoot
             };
 
+            // Set up validation before closing
+            dialog.PrimaryButtonClick += (d, args) =>
+            {
+                if (!agregarCargoControl.IsValid)
+                {
+                    args.Cancel = true;
+                }
+            };
+
             var result = await dialog.ShowAsync();
 
             if (result == ContentDialogResult.Primary)
             {
-                // Validar que los campos estén completos
-                if (!agregarCargoControl.IsValid)
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Por favor complete todos los campos requeridos.",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
                 try
                 {
                     // Obtener el DTO con los datos del cargo

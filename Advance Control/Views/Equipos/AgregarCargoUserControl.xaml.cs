@@ -31,7 +31,7 @@ namespace Advance_Control.Views.Equipos
                        !double.IsNaN(IdRelacionCargoNumberBox.Value) &&
                        IdRelacionCargoNumberBox.Value > 0 &&
                        !double.IsNaN(MontoNumberBox.Value) &&
-                       MontoNumberBox.Value >= 0;
+                       MontoNumberBox.Value > 0;
             }
         }
 
@@ -48,18 +48,13 @@ namespace Advance_Control.Views.Equipos
 
             return new CargoEditDto
             {
+                Operacion = "create",
                 IdOperacion = _idOperacion,
                 IdTipoCargo = idTipoCargo,
                 IdRelacionCargo = Convert.ToInt32(IdRelacionCargoNumberBox.Value),
                 Monto = MontoNumberBox.Value,
                 Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim()
             };
-        }
-
-        private void TipoCargoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // Notify parent that validation state may have changed
-            // This could be used to enable/disable the dialog's primary button
         }
     }
 }

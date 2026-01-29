@@ -28,11 +28,10 @@
             <TextBlock Text="Tipo de Cargo:" FontWeight="SemiBold" Margin="0,0,0,4" />
             <ComboBox
                 x:Name="TipoCargoComboBox"
-                HorizontalAlignment="Stretch"
-                SelectionChanged="TipoCargoComboBox_SelectionChanged">
-                <ComboBoxItem Content="1 - Refacción" Tag="1" />
-                <ComboBoxItem Content="2 - Mano de Obra" Tag="2" />
-                <ComboBoxItem Content="3 - Servicio Externo" Tag="3" />
+                HorizontalAlignment="Stretch">
+                <ComboBoxItem Content="Refacción" Tag="1" />
+                <ComboBoxItem Content="Mano de Obra" Tag="2" />
+                <ComboBoxItem Content="Servicio Externo" Tag="3" />
             </ComboBox>
         </StackPanel>
 
@@ -45,7 +44,7 @@
                 SpinButtonPlacementMode="Compact"
                 Minimum="1"
                 Maximum="999999"
-                Value="1" />
+                AutomationProperties.Name="ID de relación del cargo" />
         </StackPanel>
 
         <!-- Monto -->
@@ -53,13 +52,13 @@
             <TextBlock Text="Monto:" FontWeight="SemiBold" Margin="0,0,0,4" />
             <NumberBox
                 x:Name="MontoNumberBox"
-                PlaceholderText="Ingrese monto"
+                PlaceholderText="Ingrese monto (mayor a 0)"
                 SpinButtonPlacementMode="Compact"
-                Minimum="0"
+                Minimum="0.01"
                 Maximum="999999.99"
-                Value="0"
                 SmallChange="0.01"
-                LargeChange="1" />
+                LargeChange="1"
+                AutomationProperties.Name="Monto del cargo" />
         </StackPanel>
 
         <!-- Nota -->
