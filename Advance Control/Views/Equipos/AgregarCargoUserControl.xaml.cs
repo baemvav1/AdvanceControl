@@ -1,4 +1,6 @@
 using System;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Models;
@@ -8,14 +10,18 @@ namespace Advance_Control.Views.Equipos
     /// <summary>
     /// UserControl para agregar un cargo a una operación
     /// </summary>
-    public sealed partial class AgregarCargoUserControl : UserControl
+    public sealed partial class AgregarCargoUserControl : UserControl, INotifyPropertyChanged
     {
         // Constantes para los tipos de cargo
         private const int TIPO_CARGO_REFACCION = 1;
         private const int TIPO_CARGO_SERVICIO = 2;
 
         private int _idOperacion;
-        private int? _selectedIdRelacionCargo;
+        private int _selectedCargoType = 0;
+        private SeleccionarRefaccionUserControl? _refaccionSelector;
+        private SeleccionarServicioUserControl? _servicioSelector;
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public AgregarCargoUserControl(int idOperacion)
         {
@@ -26,17 +32,65 @@ namespace Advance_Control.Views.Equipos
         }
 
         /// <summary>
+        /// The currently selected cargo type (1 = Refaccion, 2 = Servicio)
+        /// </summary>
+        public int SelectedCargoType
+        {
+            get => _selectedCargoType;
+            private set
+            {
+                if (_selectedCargoType != value)
+                {
+                    _selectedCargoType = value;
+                    OnPropertyChanged();
+                    
+                    // Lazy load the appropriate selector when cargo type changes
+                    LoadSelectorForCargoType(value);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Lazy loads the selector control for the specified cargo type
+        /// </summary>
+        private void LoadSelectorForCargoType(int cargoType)
+        {
+            if (cargoType == TIPO_CARGO_REFACCION && _refaccionSelector == null)
+            {
+                _refaccionSelector = new SeleccionarRefaccionUserControl();
+                RefaccionSelectorContainer.Content = _refaccionSelector;
+            }
+            else if (cargoType == TIPO_CARGO_SERVICIO && _servicioSelector == null)
+            {
+                _servicioSelector = new SeleccionarServicioUserControl();
+                ServicioSelectorContainer.Content = _servicioSelector;
+            }
+        }
+
+        /// <summary>
         /// Indica si todos los campos requeridos están completos
         /// </summary>
         public bool IsValid
         {
             get
             {
-                return TipoCargoComboBox.SelectedIndex >= 0 &&
-                       _selectedIdRelacionCargo.HasValue &&
-                       _selectedIdRelacionCargo.Value > 0 &&
-                       !double.IsNaN(MontoNumberBox.Value) &&
-                       MontoNumberBox.Value > 0;
+                if (TipoCargoComboBox.SelectedIndex < 0)
+                    return false;
+
+                if (double.IsNaN(MontoNumberBox.Value) || MontoNumberBox.Value <= 0)
+                    return false;
+
+                // Check if a selection has been made in the appropriate selector
+                if (SelectedCargoType == TIPO_CARGO_REFACCION)
+                {
+                    return _refaccionSelector?.HasSelection == true;
+                }
+                else if (SelectedCargoType == TIPO_CARGO_SERVICIO)
+                {
+                    return _servicioSelector?.HasSelection == true;
+                }
+
+                return false;
             }
         }
 
@@ -51,12 +105,23 @@ namespace Advance_Control.Views.Equipos
             var selectedItem = TipoCargoComboBox.SelectedItem as ComboBoxItem;
             var idTipoCargo = selectedItem?.Tag != null ? Convert.ToInt32(selectedItem.Tag) : 0;
 
+            int idRelacionCargo = 0;
+            
+            if (idTipoCargo == TIPO_CARGO_REFACCION && _refaccionSelector?.HasSelection == true)
+            {
+                idRelacionCargo = _refaccionSelector.SelectedRefaccion?.IdRefaccion ?? 0;
+            }
+            else if (idTipoCargo == TIPO_CARGO_SERVICIO && _servicioSelector?.HasSelection == true)
+            {
+                idRelacionCargo = _servicioSelector.SelectedServicio?.IdServicio ?? 0;
+            }
+
             return new CargoEditDto
             {
                 Operacion = "create",
                 IdOperacion = _idOperacion,
                 IdTipoCargo = idTipoCargo,
-                IdRelacionCargo = _selectedIdRelacionCargo.Value,
+                IdRelacionCargo = idRelacionCargo,
                 Monto = MontoNumberBox.Value,
                 Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim()
             };
@@ -67,115 +132,22 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private void TipoCargoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Limpiar la selección anterior
-            _selectedIdRelacionCargo = null;
-
-            // Habilitar el botón de selección y actualizar el texto
-            IdRelacionCargoButton.IsEnabled = TipoCargoComboBox.SelectedIndex >= 0;
-
             if (TipoCargoComboBox.SelectedIndex >= 0)
             {
                 var selectedItem = TipoCargoComboBox.SelectedItem as ComboBoxItem;
                 var idTipoCargo = selectedItem?.Tag != null ? Convert.ToInt32(selectedItem.Tag) : 0;
-
-                if (idTipoCargo == TIPO_CARGO_REFACCION)
-                {
-                    IdRelacionCargoButtonText.Text = "Seleccionar refacción...";
-                }
-                else if (idTipoCargo == TIPO_CARGO_SERVICIO)
-                {
-                    IdRelacionCargoButtonText.Text = "Seleccionar servicio...";
-                }
+                
+                SelectedCargoType = idTipoCargo;
             }
             else
             {
-                IdRelacionCargoButtonText.Text = "Seleccione primero el tipo de cargo...";
+                SelectedCargoType = 0;
             }
         }
 
-        /// <summary>
-        /// Maneja el clic en el botón de ID Relación Cargo
-        /// </summary>
-        private async void IdRelacionCargoButton_Click(object sender, RoutedEventArgs e)
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
-            var selectedItem = TipoCargoComboBox.SelectedItem as ComboBoxItem;
-            if (selectedItem == null)
-                return;
-
-            var idTipoCargo = Convert.ToInt32(selectedItem.Tag);
-
-            if (idTipoCargo == TIPO_CARGO_REFACCION)
-            {
-                // Mostrar selector de refacción
-                await ShowRefaccionSelectorAsync();
-            }
-            else if (idTipoCargo == TIPO_CARGO_SERVICIO)
-            {
-                // Mostrar selector de servicio
-                await ShowServicioSelectorAsync();
-            }
-        }
-
-        /// <summary>
-        /// Muestra el diálogo de selección de refacción
-        /// </summary>
-        private async System.Threading.Tasks.Task ShowRefaccionSelectorAsync()
-        {
-            var selectorControl = new SeleccionarRefaccionUserControl();
-
-            var dialog = new ContentDialog
-            {
-                Title = "Seleccionar Refacción",
-                Content = selectorControl,
-                PrimaryButtonText = "Aceptar",
-                CloseButtonText = "Cancelar",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-
-            if (result == ContentDialogResult.Primary && selectorControl.HasSelection)
-            {
-                var selectedRefaccion = selectorControl.SelectedRefaccion;
-                if (selectedRefaccion != null)
-                {
-                    _selectedIdRelacionCargo = selectedRefaccion.IdRefaccion;
-                    var displayText = $"{selectedRefaccion.Marca} - {selectedRefaccion.Serie}";
-                    IdRelacionCargoButtonText.Text = $"Refacción: {displayText} (ID: {_selectedIdRelacionCargo})";
-                }
-            }
-        }
-
-        /// <summary>
-        /// Muestra el diálogo de selección de servicio
-        /// </summary>
-        private async System.Threading.Tasks.Task ShowServicioSelectorAsync()
-        {
-            var selectorControl = new SeleccionarServicioUserControl();
-
-            var dialog = new ContentDialog
-            {
-                Title = "Seleccionar Servicio",
-                Content = selectorControl,
-                PrimaryButtonText = "Aceptar",
-                CloseButtonText = "Cancelar",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-
-            if (result == ContentDialogResult.Primary && selectorControl.HasSelection)
-            {
-                var selectedServicio = selectorControl.SelectedServicio;
-                if (selectedServicio != null)
-                {
-                    _selectedIdRelacionCargo = selectedServicio.IdServicio;
-                    var displayText = $"{selectedServicio.Concepto}";
-                    IdRelacionCargoButtonText.Text = $"Servicio: {displayText} (ID: {_selectedIdRelacionCargo})";
-                }
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
