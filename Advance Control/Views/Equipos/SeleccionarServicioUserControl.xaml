@@ -13,6 +13,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Search filters -->
@@ -104,5 +105,27 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+
+        <!-- Proveedores button and grid -->
+        <StackPanel x:Name="ProveedoresPanel" Grid.Row="2" Margin="0,12,0,0" Visibility="Collapsed">
+            <Button x:Name="ProveedoresButton"
+                    Content="Proveedores"
+                    Click="ProveedoresButton_Click"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,0,0,8" />
+            <Border x:Name="ProveedoresGrid"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="12"
+                    MinHeight="100"
+                    Visibility="Collapsed">
+                <TextBlock Text="Lista de proveedores" 
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </Border>
+        </StackPanel>
     </Grid>
 </UserControl>

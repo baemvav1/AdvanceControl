@@ -19,6 +19,7 @@ namespace Advance_Control.Views.Equipos
         private readonly IRefaccionService _refaccionService;
         private List<RefaccionDto> _allRefacciones = new();
         private bool _isDataLoaded = false;
+        private bool _hasProveedores = false;
 
         public SeleccionarRefaccionUserControl()
         {
@@ -50,6 +51,11 @@ namespace Advance_Control.Views.Equipos
         /// Indica si hay una refacción seleccionada
         /// </summary>
         public bool HasSelection => SelectedRefaccion != null;
+
+        /// <summary>
+        /// Evento que se dispara cuando el costo de la refacción debe ser usado para rellenar el monto
+        /// </summary>
+        public event EventHandler<double?>? CostoChanged;
 
         /// <summary>
         /// Carga la lista de refacciones desde el servicio
@@ -118,9 +124,78 @@ namespace Advance_Control.Views.Equipos
         /// <summary>
         /// Maneja el cambio de selección en la lista de refacciones
         /// </summary>
-        private void RefaccionesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void RefaccionesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             SelectedRefaccion = RefaccionesListView.SelectedItem as RefaccionDto;
+            
+            if (SelectedRefaccion != null)
+            {
+                // Hide search panel and list
+                SearchPanel.Visibility = Visibility.Collapsed;
+                RefaccionesListView.Visibility = Visibility.Collapsed;
+                
+                // Show selected refaccion panel
+                SelectedRefaccionPanel.Visibility = Visibility.Visible;
+                SelectedMarcaTextBlock.Text = SelectedRefaccion.Marca ?? string.Empty;
+                SelectedSerieTextBlock.Text = SelectedRefaccion.Serie ?? string.Empty;
+                SelectedCostoTextBlock.Text = $"Costo: ${SelectedRefaccion.Costo}";
+                
+                // Notify costo change
+                CostoChanged?.Invoke(this, SelectedRefaccion.Costo);
+                
+                // Check if proveedor exists
+                try
+                {
+                    _hasProveedores = await _refaccionService.CheckProveedorExistsAsync(SelectedRefaccion.IdRefaccion);
+                    
+                    if (_hasProveedores)
+                    {
+                        ProveedoresPanel.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        ProveedoresPanel.Visibility = Visibility.Collapsed;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al verificar proveedores: {ex.GetType().Name} - {ex.Message}");
+                    ProveedoresPanel.Visibility = Visibility.Collapsed;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón para mostrar la lista de refacciones nuevamente
+        /// </summary>
+        private void ShowListButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Show search panel and list
+            SearchPanel.Visibility = Visibility.Visible;
+            RefaccionesListView.Visibility = Visibility.Visible;
+            
+            // Hide selected refaccion panel and proveedores
+            SelectedRefaccionPanel.Visibility = Visibility.Collapsed;
+            ProveedoresPanel.Visibility = Visibility.Collapsed;
+            ProveedoresGrid.Visibility = Visibility.Collapsed;
+            
+            // Clear selection
+            RefaccionesListView.SelectedItem = null;
+            SelectedRefaccion = null;
+            
+            // Notify costo cleared
+            CostoChanged?.Invoke(this, null);
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de Proveedores
+        /// </summary>
+        private void ProveedoresButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Toggle proveedores grid visibility
+            ProveedoresGrid.Visibility = ProveedoresGrid.Visibility == Visibility.Visible 
+                ? Visibility.Collapsed 
+                : Visibility.Visible;
         }
     }
 }

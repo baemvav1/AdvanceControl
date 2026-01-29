@@ -12,11 +12,13 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Search filters -->
-        <StackPanel Grid.Row="0" Margin="0,0,0,12" Spacing="8">
+        <StackPanel x:Name="SearchPanel" Grid.Row="0" Margin="0,0,0,12" Spacing="8">
             <TextBox
                 x:Name="MarcaTextBox"
                 PlaceholderText="Buscar por marca..."
@@ -27,10 +29,41 @@
                 TextChanged="SearchTextBox_TextChanged" />
         </StackPanel>
 
+        <!-- Selected refaccion display -->
+        <StackPanel x:Name="SelectedRefaccionPanel" Grid.Row="1" Margin="0,0,0,12" Visibility="Collapsed">
+            <TextBlock Text="Refacción seleccionada:" FontWeight="SemiBold" Margin="0,0,0,4" />
+            <Border 
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="4"
+                Padding="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <TextBlock x:Name="SelectedMarcaTextBlock" FontWeight="SemiBold" FontSize="14" />
+                        <TextBlock x:Name="SelectedSerieTextBlock" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                   FontSize="12" />
+                        <TextBlock x:Name="SelectedCostoTextBlock" 
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
+                                   FontSize="12" />
+                    </StackPanel>
+                    <Button Grid.Column="1" 
+                            Content="Cambiar"
+                            Click="ShowListButton_Click"
+                            VerticalAlignment="Center" />
+                </Grid>
+            </Border>
+        </StackPanel>
+
         <!-- Loading indicator -->
         <ProgressRing
             x:Name="LoadingRing"
-            Grid.Row="1"
+            Grid.Row="2"
             Width="50"
             Height="50"
             HorizontalAlignment="Center"
@@ -40,7 +73,7 @@
         <!-- Lista de refacciones -->
         <ListView
             x:Name="RefaccionesListView"
-            Grid.Row="1"
+            Grid.Row="2"
             SelectionMode="Single"
             SelectionChanged="RefaccionesListView_SelectionChanged">
             <ListView.ItemTemplate>
@@ -104,5 +137,27 @@
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
+
+        <!-- Proveedores button and grid -->
+        <StackPanel x:Name="ProveedoresPanel" Grid.Row="3" Margin="0,12,0,0" Visibility="Collapsed">
+            <Button x:Name="ProveedoresButton"
+                    Content="Proveedores"
+                    Click="ProveedoresButton_Click"
+                    HorizontalAlignment="Stretch"
+                    Margin="0,0,0,8" />
+            <Border x:Name="ProveedoresGrid"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="12"
+                    MinHeight="100"
+                    Visibility="Collapsed">
+                <TextBlock Text="Lista de proveedores" 
+                           HorizontalAlignment="Center" 
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            </Border>
+        </StackPanel>
     </Grid>
 </UserControl>

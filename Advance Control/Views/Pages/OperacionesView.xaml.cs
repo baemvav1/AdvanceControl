@@ -243,8 +243,8 @@ namespace Advance_Control.Views
             if (!operacion.IdOperacion.HasValue)
                 return;
 
-            // Crear el UserControl para agregar cargo
-            var agregarCargoControl = new Equipos.AgregarCargoUserControl(operacion.IdOperacion.Value);
+            // Crear el UserControl para agregar cargo, pasando idAtiende
+            var agregarCargoControl = new Equipos.AgregarCargoUserControl(operacion.IdOperacion.Value, operacion.IdAtiende);
 
             var dialog = new ContentDialog
             {

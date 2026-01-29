@@ -17,17 +17,19 @@ namespace Advance_Control.Views.Equipos
         private const int TIPO_CARGO_SERVICIO = 2;
 
         private int _idOperacion;
+        private int? _idAtiende;
         private int _selectedCargoType = 0;
         private SeleccionarRefaccionUserControl? _refaccionSelector;
         private SeleccionarServicioUserControl? _servicioSelector;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public AgregarCargoUserControl(int idOperacion)
+        public AgregarCargoUserControl(int idOperacion, int? idAtiende = null)
         {
             this.InitializeComponent();
             
             _idOperacion = idOperacion;
+            _idAtiende = idAtiende;
             IdOperacionTextBlock.Text = idOperacion.ToString();
         }
 
@@ -58,12 +60,28 @@ namespace Advance_Control.Views.Equipos
             if (cargoType == TIPO_CARGO_REFACCION && _refaccionSelector == null)
             {
                 _refaccionSelector = new SeleccionarRefaccionUserControl();
+                _refaccionSelector.CostoChanged += OnRefaccionCostoChanged;
                 RefaccionSelectorContainer.Content = _refaccionSelector;
             }
             else if (cargoType == TIPO_CARGO_SERVICIO && _servicioSelector == null)
             {
                 _servicioSelector = new SeleccionarServicioUserControl();
                 ServicioSelectorContainer.Content = _servicioSelector;
+            }
+        }
+
+        /// <summary>
+        /// Maneja el cambio del costo de la refacción seleccionada
+        /// </summary>
+        private void OnRefaccionCostoChanged(object? sender, double? costo)
+        {
+            if (costo.HasValue && costo.Value > 0)
+            {
+                MontoNumberBox.Value = costo.Value;
+            }
+            else
+            {
+                MontoNumberBox.Value = double.NaN;
             }
         }
 
@@ -106,6 +124,7 @@ namespace Advance_Control.Views.Equipos
             var idTipoCargo = selectedItem?.Tag != null ? Convert.ToInt32(selectedItem.Tag) : 0;
 
             int idRelacionCargo = 0;
+            int? idProveedor = null;
             
             if (idTipoCargo == TIPO_CARGO_REFACCION && _refaccionSelector?.HasSelection == true)
             {
@@ -114,6 +133,8 @@ namespace Advance_Control.Views.Equipos
             else if (idTipoCargo == TIPO_CARGO_SERVICIO && _servicioSelector?.HasSelection == true)
             {
                 idRelacionCargo = _servicioSelector.SelectedServicio?.IdServicio ?? 0;
+                // For Servicio, automatically copy idAtiende from operation as idProveedor
+                idProveedor = _idAtiende;
             }
 
             return new CargoEditDto
@@ -123,7 +144,8 @@ namespace Advance_Control.Views.Equipos
                 IdTipoCargo = idTipoCargo,
                 IdRelacionCargo = idRelacionCargo,
                 Monto = MontoNumberBox.Value,
-                Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim()
+                Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim(),
+                IdProveedor = idProveedor
             };
         }
 
