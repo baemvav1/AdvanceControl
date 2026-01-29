@@ -10,9 +10,12 @@ namespace Advance_Control.Views.Equipos
     /// </summary>
     public sealed partial class AgregarCargoUserControl : UserControl
     {
+        // Constantes para los tipos de cargo
+        private const int TIPO_CARGO_REFACCION = 1;
+        private const int TIPO_CARGO_SERVICIO = 2;
+
         private int _idOperacion;
         private int? _selectedIdRelacionCargo;
-        private string? _selectedRelacionText;
 
         public AgregarCargoUserControl(int idOperacion)
         {
@@ -66,7 +69,6 @@ namespace Advance_Control.Views.Equipos
         {
             // Limpiar la selección anterior
             _selectedIdRelacionCargo = null;
-            _selectedRelacionText = null;
 
             // Habilitar el botón de selección y actualizar el texto
             IdRelacionCargoButton.IsEnabled = TipoCargoComboBox.SelectedIndex >= 0;
@@ -76,11 +78,11 @@ namespace Advance_Control.Views.Equipos
                 var selectedItem = TipoCargoComboBox.SelectedItem as ComboBoxItem;
                 var idTipoCargo = selectedItem?.Tag != null ? Convert.ToInt32(selectedItem.Tag) : 0;
 
-                if (idTipoCargo == 1)
+                if (idTipoCargo == TIPO_CARGO_REFACCION)
                 {
                     IdRelacionCargoButtonText.Text = "Seleccionar refacción...";
                 }
-                else if (idTipoCargo == 2)
+                else if (idTipoCargo == TIPO_CARGO_SERVICIO)
                 {
                     IdRelacionCargoButtonText.Text = "Seleccionar servicio...";
                 }
@@ -102,12 +104,12 @@ namespace Advance_Control.Views.Equipos
 
             var idTipoCargo = Convert.ToInt32(selectedItem.Tag);
 
-            if (idTipoCargo == 1)
+            if (idTipoCargo == TIPO_CARGO_REFACCION)
             {
                 // Mostrar selector de refacción
                 await ShowRefaccionSelectorAsync();
             }
-            else if (idTipoCargo == 2)
+            else if (idTipoCargo == TIPO_CARGO_SERVICIO)
             {
                 // Mostrar selector de servicio
                 await ShowServicioSelectorAsync();
@@ -139,8 +141,8 @@ namespace Advance_Control.Views.Equipos
                 if (selectedRefaccion != null)
                 {
                     _selectedIdRelacionCargo = selectedRefaccion.IdRefaccion;
-                    _selectedRelacionText = $"{selectedRefaccion.Marca} - {selectedRefaccion.Serie}";
-                    IdRelacionCargoButtonText.Text = $"Refacción: {_selectedRelacionText} (ID: {_selectedIdRelacionCargo})";
+                    var displayText = $"{selectedRefaccion.Marca} - {selectedRefaccion.Serie}";
+                    IdRelacionCargoButtonText.Text = $"Refacción: {displayText} (ID: {_selectedIdRelacionCargo})";
                 }
             }
         }
@@ -170,8 +172,8 @@ namespace Advance_Control.Views.Equipos
                 if (selectedServicio != null)
                 {
                     _selectedIdRelacionCargo = selectedServicio.IdServicio;
-                    _selectedRelacionText = $"{selectedServicio.Concepto}";
-                    IdRelacionCargoButtonText.Text = $"Servicio: {_selectedRelacionText} (ID: {_selectedIdRelacionCargo})";
+                    var displayText = $"{selectedServicio.Concepto}";
+                    IdRelacionCargoButtonText.Text = $"Servicio: {displayText} (ID: {_selectedIdRelacionCargo})";
                 }
             }
         }

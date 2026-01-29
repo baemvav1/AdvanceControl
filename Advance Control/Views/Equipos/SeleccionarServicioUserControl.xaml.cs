@@ -18,6 +18,7 @@ namespace Advance_Control.Views.Equipos
     {
         private readonly IServicioService _servicioService;
         private List<ServicioDto> _allServicios = new();
+        private bool _isDataLoaded = false;
 
         public SeleccionarServicioUserControl()
         {
@@ -27,7 +28,17 @@ namespace Advance_Control.Views.Equipos
             _servicioService = ((App)Application.Current).Host.Services.GetRequiredService<IServicioService>();
             
             // Cargar servicios al inicializar
-            this.Loaded += async (s, e) => await LoadServiciosAsync();
+            this.Loaded += OnLoaded;
+        }
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            // Solo cargar una vez
+            if (!_isDataLoaded)
+            {
+                await LoadServiciosAsync();
+                _isDataLoaded = true;
+            }
         }
 
         /// <summary>
@@ -55,12 +66,15 @@ namespace Advance_Control.Views.Equipos
                 ServiciosListView.ItemsSource = _allServicios;
                 ServiciosListView.Visibility = Visibility.Visible;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // En caso de error, mostrar lista vacía con mensaje informativo
                 _allServicios = new List<ServicioDto>();
                 ServiciosListView.ItemsSource = _allServicios;
                 ServiciosListView.Visibility = Visibility.Visible;
+                
+                // Log del error para diagnóstico
+                System.Diagnostics.Debug.WriteLine($"Error al cargar servicios: {ex.GetType().Name} - {ex.Message}");
                 
                 // Mostrar mensaje de error en el placeholder de búsqueda
                 ConceptoTextBox.PlaceholderText = "Error al cargar servicios. Intente nuevamente.";

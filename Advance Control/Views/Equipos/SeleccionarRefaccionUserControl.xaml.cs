@@ -18,6 +18,7 @@ namespace Advance_Control.Views.Equipos
     {
         private readonly IRefaccionService _refaccionService;
         private List<RefaccionDto> _allRefacciones = new();
+        private bool _isDataLoaded = false;
 
         public SeleccionarRefaccionUserControl()
         {
@@ -27,7 +28,17 @@ namespace Advance_Control.Views.Equipos
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
             
             // Cargar refacciones al inicializar
-            this.Loaded += async (s, e) => await LoadRefaccionesAsync();
+            this.Loaded += OnLoaded;
+        }
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            // Solo cargar una vez
+            if (!_isDataLoaded)
+            {
+                await LoadRefaccionesAsync();
+                _isDataLoaded = true;
+            }
         }
 
         /// <summary>
@@ -55,12 +66,15 @@ namespace Advance_Control.Views.Equipos
                 RefaccionesListView.ItemsSource = _allRefacciones;
                 RefaccionesListView.Visibility = Visibility.Visible;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // En caso de error, mostrar lista vacía con mensaje informativo
                 _allRefacciones = new List<RefaccionDto>();
                 RefaccionesListView.ItemsSource = _allRefacciones;
                 RefaccionesListView.Visibility = Visibility.Visible;
+                
+                // Log del error para diagnóstico
+                System.Diagnostics.Debug.WriteLine($"Error al cargar refacciones: {ex.GetType().Name} - {ex.Message}");
                 
                 // Mostrar mensaje de error en el placeholder de búsqueda
                 MarcaTextBox.PlaceholderText = "Error al cargar refacciones. Intente nuevamente.";

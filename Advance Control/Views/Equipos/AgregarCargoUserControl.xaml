@@ -29,8 +29,9 @@
             <ComboBox
                 x:Name="TipoCargoComboBox"
                 HorizontalAlignment="Stretch"
-                SelectionChanged="TipoCargoComboBox_SelectionChanged">
-                <ComboBoxItem Content="Refaccion" Tag="1" />
+                SelectionChanged="TipoCargoComboBox_SelectionChanged"
+                AutomationProperties.Name="Tipo de cargo">
+                <ComboBoxItem Content="Refacción" Tag="1" />
                 <ComboBoxItem Content="Servicio" Tag="2" />
             </ComboBox>
         </StackPanel>
@@ -42,7 +43,8 @@
                 x:Name="IdRelacionCargoButton"
                 HorizontalAlignment="Stretch"
                 Click="IdRelacionCargoButton_Click"
-                IsEnabled="False">
+                IsEnabled="False"
+                AutomationProperties.Name="Seleccionar ID de relación del cargo">
                 <TextBlock x:Name="IdRelacionCargoButtonText" Text="Seleccione primero el tipo de cargo..." />
             </Button>
         </StackPanel>
