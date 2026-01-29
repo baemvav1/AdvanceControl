@@ -12,9 +12,9 @@ namespace Advance_Control.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is int selectedType && parameter is string targetType)
+            if (value is int selectedType && parameter is string targetTypeString)
             {
-                if (int.TryParse(targetType, out int target))
+                if (int.TryParse(targetTypeString, out int target))
                 {
                     return selectedType == target ? Visibility.Visible : Visibility.Collapsed;
                 }
