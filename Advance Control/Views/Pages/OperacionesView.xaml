@@ -325,12 +325,12 @@
                                                                 IsReadOnly="True"
                                                                 Width="100" />
                                                             <controls:DataGridTextColumn
-                                                                Header="ID Tipo Cargo"
-                                                                Binding="{Binding IdTipoCargo, Mode=TwoWay}"
+                                                                Header="Tipo Cargo"
+                                                                Binding="{Binding TipoCargo, Mode=TwoWay}"
                                                                 Width="120" />
                                                             <controls:DataGridTextColumn
-                                                                Header="ID Relación Cargo"
-                                                                Binding="{Binding IdRelacionCargo, Mode=TwoWay}"
+                                                                Header="Detalle"
+                                                                Binding="{Binding DetalleRelacionado, Mode=TwoWay}"
                                                                 Width="150" />
                                                             <controls:DataGridTextColumn
                                                                 Header="Monto"
