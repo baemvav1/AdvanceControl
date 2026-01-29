@@ -5,14 +5,21 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:Advance_Control.Converters"
+    xmlns:equipos="using:Advance_Control.Views.Equipos"
     mc:Ignorable="d"
-    MinWidth="400">
+    MinWidth="500"
+    MinHeight="600">
+
+    <UserControl.Resources>
+        <converters:CargoTypeToVisibilityConverter x:Key="CargoTypeToVisibilityConverter" />
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
@@ -36,18 +43,18 @@
             </ComboBox>
         </StackPanel>
 
-        <!-- ID Relación Cargo -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,12">
-            <TextBlock Text="ID Relación Cargo:" FontWeight="SemiBold" Margin="0,0,0,4" />
-            <Button
-                x:Name="IdRelacionCargoButton"
-                HorizontalAlignment="Stretch"
-                Click="IdRelacionCargoButton_Click"
-                IsEnabled="False"
-                AutomationProperties.Name="Seleccionar ID de relación del cargo">
-                <TextBlock x:Name="IdRelacionCargoButtonText" Text="Seleccione primero el tipo de cargo..." />
-            </Button>
-        </StackPanel>
+        <!-- Selectors Grid - embedded with visibility toggling -->
+        <Grid Grid.Row="2" Margin="0,0,0,12">
+            <!-- Refaccion Selector -->
+            <equipos:SeleccionarRefaccionUserControl 
+                x:Name="RefaccionSelector"
+                Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='1'}" />
+            
+            <!-- Servicio Selector -->
+            <equipos:SeleccionarServicioUserControl 
+                x:Name="ServicioSelector"
+                Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='2'}" />
+        </Grid>
 
         <!-- Monto -->
         <StackPanel Grid.Row="3" Margin="0,0,0,12">
