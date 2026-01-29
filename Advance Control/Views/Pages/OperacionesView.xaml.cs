@@ -279,8 +279,9 @@ namespace Advance_Control.Views
 
                     if (newCargo != null)
                     {
-                        // Agregar el cargo a la colección de la operación
-                        operacion.Cargos.Add(newCargo);
+                        // Recargar los cargos para obtener los datos completos desde la API
+                        operacion.CargosLoaded = false;
+                        await LoadCargosForOperacionAsync(operacion);
 
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Cargo creado",

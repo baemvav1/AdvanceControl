@@ -342,7 +342,8 @@
                                                                 Width="150" />
                                                             <controls:DataGridTextColumn
                                                                 Header="Proveedor"
-                                                                Binding="{Binding Proveedor, Mode=TwoWay}"
+                                                                Binding="{Binding Proveedor}"
+                                                                IsReadOnly="True"
                                                                 Width="*" />
                                                             <controls:DataGridTemplateColumn Header="Acciones" Width="100">
                                                                 <controls:DataGridTemplateColumn.CellTemplate>
