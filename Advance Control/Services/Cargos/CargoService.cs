@@ -67,6 +67,9 @@ namespace Advance_Control.Services.Cargos
                     if (!string.IsNullOrWhiteSpace(query.Nota))
                         queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
 
+                    if (query.IdProveedor.HasValue)
+                        queryParams.Add($"idProveedor={query.IdProveedor.Value}");
+
                     if (queryParams.Count > 0)
                     {
                         url = $"{url}?{string.Join("&", queryParams)}";
@@ -156,6 +159,9 @@ namespace Advance_Control.Services.Cargos
                 if (!string.IsNullOrWhiteSpace(query.Nota))
                     queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
 
+                if (query.IdProveedor.HasValue)
+                    queryParams.Add($"idProveedor={query.IdProveedor.Value}");
+
                 url = $"{url}?{string.Join("&", queryParams)}";
 
                 await _logger.LogInformationAsync($"Creando cargo en: {url}", "CargoService", "CreateCargoAsync");
@@ -240,6 +246,9 @@ namespace Advance_Control.Services.Cargos
 
                 if (!string.IsNullOrWhiteSpace(query.Nota))
                     queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
+
+                if (query.IdProveedor.HasValue)
+                    queryParams.Add($"idProveedor={query.IdProveedor.Value}");
 
                 if (queryParams.Count > 0)
                 {
