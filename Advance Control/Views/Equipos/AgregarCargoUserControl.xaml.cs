@@ -75,13 +75,14 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private void OnRefaccionCostoChanged(object? sender, double? costo)
         {
-            if (costo.HasValue && costo.Value > 0)
+            if (costo.HasValue && costo.Value >= 0)
             {
                 MontoNumberBox.Value = costo.Value;
             }
             else
             {
-                MontoNumberBox.Value = double.NaN;
+                // Clear the value by setting to 0 instead of NaN for better UI behavior
+                MontoNumberBox.Value = 0;
             }
         }
 

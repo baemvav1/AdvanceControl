@@ -126,42 +126,49 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private async void RefaccionesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            SelectedRefaccion = RefaccionesListView.SelectedItem as RefaccionDto;
-            
-            if (SelectedRefaccion != null)
+            try
             {
-                // Hide search panel and list
-                SearchPanel.Visibility = Visibility.Collapsed;
-                RefaccionesListView.Visibility = Visibility.Collapsed;
+                SelectedRefaccion = RefaccionesListView.SelectedItem as RefaccionDto;
                 
-                // Show selected refaccion panel
-                SelectedRefaccionPanel.Visibility = Visibility.Visible;
-                SelectedMarcaTextBlock.Text = SelectedRefaccion.Marca ?? string.Empty;
-                SelectedSerieTextBlock.Text = SelectedRefaccion.Serie ?? string.Empty;
-                SelectedCostoTextBlock.Text = $"Costo: ${SelectedRefaccion.Costo}";
-                
-                // Notify costo change
-                CostoChanged?.Invoke(this, SelectedRefaccion.Costo);
-                
-                // Check if proveedor exists
-                try
+                if (SelectedRefaccion != null)
                 {
-                    _hasProveedores = await _refaccionService.CheckProveedorExistsAsync(SelectedRefaccion.IdRefaccion);
+                    // Hide search panel and list
+                    SearchPanel.Visibility = Visibility.Collapsed;
+                    RefaccionesListView.Visibility = Visibility.Collapsed;
                     
-                    if (_hasProveedores)
+                    // Show selected refaccion panel
+                    SelectedRefaccionPanel.Visibility = Visibility.Visible;
+                    SelectedMarcaTextBlock.Text = SelectedRefaccion.Marca ?? string.Empty;
+                    SelectedSerieTextBlock.Text = SelectedRefaccion.Serie ?? string.Empty;
+                    SelectedCostoTextBlock.Text = $"Costo: ${SelectedRefaccion.Costo ?? 0}";
+                    
+                    // Notify costo change
+                    CostoChanged?.Invoke(this, SelectedRefaccion.Costo);
+                    
+                    // Check if proveedor exists
+                    try
                     {
-                        ProveedoresPanel.Visibility = Visibility.Visible;
+                        _hasProveedores = await _refaccionService.CheckProveedorExistsAsync(SelectedRefaccion.IdRefaccion);
+                        
+                        if (_hasProveedores)
+                        {
+                            ProveedoresPanel.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            ProveedoresPanel.Visibility = Visibility.Collapsed;
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
+                        System.Diagnostics.Debug.WriteLine($"Error al verificar proveedores: {ex.GetType().Name} - {ex.Message}");
                         ProveedoresPanel.Visibility = Visibility.Collapsed;
                     }
                 }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error al verificar proveedores: {ex.GetType().Name} - {ex.Message}");
-                    ProveedoresPanel.Visibility = Visibility.Collapsed;
-                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error en RefaccionesListView_SelectionChanged: {ex.GetType().Name} - {ex.Message}");
             }
         }
 
