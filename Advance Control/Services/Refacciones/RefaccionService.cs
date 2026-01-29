@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
@@ -278,23 +279,51 @@ namespace Advance_Control.Services.Refacciones
                     return false;
                 }
 
-                // Intentar deserializar la respuesta para obtener el resultado
-                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                // Deserializar la respuesta usando JsonDocument para manejar correctamente el tipo de dato
+                var jsonString = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                using var doc = JsonDocument.Parse(jsonString);
                 
-                if (result != null && result.ContainsKey("exists"))
+                if (doc.RootElement.TryGetProperty("exists", out var existsElement))
                 {
-                    var exists = result["exists"].ToString()?.ToLower() == "true";
+                    bool exists;
+                    if (existsElement.ValueKind == JsonValueKind.True)
+                    {
+                        exists = true;
+                    }
+                    else if (existsElement.ValueKind == JsonValueKind.False)
+                    {
+                        exists = false;
+                    }
+                    else if (existsElement.ValueKind == JsonValueKind.String)
+                    {
+                        exists = existsElement.GetString()?.ToLower() == "true";
+                    }
+                    else if (existsElement.ValueKind == JsonValueKind.Number)
+                    {
+                        exists = existsElement.GetInt32() != 0;
+                    }
+                    else
+                    {
+                        await _logger.LogWarningAsync($"Tipo de dato inesperado para 'exists': {existsElement.ValueKind}", "RefaccionService", "CheckProveedorExistsAsync");
+                        return false;
+                    }
+
                     await _logger.LogInformationAsync($"Verificación de proveedores para refacción {id}: {exists}", "RefaccionService", "CheckProveedorExistsAsync");
                     return exists;
                 }
 
-                await _logger.LogWarningAsync("No se pudo determinar si existen proveedores para la refacción", "RefaccionService", "CheckProveedorExistsAsync");
+                await _logger.LogWarningAsync("No se encontró la propiedad 'exists' en la respuesta", "RefaccionService", "CheckProveedorExistsAsync");
                 return false;
             }
             catch (HttpRequestException ex)
             {
                 await _logger.LogErrorAsync("Error de red al verificar proveedores de refacción", ex, "RefaccionService", "CheckProveedorExistsAsync");
                 throw new InvalidOperationException("Error de comunicación con el servidor al verificar proveedores de refacción", ex);
+            }
+            catch (JsonException ex)
+            {
+                await _logger.LogErrorAsync("Error al deserializar respuesta de verificación de proveedores", ex, "RefaccionService", "CheckProveedorExistsAsync");
+                throw new InvalidOperationException("Error al procesar respuesta del servidor", ex);
             }
             catch (Exception ex)
             {
