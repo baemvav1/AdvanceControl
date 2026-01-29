@@ -276,44 +276,20 @@ namespace Advance_Control.Services.Refacciones
                         null,
                         "RefaccionService",
                         "CheckProveedorExistsAsync");
+                    throw new InvalidOperationException($"Error al verificar proveedores de refacción. Status: {response.StatusCode}");
+                }
+
+                // Deserializar la respuesta usando el DTO apropiado
+                var result = await response.Content.ReadFromJsonAsync<CheckProveedorResponseDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                
+                if (result == null)
+                {
+                    await _logger.LogWarningAsync("La respuesta de verificación de proveedores fue nula", "RefaccionService", "CheckProveedorExistsAsync");
                     return false;
                 }
 
-                // Deserializar la respuesta usando JsonDocument para manejar correctamente el tipo de dato
-                var jsonString = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                using var doc = JsonDocument.Parse(jsonString);
-                
-                if (doc.RootElement.TryGetProperty("exists", out var existsElement))
-                {
-                    bool exists;
-                    if (existsElement.ValueKind == JsonValueKind.True)
-                    {
-                        exists = true;
-                    }
-                    else if (existsElement.ValueKind == JsonValueKind.False)
-                    {
-                        exists = false;
-                    }
-                    else if (existsElement.ValueKind == JsonValueKind.String)
-                    {
-                        exists = existsElement.GetString()?.ToLower() == "true";
-                    }
-                    else if (existsElement.ValueKind == JsonValueKind.Number)
-                    {
-                        exists = existsElement.GetInt32() != 0;
-                    }
-                    else
-                    {
-                        await _logger.LogWarningAsync($"Tipo de dato inesperado para 'exists': {existsElement.ValueKind}", "RefaccionService", "CheckProveedorExistsAsync");
-                        return false;
-                    }
-
-                    await _logger.LogInformationAsync($"Verificación de proveedores para refacción {id}: {exists}", "RefaccionService", "CheckProveedorExistsAsync");
-                    return exists;
-                }
-
-                await _logger.LogWarningAsync("No se encontró la propiedad 'exists' en la respuesta", "RefaccionService", "CheckProveedorExistsAsync");
-                return false;
+                await _logger.LogInformationAsync($"Verificación de proveedores para refacción {id}: {result.Exists}", "RefaccionService", "CheckProveedorExistsAsync");
+                return result.Exists;
             }
             catch (HttpRequestException ex)
             {
