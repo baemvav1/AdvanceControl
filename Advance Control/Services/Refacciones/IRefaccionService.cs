@@ -46,5 +46,13 @@ namespace Advance_Control.Services.Refacciones
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<bool> CreateRefaccionAsync(string? marca, string? serie, double? costo, string? descripcion, bool estatus = true, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Verifica si una refacción tiene proveedores relacionados
+        /// </summary>
+        /// <param name="id">ID de la refacción a verificar</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>True si existe relación con proveedores, False en caso contrario</returns>
+        Task<bool> CheckProveedorExistsAsync(int id, CancellationToken cancellationToken = default);
     }
 }
