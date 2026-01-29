@@ -17,7 +17,9 @@ namespace Advance_Control.Views.Equipos
         private const int TIPO_CARGO_SERVICIO = 2;
 
         private int _idOperacion;
-        private int _selectedCargoType;
+        private int _selectedCargoType = 0;
+        private SeleccionarRefaccionUserControl? _refaccionSelector;
+        private SeleccionarServicioUserControl? _servicioSelector;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -41,7 +43,27 @@ namespace Advance_Control.Views.Equipos
                 {
                     _selectedCargoType = value;
                     OnPropertyChanged();
+                    
+                    // Lazy load the appropriate selector when cargo type changes
+                    LoadSelectorForCargoType(value);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Lazy loads the selector control for the specified cargo type
+        /// </summary>
+        private void LoadSelectorForCargoType(int cargoType)
+        {
+            if (cargoType == TIPO_CARGO_REFACCION && _refaccionSelector == null)
+            {
+                _refaccionSelector = new SeleccionarRefaccionUserControl();
+                RefaccionSelectorContainer.Content = _refaccionSelector;
+            }
+            else if (cargoType == TIPO_CARGO_SERVICIO && _servicioSelector == null)
+            {
+                _servicioSelector = new SeleccionarServicioUserControl();
+                ServicioSelectorContainer.Content = _servicioSelector;
             }
         }
 
@@ -61,11 +83,11 @@ namespace Advance_Control.Views.Equipos
                 // Check if a selection has been made in the appropriate selector
                 if (SelectedCargoType == TIPO_CARGO_REFACCION)
                 {
-                    return RefaccionSelector.HasSelection;
+                    return _refaccionSelector?.HasSelection == true;
                 }
                 else if (SelectedCargoType == TIPO_CARGO_SERVICIO)
                 {
-                    return ServicioSelector.HasSelection;
+                    return _servicioSelector?.HasSelection == true;
                 }
 
                 return false;
@@ -85,13 +107,13 @@ namespace Advance_Control.Views.Equipos
 
             int idRelacionCargo = 0;
             
-            if (idTipoCargo == TIPO_CARGO_REFACCION && RefaccionSelector.HasSelection)
+            if (idTipoCargo == TIPO_CARGO_REFACCION && _refaccionSelector?.HasSelection == true)
             {
-                idRelacionCargo = RefaccionSelector.SelectedRefaccion?.IdRefaccion ?? 0;
+                idRelacionCargo = _refaccionSelector.SelectedRefaccion?.IdRefaccion ?? 0;
             }
-            else if (idTipoCargo == TIPO_CARGO_SERVICIO && ServicioSelector.HasSelection)
+            else if (idTipoCargo == TIPO_CARGO_SERVICIO && _servicioSelector?.HasSelection == true)
             {
-                idRelacionCargo = ServicioSelector.SelectedServicio?.IdServicio ?? 0;
+                idRelacionCargo = _servicioSelector.SelectedServicio?.IdServicio ?? 0;
             }
 
             return new CargoEditDto

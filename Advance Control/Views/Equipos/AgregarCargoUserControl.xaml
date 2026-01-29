@@ -45,14 +45,22 @@
 
         <!-- Selectors Grid - embedded with visibility toggling -->
         <Grid Grid.Row="2" Margin="0,0,0,12">
-            <!-- Refaccion Selector -->
-            <equipos:SeleccionarRefaccionUserControl 
-                x:Name="RefaccionSelector"
+            <!-- Instructions when no type is selected -->
+            <TextBlock 
+                Text="Seleccione un tipo de cargo para continuar..."
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='0'}" />
+            
+            <!-- ContentControl for Refaccion Selector (lazy loaded) -->
+            <ContentControl 
+                x:Name="RefaccionSelectorContainer"
                 Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='1'}" />
             
-            <!-- Servicio Selector -->
-            <equipos:SeleccionarServicioUserControl 
-                x:Name="ServicioSelector"
+            <!-- ContentControl for Servicio Selector (lazy loaded) -->
+            <ContentControl 
+                x:Name="ServicioSelectorContainer"
                 Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='2'}" />
         </Grid>
 
