@@ -23,12 +23,13 @@ namespace Advance_Control.Views.Equipos
         private List<ProveedorPorRefaccionDto> _proveedores = new();
         private bool _isDataLoaded = false;
         private bool _hasProveedores = false;
+        private bool _isLoadingProveedores = false;
 
         public SeleccionarRefaccionUserControl()
         {
             this.InitializeComponent();
             
-            // Resolver los servicios desde DI
+            // Resolve services from DI
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
             _relacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionProveedorRefaccionService>();
             
@@ -199,10 +200,12 @@ namespace Advance_Control.Views.Equipos
             RefaccionesListView.SelectedItem = null;
             SelectedRefaccion = null;
             
-            // Clear provider selection
+            // Clear provider selection and data
+            ProveedoresListView.ItemsSource = null;
             ProveedoresListView.SelectedItem = null;
             SelectedProveedor = null;
             _proveedores.Clear();
+            _isLoadingProveedores = false;
             
             // Notify costo cleared
             CostoChanged?.Invoke(this, null);
@@ -219,7 +222,8 @@ namespace Advance_Control.Views.Equipos
                 // Show the grid and load providers if not already loaded
                 ProveedoresGrid.Visibility = Visibility.Visible;
                 
-                if (_proveedores.Count == 0 && SelectedRefaccion != null)
+                // Prevent concurrent loads
+                if (!_isLoadingProveedores && _proveedores.Count == 0 && SelectedRefaccion != null)
                 {
                     await LoadProveedoresAsync(SelectedRefaccion.IdRefaccion);
                 }
@@ -227,6 +231,8 @@ namespace Advance_Control.Views.Equipos
             else
             {
                 ProveedoresGrid.Visibility = Visibility.Collapsed;
+                // Ensure loading ring is off when hiding grid
+                ProveedoresLoadingRing.IsActive = false;
             }
         }
 
@@ -235,6 +241,7 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private async Task LoadProveedoresAsync(int idRefaccion)
         {
+            _isLoadingProveedores = true;
             try
             {
                 ProveedoresLoadingRing.IsActive = true;
@@ -245,19 +252,19 @@ namespace Advance_Control.Views.Equipos
                 ProveedoresListView.ItemsSource = _proveedores;
                 ProveedoresListView.Visibility = Visibility.Visible;
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                // En caso de error, mostrar lista vacía
+                // Network or API error - show empty list gracefully
                 _proveedores = new List<ProveedorPorRefaccionDto>();
                 ProveedoresListView.ItemsSource = _proveedores;
                 ProveedoresListView.Visibility = Visibility.Visible;
                 
-                // Log del error para diagnóstico
-                System.Diagnostics.Debug.WriteLine($"Error al cargar proveedores: {ex.GetType().Name} - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error al cargar proveedores: {ex.Message}");
             }
             finally
             {
                 ProveedoresLoadingRing.IsActive = false;
+                _isLoadingProveedores = false;
             }
         }
 

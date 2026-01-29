@@ -5,9 +5,14 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:Advance_Control.Converters"
     mc:Ignorable="d"
     MinWidth="500"
     MinHeight="400">
+
+    <UserControl.Resources>
+        <converters:NullableNumberToStringConverter x:Key="NullableNumberConverter" />
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -186,7 +191,7 @@
                                         CornerRadius="4"
                                         VerticalAlignment="Center">
                                         <TextBlock
-                                            Text="{Binding IdProveedor}"
+                                            Text="{Binding IdProveedor, Converter={StaticResource NullableNumberConverter}, ConverterParameter=?}"
                                             Foreground="White"
                                             FontWeight="SemiBold"
                                             FontSize="12" />
@@ -208,7 +213,7 @@
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                         FontSize="12">
                                         <Run Text="$" />
-                                        <Run Text="{Binding Costo}" />
+                                        <Run Text="{Binding Costo, Converter={StaticResource NullableNumberConverter}, ConverterParameter=N/A}" />
                                     </TextBlock>
                                 </Grid>
                             </DataTemplate>
