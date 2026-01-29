@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Models;
 using Advance_Control.Services.Refacciones;
+using Advance_Control.Services.RelacionesProveedorRefaccion;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Advance_Control.Views.Equipos
@@ -17,6 +18,7 @@ namespace Advance_Control.Views.Equipos
     public sealed partial class SeleccionarRefaccionUserControl : UserControl
     {
         private readonly IRefaccionService _refaccionService;
+        private readonly IRelacionProveedorRefaccionService _relacionService;
         private List<RefaccionDto> _allRefacciones = new();
         private bool _isDataLoaded = false;
         private bool _hasProveedores = false;
@@ -27,6 +29,9 @@ namespace Advance_Control.Views.Equipos
             
             // Resolver el servicio de refacciones desde DI
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
+            
+            // Resolver el servicio de relaciones proveedor-refacción desde DI
+            _relacionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionProveedorRefaccionService>();
             
             // Cargar refacciones al inicializar
             this.Loaded += OnLoaded;
@@ -197,12 +202,55 @@ namespace Advance_Control.Views.Equipos
         /// <summary>
         /// Maneja el clic en el botón de Proveedores
         /// </summary>
-        private void ProveedoresButton_Click(object sender, RoutedEventArgs e)
+        private async void ProveedoresButton_Click(object sender, RoutedEventArgs e)
         {
             // Toggle proveedores grid visibility
-            ProveedoresGrid.Visibility = ProveedoresGrid.Visibility == Visibility.Visible 
-                ? Visibility.Collapsed 
-                : Visibility.Visible;
+            if (ProveedoresGrid.Visibility == Visibility.Collapsed)
+            {
+                // Show and load providers
+                ProveedoresGrid.Visibility = Visibility.Visible;
+                await LoadProveedoresAsync();
+            }
+            else
+            {
+                // Just hide
+                ProveedoresGrid.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        /// <summary>
+        /// Carga los proveedores para la refacción seleccionada
+        /// </summary>
+        private async Task LoadProveedoresAsync()
+        {
+            if (SelectedRefaccion == null)
+                return;
+
+            try
+            {
+                ProveedoresLoadingRing.IsActive = true;
+                ProveedoresListView.Visibility = Visibility.Collapsed;
+
+                // Get provider relations for this refaccion
+                // Note: We pass 0 as idProveedor to get all providers for this refaccion
+                var relaciones = await _relacionService.GetRelacionesAsync(
+                    idProveedor: 0, 
+                    idRefaccion: SelectedRefaccion.IdRefaccion, 
+                    CancellationToken.None);
+
+                ProveedoresListView.ItemsSource = relaciones;
+                ProveedoresListView.Visibility = Visibility.Visible;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar proveedores: {ex.GetType().Name} - {ex.Message}");
+                ProveedoresListView.ItemsSource = null;
+                ProveedoresListView.Visibility = Visibility.Visible;
+            }
+            finally
+            {
+                ProveedoresLoadingRing.IsActive = false;
+            }
         }
     }
 }

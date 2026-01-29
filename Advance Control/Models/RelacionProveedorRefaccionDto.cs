@@ -27,5 +27,15 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("creado")]
         public int? Creado { get; set; }
+
+        // Provider fields (populated when querying by idRefaccion)
+        [JsonPropertyName("idProveedor")]
+        public int? IdProveedor { get; set; }
+
+        [JsonPropertyName("razonSocial")]
+        public string? RazonSocial { get; set; }
+
+        [JsonPropertyName("nombreComercial")]
+        public string? NombreComercial { get; set; }
     }
 }
