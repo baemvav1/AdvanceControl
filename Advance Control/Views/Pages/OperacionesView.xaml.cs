@@ -243,29 +243,13 @@ namespace Advance_Control.Views
             if (!operacion.IdOperacion.HasValue)
                 return;
 
-            // Crear el contenido del diálogo que solo muestra el ID de la operación
-            var dialogContent = new StackPanel
-            {
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock 
-                    { 
-                        Text = "ID de la Operación:", 
-                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold 
-                    },
-                    new TextBlock 
-                    { 
-                        Text = operacion.IdOperacion.Value.ToString(),
-                        FontSize = 16
-                    }
-                }
-            };
+            // Crear el UserControl para agregar cargo
+            var agregarCargoControl = new Equipos.AgregarCargoUserControl(operacion.IdOperacion.Value);
 
             var dialog = new ContentDialog
             {
                 Title = "Agregar Cargo",
-                Content = dialogContent,
+                Content = agregarCargoControl,
                 PrimaryButtonText = "Agregar",
                 CloseButtonText = "Cancelar",
                 DefaultButton = ContentDialogButton.Primary,
@@ -276,11 +260,50 @@ namespace Advance_Control.Views
 
             if (result == ContentDialogResult.Primary)
             {
-                // Por ahora solo mostramos una notificación
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Agregar Cargo",
-                    nota: $"Funcionalidad pendiente de implementación para la operación ID: {operacion.IdOperacion.Value}",
-                    fechaHoraInicio: DateTime.Now);
+                // Validar que los campos estén completos
+                if (!agregarCargoControl.IsValid)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Por favor complete todos los campos requeridos.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                try
+                {
+                    // Obtener el DTO con los datos del cargo
+                    var cargoEditDto = agregarCargoControl.GetCargoEditDto();
+
+                    // Crear el cargo usando el servicio
+                    var newCargo = await _cargoService.CreateCargoAsync(cargoEditDto);
+
+                    if (newCargo != null)
+                    {
+                        // Agregar el cargo a la colección de la operación
+                        operacion.Cargos.Add(newCargo);
+
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Cargo creado",
+                            nota: $"El cargo con ID {newCargo.IdCargo} se ha creado correctamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo crear el cargo. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al crear cargo: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: $"Ocurrió un error al crear el cargo: {ex.Message}",
+                        fechaHoraInicio: DateTime.Now);
+                }
             }
         }
 
