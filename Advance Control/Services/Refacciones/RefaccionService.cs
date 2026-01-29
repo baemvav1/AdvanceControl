@@ -100,7 +100,7 @@ namespace Advance_Control.Services.Refacciones
             try
             {
                 var url = _endpoints.GetEndpoint("api", "refaccion_crud");
-                url = $"{url}?idRefaccion={id}";
+                url = $"{url}/{id}";
 
                 await _logger.LogInformationAsync($"Eliminando refacción {id} en: {url}", "RefaccionService", "DeleteRefaccionAsync");
 
@@ -139,13 +139,11 @@ namespace Advance_Control.Services.Refacciones
         {
             try
             {
-                // Construir la URL con parámetros de consulta
+                // Construir la URL con el id en la ruta y parámetros de consulta
                 var url = _endpoints.GetEndpoint("api", "refaccion_crud");
+                url = $"{url}/{id}";
 
-                var queryParams = new List<string>
-                {
-                    $"idRefaccion={id}"
-                };
+                var queryParams = new List<string>();
 
                 if (!string.IsNullOrWhiteSpace(query.Marca))
                     queryParams.Add($"marca={Uri.EscapeDataString(query.Marca)}");
@@ -159,9 +157,10 @@ namespace Advance_Control.Services.Refacciones
                 if (!string.IsNullOrWhiteSpace(query.Descripcion))
                     queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
 
-                queryParams.Add($"estatus={query.Estatus.ToString().ToLowerInvariant()}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                if (queryParams.Count > 0)
+                {
+                    url = $"{url}?{string.Join("&", queryParams)}";
+                }
 
                 await _logger.LogInformationAsync($"Actualizando refacción {id} en: {url}", "RefaccionService", "UpdateRefaccionAsync");
 
@@ -250,6 +249,56 @@ namespace Advance_Control.Services.Refacciones
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error inesperado al crear refacción", ex, "RefaccionService", "CreateRefaccionAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Verifica si una refacción tiene proveedores relacionados
+        /// </summary>
+        public async Task<bool> CheckProveedorExistsAsync(int id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "refaccion_crud");
+                url = $"{url}/{id}/check-proveedor";
+
+                await _logger.LogInformationAsync($"Verificando proveedores para refacción {id} en: {url}", "RefaccionService", "CheckProveedorExistsAsync");
+
+                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al verificar proveedores de refacción. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "RefaccionService",
+                        "CheckProveedorExistsAsync");
+                    return false;
+                }
+
+                // Intentar deserializar la respuesta para obtener el resultado
+                var result = await response.Content.ReadFromJsonAsync<Dictionary<string, object>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                
+                if (result != null && result.ContainsKey("exists"))
+                {
+                    var exists = result["exists"].ToString()?.ToLower() == "true";
+                    await _logger.LogInformationAsync($"Verificación de proveedores para refacción {id}: {exists}", "RefaccionService", "CheckProveedorExistsAsync");
+                    return exists;
+                }
+
+                await _logger.LogWarningAsync("No se pudo determinar si existen proveedores para la refacción", "RefaccionService", "CheckProveedorExistsAsync");
+                return false;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al verificar proveedores de refacción", ex, "RefaccionService", "CheckProveedorExistsAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al verificar proveedores de refacción", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al verificar proveedores de refacción", ex, "RefaccionService", "CheckProveedorExistsAsync");
                 throw;
             }
         }
