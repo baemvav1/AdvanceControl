@@ -49,6 +49,12 @@ namespace Advance_Control.Models
         public string? Atiende { get; set; }
 
         /// <summary>
+        /// Nombre de quien atiende
+        /// </summary>
+        [JsonPropertyName("idAtiende")]
+        public int? IdAtiende { get; set; }
+
+        /// <summary>
         /// Monto de la operación
         /// </summary>
         [JsonPropertyName("monto")]
