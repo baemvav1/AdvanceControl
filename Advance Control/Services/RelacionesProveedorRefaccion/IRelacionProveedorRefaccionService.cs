@@ -55,5 +55,13 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>True si la creación fue exitosa, False en caso contrario</returns>
         Task<bool> CreateRelacionAsync(int idProveedor, int idRefaccion, double precio, string? nota, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene proveedores que tienen una refacción específica con sus precios
+        /// </summary>
+        /// <param name="idRefaccion">ID de la refacción</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Lista de proveedores con sus precios para la refacción</returns>
+        Task<List<ProveedorPorRefaccionDto>> GetProveedoresByRefaccionAsync(int idRefaccion, CancellationToken cancellationToken = default);
     }
 }
