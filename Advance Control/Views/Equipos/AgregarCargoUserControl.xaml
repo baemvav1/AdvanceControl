@@ -28,23 +28,23 @@
             <TextBlock Text="Tipo de Cargo:" FontWeight="SemiBold" Margin="0,0,0,4" />
             <ComboBox
                 x:Name="TipoCargoComboBox"
-                HorizontalAlignment="Stretch">
-                <ComboBoxItem Content="Refacción" Tag="1" />
-                <ComboBoxItem Content="Mano de Obra" Tag="2" />
-                <ComboBoxItem Content="Servicio Externo" Tag="3" />
+                HorizontalAlignment="Stretch"
+                SelectionChanged="TipoCargoComboBox_SelectionChanged">
+                <ComboBoxItem Content="Refaccion" Tag="1" />
+                <ComboBoxItem Content="Servicio" Tag="2" />
             </ComboBox>
         </StackPanel>
 
         <!-- ID Relación Cargo -->
         <StackPanel Grid.Row="2" Margin="0,0,0,12">
             <TextBlock Text="ID Relación Cargo:" FontWeight="SemiBold" Margin="0,0,0,4" />
-            <NumberBox
-                x:Name="IdRelacionCargoNumberBox"
-                PlaceholderText="Ingrese ID relación cargo"
-                SpinButtonPlacementMode="Compact"
-                Minimum="1"
-                Maximum="999999"
-                AutomationProperties.Name="ID de relación del cargo" />
+            <Button
+                x:Name="IdRelacionCargoButton"
+                HorizontalAlignment="Stretch"
+                Click="IdRelacionCargoButton_Click"
+                IsEnabled="False">
+                <TextBlock x:Name="IdRelacionCargoButtonText" Text="Seleccione primero el tipo de cargo..." />
+            </Button>
         </StackPanel>
 
         <!-- Monto -->
