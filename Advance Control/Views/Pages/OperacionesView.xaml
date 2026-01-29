@@ -339,6 +339,10 @@
                                                             <controls:DataGridTextColumn
                                                                 Header="Nota"
                                                                 Binding="{Binding Nota, Mode=TwoWay}"
+                                                                Width="150" />
+                                                            <controls:DataGridTextColumn
+                                                                Header="Proveedor"
+                                                                Binding="{Binding Proveedor, Mode=TwoWay}"
                                                                 Width="*" />
                                                             <controls:DataGridTemplateColumn Header="Acciones" Width="100">
                                                                 <controls:DataGridTemplateColumn.CellTemplate>
