@@ -140,5 +140,24 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        private bool _isLoadingCargos = false;
+
+        /// <summary>
+        /// Indica si los cargos se están cargando actualmente
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingCargos
+        {
+            get => _isLoadingCargos;
+            set
+            {
+                if (_isLoadingCargos != value)
+                {
+                    _isLoadingCargos = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }

@@ -60,15 +60,16 @@ namespace Advance_Control.Views.Equipos
                 ClientesListView.ItemsSource = _allClientes;
                 ClientesListView.Visibility = Visibility.Visible;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // En caso de error, mostrar lista vacía con mensaje informativo
+                System.Diagnostics.Debug.WriteLine($"Error al cargar clientes: {ex.GetType().Name} - {ex.Message}");
                 _allClientes = new List<CustomerDto>();
                 ClientesListView.ItemsSource = _allClientes;
                 ClientesListView.Visibility = Visibility.Visible;
                 
                 // Mostrar mensaje de error en el placeholder de búsqueda
-                SearchTextBox.PlaceholderText = "Error al cargar clientes. Intente nuevamente.";
+                SearchTextBox.PlaceholderText = $"Error al cargar clientes: {ex.Message}";
             }
             finally
             {

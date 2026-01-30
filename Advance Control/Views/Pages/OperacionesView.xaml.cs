@@ -96,9 +96,11 @@ namespace Advance_Control.Views
 
             try
             {
-                // Only load cargos if they haven't been loaded yet
-                if (!operacion.CargosLoaded)
+                // Only load cargos if they haven't been loaded yet and not currently loading
+                if (!operacion.CargosLoaded && !operacion.IsLoadingCargos)
                 {
+                    operacion.IsLoadingCargos = true;
+                    
                     var query = new CargoEditDto
                     {
                         IdOperacion = operacion.IdOperacion.Value
@@ -118,6 +120,14 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar cargos: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error al cargar cargos",
+                    nota: $"No se pudieron cargar los cargos de la operación: {ex.Message}",
+                    fechaHoraInicio: DateTime.Now);
+            }
+            finally
+            {
+                operacion.IsLoadingCargos = false;
             }
         }
 
@@ -426,7 +436,7 @@ namespace Advance_Control.Views
                 System.Diagnostics.Debug.WriteLine($"Error al actualizar cargo: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
-                    nota: "Ocurrió un error al actualizar el cargo. Por favor, intente nuevamente.",
+                    nota: $"Ocurrió un error al actualizar el cargo: {ex.Message}",
                     fechaHoraInicio: DateTime.Now);
             }
         }
