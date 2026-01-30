@@ -106,6 +106,7 @@ namespace Advance_Control.Models
         }
 
         private ObservableCollection<CargoDto> _cargos = new ObservableCollection<CargoDto>();
+        private INumberFormatter2? _currencyFormatter;
 
         /// <summary>
         /// Colección de cargos asociados a esta operación
@@ -148,9 +149,13 @@ namespace Advance_Control.Models
         {
             get
             {
-                var formatter = new CurrencyFormatter("MXN");
-                formatter.FractionDigits = 2;
-                return formatter;
+                if (_currencyFormatter == null)
+                {
+                    var formatter = new CurrencyFormatter("MXN");
+                    formatter.FractionDigits = 2;
+                    _currencyFormatter = formatter;
+                }
+                return _currencyFormatter;
             }
         }
 
