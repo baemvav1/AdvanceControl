@@ -157,7 +157,7 @@ namespace Advance_Control.Views.Equipos
                 IdTipoCargo = idTipoCargo,
                 IdRelacionCargo = idRelacionCargo,
                 Monto = MontoNumberBox.Value,
-                //Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim(),
+                Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim(),
                 IdProveedor = idProveedor
             };
         }

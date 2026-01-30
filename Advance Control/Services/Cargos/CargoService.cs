@@ -94,7 +94,20 @@ namespace Advance_Control.Services.Cargos
                 }
 
                 // Deserializar la respuesta
-                var cargos = await response.Content.ReadFromJsonAsync<List<CargoDto>>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
+                List<CargoDto>? cargos;
+                try
+                {
+                    cargos = await response.Content.ReadFromJsonAsync<List<CargoDto>>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (JsonException ex)
+                {
+                    await _logger.LogErrorAsync(
+                        "Error al deserializar respuesta de cargos",
+                        ex,
+                        "CargoService",
+                        "GetCargosAsync");
+                    return new List<CargoDto>();
+                }
 
                 await _logger.LogInformationAsync($"Se obtuvieron {cargos?.Count ?? 0} cargos", "CargoService", "GetCargosAsync");
 
@@ -181,7 +194,21 @@ namespace Advance_Control.Services.Cargos
 
                 // Deserializar la respuesta
                 var responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                var responseObj = JsonSerializer.Deserialize<JsonElement>(responseText);
+                
+                JsonElement responseObj;
+                try
+                {
+                    responseObj = JsonSerializer.Deserialize<JsonElement>(responseText);
+                }
+                catch (JsonException ex)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al deserializar respuesta de crear cargo. Respuesta: {responseText}",
+                        ex,
+                        "CargoService",
+                        "CreateCargoAsync");
+                    return null;
+                }
 
                 // Verificar si la operación fue exitosa
                 if (responseObj.TryGetProperty("success", out var successProp) && successProp.GetBoolean())
