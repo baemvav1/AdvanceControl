@@ -55,9 +55,10 @@ namespace Advance_Control.Views.Equipos
                 EquiposListView.ItemsSource = _allEquipos;
                 EquiposListView.Visibility = Visibility.Visible;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // En caso de error, mostrar lista vacía con mensaje informativo
+                System.Diagnostics.Debug.WriteLine($"Error al cargar equipos: {ex.GetType().Name} - {ex.Message}");
                 _allEquipos = new List<EquipoDto>();
                 EquiposListView.ItemsSource = _allEquipos;
                 EquiposListView.Visibility = Visibility.Visible;

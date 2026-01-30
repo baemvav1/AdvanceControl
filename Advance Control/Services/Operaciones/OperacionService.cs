@@ -88,7 +88,20 @@ namespace Advance_Control.Services.Operaciones
                 }
 
                 // Deserializar la respuesta
-                var operaciones = await response.Content.ReadFromJsonAsync<List<OperacionDto>>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
+                List<OperacionDto>? operaciones;
+                try
+                {
+                    operaciones = await response.Content.ReadFromJsonAsync<List<OperacionDto>>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (JsonException ex)
+                {
+                    await _logger.LogErrorAsync(
+                        "Error al deserializar respuesta de operaciones",
+                        ex,
+                        "OperacionService",
+                        "GetOperacionesAsync");
+                    return new List<OperacionDto>();
+                }
 
                 await _logger.LogInformationAsync($"Se obtuvieron {operaciones?.Count ?? 0} operaciones", "OperacionService", "GetOperacionesAsync");
 
