@@ -30,7 +30,7 @@ namespace Advance_Control.Views.Equipos
             
             _idOperacion = idOperacion;
             _idAtiende = idAtiende;
-            IdOperacionTextBlock.Text = idOperacion.ToString();
+            //IdOperacionTextBlock.Text = idOperacion.ToString();
         }
 
         /// <summary>
@@ -57,6 +57,16 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private void LoadSelectorForCargoType(int cargoType)
         {
+            if (cargoType != 0)
+            {
+                NotaPanel.Visibility = Visibility.Visible;
+                MontoPanel.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                NotaPanel.Visibility = Visibility.Collapsed;
+                MontoPanel.Visibility = Visibility.Collapsed;
+            }
             if (cargoType == TIPO_CARGO_REFACCION && _refaccionSelector == null)
             {
                 _refaccionSelector = new SeleccionarRefaccionUserControl();
@@ -147,7 +157,7 @@ namespace Advance_Control.Views.Equipos
                 IdTipoCargo = idTipoCargo,
                 IdRelacionCargo = idRelacionCargo,
                 Monto = MontoNumberBox.Value,
-                Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim(),
+                //Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim(),
                 IdProveedor = idProveedor
             };
         }

@@ -74,7 +74,9 @@ namespace Advance_Control.Views.Equipos
         {
             try
             {
+                LoadingRing.Visibility = Visibility.Visible;
                 LoadingRing.IsActive = true;
+
                 RefaccionesListView.Visibility = Visibility.Collapsed;
 
                 _allRefacciones = await _refaccionService.GetRefaccionesAsync(null, CancellationToken.None);
@@ -97,6 +99,7 @@ namespace Advance_Control.Views.Equipos
             }
             finally
             {
+                LoadingRing.Visibility = Visibility.Collapsed;
                 LoadingRing.IsActive = false;
             }
         }

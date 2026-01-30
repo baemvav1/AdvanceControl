@@ -1,226 +1,239 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <UserControl
     x:Class="Advance_Control.Views.Equipos.SeleccionarRefaccionUserControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:converters="using:Advance_Control.Converters"
-    mc:Ignorable="d"
     MinWidth="500"
-    MinHeight="400">
+    mc:Ignorable="d">
 
     <UserControl.Resources>
         <converters:NullableNumberToStringConverter x:Key="NullableNumberConverter" />
     </UserControl.Resources>
 
     <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+        <StackPanel Orientation="Vertical">
+            <StackPanel
+                x:Name="SearchPanel"
+                Margin="0,0,0,0"
+                Spacing="8">
+                <TextBox
+                    x:Name="MarcaTextBox"
+                    PlaceholderText="Buscar por marca..."
+                    TextChanged="SearchTextBox_TextChanged" />
+                <TextBox
+                    x:Name="SerieTextBox"
+                    PlaceholderText="Buscar por serie..."
+                    TextChanged="SearchTextBox_TextChanged" />
+            </StackPanel>
 
-        <!-- Search filters -->
-        <StackPanel x:Name="SearchPanel" Grid.Row="0" Margin="0,0,0,12" Spacing="8">
-            <TextBox
-                x:Name="MarcaTextBox"
-                PlaceholderText="Buscar por marca..."
-                TextChanged="SearchTextBox_TextChanged" />
-            <TextBox
-                x:Name="SerieTextBox"
-                PlaceholderText="Buscar por serie..."
-                TextChanged="SearchTextBox_TextChanged" />
-        </StackPanel>
-
-        <!-- Selected refaccion display -->
-        <StackPanel x:Name="SelectedRefaccionPanel" Grid.Row="1" Margin="0,0,0,12" Visibility="Collapsed">
-            <TextBlock Text="Refacción seleccionada:" FontWeight="SemiBold" Margin="0,0,0,4" />
-            <Border 
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="4"
-                Padding="12">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <StackPanel Grid.Column="0">
-                        <TextBlock x:Name="SelectedMarcaTextBlock" FontWeight="SemiBold" FontSize="14" />
-                        <TextBlock x:Name="SelectedSerieTextBlock" 
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" />
-                        <TextBlock x:Name="SelectedCostoTextBlock" 
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}" 
-                                   FontSize="12" />
-                    </StackPanel>
-                    <Button Grid.Column="1" 
-                            Content="Cambiar"
-                            Click="ShowListButton_Click"
-                            VerticalAlignment="Center" />
-                </Grid>
-            </Border>
-        </StackPanel>
-
-        <!-- Loading indicator -->
-        <ProgressRing
-            x:Name="LoadingRing"
-            Grid.Row="2"
-            Width="50"
-            Height="50"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            IsActive="False" />
-
-        <!-- Lista de refacciones -->
-        <ListView
-            x:Name="RefaccionesListView"
-            Grid.Row="2"
-            SelectionMode="Single"
-            SelectionChanged="RefaccionesListView_SelectionChanged">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <Grid Padding="8">
+            <StackPanel
+                x:Name="SelectedRefaccionPanel"
+                Margin="0,0,0,0"
+                Visibility="Collapsed">
+                <TextBlock
+                    Margin="0,0,0,4"
+                    FontWeight="SemiBold"
+                    Text="Refacción seleccionada:" />
+                <Border
+                    Padding="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                    <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <!-- ID Badge -->
-                        <Border
-                            Grid.Row="0"
-                            Grid.RowSpan="3"
-                            Grid.Column="0"
-                            Margin="0,0,12,0"
-                            Padding="8,4"
-                            Background="{ThemeResource AccentFillColorDefaultBrush}"
-                            CornerRadius="4"
-                            VerticalAlignment="Center">
+                        <StackPanel Grid.Column="0">
                             <TextBlock
-                                Text="{Binding IdRefaccion}"
-                                Foreground="White"
-                                FontWeight="SemiBold"
-                                FontSize="12" />
-                        </Border>
-
-                        <!-- Marca -->
-                        <TextBlock
-                            Grid.Row="0"
+                                x:Name="SelectedMarcaTextBlock"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                x:Name="SelectedSerieTextBlock"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock
+                                x:Name="SelectedCostoTextBlock"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <Button
                             Grid.Column="1"
-                            Text="{Binding Marca}"
-                            FontWeight="SemiBold"
-                            FontSize="14"
-                            TextTrimming="CharacterEllipsis" />
-
-                        <!-- Serie -->
-                        <TextBlock
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Text="{Binding Serie}"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            FontSize="12"
-                            TextTrimming="CharacterEllipsis" />
-
-                        <!-- Costo -->
-                        <TextBlock
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            FontSize="12">
-                            <Run Text="Costo: $" />
-                            <Run Text="{Binding Costo}" />
-                        </TextBlock>
+                            VerticalAlignment="Center"
+                            Click="ShowListButton_Click"
+                            Content="Cambiar" />
                     </Grid>
-                </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+                </Border>
+            </StackPanel>
 
-        <!-- Proveedores button and grid -->
-        <StackPanel x:Name="ProveedoresPanel" Grid.Row="3" Margin="0,12,0,0" Visibility="Collapsed">
-            <Button x:Name="ProveedoresButton"
-                    Content="Proveedores"
-                    Click="ProveedoresButton_Click"
+            <!--  Loading indicator  -->
+            <ProgressRing
+                x:Name="LoadingRing"
+                Width="50"
+                Height="50"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsActive="False"
+                Visibility="Collapsed" />
+
+
+            <!--  Lista de refacciones  -->
+            <ListView
+                x:Name="RefaccionesListView"
+                SelectionChanged="RefaccionesListView_SelectionChanged"
+                SelectionMode="Single">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <Grid Padding="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <!--  ID Badge  -->
+                            <Border
+                                Grid.Row="0"
+                                Grid.RowSpan="3"
+                                Grid.Column="0"
+                                Margin="0,0,12,0"
+                                Padding="8,4"
+                                VerticalAlignment="Center"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                CornerRadius="4">
+                                <TextBlock
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Foreground="White"
+                                    Text="{Binding IdRefaccion}" />
+                            </Border>
+
+                            <!--  Marca  -->
+                            <TextBlock
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Text="{Binding Marca}"
+                                TextTrimming="CharacterEllipsis" />
+
+                            <!--  Serie  -->
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{Binding Serie}"
+                                TextTrimming="CharacterEllipsis" />
+
+                            <!--  Costo  -->
+                            <TextBlock
+                                Grid.Row="2"
+                                Grid.Column="1"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                <Run Text="Costo: $" />
+                                <Run Text="{Binding Costo}" />
+                            </TextBlock>
+                        </Grid>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+            <!--  Proveedores button and grid  -->
+            <StackPanel
+                x:Name="ProveedoresPanel"
+                Margin="0,12,0,0"
+                Visibility="Collapsed">
+                <Button
+                    x:Name="ProveedoresButton"
+                    Margin="0,0,0,8"
                     HorizontalAlignment="Stretch"
-                    Margin="0,0,0,8" />
-            <Border x:Name="ProveedoresGrid"
+                    Click="ProveedoresButton_Click"
+                    Content="Proveedores" />
+                <Border
+                    x:Name="ProveedoresGrid"
+                    MinHeight="100"
+                    Padding="12"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="4"
-                    Padding="12"
-                    MinHeight="100"
                     Visibility="Collapsed">
-                <Grid>
-                    <!-- Loading indicator for providers -->
-                    <ProgressRing
-                        x:Name="ProveedoresLoadingRing"
-                        Width="40"
-                        Height="40"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        IsActive="False" />
-                    
-                    <!-- Lista de proveedores -->
-                    <ListView
-                        x:Name="ProveedoresListView"
-                        SelectionMode="Single"
-                        SelectionChanged="ProveedoresListView_SelectionChanged">
-                        <ListView.ItemTemplate>
-                            <DataTemplate>
-                                <Grid Padding="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <!-- ID Badge -->
-                                    <Border
-                                        Grid.Column="0"
-                                        Margin="0,0,12,0"
-                                        Padding="8,4"
-                                        Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                        CornerRadius="4"
-                                        VerticalAlignment="Center">
+                    <Grid>
+                        <!--  Loading indicator for providers  -->
+                        <ProgressRing
+                            x:Name="ProveedoresLoadingRing"
+                            Width="40"
+                            Height="40"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            IsActive="False" />
+
+                        <!--  Lista de proveedores  -->
+                        <ListView
+                            x:Name="ProveedoresListView"
+                            SelectionChanged="ProveedoresListView_SelectionChanged"
+                            SelectionMode="Single">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Padding="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!--  ID Badge  -->
+                                        <Border
+                                            Grid.Column="0"
+                                            Margin="0,0,12,0"
+                                            Padding="8,4"
+                                            VerticalAlignment="Center"
+                                            Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                            CornerRadius="4">
+                                            <TextBlock
+                                                FontSize="12"
+                                                FontWeight="SemiBold"
+                                                Foreground="White"
+                                                Text="{Binding IdProveedor, Converter={StaticResource NullableNumberConverter}, ConverterParameter=?}" />
+                                        </Border>
+
+                                        <!--  Nombre Comercial  -->
                                         <TextBlock
-                                            Text="{Binding IdProveedor, Converter={StaticResource NullableNumberConverter}, ConverterParameter=?}"
-                                            Foreground="White"
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            FontSize="14"
                                             FontWeight="SemiBold"
-                                            FontSize="12" />
-                                    </Border>
-                                    
-                                    <!-- Nombre Comercial -->
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        Text="{Binding NombreComercial}"
-                                        FontWeight="SemiBold"
-                                        FontSize="14"
-                                        VerticalAlignment="Center"
-                                        TextTrimming="CharacterEllipsis" />
-                                    
-                                    <!-- Costo -->
-                                    <TextBlock
-                                        Grid.Column="2"
-                                        VerticalAlignment="Center"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        FontSize="12">
-                                        <Run Text="$" />
-                                        <Run Text="{Binding Costo, Converter={StaticResource NullableNumberConverter}, ConverterParameter=N/A}" />
-                                    </TextBlock>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </Grid>
-            </Border>
+                                            Text="{Binding NombreComercial}"
+                                            TextTrimming="CharacterEllipsis" />
+
+                                        <!--  Costo  -->
+                                        <TextBlock
+                                            Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                            <Run Text="$" />
+                                            <Run Text="{Binding Costo, Converter={StaticResource NullableNumberConverter}, ConverterParameter=N/A}" />
+                                        </TextBlock>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </Grid>
+                </Border>
+            </StackPanel>
+
         </StackPanel>
     </Grid>
 </UserControl>

@@ -58,6 +58,7 @@ namespace Advance_Control.Views.Equipos
         {
             try
             {
+                LoadingRing.Visibility = Visibility.Visible;
                 LoadingRing.IsActive = true;
                 ServiciosListView.Visibility = Visibility.Collapsed;
 
@@ -81,6 +82,7 @@ namespace Advance_Control.Views.Equipos
             }
             finally
             {
+                LoadingRing.Visibility = Visibility.Collapsed;
                 LoadingRing.IsActive = false;
             }
         }
