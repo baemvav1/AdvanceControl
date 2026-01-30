@@ -180,7 +180,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar operación: {ex.GetType().Name} - {ex.Message}");
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la operación. Por favor, intente nuevamente.",
+                        nota: $"Ocurrió un error al eliminar la operación: {ex.Message}",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
@@ -376,7 +376,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar cargo: {ex.GetType().Name} - {ex.Message}");
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: "Ocurrió un error al eliminar el cargo. Por favor, intente nuevamente.",
+                        nota: $"Ocurrió un error al eliminar el cargo: {ex.Message}",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
