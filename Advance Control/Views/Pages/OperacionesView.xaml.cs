@@ -166,6 +166,9 @@ namespace Advance_Control.Views
                         operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
                     };
                     
+                    // Notify that TotalMonto should be recalculated after loading cargos
+                    operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
+                    
                     operacion.CargosLoaded = true;
                 }
             }
