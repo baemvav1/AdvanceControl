@@ -69,7 +69,7 @@ namespace Advance_Control.Views.Equipos
                 ClientesListView.Visibility = Visibility.Visible;
                 
                 // Mostrar mensaje de error en el placeholder de búsqueda
-                SearchTextBox.PlaceholderText = $"Error al cargar clientes: {ex.Message}";
+                SearchTextBox.PlaceholderText = "Error al cargar clientes. Intente nuevamente.";
             }
             finally
             {

@@ -64,7 +64,7 @@ namespace Advance_Control.Views.Equipos
                 EquiposListView.Visibility = Visibility.Visible;
                 
                 // Mostrar mensaje de error en el placeholder de búsqueda
-                SearchTextBox.PlaceholderText = $"Error al cargar equipos: {ex.Message}";
+                SearchTextBox.PlaceholderText = "Error al cargar equipos. Intente nuevamente.";
             }
             finally
             {

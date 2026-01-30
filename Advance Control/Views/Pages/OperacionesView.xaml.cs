@@ -122,7 +122,7 @@ namespace Advance_Control.Views
                 System.Diagnostics.Debug.WriteLine($"Error al cargar cargos: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error al cargar cargos",
-                    nota: $"No se pudieron cargar los cargos de la operación: {ex.Message}",
+                    nota: "No se pudieron cargar los cargos de la operación. Por favor, intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
             }
             finally
@@ -180,7 +180,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar operación: {ex.GetType().Name} - {ex.Message}");
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: $"Ocurrió un error al eliminar la operación: {ex.Message}",
+                        nota: "Ocurrió un error al eliminar la operación. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
@@ -311,7 +311,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al crear cargo: {ex.GetType().Name} - {ex.Message}");
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: $"Ocurrió un error al crear el cargo: {ex.Message}",
+                        nota: "Ocurrió un error al crear el cargo. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
@@ -376,7 +376,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar cargo: {ex.GetType().Name} - {ex.Message}");
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: $"Ocurrió un error al eliminar el cargo: {ex.Message}",
+                        nota: "Ocurrió un error al eliminar el cargo. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
@@ -436,7 +436,7 @@ namespace Advance_Control.Views
                 System.Diagnostics.Debug.WriteLine($"Error al actualizar cargo: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
-                    nota: $"Ocurrió un error al actualizar el cargo: {ex.Message}",
+                    nota: "Ocurrió un error al actualizar el cargo. Por favor, intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
             }
         }
