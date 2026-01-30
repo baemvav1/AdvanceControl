@@ -1,8 +1,10 @@
 using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using Windows.Globalization.NumberFormatting;
 
 namespace Advance_Control.Models
 {
@@ -104,6 +106,7 @@ namespace Advance_Control.Models
         }
 
         private ObservableCollection<CargoDto> _cargos = new ObservableCollection<CargoDto>();
+        private INumberFormatter2? _currencyFormatter;
 
         /// <summary>
         /// Colección de cargos asociados a esta operación
@@ -118,7 +121,41 @@ namespace Advance_Control.Models
                 {
                     _cargos = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(TotalMonto));
                 }
+            }
+        }
+
+        /// <summary>
+        /// Calcula el total de todos los montos en la colección de cargos
+        /// </summary>
+        [JsonIgnore]
+        public double TotalMonto
+        {
+            get
+            {
+                if (Cargos == null || Cargos.Count == 0)
+                    return 0.0;
+
+                return Cargos.Sum(c => c.Monto ?? 0.0);
+            }
+        }
+
+        /// <summary>
+        /// Currency formatter para formatear el total como moneda mexicana
+        /// </summary>
+        [JsonIgnore]
+        public INumberFormatter2 CurrencyFormatter
+        {
+            get
+            {
+                if (_currencyFormatter == null)
+                {
+                    var formatter = new CurrencyFormatter("MXN");
+                    formatter.FractionDigits = 2;
+                    _currencyFormatter = formatter;
+                }
+                return _currencyFormatter;
             }
         }
 
