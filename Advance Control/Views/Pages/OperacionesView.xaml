@@ -16,6 +16,7 @@
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <converters:CurrencyConverter x:Key="CurrencyConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -289,6 +290,7 @@
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="*" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
 
                                                     <!-- Buttons for Add/Delete -->
@@ -320,21 +322,18 @@
                                                         Tag="{x:Bind}">
                                                         <controls:DataGrid.Columns>
                                                             <controls:DataGridTextColumn
-                                                                Header="ID Cargo"
-                                                                Binding="{Binding IdCargo}"
-                                                                IsReadOnly="True"
-                                                                Width="100" />
-                                                            <controls:DataGridTextColumn
                                                                 Header="Tipo Cargo"
-                                                                Binding="{Binding TipoCargo, Mode=TwoWay}"
+                                                                Binding="{Binding TipoCargo, Mode=OneWay}"
+                                                                IsReadOnly="True"
                                                                 Width="120" />
                                                             <controls:DataGridTextColumn
                                                                 Header="Detalle"
-                                                                Binding="{Binding DetalleRelacionado, Mode=TwoWay}"
+                                                                Binding="{Binding DetalleRelacionado, Mode=OneWay}"
+                                                                IsReadOnly="True"
                                                                 Width="150" />
                                                             <controls:DataGridTextColumn
                                                                 Header="Monto"
-                                                                Binding="{Binding Monto, Mode=TwoWay}"
+                                                                Binding="{Binding Monto, Mode=TwoWay, Converter={StaticResource CurrencyConverter}}"
                                                                 Width="100" />
                                                             <controls:DataGridTextColumn
                                                                 Header="Nota"
@@ -359,6 +358,18 @@
                                                             </controls:DataGridTemplateColumn>
                                                         </controls:DataGrid.Columns>
                                                     </controls:DataGrid>
+
+                                                    <!-- Total Sum NumberBox -->
+                                                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" Spacing="8">
+                                                        <TextBlock Text="Total:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="WhiteSmoke" />
+                                                        <NumberBox
+                                                            x:Name="TotalMontoNumberBox"
+                                                            Value="{x:Bind CalculateTotalMonto(Cargos), Mode=OneWay}"
+                                                            IsReadOnly="True"
+                                                            Width="150"
+                                                            SpinButtonPlacementMode="Hidden"
+                                                            NumberFormatter="{x:Bind CurrencyFormatter}" />
+                                                    </StackPanel>
                                                 </Grid>
                                             </PivotItem>
                                         </Pivot>

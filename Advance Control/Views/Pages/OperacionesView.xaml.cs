@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,6 +13,7 @@ using Advance_Control.Services.Cargos;
 using Advance_Control.Views.Equipos;
 using Advance_Control.Models;
 using CommunityToolkit.WinUI.UI.Controls;
+using Windows.Globalization.NumberFormatting;
 
 namespace Advance_Control.Views
 {
@@ -24,6 +26,11 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly ICargoService _cargoService;
 
+        /// <summary>
+        /// Currency formatter for the NumberBox
+        /// </summary>
+        public INumberFormatter2 CurrencyFormatter { get; }
+
         public OperacionesView()
         {
             // Resolver el ViewModel desde DI
@@ -34,11 +41,27 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de cargos desde DI
             _cargoService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoService>();
+
+            // Initialize currency formatter for Mexican Pesos
+            var currencyFormatter = new CurrencyFormatter("MXN");
+            currencyFormatter.FractionDigits = 2;
+            CurrencyFormatter = currencyFormatter;
             
             this.InitializeComponent();
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+        }
+
+        /// <summary>
+        /// Calculates the total sum of all Monto values in the Cargos collection
+        /// </summary>
+        public double CalculateTotalMonto(ObservableCollection<CargoDto> cargos)
+        {
+            if (cargos == null || cargos.Count == 0)
+                return 0.0;
+
+            return cargos.Sum(c => c.Monto ?? 0.0);
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -112,7 +135,36 @@ namespace Advance_Control.Views
                     foreach (var cargo in cargos)
                     {
                         operacion.Cargos.Add(cargo);
+                        // Subscribe to PropertyChanged to update total when Monto changes
+                        cargo.PropertyChanged += (s, e) =>
+                        {
+                            if (e.PropertyName == nameof(CargoDto.Monto))
+                            {
+                                // Notify bindings to update
+                                operacion.OnPropertyChanged(nameof(operacion.Cargos));
+                            }
+                        };
                     }
+
+                    // Subscribe to collection changes to update total when items are added/removed
+                    operacion.Cargos.CollectionChanged += (s, e) =>
+                    {
+                        if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems != null)
+                        {
+                            foreach (CargoDto cargo in e.NewItems)
+                            {
+                                cargo.PropertyChanged += (sender, args) =>
+                                {
+                                    if (args.PropertyName == nameof(CargoDto.Monto))
+                                    {
+                                        operacion.OnPropertyChanged(nameof(operacion.Cargos));
+                                    }
+                                };
+                            }
+                        }
+                        // Notify bindings to update total
+                        operacion.OnPropertyChanged(nameof(operacion.Cargos));
+                    };
                     
                     operacion.CargosLoaded = true;
                 }
