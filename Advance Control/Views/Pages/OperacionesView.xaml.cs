@@ -141,7 +141,7 @@ namespace Advance_Control.Views
                             if (e.PropertyName == nameof(CargoDto.Monto))
                             {
                                 // Notify bindings to update
-                                operacion.OnPropertyChanged(nameof(operacion.Cargos));
+                                operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
                             }
                         };
                     }
@@ -157,13 +157,13 @@ namespace Advance_Control.Views
                                 {
                                     if (args.PropertyName == nameof(CargoDto.Monto))
                                     {
-                                        operacion.OnPropertyChanged(nameof(operacion.Cargos));
+                                        operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
                                     }
                                 };
                             }
                         }
                         // Notify bindings to update total
-                        operacion.OnPropertyChanged(nameof(operacion.Cargos));
+                        operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
                     };
                     
                     operacion.CargosLoaded = true;

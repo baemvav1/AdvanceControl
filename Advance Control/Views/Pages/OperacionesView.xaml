@@ -363,9 +363,8 @@
                                                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" Spacing="8">
                                                         <TextBlock Text="Total:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="WhiteSmoke" />
                                                         <NumberBox
-                                                            x:Name="TotalMontoNumberBox"
-                                                            Value="{x:Bind CalculateTotalMonto(Cargos), Mode=OneWay}"
-                                                            IsReadOnly="True"
+                                                            Value="{x:Bind TotalMonto, Mode=OneWay}"
+                                                            IsEnabled="False"
                                                             Width="150"
                                                             SpinButtonPlacementMode="Hidden"
                                                             NumberFormatter="{x:Bind CurrencyFormatter}" />
