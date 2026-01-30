@@ -27,10 +27,7 @@ namespace Advance_Control.Converters
             {
                 // Check if parameter specifies a format (e.g., "F2" for 2 decimal places)
                 var format = parameter?.ToString();
-                if (!string.IsNullOrEmpty(format))
-                {
-                    return doubleValue.ToString(format);
-                }
+                
                 return doubleValue.ToString("F2"); // Default to 2 decimal places
             }
 
