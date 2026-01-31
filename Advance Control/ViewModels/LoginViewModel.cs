@@ -401,7 +401,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogWarningAsync("Error al cargar credenciales guardadas", "LoginViewModel", "LoadSavedCredentialsAsync");
+                await _logger.LogWarningAsync($"Error al cargar credenciales guardadas: {ex.Message}", "LoginViewModel", "LoadSavedCredentialsAsync");
                 // Ignorar errores, el usuario puede ingresar sus credenciales manualmente
             }
         }
@@ -422,7 +422,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogWarningAsync("Error al guardar credenciales", "LoginViewModel", "SaveCredentialsAsync");
+                await _logger.LogWarningAsync($"Error al guardar credenciales: {ex.Message}", "LoginViewModel", "SaveCredentialsAsync");
                 // No lanzar excepción, esto no debería impedir el login exitoso
             }
         }
@@ -446,7 +446,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogWarningAsync("Error al guardar preferencia de recordar", "LoginViewModel", "SaveRememberMePreferenceAsync");
+                await _logger.LogWarningAsync($"Error al guardar preferencia de recordar: {ex.Message}", "LoginViewModel", "SaveRememberMePreferenceAsync");
             }
         }
 
@@ -466,7 +466,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogWarningAsync("Error al limpiar credenciales guardadas", "LoginViewModel", "ClearSavedCredentialsAsync");
+                await _logger.LogWarningAsync($"Error al limpiar credenciales guardadas: {ex.Message}", "LoginViewModel", "ClearSavedCredentialsAsync");
             }
         }
 
