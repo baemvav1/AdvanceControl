@@ -78,7 +78,9 @@ namespace Advance_Control.Models
         }
 
         /// <summary>
-        /// ID de la relación del cargo
+        /// ID de la relación del cargo (referencia a IdRefaccion o IdServicio según el tipo de cargo)
+        /// NOTA: Este campo es crítico para poder ver los detalles de refacciones/servicios asociados al cargo.
+        /// El backend debe retornar este campo en la respuesta. Si llega null, el botón "Ver detalles" no funcionará.
         /// </summary>
         [JsonPropertyName("idRelacionCargo")]
         public int? IdRelacionCargo

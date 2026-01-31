@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -27,10 +28,11 @@ namespace Advance_Control.Services.Cargos
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            // Configurar opciones de JSON para ser case-insensitive
+            // Configurar opciones de JSON para ser case-insensitive y usar el convertidor personalizado
             _jsonOptions = new JsonSerializerOptions
             {
-                PropertyNameCaseInsensitive = true
+                PropertyNameCaseInsensitive = true,
+                Converters = { new Converters.CargoDtoJsonConverter() }
             };
         }
 
@@ -97,7 +99,11 @@ namespace Advance_Control.Services.Cargos
                 List<CargoDto>? cargos;
                 try
                 {
-                    cargos = await response.Content.ReadFromJsonAsync<List<CargoDto>>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
+                    // Get raw response for debugging
+                    var responseText = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogInformationAsync($"Respuesta de API de cargos: {responseText.Substring(0, Math.Min(500, responseText.Length))}", "CargoService", "GetCargosAsync");
+                    
+                    cargos = JsonSerializer.Deserialize<List<CargoDto>>(responseText, _jsonOptions);
                 }
                 catch (JsonException ex)
                 {
@@ -110,6 +116,16 @@ namespace Advance_Control.Services.Cargos
                 }
 
                 await _logger.LogInformationAsync($"Se obtuvieron {cargos?.Count ?? 0} cargos", "CargoService", "GetCargosAsync");
+                
+                // Log details about IdRelacionCargo for debugging
+                if (cargos != null && cargos.Count > 0)
+                {
+                    var cargosWithNullIdRelacion = cargos.Where(c => !c.IdRelacionCargo.HasValue).ToList();
+                    if (cargosWithNullIdRelacion.Any())
+                    {
+                        await _logger.LogWarningAsync($"{cargosWithNullIdRelacion.Count} cargos sin IdRelacionCargo", "CargoService", "GetCargosAsync");
+                    }
+                }
 
                 return cargos ?? new List<CargoDto>();
             }

@@ -507,9 +507,26 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
                 return;
 
-            // Verificar que el cargo sea de tipo Refaccion y tenga un idRelacionCargo
-            if (cargo.TipoCargo != "Refaccion" || !cargo.IdRelacionCargo.HasValue)
+            // Log para debugging
+            System.Diagnostics.Debug.WriteLine($"ViewRefaccionFromCargoButton_Click: IdCargo={cargo.IdCargo}, TipoCargo={cargo.TipoCargo}, IdRelacionCargo={cargo.IdRelacionCargo}");
+
+            // Verificar que el cargo sea de tipo Refaccion
+            if (cargo.TipoCargo != "Refaccion")
+            {
+                System.Diagnostics.Debug.WriteLine($"Cargo no es de tipo Refaccion: {cargo.TipoCargo}");
                 return;
+            }
+
+            // Verificar que tenga un idRelacionCargo
+            if (!cargo.IdRelacionCargo.HasValue)
+            {
+                System.Diagnostics.Debug.WriteLine($"IdRelacionCargo es null para cargo {cargo.IdCargo}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "No se puede mostrar la refacción porque el cargo no tiene una relación válida. El campo IdRelacionCargo está vacío.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
 
             try
             {
