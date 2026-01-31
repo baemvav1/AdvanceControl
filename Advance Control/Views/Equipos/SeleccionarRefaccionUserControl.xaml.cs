@@ -24,15 +24,16 @@ namespace Advance_Control.Views.Equipos
         private bool _isDataLoaded = false;
         private bool _hasProveedores = false;
         private bool _isLoadingProveedores = false;
+        private int? _idProveedor;
 
-        public SeleccionarRefaccionUserControl()
+        public SeleccionarRefaccionUserControl(int? idProveedor)
         {
             this.InitializeComponent();
             
             // Resolve services from DI
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
             _relacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionProveedorRefaccionService>();
-            
+            _idProveedor = idProveedor;
             // Cargar refacciones al inicializar
             this.Loaded += OnLoaded;
         }
@@ -166,6 +167,10 @@ namespace Advance_Control.Views.Equipos
                         if (_hasProveedores)
                         {
                             ProveedoresPanel.Visibility = Visibility.Visible;
+                            if (_idProveedor != 0)
+                            {
+                                 //si el idproveedor esta preseleccionado, es decir es diferente de 0, 
+                            }
                         }
                         else
                         {

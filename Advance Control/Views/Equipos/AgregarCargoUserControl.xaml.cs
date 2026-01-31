@@ -17,19 +17,19 @@ namespace Advance_Control.Views.Equipos
         private const int TIPO_CARGO_SERVICIO = 2;
 
         private int _idOperacion;
-        private int? _idAtiende;
+        private int? _idProveedor;
         private int _selectedCargoType = 0;
         private SeleccionarRefaccionUserControl? _refaccionSelector;
         private SeleccionarServicioUserControl? _servicioSelector;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        public AgregarCargoUserControl(int idOperacion, int? idAtiende = null)
+        public AgregarCargoUserControl(int idOperacion, int? idProveedor = null)
         {
             this.InitializeComponent();
             
             _idOperacion = idOperacion;
-            _idAtiende = idAtiende;
+            _idProveedor = idProveedor;
             //IdOperacionTextBlock.Text = idOperacion.ToString();
         }
 
@@ -47,7 +47,7 @@ namespace Advance_Control.Views.Equipos
                     OnPropertyChanged();
                     
                     // Lazy load the appropriate selector when cargo type changes
-                    LoadSelectorForCargoType(value);
+                    LoadSelectorForCargoType(value, _idProveedor);
                 }
             }
         }
@@ -55,7 +55,7 @@ namespace Advance_Control.Views.Equipos
         /// <summary>
         /// Lazy loads the selector control for the specified cargo type
         /// </summary>
-        private void LoadSelectorForCargoType(int cargoType)
+        private void LoadSelectorForCargoType(int cargoType, int? idProveedor)
         {
             if (cargoType != 0)
             {
@@ -69,7 +69,7 @@ namespace Advance_Control.Views.Equipos
             }
             if (cargoType == TIPO_CARGO_REFACCION && _refaccionSelector == null)
             {
-                _refaccionSelector = new SeleccionarRefaccionUserControl();
+                _refaccionSelector = new SeleccionarRefaccionUserControl(idProveedor);
                 _refaccionSelector.CostoChanged += OnRefaccionCostoChanged;
                 RefaccionSelectorContainer.Content = _refaccionSelector;
             }
@@ -147,7 +147,7 @@ namespace Advance_Control.Views.Equipos
             {
                 idRelacionCargo = _servicioSelector.SelectedServicio?.IdServicio ?? 0;
                 // For Servicio, automatically copy idAtiende from operation as idProveedor
-                idProveedor = _idAtiende;
+                idProveedor = _idProveedor;
             }
 
             return new CargoEditDto

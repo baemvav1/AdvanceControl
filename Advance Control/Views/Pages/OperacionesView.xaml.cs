@@ -1,18 +1,19 @@
-using System;
-using System.Collections.ObjectModel;
-using System.Collections.Specialized;
-using System.Linq;
+using Advance_Control.Models;
+using Advance_Control.Services.Cargos;
+using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.UserInfo;
+using Advance_Control.ViewModels;
+using Advance_Control.Views.Equipos;
+using CommunityToolkit.WinUI.UI.Controls;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using Microsoft.Extensions.DependencyInjection;
-using Advance_Control.ViewModels;
-using Advance_Control.Services.Notificacion;
-using Advance_Control.Services.Cargos;
-using Advance_Control.Views.Equipos;
-using Advance_Control.Models;
-using CommunityToolkit.WinUI.UI.Controls;
+using System;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.Linq;
 using Windows.Globalization.NumberFormatting;
 
 namespace Advance_Control.Views
@@ -25,6 +26,7 @@ namespace Advance_Control.Views
         public OperacionesViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly ICargoService _cargoService;
+        private readonly IUserInfoService _userInfoService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -41,6 +43,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de cargos desde DI
             _cargoService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoService>();
+
+            // Resolver el servicio de información de usuario desde DI
+            _userInfoService = ((App)Application.Current).Host.Services.GetRequiredService<IUserInfoService>();
 
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
@@ -307,9 +312,9 @@ namespace Advance_Control.Views
 
             if (!operacion.IdOperacion.HasValue)
                 return;
-
-            // Crear el UserControl para agregar cargo, pasando idAtiende
-            var agregarCargoControl = new Equipos.AgregarCargoUserControl(operacion.IdOperacion.Value, operacion.IdAtiende);
+            var userInfo = await _userInfoService.GetUserInfoAsync();
+            // Crear el UserControl para agregar cargo, pasando idProveedor registrado en el contacto que realiza la operacion
+            var agregarCargoControl = new Equipos.AgregarCargoUserControl(operacion.IdOperacion.Value, userInfo?.IdProveedor);
 
             var dialog = new ContentDialog
             {

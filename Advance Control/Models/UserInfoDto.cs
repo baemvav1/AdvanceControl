@@ -21,5 +21,8 @@ namespace Advance_Control.Models
         
         [JsonPropertyName("tipoUsuario")]
         public string? TipoUsuario { get; set; }
+
+        [JsonPropertyName("idProveedor")]
+        public int IdProveedor { get; set; }
     }
 }
