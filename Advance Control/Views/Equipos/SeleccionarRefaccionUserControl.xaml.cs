@@ -298,9 +298,9 @@ namespace Advance_Control.Views.Equipos
                 
                 // Show selected proveedor panel
                 SelectedProveedorPanel.Visibility = Visibility.Visible;
-                SelectedProveedorIdTextBlock.Text = $"ID: {SelectedProveedor.IdProveedor?.ToString() ?? "N/A"}";
+                SelectedProveedorIdTextBlock.Text = $"ID: {SelectedProveedor.IdProveedor?.ToString() ?? "Sin ID"}";
                 SelectedProveedorNombreTextBlock.Text = SelectedProveedor.NombreComercial ?? string.Empty;
-                SelectedProveedorCostoTextBlock.Text = $"Costo: ${SelectedProveedor.Costo?.ToString() ?? "N/A"}";
+                SelectedProveedorCostoTextBlock.Text = $"Costo: ${SelectedProveedor.Costo?.ToString("F2") ?? "N/A"}";
                 
                 // Notify the cost changed
                 CostoChanged?.Invoke(this, SelectedProveedor.Costo);
