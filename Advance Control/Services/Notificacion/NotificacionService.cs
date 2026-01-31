@@ -20,6 +20,17 @@ namespace Advance_Control.Services.Notificacion
         private readonly Dictionary<Guid, CancellationTokenSource> _timers;
 
         /// <summary>
+        /// Tiempo de vida por defecto para notificaciones no-error (en segundos).
+        /// </summary>
+        private const int TiempoDeVidaPorDefecto = 3;
+
+        /// <summary>
+        /// Palabras clave que identifican notificaciones de error.
+        /// Estas notificaciones no se auto-eliminan.
+        /// </summary>
+        private static readonly string[] PalabrasClaveError = { "Error", "Validación" };
+
+        /// <summary>
         /// Evento que se dispara cuando se agrega una nueva notificación.
         /// </summary>
         public event EventHandler<NotificacionDto>? NotificacionAgregada;
@@ -44,6 +55,19 @@ namespace Advance_Control.Services.Notificacion
             if (string.IsNullOrWhiteSpace(titulo))
             {
                 throw new ArgumentException("El título es requerido.", nameof(titulo));
+            }
+
+            // Aplicar tiempo de vida por defecto de 3 segundos para notificaciones no-error
+            // Las notificaciones de error (título contiene palabras clave de error) no se auto-eliminan
+            if (tiempoDeVidaSegundos == null)
+            {
+                bool isErrorNotification = PalabrasClaveError.Any(keyword => 
+                    titulo.Contains(keyword, StringComparison.OrdinalIgnoreCase));
+                
+                if (!isErrorNotification)
+                {
+                    tiempoDeVidaSegundos = TiempoDeVidaPorDefecto;
+                }
             }
 
             var notificacion = new NotificacionDto

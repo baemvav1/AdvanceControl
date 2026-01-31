@@ -17,6 +17,10 @@ namespace Advance_Control.Tests.Services
         private readonly Mock<ILoggingService> _mockLogger;
         private readonly NotificacionService _service;
 
+        // Constantes para pruebas de tiempo
+        private const int TiempoDeVidaPorDefecto = 3;
+        private const double BufferSegundos = 0.5;
+
         public NotificacionServiceTests()
         {
             _mockLogger = new Mock<ILoggingService>();
@@ -233,10 +237,24 @@ namespace Advance_Control.Tests.Services
         }
 
         [Fact]
-        public async Task MostrarNotificacionAsync_SinTiempoDeVida_CreaNotificacionEstatica()
+        public async Task MostrarNotificacionAsync_SinTiempoDeVida_AsignaTresSegundosPorDefecto()
         {
             // Arrange
-            var titulo = "Notificación estática";
+            var titulo = "Notificación normal";
+
+            // Act
+            var resultado = await _service.MostrarNotificacionAsync(titulo);
+
+            // Assert
+            Assert.NotNull(resultado);
+            Assert.Equal(TiempoDeVidaPorDefecto, resultado.TiempoDeVidaSegundos);
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_ConTituloError_NoAsignaTiempoDeVida()
+        {
+            // Arrange
+            var titulo = "Error al procesar";
 
             // Act
             var resultado = await _service.MostrarNotificacionAsync(titulo);
@@ -244,6 +262,49 @@ namespace Advance_Control.Tests.Services
             // Assert
             Assert.NotNull(resultado);
             Assert.Null(resultado.TiempoDeVidaSegundos);
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_ConTituloValidacion_NoAsignaTiempoDeVida()
+        {
+            // Arrange
+            var titulo = "Validación";
+
+            // Act
+            var resultado = await _service.MostrarNotificacionAsync(titulo);
+
+            // Assert
+            Assert.NotNull(resultado);
+            Assert.Null(resultado.TiempoDeVidaSegundos);
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_ConTituloErrorMayuscula_NoAsignaTiempoDeVida()
+        {
+            // Arrange
+            var titulo = "ERROR DE SISTEMA";
+
+            // Act
+            var resultado = await _service.MostrarNotificacionAsync(titulo);
+
+            // Assert
+            Assert.NotNull(resultado);
+            Assert.Null(resultado.TiempoDeVidaSegundos);
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_ConTiempoDeVidaExplicito_UsaTiempoEspecificado()
+        {
+            // Arrange
+            var titulo = "Notificación con tiempo específico";
+            var tiempoDeVida = 10;
+
+            // Act
+            var resultado = await _service.MostrarNotificacionAsync(titulo, tiempoDeVidaSegundos: tiempoDeVida);
+
+            // Assert
+            Assert.NotNull(resultado);
+            Assert.Equal(tiempoDeVida, resultado.TiempoDeVidaSegundos);
         }
 
         [Fact]
@@ -294,6 +355,40 @@ namespace Advance_Control.Tests.Services
             // Act
             await _service.MostrarNotificacionAsync(titulo, tiempoDeVidaSegundos: tiempoDeVida);
             await Task.Delay(TimeSpan.FromSeconds(1));
+
+            // Assert
+            Assert.Single(_service.ObtenerNotificaciones());
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_NotificacionNormal_SeEliminaEn3Segundos()
+        {
+            // Arrange
+            var titulo = "Notificación de éxito";
+
+            // Act
+            await _service.MostrarNotificacionAsync(titulo);
+            Assert.Single(_service.ObtenerNotificaciones());
+
+            // Wait for auto-deletion (default time + buffer)
+            await Task.Delay(TimeSpan.FromSeconds(TiempoDeVidaPorDefecto + BufferSegundos));
+
+            // Assert
+            Assert.Empty(_service.ObtenerNotificaciones());
+        }
+
+        [Fact]
+        public async Task MostrarNotificacionAsync_NotificacionError_NoCaducaNunca()
+        {
+            // Arrange
+            var titulo = "Error al guardar";
+
+            // Act
+            await _service.MostrarNotificacionAsync(titulo);
+            Assert.Single(_service.ObtenerNotificaciones());
+
+            // Wait longer than default timeout to verify it doesn't auto-delete
+            await Task.Delay(TimeSpan.FromSeconds(TiempoDeVidaPorDefecto + 1));
 
             // Assert
             Assert.Single(_service.ObtenerNotificaciones());
