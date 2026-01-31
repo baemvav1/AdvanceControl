@@ -16,104 +16,118 @@
     </UserControl.Resources>
 
     <Grid>
-        <StackPanel>
-            <Grid
-                x:Name="TipoCargoSelector"
-                Padding="0"
-                Background="Transparent">
-                <!--  ID Tipo Cargo  -->
-                <StackPanel Grid.Row="1" Margin="0,0,0,12">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto">
+            <StackPanel>
+                <Grid
+                    x:Name="TipoCargoSelector"
+                    Padding="0"
+                    Background="Transparent">
+                    <!--  ID Tipo Cargo  -->
+                    <StackPanel Grid.Row="1" Margin="0,0,0,12">
+                        <TextBlock
+                            Margin="0,0,0,4"
+                            FontWeight="SemiBold"
+                            Text="Seleccionar cargo:" />
+                        <ComboBox
+                            x:Name="TipoCargoComboBox"
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.Name="Tipo de cargo"
+                            SelectionChanged="TipoCargoComboBox_SelectionChanged">
+                            <ComboBoxItem Content="Refacción" Tag="1" />
+                            <ComboBoxItem Content="Servicio" Tag="2" />
+                        </ComboBox>
+                    </StackPanel>
+
+                </Grid>
+                <Grid x:Name="Listados">
+
+                    <StackPanel>
+                        <!--  Instructions when no type is selected  -->
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Seleccione un tipo de cargo para continuar..."
+                            Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='0'}" />
+
+                        <!--  ContentControl for Refaccion Selector (lazy loaded)  -->
+                        <ContentControl x:Name="RefaccionSelectorContainer" Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='1'}" />
+
+                        <!--  ContentControl for Servicio Selector (lazy loaded)  -->
+                        <ContentControl x:Name="ServicioSelectorContainer" Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='2'}" />
+
+                    </StackPanel>
+                </Grid>
+
+                <!--  RefaccionesViewerPanel  -->
+                <StackPanel
+                    x:Name="RefaccionesViewerPanel"
+                    Margin="0,12,0,0"
+                    Visibility="Collapsed">
+                    <Border
+                        Padding="12"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="4">
+                        <StackPanel Spacing="12">
+                            <Grid>
+                                <TextBlock
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Text="Detalles de la Refacción" />
+                                <Button
+                                    HorizontalAlignment="Right"
+                                    Click="CerrarVisorButton_Click"
+                                    Content="Cerrar Visor" />
+                            </Grid>
+                            <ContentControl x:Name="RefaccionesViewerContainer" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+
+                <!--  Monto  -->
+                <StackPanel
+                    x:Name="MontoPanel"
+                    Margin="0,0,0,12"
+                    Visibility="Collapsed">
                     <TextBlock
                         Margin="0,0,0,4"
                         FontWeight="SemiBold"
-                        Text="Seleccionar cargo:" />
-                    <ComboBox
-                        x:Name="TipoCargoComboBox"
-                        HorizontalAlignment="Stretch"
-                        AutomationProperties.Name="Tipo de cargo"
-                        SelectionChanged="TipoCargoComboBox_SelectionChanged">
-                        <ComboBoxItem Content="Refacción" Tag="1" />
-                        <ComboBoxItem Content="Servicio" Tag="2" />
-                    </ComboBox>
+                        Text="Monto:" />
+                    <NumberBox
+                        x:Name="MontoNumberBox"
+                        AutomationProperties.Name="Monto del cargo"
+                        LargeChange="1"
+                        Maximum="999999.99"
+                        Minimum="0.01"
+                        PlaceholderText="Ingrese monto (mayor a 0)"
+                        SmallChange="0.01"
+                        SpinButtonPlacementMode="Compact" />
                 </StackPanel>
 
-            </Grid>
-            <Grid x:Name="Listados">
-
-                <StackPanel>
-                    <!--  Instructions when no type is selected  -->
+                <!--  Nota  -->
+                <StackPanel
+                    x:Name="NotaPanel"
+                    Margin="0,0,0,0"
+                    Visibility="Collapsed">
                     <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="Seleccione un tipo de cargo para continuar..."
-                        Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='0'}" />
-
-                    <!--  ContentControl for Refaccion Selector (lazy loaded)  -->
-                    <ContentControl x:Name="RefaccionSelectorContainer" Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='1'}" />
-
-                    <!--  ContentControl for Servicio Selector (lazy loaded)  -->
-                    <ContentControl x:Name="ServicioSelectorContainer" Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='2'}" />
-
+                        Margin="0,0,0,4"
+                        FontWeight="SemiBold"
+                        Text="Nota (opcional):" />
+                    <TextBox
+                        x:Name="NotaTextBox"
+                        MinHeight="80"
+                        MaxHeight="120"
+                        AcceptsReturn="True"
+                        PlaceholderText="Ingrese una nota (opcional)..."
+                        TextWrapping="Wrap" />
                 </StackPanel>
-            </Grid>
 
-            <!--  Monto  -->
-            <StackPanel Margin="0,0,0,12" x:Name="MontoPanel" Visibility="Collapsed">
-                <TextBlock
-                    Margin="0,0,0,4"
-                    FontWeight="SemiBold"
-                    Text="Monto:" />
-                <NumberBox
-                    x:Name="MontoNumberBox"
-                    AutomationProperties.Name="Monto del cargo"
-                    LargeChange="1"
-                    Maximum="999999.99"
-                    Minimum="0.01"
-                    PlaceholderText="Ingrese monto (mayor a 0)"
-                    SmallChange="0.01"
-                    SpinButtonPlacementMode="Compact" />
-            </StackPanel>
 
-            <!--  Nota  -->
-            <StackPanel Margin="0,0,0,0" x:Name="NotaPanel" Visibility="Collapsed">
-                <TextBlock
-                    Margin="0,0,0,4"
-                    FontWeight="SemiBold"
-                    Text="Nota (opcional):" />
-                <TextBox
-                    x:Name="NotaTextBox"
-                    MinHeight="80"
-                    MaxHeight="120"
-                    AcceptsReturn="True"
-                    PlaceholderText="Ingrese una nota (opcional)..."
-                    TextWrapping="Wrap" />
             </StackPanel>
-
-            <!--  RefaccionesViewerPanel  -->
-            <StackPanel x:Name="RefaccionesViewerPanel" Margin="0,12,0,0" Visibility="Collapsed">
-                <Border
-                    Padding="12"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="4">
-                    <StackPanel Spacing="12">
-                        <Grid>
-                            <TextBlock
-                                FontSize="16"
-                                FontWeight="SemiBold"
-                                Text="Detalles de la Refacción" />
-                            <Button
-                                HorizontalAlignment="Right"
-                                Click="CerrarVisorButton_Click"
-                                Content="Cerrar Visor" />
-                        </Grid>
-                        <ContentControl x:Name="RefaccionesViewerContainer" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </StackPanel>
+        </ScrollViewer>
 
 
 
