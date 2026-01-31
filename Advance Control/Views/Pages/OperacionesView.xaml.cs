@@ -457,15 +457,20 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
                 return;
 
-            // Verificar que el cargo tenga IdRelacionCargo y sea de tipo Refaccion
+            // Verificar que el tipo de cargo sea "Refaccion"
+            if (!string.Equals(cargo.TipoCargo, "Refaccion", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            // Cuando TipoCargo es "Refaccion", IdRelacionCargo contiene el ID de la refacción
             if (!cargo.IdRelacionCargo.HasValue || cargo.IdRelacionCargo.Value <= 0)
                 return;
 
             try
             {
                 // Mostrar el diálogo con el viewer de la refacción
+                // IdRelacionCargo = IdRefaccion cuando TipoCargo = "Refaccion"
                 await _dialogService.ShowDialogAsync<RefaccionesViewerUserControl>(
-                    configureControl: control => new RefaccionesViewerUserControl(cargo.IdRelacionCargo.Value),
+                    configureControl: control => control.IdRefaccionToLoad = cargo.IdRelacionCargo.Value,
                     title: "Detalles de la Refacción"
                 );
             }

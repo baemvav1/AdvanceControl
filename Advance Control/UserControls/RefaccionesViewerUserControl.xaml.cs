@@ -35,29 +35,39 @@ namespace Advance_Control.UserControls
         }
 
         /// <summary>
-        /// Constructor que acepta un RefaccionDto directamente
+        /// Constructor sin parámetros requerido por el DialogService
         /// </summary>
-        public RefaccionesViewerUserControl(RefaccionDto refaccion)
+        public RefaccionesViewerUserControl()
         {
             this.InitializeComponent();
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
             
-            if (refaccion != null)
+            this.Loaded += OnLoaded;
+        }
+
+        private async void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            // Si hay un RefaccionDto configurado, cargarlo
+            if (RefaccionToDisplay != null)
             {
-                LoadRefaccionData(refaccion);
+                LoadRefaccionData(RefaccionToDisplay);
+            }
+            // Si hay un IdRefaccion configurado, cargarlo desde el servicio
+            else if (IdRefaccionToLoad > 0)
+            {
+                await LoadRefaccionByIdAsync(IdRefaccionToLoad);
             }
         }
 
         /// <summary>
-        /// Constructor que acepta un ID de refacción y carga los datos desde el servicio
+        /// RefaccionDto para mostrar (se configura antes de mostrar el control)
         /// </summary>
-        public RefaccionesViewerUserControl(int idRefaccion)
-        {
-            this.InitializeComponent();
-            _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
-            
-            this.Loaded += async (s, e) => await LoadRefaccionByIdAsync(idRefaccion);
-        }
+        public RefaccionDto? RefaccionToDisplay { get; set; }
+
+        /// <summary>
+        /// ID de refacción para cargar desde el servicio (se configura antes de mostrar el control)
+        /// </summary>
+        public int IdRefaccionToLoad { get; set; }
 
         public int IdRefaccion
         {

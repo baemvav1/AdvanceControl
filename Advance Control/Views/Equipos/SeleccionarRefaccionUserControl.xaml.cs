@@ -382,7 +382,7 @@ namespace Advance_Control.Views.Equipos
             if (sender is Button button && button.Tag is RefaccionDto refaccion)
             {
                 await _dialogService.ShowDialogAsync<RefaccionesViewerUserControl>(
-                    configureControl: control => new RefaccionesViewerUserControl(refaccion),
+                    configureControl: control => control.RefaccionToDisplay = refaccion,
                     title: "Detalles de la Refacción"
                 );
             }
@@ -396,7 +396,7 @@ namespace Advance_Control.Views.Equipos
             if (SelectedRefaccion != null)
             {
                 await _dialogService.ShowDialogAsync<RefaccionesViewerUserControl>(
-                    configureControl: control => new RefaccionesViewerUserControl(SelectedRefaccion),
+                    configureControl: control => control.RefaccionToDisplay = SelectedRefaccion,
                     title: "Detalles de la Refacción"
                 );
             }
