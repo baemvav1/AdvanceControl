@@ -277,6 +277,17 @@ namespace Advance_Control.Views.Equipos
         private void ProveedoresListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             SelectedProveedor = ProveedoresListView.SelectedItem as ProveedorPorRefaccionDto;
+            
+            // When a proveedor is selected, notify the cost changed
+            if (SelectedProveedor != null)
+            {
+                CostoChanged?.Invoke(this, SelectedProveedor.Costo);
+            }
+            else if (SelectedRefaccion != null)
+            {
+                // When proveedor is deselected, revert to refaccion cost
+                CostoChanged?.Invoke(this, SelectedRefaccion.Costo);
+            }
         }
     }
 }
