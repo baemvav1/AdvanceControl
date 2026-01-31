@@ -534,12 +534,12 @@ namespace Advance_Control.Views
                 // Esto asegura que tengamos la información más reciente incluyendo IdRelacionCargo
                 System.Diagnostics.Debug.WriteLine($"Consultando cargo {cargo.IdCargo} desde API...");
                 
-                var query = new CargoEditDto
+                var cargoQuery = new CargoEditDto
                 {
                     IdCargo = cargo.IdCargo
                 };
 
-                var cargos = await _cargoService.GetCargosAsync(query);
+                var cargos = await _cargoService.GetCargosAsync(cargoQuery);
                 
                 if (cargos == null || cargos.Count == 0)
                 {
@@ -551,7 +551,18 @@ namespace Advance_Control.Views
                     return;
                 }
 
-                var cargoActualizado = cargos[0];
+                var cargoActualizado = cargos.FirstOrDefault();
+                
+                if (cargoActualizado == null)
+                {
+                    System.Diagnostics.Debug.WriteLine($"No se pudo obtener el cargo {cargo.IdCargo} de la lista");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo obtener la información del cargo desde el servidor.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+                
                 System.Diagnostics.Debug.WriteLine($"Cargo obtenido del API: IdCargo={cargoActualizado.IdCargo}, IdRelacionCargo={cargoActualizado.IdRelacionCargo}");
 
                 // Verificar que el cargo actualizado tenga un idRelacionCargo
