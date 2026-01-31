@@ -15,7 +15,7 @@ namespace Advance_Control.Views.Equipos
     /// </summary>
     public sealed partial class RefaccionesViewerUserControl : UserControl
     {
-        private readonly IRefaccionService _refaccionService;
+        private readonly IRefaccionService? _refaccionService;
         private RefaccionDto? _refaccion;
 
         /// <summary>
@@ -24,9 +24,6 @@ namespace Advance_Control.Views.Equipos
         public RefaccionesViewerUserControl(RefaccionDto refaccion)
         {
             this.InitializeComponent();
-            
-            // Resolve service from DI
-            _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
             
             _refaccion = refaccion;
             
@@ -53,6 +50,7 @@ namespace Advance_Control.Views.Equipos
             if (_refaccion != null)
             {
                 DisplayRefaccion(_refaccion);
+                ContentPanel.Visibility = Visibility.Visible;
             }
         }
 
@@ -61,6 +59,13 @@ namespace Advance_Control.Views.Equipos
         /// </summary>
         private async Task LoadRefaccionAsync(int idRefaccion)
         {
+            if (_refaccionService == null)
+            {
+                ErrorTextBlock.Text = "Error: Servicio no disponible";
+                ErrorTextBlock.Visibility = Visibility.Visible;
+                return;
+            }
+
             try
             {
                 LoadingRing.Visibility = Visibility.Visible;

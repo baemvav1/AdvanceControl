@@ -13,7 +13,7 @@ namespace Advance_Control.Converters
         {
             if (value is string tipoCargo)
             {
-                return tipoCargo?.Equals("Refaccion", StringComparison.OrdinalIgnoreCase) == true
+                return tipoCargo.Equals("Refaccion", StringComparison.OrdinalIgnoreCase)
                     ? Visibility.Visible
                     : Visibility.Collapsed;
             }
