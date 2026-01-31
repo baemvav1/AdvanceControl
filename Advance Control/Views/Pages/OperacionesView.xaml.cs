@@ -540,22 +540,11 @@ namespace Advance_Control.Views
                 };
 
                 var cargos = await _cargoService.GetCargosAsync(cargoQuery);
-                
-                if (cargos == null || cargos.Count == 0)
-                {
-                    System.Diagnostics.Debug.WriteLine($"No se encontró el cargo {cargo.IdCargo} en el API");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo obtener la información del cargo desde el servidor.",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
-                var cargoActualizado = cargos.FirstOrDefault();
+                var cargoActualizado = cargos?.FirstOrDefault();
                 
                 if (cargoActualizado == null)
                 {
-                    System.Diagnostics.Debug.WriteLine($"No se pudo obtener el cargo {cargo.IdCargo} de la lista");
+                    System.Diagnostics.Debug.WriteLine($"No se encontró el cargo {cargo.IdCargo} en el API");
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
                         nota: "No se pudo obtener la información del cargo desde el servidor.",
