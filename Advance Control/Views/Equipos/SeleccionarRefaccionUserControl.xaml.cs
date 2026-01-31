@@ -369,5 +369,53 @@ namespace Advance_Control.Views.Equipos
                 ProveedoresPanel.Visibility = Visibility.Visible;
             }
         }
+
+        /// <summary>
+        /// Maneja el clic en el botón de ver detalles de una refacción en la lista
+        /// </summary>
+        private async void ViewRefaccionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not RefaccionDto refaccion)
+                return;
+
+            // Crear el UserControl para visualizar la refacción
+            var viewerControl = new RefaccionesViewerUserControl(refaccion);
+
+            // Crear el diálogo
+            var dialog = new ContentDialog
+            {
+                Title = "Detalles de la Refacción",
+                Content = viewerControl,
+                CloseButtonText = "Cerrar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            await dialog.ShowAsync();
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de ver detalles de la refacción seleccionada
+        /// </summary>
+        private async void ViewSelectedRefaccionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedRefaccion == null)
+                return;
+
+            // Crear el UserControl para visualizar la refacción
+            var viewerControl = new RefaccionesViewerUserControl(SelectedRefaccion);
+
+            // Crear el diálogo
+            var dialog = new ContentDialog
+            {
+                Title = "Detalles de la Refacción",
+                Content = viewerControl,
+                CloseButtonText = "Cerrar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            await dialog.ShowAsync();
+        }
     }
 }

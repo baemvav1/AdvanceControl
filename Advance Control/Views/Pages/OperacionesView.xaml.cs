@@ -500,5 +500,42 @@ namespace Advance_Control.Views
                     fechaHoraInicio: DateTime.Now);
             }
         }
+
+        private async void ViewRefaccionFromCargoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cargo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
+                return;
+
+            // Verificar que el cargo sea de tipo Refaccion y tenga un idRelacionCargo
+            if (cargo.TipoCargo != "Refaccion" || !cargo.IdRelacionCargo.HasValue)
+                return;
+
+            try
+            {
+                // Crear el UserControl para visualizar la refacción usando el ID de la relación
+                var viewerControl = new Equipos.RefaccionesViewerUserControl(cargo.IdRelacionCargo.Value);
+
+                // Crear el diálogo
+                var dialog = new ContentDialog
+                {
+                    Title = "Detalles de la Refacción",
+                    Content = viewerControl,
+                    CloseButtonText = "Cerrar",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al mostrar detalles de refacción: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "No se pudo cargar la información de la refacción. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
     }
 }

@@ -19,6 +19,14 @@ namespace Advance_Control.Services.Refacciones
         Task<List<RefaccionDto>> GetRefaccionesAsync(RefaccionQueryDto? query = null, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Obtiene una refacción específica por su ID
+        /// </summary>
+        /// <param name="id">ID de la refacción a obtener</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Refacción solicitada o null si no existe</returns>
+        Task<RefaccionDto?> GetRefaccionByIdAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Elimina (soft delete) una refacción por su ID
         /// </summary>
         /// <param name="id">ID de la refacción a eliminar</param>
