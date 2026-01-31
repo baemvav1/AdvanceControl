@@ -17,6 +17,10 @@ namespace Advance_Control.Tests.Services
         private readonly Mock<ILoggingService> _mockLogger;
         private readonly NotificacionService _service;
 
+        // Constantes para pruebas de tiempo
+        private const int TiempoDeVidaPorDefecto = 3;
+        private const double BufferSegundos = 0.5;
+
         public NotificacionServiceTests()
         {
             _mockLogger = new Mock<ILoggingService>();
@@ -243,7 +247,7 @@ namespace Advance_Control.Tests.Services
 
             // Assert
             Assert.NotNull(resultado);
-            Assert.Equal(3, resultado.TiempoDeVidaSegundos);
+            Assert.Equal(TiempoDeVidaPorDefecto, resultado.TiempoDeVidaSegundos);
         }
 
         [Fact]
@@ -366,8 +370,8 @@ namespace Advance_Control.Tests.Services
             await _service.MostrarNotificacionAsync(titulo);
             Assert.Single(_service.ObtenerNotificaciones());
 
-            // Wait for auto-deletion (3 seconds + buffer)
-            await Task.Delay(TimeSpan.FromSeconds(3.5));
+            // Wait for auto-deletion (default time + buffer)
+            await Task.Delay(TimeSpan.FromSeconds(TiempoDeVidaPorDefecto + BufferSegundos));
 
             // Assert
             Assert.Empty(_service.ObtenerNotificaciones());
@@ -383,8 +387,8 @@ namespace Advance_Control.Tests.Services
             await _service.MostrarNotificacionAsync(titulo);
             Assert.Single(_service.ObtenerNotificaciones());
 
-            // Wait for some time to verify it doesn't auto-delete
-            await Task.Delay(TimeSpan.FromSeconds(4));
+            // Wait longer than default timeout to verify it doesn't auto-delete
+            await Task.Delay(TimeSpan.FromSeconds(TiempoDeVidaPorDefecto + 1));
 
             // Assert
             Assert.Single(_service.ObtenerNotificaciones());
