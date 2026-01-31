@@ -94,6 +94,49 @@ namespace Advance_Control.Services.Refacciones
         }
 
         /// <summary>
+        /// Obtiene una refacción específica por su ID
+        /// </summary>
+        public async Task<RefaccionDto?> GetRefaccionByIdAsync(int id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "refaccion_crud");
+                url = $"{url}/{id}";
+
+                await _logger.LogInformationAsync($"Obteniendo refacción {id} desde: {url}", "RefaccionService", "GetRefaccionByIdAsync");
+
+                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al obtener refacción. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "RefaccionService",
+                        "GetRefaccionByIdAsync");
+                    return null;
+                }
+
+                var refaccion = await response.Content.ReadFromJsonAsync<RefaccionDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                await _logger.LogInformationAsync($"Refacción {id} obtenida correctamente", "RefaccionService", "GetRefaccionByIdAsync");
+
+                return refaccion;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al obtener refacción", ex, "RefaccionService", "GetRefaccionByIdAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al obtener refacción", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al obtener refacción", ex, "RefaccionService", "GetRefaccionByIdAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Elimina (soft delete) una refacción por su ID
         /// </summary>
         public async Task<bool> DeleteRefaccionAsync(int id, CancellationToken cancellationToken = default)

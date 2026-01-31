@@ -17,6 +17,7 @@
         <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
         <converters:CurrencyConverter x:Key="CurrencyConverter" />
+        <converters:RefaccionVisibilityConverter x:Key="RefaccionVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -344,15 +345,26 @@
                                                                 Binding="{Binding Proveedor}"
                                                                 IsReadOnly="True"
                                                                 Width="*" />
-                                                            <controls:DataGridTemplateColumn Header="Acciones" Width="100">
+                                                            <controls:DataGridTemplateColumn Header="Acciones" Width="Auto">
                                                                 <controls:DataGridTemplateColumn.CellTemplate>
                                                                     <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CargoDto">
-                                                                        <Button
-                                                                            Click="DeleteCargoButton_Click"
-                                                                            Tag="{x:Bind}"
-                                                                            Background="Transparent">
-                                                                            <SymbolIcon Symbol="Delete" />
-                                                                        </Button>
+                                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                            <Button
+                                                                                Click="DeleteCargoButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                Background="Transparent"
+                                                                                ToolTipService.ToolTip="Eliminar cargo">
+                                                                                <SymbolIcon Symbol="Delete" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                Click="ViewRefaccionFromCargoButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                Background="Transparent"
+                                                                                ToolTipService.ToolTip="Ver detalles de refacción"
+                                                                                Visibility="{x:Bind TipoCargo, Converter={StaticResource RefaccionVisibilityConverter}}">
+                                                                                <SymbolIcon Symbol="View" />
+                                                                            </Button>
+                                                                        </StackPanel>
                                                                     </DataTemplate>
                                                                 </controls:DataGridTemplateColumn.CellTemplate>
                                                             </controls:DataGridTemplateColumn>
