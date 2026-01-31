@@ -149,6 +149,49 @@
                 </ListView.ItemTemplate>
             </ListView>
 
+            <!--  Selected Proveedor Panel  -->
+            <StackPanel
+                x:Name="SelectedProveedorPanel"
+                Margin="0,12,0,0"
+                Visibility="Collapsed">
+                <TextBlock
+                    Margin="0,0,0,4"
+                    FontWeight="SemiBold"
+                    Text="Proveedor seleccionado:" />
+                <Border
+                    Padding="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock
+                                x:Name="SelectedProveedorIdTextBlock"
+                                FontSize="14"
+                                FontWeight="SemiBold" />
+                            <TextBlock
+                                x:Name="SelectedProveedorNombreTextBlock"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock
+                                x:Name="SelectedProveedorCostoTextBlock"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Click="ShowProveedoresListButton_Click"
+                            Content="Cambiar" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+
             <!--  Proveedores button and grid  -->
             <StackPanel
                 x:Name="ProveedoresPanel"

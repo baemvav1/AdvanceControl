@@ -166,10 +166,15 @@ namespace Advance_Control.Views.Equipos
                         
                         if (_hasProveedores)
                         {
-                            ProveedoresPanel.Visibility = Visibility.Visible;
-                            if (_idProveedor != 0)
+                            // If idProveedor is preselected (not 0), load and auto-select the provider
+                            if (_idProveedor.HasValue && _idProveedor.Value != 0)
                             {
-                                 //si el idproveedor esta preseleccionado, es decir es diferente de 0
+                                await LoadAndPreselectProveedorAsync(SelectedRefaccion.IdRefaccion, _idProveedor.Value);
+                            }
+                            else
+                            {
+                                // Show proveedores button for manual selection
+                                ProveedoresPanel.Visibility = Visibility.Visible;
                             }
                         }
                         else
@@ -201,6 +206,7 @@ namespace Advance_Control.Views.Equipos
             
             // Hide selected refaccion panel and proveedores
             SelectedRefaccionPanel.Visibility = Visibility.Collapsed;
+            SelectedProveedorPanel.Visibility = Visibility.Collapsed;
             ProveedoresPanel.Visibility = Visibility.Collapsed;
             ProveedoresGrid.Visibility = Visibility.Collapsed;
             
@@ -283,15 +289,84 @@ namespace Advance_Control.Views.Equipos
         {
             SelectedProveedor = ProveedoresListView.SelectedItem as ProveedorPorRefaccionDto;
             
-            // When a proveedor is selected, notify the cost changed
+            // When a proveedor is selected, show the selected proveedor panel
             if (SelectedProveedor != null)
             {
+                // Hide the proveedores list and button
+                ProveedoresPanel.Visibility = Visibility.Collapsed;
+                ProveedoresGrid.Visibility = Visibility.Collapsed;
+                
+                // Show selected proveedor panel
+                SelectedProveedorPanel.Visibility = Visibility.Visible;
+                SelectedProveedorIdTextBlock.Text = $"ID: {SelectedProveedor.IdProveedor?.ToString() ?? "Sin ID"}";
+                SelectedProveedorNombreTextBlock.Text = SelectedProveedor.NombreComercial ?? string.Empty;
+                SelectedProveedorCostoTextBlock.Text = $"Costo: ${SelectedProveedor.Costo?.ToString("F2") ?? "N/A"}";
+                
+                // Notify the cost changed
                 CostoChanged?.Invoke(this, SelectedProveedor.Costo);
             }
             else if (SelectedRefaccion != null)
             {
                 // When proveedor is deselected, revert to refaccion cost
                 CostoChanged?.Invoke(this, SelectedRefaccion.Costo);
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón para mostrar la lista de proveedores nuevamente
+        /// </summary>
+        private void ShowProveedoresListButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Hide selected proveedor panel
+            SelectedProveedorPanel.Visibility = Visibility.Collapsed;
+            
+            // Show proveedores button and grid
+            ProveedoresPanel.Visibility = Visibility.Visible;
+            ProveedoresGrid.Visibility = Visibility.Visible;
+            
+            // Clear provider selection (but keep the list)
+            ProveedoresListView.SelectedItem = null;
+            SelectedProveedor = null;
+            
+            // Revert to refaccion cost
+            if (SelectedRefaccion != null)
+            {
+                CostoChanged?.Invoke(this, SelectedRefaccion.Costo);
+            }
+        }
+
+        /// <summary>
+        /// Carga los proveedores y preselecciona el proveedor especificado si existe
+        /// </summary>
+        private async Task LoadAndPreselectProveedorAsync(int idRefaccion, int idProveedorPreselected)
+        {
+            try
+            {
+                // Load providers
+                await LoadProveedoresAsync(idRefaccion);
+                
+                // Find the provider with the preselected ID
+                var proveedorToSelect = _proveedores.FirstOrDefault(p => p.IdProveedor == idProveedorPreselected);
+                
+                if (proveedorToSelect != null)
+                {
+                    // Select the provider in the ListView (this will trigger SelectionChanged)
+                    ProveedoresListView.SelectedItem = proveedorToSelect;
+                    
+                    // Since selection triggers the event handler, the UI will be updated automatically
+                }
+                else
+                {
+                    // Provider not found in the list, show manual selection UI
+                    ProveedoresPanel.Visibility = Visibility.Visible;
+                    ProveedoresGrid.Visibility = Visibility.Visible;
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al preseleccionar proveedor: {ex.GetType().Name} - {ex.Message}");
+                // On error, show manual selection UI
+                ProveedoresPanel.Visibility = Visibility.Visible;
             }
         }
     }
