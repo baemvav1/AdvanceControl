@@ -8,6 +8,8 @@ using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Models;
 using Advance_Control.Services.Refacciones;
 using Advance_Control.Services.RelacionesProveedorRefaccion;
+using Advance_Control.Services.Dialog;
+using Advance_Control.UserControls;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Advance_Control.Views.Equipos
@@ -19,6 +21,7 @@ namespace Advance_Control.Views.Equipos
     {
         private readonly IRefaccionService _refaccionService;
         private readonly IRelacionProveedorRefaccionService _relacionProveedorRefaccionService;
+        private readonly IDialogService _dialogService;
         private List<RefaccionDto> _allRefacciones = new();
         private List<ProveedorPorRefaccionDto> _proveedores = new();
         private bool _isDataLoaded = false;
@@ -33,6 +36,7 @@ namespace Advance_Control.Views.Equipos
             // Resolve services from DI
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
             _relacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionProveedorRefaccionService>();
+            _dialogService = ((App)Application.Current).Host.Services.GetRequiredService<IDialogService>();
             _idProveedor = idProveedor;
             // Cargar refacciones al inicializar
             this.Loaded += OnLoaded;
@@ -367,6 +371,34 @@ namespace Advance_Control.Views.Equipos
                 System.Diagnostics.Debug.WriteLine($"Error al preseleccionar proveedor: {ex.GetType().Name} - {ex.Message}");
                 // On error, show manual selection UI
                 ProveedoresPanel.Visibility = Visibility.Visible;
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón para ver detalles de una refacción en la lista
+        /// </summary>
+        private async void ViewRefaccionDetailsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is RefaccionDto refaccion)
+            {
+                await _dialogService.ShowDialogAsync<RefaccionesViewerUserControl>(
+                    configureControl: control => new RefaccionesViewerUserControl(refaccion),
+                    title: "Detalles de la Refacción"
+                );
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón para ver detalles de la refacción seleccionada
+        /// </summary>
+        private async void ViewSelectedRefaccionDetailsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (SelectedRefaccion != null)
+            {
+                await _dialogService.ShowDialogAsync<RefaccionesViewerUserControl>(
+                    configureControl: control => new RefaccionesViewerUserControl(SelectedRefaccion),
+                    title: "Detalles de la Refacción"
+                );
             }
         }
     }

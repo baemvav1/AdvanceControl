@@ -1,7 +1,9 @@
 using Advance_Control.Models;
 using Advance_Control.Services.Cargos;
+using Advance_Control.Services.Dialog;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
+using Advance_Control.UserControls;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
 using CommunityToolkit.WinUI.UI.Controls;
@@ -27,6 +29,7 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly ICargoService _cargoService;
         private readonly IUserInfoService _userInfoService;
+        private readonly IDialogService _dialogService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -46,6 +49,9 @@ namespace Advance_Control.Views
 
             // Resolver el servicio de información de usuario desde DI
             _userInfoService = ((App)Application.Current).Host.Services.GetRequiredService<IUserInfoService>();
+
+            // Resolver el servicio de diálogos desde DI
+            _dialogService = ((App)Application.Current).Host.Services.GetRequiredService<IDialogService>();
 
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
@@ -439,6 +445,37 @@ namespace Advance_Control.Views
                         nota: "Ocurrió un error al eliminar el cargo. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón para ver detalles de la refacción asociada a un cargo
+        /// </summary>
+        private async void ViewRefaccionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cargo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
+                return;
+
+            // Verificar que el cargo tenga IdRelacionCargo y sea de tipo Refaccion
+            if (!cargo.IdRelacionCargo.HasValue || cargo.IdRelacionCargo.Value <= 0)
+                return;
+
+            try
+            {
+                // Mostrar el diálogo con el viewer de la refacción
+                await _dialogService.ShowDialogAsync<RefaccionesViewerUserControl>(
+                    configureControl: control => new RefaccionesViewerUserControl(cargo.IdRelacionCargo.Value),
+                    title: "Detalles de la Refacción"
+                );
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al mostrar detalles de refacción: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "No se pudo cargar la información de la refacción.",
+                    fechaHoraInicio: DateTime.Now);
             }
         }
 
