@@ -41,9 +41,15 @@ namespace Advance_Control.Services.Quotes
             {
                 await _logger.LogInformationAsync($"Generando cotización PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateQuotePdfAsync");
 
-                // Generate filename
+                // Generate filename with sanitized client name
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var fileName = $"Cotizacion_{operacion.RazonSocial?.Replace(" ", "_") ?? "Cliente"}_{timestamp}.pdf";
+                var clientName = operacion.RazonSocial ?? "Cliente";
+                
+                // Sanitize the client name to remove invalid filename characters
+                var invalidChars = Path.GetInvalidFileNameChars();
+                var sanitizedClientName = string.Join("_", clientName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
+                
+                var fileName = $"Cotizacion_{sanitizedClientName}_{timestamp}.pdf";
                 var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                 var quotesFolder = Path.Combine(documentsPath, "Advance Control", "Cotizaciones");
                 
@@ -84,6 +90,9 @@ namespace Advance_Control.Services.Quotes
                             {
                                 column.Spacing(20);
 
+                                // Use consistent date throughout the document
+                                var quoteDate = operacion.FechaInicio ?? DateTime.Now;
+
                                 // Information section
                                 column.Item().Row(row =>
                                 {
@@ -99,7 +108,7 @@ namespace Advance_Control.Services.Quotes
                                     {
                                         col.Item().Text("Información de la Operación").Bold().FontSize(14);
                                         col.Item().PaddingTop(5);
-                                        col.Item().Text($"Fecha: {DateTime.Now:dd/MM/yyyy}");
+                                        col.Item().Text($"Fecha: {quoteDate:dd/MM/yyyy}");
                                         col.Item().Text($"Atendido por: {operacion.Atiende ?? "N/A"}");
                                         col.Item().Text($"Tipo: {GetTipoOperacion(operacion.IdTipo)}");
                                     });
