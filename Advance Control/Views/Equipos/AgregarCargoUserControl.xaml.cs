@@ -31,6 +31,22 @@ namespace Advance_Control.Views.Equipos
             _idOperacion = idOperacion;
             _idProveedor = idProveedor;
             //IdOperacionTextBlock.Text = idOperacion.ToString();
+            
+            // Subscribe to Unloaded event for cleanup
+            this.Unloaded += AgregarCargoUserControl_Unloaded;
+        }
+
+        /// <summary>
+        /// Cleanup event handlers when the control is unloaded
+        /// </summary>
+        private void AgregarCargoUserControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // Unsubscribe from events to prevent memory leaks
+            if (_refaccionSelector != null)
+            {
+                _refaccionSelector.CostoChanged -= OnRefaccionCostoChanged;
+                _refaccionSelector.ViewRefaccionRequested -= OnViewRefaccionRequested;
+            }
         }
 
         /// <summary>
