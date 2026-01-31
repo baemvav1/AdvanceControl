@@ -244,23 +244,48 @@ await _notificacionService.MostrarNotificacionAsync(
 
 ## 📈 Impacto en el Código
 
-### Archivos Modificados
-| Archivo | Líneas Agregadas | Líneas Eliminadas | Cambio Neto |
-|---------|------------------|-------------------|-------------|
-| NotificacionDto.cs | 7 | 0 | +7 |
-| INotificacionService.cs | 3 | 2 | +1 |
-| NotificacionService.cs | 40 | 6 | +34 |
-| MainViewModel.cs | 15 | 1 | +14 |
-| MainWindow.xaml | 45 | 23 | +22 |
-| NotificacionServiceTests.cs | 70 | 0 | +70 |
+### Archivos Modificados (Última actualización)
+| Archivo | Cambio | Descripción |
+|---------|--------|-------------|
+| NotificacionService.cs | Crítico | Agregado soporte para UI thread safety en todas las operaciones de ObservableCollection |
 
-**Total:** ~148 líneas agregadas, ~32 líneas eliminadas
+**Cambios recientes:**
+- **MostrarNotificacionAsync**: Ahora usa `DispatcherQueue` para agregar notificaciones en el hilo de UI
+- **EliminarNotificacion**: Ahora usa `DispatcherQueue` para eliminar notificaciones en el hilo de UI
+- **LimpiarNotificaciones**: Ahora usa `DispatcherQueue` para limpiar notificaciones en el hilo de UI
 
 ### Archivos de Documentación
 - ✅ README.md actualizado
 - ✅ NOTIFICACION_SERVICE_SUMMARY.md actualizado
 - ✅ NOTIFICACIONES_EJEMPLOS_USO.md creado (nuevo)
 - ✅ RESUMEN_CAMBIOS_NOTIFICACIONES.md creado (este archivo)
+
+## 🐛 Correcciones de Bugs Críticos
+
+### Bug #1: Auto-close no funcionaba
+**Problema:** Las notificaciones con tiempo de vida no se cerraban automáticamente.
+
+**Causa:** El timer ejecutaba `EliminarNotificacion` desde un background thread (Task.Run), pero `ObservableCollection` requiere modificaciones en el UI thread.
+
+**Solución:** 
+```csharp
+// Eliminar de la colección en el hilo de UI
+var dispatcherQueue = App.MainWindow?.DispatcherQueue;
+if (dispatcherQueue != null)
+{
+    dispatcherQueue.TryEnqueue(() =>
+    {
+        _notificaciones.Remove(notificacion);
+    });
+}
+```
+
+### Bug #2: Botón de eliminar manual no funcionaba
+**Problema:** El botón de eliminar no cerraba las notificaciones.
+
+**Causa:** Similar al bug #1, el método `EliminarNotificacion` podría ser llamado desde diferentes threads y `ObservableCollection` requiere UI thread.
+
+**Solución:** Mismo fix que bug #1 - todas las modificaciones de `ObservableCollection` ahora se ejecutan en el UI thread usando `DispatcherQueue`.
 
 ## 🎨 Diseño de UI
 
@@ -332,7 +357,8 @@ UI se actualiza automáticamente (MVVM binding)
 ### Thread Safety
 - ✅ Task.Run para operaciones asíncronas
 - ✅ CancellationToken para control de tareas
-- ✅ ObservableCollection thread-safe para UI
+- ✅ **ObservableCollection modificado SOLO en UI thread usando DispatcherQueue**
+- ✅ Fallback a manipulación directa cuando DispatcherQueue no está disponible (testing)
 
 ## 📝 Notas Técnicas
 
