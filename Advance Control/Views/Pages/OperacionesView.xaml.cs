@@ -534,12 +534,12 @@ namespace Advance_Control.Views
                 // Esto asegura que tengamos la información más reciente incluyendo IdRelacionCargo
                 System.Diagnostics.Debug.WriteLine($"Consultando cargo {cargo.IdCargo} desde API...");
                 
-                var cargoQuery = new CargoEditDto
+                var query = new CargoEditDto
                 {
                     IdCargo = cargo.IdCargo
                 };
 
-                var cargos = await _cargoService.GetCargosAsync(cargoQuery);
+                var cargos = await _cargoService.GetCargosAsync(query);
                 var cargoActualizado = cargos?.FirstOrDefault();
                 
                 if (cargoActualizado == null)
