@@ -589,5 +589,74 @@ namespace Advance_Control.Views
                     fechaHoraInicio: DateTime.Now);
             }
         }
+
+        private async void GenerarCotizacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            if (!operacion.IdOperacion.HasValue)
+                return;
+
+            // Verificar que la operación tenga cargos cargados
+            if (operacion.Cargos == null || operacion.Cargos.Count == 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "No hay cargos",
+                    nota: "No se puede generar una cotización porque no hay cargos asociados a esta operación.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            try
+            {
+                // Generar la cotización
+                var filePath = await ViewModel.GenerateQuoteAsync(operacion);
+
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    // Mostrar diálogo de éxito con opción de abrir el archivo
+                    var dialog = new ContentDialog
+                    {
+                        Title = "Cotización generada",
+                        Content = $"La cotización se ha generado exitosamente en:\n\n{filePath}\n\n¿Desea abrir el archivo?",
+                        PrimaryButtonText = "Abrir",
+                        CloseButtonText = "Cerrar",
+                        DefaultButton = ContentDialogButton.Primary,
+                        XamlRoot = this.XamlRoot
+                    };
+
+                    var result = await dialog.ShowAsync();
+
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        // Abrir el archivo PDF con la aplicación predeterminada
+                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                        await Windows.System.Launcher.LaunchFileAsync(file);
+                    }
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Cotización generada",
+                        nota: "La cotización PDF se ha generado correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo generar la cotización. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al generar cotización: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al generar la cotización. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
     }
 }

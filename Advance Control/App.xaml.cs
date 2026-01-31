@@ -23,6 +23,7 @@ using Advance_Control.Services.Proveedores;
 using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Cargos;
 using Advance_Control.Services.Servicios;
+using Advance_Control.Services.Quotes;
 
 namespace Advance_Control
 {
@@ -384,6 +385,9 @@ namespace Advance_Control
 
                     // Registrar NotificacionService
                     services.AddSingleton<INotificacionService, NotificacionService>();
+
+                    // Registrar QuoteService (PDF generation)
+                    services.AddSingleton<IQuoteService, QuoteService>();
 
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();

@@ -305,6 +305,15 @@
                                                                 <TextBlock Text="Agregar Cargo" />
                                                             </StackPanel>
                                                         </Button>
+                                                        <Button
+                                                            Click="GenerarCotizacionButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            Background="{ThemeResource SystemAccentColorLight1}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Document" />
+                                                                <TextBlock Text="Generar Cotización" />
+                                                            </StackPanel>
+                                                        </Button>
                                                     </StackPanel>
 
                                                     <!-- DataGrid for Cargos -->

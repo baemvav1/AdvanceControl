@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Quotes;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,6 +18,7 @@ namespace Advance_Control.ViewModels
     {
         private readonly IOperacionService _operacionService;
         private readonly ILoggingService _logger;
+        private readonly IQuoteService _quoteService;
         private ObservableCollection<OperacionDto> _operaciones;
         private bool _isLoading;
         private string? _errorMessage;
@@ -28,10 +30,11 @@ namespace Advance_Control.ViewModels
         private string? _selectedClienteText;
         private string? _selectedEquipoText;
 
-        public OperacionesViewModel(IOperacionService operacionService, ILoggingService logger)
+        public OperacionesViewModel(IOperacionService operacionService, ILoggingService logger, IQuoteService quoteService)
         {
             _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _quoteService = quoteService ?? throw new ArgumentNullException(nameof(quoteService));
             _operaciones = new ObservableCollection<OperacionDto>();
         }
 
@@ -242,6 +245,41 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = $"Error al eliminar operación: {ex.Message}";
                 await _logger.LogErrorAsync($"Error al eliminar operación {idOperacion}", ex, "OperacionesViewModel", "DeleteOperacionAsync");
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Genera una cotización PDF para la operación especificada con sus cargos
+        /// </summary>
+        public async Task<string?> GenerateQuoteAsync(OperacionDto operacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (operacion == null)
+                {
+                    ErrorMessage = "No se puede generar cotización: operación no válida.";
+                    return null;
+                }
+
+                if (operacion.Cargos == null || operacion.Cargos.Count == 0)
+                {
+                    ErrorMessage = "No se puede generar cotización: no hay cargos asociados a esta operación.";
+                    return null;
+                }
+
+                await _logger.LogInformationAsync($"Generando cotización para operación {operacion.IdOperacion}...", "OperacionesViewModel", "GenerateQuoteAsync");
+
+                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos);
+
+                await _logger.LogInformationAsync($"Cotización generada exitosamente: {filePath}", "OperacionesViewModel", "GenerateQuoteAsync");
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar cotización: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al generar cotización para operación {operacion?.IdOperacion}", ex, "OperacionesViewModel", "GenerateQuoteAsync");
+                return null;
             }
         }
     }
