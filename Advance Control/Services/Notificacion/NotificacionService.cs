@@ -46,6 +46,19 @@ namespace Advance_Control.Services.Notificacion
                 throw new ArgumentException("El título es requerido.", nameof(titulo));
             }
 
+            // Aplicar tiempo de vida por defecto de 3 segundos para notificaciones no-error
+            // Las notificaciones de error (título contiene "Error" o "Validación") no se auto-eliminan
+            if (tiempoDeVidaSegundos == null)
+            {
+                bool isErrorNotification = titulo.Contains("Error", StringComparison.OrdinalIgnoreCase) || 
+                                          titulo.Contains("Validación", StringComparison.OrdinalIgnoreCase);
+                
+                if (!isErrorNotification)
+                {
+                    tiempoDeVidaSegundos = 3; // 3 segundos por defecto para notificaciones normales
+                }
+            }
+
             var notificacion = new NotificacionDto
             {
                 Titulo = titulo,
