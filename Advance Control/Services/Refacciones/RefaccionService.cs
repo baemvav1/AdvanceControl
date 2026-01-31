@@ -51,6 +51,9 @@ namespace Advance_Control.Services.Refacciones
                     if (!string.IsNullOrWhiteSpace(query.Descripcion))
                         queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
 
+                    if (query.IdRefaccion != 0)
+                        queryParams.Add($"idRefaccion={Uri.EscapeDataString(query.IdRefaccion.ToString())}");
+
                     if (queryParams.Count > 0)
                     {
                         url = $"{url}?{string.Join("&", queryParams)}";
@@ -101,7 +104,7 @@ namespace Advance_Control.Services.Refacciones
             try
             {
                 var url = _endpoints.GetEndpoint("api", "refaccion_crud");
-                url = $"{url}/{id}";
+                url = $"{url}?idRefaccion={id}";
 
                 await _logger.LogInformationAsync($"Obteniendo refacción {id} desde: {url}", "RefaccionService", "GetRefaccionByIdAsync");
 

@@ -73,7 +73,16 @@ namespace Advance_Control.Views.Equipos
                 ContentPanel.Visibility = Visibility.Collapsed;
                 ErrorTextBlock.Visibility = Visibility.Collapsed;
 
-                _refaccion = await _refaccionService.GetRefaccionByIdAsync(idRefaccion, CancellationToken.None);
+               
+
+                var query = new RefaccionQueryDto
+                {
+                    IdRefaccion = idRefaccion
+                };
+
+                var refacciones = await _refaccionService.GetRefaccionesAsync(query, CancellationToken.None);
+
+                _refaccion = refacciones.Count > 0 ? refacciones[0] : null;
 
                 if (_refaccion != null)
                 {
