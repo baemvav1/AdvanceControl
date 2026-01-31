@@ -517,21 +517,56 @@ namespace Advance_Control.Views
                 return;
             }
 
-            // Verificar que tenga un idRelacionCargo
-            if (!cargo.IdRelacionCargo.HasValue)
+            // Validar que tengamos un IdCargo válido para consultar
+            if (cargo.IdCargo <= 0)
             {
-                System.Diagnostics.Debug.WriteLine($"IdRelacionCargo es null para cargo {cargo.IdCargo}");
+                System.Diagnostics.Debug.WriteLine($"IdCargo inválido: {cargo.IdCargo}");
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
-                    nota: "No se puede mostrar la refacción porque el cargo no tiene una relación válida. El campo IdRelacionCargo está vacío.",
+                    nota: "No se puede mostrar la refacción porque el cargo no tiene un ID válido.",
                     fechaHoraInicio: DateTime.Now);
                 return;
             }
 
             try
             {
-                // Crear el UserControl para visualizar la refacción usando el ID de la relación
-                var viewerControl = new Equipos.RefaccionesViewerUserControl(cargo.IdRelacionCargo.Value);
+                // Obtener el cargo actualizado desde el API usando su ID
+                // Esto asegura que tengamos la información más reciente incluyendo IdRelacionCargo
+                System.Diagnostics.Debug.WriteLine($"Consultando cargo {cargo.IdCargo} desde API...");
+                
+                var query = new CargoEditDto
+                {
+                    IdCargo = cargo.IdCargo
+                };
+
+                var cargos = await _cargoService.GetCargosAsync(query);
+                
+                if (cargos == null || cargos.Count == 0)
+                {
+                    System.Diagnostics.Debug.WriteLine($"No se encontró el cargo {cargo.IdCargo} en el API");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo obtener la información del cargo desde el servidor.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                var cargoActualizado = cargos[0];
+                System.Diagnostics.Debug.WriteLine($"Cargo obtenido del API: IdCargo={cargoActualizado.IdCargo}, IdRelacionCargo={cargoActualizado.IdRelacionCargo}");
+
+                // Verificar que el cargo actualizado tenga un idRelacionCargo
+                if (!cargoActualizado.IdRelacionCargo.HasValue)
+                {
+                    System.Diagnostics.Debug.WriteLine($"IdRelacionCargo es null para cargo {cargoActualizado.IdCargo} incluso después de consultar el API");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se puede mostrar la refacción porque el cargo no tiene una relación válida. El campo IdRelacionCargo está vacío en el servidor.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                // Crear el UserControl para visualizar la refacción usando el ID de la relación del cargo actualizado
+                var viewerControl = new Equipos.RefaccionesViewerUserControl(cargoActualizado.IdRelacionCargo.Value);
 
                 // Crear el diálogo
                 var dialog = new ContentDialog
