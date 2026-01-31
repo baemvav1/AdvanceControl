@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Security;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,6 +18,7 @@ namespace Advance_Control.ViewModels
         private readonly IAuthService _authService;
         private readonly ILoggingService _logger;
         private readonly INotificacionService _notificacionService;
+        private readonly ISecureStorage _secureStorage;
         
         private string _user = string.Empty;
         private string _password = string.Empty;
@@ -24,12 +26,18 @@ namespace Advance_Control.ViewModels
         private string _errorMessage = string.Empty;
         private bool _loginSuccessful;
         private bool _isAuthenticated;
+        private bool _rememberMe;
+        
+        private const string Key_RememberMe = "login.remember_me";
+        private const string Key_SavedUsername = "login.saved_username";
+        private const string Key_SavedPassword = "login.saved_password";
 
-        public LoginViewModel(IAuthService authService, ILoggingService logger, INotificacionService notificacionService)
+        public LoginViewModel(IAuthService authService, ILoggingService logger, INotificacionService notificacionService, ISecureStorage secureStorage)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
+            _secureStorage = secureStorage ?? throw new ArgumentNullException(nameof(secureStorage));
             
             // Inicializar el comando de login y logout
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
@@ -37,6 +45,9 @@ namespace Advance_Control.ViewModels
             
             // Verificar si el usuario ya está autenticado
             _isAuthenticated = _authService.IsAuthenticated;
+            
+            // Cargar credenciales guardadas si existe la configuración de recordar
+            _ = LoadSavedCredentialsAsync();
         }
 
         /// <summary>
@@ -150,6 +161,21 @@ namespace Advance_Control.ViewModels
         public bool IsNotAuthenticated => !IsAuthenticated;
 
         /// <summary>
+        /// Indica si se deben recordar las credenciales del usuario
+        /// </summary>
+        public bool RememberMe
+        {
+            get => _rememberMe;
+            set
+            {
+                if (SetProperty(ref _rememberMe, value))
+                {
+                    _ = SaveRememberMePreferenceAsync(value);
+                }
+            }
+        }
+
+        /// <summary>
         /// Comando para ejecutar el inicio de sesión
         /// </summary>
         public ICommand LoginCommand { get; }
@@ -240,6 +266,12 @@ namespace Advance_Control.ViewModels
                     LoginSuccessful = true;
                     await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {User}", "LoginViewModel", "ExecuteLogin");
                     
+                    // Guardar credenciales si RememberMe está habilitado
+                    if (RememberMe)
+                    {
+                        await SaveCredentialsAsync();
+                    }
+                    
                     // Mostrar notificación de bienvenida
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Bienvenido",
@@ -307,8 +339,9 @@ namespace Advance_Control.ViewModels
                         nota: "Ha cerrado sesión exitosamente",
                         fechaHoraInicio: DateTime.Now);
                     
-                    // Limpiar el formulario
+                    // Limpiar el formulario y credenciales guardadas
                     ClearForm();
+                    await ClearSavedCredentialsAsync();
                 }
                 else
                 {
@@ -333,6 +366,174 @@ namespace Advance_Control.ViewModels
         public void RefreshAuthenticationState()
         {
             IsAuthenticated = _authService.IsAuthenticated;
+        }
+
+        /// <summary>
+        /// Carga las credenciales guardadas si el usuario ha habilitado "Recordar"
+        /// </summary>
+        private async Task LoadSavedCredentialsAsync()
+        {
+            try
+            {
+                var rememberMeValue = await _secureStorage.GetAsync(Key_RememberMe);
+                if (rememberMeValue == "true")
+                {
+                    _rememberMe = true;
+                    OnPropertyChanged(nameof(RememberMe));
+                    
+                    var savedUsername = await _secureStorage.GetAsync(Key_SavedUsername);
+                    var savedPassword = await _secureStorage.GetAsync(Key_SavedPassword);
+                    
+                    if (!string.IsNullOrEmpty(savedUsername))
+                    {
+                        _user = savedUsername;
+                        OnPropertyChanged(nameof(User));
+                    }
+                    
+                    if (!string.IsNullOrEmpty(savedPassword))
+                    {
+                        _password = savedPassword;
+                        OnPropertyChanged(nameof(Password));
+                    }
+                    
+                    await _logger.LogDebugAsync("Credenciales cargadas desde almacenamiento seguro", "LoginViewModel", "LoadSavedCredentialsAsync");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync("Error al cargar credenciales guardadas", "LoginViewModel", "LoadSavedCredentialsAsync");
+                // Ignorar errores, el usuario puede ingresar sus credenciales manualmente
+            }
+        }
+
+        /// <summary>
+        /// Guarda las credenciales del usuario en almacenamiento seguro
+        /// </summary>
+        private async Task SaveCredentialsAsync()
+        {
+            try
+            {
+                if (RememberMe && !string.IsNullOrEmpty(User) && !string.IsNullOrEmpty(Password))
+                {
+                    await _secureStorage.SetAsync(Key_SavedUsername, User);
+                    await _secureStorage.SetAsync(Key_SavedPassword, Password);
+                    await _logger.LogDebugAsync("Credenciales guardadas en almacenamiento seguro", "LoginViewModel", "SaveCredentialsAsync");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync("Error al guardar credenciales", "LoginViewModel", "SaveCredentialsAsync");
+                // No lanzar excepción, esto no debería impedir el login exitoso
+            }
+        }
+
+        /// <summary>
+        /// Guarda la preferencia de recordar credenciales
+        /// </summary>
+        private async Task SaveRememberMePreferenceAsync(bool value)
+        {
+            try
+            {
+                await _secureStorage.SetAsync(Key_RememberMe, value ? "true" : "false");
+                
+                if (!value)
+                {
+                    // Si se deshabilita "Recordar", limpiar credenciales guardadas
+                    await ClearSavedCredentialsAsync();
+                }
+                
+                await _logger.LogDebugAsync($"Preferencia de recordar actualizada: {value}", "LoginViewModel", "SaveRememberMePreferenceAsync");
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync("Error al guardar preferencia de recordar", "LoginViewModel", "SaveRememberMePreferenceAsync");
+            }
+        }
+
+        /// <summary>
+        /// Limpia las credenciales guardadas del almacenamiento seguro
+        /// </summary>
+        private async Task ClearSavedCredentialsAsync()
+        {
+            try
+            {
+                await _secureStorage.RemoveAsync(Key_RememberMe);
+                await _secureStorage.RemoveAsync(Key_SavedUsername);
+                await _secureStorage.RemoveAsync(Key_SavedPassword);
+                _rememberMe = false;
+                OnPropertyChanged(nameof(RememberMe));
+                await _logger.LogDebugAsync("Credenciales guardadas eliminadas", "LoginViewModel", "ClearSavedCredentialsAsync");
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync("Error al limpiar credenciales guardadas", "LoginViewModel", "ClearSavedCredentialsAsync");
+            }
+        }
+
+        /// <summary>
+        /// Intenta hacer login automático con las credenciales guardadas
+        /// </summary>
+        /// <returns>True si el login automático fue exitoso, false en caso contrario</returns>
+        public async Task<bool> TryAutoLoginAsync()
+        {
+            try
+            {
+                // Verificar si hay credenciales guardadas
+                var rememberMeValue = await _secureStorage.GetAsync(Key_RememberMe);
+                if (rememberMeValue != "true")
+                {
+                    await _logger.LogDebugAsync("Auto-login omitido: RecordarMe no está habilitado", "LoginViewModel", "TryAutoLoginAsync");
+                    return false;
+                }
+
+                var savedUsername = await _secureStorage.GetAsync(Key_SavedUsername);
+                var savedPassword = await _secureStorage.GetAsync(Key_SavedPassword);
+
+                if (string.IsNullOrEmpty(savedUsername) || string.IsNullOrEmpty(savedPassword))
+                {
+                    await _logger.LogDebugAsync("Auto-login omitido: No hay credenciales guardadas", "LoginViewModel", "TryAutoLoginAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Intentando login automático para usuario: {savedUsername}", "LoginViewModel", "TryAutoLoginAsync");
+
+                // Establecer las credenciales
+                _user = savedUsername;
+                _password = savedPassword;
+                _rememberMe = true;
+                OnPropertyChanged(nameof(User));
+                OnPropertyChanged(nameof(Password));
+                OnPropertyChanged(nameof(RememberMe));
+
+                // Intentar autenticar
+                var success = await _authService.AuthenticateAsync(savedUsername, savedPassword);
+                
+                if (success)
+                {
+                    LoginSuccessful = true;
+                    await _logger.LogInformationAsync($"Login automático exitoso para usuario: {savedUsername}", "LoginViewModel", "TryAutoLoginAsync");
+                    
+                    // Mostrar notificación de bienvenida
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Bienvenido",
+                        nota: $"Usuario {savedUsername} ha iniciado sesión automáticamente",
+                        fechaHoraInicio: DateTime.Now);
+                    
+                    return true;
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"Login automático falló para usuario: {savedUsername}", "LoginViewModel", "TryAutoLoginAsync");
+                    // Limpiar credenciales inválidas
+                    await ClearSavedCredentialsAsync();
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error durante el login automático", ex, "LoginViewModel", "TryAutoLoginAsync");
+                return false;
+            }
         }
     }
 }

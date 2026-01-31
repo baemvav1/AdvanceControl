@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Security;
 using Advance_Control.ViewModels;
 using Moq;
 using Xunit;
@@ -17,12 +18,19 @@ namespace Advance_Control.Tests.ViewModels
         private readonly Mock<IAuthService> _mockAuthService;
         private readonly Mock<ILoggingService> _mockLogger;
         private readonly Mock<INotificacionService> _mockNotificationService;
+        private readonly Mock<ISecureStorage> _mockSecureStorage;
 
         public LoginViewModelTests()
         {
             _mockAuthService = new Mock<IAuthService>();
             _mockLogger = new Mock<ILoggingService>();
             _mockNotificationService = new Mock<INotificacionService>();
+            _mockSecureStorage = new Mock<ISecureStorage>();
+            
+            // Setup default return values for secure storage
+            _mockSecureStorage.Setup(x => x.GetAsync(It.IsAny<string>())).ReturnsAsync((string?)null);
+            _mockSecureStorage.Setup(x => x.SetAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+            _mockSecureStorage.Setup(x => x.RemoveAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
         }
 
         [Fact]
@@ -30,7 +38,7 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new LoginViewModel(null!, _mockLogger.Object, _mockNotificationService.Object));
+                new LoginViewModel(null!, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object));
         }
 
         [Fact]
@@ -38,7 +46,7 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new LoginViewModel(_mockAuthService.Object, null!, _mockNotificationService.Object));
+                new LoginViewModel(_mockAuthService.Object, null!, _mockNotificationService.Object, _mockSecureStorage.Object));
         }
 
         [Fact]
@@ -46,14 +54,22 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, null!));
+                new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, null!, _mockSecureStorage.Object));
+        }
+
+        [Fact]
+        public void Constructor_WithNullSecureStorage_ThrowsArgumentNullException()
+        {
+            // Act & Assert
+            Assert.Throws<ArgumentNullException>(() => 
+                new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, null!));
         }
 
         [Fact]
         public void User_WhenSet_UpdatesCanLogin()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
             var canLoginChangedCount = 0;
             viewModel.PropertyChanged += (s, e) =>
             {
@@ -73,7 +89,7 @@ namespace Advance_Control.Tests.ViewModels
         public void Password_WhenSet_UpdatesCanLogin()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
             var canLoginChangedCount = 0;
             viewModel.PropertyChanged += (s, e) =>
             {
@@ -93,7 +109,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WithValidCredentials_ReturnsTrue()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "testuser",
                 Password = "password123"
@@ -107,7 +123,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WithEmptyUser_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "",
                 Password = "password123"
@@ -121,7 +137,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WithEmptyPassword_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "testuser",
                 Password = ""
@@ -135,7 +151,7 @@ namespace Advance_Control.Tests.ViewModels
         public void CanLogin_WhenLoading_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "testuser",
                 Password = "password123"
@@ -152,7 +168,7 @@ namespace Advance_Control.Tests.ViewModels
         public void HasError_WithErrorMessage_ReturnsTrue()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
 
             // Act
             viewModel.GetType().GetProperty("ErrorMessage")!.SetValue(viewModel, "Test error");
@@ -165,7 +181,7 @@ namespace Advance_Control.Tests.ViewModels
         public void HasError_WithoutErrorMessage_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
 
             // Assert
             Assert.False(viewModel.HasError);
@@ -175,7 +191,7 @@ namespace Advance_Control.Tests.ViewModels
         public void ClearForm_ResetsAllFields()
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "testuser",
                 Password = "password123"
@@ -195,7 +211,7 @@ namespace Advance_Control.Tests.ViewModels
         public void LoginCommand_IsNotNull()
         {
             // Arrange & Act
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
 
             // Assert
             Assert.NotNull(viewModel.LoginCommand);
@@ -205,7 +221,7 @@ namespace Advance_Control.Tests.ViewModels
         public void LogoutCommand_IsNotNull()
         {
             // Arrange & Act
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
 
             // Assert
             Assert.NotNull(viewModel.LogoutCommand);
@@ -219,7 +235,7 @@ namespace Advance_Control.Tests.ViewModels
         public void ExecuteLogin_WithInvalidCredentials_SetsErrorMessage(string user, string password, string expectedError)
         {
             // Arrange
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = user,
                 Password = password
@@ -243,7 +259,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(true);
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "validuser",
                 Password = "validpassword"
@@ -267,7 +283,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ReturnsAsync(false);
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "validuser",
                 Password = "validpassword"
@@ -292,7 +308,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
                 .ThrowsAsync(new Exception("Network error"));
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object)
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
             {
                 User = "validuser",
                 Password = "validpassword"
@@ -316,7 +332,7 @@ namespace Advance_Control.Tests.ViewModels
             _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
 
             // Act
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
 
             // Assert
             Assert.True(viewModel.IsAuthenticated);
@@ -327,7 +343,7 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Arrange
             _mockAuthService.Setup(x => x.IsAuthenticated).Returns(false);
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
             
             // Act - change the auth state
             _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
@@ -346,7 +362,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.LogoutAsync(default))
                 .ReturnsAsync(true);
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
             viewModel.RefreshAuthenticationState(); // Set IsAuthenticated to true
 
             // Act
@@ -370,7 +386,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.LogoutAsync(default))
                 .ReturnsAsync(false);
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
             viewModel.RefreshAuthenticationState();
 
             // Act
@@ -392,7 +408,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.LogoutAsync(default))
                 .ThrowsAsync(new Exception("Network error"));
 
-            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
             viewModel.RefreshAuthenticationState();
 
             // Act
@@ -403,6 +419,196 @@ namespace Advance_Control.Tests.ViewModels
 
             // Assert
             Assert.Contains("Error al cerrar sesión", viewModel.ErrorMessage);
+        }
+
+        // ===== RememberMe Functionality Tests =====
+
+        [Fact]
+        public async Task RememberMe_WhenSetToTrue_SavesPreference()
+        {
+            // Arrange
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
+
+            // Act
+            viewModel.RememberMe = true;
+            await Task.Delay(100); // Give time for async save
+
+            // Assert
+            Assert.True(viewModel.RememberMe);
+            _mockSecureStorage.Verify(x => x.SetAsync("login.remember_me", "true"), Times.Once);
+        }
+
+        [Fact]
+        public async Task RememberMe_WhenSetToFalse_ClearsSavedCredentials()
+        {
+            // Arrange
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
+            {
+                RememberMe = true
+            };
+            await Task.Delay(100); // Give time for async save
+
+            // Act
+            viewModel.RememberMe = false;
+            await Task.Delay(200); // Give time for async clear
+
+            // Assert
+            Assert.False(viewModel.RememberMe);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.remember_me"), Times.AtLeastOnce);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.saved_username"), Times.AtLeastOnce);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.saved_password"), Times.AtLeastOnce);
+        }
+
+        [Fact]
+        public async Task ExecuteLogin_WithRememberMeEnabled_SavesCredentials()
+        {
+            // Arrange
+            _mockAuthService
+                .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
+                .ReturnsAsync(true);
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
+            {
+                User = "testuser",
+                Password = "testpass123",
+                RememberMe = true
+            };
+
+            // Act
+            viewModel.LoginCommand.Execute(null);
+            await Task.Delay(500); // Wait for async login to complete
+
+            // Assert
+            _mockSecureStorage.Verify(x => x.SetAsync("login.saved_username", "testuser"), Times.Once);
+            _mockSecureStorage.Verify(x => x.SetAsync("login.saved_password", "testpass123"), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExecuteLogin_WithRememberMeDisabled_DoesNotSaveCredentials()
+        {
+            // Arrange
+            _mockAuthService
+                .Setup(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default))
+                .ReturnsAsync(true);
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
+            {
+                User = "testuser",
+                Password = "testpass123",
+                RememberMe = false
+            };
+
+            // Act
+            viewModel.LoginCommand.Execute(null);
+            await Task.Delay(500); // Wait for async login to complete
+
+            // Assert
+            _mockSecureStorage.Verify(x => x.SetAsync("login.saved_username", It.IsAny<string>()), Times.Never);
+            _mockSecureStorage.Verify(x => x.SetAsync("login.saved_password", It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task TryAutoLoginAsync_WithNoSavedCredentials_ReturnsFalse()
+        {
+            // Arrange
+            _mockSecureStorage.Setup(x => x.GetAsync("login.remember_me")).ReturnsAsync((string?)null);
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
+
+            // Act
+            var result = await viewModel.TryAutoLoginAsync();
+
+            // Assert
+            Assert.False(result);
+            _mockAuthService.Verify(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default), Times.Never);
+        }
+
+        [Fact]
+        public async Task TryAutoLoginAsync_WithRememberMeDisabled_ReturnsFalse()
+        {
+            // Arrange
+            _mockSecureStorage.Setup(x => x.GetAsync("login.remember_me")).ReturnsAsync("false");
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
+
+            // Act
+            var result = await viewModel.TryAutoLoginAsync();
+
+            // Assert
+            Assert.False(result);
+            _mockAuthService.Verify(x => x.AuthenticateAsync(It.IsAny<string>(), It.IsAny<string>(), default), Times.Never);
+        }
+
+        [Fact]
+        public async Task TryAutoLoginAsync_WithSavedCredentials_AttemptsAuthentication()
+        {
+            // Arrange
+            _mockSecureStorage.Setup(x => x.GetAsync("login.remember_me")).ReturnsAsync("true");
+            _mockSecureStorage.Setup(x => x.GetAsync("login.saved_username")).ReturnsAsync("testuser");
+            _mockSecureStorage.Setup(x => x.GetAsync("login.saved_password")).ReturnsAsync("testpass123");
+            _mockAuthService
+                .Setup(x => x.AuthenticateAsync("testuser", "testpass123", default))
+                .ReturnsAsync(true);
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
+
+            // Act
+            var result = await viewModel.TryAutoLoginAsync();
+
+            // Assert
+            Assert.True(result);
+            Assert.True(viewModel.LoginSuccessful);
+            Assert.Equal("testuser", viewModel.User);
+            Assert.Equal("testpass123", viewModel.Password);
+            Assert.True(viewModel.RememberMe);
+            _mockAuthService.Verify(x => x.AuthenticateAsync("testuser", "testpass123", default), Times.Once);
+        }
+
+        [Fact]
+        public async Task TryAutoLoginAsync_WithInvalidCredentials_ClearsSavedCredentials()
+        {
+            // Arrange
+            _mockSecureStorage.Setup(x => x.GetAsync("login.remember_me")).ReturnsAsync("true");
+            _mockSecureStorage.Setup(x => x.GetAsync("login.saved_username")).ReturnsAsync("testuser");
+            _mockSecureStorage.Setup(x => x.GetAsync("login.saved_password")).ReturnsAsync("wrongpass");
+            _mockAuthService
+                .Setup(x => x.AuthenticateAsync("testuser", "wrongpass", default))
+                .ReturnsAsync(false);
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object);
+
+            // Act
+            var result = await viewModel.TryAutoLoginAsync();
+
+            // Assert
+            Assert.False(result);
+            Assert.False(viewModel.LoginSuccessful);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.remember_me"), Times.Once);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.saved_username"), Times.Once);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.saved_password"), Times.Once);
+        }
+
+        [Fact]
+        public async Task ExecuteLogout_ClearsSavedCredentials()
+        {
+            // Arrange
+            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(true);
+            _mockAuthService
+                .Setup(x => x.LogoutAsync(default))
+                .ReturnsAsync(true);
+
+            var viewModel = new LoginViewModel(_mockAuthService.Object, _mockLogger.Object, _mockNotificationService.Object, _mockSecureStorage.Object)
+            {
+                RememberMe = true
+            };
+            viewModel.RefreshAuthenticationState();
+
+            // Act
+            viewModel.LogoutCommand.Execute(null);
+            await Task.Delay(500); // Wait for async operation to complete
+
+            // Assert
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.remember_me"), Times.AtLeastOnce);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.saved_username"), Times.AtLeastOnce);
+            _mockSecureStorage.Verify(x => x.RemoveAsync("login.saved_password"), Times.AtLeastOnce);
         }
     }
 }
