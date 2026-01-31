@@ -69,6 +69,11 @@ namespace Advance_Control.Views.Equipos
         public event EventHandler<double?>? CostoChanged;
 
         /// <summary>
+        /// Evento que se dispara cuando se solicita visualizar una refacción
+        /// </summary>
+        public event EventHandler<RefaccionDto>? ViewRefaccionRequested;
+
+        /// <summary>
         /// Carga la lista de refacciones desde el servicio
         /// </summary>
         private async Task LoadRefaccionesAsync()
@@ -373,49 +378,25 @@ namespace Advance_Control.Views.Equipos
         /// <summary>
         /// Maneja el clic en el botón de ver detalles de una refacción en la lista
         /// </summary>
-        private async void ViewRefaccionButton_Click(object sender, RoutedEventArgs e)
+        private void ViewRefaccionButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not FrameworkElement element || element.Tag is not RefaccionDto refaccion)
                 return;
 
-            // Crear el UserControl para visualizar la refacción
-            var viewerControl = new RefaccionesViewerUserControl(refaccion);
-
-            // Crear el diálogo
-            var dialog = new ContentDialog
-            {
-                Title = "Detalles de la Refacción",
-                Content = viewerControl,
-                CloseButtonText = "Cerrar",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            await dialog.ShowAsync();
+            // Disparar evento para que el contenedor padre maneje la visualización
+            ViewRefaccionRequested?.Invoke(this, refaccion);
         }
 
         /// <summary>
         /// Maneja el clic en el botón de ver detalles de la refacción seleccionada
         /// </summary>
-        private async void ViewSelectedRefaccionButton_Click(object sender, RoutedEventArgs e)
+        private void ViewSelectedRefaccionButton_Click(object sender, RoutedEventArgs e)
         {
             if (SelectedRefaccion == null)
                 return;
 
-            // Crear el UserControl para visualizar la refacción
-            var viewerControl = new RefaccionesViewerUserControl(SelectedRefaccion);
-
-            // Crear el diálogo
-            var dialog = new ContentDialog
-            {
-                Title = "Detalles de la Refacción",
-                Content = viewerControl,
-                CloseButtonText = "Cerrar",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            await dialog.ShowAsync();
+            // Disparar evento para que el contenedor padre maneje la visualización
+            ViewRefaccionRequested?.Invoke(this, SelectedRefaccion);
         }
     }
 }
