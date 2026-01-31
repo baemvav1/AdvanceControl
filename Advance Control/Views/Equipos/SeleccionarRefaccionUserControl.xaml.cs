@@ -384,7 +384,7 @@ namespace Advance_Control.Views.Equipos
                 return;
 
             // Disparar evento para que el contenedor padre maneje la visualización
-            if (ViewRefaccionRequested != null && ViewRefaccionRequested.GetInvocationList().Length > 0)
+            if (ViewRefaccionRequested != null)
             {
                 ViewRefaccionRequested.Invoke(this, refaccion);
             }
@@ -404,7 +404,7 @@ namespace Advance_Control.Views.Equipos
                 return;
 
             // Disparar evento para que el contenedor padre maneje la visualización
-            if (ViewRefaccionRequested != null && ViewRefaccionRequested.GetInvocationList().Length > 0)
+            if (ViewRefaccionRequested != null)
             {
                 ViewRefaccionRequested.Invoke(this, SelectedRefaccion);
             }
