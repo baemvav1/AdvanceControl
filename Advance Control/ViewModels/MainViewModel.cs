@@ -287,9 +287,9 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Intenta iniciar sesión automáticamente usando los tokens almacenados.
-        /// Si los tokens son válidos, carga la información del usuario.
-        /// Si los tokens están expirados o no existen, muestra el diálogo de login.
+        /// Intenta iniciar sesión automáticamente usando credenciales guardadas o tokens almacenados.
+        /// Si las credenciales/tokens son válidos, carga la información del usuario.
+        /// Si no hay credenciales guardadas o los tokens están expirados, muestra el diálogo de login.
         /// </summary>
         /// <returns>True si se autenticó exitosamente (ya sea automáticamente o mediante diálogo), false si el usuario canceló el login</returns>
         public async Task<bool> TryAutoLoginAsync()
@@ -298,7 +298,26 @@ namespace Advance_Control.ViewModels
             {
                 await _logger.LogInformationAsync("Intentando inicio de sesión automático", "MainViewModel", "TryAutoLoginAsync");
 
-                // Intentar restaurar la sesión desde los tokens almacenados
+                // Primero, intentar login automático con credenciales guardadas (si RememberMe está habilitado)
+                var loginViewModel = _serviceProvider.GetRequiredService<LoginViewModel>();
+                var credentialsLoginSuccessful = await loginViewModel.TryAutoLoginAsync();
+
+                if (credentialsLoginSuccessful)
+                {
+                    // Login con credenciales guardadas exitoso - actualizar estado de autenticación
+                    await UpdateUIPropertiesAsync(() =>
+                    {
+                        IsAuthenticated = true;
+                    });
+
+                    // Cargar información del usuario
+                    await LoadUserInfoAsync();
+
+                    await _logger.LogInformationAsync("Inicio de sesión automático exitoso con credenciales guardadas", "MainViewModel", "TryAutoLoginAsync");
+                    return true;
+                }
+
+                // Si no hay credenciales guardadas, intentar restaurar la sesión desde los tokens almacenados
                 var sessionRestored = await _authService.TryRestoreSessionAsync();
 
                 if (sessionRestored)
@@ -312,7 +331,7 @@ namespace Advance_Control.ViewModels
                     // Cargar información del usuario
                     await LoadUserInfoAsync();
 
-                    await _logger.LogInformationAsync("Inicio de sesión automático exitoso", "MainViewModel", "TryAutoLoginAsync");
+                    await _logger.LogInformationAsync("Inicio de sesión automático exitoso con tokens", "MainViewModel", "TryAutoLoginAsync");
                     return true;
                 }
                 else
