@@ -44,6 +44,7 @@ namespace Advance_Control.Services.Notificacion
 
         /// <summary>
         /// Muestra una notificación en el sistema.
+        /// Asegura que la notificación se agrega en el hilo de UI.
         /// </summary>
         public async Task<NotificacionDto> MostrarNotificacionAsync(
             string titulo, 
@@ -80,8 +81,30 @@ namespace Advance_Control.Services.Notificacion
                 TiempoDeVidaSegundos = tiempoDeVidaSegundos
             };
 
-            // Agregar a la colección
-            _notificaciones.Add(notificacion);
+            // Agregar a la colección en el hilo de UI para evitar cross-thread exceptions
+            var dispatcherQueue = App.MainWindow?.DispatcherQueue;
+            if (dispatcherQueue != null)
+            {
+                var tcs = new TaskCompletionSource<bool>();
+                dispatcherQueue.TryEnqueue(() =>
+                {
+                    try
+                    {
+                        _notificaciones.Add(notificacion);
+                        tcs.SetResult(true);
+                    }
+                    catch (Exception ex)
+                    {
+                        tcs.SetException(ex);
+                    }
+                });
+                await tcs.Task;
+            }
+            else
+            {
+                // Si no hay DispatcherQueue disponible (ej. durante pruebas), agregar directamente
+                _notificaciones.Add(notificacion);
+            }
 
             // Registrar en el log
             await _logger.LogInformationAsync(
@@ -128,10 +151,33 @@ namespace Advance_Control.Services.Notificacion
 
         /// <summary>
         /// Limpia todas las notificaciones.
+        /// Asegura que la limpieza ocurre en el hilo de UI.
         /// </summary>
         public void LimpiarNotificaciones()
         {
-            _notificaciones.Clear();
+            // Cancelar todos los timers activos
+            foreach (var cts in _timers.Values)
+            {
+                cts.Cancel();
+                cts.Dispose();
+            }
+            _timers.Clear();
+
+            // Limpiar la colección en el hilo de UI para evitar cross-thread exceptions
+            var dispatcherQueue = App.MainWindow?.DispatcherQueue;
+            if (dispatcherQueue != null)
+            {
+                dispatcherQueue.TryEnqueue(() =>
+                {
+                    _notificaciones.Clear();
+                });
+            }
+            else
+            {
+                // Si no hay DispatcherQueue disponible (ej. durante pruebas), limpiar directamente
+                _notificaciones.Clear();
+            }
+
             _logger.LogInformationAsync(
                 "Todas las notificaciones han sido limpiadas", 
                 "NotificacionService", 
@@ -140,6 +186,7 @@ namespace Advance_Control.Services.Notificacion
 
         /// <summary>
         /// Elimina una notificación específica por su ID.
+        /// Asegura que la eliminación ocurre en el hilo de UI.
         /// </summary>
         public bool EliminarNotificacion(Guid id)
         {
@@ -154,7 +201,21 @@ namespace Advance_Control.Services.Notificacion
                     _timers.Remove(id);
                 }
 
-                _notificaciones.Remove(notificacion);
+                // Eliminar de la colección en el hilo de UI para evitar cross-thread exceptions
+                var dispatcherQueue = App.MainWindow?.DispatcherQueue;
+                if (dispatcherQueue != null)
+                {
+                    dispatcherQueue.TryEnqueue(() =>
+                    {
+                        _notificaciones.Remove(notificacion);
+                    });
+                }
+                else
+                {
+                    // Si no hay DispatcherQueue disponible (ej. durante pruebas), eliminar directamente
+                    _notificaciones.Remove(notificacion);
+                }
+
                 _logger.LogInformationAsync(
                     $"Notificación eliminada: {notificacion.Titulo}", 
                     "NotificacionService", 
