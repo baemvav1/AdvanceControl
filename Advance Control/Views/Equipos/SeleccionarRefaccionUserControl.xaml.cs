@@ -69,6 +69,11 @@ namespace Advance_Control.Views.Equipos
         public event EventHandler<double?>? CostoChanged;
 
         /// <summary>
+        /// Evento que se dispara cuando se solicita visualizar una refacción
+        /// </summary>
+        public event EventHandler<RefaccionDto>? ViewRefaccionRequested;
+
+        /// <summary>
         /// Carga la lista de refacciones desde el servicio
         /// </summary>
         private async Task LoadRefaccionesAsync()
@@ -378,20 +383,16 @@ namespace Advance_Control.Views.Equipos
             if (sender is not FrameworkElement element || element.Tag is not RefaccionDto refaccion)
                 return;
 
-            // Crear el UserControl para visualizar la refacción
-            var viewerControl = new RefaccionesViewerUserControl(refaccion);
-
-            // Crear el diálogo
-            var dialog = new ContentDialog
+            // Disparar evento para que el contenedor padre maneje la visualización
+            if (ViewRefaccionRequested != null)
             {
-                Title = "Detalles de la Refacción",
-                Content = viewerControl,
-                CloseButtonText = "Cerrar",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = this.XamlRoot
-            };
-
-            await dialog.ShowAsync();
+                ViewRefaccionRequested.Invoke(this, refaccion);
+            }
+            else
+            {
+                // Fallback: si no hay suscriptores, mostrar en un diálogo
+                await ShowRefaccionInDialogAsync(refaccion);
+            }
         }
 
         /// <summary>
@@ -402,10 +403,25 @@ namespace Advance_Control.Views.Equipos
             if (SelectedRefaccion == null)
                 return;
 
-            // Crear el UserControl para visualizar la refacción
-            var viewerControl = new RefaccionesViewerUserControl(SelectedRefaccion);
+            // Disparar evento para que el contenedor padre maneje la visualización
+            if (ViewRefaccionRequested != null)
+            {
+                ViewRefaccionRequested.Invoke(this, SelectedRefaccion);
+            }
+            else
+            {
+                // Fallback: si no hay suscriptores, mostrar en un diálogo
+                await ShowRefaccionInDialogAsync(SelectedRefaccion);
+            }
+        }
 
-            // Crear el diálogo
+        /// <summary>
+        /// Muestra la refacción en un diálogo (fallback cuando no hay contenedor padre)
+        /// </summary>
+        private async Task ShowRefaccionInDialogAsync(RefaccionDto refaccion)
+        {
+            var viewerControl = new RefaccionesViewerUserControl(refaccion);
+
             var dialog = new ContentDialog
             {
                 Title = "Detalles de la Refacción",

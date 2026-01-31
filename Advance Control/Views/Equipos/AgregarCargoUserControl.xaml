@@ -89,6 +89,30 @@
                     PlaceholderText="Ingrese una nota (opcional)..."
                     TextWrapping="Wrap" />
             </StackPanel>
+
+            <!--  RefaccionesViewerPanel  -->
+            <StackPanel x:Name="RefaccionesViewerPanel" Margin="0,12,0,0" Visibility="Collapsed">
+                <Border
+                    Padding="12"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                    <StackPanel Spacing="12">
+                        <Grid>
+                            <TextBlock
+                                FontSize="16"
+                                FontWeight="SemiBold"
+                                Text="Detalles de la Refacción" />
+                            <Button
+                                HorizontalAlignment="Right"
+                                Click="CerrarVisorButton_Click"
+                                Content="Cerrar Visor" />
+                        </Grid>
+                        <ContentControl x:Name="RefaccionesViewerContainer" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
         </StackPanel>
 
 

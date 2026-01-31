@@ -31,6 +31,22 @@ namespace Advance_Control.Views.Equipos
             _idOperacion = idOperacion;
             _idProveedor = idProveedor;
             //IdOperacionTextBlock.Text = idOperacion.ToString();
+            
+            // Subscribe to Unloaded event for cleanup
+            this.Unloaded += AgregarCargoUserControl_Unloaded;
+        }
+
+        /// <summary>
+        /// Cleanup event handlers when the control is unloaded
+        /// </summary>
+        private void AgregarCargoUserControl_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // Unsubscribe from events to prevent memory leaks
+            if (_refaccionSelector != null)
+            {
+                _refaccionSelector.CostoChanged -= OnRefaccionCostoChanged;
+                _refaccionSelector.ViewRefaccionRequested -= OnViewRefaccionRequested;
+            }
         }
 
         /// <summary>
@@ -71,6 +87,7 @@ namespace Advance_Control.Views.Equipos
             {
                 _refaccionSelector = new SeleccionarRefaccionUserControl(idProveedor);
                 _refaccionSelector.CostoChanged += OnRefaccionCostoChanged;
+                _refaccionSelector.ViewRefaccionRequested += OnViewRefaccionRequested;
                 RefaccionSelectorContainer.Content = _refaccionSelector;
             }
             else if (cargoType == TIPO_CARGO_SERVICIO && _servicioSelector == null)
@@ -183,6 +200,31 @@ namespace Advance_Control.Views.Equipos
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Maneja la solicitud de visualización de una refacción
+        /// </summary>
+        private void OnViewRefaccionRequested(object? sender, RefaccionDto refaccion)
+        {
+            if (refaccion == null) return;
+
+            // Crear el UserControl para visualizar la refacción
+            var viewerControl = new RefaccionesViewerUserControl(refaccion);
+
+            // Mostrar en el panel de visualización
+            RefaccionesViewerContainer.Content = viewerControl;
+            RefaccionesViewerPanel.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón "Cerrar Visor"
+        /// </summary>
+        private void CerrarVisorButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Ocultar el panel de visualización
+            RefaccionesViewerPanel.Visibility = Visibility.Collapsed;
+            RefaccionesViewerContainer.Content = null;
         }
     }
 }
