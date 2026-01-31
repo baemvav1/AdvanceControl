@@ -169,7 +169,7 @@ namespace Advance_Control.Views.Equipos
                             ProveedoresPanel.Visibility = Visibility.Visible;
                             if (_idProveedor != 0)
                             {
-                                 //si el idproveedor esta preseleccionado, es decir es diferente de 0, 
+                                 //si el idproveedor esta preseleccionado, es decir es diferente de 0
                             }
                         }
                         else
