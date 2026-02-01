@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Areas;
+using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.Logging;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,10 +19,13 @@ namespace Advance_Control.ViewModels
     {
         private readonly IGoogleMapsConfigService _googleMapsConfigService;
         private readonly IAreasService _areasService;
+        private readonly IUbicacionService _ubicacionService;
         private readonly ILoggingService _logger;
 
         private GoogleMapsConfigDto? _mapsConfig;
         private ObservableCollection<GoogleMapsAreaDto> _areas;
+        private ObservableCollection<UbicacionDto> _ubicaciones;
+        private UbicacionDto? _selectedUbicacion;
         private bool _isLoading;
         private string? _errorMessage;
         private bool _isMapInitialized;
@@ -28,12 +33,15 @@ namespace Advance_Control.ViewModels
         public UbicacionesViewModel(
             IGoogleMapsConfigService googleMapsConfigService,
             IAreasService areasService,
+            IUbicacionService ubicacionService,
             ILoggingService logger)
         {
             _googleMapsConfigService = googleMapsConfigService ?? throw new ArgumentNullException(nameof(googleMapsConfigService));
             _areasService = areasService ?? throw new ArgumentNullException(nameof(areasService));
+            _ubicacionService = ubicacionService ?? throw new ArgumentNullException(nameof(ubicacionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _areas = new ObservableCollection<GoogleMapsAreaDto>();
+            _ubicaciones = new ObservableCollection<UbicacionDto>();
         }
 
         /// <summary>
@@ -52,6 +60,24 @@ namespace Advance_Control.ViewModels
         {
             get => _areas;
             set => SetProperty(ref _areas, value);
+        }
+
+        /// <summary>
+        /// Colección de ubicaciones
+        /// </summary>
+        public ObservableCollection<UbicacionDto> Ubicaciones
+        {
+            get => _ubicaciones;
+            set => SetProperty(ref _ubicaciones, value);
+        }
+
+        /// <summary>
+        /// Ubicación seleccionada actualmente
+        /// </summary>
+        public UbicacionDto? SelectedUbicacion
+        {
+            get => _selectedUbicacion;
+            set => SetProperty(ref _selectedUbicacion, value);
         }
 
         /// <summary>
@@ -112,6 +138,9 @@ namespace Advance_Control.ViewModels
 
                 // Cargar áreas activas
                 await LoadAreasAsync(cancellationToken);
+
+                // Cargar ubicaciones
+                await LoadUbicacionesAsync(cancellationToken);
 
                 IsMapInitialized = true;
 
@@ -229,6 +258,115 @@ namespace Advance_Control.ViewModels
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Carga las ubicaciones desde el API
+        /// </summary>
+        public async Task LoadUbicacionesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync("Cargando ubicaciones", "UbicacionesViewModel", "LoadUbicacionesAsync");
+
+                var ubicaciones = await _ubicacionService.GetUbicacionesAsync(cancellationToken);
+
+                Ubicaciones.Clear();
+                foreach (var ubicacion in ubicaciones)
+                {
+                    Ubicaciones.Add(ubicacion);
+                }
+
+                await _logger.LogInformationAsync($"Se cargaron {ubicaciones.Count} ubicaciones", "UbicacionesViewModel", "LoadUbicacionesAsync");
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al cargar ubicaciones", ex, "UbicacionesViewModel", "LoadUbicacionesAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Crea una nueva ubicación
+        /// </summary>
+        public async Task<ApiResponse> CreateUbicacionAsync(UbicacionDto ubicacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Creando ubicación: {ubicacion?.Nombre}", "UbicacionesViewModel", "CreateUbicacionAsync");
+
+                var result = await _ubicacionService.CreateUbicacionAsync(ubicacion!, cancellationToken);
+
+                if (result.Success)
+                {
+                    // Recargar ubicaciones
+                    await LoadUbicacionesAsync(cancellationToken);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al crear ubicación", ex, "UbicacionesViewModel", "CreateUbicacionAsync");
+                return new ApiResponse { Success = false, Message = "Error al crear ubicación" };
+            }
+        }
+
+        /// <summary>
+        /// Actualiza una ubicación existente
+        /// </summary>
+        public async Task<ApiResponse> UpdateUbicacionAsync(UbicacionDto ubicacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (!ubicacion.IdUbicacion.HasValue || ubicacion.IdUbicacion.Value <= 0)
+                {
+                    return new ApiResponse { Success = false, Message = "ID de ubicación inválido" };
+                }
+
+                await _logger.LogInformationAsync($"Actualizando ubicación ID: {ubicacion.IdUbicacion}", "UbicacionesViewModel", "UpdateUbicacionAsync");
+
+                var result = await _ubicacionService.UpdateUbicacionAsync(ubicacion.IdUbicacion.Value, ubicacion, cancellationToken);
+
+                if (result.Success)
+                {
+                    // Recargar ubicaciones
+                    await LoadUbicacionesAsync(cancellationToken);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al actualizar ubicación", ex, "UbicacionesViewModel", "UpdateUbicacionAsync");
+                return new ApiResponse { Success = false, Message = "Error al actualizar ubicación" };
+            }
+        }
+
+        /// <summary>
+        /// Elimina una ubicación
+        /// </summary>
+        public async Task<ApiResponse> DeleteUbicacionAsync(int idUbicacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Eliminando ubicación ID: {idUbicacion}", "UbicacionesViewModel", "DeleteUbicacionAsync");
+
+                var result = await _ubicacionService.DeleteUbicacionAsync(idUbicacion, cancellationToken);
+
+                if (result.Success)
+                {
+                    // Recargar ubicaciones
+                    await LoadUbicacionesAsync(cancellationToken);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al eliminar ubicación", ex, "UbicacionesViewModel", "DeleteUbicacionAsync");
+                return new ApiResponse { Success = false, Message = "Error al eliminar ubicación" };
             }
         }
     }

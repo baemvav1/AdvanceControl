@@ -26,6 +26,7 @@ using Advance_Control.Services.Servicios;
 using Advance_Control.Services.Quotes;
 using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Areas;
+using Advance_Control.Services.Ubicaciones;
 
 namespace Advance_Control
 {
@@ -413,6 +414,26 @@ namespace Advance_Control
 
                     // Registrar AreasService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IAreasService, AreasService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar UbicacionService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IUbicacionService, UbicacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
