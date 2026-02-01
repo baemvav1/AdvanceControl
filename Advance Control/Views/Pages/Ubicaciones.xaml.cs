@@ -86,31 +86,45 @@ namespace Advance_Control.Views.Pages
                         if (jsonDoc.TryGetValue("lat", out var latElement) && 
                             jsonDoc.TryGetValue("lng", out var lngElement))
                         {
-                            var lat = latElement.GetDecimal();
-                            var lng = lngElement.GetDecimal();
-
-                            // Update UI on the UI thread
-                            DispatcherQueue.TryEnqueue(() =>
+                            // Safely parse decimal values
+                            if (latElement.ValueKind == JsonValueKind.Number && 
+                                lngElement.ValueKind == JsonValueKind.Number)
                             {
-                                LatitudTextBox.Text = lat.ToString("F6", CultureInfo.InvariantCulture);
-                                LongitudTextBox.Text = lng.ToString("F6", CultureInfo.InvariantCulture);
-                            });
+                                var lat = latElement.GetDecimal();
+                                var lng = lngElement.GetDecimal();
 
-                            // Get address information if available
-                            if (jsonDoc.TryGetValue("address", out var addressElement))
-                            {
-                                var addressData = addressElement.Deserialize<Dictionary<string, JsonElement>>();
-                                
+                                // Update UI on the UI thread
                                 DispatcherQueue.TryEnqueue(() =>
                                 {
-                                    if (addressData != null)
-                                    {
-                                        if (addressData.TryGetValue("formatted", out var formattedElement))
-                                        {
-                                            DireccionTextBox.Text = formattedElement.GetString() ?? string.Empty;
-                                        }
-                                    }
+                                    LatitudTextBox.Text = lat.ToString("F6", CultureInfo.InvariantCulture);
+                                    LongitudTextBox.Text = lng.ToString("F6", CultureInfo.InvariantCulture);
                                 });
+
+                                // Get address information if available
+                                if (jsonDoc.TryGetValue("address", out var addressElement))
+                                {
+                                    var addressData = addressElement.Deserialize<Dictionary<string, JsonElement>>();
+                                    
+                                    DispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        if (addressData != null)
+                                        {
+                                            if (addressData.TryGetValue("formatted", out var formattedElement) && 
+                                                formattedElement.ValueKind == JsonValueKind.String)
+                                            {
+                                                var address = formattedElement.GetString();
+                                                if (!string.IsNullOrEmpty(address))
+                                                {
+                                                    DireccionTextBox.Text = address;
+                                                }
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                            else
+                            {
+                                await _loggingService.LogWarningAsync("Coordenadas recibidas no son números válidos", "Ubicaciones", "CoreWebView2_WebMessageReceived");
                             }
                         }
                     }
@@ -272,7 +286,7 @@ namespace Advance_Control.Views.Pages
                 map: map,
                 draggable: true,
                 icon: {{
-                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                    url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
                     scaledSize: new google.maps.Size(40, 40)
                 }},
                 title: 'Nueva ubicación',
