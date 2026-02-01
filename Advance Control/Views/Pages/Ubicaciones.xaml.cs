@@ -16,6 +16,8 @@ using Windows.Foundation.Collections;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Logging;
+using Advance_Control.Models;
+using System.Globalization;
 
 namespace Advance_Control.Views.Pages
 {
@@ -30,6 +32,8 @@ namespace Advance_Control.Views.Pages
 
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
+        private bool _isEditMode = false;
+        private int? _editingUbicacionId = null;
 
         public Ubicaciones()
         {
@@ -91,13 +95,17 @@ namespace Advance_Control.Views.Pages
                 // Serializar las áreas como JSON
                 var areasJson = JsonSerializer.Serialize(ViewModel.Areas);
 
+                // Serializar las ubicaciones como JSON
+                var ubicacionesJson = JsonSerializer.Serialize(ViewModel.Ubicaciones);
+
                 // Crear el HTML con Google Maps
                 var html = GenerateMapHtml(
                     ViewModel.MapsConfig.ApiKey,
                     lat,
                     lng,
                     ViewModel.MapsConfig.DefaultZoom,
-                    areasJson);
+                    areasJson,
+                    ubicacionesJson);
 
                 // Cargar el HTML en el WebView2
                 MapWebView.NavigateToString(html);
@@ -113,7 +121,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Genera el HTML para el mapa de Google Maps
         /// </summary>
-        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string areasJson)
+        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string areasJson, string ubicacionesJson)
         {
             return $@"
 <!DOCTYPE html>
@@ -143,7 +151,9 @@ namespace Advance_Control.Views.Pages
     <script>
         let map;
         let areas = {areasJson};
+        let ubicaciones = {ubicacionesJson};
         let shapes = [];
+        let markers = [];
         let infoWindow;
 
         function initMap() {{
@@ -159,6 +169,9 @@ namespace Advance_Control.Views.Pages
 
             // Renderizar las áreas
             renderAreas();
+
+            // Renderizar las ubicaciones (markers)
+            renderUbicaciones();
         }}
 
         function renderAreas() {{
@@ -259,6 +272,40 @@ namespace Advance_Control.Views.Pages
             }});
         }}
 
+        function renderUbicaciones() {{
+            // Limpiar markers existentes
+            markers.forEach(marker => marker.setMap(null));
+            markers = [];
+
+            // Renderizar cada ubicación como marker
+            ubicaciones.forEach(ubicacion => {{
+                try {{
+                    if (!ubicacion.latitud || !ubicacion.longitud) {{
+                        return;
+                    }}
+
+                    const marker = new google.maps.Marker({{
+                        position: {{ 
+                            lat: parseFloat(ubicacion.latitud), 
+                            lng: parseFloat(ubicacion.longitud) 
+                        }},
+                        map: map,
+                        title: ubicacion.nombre,
+                        icon: ubicacion.icono || undefined
+                    }});
+
+                    markers.push(marker);
+
+                    // Agregar listener para click con InfoWindow
+                    marker.addListener('click', () => {{
+                        showUbicacionInfo(ubicacion, marker.getPosition());
+                    }});
+                }} catch (error) {{
+                    console.error('Error al renderizar ubicación', ubicacion.nombre, error);
+                }}
+            }});
+        }}
+
         function showAreaInfo(area, position) {{
             const content = `
                 <div style='padding: 8px; min-width: 200px;'>
@@ -267,6 +314,25 @@ namespace Advance_Control.Views.Pages
                         <p style='margin: 4px 0;'><strong>Tipo:</strong> ${{area.type}}</p>
                         <p style='margin: 4px 0;'><strong>ID:</strong> ${{area.idArea}}</p>
                         ${{area.radius ? `<p style='margin: 4px 0;'><strong>Radio:</strong> ${{area.radius.toFixed(0)}}m</p>` : ''}}
+                    </div>
+                </div>
+            `;
+            
+            infoWindow.setContent(content);
+            infoWindow.setPosition(position);
+            infoWindow.open(map);
+        }}
+
+        function showUbicacionInfo(ubicacion, position) {{
+            const content = `
+                <div style='padding: 8px; min-width: 250px;'>
+                    <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{ubicacion.nombre}}</h3>
+                    <div style='color: #5f6368; font-size: 14px;'>
+                        ${{ubicacion.descripcion ? `<p style='margin: 4px 0;'>${{ubicacion.descripcion}}</p>` : ''}}
+                        ${{ubicacion.direccionCompleta ? `<p style='margin: 4px 0;'><strong>Dirección:</strong> ${{ubicacion.direccionCompleta}}</p>` : ''}}
+                        ${{ubicacion.telefono ? `<p style='margin: 4px 0;'><strong>Tel:</strong> ${{ubicacion.telefono}}</p>` : ''}}
+                        ${{ubicacion.email ? `<p style='margin: 4px 0;'><strong>Email:</strong> ${{ubicacion.email}}</p>` : ''}}
+                        <p style='margin: 4px 0; font-size: 12px;'><strong>Coordenadas:</strong> ${{ubicacion.latitud}}, ${{ubicacion.longitud}}</p>
                     </div>
                 </div>
             `;
@@ -305,15 +371,217 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                await _loggingService.LogInformationAsync("Refrescando áreas del mapa", "Ubicaciones", "RefreshButton_Click");
+                await _loggingService.LogInformationAsync("Refrescando ubicaciones y áreas del mapa", "Ubicaciones", "RefreshButton_Click");
                 
                 await ViewModel.RefreshAreasAsync();
+                await ViewModel.LoadUbicacionesAsync();
                 await LoadMapAsync();
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al refrescar áreas", ex, "Ubicaciones", "RefreshButton_Click");
+                await _loggingService.LogErrorAsync("Error al refrescar", ex, "Ubicaciones", "RefreshButton_Click");
             }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de agregar ubicación
+        /// </summary>
+        private void AddButton_Click(object sender, RoutedEventArgs e)
+        {
+            _isEditMode = false;
+            _editingUbicacionId = null;
+            FormTitle.Text = "Nueva Ubicación";
+            ClearForm();
+            LocationForm.Visibility = Visibility.Visible;
+        }
+
+        /// <summary>
+        /// Maneja el cambio de selección en la lista de ubicaciones
+        /// </summary>
+        private void UbicacionesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Opcional: Puedes hacer algo cuando se selecciona una ubicación
+            // Por ejemplo, centrar el mapa en la ubicación seleccionada
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de editar ubicación
+        /// </summary>
+        private void EditButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is int idUbicacion)
+            {
+                var ubicacion = ViewModel.Ubicaciones.FirstOrDefault(u => u.IdUbicacion == idUbicacion);
+                if (ubicacion != null)
+                {
+                    _isEditMode = true;
+                    _editingUbicacionId = idUbicacion;
+                    FormTitle.Text = "Editar Ubicación";
+                    LoadUbicacionToForm(ubicacion);
+                    LocationForm.Visibility = Visibility.Visible;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de eliminar ubicación
+        /// </summary>
+        private async void DeleteButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is int idUbicacion)
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = "Confirmar eliminación",
+                    Content = "¿Está seguro de que desea eliminar esta ubicación?",
+                    PrimaryButtonText = "Eliminar",
+                    CloseButtonText = "Cancelar",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await dialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    try
+                    {
+                        var response = await ViewModel.DeleteUbicacionAsync(idUbicacion);
+                        
+                        if (response.Success)
+                        {
+                            await LoadMapAsync();
+                            await ShowMessageDialogAsync("Éxito", "Ubicación eliminada correctamente");
+                        }
+                        else
+                        {
+                            await ShowMessageDialogAsync("Error", response.Message ?? "Error al eliminar la ubicación");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        await _loggingService.LogErrorAsync("Error al eliminar ubicación", ex, "Ubicaciones", "DeleteButton_Click");
+                        await ShowMessageDialogAsync("Error", "Ocurrió un error al eliminar la ubicación");
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de guardar
+        /// </summary>
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validar campos requeridos
+                if (string.IsNullOrWhiteSpace(NombreTextBox.Text))
+                {
+                    await ShowMessageDialogAsync("Validación", "El nombre es requerido");
+                    return;
+                }
+
+                if (!decimal.TryParse(LatitudTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var latitud))
+                {
+                    await ShowMessageDialogAsync("Validación", "La latitud debe ser un número válido");
+                    return;
+                }
+
+                if (!decimal.TryParse(LongitudTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var longitud))
+                {
+                    await ShowMessageDialogAsync("Validación", "La longitud debe ser un número válido");
+                    return;
+                }
+
+                var ubicacion = new UbicacionDto
+                {
+                    Nombre = NombreTextBox.Text,
+                    Descripcion = DescripcionTextBox.Text,
+                    Latitud = latitud,
+                    Longitud = longitud,
+                    DireccionCompleta = DireccionTextBox.Text,
+                    Activo = true
+                };
+
+                ApiResponse response;
+                if (_isEditMode && _editingUbicacionId.HasValue)
+                {
+                    ubicacion.IdUbicacion = _editingUbicacionId.Value;
+                    response = await ViewModel.UpdateUbicacionAsync(ubicacion);
+                }
+                else
+                {
+                    response = await ViewModel.CreateUbicacionAsync(ubicacion);
+                }
+
+                if (response.Success)
+                {
+                    LocationForm.Visibility = Visibility.Collapsed;
+                    ClearForm();
+                    await LoadMapAsync();
+                    await ShowMessageDialogAsync("Éxito", _isEditMode ? "Ubicación actualizada correctamente" : "Ubicación creada correctamente");
+                }
+                else
+                {
+                    await ShowMessageDialogAsync("Error", response.Message ?? "Error al guardar la ubicación");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al guardar ubicación", ex, "Ubicaciones", "SaveButton_Click");
+                await ShowMessageDialogAsync("Error", "Ocurrió un error al guardar la ubicación");
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de cancelar
+        /// </summary>
+        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            LocationForm.Visibility = Visibility.Collapsed;
+            ClearForm();
+        }
+
+        /// <summary>
+        /// Limpia el formulario de ubicación
+        /// </summary>
+        private void ClearForm()
+        {
+            NombreTextBox.Text = string.Empty;
+            DescripcionTextBox.Text = string.Empty;
+            LatitudTextBox.Text = string.Empty;
+            LongitudTextBox.Text = string.Empty;
+            DireccionTextBox.Text = string.Empty;
+            _isEditMode = false;
+            _editingUbicacionId = null;
+        }
+
+        /// <summary>
+        /// Carga una ubicación en el formulario para edición
+        /// </summary>
+        private void LoadUbicacionToForm(UbicacionDto ubicacion)
+        {
+            NombreTextBox.Text = ubicacion.Nombre ?? string.Empty;
+            DescripcionTextBox.Text = ubicacion.Descripcion ?? string.Empty;
+            LatitudTextBox.Text = ubicacion.Latitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            LongitudTextBox.Text = ubicacion.Longitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            DireccionTextBox.Text = ubicacion.DireccionCompleta ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Muestra un diálogo de mensaje
+        /// </summary>
+        private async System.Threading.Tasks.Task ShowMessageDialogAsync(string title, string message)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = title,
+                Content = message,
+                CloseButtonText = "OK",
+                XamlRoot = this.XamlRoot
+            };
+
+            await dialog.ShowAsync();
         }
     }
 }
