@@ -24,6 +24,10 @@ namespace Advance_Control.Views.Pages
     /// </summary>
     public sealed partial class Ubicaciones : Page
     {
+        // Default coordinates for Mexico City if configuration is not available
+        private const string DEFAULT_LATITUDE = "19.4326";
+        private const string DEFAULT_LONGITUDE = "-99.1332";
+
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
 
@@ -78,8 +82,8 @@ namespace Advance_Control.Views.Pages
 
                 // Parsear el centro del mapa
                 var centerParts = ViewModel.MapsConfig.DefaultCenter.Split(',');
-                var lat = centerParts.Length > 0 ? centerParts[0].Trim() : "19.4326";
-                var lng = centerParts.Length > 1 ? centerParts[1].Trim() : "-99.1332";
+                var lat = centerParts.Length > 0 ? centerParts[0].Trim() : DEFAULT_LATITUDE;
+                var lng = centerParts.Length > 1 ? centerParts[1].Trim() : DEFAULT_LONGITUDE;
 
                 // Serializar las áreas como JSON
                 var areasJson = JsonSerializer.Serialize(ViewModel.Areas);
@@ -137,6 +141,7 @@ namespace Advance_Control.Views.Pages
         let map;
         let areas = {areasJson};
         let shapes = [];
+        let infoWindow;
 
         function initMap() {{
             // Crear el mapa
@@ -145,6 +150,9 @@ namespace Advance_Control.Views.Pages
                 zoom: {zoom},
                 mapTypeId: 'roadmap'
             }});
+
+            // Crear InfoWindow global
+            infoWindow = new google.maps.InfoWindow();
 
             // Renderizar las áreas
             renderAreas();
@@ -158,70 +166,88 @@ namespace Advance_Control.Views.Pages
             // Renderizar cada área
             areas.forEach(area => {{
                 try {{
+                    let shape = null;
+                    let position = null;
+
                     if (area.type === 'Polygon') {{
                         const path = JSON.parse(area.path);
                         const options = JSON.parse(area.options);
                         
-                        const polygon = new google.maps.Polygon({{
+                        shape = new google.maps.Polygon({{
                             paths: path,
                             ...options
                         }});
                         
-                        polygon.setMap(map);
-                        shapes.push(polygon);
-
-                        // Agregar listener para click
-                        polygon.addListener('click', () => {{
-                            showAreaInfo(area);
-                        }});
+                        // Calcular centro del polígono para el InfoWindow
+                        if (area.center) {{
+                            position = JSON.parse(area.center);
+                        }}
                     }} else if (area.type === 'Circle') {{
                         const center = JSON.parse(area.center);
                         const options = JSON.parse(area.options);
                         
-                        const circle = new google.maps.Circle({{
+                        shape = new google.maps.Circle({{
                             center: center,
                             radius: area.radius,
                             ...options
                         }});
                         
-                        circle.setMap(map);
-                        shapes.push(circle);
-
-                        // Agregar listener para click
-                        circle.addListener('click', () => {{
-                            showAreaInfo(area);
-                        }});
+                        position = center;
                     }} else if (area.type === 'Rectangle') {{
                         const bounds = JSON.parse(area.bounds);
                         const options = JSON.parse(area.options);
                         
-                        const rectangle = new google.maps.Rectangle({{
+                        shape = new google.maps.Rectangle({{
                             bounds: bounds,
                             ...options
                         }});
                         
-                        rectangle.setMap(map);
-                        shapes.push(rectangle);
-
-                        // Agregar listener para click
-                        rectangle.addListener('click', () => {{
-                            showAreaInfo(area);
-                        }});
+                        // Calcular centro del rectángulo
+                        position = {{
+                            lat: (bounds.north + bounds.south) / 2,
+                            lng: (bounds.east + bounds.west) / 2
+                        }};
                     }} else if (area.type === 'Polyline') {{
                         const path = JSON.parse(area.path);
                         const options = JSON.parse(area.options);
                         
-                        const polyline = new google.maps.Polyline({{
+                        shape = new google.maps.Polyline({{
                             path: path,
                             ...options
                         }});
                         
-                        polyline.setMap(map);
-                        shapes.push(polyline);
+                        // Usar primer punto como posición
+                        if (path && path.length > 0) {{
+                            position = path[0];
+                        }}
+                    }}
 
-                        // Agregar listener para click
-                        polyline.addListener('click', () => {{
-                            showAreaInfo(area);
+                    if (shape) {{
+                        shape.setMap(map);
+                        shapes.push(shape);
+
+                        // Agregar listener para click con InfoWindow
+                        shape.addListener('click', (event) => {{
+                            const clickPosition = position || event.latLng;
+                            showAreaInfo(area, clickPosition);
+                        }});
+
+                        // Agregar hover effect
+                        shape.addListener('mouseover', () => {{
+                            if (area.type === 'Polygon' || area.type === 'Rectangle' || area.type === 'Circle') {{
+                                const options = JSON.parse(area.options);
+                                shape.setOptions({{
+                                    fillOpacity: (options.fillOpacity || 0.5) * 1.3,
+                                    strokeWeight: (options.strokeWeight || 2) + 1
+                                }});
+                            }}
+                        }});
+
+                        shape.addListener('mouseout', () => {{
+                            if (area.type === 'Polygon' || area.type === 'Rectangle' || area.type === 'Circle') {{
+                                const options = JSON.parse(area.options);
+                                shape.setOptions(options);
+                            }}
                         }});
                     }}
                 }} catch (error) {{
@@ -230,8 +256,21 @@ namespace Advance_Control.Views.Pages
             }});
         }}
 
-        function showAreaInfo(area) {{
-            alert('Área: ' + area.nombre + '\\nTipo: ' + area.type + '\\nID: ' + area.idArea);
+        function showAreaInfo(area, position) {{
+            const content = `
+                <div style='padding: 8px; min-width: 200px;'>
+                    <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{area.nombre}}</h3>
+                    <div style='color: #5f6368; font-size: 14px;'>
+                        <p style='margin: 4px 0;'><strong>Tipo:</strong> ${{area.type}}</p>
+                        <p style='margin: 4px 0;'><strong>ID:</strong> ${{area.idArea}}</p>
+                        ${{area.radius ? `<p style='margin: 4px 0;'><strong>Radio:</strong> ${{area.radius.toFixed(0)}}m</p>` : ''}}
+                    </div>
+                </div>
+            `;
+            
+            infoWindow.setContent(content);
+            infoWindow.setPosition(position);
+            infoWindow.open(map);
         }}
 
         // Inicializar el mapa cuando cargue la página
