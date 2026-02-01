@@ -85,6 +85,8 @@
                             Content="Servicios" Icon="Repair" Tag="Servicios" />
                         <NavigationViewItem
                             Content="Proveedores" Icon="Contact" Tag="Proveedores" />
+                        <NavigationViewItem
+                            Content="Ubicaciones" Icon="MapPin" Tag="Ubicaciones" />
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>
