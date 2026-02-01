@@ -142,6 +142,13 @@
                         FontWeight="SemiBold"
                         Text="Nueva Ubicación" />
 
+                    <InfoBar
+                        IsOpen="True"
+                        IsClosable="False"
+                        Severity="Informational"
+                        Message="Haz clic en el mapa para colocar un marcador rojo y rellenar automáticamente las coordenadas y dirección."
+                        Margin="0,4,0,4" />
+
                     <TextBox
                         x:Name="NombreTextBox"
                         Header="Nombre *"
