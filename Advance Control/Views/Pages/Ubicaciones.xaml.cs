@@ -236,6 +236,11 @@ namespace Advance_Control.Views.Pages
     
     <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places'></script>
     <script>
+        // Constants
+        const SEARCH_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+        const EDIT_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+        const MARKER_ICON_SIZE = 40;
+
         let map;
         let areas = {areasJson};
         let ubicaciones = {ubicacionesJson};
@@ -307,8 +312,8 @@ namespace Advance_Control.Views.Pages
                             map: map,
                             title: place.name,
                             icon: {{
-                                url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-                                scaledSize: new google.maps.Size(40, 40)
+                                url: SEARCH_MARKER_ICON,
+                                scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
                             }},
                             animation: google.maps.Animation.DROP
                         }});
@@ -327,7 +332,31 @@ namespace Advance_Control.Views.Pages
                         infoWindow.open(map, searchMarker);
                     }}
                 }} else {{
-                    console.error('No se encontró la ubicación. Status:', status);
+                    // Show error to user via InfoWindow
+                    const errorMessages = {{
+                        'ZERO_RESULTS': 'No se encontraron resultados para la búsqueda.',
+                        'OVER_QUERY_LIMIT': 'Se ha excedido el límite de consultas. Intente más tarde.',
+                        'REQUEST_DENIED': 'La solicitud fue denegada.',
+                        'INVALID_REQUEST': 'La solicitud no es válida.',
+                        'UNKNOWN_ERROR': 'Ocurrió un error desconocido. Intente nuevamente.'
+                    }};
+                    
+                    const errorMessage = errorMessages[status] || errorMessages['UNKNOWN_ERROR'];
+                    
+                    const errorContent = `
+                        <div style='padding: 8px; min-width: 200px;'>
+                            <h3 style='margin: 0 0 8px 0; color: #d93025; font-size: 16px;'>Error en la búsqueda</h3>
+                            <div style='color: #5f6368; font-size: 14px;'>
+                                <p style='margin: 4px 0;'>${{errorMessage}}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    infoWindow.setContent(errorContent);
+                    infoWindow.setPosition(map.getCenter());
+                    infoWindow.open(map);
+                    
+                    console.error('Error en búsqueda de ubicación. Query:', query, 'Status:', status);
                 }}
             }});
         }}
@@ -344,8 +373,8 @@ namespace Advance_Control.Views.Pages
                 map: map,
                 draggable: true,
                 icon: {{
-                    url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                    scaledSize: new google.maps.Size(40, 40)
+                    url: EDIT_MARKER_ICON,
+                    scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
                 }},
                 title: 'Nueva ubicación',
                 animation: google.maps.Animation.DROP
@@ -645,9 +674,9 @@ namespace Advance_Control.Views.Pages
 
                 if (MapWebView?.CoreWebView2 != null)
                 {
-                    // Escape the search query for JavaScript
-                    var escapedQuery = searchQuery.Replace("'", "\\'").Replace("\"", "\\\"");
-                    var script = $"searchLocation('{escapedQuery}');";
+                    // Use proper JavaScript encoding to prevent XSS attacks
+                    var encodedQuery = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(searchQuery);
+                    var script = $"searchLocation('{encodedQuery}');";
                     await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
                 }
             }
