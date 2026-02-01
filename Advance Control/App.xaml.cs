@@ -24,6 +24,8 @@ using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Cargos;
 using Advance_Control.Services.Servicios;
 using Advance_Control.Services.Quotes;
+using Advance_Control.Services.GoogleMaps;
+using Advance_Control.Services.Areas;
 
 namespace Advance_Control
 {
@@ -389,6 +391,46 @@ namespace Advance_Control
                     // Registrar QuoteService (PDF generation)
                     services.AddSingleton<IQuoteService, QuoteService>();
 
+                    // Registrar GoogleMapsConfigService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IGoogleMapsConfigService, GoogleMapsConfigService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar AreasService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IAreasService, AreasService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();
                     services.AddTransient<ViewModels.LoginViewModel>();
@@ -401,6 +443,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.NuevoEquipoViewModel>();
                     services.AddTransient<ViewModels.RefaccionesViewModel>();
                     services.AddTransient<ViewModels.ServiciosViewModel>();
+                    services.AddTransient<ViewModels.UbicacionesViewModel>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
