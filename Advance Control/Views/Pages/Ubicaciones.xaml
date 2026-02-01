@@ -54,6 +54,39 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
+            <!-- Search Box for Map -->
+            <Grid 
+                Grid.Column="1" 
+                VerticalAlignment="Top" 
+                Margin="12,12,12,0" 
+                Padding="12"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                ZIndex="1000">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox 
+                    x:Name="MapSearchBox"
+                    Grid.Column="0"
+                    PlaceholderText="Buscar ubicación en el mapa..."
+                    VerticalAlignment="Center"
+                    Margin="0,0,8,0" />
+                <Button 
+                    x:Name="SearchButton"
+                    Grid.Column="1"
+                    Click="SearchButton_Click"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <SymbolIcon Symbol="Find" />
+                        <TextBlock Text="Buscar" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
             <!-- Left Panel - Location List and Form -->
             <Grid Grid.Column="0" Margin="0,0,12,0">
                 <Grid.RowDefinitions>

@@ -234,8 +234,13 @@ namespace Advance_Control.Views.Pages
 <body>
     <div id='map'></div>
     
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}'></script>
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places'></script>
     <script>
+        // Constants
+        const SEARCH_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+        const EDIT_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+        const MARKER_ICON_SIZE = 40;
+
         let map;
         let areas = {areasJson};
         let ubicaciones = {ubicacionesJson};
@@ -245,6 +250,17 @@ namespace Advance_Control.Views.Pages
         let editMarker = null;
         let geocoder = null;
         let isFormVisible = false;
+        let searchMarker = null;
+
+        // HTML encoding function for defense-in-depth security
+        // Encodes HTML special characters to prevent XSS by leveraging
+        // the browser's built-in encoding when setting textContent
+        function escapeHtml(text) {{
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }}
 
         function initMap() {{
             // Crear el mapa
@@ -274,6 +290,90 @@ namespace Advance_Control.Views.Pages
             }});
         }}
 
+        function searchLocation(query) {{
+            if (!query || query.trim() === '') {{
+                return;
+            }}
+
+            const request = {{
+                query: query,
+                fields: ['name', 'geometry', 'formatted_address']
+            }};
+
+            const service = new google.maps.places.PlacesService(map);
+            
+            service.findPlaceFromQuery(request, (results, status) => {{
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {{
+                    const place = results[0];
+                    
+                    // Remove previous search marker if exists
+                    if (searchMarker) {{
+                        searchMarker.setMap(null);
+                    }}
+
+                    // Center map on the found location
+                    if (place.geometry && place.geometry.location) {{
+                        map.setCenter(place.geometry.location);
+                        map.setZoom(15);
+
+                        // Add a marker for the search result
+                        searchMarker = new google.maps.Marker({{
+                            position: place.geometry.location,
+                            map: map,
+                            title: place.name,
+                            icon: {{
+                                url: SEARCH_MARKER_ICON,
+                                scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
+                            }},
+                            animation: google.maps.Animation.DROP
+                        }});
+
+                        // Show info window with search result
+                        const safeName = escapeHtml(place.name || 'Ubicación encontrada');
+                        const safeAddress = place.formatted_address ? escapeHtml(place.formatted_address) : '';
+                        
+                        const content = `
+                            <div style='padding: 8px; min-width: 200px;'>
+                                <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{safeName}}</h3>
+                                <div style='color: #5f6368; font-size: 14px;'>
+                                    ${{safeAddress ? `<p style='margin: 4px 0;'>${{safeAddress}}</p>` : ''}}
+                                </div>
+                            </div>
+                        `;
+                        
+                        infoWindow.setContent(content);
+                        infoWindow.open(map, searchMarker);
+                    }}
+                }} else {{
+                    // Show error to user via InfoWindow
+                    const errorMessages = {{
+                        'ZERO_RESULTS': 'No se encontraron resultados para la búsqueda.',
+                        'OVER_QUERY_LIMIT': 'Se ha excedido el límite de consultas. Intente más tarde.',
+                        'REQUEST_DENIED': 'La solicitud fue denegada.',
+                        'INVALID_REQUEST': 'La solicitud no es válida.',
+                        'UNKNOWN_ERROR': 'Ocurrió un error desconocido. Intente nuevamente.'
+                    }};
+                    
+                    const errorMessage = errorMessages[status] || errorMessages.UNKNOWN_ERROR;
+                    
+                    const errorContent = `
+                        <div style='padding: 8px; min-width: 200px;'>
+                            <h3 style='margin: 0 0 8px 0; color: #d93025; font-size: 16px;'>Error en la búsqueda</h3>
+                            <div style='color: #5f6368; font-size: 14px;'>
+                                <p style='margin: 4px 0;'>${{errorMessage}}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    infoWindow.setContent(errorContent);
+                    infoWindow.setPosition(map.getCenter());
+                    infoWindow.open(map);
+                    
+                    console.error('Error en búsqueda de ubicación. Query:', query, 'Status:', status);
+                }}
+            }});
+        }}
+
         function placeMarker(location) {{
             // Remove existing edit marker
             if (editMarker) {{
@@ -286,8 +386,8 @@ namespace Advance_Control.Views.Pages
                 map: map,
                 draggable: true,
                 icon: {{
-                    url: 'https://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                    scaledSize: new google.maps.Size(40, 40)
+                    url: EDIT_MARKER_ICON,
+                    scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
                 }},
                 title: 'Nueva ubicación',
                 animation: google.maps.Animation.DROP
@@ -565,6 +665,38 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al refrescar", ex, "Ubicaciones", "RefreshButton_Click");
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de búsqueda del mapa
+        /// </summary>
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var searchQuery = MapSearchBox.Text?.Trim();
+                
+                if (string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    await ShowMessageDialogAsync("Búsqueda", "Por favor ingrese una ubicación para buscar");
+                    return;
+                }
+
+                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "Ubicaciones", "SearchButton_Click");
+
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    // Use proper JavaScript encoding to prevent XSS attacks
+                    var encodedQuery = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(searchQuery);
+                    var script = $"searchLocation('{encodedQuery}');";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "Ubicaciones", "SearchButton_Click");
+                await ShowMessageDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
             }
         }
 
