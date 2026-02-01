@@ -234,7 +234,7 @@ namespace Advance_Control.Views.Pages
 <body>
     <div id='map'></div>
     
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}'></script>
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places'></script>
     <script>
         let map;
         let areas = {areasJson};
@@ -245,6 +245,7 @@ namespace Advance_Control.Views.Pages
         let editMarker = null;
         let geocoder = null;
         let isFormVisible = false;
+        let searchMarker = null;
 
         function initMap() {{
             // Crear el mapa
@@ -270,6 +271,63 @@ namespace Advance_Control.Views.Pages
             map.addListener('click', (event) => {{
                 if (isFormVisible) {{
                     placeMarker(event.latLng);
+                }}
+            }});
+        }}
+
+        function searchLocation(query) {{
+            if (!query || query.trim() === '') {{
+                return;
+            }}
+
+            const request = {{
+                query: query,
+                fields: ['name', 'geometry', 'formatted_address']
+            }};
+
+            const service = new google.maps.places.PlacesService(map);
+            
+            service.findPlaceFromQuery(request, (results, status) => {{
+                if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {{
+                    const place = results[0];
+                    
+                    // Remove previous search marker if exists
+                    if (searchMarker) {{
+                        searchMarker.setMap(null);
+                    }}
+
+                    // Center map on the found location
+                    if (place.geometry && place.geometry.location) {{
+                        map.setCenter(place.geometry.location);
+                        map.setZoom(15);
+
+                        // Add a marker for the search result
+                        searchMarker = new google.maps.Marker({{
+                            position: place.geometry.location,
+                            map: map,
+                            title: place.name,
+                            icon: {{
+                                url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                                scaledSize: new google.maps.Size(40, 40)
+                            }},
+                            animation: google.maps.Animation.DROP
+                        }});
+
+                        // Show info window with search result
+                        const content = `
+                            <div style='padding: 8px; min-width: 200px;'>
+                                <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{place.name || 'Ubicación encontrada'}}</h3>
+                                <div style='color: #5f6368; font-size: 14px;'>
+                                    ${{place.formatted_address ? `<p style='margin: 4px 0;'>${{place.formatted_address}}</p>` : ''}}
+                                </div>
+                            </div>
+                        `;
+                        
+                        infoWindow.setContent(content);
+                        infoWindow.open(map, searchMarker);
+                    }}
+                }} else {{
+                    console.error('No se encontró la ubicación. Status:', status);
                 }}
             }});
         }}
@@ -565,6 +623,38 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al refrescar", ex, "Ubicaciones", "RefreshButton_Click");
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de búsqueda del mapa
+        /// </summary>
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var searchQuery = MapSearchBox.Text?.Trim();
+                
+                if (string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    await ShowMessageDialogAsync("Búsqueda", "Por favor ingrese una ubicación para buscar");
+                    return;
+                }
+
+                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "Ubicaciones", "SearchButton_Click");
+
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    // Escape the search query for JavaScript
+                    var escapedQuery = searchQuery.Replace("'", "\\'").Replace("\"", "\\\"");
+                    var script = $"searchLocation('{escapedQuery}');";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "Ubicaciones", "SearchButton_Click");
+                await ShowMessageDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
             }
         }
 
