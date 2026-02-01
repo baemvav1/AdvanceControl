@@ -76,9 +76,9 @@ private async void SearchButton_Click(object sender, RoutedEventArgs e)
 
         if (MapWebView?.CoreWebView2 != null)
         {
-            // Escape the search query for JavaScript
-            var escapedQuery = searchQuery.Replace("'", "\\'").Replace("\"", "\\\"");
-            var script = $"searchLocation('{escapedQuery}');";
+            // Use proper JavaScript encoding to prevent XSS attacks
+            var encodedQuery = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(searchQuery);
+            var script = $"searchLocation('{encodedQuery}');";
             await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
         }
     }
@@ -93,7 +93,7 @@ private async void SearchButton_Click(object sender, RoutedEventArgs e)
 **Funcionalidades del Manejador:**
 - Valida que el campo de búsqueda no esté vacío
 - Registra la búsqueda en los logs del sistema
-- Escapa caracteres especiales para prevenir inyección de código
+- Usa `JavaScriptEncoder.Default.Encode` para prevenir ataques XSS de manera segura y completa
 - Ejecuta JavaScript en el WebView2 para realizar la búsqueda
 - Maneja errores con mensajes informativos al usuario
 
@@ -107,14 +107,23 @@ Se modificó la carga del script de Google Maps para incluir la librería Places
 <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places'></script>
 ```
 
-#### 3.2 Variable para Marcador de Búsqueda
+#### 3.2 Constantes de Configuración
+Se agregaron constantes para mejorar la mantenibilidad del código:
+
+```javascript
+const SEARCH_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
+const EDIT_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+const MARKER_ICON_SIZE = 40;
+```
+
+#### 3.3 Variable para Marcador de Búsqueda
 Se agregó una variable global para rastrear el marcador de búsqueda:
 
 ```javascript
 let searchMarker = null;
 ```
 
-#### 3.3 Función de Búsqueda
+#### 3.4 Función de Búsqueda
 Se implementó la función `searchLocation` que utiliza el servicio Places de Google Maps:
 
 ```javascript
@@ -150,8 +159,8 @@ function searchLocation(query) {
                     map: map,
                     title: place.name,
                     icon: {
-                        url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-                        scaledSize: new google.maps.Size(40, 40)
+                        url: SEARCH_MARKER_ICON,
+                        scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
                     },
                     animation: google.maps.Animation.DROP
                 });
@@ -170,10 +179,50 @@ function searchLocation(query) {
                 infoWindow.open(map, searchMarker);
             }
         } else {
-            console.error('No se encontró la ubicación. Status:', status);
+            // Show error to user via InfoWindow
+            const errorMessages = {
+                'ZERO_RESULTS': 'No se encontraron resultados para la búsqueda.',
+                'OVER_QUERY_LIMIT': 'Se ha excedido el límite de consultas. Intente más tarde.',
+                'REQUEST_DENIED': 'La solicitud fue denegada.',
+                'INVALID_REQUEST': 'La solicitud no es válida.',
+                'UNKNOWN_ERROR': 'Ocurrió un error desconocido. Intente nuevamente.'
+            };
+            
+            const errorMessage = errorMessages[status] || errorMessages['UNKNOWN_ERROR'];
+            
+            const errorContent = `
+                <div style='padding: 8px; min-width: 200px;'>
+                    <h3 style='margin: 0 0 8px 0; color: #d93025; font-size: 16px;'>Error en la búsqueda</h3>
+                    <div style='color: #5f6368; font-size: 14px;'>
+                        <p style='margin: 4px 0;'>${errorMessage}</p>
+                    </div>
+                </div>
+            `;
+            
+            infoWindow.setContent(errorContent);
+            infoWindow.setPosition(map.getCenter());
+            infoWindow.open(map);
+            
+            console.error('Error en búsqueda de ubicación. Query:', query, 'Status:', status);
         }
     });
 }
+```
+
+**Características de la Función de Búsqueda:**
+- Valida que la consulta no esté vacía
+- Utiliza `PlacesService.findPlaceFromQuery` para buscar ubicaciones
+- Solicita campos específicos: nombre, geometría y dirección formateada
+- Elimina marcadores de búsqueda anteriores antes de crear uno nuevo
+- Centra el mapa en la ubicación encontrada con zoom 15
+- Crea un marcador azul distintivo usando la constante `SEARCH_MARKER_ICON`
+- Aplica animación DROP al marcador para mejor experiencia visual
+- Muestra un InfoWindow con información de la ubicación
+- **Manejo de errores mejorado**: Muestra mensajes de error amigables al usuario mediante InfoWindow
+- Mapea códigos de error de Google Places a mensajes en español
+- Posiciona el InfoWindow de error en el centro del mapa
+- Registra errores en la consola para debugging
+- Los errores son visibles para el usuario, no solo en la consola del navegador
 ```
 
 **Características de la Función de Búsqueda:**
@@ -192,22 +241,26 @@ function searchLocation(query) {
 1. **Usuario ingresa texto**: El usuario escribe el nombre de una ubicación, dirección o lugar de interés en el campo de búsqueda
 2. **Usuario presiona Buscar**: Al hacer clic en el botón, se ejecuta `SearchButton_Click`
 3. **Validación**: Se valida que el campo no esté vacío
-4. **Escape de caracteres**: Se escapan caracteres especiales para seguridad
+4. **Codificación segura**: Se codifica la consulta usando `JavaScriptEncoder.Default.Encode` para prevenir XSS
 5. **Llamada a JavaScript**: Se ejecuta la función `searchLocation` en el WebView2
 6. **Consulta a Google Places**: El API de Places busca la ubicación
 7. **Resultado encontrado**: Si se encuentra:
    - Se elimina cualquier marcador de búsqueda anterior
    - Se centra el mapa en la nueva ubicación
-   - Se crea un marcador azul
+   - Se crea un marcador azul distintivo
    - Se muestra un InfoWindow con detalles
-8. **Resultado no encontrado**: Se registra un error en la consola del navegador
+8. **Resultado no encontrado**: Si falla:
+   - Se muestra un InfoWindow con mensaje de error en español
+   - Se mapea el código de error a un mensaje amigable
+   - Se registra el error en la consola para debugging
 
 ## Consideraciones de Seguridad
 
-1. **Escape de caracteres especiales**: Se escapan comillas simples y dobles en la consulta de búsqueda para prevenir inyección de código JavaScript
+1. **Protección XSS mejorada**: Se utiliza `System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode` que es el método recomendado por Microsoft para codificar cadenas antes de insertarlas en JavaScript. Este encoder maneja correctamente todos los caracteres especiales y secuencias peligrosas.
 2. **Validación de entrada**: Se valida que el campo no esté vacío antes de procesar
 3. **Manejo de errores**: Se capturan y registran excepciones de manera segura
 4. **Logging**: Todas las búsquedas se registran en el sistema de logging para auditoría
+5. **Constantes**: URLs de iconos y tamaños se definen como constantes para prevenir modificaciones accidentales
 
 ## Diferencias con el API de Advance
 
