@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="Advance_Control.Views.Pages.Ubicaciones"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Advance_Control.Views.Pages"
-    xmlns:models="using:Advance_Control.Models"
     xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Advance_Control.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
@@ -15,67 +15,61 @@
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
     </Page.Resources>
 
-    <Grid Padding="24">
+    <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="90" />
+            <RowDefinition Height="80" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Header -->
-        <StackPanel
-            Grid.Row="0"
-            Margin="0,0,0,24"
-            Spacing="8">
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock
-                    FontSize="32"
-                    FontWeight="Bold"
-                    Text="Ubicaciones" />
-                <Button
-                    x:Name="RefreshButton"
-                    VerticalAlignment="Center"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Click="RefreshButton_Click"
-                    ToolTipService.ToolTip="Recargar ubicaciones">
-                    <SymbolIcon Symbol="Refresh" />
-                </Button>
+        <Grid Grid.Row="0">
+            <!--  Header  -->
+            <StackPanel
+                Grid.Row="0"
+                Margin="20,20,0,24"
+                Orientation="Horizontal"
+                Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock
+                        FontSize="32"
+                        FontWeight="Bold"
+                        Text="Ubicaciones" />
+                    <Button
+                        x:Name="RefreshButton"
+                        Margin="0,10,0,0"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="RefreshButton_Click"
+                        ToolTipService.ToolTip="Recargar ubicaciones">
+                        <SymbolIcon Symbol="Refresh" />
+                    </Button>
+                </StackPanel>
+
             </StackPanel>
-            <TextBlock
-                FontSize="16"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Gestión de ubicaciones con Google Maps" />
-        </StackPanel>
+        </Grid>
 
-        <!-- Content Area -->
         <Grid Grid.Row="1">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="400" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
-
-            <!-- Search Box for Map -->
-            <Grid 
-                Grid.Column="1" 
-                VerticalAlignment="Top" 
-                Margin="12,12,12,0" 
+            <Grid
+                Grid.Column="1"
+                Margin="12,12,12,0"
                 Padding="12"
+                VerticalAlignment="Top"
                 Background="{ThemeResource LayerFillColorDefaultBrush}"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
-                CornerRadius="8"
-                ZIndex="1000">
+                CornerRadius="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
-                <TextBox 
+                <TextBox
                     x:Name="MapSearchBox"
                     Grid.Column="0"
-                    PlaceholderText="Buscar ubicación en el mapa..."
+                    Margin="0,0,8,0"
                     VerticalAlignment="Center"
-                    Margin="0,0,8,0" />
-                <Button 
+                    PlaceholderText="Buscar ubicación en el mapa..." />
+                <Button
                     x:Name="SearchButton"
                     Grid.Column="1"
                     Click="SearchButton_Click"
@@ -86,180 +80,201 @@
                     </StackPanel>
                 </Button>
             </Grid>
+        </Grid>
 
-            <!-- Left Panel - Location List and Form -->
-            <Grid Grid.Column="0" Margin="0,0,12,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+        <!--  Body  -->
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="400" />
+            </Grid.ColumnDefinitions>
 
-                <!-- Location List Header -->
-                <StackPanel Grid.Row="0" Margin="0,0,0,12">
-                    <TextBlock
-                        FontSize="20"
-                        FontWeight="SemiBold"
-                        Text="Lista de Ubicaciones" />
-                    <Button
-                        x:Name="AddButton"
-                        Margin="0,8,0,0"
-                        Click="AddButton_Click">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <SymbolIcon Symbol="Add" />
-                            <TextBlock Text="Agregar Ubicación" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
 
-                <!-- Location List -->
-                <ScrollViewer Grid.Row="1">
-                    <ListView
-                        x:Name="UbicacionesList"
-                        ItemsSource="{x:Bind ViewModel.Ubicaciones, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.SelectedUbicacion, Mode=TwoWay}"
-                        SelectionChanged="UbicacionesList_SelectionChanged">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:UbicacionDto">
-                                <Grid Padding="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel Grid.Column="0">
-                                        <TextBlock Text="{x:Bind Nombre}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{x:Bind Descripcion}" FontSize="12" Foreground="Gray" />
-                                        <TextBlock FontSize="11" Foreground="Gray">
-                                            <Run Text="Lat: " />
-                                            <Run Text="{x:Bind Latitud}" />
-                                            <Run Text=", Lng: " />
-                                            <Run Text="{x:Bind Longitud}" />
-                                        </TextBlock>
-                                    </StackPanel>
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                                        <Button
-                                            Click="EditButton_Click"
-                                            Tag="{x:Bind IdUbicacion}"
-                                            ToolTipService.ToolTip="Editar">
-                                            <SymbolIcon Symbol="Edit" />
-                                        </Button>
-                                        <Button
-                                            Click="DeleteButton_Click"
-                                            Tag="{x:Bind IdUbicacion}"
-                                            ToolTipService.ToolTip="Eliminar">
-                                            <SymbolIcon Symbol="Delete" />
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                    </ListView>
-                </ScrollViewer>
-
-                <!-- Location Form -->
-                <StackPanel
-                    x:Name="LocationForm"
-                    Grid.Row="2"
-                    Margin="0,12,0,0"
-                    Padding="12"
-                    Background="{ThemeResource LayerFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8"
-                    Spacing="8"
-                    Visibility="Collapsed">
-                    
-                    <TextBlock
-                        x:Name="FormTitle"
-                        FontSize="18"
-                        FontWeight="SemiBold"
-                        Text="Nueva Ubicación" />
-
-                    <InfoBar
-                        IsOpen="True"
-                        IsClosable="False"
-                        Severity="Informational"
-                        Message="Haz clic en el mapa para colocar un marcador rojo y rellenar automáticamente las coordenadas y dirección."
-                        Margin="0,4,0,4" />
-
-                    <TextBox
-                        x:Name="NombreTextBox"
-                        Header="Nombre *"
-                        PlaceholderText="Nombre de la ubicación" />
-
-                    <TextBox
-                        x:Name="DescripcionTextBox"
-                        Header="Descripción"
-                        PlaceholderText="Descripción opcional"
-                        TextWrapping="Wrap"
-                        AcceptsReturn="True"
-                        Height="60" />
-
-                    <TextBox
-                        x:Name="LatitudTextBox"
-                        Header="Latitud *"
-                        PlaceholderText="19.4326" />
-
-                    <TextBox
-                        x:Name="LongitudTextBox"
-                        Header="Longitud *"
-                        PlaceholderText="-99.1332" />
-
-                    <TextBox
-                        x:Name="DireccionTextBox"
-                        Header="Dirección Completa"
-                        PlaceholderText="Dirección opcional" />
-
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button
-                            x:Name="SaveButton"
-                            Click="SaveButton_Click"
-                            Style="{StaticResource AccentButtonStyle}">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <SymbolIcon Symbol="Save" />
-                                <TextBlock Text="Guardar" />
-                            </StackPanel>
-                        </Button>
-                        <Button
-                            x:Name="CancelButton"
-                            Click="CancelButton_Click">
-                            Cancelar
-                        </Button>
+            <!--  Mapa  -->
+            <Grid Grid.Column="0" Margin="10" CornerRadius="10">
+                <Grid Grid.Column="1">
+                    <!--  Loading Indicator  -->
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <ProgressRing
+                            Width="50"
+                            Height="50"
+                            IsActive="True" />
+                        <TextBlock
+                            Margin="0,12,0,0"
+                            HorizontalAlignment="Center"
+                            Text="Cargando mapa..." />
                     </StackPanel>
-                </StackPanel>
+
+                    <!--  Error Message  -->
+                    <InfoBar
+                        Margin="0,0,0,12"
+                        VerticalAlignment="Top"
+                        IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                        Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                        Severity="Error" />
+
+                    <!--  WebView2 for Google Maps  -->
+                    <WebView2
+                        x:Name="MapWebView"
+                        NavigationCompleted="MapWebView_NavigationCompleted"
+                        Visibility="{x:Bind ViewModel.IsMapInitialized, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                </Grid>
             </Grid>
 
-            <!-- Right Panel - Map -->
+            <!--  Lista de ubicaciones / formulario  -->
             <Grid Grid.Column="1">
-                <!-- Loading Indicator -->
-                <StackPanel
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
-                    <ProgressRing
-                        Width="50"
-                        Height="50"
-                        IsActive="True" />
-                    <TextBlock
-                        Margin="0,12,0,0"
-                        HorizontalAlignment="Center"
-                        Text="Cargando mapa..." />
-                </StackPanel>
+                <ScrollViewer VerticalScrollMode="Auto" VerticalScrollBarVisibility="Auto">
+                    <Grid Margin="0,0,12,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
 
-                <!-- Error Message -->
-                <InfoBar
-                    Margin="0,0,0,12"
-                    IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
-                    Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
-                    Severity="Error"
-                    VerticalAlignment="Top" />
+                        <!--  Location List Header  -->
+                        <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                            <TextBlock
+             FontSize="20"
+             FontWeight="SemiBold"
+             Text="Lista de Ubicaciones" />
+                            <Button
+             x:Name="AddButton"
+             Margin="0,8,0,0"
+             Click="AddButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <SymbolIcon Symbol="Add" />
+                                    <TextBlock Text="Agregar Ubicación" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
 
-                <!-- WebView2 for Google Maps -->
-                <WebView2
-                    x:Name="MapWebView"
-                    NavigationCompleted="MapWebView_NavigationCompleted"
-                    Visibility="{x:Bind ViewModel.IsMapInitialized, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                        <!--  Location List  -->
+                        <ScrollViewer Grid.Row="1">
+                            <ListView
+             x:Name="UbicacionesList"
+             ItemsSource="{x:Bind ViewModel.Ubicaciones, Mode=OneWay}"
+             SelectedItem="{x:Bind ViewModel.SelectedUbicacion, Mode=TwoWay}"
+             SelectionChanged="UbicacionesList_SelectionChanged">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:UbicacionDto">
+                                        <Grid Padding="8">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Grid.Column="0">
+                                                <TextBlock FontWeight="SemiBold" Text="{x:Bind Nombre}" />
+                                                <TextBlock
+                                 FontSize="12"
+                                 Foreground="Gray"
+                                 Text="{x:Bind Descripcion}" />
+                                                <TextBlock FontSize="11" Foreground="Gray">
+                                 <Run Text="Lat: " />
+                                 <Run Text="{x:Bind Latitud}" />
+                                 <Run Text=", Lng: " />
+                                 <Run Text="{x:Bind Longitud}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                            <StackPanel
+                             Grid.Column="1"
+                             Orientation="Horizontal"
+                             Spacing="4">
+                                                <Button
+                                 Click="EditButton_Click"
+                                 Tag="{x:Bind IdUbicacion}"
+                                 ToolTipService.ToolTip="Editar">
+                                                    <SymbolIcon Symbol="Edit" />
+                                                </Button>
+                                                <Button
+                                 Click="DeleteButton_Click"
+                                 Tag="{x:Bind IdUbicacion}"
+                                 ToolTipService.ToolTip="Eliminar">
+                                                    <SymbolIcon Symbol="Delete" />
+                                                </Button>
+                                            </StackPanel>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </ScrollViewer>
+
+                        <!--  Location Form  -->
+                        <StackPanel
+         x:Name="LocationForm"
+         Grid.Row="2"
+         Margin="0,12,0,0"
+         Padding="12"
+         Background="{ThemeResource LayerFillColorDefaultBrush}"
+         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+         BorderThickness="1"
+         CornerRadius="8"
+         Spacing="8"
+         Visibility="Collapsed">
+
+                            <TextBlock
+             x:Name="FormTitle"
+             FontSize="18"
+             FontWeight="SemiBold"
+             Text="Nueva Ubicación" />
+
+                            <InfoBar
+             Margin="0,4,0,4"
+             IsClosable="False"
+             IsOpen="True"
+             Message="Haz clic en el mapa para colocar un marcador rojo y rellenar automáticamente las coordenadas y dirección."
+             Severity="Informational" />
+
+                            <TextBox
+             x:Name="NombreTextBox"
+             Header="Nombre *"
+             PlaceholderText="Nombre de la ubicación" />
+
+                            <TextBox
+             x:Name="DescripcionTextBox"
+             Height="60"
+             AcceptsReturn="True"
+             Header="Descripción"
+             PlaceholderText="Descripción opcional"
+             TextWrapping="Wrap" />
+
+                            <TextBox
+             x:Name="LatitudTextBox"
+             Header="Latitud *"
+             PlaceholderText="19.4326" />
+
+                            <TextBox
+             x:Name="LongitudTextBox"
+             Header="Longitud *"
+             PlaceholderText="-99.1332" />
+
+                            <TextBox
+             x:Name="DireccionTextBox"
+             Header="Dirección Completa"
+             PlaceholderText="Dirección opcional" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button
+                 x:Name="SaveButton"
+                 Click="SaveButton_Click"
+                 Style="{StaticResource AccentButtonStyle}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <SymbolIcon Symbol="Save" />
+                                        <TextBlock Text="Guardar" />
+                                    </StackPanel>
+                                </Button>
+                                <Button x:Name="CancelButton" Click="CancelButton_Click">
+                                    Cancelar
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
             </Grid>
         </Grid>
     </Grid>
+
+
 </Page>
