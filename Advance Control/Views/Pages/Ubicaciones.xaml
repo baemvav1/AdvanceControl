@@ -158,14 +158,12 @@
                     <TextBox
                         x:Name="LatitudTextBox"
                         Header="Latitud *"
-                        PlaceholderText="19.4326"
-                        InputScope="Number" />
+                        PlaceholderText="19.4326" />
 
                     <TextBox
                         x:Name="LongitudTextBox"
                         Header="Longitud *"
-                        PlaceholderText="-99.1332"
-                        InputScope="Number" />
+                        PlaceholderText="-99.1332" />
 
                     <TextBox
                         x:Name="DireccionTextBox"

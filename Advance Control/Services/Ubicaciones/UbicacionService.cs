@@ -272,14 +272,37 @@ namespace Advance_Control.Services.Ubicaciones
                     return new ApiResponse { Success = false, Message = "Ubicación no puede ser nula" };
                 }
 
-                // El ID del parámetro de ruta se asigna al objeto ubicación
-                ubicacion.IdUbicacion = id;
-
                 var url = _endpoints.GetEndpoint("api", "Ubicacion", id.ToString());
 
                 await _logger.LogInformationAsync($"Actualizando ubicación con ID {id} en: {url}", "UbicacionService", "UpdateUbicacionAsync");
 
-                var json = JsonSerializer.Serialize(ubicacion);
+                // Create a copy to avoid modifying the input parameter
+                var ubicacionToUpdate = new UbicacionDto
+                {
+                    IdUbicacion = id,
+                    Nombre = ubicacion.Nombre,
+                    Descripcion = ubicacion.Descripcion,
+                    Latitud = ubicacion.Latitud,
+                    Longitud = ubicacion.Longitud,
+                    DireccionCompleta = ubicacion.DireccionCompleta,
+                    Ciudad = ubicacion.Ciudad,
+                    Estado = ubicacion.Estado,
+                    Pais = ubicacion.Pais,
+                    PlaceId = ubicacion.PlaceId,
+                    Icono = ubicacion.Icono,
+                    ColorIcono = ubicacion.ColorIcono,
+                    NivelZoom = ubicacion.NivelZoom,
+                    InfoWindowHTML = ubicacion.InfoWindowHTML,
+                    Categoria = ubicacion.Categoria,
+                    Telefono = ubicacion.Telefono,
+                    Email = ubicacion.Email,
+                    MetadataJSON = ubicacion.MetadataJSON,
+                    Activo = ubicacion.Activo,
+                    UsuarioCreacion = ubicacion.UsuarioCreacion,
+                    UsuarioModificacion = ubicacion.UsuarioModificacion
+                };
+
+                var json = JsonSerializer.Serialize(ubicacionToUpdate);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 var response = await _http.PutAsync(url, content, cancellationToken).ConfigureAwait(false);

@@ -487,9 +487,21 @@ namespace Advance_Control.Views.Pages
                     return;
                 }
 
+                if (latitud < -90 || latitud > 90)
+                {
+                    await ShowMessageDialogAsync("Validación", "La latitud debe estar entre -90 y 90");
+                    return;
+                }
+
                 if (!decimal.TryParse(LongitudTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var longitud))
                 {
                     await ShowMessageDialogAsync("Validación", "La longitud debe ser un número válido");
+                    return;
+                }
+
+                if (longitud < -180 || longitud > 180)
+                {
+                    await ShowMessageDialogAsync("Validación", "La longitud debe estar entre -180 y 180");
                     return;
                 }
 
@@ -563,8 +575,8 @@ namespace Advance_Control.Views.Pages
         {
             NombreTextBox.Text = ubicacion.Nombre ?? string.Empty;
             DescripcionTextBox.Text = ubicacion.Descripcion ?? string.Empty;
-            LatitudTextBox.Text = ubicacion.Latitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-            LongitudTextBox.Text = ubicacion.Longitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            LatitudTextBox.Text = ubicacion.Latitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
+            LongitudTextBox.Text = ubicacion.Longitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
             DireccionTextBox.Text = ubicacion.DireccionCompleta ?? string.Empty;
         }
 
