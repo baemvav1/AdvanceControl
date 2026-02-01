@@ -34,6 +34,7 @@ namespace Advance_Control.Views.Pages
         private readonly ILoggingService _loggingService;
         private bool _isEditMode = false;
         private int? _editingUbicacionId = null;
+        private bool _isFormVisible = false;
 
         public Ubicaciones()
         {
@@ -47,6 +48,78 @@ namespace Advance_Control.Views.Pages
 
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            // Setup WebView2 message handler
+            this.Loaded += Ubicaciones_Loaded;
+        }
+
+        private async void Ubicaciones_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                await MapWebView.EnsureCoreWebView2Async();
+                MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al configurar WebView2 message handler", ex, "Ubicaciones", "Ubicaciones_Loaded");
+            }
+        }
+
+        private async void CoreWebView2_WebMessageReceived(Microsoft.Web.WebView2.Core.CoreWebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs args)
+        {
+            try
+            {
+                var message = args.TryGetWebMessageAsString();
+                await _loggingService.LogInformationAsync($"Mensaje recibido de WebView2: {message}", "Ubicaciones", "CoreWebView2_WebMessageReceived");
+
+                // Parse the JSON message
+                var jsonDoc = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(message);
+                
+                if (jsonDoc != null && jsonDoc.TryGetValue("type", out var typeElement))
+                {
+                    var messageType = typeElement.GetString();
+
+                    if (messageType == "markerMoved")
+                    {
+                        // Extract coordinates
+                        if (jsonDoc.TryGetValue("lat", out var latElement) && 
+                            jsonDoc.TryGetValue("lng", out var lngElement))
+                        {
+                            var lat = latElement.GetDecimal();
+                            var lng = lngElement.GetDecimal();
+
+                            // Update UI on the UI thread
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                LatitudTextBox.Text = lat.ToString("F6", CultureInfo.InvariantCulture);
+                                LongitudTextBox.Text = lng.ToString("F6", CultureInfo.InvariantCulture);
+                            });
+
+                            // Get address information if available
+                            if (jsonDoc.TryGetValue("address", out var addressElement))
+                            {
+                                var addressData = addressElement.Deserialize<Dictionary<string, JsonElement>>();
+                                
+                                DispatcherQueue.TryEnqueue(() =>
+                                {
+                                    if (addressData != null)
+                                    {
+                                        if (addressData.TryGetValue("formatted", out var formattedElement))
+                                        {
+                                            DireccionTextBox.Text = formattedElement.GetString() ?? string.Empty;
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al procesar mensaje de WebView2", ex, "Ubicaciones", "CoreWebView2_WebMessageReceived");
+            }
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -155,6 +228,9 @@ namespace Advance_Control.Views.Pages
         let shapes = [];
         let markers = [];
         let infoWindow;
+        let editMarker = null;
+        let geocoder = null;
+        let isFormVisible = false;
 
         function initMap() {{
             // Crear el mapa
@@ -167,11 +243,106 @@ namespace Advance_Control.Views.Pages
             // Crear InfoWindow global
             infoWindow = new google.maps.InfoWindow();
 
+            // Crear geocoder para reverse geocoding
+            geocoder = new google.maps.Geocoder();
+
             // Renderizar las áreas
             renderAreas();
 
             // Renderizar las ubicaciones (markers)
             renderUbicaciones();
+
+            // Add map click listener for placing marker when form is visible
+            map.addListener('click', (event) => {{
+                if (isFormVisible) {{
+                    placeMarker(event.latLng);
+                }}
+            }});
+        }}
+
+        function placeMarker(location) {{
+            // Remove existing edit marker
+            if (editMarker) {{
+                editMarker.setMap(null);
+            }}
+
+            // Create new marker
+            editMarker = new google.maps.Marker({{
+                position: location,
+                map: map,
+                draggable: true,
+                icon: {{
+                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                    scaledSize: new google.maps.Size(40, 40)
+                }},
+                title: 'Nueva ubicación',
+                animation: google.maps.Animation.DROP
+            }});
+
+            // Update form with coordinates
+            updateFormWithLocation(location);
+
+            // Add drag end listener
+            editMarker.addListener('dragend', (event) => {{
+                updateFormWithLocation(event.latLng);
+            }});
+        }}
+
+        function updateFormWithLocation(location) {{
+            const lat = location.lat();
+            const lng = location.lng();
+
+            // Use geocoder to get address
+            geocoder.geocode({{ location: location }}, (results, status) => {{
+                let addressData = {{}};
+                
+                if (status === 'OK' && results && results[0]) {{
+                    addressData.formatted = results[0].formatted_address;
+                    
+                    // Extract address components
+                    results[0].address_components.forEach(component => {{
+                        if (component.types.includes('locality')) {{
+                            addressData.city = component.long_name;
+                        }}
+                        if (component.types.includes('administrative_area_level_1')) {{
+                            addressData.state = component.long_name;
+                        }}
+                        if (component.types.includes('country')) {{
+                            addressData.country = component.long_name;
+                        }}
+                    }});
+                }}
+
+                // Send message to C# app
+                const message = JSON.stringify({{
+                    type: 'markerMoved',
+                    lat: lat,
+                    lng: lng,
+                    address: addressData
+                }});
+
+                if (window.chrome && window.chrome.webview) {{
+                    window.chrome.webview.postMessage(message);
+                }}
+            }});
+        }}
+
+        function setFormVisibility(visible) {{
+            isFormVisible = visible;
+            
+            // Remove marker if form is hidden
+            if (!visible && editMarker) {{
+                editMarker.setMap(null);
+                editMarker = null;
+            }}
+        }}
+
+        function loadExistingMarker(lat, lng) {{
+            if (lat && lng) {{
+                const location = new google.maps.LatLng(parseFloat(lat), parseFloat(lng));
+                placeMarker(location);
+                map.setCenter(location);
+            }}
         }}
 
         function renderAreas() {{
@@ -386,13 +557,17 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Maneja el clic en el botón de agregar ubicación
         /// </summary>
-        private void AddButton_Click(object sender, RoutedEventArgs e)
+        private async void AddButton_Click(object sender, RoutedEventArgs e)
         {
             _isEditMode = false;
             _editingUbicacionId = null;
+            _isFormVisible = true;
             FormTitle.Text = "Nueva Ubicación";
             ClearForm();
             LocationForm.Visibility = Visibility.Visible;
+
+            // Notify map that form is visible
+            await NotifyMapFormVisibility(true);
         }
 
         /// <summary>
@@ -407,7 +582,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Maneja el clic en el botón de editar ubicación
         /// </summary>
-        private void EditButton_Click(object sender, RoutedEventArgs e)
+        private async void EditButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button button && button.Tag is int idUbicacion)
             {
@@ -416,9 +591,19 @@ namespace Advance_Control.Views.Pages
                 {
                     _isEditMode = true;
                     _editingUbicacionId = idUbicacion;
+                    _isFormVisible = true;
                     FormTitle.Text = "Editar Ubicación";
                     LoadUbicacionToForm(ubicacion);
                     LocationForm.Visibility = Visibility.Visible;
+
+                    // Notify map that form is visible
+                    await NotifyMapFormVisibility(true);
+
+                    // Load existing marker if coordinates exist
+                    if (ubicacion.Latitud.HasValue && ubicacion.Longitud.HasValue)
+                    {
+                        await LoadMarkerOnMap(ubicacion.Latitud.Value, ubicacion.Longitud.Value);
+                    }
                 }
             }
         }
@@ -528,8 +713,10 @@ namespace Advance_Control.Views.Pages
 
                 if (response.Success)
                 {
+                    _isFormVisible = false;
                     LocationForm.Visibility = Visibility.Collapsed;
                     ClearForm();
+                    await NotifyMapFormVisibility(false);
                     await LoadMapAsync();
                     await ShowMessageDialogAsync("Éxito", _isEditMode ? "Ubicación actualizada correctamente" : "Ubicación creada correctamente");
                 }
@@ -548,10 +735,14 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Maneja el clic en el botón de cancelar
         /// </summary>
-        private void CancelButton_Click(object sender, RoutedEventArgs e)
+        private async void CancelButton_Click(object sender, RoutedEventArgs e)
         {
+            _isFormVisible = false;
             LocationForm.Visibility = Visibility.Collapsed;
             ClearForm();
+
+            // Notify map that form is hidden
+            await NotifyMapFormVisibility(false);
         }
 
         /// <summary>
@@ -566,6 +757,46 @@ namespace Advance_Control.Views.Pages
             DireccionTextBox.Text = string.Empty;
             _isEditMode = false;
             _editingUbicacionId = null;
+        }
+
+        /// <summary>
+        /// Notifica al mapa JavaScript sobre la visibilidad del formulario
+        /// </summary>
+        private async System.Threading.Tasks.Task NotifyMapFormVisibility(bool isVisible)
+        {
+            try
+            {
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    var script = $"setFormVisibility({isVisible.ToString().ToLower()});";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al notificar visibilidad del formulario al mapa", ex, "Ubicaciones", "NotifyMapFormVisibility");
+            }
+        }
+
+        /// <summary>
+        /// Carga un marker en el mapa con las coordenadas especificadas
+        /// </summary>
+        private async System.Threading.Tasks.Task LoadMarkerOnMap(decimal lat, decimal lng)
+        {
+            try
+            {
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    var latStr = lat.ToString("F6", CultureInfo.InvariantCulture);
+                    var lngStr = lng.ToString("F6", CultureInfo.InvariantCulture);
+                    var script = $"loadExistingMarker({latStr}, {lngStr});";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al cargar marker en el mapa", ex, "Ubicaciones", "LoadMarkerOnMap");
+            }
         }
 
         /// <summary>
