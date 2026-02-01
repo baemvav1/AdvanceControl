@@ -782,7 +782,8 @@ namespace Advance_Control.Views.Pages
             {
                 if (MapWebView?.CoreWebView2 != null)
                 {
-                    var script = $"setFormVisibility({isVisible.ToString().ToLower()});";
+                    var visibilityParam = isVisible ? "true" : "false";
+                    var script = $"setFormVisibility({visibilityParam});";
                     await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
                 }
             }

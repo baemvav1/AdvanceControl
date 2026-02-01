@@ -148,7 +148,7 @@ loadExistingMarker(19.432608, -99.133209);
 ```
 
 ### Estilos del Marcador
-- **URL del icono**: `http://maps.google.com/mapfiles/ms/icons/red-dot.png`
+- **URL del icono**: `https://maps.google.com/mapfiles/ms/icons/red-dot.png`
 - **Tamaño escalado**: 40x40 píxeles
 - **Animación**: `google.maps.Animation.DROP`
 - **Draggable**: true
