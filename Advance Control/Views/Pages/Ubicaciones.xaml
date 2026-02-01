@@ -4,11 +4,78 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="using:Advance_Control.Views.Pages"
+    xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
-    <Grid>
+    <Page.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Page.Resources>
 
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Header -->
+        <StackPanel
+            Grid.Row="0"
+            Margin="0,0,0,24"
+            Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <TextBlock
+                    FontSize="32"
+                    FontWeight="Bold"
+                    Text="Ubicaciones" />
+                <Button
+                    x:Name="RefreshButton"
+                    VerticalAlignment="Center"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="RefreshButton_Click"
+                    ToolTipService.ToolTip="Recargar áreas">
+                    <SymbolIcon Symbol="Refresh" />
+                </Button>
+            </StackPanel>
+            <TextBlock
+                FontSize="16"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Visualización de áreas geográficas en Google Maps" />
+        </StackPanel>
+
+        <!-- Content Area -->
+        <Grid Grid.Row="1">
+            <!-- Loading Indicator -->
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                <ProgressRing
+                    Width="50"
+                    Height="50"
+                    IsActive="True" />
+                <TextBlock
+                    Margin="0,12,0,0"
+                    HorizontalAlignment="Center"
+                    Text="Cargando mapa..." />
+            </StackPanel>
+
+            <!-- Error Message -->
+            <InfoBar
+                Margin="0,0,0,12"
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                Severity="Error"
+                VerticalAlignment="Top" />
+
+            <!-- WebView2 for Google Maps -->
+            <WebView2
+                x:Name="MapWebView"
+                NavigationCompleted="MapWebView_NavigationCompleted"
+                Visibility="{x:Bind ViewModel.IsMapInitialized, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+        </Grid>
     </Grid>
 </Page>
