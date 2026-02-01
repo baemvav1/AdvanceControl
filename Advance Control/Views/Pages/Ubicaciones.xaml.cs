@@ -253,6 +253,8 @@ namespace Advance_Control.Views.Pages
         let searchMarker = null;
 
         // HTML encoding function for defense-in-depth security
+        // Encodes HTML special characters to prevent XSS by leveraging
+        // the browser's built-in encoding when setting textContent
         function escapeHtml(text) {{
             if (!text) return '';
             const div = document.createElement('div');
@@ -352,7 +354,7 @@ namespace Advance_Control.Views.Pages
                         'UNKNOWN_ERROR': 'Ocurrió un error desconocido. Intente nuevamente.'
                     }};
                     
-                    const errorMessage = errorMessages[status] || errorMessages['UNKNOWN_ERROR'];
+                    const errorMessage = errorMessages[status] || errorMessages.UNKNOWN_ERROR;
                     
                     const errorContent = `
                         <div style='padding: 8px; min-width: 200px;'>

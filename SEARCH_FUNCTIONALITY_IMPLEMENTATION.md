@@ -116,14 +116,34 @@ const EDIT_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
 const MARKER_ICON_SIZE = 40;
 ```
 
-#### 3.3 Variable para Marcador de Búsqueda
+#### 3.3 Función de Codificación HTML
+Se agregó una función de utilidad para codificar HTML y prevenir XSS:
+
+```javascript
+// HTML encoding function for defense-in-depth security
+// Encodes HTML special characters to prevent XSS by leveraging
+// the browser's built-in encoding when setting textContent
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+```
+
+**Propósito:**
+- Codifica caracteres especiales HTML (&, <, >, ", ') antes de insertar contenido en el DOM
+- Utiliza el mecanismo nativo del navegador (textContent) para codificación segura
+- Capa adicional de seguridad (defense-in-depth) para datos externos de APIs
+
+#### 3.4 Variable para Marcador de Búsqueda
 Se agregó una variable global para rastrear el marcador de búsqueda:
 
 ```javascript
 let searchMarker = null;
 ```
 
-#### 3.4 Función de Búsqueda
+#### 3.5 Función de Búsqueda
 Se implementó la función `searchLocation` que utiliza el servicio Places de Google Maps:
 
 ```javascript
@@ -166,11 +186,15 @@ function searchLocation(query) {
                 });
 
                 // Show info window with search result
+                // Encode HTML to prevent XSS (defense-in-depth security)
+                const safeName = escapeHtml(place.name || 'Ubicación encontrada');
+                const safeAddress = place.formatted_address ? escapeHtml(place.formatted_address) : '';
+                
                 const content = `
                     <div style='padding: 8px; min-width: 200px;'>
-                        <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${place.name || 'Ubicación encontrada'}</h3>
+                        <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${safeName}</h3>
                         <div style='color: #5f6368; font-size: 14px;'>
-                            ${place.formatted_address ? `<p style='margin: 4px 0;'>${place.formatted_address}</p>` : ''}
+                            ${safeAddress ? `<p style='margin: 4px 0;'>${safeAddress}</p>` : ''}
                         </div>
                     </div>
                 `;
@@ -244,11 +268,15 @@ function searchLocation(query) {
 
 ## Consideraciones de Seguridad
 
-1. **Protección XSS mejorada**: Se utiliza `System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode` que es el método recomendado por Microsoft para codificar cadenas antes de insertarlas en JavaScript. Este encoder maneja correctamente todos los caracteres especiales y secuencias peligrosas.
+1. **Protección XSS mejorada (Capas múltiples)**:
+   - **Capa 1 - Entrada**: Se utiliza `System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode` en C# que es el método recomendado por Microsoft para codificar cadenas antes de insertarlas en JavaScript
+   - **Capa 2 - Salida**: Se utiliza la función `escapeHtml()` en JavaScript para codificar HTML antes de insertar datos externos en el DOM
+   - Este enfoque de defensa en profundidad (defense-in-depth) protege contra múltiples vectores de ataque
 2. **Validación de entrada**: Se valida que el campo no esté vacío antes de procesar
 3. **Manejo de errores**: Se capturan y registran excepciones de manera segura
 4. **Logging**: Todas las búsquedas se registran en el sistema de logging para auditoría
 5. **Constantes**: URLs de iconos y tamaños se definen como constantes para prevenir modificaciones accidentales
+6. **Codificación de caracteres**: La función `escapeHtml` utiliza el mecanismo nativo del navegador (textContent) para garantizar codificación correcta de todos los caracteres especiales
 
 ## Diferencias con el API de Advance
 
