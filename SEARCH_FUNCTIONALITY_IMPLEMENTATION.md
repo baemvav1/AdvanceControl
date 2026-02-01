@@ -223,18 +223,6 @@ function searchLocation(query) {
 - Posiciona el InfoWindow de error en el centro del mapa
 - Registra errores en la consola para debugging
 - Los errores son visibles para el usuario, no solo en la consola del navegador
-```
-
-**Características de la Función de Búsqueda:**
-- Valida que la consulta no esté vacía
-- Utiliza `PlacesService.findPlaceFromQuery` para buscar ubicaciones
-- Solicita campos específicos: nombre, geometría y dirección formateada
-- Elimina marcadores de búsqueda anteriores antes de crear uno nuevo
-- Centra el mapa en la ubicación encontrada con zoom 15
-- Crea un marcador azul distintivo para la ubicación encontrada
-- Aplica animación DROP al marcador para mejor experiencia visual
-- Muestra un InfoWindow con información de la ubicación
-- Registra errores en la consola si la búsqueda falla
 
 ## Flujo de Funcionamiento
 
