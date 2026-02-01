@@ -80,6 +80,9 @@ namespace Advance_Control.Views.Pages
 
                 await _loggingService.LogInformationAsync("Cargando mapa de Google Maps", "Ubicaciones", "LoadMapAsync");
 
+                // Ensure CoreWebView2 is initialized before using NavigateToString
+                await MapWebView.EnsureCoreWebView2Async();
+
                 // Parsear el centro del mapa
                 var centerParts = ViewModel.MapsConfig.DefaultCenter.Split(',');
                 var lat = centerParts.Length > 0 ? centerParts[0].Trim() : DEFAULT_LATITUDE;
