@@ -252,6 +252,14 @@ namespace Advance_Control.Views.Pages
         let isFormVisible = false;
         let searchMarker = null;
 
+        // HTML encoding function for defense-in-depth security
+        function escapeHtml(text) {{
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }}
+
         function initMap() {{
             // Crear el mapa
             map = new google.maps.Map(document.getElementById('map'), {{
@@ -319,11 +327,14 @@ namespace Advance_Control.Views.Pages
                         }});
 
                         // Show info window with search result
+                        const safeName = escapeHtml(place.name || 'Ubicación encontrada');
+                        const safeAddress = place.formatted_address ? escapeHtml(place.formatted_address) : '';
+                        
                         const content = `
                             <div style='padding: 8px; min-width: 200px;'>
-                                <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{place.name || 'Ubicación encontrada'}}</h3>
+                                <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{safeName}}</h3>
                                 <div style='color: #5f6368; font-size: 14px;'>
-                                    ${{place.formatted_address ? `<p style='margin: 4px 0;'>${{place.formatted_address}}</p>` : ''}}
+                                    ${{safeAddress ? `<p style='margin: 4px 0;'>${{safeAddress}}</p>` : ''}}
                                 </div>
                             </div>
                         `;
