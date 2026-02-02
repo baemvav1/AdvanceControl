@@ -58,6 +58,9 @@ namespace Advance_Control.Views.Pages
         // Note: Only the most recent shape is stored because the map drawing manager
         // only allows one shape at a time (previous shapes are removed when a new one is drawn)
         private Dictionary<string, JsonElement>? _pendingShapeMessage = null;
+        
+        // Track if the Areas map has been loaded to prevent unnecessary reloads
+        private bool _areasMapLoaded = false;
 
         public Ubicaciones()
         {
@@ -419,7 +422,9 @@ namespace Advance_Control.Views.Pages
         /// </summary>
         public async Task ReloadAreasMapAsync()
         {
+            _areasMapLoaded = false; // Reset flag to force reload
             await LoadAreasMapAsync();
+            _areasMapLoaded = true;
         }
 
         /// <summary>
@@ -1399,8 +1404,13 @@ namespace Advance_Control.Views.Pages
                             _pendingShapeMessage = null; // Clear after forwarding
                         }
                         
-                        // Recargar el mapa para áreas con herramientas de dibujo
-                        await LoadAreasMapAsync();
+                        // Only load the map if it hasn't been loaded yet
+                        // This prevents losing drawn shapes when switching tabs
+                        if (!_areasMapLoaded)
+                        {
+                            await LoadAreasMapAsync();
+                            _areasMapLoaded = true;
+                        }
                     }
                 }
             }
