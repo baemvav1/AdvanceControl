@@ -724,8 +724,11 @@ namespace Advance_Control.Views.Pages
                             };
                             await successDialog.ShowAsync();
 
-                            // Reload map
-                            await InitializeMapAsync();
+                            // Reload map through parent Ubicaciones page
+                            if (ParentUbicacionesPage != null)
+                            {
+                                await ParentUbicacionesPage.ReloadAreasMapAsync();
+                            }
                         }
                         else
                         {
