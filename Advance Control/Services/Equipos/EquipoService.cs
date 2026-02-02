@@ -97,7 +97,8 @@ namespace Advance_Control.Services.Equipos
                     }
                     catch (System.Text.Json.JsonException)
                     {
-                        // If we can't parse the error, use a generic message
+                        // If we can't parse the error, throw generic message
+                        throw new InvalidOperationException("Error al obtener equipos del servidor.");
                     }
                     
                     return new List<EquipoDto>();
@@ -156,6 +157,7 @@ namespace Advance_Control.Services.Equipos
                     catch (System.Text.Json.JsonException)
                     {
                         // If we can't parse the error, throw generic message
+                        throw new InvalidOperationException("Error al eliminar equipo del servidor.");
                     }
                     
                     return false;
@@ -242,6 +244,7 @@ namespace Advance_Control.Services.Equipos
                     catch (System.Text.Json.JsonException)
                     {
                         // If we can't parse the error, throw generic message
+                        throw new InvalidOperationException("Error al actualizar equipo en el servidor.");
                     }
                     
                     return false;
@@ -318,6 +321,7 @@ namespace Advance_Control.Services.Equipos
                     catch (System.Text.Json.JsonException)
                     {
                         // If we can't parse the error, throw generic message
+                        throw new InvalidOperationException("Error al crear equipo en el servidor.");
                     }
                     
                     return false;
