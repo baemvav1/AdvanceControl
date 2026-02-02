@@ -465,6 +465,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.RefaccionesViewModel>();
                     services.AddTransient<ViewModels.ServiciosViewModel>();
                     services.AddTransient<ViewModels.UbicacionesViewModel>();
+                    services.AddTransient<ViewModels.AreasViewModel>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
