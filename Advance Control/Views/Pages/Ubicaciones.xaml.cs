@@ -115,7 +115,7 @@ namespace Advance_Control.Views.Pages
                                     
                                     if (addressData != null)
                                     {
-                                        // Extract formatted address
+                                         // Extract formatted address
                                         if (addressData.TryGetValue("formatted", out var formattedElement) && 
                                             formattedElement.ValueKind == JsonValueKind.String)
                                         {
@@ -152,8 +152,49 @@ namespace Advance_Control.Views.Pages
                                     }
                                 }
 
+                                // Update search box with the formatted address for visual validation
+                                // This provides the user with immediate feedback about the selected location
+                                var searchBoxUpdated = false;
+                                if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
+                                {
+                                    var addressToDisplay = _currentDireccionCompleta;
+                                    var enqueued = this.DispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        try
+                                        {
+                                            if (MapSearchBox != null)
+                                            {
+                                                MapSearchBox.Text = addressToDisplay;
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            // Fire-and-forget logging to avoid blocking the UI thread
+                                            // We don't await here since this is a UI thread callback
+                                            _ = _loggingService.LogErrorAsync("Error al actualizar campo de búsqueda", ex, "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                                        }
+                                    });
+                                    
+                                    searchBoxUpdated = enqueued;
+                                    
+                                    if (!enqueued)
+                                    {
+                                        await _loggingService.LogWarningAsync("No se pudo encolar la actualización del campo de búsqueda", "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                                    }
+                                }
+
+                                var logMessage = $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}";
+                                if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
+                                {
+                                    logMessage += $", Dirección={_currentDireccionCompleta}";
+                                    if (searchBoxUpdated)
+                                    {
+                                        logMessage += ". Campo de búsqueda actualizado con la dirección";
+                                    }
+                                }
+                                
                                 await _loggingService.LogInformationAsync(
-                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}", 
+                                    logMessage, 
                                     "Ubicaciones", 
                                     "CoreWebView2_WebMessageReceived");
                             }
