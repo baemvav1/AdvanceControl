@@ -788,6 +788,43 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
+        /// Maneja el cambio de pestaña en el TabView
+        /// </summary>
+        private async void TabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (sender is TabView tabView && tabView.SelectedItem is TabViewItem selectedTab)
+                {
+                    var tabHeader = selectedTab.Header?.ToString() ?? "";
+                    await _loggingService.LogInformationAsync($"Tab seleccionada: {tabHeader}", "Ubicaciones", "TabView_SelectionChanged");
+
+                    // Recargar el mapa basado en la pestaña seleccionada
+                    if (tabHeader == "Ubicaciones")
+                    {
+                        // Recargar el mapa para ubicaciones
+                        await ViewModel.LoadUbicacionesAsync();
+                        await LoadMapAsync();
+                    }
+                    else if (tabHeader == "Áreas")
+                    {
+                        // Recargar el mapa para áreas
+                        // La página de Areas tiene su propio ViewModel y maneja su propia carga
+                        if (AreasPage != null && AreasPage.ViewModel != null)
+                        {
+                            await AreasPage.ViewModel.LoadAreasAsync();
+                            await AreasPage.LoadMapAsync();
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al cambiar de pestaña", ex, "Ubicaciones", "TabView_SelectionChanged");
+            }
+        }
+
+        /// <summary>
         /// Maneja el clic en el botón de refrescar
         /// </summary>
         private async void RefreshButton_Click(object sender, RoutedEventArgs e)
