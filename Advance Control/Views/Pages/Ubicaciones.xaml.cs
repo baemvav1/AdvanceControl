@@ -312,7 +312,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Carga el mapa de Google Maps para Áreas con herramientas de dibujo
         /// </summary>
-        private async System.Threading.Tasks.Task LoadAreasMapAsync()
+        private async Task LoadAreasMapAsync()
         {
             try
             {
@@ -433,9 +433,10 @@ namespace Advance_Control.Views.Pages
                         return JsonSerializer.Deserialize<object>(pathElement.GetRawText());
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Ignore parsing errors
+                    // Log parsing error but continue - area may not have valid path data
+                    _ = _loggingService.LogWarningAsync($"Error al parsear path de área {area.IdArea}: {ex.Message}", "Ubicaciones", "ParseAreaPath");
                 }
             }
             return null;
