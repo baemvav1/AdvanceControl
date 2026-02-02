@@ -254,6 +254,7 @@ namespace Advance_Control.Views.Pages
         let isFormVisible = false;
         let searchMarker = null;
         let selectedLocationMarker = null;
+        let selectedMarkerTimeout = null;
 
         // HTML encoding function for defense-in-depth security
         // Encodes HTML special characters to prevent XSS by leveraging
@@ -631,6 +632,12 @@ namespace Advance_Control.Views.Pages
         }}
 
         function showSelectedLocationMarker(ubicacion, position) {{
+            // Clear any existing timeout to prevent race conditions
+            if (selectedMarkerTimeout) {{
+                clearTimeout(selectedMarkerTimeout);
+                selectedMarkerTimeout = null;
+            }}
+
             // Remove previous selected location marker if exists
             if (selectedLocationMarker) {{
                 selectedLocationMarker.setMap(null);
@@ -649,11 +656,12 @@ namespace Advance_Control.Views.Pages
                 zIndex: 9999 // Ensure it's on top
             }});
 
-            // Stop bouncing after 2 seconds
-            setTimeout(() => {{
+            // Stop bouncing after 2 seconds, storing the timeout reference
+            selectedMarkerTimeout = setTimeout(() => {{
                 if (selectedLocationMarker) {{
                     selectedLocationMarker.setAnimation(null);
                 }}
+                selectedMarkerTimeout = null;
             }}, 2000);
 
             // Show info window for the selected location
