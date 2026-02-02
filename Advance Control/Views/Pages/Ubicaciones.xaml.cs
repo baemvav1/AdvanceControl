@@ -30,6 +30,9 @@ namespace Advance_Control.Views.Pages
         // Default coordinates for Mexico City if configuration is not available
         private const string DEFAULT_LATITUDE = "19.4326";
         private const string DEFAULT_LONGITUDE = "-99.1332";
+        
+        // Delay in milliseconds to ensure map is initialized before centering
+        private const int MAP_INITIALIZATION_DELAY_MS = 500;
 
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
@@ -1171,7 +1174,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Selecciona una ubicación por su ID y centra el mapa en ella
         /// </summary>
-        private async System.Threading.Tasks.Task SelectAndCenterUbicacionAsync(int idUbicacion)
+        private async Task SelectAndCenterUbicacionAsync(int idUbicacion)
         {
             try
             {
@@ -1188,7 +1191,7 @@ namespace Advance_Control.Views.Pages
                     ViewModel.SelectedUbicacion = ubicacion;
 
                     // Esperar un momento para asegurar que el mapa esté inicializado
-                    await Task.Delay(500);
+                    await Task.Delay(MAP_INITIALIZATION_DELAY_MS);
 
                     // Centrar el mapa en la ubicación
                     await CenterMapOnUbicacion(ubicacion);
