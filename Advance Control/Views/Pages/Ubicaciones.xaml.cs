@@ -613,22 +613,33 @@ namespace Advance_Control.Views.Pages
         }}
 
         function showUbicacionInfo(ubicacion, position) {{
-            const content = `
-                <div style='padding: 8px; min-width: 250px;'>
-                    <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{ubicacion.nombre}}</h3>
-                    <div style='color: #5f6368; font-size: 14px;'>
-                        ${{ubicacion.descripcion ? `<p style='margin: 4px 0;'>${{ubicacion.descripcion}}</p>` : ''}}
-                        ${{ubicacion.direccionCompleta ? `<p style='margin: 4px 0;'><strong>Dirección:</strong> ${{ubicacion.direccionCompleta}}</p>` : ''}}
-                        ${{ubicacion.telefono ? `<p style='margin: 4px 0;'><strong>Tel:</strong> ${{ubicacion.telefono}}</p>` : ''}}
-                        ${{ubicacion.email ? `<p style='margin: 4px 0;'><strong>Email:</strong> ${{ubicacion.email}}</p>` : ''}}
-                        <p style='margin: 4px 0; font-size: 12px;'><strong>Coordenadas:</strong> ${{ubicacion.latitud}}, ${{ubicacion.longitud}}</p>
+            // Use reverse geocoding to get current address information
+            geocoder.geocode({{ location: position }}, (results, status) => {{
+                let direccionActual = escapeHtml(ubicacion.direccionCompleta || '');
+                
+                // If geocoding is successful, use the current address
+                if (status === 'OK' && results && results[0]) {{
+                    direccionActual = escapeHtml(results[0].formatted_address);
+                }}
+                
+                // Create info window content with geocoded address
+                const content = `
+                    <div style='padding: 8px; min-width: 250px;'>
+                        <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{escapeHtml(ubicacion.nombre)}}</h3>
+                        <div style='color: #5f6368; font-size: 14px;'>
+                            ${{ubicacion.descripcion ? `<p style='margin: 4px 0;'>${{escapeHtml(ubicacion.descripcion)}}</p>` : ''}}
+                            ${{direccionActual ? `<p style='margin: 4px 0;'><strong>Dirección:</strong> ${{direccionActual}}</p>` : ''}}
+                            ${{ubicacion.telefono ? `<p style='margin: 4px 0;'><strong>Tel:</strong> ${{escapeHtml(ubicacion.telefono)}}</p>` : ''}}
+                            ${{ubicacion.email ? `<p style='margin: 4px 0;'><strong>Email:</strong> ${{escapeHtml(ubicacion.email)}}</p>` : ''}}
+                            <p style='margin: 4px 0; font-size: 12px;'><strong>Coordenadas:</strong> ${{escapeHtml(String(ubicacion.latitud))}}, ${{escapeHtml(String(ubicacion.longitud))}}</p>
+                        </div>
                     </div>
-                </div>
-            `;
-            
-            infoWindow.setContent(content);
-            infoWindow.setPosition(position);
-            infoWindow.open(map);
+                `;
+                
+                infoWindow.setContent(content);
+                infoWindow.setPosition(position);
+                infoWindow.open(map);
+            }});
         }}
 
         function showSelectedLocationMarker(ubicacion, position) {{
