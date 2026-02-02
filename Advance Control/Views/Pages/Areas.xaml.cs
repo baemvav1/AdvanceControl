@@ -12,6 +12,7 @@ using System.Globalization;
 using System.Linq;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI;
+using Microsoft.UI.Xaml.Navigation;
 
 namespace Advance_Control.Views.Pages
 {

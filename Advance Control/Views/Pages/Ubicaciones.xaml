@@ -37,7 +37,7 @@
         <TabView
             Grid.Row="1"
             Margin="20,0,20,20"
-            TabWidthMode="Equal">
+            TabWidthMode="Equal" VerticalAlignment="Stretch">
             <!--  Tab 1: Ubicaciones  -->
             <TabViewItem Header="Ubicaciones" IsClosable="False">
                 <Grid>
@@ -146,7 +146,7 @@
                                                 BorderThickness="0"
                                                 Click="RefreshButton_Click"
                                                 ToolTipService.ToolTip="Recargar ubicaciones">
-                                                <SymbolIcon FontSize="16" Symbol="Refresh" />
+                                                <SymbolIcon Symbol="Refresh" />
                                             </Button>
                                         </StackPanel>
                                         <Button
