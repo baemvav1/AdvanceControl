@@ -24,7 +24,7 @@
     <None Remove="Views\Pages\ProveedoresView.xaml" />
     <None Remove="Views\Pages\RefaaccionView.xaml" />
     <None Remove="Views\Pages\ServiciosView.xaml" />
-    <None Remove="Views\Pages\Ubicaciones.xaml" />
+    <None Remove="Views\Pages\UbicacionesView.xaml" />
     <None Remove="Views\Servicios.xaml" />
   </ItemGroup>
 
@@ -77,7 +77,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\Ubicaciones.xaml">
+    <Page Update="Views\Pages\UbicacionesView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
