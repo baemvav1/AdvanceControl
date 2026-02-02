@@ -131,7 +131,7 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                var message = args.TryGetWebMessageAsString();
+                var message = args.WebMessageAsJson.ToString();
                 await _loggingService.LogInformationAsync($"Mensaje recibido de WebView2: {message}", "AreasView", "CoreWebView2_WebMessageReceived");
 
                 var jsonDoc = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(message);
