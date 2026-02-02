@@ -55,6 +55,8 @@ namespace Advance_Control.Views.Pages
         private string? _currentPlaceId = null;
         
         // Store pending shape messages if AreasPage is not yet initialized
+        // Note: Only the most recent shape is stored because the map drawing manager
+        // only allows one shape at a time (previous shapes are removed when a new one is drawn)
         private Dictionary<string, JsonElement>? _pendingShapeMessage = null;
 
         public Ubicaciones()
@@ -90,7 +92,7 @@ namespace Advance_Control.Views.Pages
                     if (_pendingShapeMessage != null)
                     {
                         await _loggingService.LogInformationAsync(
-                            "Forwarding pending shape message to AreasPage (on page load)", 
+                            "Forwarding pending shape message to AreasPage during page initialization", 
                             "Ubicaciones", 
                             "Ubicaciones_Loaded");
                         await AreasPage.HandleShapeMessageAsync(_pendingShapeMessage);
@@ -1390,7 +1392,7 @@ namespace Advance_Control.Views.Pages
                         if (AreasPage != null && _pendingShapeMessage != null)
                         {
                             await _loggingService.LogInformationAsync(
-                                "Forwarding pending shape message to AreasPage", 
+                                "Forwarding pending shape message to AreasPage during tab selection", 
                                 "Ubicaciones", 
                                 "TabView_SelectionChanged");
                             await AreasPage.HandleShapeMessageAsync(_pendingShapeMessage);
