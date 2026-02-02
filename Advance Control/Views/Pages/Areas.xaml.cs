@@ -110,7 +110,7 @@ namespace Advance_Control.Views.Pages
                         }
 
                         await _loggingService.LogInformationAsync(
-                            $"Shape dibujado: Type={_currentShapeType}, Path={_currentShapePath?.Substring(0, Math.Min(100, _currentShapePath?.Length ?? 0))}",
+                            $"Shape dibujado: Type={_currentShapeType}, Path={(_currentShapePath != null ? _currentShapePath.Substring(0, Math.Min(100, _currentShapePath.Length)) : "null")}",
                             "Areas",
                             "CoreWebView2_WebMessageReceived");
 
@@ -177,8 +177,17 @@ namespace Advance_Control.Views.Pages
                 var config = ViewModel.MapsConfig;
                 
                 string apiKey = config?.ApiKey ?? "YOUR_API_KEY";
-                string centerLat = config?.DefaultCenter?.Split(',')[0]?.Trim() ?? DEFAULT_LATITUDE;
-                string centerLng = config?.DefaultCenter?.Split(',')[1]?.Trim() ?? DEFAULT_LONGITUDE;
+                
+                // Parse coordinates and format with InvariantCulture to ensure proper decimal separator
+                decimal parsedLat = decimal.TryParse(config?.DefaultCenter?.Split(',')[0]?.Trim() ?? DEFAULT_LATITUDE, NumberStyles.Any, CultureInfo.InvariantCulture, out var lat) 
+                    ? lat 
+                    : decimal.Parse(DEFAULT_LATITUDE, CultureInfo.InvariantCulture);
+                decimal parsedLng = decimal.TryParse(config?.DefaultCenter?.Split(',')[1]?.Trim() ?? DEFAULT_LONGITUDE, NumberStyles.Any, CultureInfo.InvariantCulture, out var lng) 
+                    ? lng 
+                    : decimal.Parse(DEFAULT_LONGITUDE, CultureInfo.InvariantCulture);
+                
+                string centerLat = parsedLat.ToString(CultureInfo.InvariantCulture);
+                string centerLng = parsedLng.ToString(CultureInfo.InvariantCulture);
                 int zoom = config?.DefaultZoom ?? 12;
 
                 // Load areas for display
@@ -285,7 +294,7 @@ namespace Advance_Control.Views.Pages
         function initMap() {{
             // Initialize map
             map = new google.maps.Map(document.getElementById('map'), {{
-                center: {{ lat: {centerLat.Replace(",", ".")}, lng: {centerLng.Replace(",", ".")} }},
+                center: {{ lat: {centerLat}, lng: {centerLng} }},
                 zoom: {zoom},
                 mapTypeId: 'roadmap'
             }});
@@ -668,7 +677,9 @@ namespace Advance_Control.Views.Pages
                 return;
             }
 
-            if (string.IsNullOrEmpty(_currentShapeType) || string.IsNullOrEmpty(_currentShapePath))
+            // When editing, allow saving without redrawing the shape
+            // When creating, require a shape to be drawn
+            if (!_isEditMode && (string.IsNullOrEmpty(_currentShapeType) || string.IsNullOrEmpty(_currentShapePath)))
             {
                 var dialog = new ContentDialog
                 {
@@ -700,13 +711,17 @@ namespace Advance_Control.Views.Pages
                 AnchoBorde = 2,
                 Activo = ActivoCheckBox.IsChecked,
                 TipoGeometria = _currentShapeType ?? "Polygon",
-                MetadataJSON = JsonSerializer.Serialize(new
-                {
-                    path = _currentShapePath != null ? JsonSerializer.Deserialize<object>(_currentShapePath) : null,
-                    center = _currentShapeCenter != null ? JsonSerializer.Deserialize<object>(_currentShapeCenter) : null,
-                    bounds = _currentShapeBounds != null ? JsonSerializer.Deserialize<object>(_currentShapeBounds) : null,
-                    radius = _currentShapeRadius
-                })
+                // Store complete shape data as JSON for later retrieval
+                // This allows us to reconstruct the exact shape when editing
+                MetadataJSON = _isEditMode && string.IsNullOrEmpty(_currentShapePath)
+                    ? null  // Keep existing metadata when editing without redrawing
+                    : JsonSerializer.Serialize(new Dictionary<string, object?>
+                    {
+                        ["path"] = _currentShapePath != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapePath) : (object?)null,
+                        ["center"] = _currentShapeCenter != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapeCenter) : (object?)null,
+                        ["bounds"] = _currentShapeBounds != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapeBounds) : (object?)null,
+                        ["radius"] = _currentShapeRadius
+                    })
             };
 
             // Parse center from JSON

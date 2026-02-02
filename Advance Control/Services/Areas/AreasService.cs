@@ -224,6 +224,17 @@ namespace Advance_Control.Services.Areas
 
                 var response = await _http.PostAsJsonAsync(url, area, cancellationToken).ConfigureAwait(false);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al crear área. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "AreasService",
+                        "CreateAreaAsync");
+                    return new ApiResponse { Success = false, Message = $"Error del servidor: {response.StatusCode}" };
+                }
+
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 if (result?.Success == true)
@@ -275,6 +286,17 @@ namespace Advance_Control.Services.Areas
 
                 var response = await _http.PutAsJsonAsync(url, area, cancellationToken).ConfigureAwait(false);
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al actualizar área. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "AreasService",
+                        "UpdateAreaAsync");
+                    return new ApiResponse { Success = false, Message = $"Error del servidor: {response.StatusCode}" };
+                }
+
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
                 if (result?.Success == true)
@@ -319,6 +341,17 @@ namespace Advance_Control.Services.Areas
                 await _logger.LogInformationAsync($"Eliminando área ID: {idArea}", "AreasService", "DeleteAreaAsync");
 
                 var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al eliminar área. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "AreasService",
+                        "DeleteAreaAsync");
+                    return new ApiResponse { Success = false, Message = $"Error del servidor: {response.StatusCode}" };
+                }
 
                 var result = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
 

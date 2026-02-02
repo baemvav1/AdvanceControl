@@ -201,7 +201,13 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                await _logger.LogInformationAsync($"Creando área: {area?.Nombre}", "AreasViewModel", "CreateAreaAsync");
+                if (area == null)
+                {
+                    await _logger.LogWarningAsync("Se intentó crear un área nula", "AreasViewModel", "CreateAreaAsync");
+                    return new ApiResponse { Success = false, Message = "El área no puede ser nula" };
+                }
+
+                await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasViewModel", "CreateAreaAsync");
 
                 var result = await _areasService.CreateAreaAsync(area!, cancellationToken);
 
