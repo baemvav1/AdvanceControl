@@ -765,7 +765,8 @@ namespace Advance_Control.Views.Pages
 
             // When editing, allow saving without redrawing the shape
             // When creating, require a shape to be drawn
-            if (!_isEditMode && (string.IsNullOrEmpty(_currentShapeType) || string.IsNullOrEmpty(_currentShapePath)))
+            // For circles, we need center and radius; for polygons/rectangles, we need path
+            if (!_isEditMode && string.IsNullOrEmpty(_currentShapeType))
             {
                 var dialog = new ContentDialog
                 {
@@ -776,6 +777,36 @@ namespace Advance_Control.Views.Pages
                 };
                 await dialog.ShowAsync();
                 return;
+            }
+
+            // Validate that we have the necessary data for the specific shape type
+            if (!_isEditMode)
+            {
+                bool hasValidShapeData = false;
+                
+                if (_currentShapeType?.ToLower() == "circle")
+                {
+                    // For circles, we need center and radius
+                    hasValidShapeData = !string.IsNullOrEmpty(_currentShapeCenter) && _currentShapeRadius.HasValue;
+                }
+                else
+                {
+                    // For polygons and rectangles, we need path
+                    hasValidShapeData = !string.IsNullOrEmpty(_currentShapePath);
+                }
+
+                if (!hasValidShapeData)
+                {
+                    var dialog = new ContentDialog
+                    {
+                        Title = "Validación",
+                        Content = "Debe dibujar un área en el mapa antes de guardar.",
+                        CloseButtonText = "OK",
+                        XamlRoot = this.XamlRoot
+                    };
+                    await dialog.ShowAsync();
+                    return;
+                }
             }
 
             // Get selected color
