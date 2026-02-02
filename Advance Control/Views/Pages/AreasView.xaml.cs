@@ -190,19 +190,22 @@ namespace Advance_Control.Views.Pages
             {
                 await EnsureWebView2InitializedAsync();
 
-                var apiKey = App.GetConfigurationValue("GoogleMapsApiKey");
-                if (string.IsNullOrEmpty(apiKey))
+                if (ViewModel.MapsConfig == null)
                 {
-                    await _loggingService.LogErrorAsync("Google Maps API Key no configurada", null, "AreasView", "LoadMapAsync");
+                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible", "AreasView", "LoadMapAsync");
                     return;
                 }
 
-                var centerLat = App.GetConfigurationValue("DefaultLatitude", DEFAULT_LATITUDE);
-                var centerLng = App.GetConfigurationValue("DefaultLongitude", DEFAULT_LONGITUDE);
-                var zoom = int.Parse(App.GetConfigurationValue("DefaultZoom", DEFAULT_ZOOM.ToString()));
+                await _loggingService.LogInformationAsync("Cargando mapa de Google Maps", "AreasView", "LoadMapAsync");
+
+                // Parsear el centro del mapa
+                var centerParts = ViewModel.MapsConfig.DefaultCenter?.Split(',') ?? Array.Empty<string>();
+                var centerLat = centerParts.Length > 0 ? centerParts[0].Trim() : DEFAULT_LATITUDE;
+                var centerLng = centerParts.Length > 1 ? centerParts[1].Trim() : DEFAULT_LONGITUDE;
+                var zoom = ViewModel.MapsConfig.DefaultZoom;
 
                 var areasJson = PrepareAreasJson();
-                var html = GenerateAreasMapHtml(apiKey, centerLat, centerLng, zoom, areasJson);
+                var html = GenerateAreasMapHtml(ViewModel.MapsConfig.ApiKey, centerLat, centerLng, zoom, areasJson);
 
                 MapWebView.NavigateToString(html);
                 ViewModel.IsMapInitialized = true;
