@@ -222,7 +222,11 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                var areas = ViewModel.Areas
+                // Create a snapshot of the collection to avoid race conditions
+                // when the collection is modified while being iterated
+                var areasSnapshot = ViewModel.Areas.ToList();
+                
+                var areas = areasSnapshot
                     .Where(a => a.Activo == true)
                     .Select(a => new
                     {
