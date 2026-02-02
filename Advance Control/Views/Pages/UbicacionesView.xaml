@@ -45,7 +45,7 @@
                     Grid.Column="0"
                     Margin="0,0,8,0"
                     VerticalAlignment="Center"
-                    PlaceholderText="Buscar ubicación o área en el mapa..." />
+                    PlaceholderText="Buscar ubicación en el mapa..." />
                 <Button
                     x:Name="SearchButton"
                     Grid.Column="1"

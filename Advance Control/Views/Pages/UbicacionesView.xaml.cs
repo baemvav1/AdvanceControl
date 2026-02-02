@@ -781,9 +781,8 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                await _loggingService.LogInformationAsync("Refrescando ubicaciones y áreas del mapa", "UbicacionesView", "RefreshButton_Click");
+                await _loggingService.LogInformationAsync("Refrescando ubicaciones del mapa", "UbicacionesView", "RefreshButton_Click");
                 
-                await ViewModel.RefreshAreasAsync();
                 await ViewModel.LoadUbicacionesAsync();
                 await LoadMapAsync();
             }
