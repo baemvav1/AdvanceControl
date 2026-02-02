@@ -38,6 +38,9 @@ namespace Advance_Control.Views.Pages
         private decimal? _currentShapeRadius = null;
         private string? _currentShapeBounds = null;
 
+        // Reference to parent Ubicaciones page for map operations
+        public Ubicaciones? ParentUbicacionesPage { get; set; }
+
         public Areas()
         {
             // Resolver el ViewModel desde DI
@@ -51,7 +54,7 @@ namespace Advance_Control.Views.Pages
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
 
-            // Setup WebView2 message handler
+            // No need for WebView2 setup since map is managed by parent Ubicaciones page
             this.Loaded += Areas_Loaded;
         }
 
@@ -59,15 +62,71 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                await MapWebView.EnsureCoreWebView2Async();
-                MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+                // Initialize ViewModel when page loads
+                await ViewModel.InitializeAsync();
+                await _loggingService.LogInformationAsync("Página de Áreas cargada", "Areas", "Areas_Loaded");
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al configurar WebView2 message handler", ex, "Areas", "Areas_Loaded");
+                await _loggingService.LogErrorAsync("Error al cargar página de Áreas", ex, "Areas", "Areas_Loaded");
             }
         }
 
+        /// <summary>
+        /// Maneja los mensajes de forma (shape) recibidos del mapa
+        /// Llamado por la página padre Ubicaciones
+        /// </summary>
+        public async Task HandleShapeMessageAsync(Dictionary<string, JsonElement> jsonDoc)
+        {
+            try
+            {
+                if (jsonDoc.TryGetValue("type", out var typeElement))
+                {
+                    var messageType = typeElement.GetString();
+
+                    if (messageType == "shapeDrawn" || messageType == "shapeEdited")
+                    {
+                        // Extract shape data
+                        if (jsonDoc.TryGetValue("shapeType", out var shapeTypeElement))
+                        {
+                            _currentShapeType = shapeTypeElement.GetString();
+                        }
+
+                        if (jsonDoc.TryGetValue("path", out var pathElement))
+                        {
+                            _currentShapePath = pathElement.GetRawText();
+                        }
+
+                        if (jsonDoc.TryGetValue("center", out var centerElement))
+                        {
+                            _currentShapeCenter = centerElement.GetRawText();
+                        }
+
+                        if (jsonDoc.TryGetValue("radius", out var radiusElement) && radiusElement.ValueKind == JsonValueKind.Number)
+                        {
+                            _currentShapeRadius = radiusElement.GetDecimal();
+                        }
+
+                        if (jsonDoc.TryGetValue("bounds", out var boundsElement))
+                        {
+                            _currentShapeBounds = boundsElement.GetRawText();
+                        }
+
+                        await _loggingService.LogInformationAsync(
+                            $"Shape {messageType}: Type={_currentShapeType}",
+                            "Areas",
+                            "HandleShapeMessageAsync");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al procesar mensaje de forma", ex, "Areas", "HandleShapeMessageAsync");
+            }
+        }
+
+        // OLD METHOD - No longer used since map is managed by parent Ubicaciones page
+        /*
         private async void CoreWebView2_WebMessageReceived(Microsoft.Web.WebView2.Core.CoreWebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs args)
         {
             try
@@ -158,7 +217,10 @@ namespace Advance_Control.Views.Pages
                 await _loggingService.LogErrorAsync("Error al procesar mensaje de WebView2", ex, "Areas", "CoreWebView2_WebMessageReceived");
             }
         }
+        */
 
+        // OLD METHOD - No longer used since map is managed by parent Ubicaciones page
+        /*
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
@@ -225,6 +287,7 @@ namespace Advance_Control.Views.Pages
                 await _loggingService.LogErrorAsync("Error al inicializar mapa", ex, "Areas", "InitializeMapAsync");
             }
         }
+        */
 
         private object? ParsePathJson(AreaDto area)
         {
@@ -256,6 +319,8 @@ namespace Advance_Control.Views.Pages
             return null;
         }
 
+        // OLD METHOD - No longer used since map is managed by parent Ubicaciones page
+        /*
         private string CreateMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string areasJson)
         {
             return $@"
@@ -530,7 +595,10 @@ namespace Advance_Control.Views.Pages
 </body>
 </html>";
         }
+        */
 
+        // OLD METHOD - No longer used since map is managed by parent Ubicaciones page
+        /*
         private async void MapWebView_NavigationCompleted(WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs args)
         {
             if (args.IsSuccess)
@@ -542,11 +610,25 @@ namespace Advance_Control.Views.Pages
                 await _loggingService.LogErrorAsync($"Error al cargar mapa. HttpStatusCode: {args.HttpStatusCode}", null, "Areas", "MapWebView_NavigationCompleted");
             }
         }
+        */
 
         private async void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.RefreshAreasAsync();
-            await InitializeMapAsync();
+            try
+            {
+                // Refresh areas data
+                await ViewModel.RefreshAreasAsync();
+                
+                // Reload the map through parent Ubicaciones page
+                if (ParentUbicacionesPage != null)
+                {
+                    await ParentUbicacionesPage.ReloadAreasMapAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al refrescar áreas", ex, "Areas", "RefreshButton_Click");
+            }
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
@@ -788,11 +870,12 @@ namespace Advance_Control.Views.Pages
                 // Hide form and reset
                 CancelButton_Click(sender, e);
 
-                // Clear current shape
-                await MapWebView.CoreWebView2.ExecuteScriptAsync("clearCurrentShape();");
-
-                // Reload map
-                await InitializeMapAsync();
+                // Clear current shape and reload map through parent page
+                if (ParentUbicacionesPage != null)
+                {
+                    await ParentUbicacionesPage.ExecuteMapScriptAsync("clearCurrentShape();");
+                    await ParentUbicacionesPage.ReloadAreasMapAsync();
+                }
             }
             else
             {

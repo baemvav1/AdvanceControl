@@ -34,6 +34,10 @@ namespace Advance_Control.Views.Pages
         // Delay in milliseconds to ensure map is initialized before centering
         private const int MAP_INITIALIZATION_DELAY_MS = 500;
 
+        // Tab header names for TabView
+        private const string TAB_UBICACIONES = "Ubicaciones";
+        private const string TAB_AREAS = "Áreas";
+
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
         private bool _isEditMode = false;
@@ -73,6 +77,12 @@ namespace Advance_Control.Views.Pages
             {
                 await MapWebView.EnsureCoreWebView2Async();
                 MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+                
+                // Set parent reference for Areas page
+                if (AreasPage != null)
+                {
+                    AreasPage.ParentUbicacionesPage = this;
+                }
             }
             catch (Exception ex)
             {
@@ -207,6 +217,14 @@ namespace Advance_Control.Views.Pages
                             }
                         }
                     }
+                    else if (messageType == "shapeDrawn" || messageType == "shapeEdited")
+                    {
+                        // Forward shape messages to Areas page if it exists
+                        if (AreasPage != null)
+                        {
+                            await AreasPage.HandleShapeMessageAsync(jsonDoc);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
@@ -289,6 +307,153 @@ namespace Advance_Control.Views.Pages
             {
                 await _loggingService.LogErrorAsync("Error al cargar el mapa", ex, "Ubicaciones", "LoadMapAsync");
             }
+        }
+
+        /// <summary>
+        /// Carga el mapa de Google Maps para Áreas con herramientas de dibujo
+        /// </summary>
+        private async Task LoadAreasMapAsync()
+        {
+            try
+            {
+                if (ViewModel.MapsConfig == null)
+                {
+                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible", "Ubicaciones", "LoadAreasMapAsync");
+                    return;
+                }
+
+                await _loggingService.LogInformationAsync("Cargando mapa de Google Maps para Áreas", "Ubicaciones", "LoadAreasMapAsync");
+
+                // Ensure CoreWebView2 is initialized before using NavigateToString
+                await MapWebView.EnsureCoreWebView2Async();
+
+                // Parse coordinates
+                decimal parsedLat = decimal.TryParse(ViewModel.MapsConfig.DefaultCenter?.Split(',')[0]?.Trim() ?? DEFAULT_LATITUDE, NumberStyles.Any, CultureInfo.InvariantCulture, out var lat) 
+                    ? lat 
+                    : decimal.Parse(DEFAULT_LATITUDE, CultureInfo.InvariantCulture);
+                decimal parsedLng = decimal.TryParse(ViewModel.MapsConfig.DefaultCenter?.Split(',')[1]?.Trim() ?? DEFAULT_LONGITUDE, NumberStyles.Any, CultureInfo.InvariantCulture, out var lng) 
+                    ? lng 
+                    : decimal.Parse(DEFAULT_LONGITUDE, CultureInfo.InvariantCulture);
+                
+                string centerLat = parsedLat.ToString(CultureInfo.InvariantCulture);
+                string centerLng = parsedLng.ToString(CultureInfo.InvariantCulture);
+                int zoom = ViewModel.MapsConfig.DefaultZoom;
+
+                // Get Areas data from AreasPage if available
+                var areasJson = "[]";
+                if (AreasPage != null && AreasPage.ViewModel != null)
+                {
+                    // Load areas if not already loaded
+                    if (AreasPage.ViewModel.Areas.Count == 0)
+                    {
+                        await AreasPage.ViewModel.LoadAreasAsync();
+                    }
+
+                    var areas = AreasPage.ViewModel.Areas;
+                    areasJson = JsonSerializer.Serialize(areas.Select(a => new
+                    {
+                        idArea = a.IdArea,
+                        nombre = a.Nombre,
+                        type = a.TipoGeometria,
+                        path = ParseAreaPath(a),
+                        center = ParseAreaCenter(a),
+                        radius = a.Radio,
+                        options = new
+                        {
+                            fillColor = a.ColorMapa,
+                            fillOpacity = a.Opacidad ?? 0.35m,
+                            strokeColor = a.ColorBorde,
+                            strokeWeight = a.AnchoBorde ?? 2,
+                            editable = false,
+                            clickable = true
+                        }
+                    }));
+                }
+
+                // Generate HTML for Areas map with drawing tools
+                var html = GenerateAreasMapHtml(
+                    ViewModel.MapsConfig.ApiKey,
+                    centerLat,
+                    centerLng,
+                    zoom,
+                    areasJson);
+
+                // Load HTML in WebView2
+                MapWebView.NavigateToString(html);
+
+                await _loggingService.LogInformationAsync("Mapa de Áreas cargado exitosamente", "Ubicaciones", "LoadAreasMapAsync");
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al cargar el mapa de áreas", ex, "Ubicaciones", "LoadAreasMapAsync");
+            }
+        }
+
+        /// <summary>
+        /// Método público para que la página de Áreas pueda solicitar recarga del mapa
+        /// </summary>
+        public async Task ReloadAreasMapAsync()
+        {
+            await LoadAreasMapAsync();
+        }
+
+        /// <summary>
+        /// Método público para ejecutar script en el WebView2
+        /// Útil para limpiar formas dibujadas, etc.
+        /// </summary>
+        public async Task ExecuteMapScriptAsync(string script)
+        {
+            try
+            {
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync($"Error al ejecutar script en mapa: {script}", ex, "Ubicaciones", "ExecuteMapScriptAsync");
+            }
+        }
+
+        /// <summary>
+        /// Extrae el path (coordenadas) de un área desde su MetadataJSON
+        /// </summary>
+        /// <param name="area">DTO del área con MetadataJSON</param>
+        /// <returns>Objeto con array de coordenadas, o null si no se encuentra</returns>
+        private object? ParseAreaPath(AreaDto area)
+        {
+            if (!string.IsNullOrEmpty(area.MetadataJSON))
+            {
+                try
+                {
+                    var metadata = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(area.MetadataJSON);
+                    if (metadata != null && metadata.TryGetValue("path", out var pathElement))
+                    {
+                        return JsonSerializer.Deserialize<object>(pathElement.GetRawText());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log parsing error but continue - area may not have valid path data
+                    _ = _loggingService.LogWarningAsync($"Error al parsear path de área {area.IdArea}: {ex.Message}", "Ubicaciones", "ParseAreaPath");
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Extrae las coordenadas del centro de un área
+        /// </summary>
+        /// <param name="area">DTO del área con CentroLatitud y CentroLongitud</param>
+        /// <returns>Objeto con lat/lng, o null si no están disponibles</returns>
+        private object? ParseAreaCenter(AreaDto area)
+        {
+            if (area.CentroLatitud.HasValue && area.CentroLongitud.HasValue)
+            {
+                return new { lat = area.CentroLatitud.Value, lng = area.CentroLongitud.Value };
+            }
+            return null;
         }
 
         /// <summary>
@@ -773,6 +938,284 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
+        /// Genera el HTML para el mapa de Áreas con herramientas de dibujo
+        /// </summary>
+        private string GenerateAreasMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string areasJson)
+        {
+            return $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Áreas Map</title>
+    <style>
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }}
+        html, body {{
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+        }}
+        #map {{
+            height: 100%;
+            width: 100%;
+        }}
+    </style>
+</head>
+<body>
+    <div id='map'></div>
+    
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=drawing,geometry&callback=initMap' async defer></script>
+    <script>
+        let map;
+        let drawingManager;
+        let currentShape = null;
+        let existingShapes = [];
+
+        function initMap() {{
+            // Initialize map
+            map = new google.maps.Map(document.getElementById('map'), {{
+                center: {{ lat: {centerLat}, lng: {centerLng} }},
+                zoom: {zoom},
+                mapTypeId: 'roadmap'
+            }});
+
+            // Initialize Drawing Manager
+            drawingManager = new google.maps.drawing.DrawingManager({{
+                drawingMode: null,
+                drawingControl: true,
+                drawingControlOptions: {{
+                    position: google.maps.ControlPosition.TOP_CENTER,
+                    drawingModes: [
+                        google.maps.drawing.OverlayType.POLYGON,
+                        google.maps.drawing.OverlayType.CIRCLE,
+                        google.maps.drawing.OverlayType.RECTANGLE
+                    ]
+                }},
+                polygonOptions: {{
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.35,
+                    strokeWeight: 2,
+                    strokeColor: '#FF0000',
+                    editable: true,
+                    draggable: true
+                }},
+                circleOptions: {{
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.35,
+                    strokeWeight: 2,
+                    strokeColor: '#FF0000',
+                    editable: true,
+                    draggable: true
+                }},
+                rectangleOptions: {{
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.35,
+                    strokeWeight: 2,
+                    strokeColor: '#FF0000',
+                    editable: true,
+                    draggable: true
+                }}
+            }});
+
+            drawingManager.setMap(map);
+
+            // Handle shape complete
+            google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {{
+                // Remove previous shape if exists
+                if (currentShape) {{
+                    currentShape.setMap(null);
+                }}
+
+                currentShape = event.overlay;
+                
+                // Set drawing mode to null to allow editing
+                drawingManager.setDrawingMode(null);
+
+                // Extract shape data
+                const shapeData = extractShapeData(event.type, event.overlay);
+                
+                // Send message to C#
+                window.chrome.webview.postMessage({{
+                    type: 'shapeDrawn',
+                    shapeType: event.type,
+                    ...shapeData
+                }});
+
+                // Add listeners for shape edits
+                addShapeEditListeners(event.type, event.overlay);
+            }});
+
+            // Load existing areas
+            loadExistingAreas({areasJson});
+        }}
+
+        function extractShapeData(type, shape) {{
+            const data = {{}};
+
+            if (type === 'polygon') {{
+                const path = shape.getPath();
+                data.path = [];
+                for (let i = 0; i < path.getLength(); i++) {{
+                    const point = path.getAt(i);
+                    data.path.push({{ lat: point.lat(), lng: point.lng() }});
+                }}
+                
+                // Calculate bounds and center
+                const bounds = new google.maps.LatLngBounds();
+                data.path.forEach(point => bounds.extend(point));
+                const center = bounds.getCenter();
+                data.center = {{ lat: center.lat(), lng: center.lng() }};
+                data.bounds = {{
+                    north: bounds.getNorthEast().lat(),
+                    east: bounds.getNorthEast().lng(),
+                    south: bounds.getSouthWest().lat(),
+                    west: bounds.getSouthWest().lng()
+                }};
+            }} 
+            else if (type === 'circle') {{
+                const center = shape.getCenter();
+                data.center = {{ lat: center.lat(), lng: center.lng() }};
+                data.radius = shape.getRadius();
+                
+                const bounds = shape.getBounds();
+                data.bounds = {{
+                    north: bounds.getNorthEast().lat(),
+                    east: bounds.getNorthEast().lng(),
+                    south: bounds.getSouthWest().lat(),
+                    west: bounds.getSouthWest().lng()
+                }};
+            }}
+            else if (type === 'rectangle') {{
+                const bounds = shape.getBounds();
+                const ne = bounds.getNorthEast();
+                const sw = bounds.getSouthWest();
+                
+                data.path = [
+                    {{ lat: ne.lat(), lng: sw.lng() }},
+                    {{ lat: ne.lat(), lng: ne.lng() }},
+                    {{ lat: sw.lat(), lng: ne.lng() }},
+                    {{ lat: sw.lat(), lng: sw.lng() }}
+                ];
+                
+                const center = bounds.getCenter();
+                data.center = {{ lat: center.lat(), lng: center.lng() }};
+                data.bounds = {{
+                    north: ne.lat(),
+                    east: ne.lng(),
+                    south: sw.lat(),
+                    west: sw.lng()
+                }};
+            }}
+
+            return data;
+        }}
+
+        function addShapeEditListeners(type, shape) {{
+            if (type === 'polygon') {{
+                google.maps.event.addListener(shape.getPath(), 'set_at', function() {{
+                    const shapeData = extractShapeData(type, shape);
+                    window.chrome.webview.postMessage({{
+                        type: 'shapeEdited',
+                        shapeType: type,
+                        ...shapeData
+                    }});
+                }});
+                
+                google.maps.event.addListener(shape.getPath(), 'insert_at', function() {{
+                    const shapeData = extractShapeData(type, shape);
+                    window.chrome.webview.postMessage({{
+                        type: 'shapeEdited',
+                        shapeType: type,
+                        ...shapeData
+                    }});
+                }});
+            }} 
+            else if (type === 'circle') {{
+                google.maps.event.addListener(shape, 'center_changed', function() {{
+                    const shapeData = extractShapeData(type, shape);
+                    window.chrome.webview.postMessage({{
+                        type: 'shapeEdited',
+                        shapeType: type,
+                        ...shapeData
+                    }});
+                }});
+                
+                google.maps.event.addListener(shape, 'radius_changed', function() {{
+                    const shapeData = extractShapeData(type, shape);
+                    window.chrome.webview.postMessage({{
+                        type: 'shapeEdited',
+                        shapeType: type,
+                        ...shapeData
+                    }});
+                }});
+            }}
+            else if (type === 'rectangle') {{
+                google.maps.event.addListener(shape, 'bounds_changed', function() {{
+                    const shapeData = extractShapeData(type, shape);
+                    window.chrome.webview.postMessage({{
+                        type: 'shapeEdited',
+                        shapeType: type,
+                        ...shapeData
+                    }});
+                }});
+            }}
+        }}
+
+        function loadExistingAreas(areasData) {{
+            if (!areasData || areasData.length === 0) return;
+
+            areasData.forEach(area => {{
+                let shape;
+
+                if (area.type === 'Polygon' && area.path) {{
+                    shape = new google.maps.Polygon({{
+                        paths: area.path,
+                        ...area.options
+                    }});
+                }} 
+                else if (area.type === 'Circle' && area.center && area.radius) {{
+                    shape = new google.maps.Circle({{
+                        center: area.center,
+                        radius: area.radius,
+                        ...area.options
+                    }});
+                }}
+                else if (area.type === 'Rectangle' && area.path) {{
+                    const bounds = new google.maps.LatLngBounds();
+                    area.path.forEach(point => bounds.extend(point));
+                    shape = new google.maps.Rectangle({{
+                        bounds: bounds,
+                        ...area.options
+                    }});
+                }}
+
+                if (shape) {{
+                    shape.setMap(map);
+                    existingShapes.push({{ id: area.idArea, shape: shape }});
+                }}
+            }});
+        }}
+
+        function clearCurrentShape() {{
+            if (currentShape) {{
+                currentShape.setMap(null);
+                currentShape = null;
+            }}
+        }}
+
+        // Expose function to C#
+        window.clearCurrentShape = clearCurrentShape;
+    </script>
+</body>
+</html>";
+        }
+
+        /// <summary>
         /// Maneja el evento de navegación completada del WebView2
         /// </summary>
         private async void MapWebView_NavigationCompleted(WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs args)
@@ -784,6 +1227,38 @@ namespace Advance_Control.Views.Pages
             else
             {
                 await _loggingService.LogErrorAsync($"WebView2 navegación falló. Status: {args.WebErrorStatus}", null, "Ubicaciones", "MapWebView_NavigationCompleted");
+            }
+        }
+
+        /// <summary>
+        /// Maneja el cambio de pestaña en el TabView
+        /// </summary>
+        private async void TabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            try
+            {
+                if (sender is TabView tabView && tabView.SelectedItem is TabViewItem selectedTab)
+                {
+                    var tabHeader = selectedTab.Header?.ToString() ?? "";
+                    await _loggingService.LogInformationAsync($"Tab seleccionada: {tabHeader}", "Ubicaciones", "TabView_SelectionChanged");
+
+                    // Recargar el mapa basado en la pestaña seleccionada
+                    if (tabHeader == TAB_UBICACIONES)
+                    {
+                        // Recargar el mapa para ubicaciones con marcadores
+                        await ViewModel.LoadUbicacionesAsync();
+                        await LoadMapAsync();
+                    }
+                    else if (tabHeader == TAB_AREAS)
+                    {
+                        // Recargar el mapa para áreas con herramientas de dibujo
+                        await LoadAreasMapAsync();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al cambiar de pestaña", ex, "Ubicaciones", "TabView_SelectionChanged");
             }
         }
 
