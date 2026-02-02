@@ -643,6 +643,14 @@ namespace Advance_Control.Views.Pages
                 selectedLocationMarker.setMap(null);
             }}
 
+            // Remove search marker from Places API if exists - when selecting a saved location,
+            // we don't need the Places API search marker anymore since saved locations already
+            // have all their data stored
+            if (searchMarker) {{
+                searchMarker.setMap(null);
+                searchMarker = null;
+            }}
+
             // Create a new marker for the selected location with distinctive green color
             selectedLocationMarker = new google.maps.Marker({{
                 position: position,
