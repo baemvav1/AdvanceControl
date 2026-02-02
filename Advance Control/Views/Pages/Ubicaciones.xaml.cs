@@ -120,6 +120,13 @@ namespace Advance_Control.Views.Pages
                                             formattedElement.ValueKind == JsonValueKind.String)
                                         {
                                             _currentDireccionCompleta = formattedElement.GetString();
+                                            
+                                            // Update search box with the formatted address for visual validation
+                                            // This provides the user with immediate feedback about the selected location
+                                            this.DispatcherQueue.TryEnqueue(() =>
+                                            {
+                                                MapSearchBox.Text = _currentDireccionCompleta;
+                                            });
                                         }
                                         
                                         // Extract city
@@ -153,7 +160,7 @@ namespace Advance_Control.Views.Pages
                                 }
 
                                 await _loggingService.LogInformationAsync(
-                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}", 
+                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Dirección={_currentDireccionCompleta}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}. Campo de búsqueda actualizado con dirección.", 
                                     "Ubicaciones", 
                                     "CoreWebView2_WebMessageReceived");
                             }
