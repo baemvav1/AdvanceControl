@@ -141,5 +141,58 @@ namespace Advance_Control.Models
         {
             OnPropertyChanged(nameof(ShowNoRelacionesMessage));
         }
+
+        private UbicacionDto? _ubicacion;
+
+        /// <summary>
+        /// Ubicación asociada al equipo.
+        /// Se carga desde el endpoint de ubicaciones cuando se expande el item.
+        /// </summary>
+        [JsonIgnore]
+        public UbicacionDto? Ubicacion
+        {
+            get => _ubicacion;
+            set
+            {
+                if (_ubicacion != value)
+                {
+                    _ubicacion = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(HasUbicacion));
+                    OnPropertyChanged(nameof(ShowNoUbicacionMessage));
+                }
+            }
+        }
+
+        private bool _isLoadingUbicacion = false;
+
+        /// <summary>
+        /// Indica si la ubicación está siendo cargada.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingUbicacion
+        {
+            get => _isLoadingUbicacion;
+            set
+            {
+                if (_isLoadingUbicacion != value)
+                {
+                    _isLoadingUbicacion = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si el equipo tiene una ubicación asignada.
+        /// </summary>
+        [JsonIgnore]
+        public bool HasUbicacion => IdUbicacion.HasValue && IdUbicacion.Value > 0;
+
+        /// <summary>
+        /// Indica si se debe mostrar el mensaje de que no hay ubicación.
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoUbicacionMessage => !HasUbicacion;
     }
 }
