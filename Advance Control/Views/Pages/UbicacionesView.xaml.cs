@@ -61,7 +61,7 @@ namespace Advance_Control.Views.Pages
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
 
-        public Ubicaciones()
+        public UbicacionesView()
         {
             // Resolver el ViewModel desde DI
             ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<UbicacionesViewModel>();
@@ -76,13 +76,13 @@ namespace Advance_Control.Views.Pages
 
             // Setup WebView2 message handler
             this.Loaded += UbicacionesView_Loaded;
-            this.Unloaded += Ubicaciones_Unloaded;
+            this.Unloaded += UbicacionesView_Unloaded;
         }
 
         /// <summary>
         /// Cleanup resources when page is unloaded
         /// </summary>
-        private void Ubicaciones_Unloaded(object sender, RoutedEventArgs e)
+        private void UbicacionesView_Unloaded(object sender, RoutedEventArgs e)
         {
             // Mark as disposed to prevent further operations
             _isDisposed = true;
@@ -112,7 +112,7 @@ namespace Advance_Control.Views.Pages
             // Check if page is disposed
             if (_isDisposed)
             {
-                await _loggingService.LogWarningAsync("Cannot initialize WebView2 - page is disposed", "Ubicaciones", "EnsureWebView2InitializedAsync");
+                await _loggingService.LogWarningAsync("Cannot initialize WebView2 - page is disposed", "UbicacionesView", "EnsureWebView2InitializedAsync");
                 return;
             }
             
@@ -131,18 +131,18 @@ namespace Advance_Control.Views.Pages
                     return; // Already initialized by another thread or page is disposed
                 }
 
-                await _loggingService.LogInformationAsync("Initializing CoreWebView2 and message handler", "Ubicaciones", "EnsureWebView2InitializedAsync");
+                await _loggingService.LogInformationAsync("Initializing CoreWebView2 and message handler", "UbicacionesView", "EnsureWebView2InitializedAsync");
                 
                 await MapWebView.EnsureCoreWebView2Async();
                 MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
                 
                 _isWebView2Initialized = true;
                 
-                await _loggingService.LogInformationAsync("CoreWebView2 and message handler initialized successfully", "Ubicaciones", "EnsureWebView2InitializedAsync");
+                await _loggingService.LogInformationAsync("CoreWebView2 and message handler initialized successfully", "UbicacionesView", "EnsureWebView2InitializedAsync");
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al inicializar WebView2 message handler", ex, "Ubicaciones", "EnsureWebView2InitializedAsync");
+                await _loggingService.LogErrorAsync("Error al inicializar WebView2 message handler", ex, "UbicacionesView", "EnsureWebView2InitializedAsync");
                 // Don't set _isWebView2Initialized to true so it can be retried
                 throw; // Re-throw to notify caller of initialization failure
             }
@@ -161,7 +161,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al configurar WebView2 en Loaded event", ex, "Ubicaciones", "Ubicaciones_Loaded");
+                await _loggingService.LogErrorAsync("Error al configurar WebView2 en Loaded event", ex, "UbicacionesView", "UbicacionesView_Loaded");
             }
         }
 
@@ -170,7 +170,7 @@ namespace Advance_Control.Views.Pages
             try
             {
                 var message = args.TryGetWebMessageAsString();
-                await _loggingService.LogInformationAsync($"Mensaje recibido de WebView2: {message}", "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                await _loggingService.LogInformationAsync($"Mensaje recibido de WebView2: {message}", "UbicacionesView", "CoreWebView2_WebMessageReceived");
 
                 // Parse the JSON message
                 var jsonDoc = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(message);
@@ -259,7 +259,7 @@ namespace Advance_Control.Views.Pages
                                         {
                                             // Fire-and-forget logging to avoid blocking the UI thread
                                             // We don't await here since this is a UI thread callback
-                                            _ = _loggingService.LogErrorAsync("Error al actualizar campo de búsqueda", ex, "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                                            _ = _loggingService.LogErrorAsync("Error al actualizar campo de búsqueda", ex, "UbicacionesView", "CoreWebView2_WebMessageReceived");
                                         }
                                     });
                                     
@@ -267,7 +267,7 @@ namespace Advance_Control.Views.Pages
                                     
                                     if (!enqueued)
                                     {
-                                        await _loggingService.LogWarningAsync("No se pudo encolar la actualización del campo de búsqueda", "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                                        await _loggingService.LogWarningAsync("No se pudo encolar la actualización del campo de búsqueda", "UbicacionesView", "CoreWebView2_WebMessageReceived");
                                     }
                                 }
 
@@ -283,12 +283,12 @@ namespace Advance_Control.Views.Pages
                                 
                                 await _loggingService.LogInformationAsync(
                                     logMessage, 
-                                    "Ubicaciones", 
+                                    "UbicacionesView", 
                                     "CoreWebView2_WebMessageReceived");
                             }
                             else
                             {
-                                await _loggingService.LogWarningAsync("Coordenadas recibidas no son números válidos", "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                                await _loggingService.LogWarningAsync("Coordenadas recibidas no son números válidos", "UbicacionesView", "CoreWebView2_WebMessageReceived");
                             }
                         }
                     }
@@ -297,7 +297,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al procesar mensaje de WebView2", ex, "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                await _loggingService.LogErrorAsync("Error al procesar mensaje de WebView2", ex, "UbicacionesView", "CoreWebView2_WebMessageReceived");
             }
         }
 
@@ -307,7 +307,7 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                await _loggingService.LogInformationAsync("Navegando a página de Ubicaciones", "Ubicaciones", "OnNavigatedTo");
+                await _loggingService.LogInformationAsync("Navegando a página de Ubicaciones", "UbicacionesView", "OnNavigatedTo");
 
                 // Ensure CoreWebView2 is initialized and message handler is registered BEFORE loading any map
                 await EnsureWebView2InitializedAsync();
@@ -321,13 +321,13 @@ namespace Advance_Control.Views.Pages
                 // Si se pasó un ID de ubicación como parámetro, seleccionarla y centrar el mapa
                 if (e.Parameter is int idUbicacion)
                 {
-                    await _loggingService.LogInformationAsync($"Navegación con parámetro: IdUbicacion = {idUbicacion}", "Ubicaciones", "OnNavigatedTo");
+                    await _loggingService.LogInformationAsync($"Navegación con parámetro: IdUbicacion = {idUbicacion}", "UbicacionesView", "OnNavigatedTo");
                     await SelectAndCenterUbicacionAsync(idUbicacion);
                 }
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al navegar a Ubicaciones", ex, "Ubicaciones", "OnNavigatedTo");
+                await _loggingService.LogErrorAsync("Error al navegar a Ubicaciones", ex, "UbicacionesView", "OnNavigatedTo");
             }
         }
 
@@ -340,11 +340,11 @@ namespace Advance_Control.Views.Pages
             {
                 if (ViewModel.MapsConfig == null)
                 {
-                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible", "Ubicaciones", "LoadMapAsync");
+                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible", "UbicacionesView", "LoadMapAsync");
                     return;
                 }
 
-                await _loggingService.LogInformationAsync("Cargando mapa de Google Maps", "Ubicaciones", "LoadMapAsync");
+                await _loggingService.LogInformationAsync("Cargando mapa de Google Maps", "UbicacionesView", "LoadMapAsync");
 
                 // Ensure CoreWebView2 is initialized before using NavigateToString
                 await MapWebView.EnsureCoreWebView2Async();
@@ -353,9 +353,6 @@ namespace Advance_Control.Views.Pages
                 var centerParts = ViewModel.MapsConfig.DefaultCenter.Split(',');
                 var lat = centerParts.Length > 0 ? centerParts[0].Trim() : DEFAULT_LATITUDE;
                 var lng = centerParts.Length > 1 ? centerParts[1].Trim() : DEFAULT_LONGITUDE;
-
-                // Serializar las áreas como JSON
-                var areasJson = JsonSerializer.Serialize(ViewModel.Areas);
 
                 // Serializar las ubicaciones como JSON
                 var ubicacionesJson = JsonSerializer.Serialize(ViewModel.Ubicaciones);
@@ -366,17 +363,16 @@ namespace Advance_Control.Views.Pages
                     lat,
                     lng,
                     ViewModel.MapsConfig.DefaultZoom,
-                    areasJson,
                     ubicacionesJson);
 
                 // Cargar el HTML en el WebView2
                 MapWebView.NavigateToString(html);
 
-                await _loggingService.LogInformationAsync("Mapa cargado exitosamente", "Ubicaciones", "LoadMapAsync");
+                await _loggingService.LogInformationAsync("Mapa cargado exitosamente", "UbicacionesView", "LoadMapAsync");
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al cargar el mapa", ex, "Ubicaciones", "LoadMapAsync");
+                await _loggingService.LogErrorAsync("Error al cargar el mapa", ex, "UbicacionesView", "LoadMapAsync");
             }
         }
 
@@ -395,14 +391,14 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync($"Error al ejecutar script en mapa: {script}", ex, "Ubicaciones", "ExecuteMapScriptAsync");
+                await _loggingService.LogErrorAsync($"Error al ejecutar script en mapa: {script}", ex, "UbicacionesView", "ExecuteMapScriptAsync");
             }
         }
 
         /// <summary>
         /// Genera el HTML para el mapa de Google Maps
         /// </summary>
-        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string areasJson, string ubicacionesJson)
+        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string ubicacionesJson)
         {
             return $@"
 <!DOCTYPE html>
@@ -437,9 +433,7 @@ namespace Advance_Control.Views.Pages
         const MARKER_ICON_SIZE = 40;
 
         let map;
-        let areas = {areasJson};
         let ubicaciones = {ubicacionesJson};
-        let shapes = [];
         let markers = [];
         let infoWindow;
         let editMarker = null;
@@ -472,9 +466,6 @@ namespace Advance_Control.Views.Pages
 
             // Crear geocoder para reverse geocoding
             geocoder = new google.maps.Geocoder();
-
-            // Renderizar las áreas
-            renderAreas();
 
             // Renderizar las ubicaciones (markers)
             renderUbicaciones();
@@ -659,104 +650,6 @@ namespace Advance_Control.Views.Pages
             }}
         }}
 
-        function renderAreas() {{
-            // Limpiar shapes existentes
-            shapes.forEach(shape => shape.setMap(null));
-            shapes = [];
-
-            // Renderizar cada área
-            areas.forEach(area => {{
-                try {{
-                    let shape = null;
-                    let position = null;
-
-                    if (area.type === 'Polygon') {{
-                        const path = JSON.parse(area.path);
-                        const options = JSON.parse(area.options);
-                        
-                        shape = new google.maps.Polygon({{
-                            paths: path,
-                            ...options
-                        }});
-                        
-                        // Calcular centro del polígono para el InfoWindow
-                        if (area.center) {{
-                            position = JSON.parse(area.center);
-                        }}
-                    }} else if (area.type === 'Circle') {{
-                        const center = JSON.parse(area.center);
-                        const options = JSON.parse(area.options);
-                        
-                        shape = new google.maps.Circle({{
-                            center: center,
-                            radius: area.radius,
-                            ...options
-                        }});
-                        
-                        position = center;
-                    }} else if (area.type === 'Rectangle') {{
-                        const bounds = JSON.parse(area.bounds);
-                        const options = JSON.parse(area.options);
-                        
-                        shape = new google.maps.Rectangle({{
-                            bounds: bounds,
-                            ...options
-                        }});
-                        
-                        // Calcular centro del rectángulo
-                        position = {{
-                            lat: (bounds.north + bounds.south) / 2,
-                            lng: (bounds.east + bounds.west) / 2
-                        }};
-                    }} else if (area.type === 'Polyline') {{
-                        const path = JSON.parse(area.path);
-                        const options = JSON.parse(area.options);
-                        
-                        shape = new google.maps.Polyline({{
-                            path: path,
-                            ...options
-                        }});
-                        
-                        // Usar primer punto como posición
-                        if (path && path.length > 0) {{
-                            position = path[0];
-                        }}
-                    }}
-
-                    if (shape) {{
-                        shape.setMap(map);
-                        shapes.push(shape);
-
-                        // Agregar listener para click con InfoWindow
-                        shape.addListener('click', (event) => {{
-                            const clickPosition = position || event.latLng;
-                            showAreaInfo(area, clickPosition);
-                        }});
-
-                        // Agregar hover effect
-                        shape.addListener('mouseover', () => {{
-                            if (area.type === 'Polygon' || area.type === 'Rectangle' || area.type === 'Circle') {{
-                                const options = JSON.parse(area.options);
-                                shape.setOptions({{
-                                    fillOpacity: (options.fillOpacity || 0.5) * 1.3,
-                                    strokeWeight: (options.strokeWeight || 2) + 1
-                                }});
-                            }}
-                        }});
-
-                        shape.addListener('mouseout', () => {{
-                            if (area.type === 'Polygon' || area.type === 'Rectangle' || area.type === 'Circle') {{
-                                const options = JSON.parse(area.options);
-                                shape.setOptions(options);
-                            }}
-                        }});
-                    }}
-                }} catch (error) {{
-                    console.error('Error al renderizar área', area.nombre, error);
-                }}
-            }});
-        }}
-
         function renderUbicaciones() {{
             // Limpiar markers existentes
             markers.forEach(marker => marker.setMap(null));
@@ -789,23 +682,6 @@ namespace Advance_Control.Views.Pages
                     console.error('Error al renderizar ubicación', ubicacion.nombre, error);
                 }}
             }});
-        }}
-
-        function showAreaInfo(area, position) {{
-            const content = `
-                <div style='padding: 8px; min-width: 200px;'>
-                    <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{area.nombre}}</h3>
-                    <div style='color: #5f6368; font-size: 14px;'>
-                        <p style='margin: 4px 0;'><strong>Tipo:</strong> ${{area.type}}</p>
-                        <p style='margin: 4px 0;'><strong>ID:</strong> ${{area.idArea}}</p>
-                        ${{area.radius ? `<p style='margin: 4px 0;'><strong>Radio:</strong> ${{area.radius.toFixed(0)}}m</p>` : ''}}
-                    </div>
-                </div>
-            `;
-            
-            infoWindow.setContent(content);
-            infoWindow.setPosition(position);
-            infoWindow.open(map);
         }}
 
         function showUbicacionInfo(ubicacion, position) {{
@@ -890,11 +766,11 @@ namespace Advance_Control.Views.Pages
         {
             if (args.IsSuccess)
             {
-                await _loggingService.LogInformationAsync("WebView2 navegación completada exitosamente", "Ubicaciones", "MapWebView_NavigationCompleted");
+                await _loggingService.LogInformationAsync("WebView2 navegación completada exitosamente", "UbicacionesView", "MapWebView_NavigationCompleted");
             }
             else
             {
-                await _loggingService.LogErrorAsync($"WebView2 navegación falló. Status: {args.WebErrorStatus}", null, "Ubicaciones", "MapWebView_NavigationCompleted");
+                await _loggingService.LogErrorAsync($"WebView2 navegación falló. Status: {args.WebErrorStatus}", null, "UbicacionesView", "MapWebView_NavigationCompleted");
             }
         }
 
@@ -905,7 +781,7 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                await _loggingService.LogInformationAsync("Refrescando ubicaciones y áreas del mapa", "Ubicaciones", "RefreshButton_Click");
+                await _loggingService.LogInformationAsync("Refrescando ubicaciones y áreas del mapa", "UbicacionesView", "RefreshButton_Click");
                 
                 await ViewModel.RefreshAreasAsync();
                 await ViewModel.LoadUbicacionesAsync();
@@ -913,7 +789,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al refrescar", ex, "Ubicaciones", "RefreshButton_Click");
+                await _loggingService.LogErrorAsync("Error al refrescar", ex, "UbicacionesView", "RefreshButton_Click");
             }
         }
 
@@ -932,7 +808,7 @@ namespace Advance_Control.Views.Pages
                     return;
                 }
 
-                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "Ubicaciones", "SearchButton_Click");
+                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "UbicacionesView", "SearchButton_Click");
 
                 if (MapWebView?.CoreWebView2 != null)
                 {
@@ -944,7 +820,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "Ubicaciones", "SearchButton_Click");
+                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "UbicacionesView", "SearchButton_Click");
                 await ShowMessageDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
             }
         }
@@ -991,7 +867,7 @@ namespace Advance_Control.Views.Pages
                 }
                 catch (Exception ex)
                 {
-                    await _loggingService.LogErrorAsync("Error al mostrar ubicación en el mapa", ex, "Ubicaciones", "UbicacionesList_SelectionChanged");
+                    await _loggingService.LogErrorAsync("Error al mostrar ubicación en el mapa", ex, "UbicacionesView", "UbicacionesList_SelectionChanged");
                 }
                 finally
                 {
@@ -1066,7 +942,7 @@ namespace Advance_Control.Views.Pages
                     }
                     catch (Exception ex)
                     {
-                        await _loggingService.LogErrorAsync("Error al eliminar ubicación", ex, "Ubicaciones", "DeleteButton_Click");
+                        await _loggingService.LogErrorAsync("Error al eliminar ubicación", ex, "UbicacionesView", "DeleteButton_Click");
                         await ShowMessageDialogAsync("Error", "Ocurrió un error al eliminar la ubicación");
                     }
                 }
@@ -1135,7 +1011,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al guardar ubicación", ex, "Ubicaciones", "SaveButton_Click");
+                await _loggingService.LogErrorAsync("Error al guardar ubicación", ex, "UbicacionesView", "SaveButton_Click");
                 await ShowMessageDialogAsync("Error", "Ocurrió un error al guardar la ubicación");
             }
         }
@@ -1187,7 +1063,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al notificar visibilidad del formulario al mapa", ex, "Ubicaciones", "NotifyMapFormVisibility");
+                await _loggingService.LogErrorAsync("Error al notificar visibilidad del formulario al mapa", ex, "UbicacionesView", "NotifyMapFormVisibility");
             }
         }
 
@@ -1208,7 +1084,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al cargar marker en el mapa", ex, "Ubicaciones", "LoadMarkerOnMap");
+                await _loggingService.LogErrorAsync("Error al cargar marker en el mapa", ex, "UbicacionesView", "LoadMarkerOnMap");
             }
         }
 
@@ -1262,7 +1138,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al centrar el mapa en la ubicación", ex, "Ubicaciones", "CenterMapOnUbicacion");
+                await _loggingService.LogErrorAsync("Error al centrar el mapa en la ubicación", ex, "UbicacionesView", "CenterMapOnUbicacion");
             }
         }
 
@@ -1289,14 +1165,14 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                await _loggingService.LogInformationAsync($"Buscando ubicación con ID: {idUbicacion}", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+                await _loggingService.LogInformationAsync($"Buscando ubicación con ID: {idUbicacion}", "UbicacionesView", "SelectAndCenterUbicacionAsync");
 
                 // Buscar la ubicación en la lista de ubicaciones
                 var ubicacion = ViewModel.Ubicaciones.FirstOrDefault(u => u.IdUbicacion == idUbicacion);
 
                 if (ubicacion != null)
                 {
-                    await _loggingService.LogInformationAsync($"Ubicación encontrada: {ubicacion.Nombre}", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+                    await _loggingService.LogInformationAsync($"Ubicación encontrada: {ubicacion.Nombre}", "UbicacionesView", "SelectAndCenterUbicacionAsync");
 
                     // Seleccionar la ubicación en el ListView
                     ViewModel.SelectedUbicacion = ubicacion;
@@ -1307,16 +1183,16 @@ namespace Advance_Control.Views.Pages
                     // Centrar el mapa en la ubicación
                     await CenterMapOnUbicacion(ubicacion);
 
-                    await _loggingService.LogInformationAsync("Mapa centrado en la ubicación seleccionada", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+                    await _loggingService.LogInformationAsync("Mapa centrado en la ubicación seleccionada", "UbicacionesView", "SelectAndCenterUbicacionAsync");
                 }
                 else
                 {
-                    await _loggingService.LogWarningAsync($"No se encontró ubicación con ID: {idUbicacion}", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+                    await _loggingService.LogWarningAsync($"No se encontró ubicación con ID: {idUbicacion}", "UbicacionesView", "SelectAndCenterUbicacionAsync");
                 }
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al seleccionar y centrar ubicación", ex, "Ubicaciones", "SelectAndCenterUbicacionAsync");
+                await _loggingService.LogErrorAsync("Error al seleccionar y centrar ubicación", ex, "UbicacionesView", "SelectAndCenterUbicacionAsync");
             }
         }
     }

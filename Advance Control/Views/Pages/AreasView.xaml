@@ -211,7 +211,7 @@
                             Width="200"
                             HorizontalAlignment="Left"
                             Header="Color del área">
-                            <ComboBoxItem Content="Rojo" IsSelected="True" Tag="#FF0000" />
+                            <ComboBoxItem Content="Rojo" Tag="#FF0000" IsSelected="True" />
                             <ComboBoxItem Content="Azul" Tag="#0000FF" />
                             <ComboBoxItem Content="Verde" Tag="#00FF00" />
                             <ComboBoxItem Content="Amarillo" Tag="#FFFF00" />
