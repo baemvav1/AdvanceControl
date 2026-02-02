@@ -80,6 +80,11 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
+                await _loggingService.LogInformationAsync(
+                    $"HandleShapeMessageAsync called with message: {System.Text.Json.JsonSerializer.Serialize(jsonDoc)}",
+                    "Areas",
+                    "HandleShapeMessageAsync");
+                
                 if (jsonDoc.TryGetValue("type", out var typeElement))
                 {
                     var messageType = typeElement.GetString();
@@ -113,7 +118,11 @@ namespace Advance_Control.Views.Pages
                         }
 
                         await _loggingService.LogInformationAsync(
-                            $"Shape {messageType}: Type={_currentShapeType}",
+                            $"Shape {messageType}: Type={_currentShapeType}, " +
+                            $"Path={(string.IsNullOrEmpty(_currentShapePath) ? "EMPTY" : "SET")}, " +
+                            $"Center={(string.IsNullOrEmpty(_currentShapeCenter) ? "EMPTY" : "SET")}, " +
+                            $"Radius={(_currentShapeRadius.HasValue ? _currentShapeRadius.Value.ToString() : "NULL")}, " +
+                            $"Bounds={(string.IsNullOrEmpty(_currentShapeBounds) ? "EMPTY" : "SET")}",
                             "Areas",
                             "HandleShapeMessageAsync");
                     }
@@ -177,8 +186,13 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        private void AddButton_Click(object sender, RoutedEventArgs e)
+        private async void AddButton_Click(object sender, RoutedEventArgs e)
         {
+            await _loggingService.LogInformationAsync(
+                $"AddButton_Click - Before clearing form: _currentShapeType={_currentShapeType ?? "NULL"}",
+                "Areas",
+                "AddButton_Click");
+            
             _isEditMode = false;
             _editingAreaId = null;
             FormTitle.Text = "Nueva Área";
@@ -192,6 +206,11 @@ namespace Advance_Control.Views.Pages
             // Do NOT clear shape data - preserve any shape already drawn on the map
             // This allows users to draw a shape first, then click "Agregar" and save immediately
             // Shape data will be cleared when canceling or after successfully saving
+
+            await _loggingService.LogInformationAsync(
+                $"AddButton_Click - After setting up form: _currentShapeType={_currentShapeType ?? "NULL"}",
+                "Areas",
+                "AddButton_Click");
 
             // Show form
             AreaForm.Visibility = Visibility.Visible;
@@ -351,6 +370,15 @@ namespace Advance_Control.Views.Pages
 
         private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            // Log the current state for debugging
+            await _loggingService.LogInformationAsync(
+                $"SaveButton_Click - _isEditMode={_isEditMode}, _currentShapeType={_currentShapeType ?? "NULL"}, " +
+                $"_currentShapePath={(string.IsNullOrEmpty(_currentShapePath) ? "EMPTY" : "SET")}, " +
+                $"_currentShapeCenter={(string.IsNullOrEmpty(_currentShapeCenter) ? "EMPTY" : "SET")}, " +
+                $"_currentShapeRadius={(_currentShapeRadius.HasValue ? _currentShapeRadius.Value.ToString() : "NULL")}",
+                "Areas",
+                "SaveButton_Click");
+            
             // Validate form
             if (string.IsNullOrWhiteSpace(NombreTextBox.Text))
             {
@@ -370,6 +398,13 @@ namespace Advance_Control.Views.Pages
             // For circles, we need center and radius; for polygons/rectangles, we need path
             if (!_isEditMode && string.IsNullOrEmpty(_currentShapeType))
             {
+                await _loggingService.LogErrorAsync(
+                    "Validation failed: _currentShapeType is null or empty when creating a new area. " +
+                    "This means the shape message from the map was not received or was not forwarded to Areas page.",
+                    null,
+                    "Areas",
+                    "SaveButton_Click");
+                
                 var dialog = new ContentDialog
                 {
                     Title = "Validación",

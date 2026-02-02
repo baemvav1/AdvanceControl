@@ -46,6 +46,9 @@ namespace Advance_Control.Views.Pages
         private bool _isFormVisible = false;
         private bool _isCenteringMap = false;
         
+        // Track which map is currently loaded to prevent unnecessary reloads
+        private string? _currentlyLoadedMap = null;
+        
         // Store location data extracted from Google Maps Geocoding API
         private decimal? _currentLatitud = null;
         private decimal? _currentLongitud = null;
@@ -316,9 +319,18 @@ namespace Advance_Control.Views.Pages
                     }
                     else if (messageType == "shapeDrawn" || messageType == "shapeEdited")
                     {
+                        await _loggingService.LogInformationAsync(
+                            $"Shape message received: type={messageType}, AreasPage={(AreasPage != null ? "EXISTS" : "NULL")}",
+                            "Ubicaciones",
+                            "CoreWebView2_WebMessageReceived");
+                        
                         // Forward shape messages to Areas page if it exists
                         if (AreasPage != null)
                         {
+                            await _loggingService.LogInformationAsync(
+                                $"Forwarding shape message immediately to AreasPage",
+                                "Ubicaciones",
+                                "CoreWebView2_WebMessageReceived");
                             await AreasPage.HandleShapeMessageAsync(jsonDoc);
                         }
                         else
@@ -411,6 +423,9 @@ namespace Advance_Control.Views.Pages
                 MapWebView.NavigateToString(html);
 
                 await _loggingService.LogInformationAsync("Mapa cargado exitosamente", "Ubicaciones", "LoadMapAsync");
+                
+                // Update the flag to indicate Ubicaciones map is loaded
+                _currentlyLoadedMap = TAB_UBICACIONES;
             }
             catch (Exception ex)
             {
@@ -491,6 +506,9 @@ namespace Advance_Control.Views.Pages
                 MapWebView.NavigateToString(html);
 
                 await _loggingService.LogInformationAsync("Mapa de Áreas cargado exitosamente", "Ubicaciones", "LoadAreasMapAsync");
+                
+                // Update the flag to indicate Areas map is loaded
+                _currentlyLoadedMap = TAB_AREAS;
             }
             catch (Exception ex)
             {
@@ -504,6 +522,7 @@ namespace Advance_Control.Views.Pages
         public async Task ReloadAreasMapAsync()
         {
             await LoadAreasMapAsync();
+            // Note: LoadAreasMapAsync already sets _currentlyLoadedMap = TAB_AREAS
         }
 
         /// <summary>
@@ -1459,23 +1478,59 @@ namespace Advance_Control.Views.Pages
                     // Recargar el mapa basado en la pestaña seleccionada
                     if (tabHeader == TAB_UBICACIONES)
                     {
-                        // Ensure WebView2 is initialized before loading ubicaciones map
-                        await EnsureWebView2InitializedAsync();
-                        
-                        // Recargar el mapa para ubicaciones con marcadores
-                        await ViewModel.LoadUbicacionesAsync();
-                        await LoadMapAsync();
+                        // Only reload the map if it's not already the Ubicaciones map
+                        if (_currentlyLoadedMap != TAB_UBICACIONES)
+                        {
+                            // Ensure WebView2 is initialized before loading ubicaciones map
+                            await EnsureWebView2InitializedAsync();
+                            
+                            // Recargar el mapa para ubicaciones con marcadores
+                            await ViewModel.LoadUbicacionesAsync();
+                            await LoadMapAsync();
+                            // Note: LoadMapAsync sets _currentlyLoadedMap = TAB_UBICACIONES
+                            
+                            await _loggingService.LogInformationAsync(
+                                "Loaded Ubicaciones map with markers",
+                                "Ubicaciones",
+                                "TabView_SelectionChanged");
+                        }
+                        else
+                        {
+                            await _loggingService.LogInformationAsync(
+                                "Ubicaciones tab selected - map already loaded, NOT reloading",
+                                "Ubicaciones",
+                                "TabView_SelectionChanged");
+                        }
                     }
                     else if (tabHeader == TAB_AREAS)
                     {
-                        // Ensure WebView2 is initialized before loading areas map
-                        await EnsureWebView2InitializedAsync();
-                        
-                        // Ensure AreasViewModel is initialized before loading the map
-                        var areasViewModel = AreasPage?.ViewModel;
-                        if (areasViewModel != null && !areasViewModel.IsMapInitialized)
+                        // Only reload the map if it's not already the Areas map
+                        if (_currentlyLoadedMap != TAB_AREAS)
                         {
-                            await areasViewModel.InitializeAsync();
+                            // Ensure WebView2 is initialized before loading areas map
+                            await EnsureWebView2InitializedAsync();
+                            
+                            // Ensure AreasViewModel is initialized before loading the map
+                            var areasViewModel = AreasPage?.ViewModel;
+                            if (areasViewModel != null && !areasViewModel.IsMapInitialized)
+                            {
+                                await areasViewModel.InitializeAsync();
+                            }
+                            
+                            // Load the Areas map with drawing tools
+                            await _loggingService.LogInformationAsync(
+                                "Loading Areas map with drawing tools",
+                                "Ubicaciones",
+                                "TabView_SelectionChanged");
+                            await LoadAreasMapAsync();
+                            // Note: LoadAreasMapAsync sets _currentlyLoadedMap = TAB_AREAS
+                        }
+                        else
+                        {
+                            await _loggingService.LogInformationAsync(
+                                "Areas tab selected - map already loaded, NOT reloading to preserve drawn shapes",
+                                "Ubicaciones",
+                                "TabView_SelectionChanged");
                         }
                         
                         // Forward any pending shape messages now that AreasPage is available
@@ -1488,9 +1543,6 @@ namespace Advance_Control.Views.Pages
                             await AreasPage.HandleShapeMessageAsync(_pendingShapeMessage);
                             _pendingShapeMessage = null; // Clear after forwarding
                         }
-                        
-                        // Recargar el mapa para áreas con herramientas de dibujo
-                        await LoadAreasMapAsync();
                     }
                 }
             }
