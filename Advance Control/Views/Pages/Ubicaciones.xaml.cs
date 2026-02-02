@@ -18,6 +18,7 @@ using Advance_Control.ViewModels;
 using Advance_Control.Services.Logging;
 using Advance_Control.Models;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Advance_Control.Views.Pages
@@ -58,6 +59,12 @@ namespace Advance_Control.Views.Pages
         // Note: Only the most recent shape is stored because the map drawing manager
         // only allows one shape at a time (previous shapes are removed when a new one is drawn)
         private Dictionary<string, JsonElement>? _pendingShapeMessage = null;
+        
+        // WebView2 initialization state
+        // Volatile ensures visibility across threads
+        private volatile bool _isWebView2Initialized = false;
+        private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
+        private bool _isDisposed = false;
 
         public Ubicaciones()
         {
@@ -74,14 +81,67 @@ namespace Advance_Control.Views.Pages
 
             // Setup WebView2 message handler
             this.Loaded += Ubicaciones_Loaded;
+            this.Unloaded += Ubicaciones_Unloaded;
         }
 
-        private async void Ubicaciones_Loaded(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Cleanup resources when page is unloaded
+        /// </summary>
+        private void Ubicaciones_Unloaded(object sender, RoutedEventArgs e)
         {
+            // Mark as disposed to prevent further operations
+            _isDisposed = true;
+            
+            // Give a brief moment for any in-flight initialization to complete
+            // This is a best-effort approach to avoid ObjectDisposedException
+            Task.Delay(100).ContinueWith(_ =>
+            {
+                try
+                {
+                    _webView2InitLock?.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Semaphore already disposed, ignore
+                }
+            });
+        }
+
+        /// <summary>
+        /// Ensures WebView2 is initialized and message handler is registered
+        /// This must be called before any map loading to ensure messages are received
+        /// Thread-safe implementation using SemaphoreSlim
+        /// </summary>
+        private async Task EnsureWebView2InitializedAsync()
+        {
+            // Check if page is disposed
+            if (_isDisposed)
+            {
+                await _loggingService.LogWarningAsync("Cannot initialize WebView2 - page is disposed", "Ubicaciones", "EnsureWebView2InitializedAsync");
+                return;
+            }
+            
+            if (_isWebView2Initialized)
+            {
+                return; // Already initialized
+            }
+
+            // Use semaphore to ensure thread-safe initialization
+            await _webView2InitLock.WaitAsync();
             try
             {
+                // Double-check after acquiring lock
+                if (_isWebView2Initialized || _isDisposed)
+                {
+                    return; // Already initialized by another thread or page is disposed
+                }
+
+                await _loggingService.LogInformationAsync("Initializing CoreWebView2 and message handler", "Ubicaciones", "EnsureWebView2InitializedAsync");
+                
                 await MapWebView.EnsureCoreWebView2Async();
                 MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+                
+                _isWebView2Initialized = true;
                 
                 // Set parent reference for Areas page
                 if (AreasPage != null)
@@ -92,17 +152,38 @@ namespace Advance_Control.Views.Pages
                     if (_pendingShapeMessage != null)
                     {
                         await _loggingService.LogInformationAsync(
-                            "Forwarding pending shape message to AreasPage during page initialization", 
+                            "Forwarding pending shape message to AreasPage during initialization", 
                             "Ubicaciones", 
-                            "Ubicaciones_Loaded");
+                            "EnsureWebView2InitializedAsync");
                         await AreasPage.HandleShapeMessageAsync(_pendingShapeMessage);
                         _pendingShapeMessage = null; // Clear after forwarding
                     }
                 }
+                
+                await _loggingService.LogInformationAsync("CoreWebView2 and message handler initialized successfully", "Ubicaciones", "EnsureWebView2InitializedAsync");
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al configurar WebView2 message handler", ex, "Ubicaciones", "Ubicaciones_Loaded");
+                await _loggingService.LogErrorAsync("Error al inicializar WebView2 message handler", ex, "Ubicaciones", "EnsureWebView2InitializedAsync");
+                // Don't set _isWebView2Initialized to true so it can be retried
+                throw; // Re-throw to notify caller of initialization failure
+            }
+            finally
+            {
+                _webView2InitLock.Release();
+            }
+        }
+
+        private async void Ubicaciones_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Ensure WebView2 is initialized when page loads
+                await EnsureWebView2InitializedAsync();
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al configurar WebView2 en Loaded event", ex, "Ubicaciones", "Ubicaciones_Loaded");
             }
         }
 
@@ -265,6 +346,9 @@ namespace Advance_Control.Views.Pages
             try
             {
                 await _loggingService.LogInformationAsync("Navegando a página de Ubicaciones", "Ubicaciones", "OnNavigatedTo");
+
+                // Ensure CoreWebView2 is initialized and message handler is registered BEFORE loading any map
+                await EnsureWebView2InitializedAsync();
 
                 // Inicializar el mapa y cargar datos
                 await ViewModel.InitializeAsync();
@@ -1375,12 +1459,18 @@ namespace Advance_Control.Views.Pages
                     // Recargar el mapa basado en la pestaña seleccionada
                     if (tabHeader == TAB_UBICACIONES)
                     {
+                        // Ensure WebView2 is initialized before loading ubicaciones map
+                        await EnsureWebView2InitializedAsync();
+                        
                         // Recargar el mapa para ubicaciones con marcadores
                         await ViewModel.LoadUbicacionesAsync();
                         await LoadMapAsync();
                     }
                     else if (tabHeader == TAB_AREAS)
                     {
+                        // Ensure WebView2 is initialized before loading areas map
+                        await EnsureWebView2InitializedAsync();
+                        
                         // Ensure AreasViewModel is initialized before loading the map
                         var areasViewModel = AreasPage?.ViewModel;
                         if (areasViewModel != null && !areasViewModel.IsMapInitialized)
