@@ -136,6 +136,13 @@ namespace Advance_Control.ViewModels
                 // Cargar configuración de Google Maps
                 await LoadConfigurationAsync(cancellationToken);
 
+                // Only proceed if configuration was loaded successfully
+                if (MapsConfig == null)
+                {
+                    await _logger.LogWarningAsync("No se puede inicializar el mapa sin configuración", "UbicacionesViewModel", "InitializeAsync");
+                    return;
+                }
+
                 // Cargar áreas activas
                 await LoadAreasAsync(cancellationToken);
 
