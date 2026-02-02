@@ -390,14 +390,17 @@
                                                         </Button>
                                                     </StackPanel>
 
-                                                    <!--  Mostrar ubicación cuando existe  -->
+                                                     <!--  Mostrar ubicación cuando existe  -->
                                                     <StackPanel
                                                         Spacing="8"
                                                         Visibility="{x:Bind HasUbicacion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        
+                                                        <!--  Mostrar detalles de ubicación solo cuando no está cargando y tiene datos  -->
                                                         <Border
                                                             Padding="12" Background="DarkGray"
                                                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                            BorderThickness="1" CornerRadius="4">
+                                                            BorderThickness="1" CornerRadius="4"
+                                                            Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}">
                                                             <StackPanel Spacing="4">
                                                                 <TextBlock
                                                                     FontSize="13" FontWeight="SemiBold" Foreground="Black"
@@ -416,7 +419,8 @@
                                                         <Button
                                                             x:Name="EditarUbicacionButton" Background="Black" BorderThickness="1" BorderBrush="DarkGray"
                                                             Click="EditarUbicacionButton_Click" Foreground="WhiteSmoke"
-                                                            Tag="{x:Bind}">
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}">
                                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                                 <SymbolIcon Symbol="Edit" />
                                                                 <TextBlock Text="Editar Ubicación" />

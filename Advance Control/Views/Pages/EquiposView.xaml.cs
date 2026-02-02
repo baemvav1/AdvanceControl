@@ -482,9 +482,10 @@ namespace Advance_Control.Views
                     equipo.Ubicacion = ubicacion;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Log error silently
+                // Log error silently - the UI will continue to show "sin ubicacion"
+                System.Diagnostics.Debug.WriteLine($"Error al cargar ubicación: {ex.GetType().Name} - {ex.Message}");
             }
             finally
             {
@@ -527,11 +528,12 @@ namespace Advance_Control.Views
                     seleccionarUbicacionControl.Ubicaciones.Add(ubicacion);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar ubicaciones: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
-                    nota: "No se pudieron cargar las ubicaciones.",
+                    nota: "No se pudieron cargar las ubicaciones. Por favor, verifique su conexión e intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
                 return;
             }
@@ -593,10 +595,21 @@ namespace Advance_Control.Views
                     // Log exception details for debugging
                     System.Diagnostics.Debug.WriteLine($"Error al actualizar ubicación: {ex.GetType().Name} - {ex.Message}");
 
+                    // Provide more specific error message
+                    var errorMessage = "Ocurrió un error al actualizar la ubicación. ";
+                    if (ex is System.Net.Http.HttpRequestException)
+                    {
+                        errorMessage += "Por favor, verifique su conexión a internet e intente nuevamente.";
+                    }
+                    else
+                    {
+                        errorMessage += "Por favor, intente nuevamente o contacte al soporte técnico.";
+                    }
+
                     // Mostrar notificación de error
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: "Ocurrió un error al actualizar la ubicación. Por favor, intente nuevamente.",
+                        nota: errorMessage,
                         fechaHoraInicio: DateTime.Now);
                 }
             }
