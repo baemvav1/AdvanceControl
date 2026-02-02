@@ -245,7 +245,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                _loggingService.LogErrorAsync("Error al preparar JSON de áreas", ex, "AreasView", "PrepareAreasJson").Wait();
+                _ = _loggingService.LogErrorAsync("Error al preparar JSON de áreas", ex, "AreasView", "PrepareAreasJson");
                 return "[]";
             }
         }
