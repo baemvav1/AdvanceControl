@@ -361,6 +361,10 @@
                                                         Visibility="{x:Bind ShowNoRelacionesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                                 </StackPanel>
                                             </PivotItem>
+                                            
+                                            <PivotItem Header="Ubicacion">
+                                                <TextBlock Text="Ubicacion"/>
+                                            </PivotItem>
                                         </Pivot>
                                     </Grid>
                                 </StackPanel>
