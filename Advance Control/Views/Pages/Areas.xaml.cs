@@ -272,9 +272,14 @@ namespace Advance_Control.Views.Pages
                                 _currentShapePath = pathElement.GetRawText();
                             }
                         }
-                        catch
+                        catch (JsonException ex)
                         {
-                            // Ignore parsing errors - shape data is optional when editing
+                            // Log parsing error but continue - shape data is optional when editing
+                            _loggingService.LogErrorAsync(
+                                "Error al parsear MetadataJSON del área",
+                                ex,
+                                "Areas",
+                                "EditButton_Click").ConfigureAwait(false);
                         }
                     }
                 }
