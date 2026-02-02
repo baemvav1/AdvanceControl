@@ -615,6 +615,24 @@ namespace Advance_Control.Views
             }
         }
 
+        /// <summary>
+        /// Maneja el evento click del botón "Ver en Mapa".
+        /// Navega a la página de Ubicaciones con el ID de ubicación del equipo seleccionado.
+        /// </summary>
+        private void VerEnMapaButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el equipo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
+                return;
+
+            // Verificar que hay una ubicación asignada
+            if (equipo.Ubicacion == null || !equipo.IdUbicacion.HasValue)
+                return;
+
+            // Navegar a la página de Ubicaciones pasando el ID de ubicación
+            Frame.Navigate(typeof(Ubicaciones), equipo.IdUbicacion.Value);
+        }
+
     }
 }
 
