@@ -609,12 +609,13 @@ namespace Advance_Control.Views.Pages
                     }};
                     
                     const errorMessage = errorMessages[status] || errorMessages.UNKNOWN_ERROR;
+                    const safeErrorMessage = escapeHtml(errorMessage);
                     
                     const errorContent = `
                         <div style='padding: 8px; min-width: 200px;'>
                             <h3 style='margin: 0 0 8px 0; color: #d93025; font-size: 16px;'>Error en la búsqueda</h3>
                             <div style='color: #5f6368; font-size: 14px;'>
-                                <p style='margin: 4px 0;'>${{errorMessage}}</p>
+                                <p style='margin: 4px 0;'>${{safeErrorMessage}}</p>
                             </div>
                         </div>
                     `;
@@ -623,7 +624,8 @@ namespace Advance_Control.Views.Pages
                     infoWindow.setPosition(map.getCenter());
                     infoWindow.open(map);
                     
-                    console.error('Error en búsqueda de ubicación. Query:', query, 'Status:', status);
+                    // Log status only, not user input
+                    console.error('Error en búsqueda de ubicación. Status:', status);
                 }}
             }});
         }}
@@ -1283,12 +1285,13 @@ namespace Advance_Control.Views.Pages
                     }};
                     
                     const errorMessage = errorMessages[status] || errorMessages.UNKNOWN_ERROR;
+                    const safeErrorMessage = escapeHtml(errorMessage);
                     
                     const errorContent = `
                         <div style='padding: 8px; min-width: 200px;'>
                             <h3 style='margin: 0 0 8px 0; color: #d93025; font-size: 16px;'>Error en la búsqueda</h3>
                             <div style='color: #5f6368; font-size: 14px;'>
-                                <p style='margin: 4px 0;'>${{errorMessage}}</p>
+                                <p style='margin: 4px 0;'>${{safeErrorMessage}}</p>
                             </div>
                         </div>
                     `;
@@ -1297,7 +1300,8 @@ namespace Advance_Control.Views.Pages
                     infoWindow.setPosition(map.getCenter());
                     infoWindow.open(map);
                     
-                    console.error('Error en búsqueda de ubicación. Query:', query, 'Status:', status);
+                    // Log status only, not user input
+                    console.error('Error en búsqueda de ubicación. Status:', status);
                 }}
             }});
         }}
