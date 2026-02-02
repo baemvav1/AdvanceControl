@@ -719,10 +719,26 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Maneja el cambio de selección en la lista de ubicaciones
         /// </summary>
-        private void UbicacionesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void UbicacionesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Opcional: Puedes hacer algo cuando se selecciona una ubicación
-            // Por ejemplo, centrar el mapa en la ubicación seleccionada
+            // When a location is selected from the list, clear search box and show location on map
+            if (ViewModel.SelectedUbicacion != null && 
+                ViewModel.SelectedUbicacion.Latitud.HasValue && 
+                ViewModel.SelectedUbicacion.Longitud.HasValue)
+            {
+                try
+                {
+                    // Clear the search box
+                    MapSearchBox.Text = string.Empty;
+
+                    // Center the map on the selected location and show info
+                    await CenterMapOnUbicacion(ViewModel.SelectedUbicacion);
+                }
+                catch (Exception ex)
+                {
+                    await _loggingService.LogErrorAsync("Error al mostrar ubicación en el mapa", ex, "Ubicaciones", "UbicacionesList_SelectionChanged");
+                }
+            }
         }
 
         /// <summary>
@@ -956,6 +972,41 @@ namespace Advance_Control.Views.Pages
             LatitudTextBox.Text = ubicacion.Latitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
             LongitudTextBox.Text = ubicacion.Longitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
             DireccionTextBox.Text = ubicacion.DireccionCompleta ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Centra el mapa en una ubicación y muestra su información
+        /// </summary>
+        private async System.Threading.Tasks.Task CenterMapOnUbicacion(UbicacionDto ubicacion)
+        {
+            try
+            {
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    var latStr = ubicacion.Latitud.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    var lngStr = ubicacion.Longitud.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    
+                    // Serialize the ubicacion for the JavaScript function
+                    var ubicacionJson = JsonSerializer.Serialize(ubicacion);
+                    // Use proper JavaScript encoding to prevent XSS attacks
+                    var encodedJson = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(ubicacionJson);
+                    
+                    var script = $@"
+                        (function() {{
+                            var ubicacion = JSON.parse('{encodedJson}');
+                            var position = {{ lat: {latStr}, lng: {lngStr} }};
+                            map.setCenter(position);
+                            map.setZoom(15);
+                            showUbicacionInfo(ubicacion, position);
+                        }})();
+                    ";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al centrar el mapa en la ubicación", ex, "Ubicaciones", "CenterMapOnUbicacion");
+            }
         }
 
         /// <summary>
