@@ -53,6 +53,11 @@ namespace Advance_Control.Views.Pages
         private string? _currentEstado = null;
         private string? _currentPais = null;
         private string? _currentPlaceId = null;
+        
+        // Store pending shape messages if AreasPage is not yet initialized
+        // Note: Only the most recent shape is stored because the map drawing manager
+        // only allows one shape at a time (previous shapes are removed when a new one is drawn)
+        private Dictionary<string, JsonElement>? _pendingShapeMessage = null;
 
         public Ubicaciones()
         {
@@ -82,6 +87,17 @@ namespace Advance_Control.Views.Pages
                 if (AreasPage != null)
                 {
                     AreasPage.ParentUbicacionesPage = this;
+                    
+                    // Forward any pending shape messages now that AreasPage is available
+                    if (_pendingShapeMessage != null)
+                    {
+                        await _loggingService.LogInformationAsync(
+                            "Forwarding pending shape message to AreasPage during page initialization", 
+                            "Ubicaciones", 
+                            "Ubicaciones_Loaded");
+                        await AreasPage.HandleShapeMessageAsync(_pendingShapeMessage);
+                        _pendingShapeMessage = null; // Clear after forwarding
+                    }
                 }
             }
             catch (Exception ex)
@@ -223,6 +239,15 @@ namespace Advance_Control.Views.Pages
                         if (AreasPage != null)
                         {
                             await AreasPage.HandleShapeMessageAsync(jsonDoc);
+                        }
+                        else
+                        {
+                            // Store the shape message to forward later when AreasPage is initialized
+                            _pendingShapeMessage = jsonDoc;
+                            await _loggingService.LogInformationAsync(
+                                "Shape message stored for later forwarding (AreasPage not yet initialized)", 
+                                "Ubicaciones", 
+                                "CoreWebView2_WebMessageReceived");
                         }
                     }
                 }
@@ -1361,6 +1386,17 @@ namespace Advance_Control.Views.Pages
                         if (areasViewModel != null && !areasViewModel.IsMapInitialized)
                         {
                             await areasViewModel.InitializeAsync();
+                        }
+                        
+                        // Forward any pending shape messages now that AreasPage is available
+                        if (AreasPage != null && _pendingShapeMessage != null)
+                        {
+                            await _loggingService.LogInformationAsync(
+                                "Forwarding pending shape message to AreasPage during tab selection", 
+                                "Ubicaciones", 
+                                "TabView_SelectionChanged");
+                            await AreasPage.HandleShapeMessageAsync(_pendingShapeMessage);
+                            _pendingShapeMessage = null; // Clear after forwarding
                         }
                         
                         // Recargar el mapa para áreas con herramientas de dibujo
