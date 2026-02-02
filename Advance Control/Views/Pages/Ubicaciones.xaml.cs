@@ -35,6 +35,7 @@ namespace Advance_Control.Views.Pages
         private bool _isEditMode = false;
         private int? _editingUbicacionId = null;
         private bool _isFormVisible = false;
+        private bool _isCenteringMap = false;
 
         public Ubicaciones()
         {
@@ -719,10 +720,36 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Maneja el cambio de selección en la lista de ubicaciones
         /// </summary>
-        private void UbicacionesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void UbicacionesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Opcional: Puedes hacer algo cuando se selecciona una ubicación
-            // Por ejemplo, centrar el mapa en la ubicación seleccionada
+            // Prevent multiple simultaneous map centering operations
+            if (_isCenteringMap)
+                return;
+
+            // When a location is selected from the list, clear search box and show location on map
+            if (ViewModel.SelectedUbicacion != null && 
+                ViewModel.SelectedUbicacion.Latitud.HasValue && 
+                ViewModel.SelectedUbicacion.Longitud.HasValue)
+            {
+                try
+                {
+                    _isCenteringMap = true;
+
+                    // Clear the search box
+                    MapSearchBox.Text = string.Empty;
+
+                    // Center the map on the selected location and show info
+                    await CenterMapOnUbicacion(ViewModel.SelectedUbicacion);
+                }
+                catch (Exception ex)
+                {
+                    await _loggingService.LogErrorAsync("Error al mostrar ubicación en el mapa", ex, "Ubicaciones", "UbicacionesList_SelectionChanged");
+                }
+                finally
+                {
+                    _isCenteringMap = false;
+                }
+            }
         }
 
         /// <summary>
@@ -956,6 +983,42 @@ namespace Advance_Control.Views.Pages
             LatitudTextBox.Text = ubicacion.Latitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
             LongitudTextBox.Text = ubicacion.Longitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
             DireccionTextBox.Text = ubicacion.DireccionCompleta ?? string.Empty;
+        }
+
+        /// <summary>
+        /// Centra el mapa en una ubicación y muestra su información
+        /// </summary>
+        private async Task CenterMapOnUbicacion(UbicacionDto ubicacion)
+        {
+            try
+            {
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    var latStr = ubicacion.Latitud.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    var lngStr = ubicacion.Longitud.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    
+                    // Serialize the ubicacion for the JavaScript function
+                    var ubicacionJson = JsonSerializer.Serialize(ubicacion);
+                    // Convert to base64 to safely pass JSON data to JavaScript
+                    var base64Json = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(ubicacionJson));
+                    
+                    var script = $@"
+                        (function() {{
+                            var ubicacionJson = atob('{base64Json}');
+                            var ubicacion = JSON.parse(ubicacionJson);
+                            var position = {{ lat: {latStr}, lng: {lngStr} }};
+                            map.setCenter(position);
+                            map.setZoom(15);
+                            showUbicacionInfo(ubicacion, position);
+                        }})();
+                    ";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al centrar el mapa en la ubicación", ex, "Ubicaciones", "CenterMapOnUbicacion");
+            }
         }
 
         /// <summary>
