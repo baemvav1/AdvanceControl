@@ -225,6 +225,13 @@ namespace Advance_Control.Views.Pages
 
                 // Cargar el HTML del mapa en el WebView2
                 await LoadMapAsync();
+
+                // Si se pasó un ID de ubicación como parámetro, seleccionarla y centrar el mapa
+                if (e.Parameter is int idUbicacion)
+                {
+                    await _loggingService.LogInformationAsync($"Navegación con parámetro: IdUbicacion = {idUbicacion}", "Ubicaciones", "OnNavigatedTo");
+                    await SelectAndCenterUbicacionAsync(idUbicacion);
+                }
             }
             catch (Exception ex)
             {
@@ -1159,6 +1166,44 @@ namespace Advance_Control.Views.Pages
             };
 
             await dialog.ShowAsync();
+        }
+
+        /// <summary>
+        /// Selecciona una ubicación por su ID y centra el mapa en ella
+        /// </summary>
+        private async System.Threading.Tasks.Task SelectAndCenterUbicacionAsync(int idUbicacion)
+        {
+            try
+            {
+                await _loggingService.LogInformationAsync($"Buscando ubicación con ID: {idUbicacion}", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+
+                // Buscar la ubicación en la lista de ubicaciones
+                var ubicacion = ViewModel.Ubicaciones.FirstOrDefault(u => u.IdUbicacion == idUbicacion);
+
+                if (ubicacion != null)
+                {
+                    await _loggingService.LogInformationAsync($"Ubicación encontrada: {ubicacion.Nombre}", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+
+                    // Seleccionar la ubicación en el ListView
+                    ViewModel.SelectedUbicacion = ubicacion;
+
+                    // Esperar un momento para asegurar que el mapa esté inicializado
+                    await Task.Delay(500);
+
+                    // Centrar el mapa en la ubicación
+                    await CenterMapOnUbicacion(ubicacion);
+
+                    await _loggingService.LogInformationAsync("Mapa centrado en la ubicación seleccionada", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+                }
+                else
+                {
+                    await _loggingService.LogWarningAsync($"No se encontró ubicación con ID: {idUbicacion}", "Ubicaciones", "SelectAndCenterUbicacionAsync");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al seleccionar y centrar ubicación", ex, "Ubicaciones", "SelectAndCenterUbicacionAsync");
+            }
         }
     }
 }

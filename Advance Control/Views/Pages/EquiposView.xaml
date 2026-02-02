@@ -426,6 +426,16 @@
                                                                 <TextBlock Text="Editar Ubicación" />
                                                             </StackPanel>
                                                         </Button>
+                                                        <Button
+                                                            x:Name="VerEnMapaButton" Background="Black" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="VerEnMapaButton_Click" Foreground="WhiteSmoke"
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <SymbolIcon Symbol="Map" />
+                                                                <TextBlock Text="Ver en Mapa" />
+                                                            </StackPanel>
+                                                        </Button>
                                                     </StackPanel>
                                                 </StackPanel>
                                             </PivotItem>
