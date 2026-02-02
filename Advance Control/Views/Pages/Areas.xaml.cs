@@ -189,6 +189,13 @@ namespace Advance_Control.Views.Pages
             ColorComboBox.SelectedIndex = 0;
             ActivoCheckBox.IsChecked = true;
 
+            // Clear shape data to ensure clean state for new area
+            _currentShapeType = null;
+            _currentShapePath = null;
+            _currentShapeCenter = null;
+            _currentShapeRadius = null;
+            _currentShapeBounds = null;
+
             // Show form
             AreaForm.Visibility = Visibility.Visible;
             _isFormVisible = true;
@@ -229,7 +236,59 @@ namespace Advance_Control.Views.Pages
                     AreaForm.Visibility = Visibility.Visible;
                     _isFormVisible = true;
 
-                    // TODO: Load area shape on map for editing
+                    // Populate shape data from existing area to allow saving without redrawing
+                    _currentShapeType = area.TipoGeometria;
+                    
+                    // Restore center data if available
+                    if (area.CentroLatitud.HasValue && area.CentroLongitud.HasValue)
+                    {
+                        _currentShapeCenter = JsonSerializer.Serialize(new Dictionary<string, decimal>
+                        {
+                            ["lat"] = area.CentroLatitud.Value,
+                            ["lng"] = area.CentroLongitud.Value
+                        });
+                    }
+                    
+                    // Restore radius for circles
+                    if (area.Radio.HasValue)
+                    {
+                        _currentShapeRadius = area.Radio.Value;
+                    }
+                    
+                    // Restore bounds data if available
+                    if (area.BoundingBoxNE_Lat.HasValue && area.BoundingBoxNE_Lng.HasValue &&
+                        area.BoundingBoxSW_Lat.HasValue && area.BoundingBoxSW_Lng.HasValue)
+                    {
+                        _currentShapeBounds = JsonSerializer.Serialize(new Dictionary<string, decimal>
+                        {
+                            ["north"] = area.BoundingBoxNE_Lat.Value,
+                            ["east"] = area.BoundingBoxNE_Lng.Value,
+                            ["south"] = area.BoundingBoxSW_Lat.Value,
+                            ["west"] = area.BoundingBoxSW_Lng.Value
+                        });
+                    }
+                    
+                    // Restore path data from metadata if available
+                    if (!string.IsNullOrEmpty(area.MetadataJSON))
+                    {
+                        try
+                        {
+                            var metadata = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(area.MetadataJSON);
+                            if (metadata != null && metadata.TryGetValue("path", out var pathElement))
+                            {
+                                _currentShapePath = pathElement.GetRawText();
+                            }
+                        }
+                        catch (JsonException ex)
+                        {
+                            // Log parsing error but continue - shape data is optional when editing
+                            _loggingService.LogErrorAsync(
+                                "Error al parsear MetadataJSON del área",
+                                ex,
+                                "Areas",
+                                "EditButton_Click").ConfigureAwait(false);
+                        }
+                    }
                 }
             }
         }
