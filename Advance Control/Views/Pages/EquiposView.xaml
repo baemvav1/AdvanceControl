@@ -363,7 +363,67 @@
                                             </PivotItem>
                                             
                                             <PivotItem Header="Ubicacion">
-                                                <TextBlock Text="Ubicacion"/>
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <TextBlock
+                                                        FontSize="14" FontWeight="SemiBold" Foreground="WhiteSmoke" Text="Ubicación del Equipo" />
+
+                                                    <!--  Loading indicator for ubicacion  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingUbicacion, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingUbicacion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Mensaje cuando no hay ubicación  -->
+                                                    <StackPanel
+                                                        Spacing="8"
+                                                        Visibility="{x:Bind ShowNoUbicacionMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        <TextBlock
+                                                            FontSize="12" FontStyle="Italic" Foreground="Gray" Text="Sin ubicación" />
+                                                        <Button
+                                                            x:Name="AgregarUbicacionButton" Background="Black" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="AgregarUbicacionButton_Click" Foreground="WhiteSmoke"
+                                                            Tag="{x:Bind}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <SymbolIcon Symbol="MapPin" />
+                                                                <TextBlock Text="Agregar Ubicación" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!--  Mostrar ubicación cuando existe  -->
+                                                    <StackPanel
+                                                        Spacing="8"
+                                                        Visibility="{x:Bind HasUbicacion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        <Border
+                                                            Padding="12" Background="DarkGray"
+                                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                            BorderThickness="1" CornerRadius="4">
+                                                            <StackPanel Spacing="4">
+                                                                <TextBlock
+                                                                    FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                    Text="{x:Bind Ubicacion.Nombre, Mode=OneWay}" />
+                                                                <TextBlock
+                                                                    FontSize="12" Foreground="Gray"
+                                                                    Text="{x:Bind Ubicacion.Descripcion, Mode=OneWay}" />
+                                                                <TextBlock FontSize="11" Foreground="DimGray">
+                                                                    <Run Text="Lat: " />
+                                                                    <Run Text="{x:Bind Ubicacion.Latitud, Mode=OneWay}" />
+                                                                    <Run Text=", Lng: " />
+                                                                    <Run Text="{x:Bind Ubicacion.Longitud, Mode=OneWay}" />
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <Button
+                                                            x:Name="EditarUbicacionButton" Background="Black" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="EditarUbicacionButton_Click" Foreground="WhiteSmoke"
+                                                            Tag="{x:Bind}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <SymbolIcon Symbol="Edit" />
+                                                                <TextBlock Text="Editar Ubicación" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </StackPanel>
                                             </PivotItem>
                                         </Pivot>
                                     </Grid>

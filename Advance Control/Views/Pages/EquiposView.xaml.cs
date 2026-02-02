@@ -31,6 +31,7 @@ namespace Advance_Control.Views
         public EquiposViewModel ViewModel { get; }
         private readonly IRelacionService _relacionService;
         private readonly INotificacionService _notificacionService;
+        private readonly Services.Ubicaciones.IUbicacionService _ubicacionService;
 
         public EquiposView()
         {
@@ -42,6 +43,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de notificaciones desde DI
             _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            
+            // Resolver el servicio de ubicaciones desde DI
+            _ubicacionService = ((App)Application.Current).Host.Services.GetRequiredService<Services.Ubicaciones.IUbicacionService>();
             
             this.InitializeComponent();
             
@@ -143,6 +147,12 @@ namespace Advance_Control.Views
                 {
                     await LoadRelacionesForEquipoAsync(equipo);
                 }
+
+                // Load ubicacion when expanding if not already loaded
+                if (equipo.Expand && equipo.HasUbicacion && equipo.Ubicacion == null)
+                {
+                    await LoadUbicacionForEquipoAsync(equipo);
+                }
             }
         }
 
@@ -157,6 +167,12 @@ namespace Advance_Control.Views
                 if (equipo.Expand && !equipo.RelacionesLoaded && !string.IsNullOrWhiteSpace(equipo.Identificador))
                 {
                     await LoadRelacionesForEquipoAsync(equipo);
+                }
+
+                // Load ubicacion when expanding if not already loaded
+                if (equipo.Expand && equipo.HasUbicacion && equipo.Ubicacion == null)
+                {
+                    await LoadUbicacionForEquipoAsync(equipo);
                 }
             }
         }
@@ -444,6 +460,142 @@ namespace Advance_Control.Views
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
                         nota: "Ocurrió un error al crear la relación. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadUbicacionForEquipoAsync(Models.EquipoDto equipo)
+        {
+            if (equipo.IsLoadingUbicacion || !equipo.IdUbicacion.HasValue || equipo.IdUbicacion.Value <= 0)
+                return;
+
+            try
+            {
+                equipo.IsLoadingUbicacion = true;
+                
+                var ubicacion = await _ubicacionService.GetUbicacionByIdAsync(equipo.IdUbicacion.Value);
+                
+                if (ubicacion != null)
+                {
+                    equipo.Ubicacion = ubicacion;
+                }
+            }
+            catch (Exception)
+            {
+                // Log error silently
+            }
+            finally
+            {
+                equipo.IsLoadingUbicacion = false;
+            }
+        }
+
+        private async void AgregarUbicacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el equipo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
+                return;
+
+            await MostrarDialogoSeleccionUbicacionAsync(equipo);
+        }
+
+        private async void EditarUbicacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el equipo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
+                return;
+
+            await MostrarDialogoSeleccionUbicacionAsync(equipo);
+        }
+
+        private async System.Threading.Tasks.Task MostrarDialogoSeleccionUbicacionAsync(Models.EquipoDto equipo)
+        {
+            // Crear el UserControl para seleccionar ubicación
+            var seleccionarUbicacionControl = new SeleccionarUbicacionUserControl();
+
+            try
+            {
+                // Cargar las ubicaciones
+                seleccionarUbicacionControl.IsLoading = true;
+                var ubicaciones = await _ubicacionService.GetUbicacionesAsync();
+                
+                seleccionarUbicacionControl.Ubicaciones.Clear();
+                foreach (var ubicacion in ubicaciones)
+                {
+                    seleccionarUbicacionControl.Ubicaciones.Add(ubicacion);
+                }
+            }
+            catch (Exception)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "No se pudieron cargar las ubicaciones.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+            finally
+            {
+                seleccionarUbicacionControl.IsLoading = false;
+            }
+
+            // Crear el diálogo
+            var dialog = new ContentDialog
+            {
+                Title = "Seleccionar Ubicación",
+                Content = seleccionarUbicacionControl,
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary && seleccionarUbicacionControl.SelectedUbicacion != null)
+            {
+                var selectedUbicacion = seleccionarUbicacionControl.SelectedUbicacion;
+
+                try
+                {
+                    // Actualizar el equipo con el ID de ubicación seleccionado
+                    var updateData = new Models.EquipoQueryDto
+                    {
+                        IdUbicacion = selectedUbicacion.IdUbicacion
+                    };
+
+                    var success = await ViewModel.UpdateEquipoAsync(equipo.IdEquipo, updateData);
+
+                    if (success)
+                    {
+                        // Actualizar el equipo local con la nueva ubicación
+                        equipo.IdUbicacion = selectedUbicacion.IdUbicacion;
+                        equipo.Ubicacion = selectedUbicacion;
+
+                        // Mostrar notificación de éxito
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Ubicación actualizada",
+                            nota: $"Ubicación \"{selectedUbicacion.Nombre}\" asignada correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        // Mostrar notificación de error
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo actualizar la ubicación. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log exception details for debugging
+                    System.Diagnostics.Debug.WriteLine($"Error al actualizar ubicación: {ex.GetType().Name} - {ex.Message}");
+
+                    // Mostrar notificación de error
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al actualizar la ubicación. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
