@@ -37,6 +37,15 @@ namespace Advance_Control.Views.Pages
         private int? _editingUbicacionId = null;
         private bool _isFormVisible = false;
         private bool _isCenteringMap = false;
+        
+        // Store location data extracted from Google Maps Geocoding API
+        private decimal? _currentLatitud = null;
+        private decimal? _currentLongitud = null;
+        private string? _currentDireccionCompleta = null;
+        private string? _currentCiudad = null;
+        private string? _currentEstado = null;
+        private string? _currentPais = null;
+        private string? _currentPlaceId = null;
 
         public Ubicaciones()
         {
@@ -95,34 +104,58 @@ namespace Advance_Control.Views.Pages
                                 var lat = latElement.GetDecimal();
                                 var lng = lngElement.GetDecimal();
 
-                                // Update UI on the UI thread
-                                DispatcherQueue.TryEnqueue(() =>
-                                {
-                                    LatitudTextBox.Text = lat.ToString("F6", CultureInfo.InvariantCulture);
-                                    LongitudTextBox.Text = lng.ToString("F6", CultureInfo.InvariantCulture);
-                                });
+                                // Store coordinates in private fields
+                                _currentLatitud = lat;
+                                _currentLongitud = lng;
 
                                 // Get address information if available
                                 if (jsonDoc.TryGetValue("address", out var addressElement))
                                 {
                                     var addressData = addressElement.Deserialize<Dictionary<string, JsonElement>>();
                                     
-                                    DispatcherQueue.TryEnqueue(() =>
+                                    if (addressData != null)
                                     {
-                                        if (addressData != null)
+                                        // Extract formatted address
+                                        if (addressData.TryGetValue("formatted", out var formattedElement) && 
+                                            formattedElement.ValueKind == JsonValueKind.String)
                                         {
-                                            if (addressData.TryGetValue("formatted", out var formattedElement) && 
-                                                formattedElement.ValueKind == JsonValueKind.String)
-                                            {
-                                                var address = formattedElement.GetString();
-                                                if (!string.IsNullOrEmpty(address))
-                                                {
-                                                    DireccionTextBox.Text = address;
-                                                }
-                                            }
+                                            _currentDireccionCompleta = formattedElement.GetString();
                                         }
-                                    });
+                                        
+                                        // Extract city
+                                        if (addressData.TryGetValue("city", out var cityElement) && 
+                                            cityElement.ValueKind == JsonValueKind.String)
+                                        {
+                                            _currentCiudad = cityElement.GetString();
+                                        }
+                                        
+                                        // Extract state
+                                        if (addressData.TryGetValue("state", out var stateElement) && 
+                                            stateElement.ValueKind == JsonValueKind.String)
+                                        {
+                                            _currentEstado = stateElement.GetString();
+                                        }
+                                        
+                                        // Extract country
+                                        if (addressData.TryGetValue("country", out var countryElement) && 
+                                            countryElement.ValueKind == JsonValueKind.String)
+                                        {
+                                            _currentPais = countryElement.GetString();
+                                        }
+                                        
+                                        // Extract place_id
+                                        if (addressData.TryGetValue("place_id", out var placeIdElement) && 
+                                            placeIdElement.ValueKind == JsonValueKind.String)
+                                        {
+                                            _currentPlaceId = placeIdElement.GetString();
+                                        }
+                                    }
                                 }
+
+                                await _loggingService.LogInformationAsync(
+                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, Pais={_currentPais}", 
+                                    "Ubicaciones", 
+                                    "CoreWebView2_WebMessageReceived");
                             }
                             else
                             {
@@ -417,6 +450,7 @@ namespace Advance_Control.Views.Pages
                 
                 if (status === 'OK' && results && results[0]) {{
                     addressData.formatted = results[0].formatted_address;
+                    addressData.place_id = results[0].place_id;
                     
                     // Extract address components
                     results[0].address_components.forEach(component => {{
@@ -891,27 +925,10 @@ namespace Advance_Control.Views.Pages
                     return;
                 }
 
-                if (!decimal.TryParse(LatitudTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var latitud))
+                // Validate that coordinates were set from the map
+                if (!_currentLatitud.HasValue || !_currentLongitud.HasValue)
                 {
-                    await ShowMessageDialogAsync("Validación", "La latitud debe ser un número válido");
-                    return;
-                }
-
-                if (latitud < -90 || latitud > 90)
-                {
-                    await ShowMessageDialogAsync("Validación", "La latitud debe estar entre -90 y 90");
-                    return;
-                }
-
-                if (!decimal.TryParse(LongitudTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var longitud))
-                {
-                    await ShowMessageDialogAsync("Validación", "La longitud debe ser un número válido");
-                    return;
-                }
-
-                if (longitud < -180 || longitud > 180)
-                {
-                    await ShowMessageDialogAsync("Validación", "La longitud debe estar entre -180 y 180");
+                    await ShowMessageDialogAsync("Validación", "Por favor, haz clic en el mapa para seleccionar una ubicación");
                     return;
                 }
 
@@ -919,9 +936,13 @@ namespace Advance_Control.Views.Pages
                 {
                     Nombre = NombreTextBox.Text,
                     Descripcion = DescripcionTextBox.Text,
-                    Latitud = latitud,
-                    Longitud = longitud,
-                    DireccionCompleta = DireccionTextBox.Text,
+                    Latitud = _currentLatitud.Value,
+                    Longitud = _currentLongitud.Value,
+                    DireccionCompleta = _currentDireccionCompleta,
+                    Ciudad = _currentCiudad,
+                    Estado = _currentEstado,
+                    Pais = _currentPais,
+                    PlaceId = _currentPlaceId,
                     Activo = true
                 };
 
@@ -977,9 +998,13 @@ namespace Advance_Control.Views.Pages
         {
             NombreTextBox.Text = string.Empty;
             DescripcionTextBox.Text = string.Empty;
-            LatitudTextBox.Text = string.Empty;
-            LongitudTextBox.Text = string.Empty;
-            DireccionTextBox.Text = string.Empty;
+            _currentLatitud = null;
+            _currentLongitud = null;
+            _currentDireccionCompleta = null;
+            _currentCiudad = null;
+            _currentEstado = null;
+            _currentPais = null;
+            _currentPlaceId = null;
             _isEditMode = false;
             _editingUbicacionId = null;
         }
@@ -1032,9 +1057,15 @@ namespace Advance_Control.Views.Pages
         {
             NombreTextBox.Text = ubicacion.Nombre ?? string.Empty;
             DescripcionTextBox.Text = ubicacion.Descripcion ?? string.Empty;
-            LatitudTextBox.Text = ubicacion.Latitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
-            LongitudTextBox.Text = ubicacion.Longitud?.ToString("F6", CultureInfo.InvariantCulture) ?? string.Empty;
-            DireccionTextBox.Text = ubicacion.DireccionCompleta ?? string.Empty;
+            
+            // Load location data from existing ubicacion
+            _currentLatitud = ubicacion.Latitud;
+            _currentLongitud = ubicacion.Longitud;
+            _currentDireccionCompleta = ubicacion.DireccionCompleta;
+            _currentCiudad = ubicacion.Ciudad;
+            _currentEstado = ubicacion.Estado;
+            _currentPais = ubicacion.Pais;
+            _currentPlaceId = ubicacion.PlaceId;
         }
 
         /// <summary>
