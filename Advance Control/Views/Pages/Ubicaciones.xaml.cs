@@ -73,6 +73,12 @@ namespace Advance_Control.Views.Pages
             {
                 await MapWebView.EnsureCoreWebView2Async();
                 MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+                
+                // Set parent reference for Areas page
+                if (AreasPage != null)
+                {
+                    AreasPage.ParentUbicacionesPage = this;
+                }
             }
             catch (Exception ex)
             {
@@ -376,6 +382,33 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al cargar el mapa de áreas", ex, "Ubicaciones", "LoadAreasMapAsync");
+            }
+        }
+
+        /// <summary>
+        /// Método público para que la página de Áreas pueda solicitar recarga del mapa
+        /// </summary>
+        public async Task ReloadAreasMapAsync()
+        {
+            await LoadAreasMapAsync();
+        }
+
+        /// <summary>
+        /// Método público para ejecutar script en el WebView2
+        /// Útil para limpiar formas dibujadas, etc.
+        /// </summary>
+        public async Task ExecuteMapScriptAsync(string script)
+        {
+            try
+            {
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync($"Error al ejecutar script en mapa: {script}", ex, "Ubicaciones", "ExecuteMapScriptAsync");
             }
         }
 

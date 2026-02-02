@@ -38,6 +38,9 @@ namespace Advance_Control.Views.Pages
         private decimal? _currentShapeRadius = null;
         private string? _currentShapeBounds = null;
 
+        // Reference to parent Ubicaciones page for map operations
+        public Ubicaciones? ParentUbicacionesPage { get; set; }
+
         public Areas()
         {
             // Resolver el ViewModel desde DI
@@ -611,9 +614,21 @@ namespace Advance_Control.Views.Pages
 
         private async void RefreshButton_Click(object sender, RoutedEventArgs e)
         {
-            // Refresh areas data only - map will be refreshed by parent Ubicaciones page
-            await ViewModel.RefreshAreasAsync();
-            // TODO: Signal parent Ubicaciones page to reload Areas map
+            try
+            {
+                // Refresh areas data
+                await ViewModel.RefreshAreasAsync();
+                
+                // Reload the map through parent Ubicaciones page
+                if (ParentUbicacionesPage != null)
+                {
+                    await ParentUbicacionesPage.ReloadAreasMapAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al refrescar áreas", ex, "Areas", "RefreshButton_Click");
+            }
         }
 
         private void AddButton_Click(object sender, RoutedEventArgs e)
@@ -855,11 +870,12 @@ namespace Advance_Control.Views.Pages
                 // Hide form and reset
                 CancelButton_Click(sender, e);
 
-                // Clear current shape - TODO: Call method on parent Ubicaciones page to clear shape
-                // await MapWebView.CoreWebView2.ExecuteScriptAsync("clearCurrentShape();");
-
-                // Reload map
-                await InitializeMapAsync();
+                // Clear current shape and reload map through parent page
+                if (ParentUbicacionesPage != null)
+                {
+                    await ParentUbicacionesPage.ExecuteMapScriptAsync("clearCurrentShape();");
+                    await ParentUbicacionesPage.ReloadAreasMapAsync();
+                }
             }
             else
             {
