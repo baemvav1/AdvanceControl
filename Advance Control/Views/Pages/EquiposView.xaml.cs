@@ -125,7 +125,8 @@ namespace Advance_Control.Views
                     nuevoEquipoViewModel.Personas,
                     string.IsNullOrWhiteSpace(nuevoEquipoViewModel.Descripcion) ? null : nuevoEquipoViewModel.Descripcion,
                     nuevoEquipoViewModel.Identificador,
-                    nuevoEquipoViewModel.Estatus
+                    nuevoEquipoViewModel.Estatus,
+                    nuevoEquipoViewModel.IdUbicacion
                 );
             }
         }

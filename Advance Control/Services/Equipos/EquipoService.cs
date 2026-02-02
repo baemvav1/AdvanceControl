@@ -62,6 +62,9 @@ namespace Advance_Control.Services.Equipos
                     if (!string.IsNullOrWhiteSpace(query.Identificador))
                         queryParams.Add($"identificador={Uri.EscapeDataString(query.Identificador)}");
 
+                    if (query.IdUbicacion.HasValue)
+                        queryParams.Add($"idUbicacion={query.IdUbicacion.Value}");
+
                     if (queryParams.Count > 0)
                     {
                         url = $"{url}?{string.Join("&", queryParams)}";
@@ -82,6 +85,21 @@ namespace Advance_Control.Services.Equipos
                         null,
                         "EquipoService",
                         "GetEquiposAsync");
+                    
+                    // Try to parse error message from API response
+                    try
+                    {
+                        var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                        if (errorResponse?.Message != null)
+                        {
+                            throw new InvalidOperationException(errorResponse.Message);
+                        }
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        // If we can't parse the error, use a generic message
+                    }
+                    
                     return new List<EquipoDto>();
                 }
 
@@ -125,6 +143,21 @@ namespace Advance_Control.Services.Equipos
                         null,
                         "EquipoService",
                         "DeleteEquipoAsync");
+                    
+                    // Try to parse error message from API response
+                    try
+                    {
+                        var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                        if (errorResponse?.Message != null)
+                        {
+                            throw new InvalidOperationException(errorResponse.Message);
+                        }
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        // If we can't parse the error, throw generic message
+                    }
+                    
                     return false;
                 }
 
@@ -176,6 +209,9 @@ namespace Advance_Control.Services.Equipos
                 if (!string.IsNullOrWhiteSpace(query.Identificador))
                     queryParams.Add($"identificador={Uri.EscapeDataString(query.Identificador)}");
 
+                if (query.IdUbicacion.HasValue)
+                    queryParams.Add($"idUbicacion={query.IdUbicacion.Value}");
+
                 if (queryParams.Count > 0)
                 {
                     url = $"{url}?{string.Join("&", queryParams)}";
@@ -193,6 +229,21 @@ namespace Advance_Control.Services.Equipos
                         null,
                         "EquipoService",
                         "UpdateEquipoAsync");
+                    
+                    // Try to parse error message from API response
+                    try
+                    {
+                        var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                        if (errorResponse?.Message != null)
+                        {
+                            throw new InvalidOperationException(errorResponse.Message);
+                        }
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        // If we can't parse the error, throw generic message
+                    }
+                    
                     return false;
                 }
 
@@ -214,7 +265,7 @@ namespace Advance_Control.Services.Equipos
         /// <summary>
         /// Crea un nuevo equipo
         /// </summary>
-        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, int? idUbicacion = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -236,6 +287,9 @@ namespace Advance_Control.Services.Equipos
                 if (!string.IsNullOrWhiteSpace(descripcion))
                     queryParams.Add($"descripcion={Uri.EscapeDataString(descripcion)}");
 
+                if (idUbicacion.HasValue)
+                    queryParams.Add($"idUbicacion={idUbicacion.Value}");
+
                 url = $"{url}?{string.Join("&", queryParams)}";
 
                 await _logger.LogInformationAsync($"Creando equipo en: {url}", "EquipoService", "CreateEquipoAsync");
@@ -251,6 +305,21 @@ namespace Advance_Control.Services.Equipos
                         null,
                         "EquipoService",
                         "CreateEquipoAsync");
+                    
+                    // Try to parse error message from API response
+                    try
+                    {
+                        var errorResponse = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                        if (errorResponse?.Message != null)
+                        {
+                            throw new InvalidOperationException(errorResponse.Message);
+                        }
+                    }
+                    catch (System.Text.Json.JsonException)
+                    {
+                        // If we can't parse the error, throw generic message
+                    }
+                    
                     return false;
                 }
 

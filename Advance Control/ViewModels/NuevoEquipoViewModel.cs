@@ -19,6 +19,7 @@ namespace Advance_Control.ViewModels
         private string _descripcion = string.Empty;
         private string _identificador = string.Empty;
         private bool _estatus = true;
+        private int? _idUbicacion = null;
         private string _errorMessage = string.Empty;
 
         public NuevoEquipoViewModel(ILoggingService logger)
@@ -177,6 +178,15 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// ID de ubicación del equipo (opcional)
+        /// </summary>
+        public int? IdUbicacion
+        {
+            get => _idUbicacion;
+            set => SetProperty(ref _idUbicacion, value);
+        }
+
+        /// <summary>
         /// Mensaje de error para mostrar al usuario
         /// </summary>
         public string ErrorMessage
@@ -263,6 +273,7 @@ namespace Advance_Control.ViewModels
             Descripcion = string.Empty;
             Identificador = string.Empty;
             Estatus = true;
+            IdUbicacion = null;
             ErrorMessage = string.Empty;
         }
     }
