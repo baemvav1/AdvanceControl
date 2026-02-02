@@ -95,9 +95,10 @@ namespace Advance_Control.Services.Equipos
                             throw new InvalidOperationException(errorResponse.Message);
                         }
                     }
-                    catch (System.Text.Json.JsonException)
+                    catch (System.Text.Json.JsonException jsonEx)
                     {
-                        // If we can't parse the error, throw generic message
+                        // If we can't parse the error, log and throw generic message
+                        await _logger.LogWarningAsync($"No se pudo parsear respuesta de error de la API: {jsonEx.Message}", "EquipoService", "GetEquiposAsync");
                         throw new InvalidOperationException("Error al obtener equipos del servidor.");
                     }
                     
@@ -154,9 +155,10 @@ namespace Advance_Control.Services.Equipos
                             throw new InvalidOperationException(errorResponse.Message);
                         }
                     }
-                    catch (System.Text.Json.JsonException)
+                    catch (System.Text.Json.JsonException jsonEx)
                     {
-                        // If we can't parse the error, throw generic message
+                        // If we can't parse the error, log and throw generic message
+                        await _logger.LogWarningAsync($"No se pudo parsear respuesta de error de la API: {jsonEx.Message}", "EquipoService", "DeleteEquipoAsync");
                         throw new InvalidOperationException("Error al eliminar equipo del servidor.");
                     }
                     
@@ -241,9 +243,10 @@ namespace Advance_Control.Services.Equipos
                             throw new InvalidOperationException(errorResponse.Message);
                         }
                     }
-                    catch (System.Text.Json.JsonException)
+                    catch (System.Text.Json.JsonException jsonEx)
                     {
-                        // If we can't parse the error, throw generic message
+                        // If we can't parse the error, log and throw generic message
+                        await _logger.LogWarningAsync($"No se pudo parsear respuesta de error de la API: {jsonEx.Message}", "EquipoService", "UpdateEquipoAsync");
                         throw new InvalidOperationException("Error al actualizar equipo en el servidor.");
                     }
                     
@@ -318,9 +321,10 @@ namespace Advance_Control.Services.Equipos
                             throw new InvalidOperationException(errorResponse.Message);
                         }
                     }
-                    catch (System.Text.Json.JsonException)
+                    catch (System.Text.Json.JsonException jsonEx)
                     {
-                        // If we can't parse the error, throw generic message
+                        // If we can't parse the error, log and throw generic message
+                        await _logger.LogWarningAsync($"No se pudo parsear respuesta de error de la API: {jsonEx.Message}", "EquipoService", "CreateEquipoAsync");
                         throw new InvalidOperationException("Error al crear equipo en el servidor.");
                     }
                     
