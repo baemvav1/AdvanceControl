@@ -76,12 +76,27 @@ namespace Advance_Control.Views.Pages
             this.Loaded += Ubicaciones_Loaded;
         }
 
-        private async void Ubicaciones_Loaded(object sender, RoutedEventArgs e)
+        private bool _isWebView2Initialized = false;
+
+        /// <summary>
+        /// Ensures WebView2 is initialized and message handler is registered
+        /// This must be called before any map loading to ensure messages are received
+        /// </summary>
+        private async Task EnsureWebView2InitializedAsync()
         {
+            if (_isWebView2Initialized)
+            {
+                return; // Already initialized
+            }
+
             try
             {
+                await _loggingService.LogInformationAsync("Initializing CoreWebView2 and message handler", "Ubicaciones", "EnsureWebView2InitializedAsync");
+                
                 await MapWebView.EnsureCoreWebView2Async();
                 MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+                
+                _isWebView2Initialized = true;
                 
                 // Set parent reference for Areas page
                 if (AreasPage != null)
@@ -92,9 +107,9 @@ namespace Advance_Control.Views.Pages
                     if (_pendingShapeMessage != null)
                     {
                         await _loggingService.LogInformationAsync(
-                            "Forwarding pending shape message to AreasPage during page initialization", 
+                            "Forwarding pending shape message to AreasPage during initialization", 
                             "Ubicaciones", 
-                            "Ubicaciones_Loaded");
+                            "EnsureWebView2InitializedAsync");
                         await AreasPage.HandleShapeMessageAsync(_pendingShapeMessage);
                         _pendingShapeMessage = null; // Clear after forwarding
                     }
@@ -102,7 +117,21 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al configurar WebView2 message handler", ex, "Ubicaciones", "Ubicaciones_Loaded");
+                await _loggingService.LogErrorAsync("Error al inicializar WebView2 message handler", ex, "Ubicaciones", "EnsureWebView2InitializedAsync");
+                throw; // Re-throw to prevent map loading without handler
+            }
+        }
+
+        private async void Ubicaciones_Loaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Ensure WebView2 is initialized when page loads
+                await EnsureWebView2InitializedAsync();
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al configurar WebView2 en Loaded event", ex, "Ubicaciones", "Ubicaciones_Loaded");
             }
         }
 
@@ -265,6 +294,9 @@ namespace Advance_Control.Views.Pages
             try
             {
                 await _loggingService.LogInformationAsync("Navegando a página de Ubicaciones", "Ubicaciones", "OnNavigatedTo");
+
+                // Ensure CoreWebView2 is initialized and message handler is registered BEFORE loading any map
+                await EnsureWebView2InitializedAsync();
 
                 // Inicializar el mapa y cargar datos
                 await ViewModel.InitializeAsync();
@@ -1375,12 +1407,18 @@ namespace Advance_Control.Views.Pages
                     // Recargar el mapa basado en la pestaña seleccionada
                     if (tabHeader == TAB_UBICACIONES)
                     {
+                        // Ensure WebView2 is initialized before loading ubicaciones map
+                        await EnsureWebView2InitializedAsync();
+                        
                         // Recargar el mapa para ubicaciones con marcadores
                         await ViewModel.LoadUbicacionesAsync();
                         await LoadMapAsync();
                     }
                     else if (tabHeader == TAB_AREAS)
                     {
+                        // Ensure WebView2 is initialized before loading areas map
+                        await EnsureWebView2InitializedAsync();
+                        
                         // Ensure AreasViewModel is initialized before loading the map
                         var areasViewModel = AreasPage?.ViewModel;
                         if (areasViewModel != null && !areasViewModel.IsMapInitialized)
