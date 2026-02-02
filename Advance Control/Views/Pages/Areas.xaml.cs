@@ -189,6 +189,13 @@ namespace Advance_Control.Views.Pages
             ColorComboBox.SelectedIndex = 0;
             ActivoCheckBox.IsChecked = true;
 
+            // Clear shape data to ensure clean state for new area
+            _currentShapeType = null;
+            _currentShapePath = null;
+            _currentShapeCenter = null;
+            _currentShapeRadius = null;
+            _currentShapeBounds = null;
+
             // Show form
             AreaForm.Visibility = Visibility.Visible;
             _isFormVisible = true;
