@@ -522,8 +522,7 @@ namespace Advance_Control.Views.Pages
         public async Task ReloadAreasMapAsync()
         {
             await LoadAreasMapAsync();
-            // Update the flag to indicate Areas map is loaded
-            _currentlyLoadedMap = TAB_AREAS;
+            // Note: LoadAreasMapAsync already sets _currentlyLoadedMap = TAB_AREAS
         }
 
         /// <summary>
@@ -1488,8 +1487,7 @@ namespace Advance_Control.Views.Pages
                             // Recargar el mapa para ubicaciones con marcadores
                             await ViewModel.LoadUbicacionesAsync();
                             await LoadMapAsync();
-                            
-                            _currentlyLoadedMap = TAB_UBICACIONES;
+                            // Note: LoadMapAsync sets _currentlyLoadedMap = TAB_UBICACIONES
                             
                             await _loggingService.LogInformationAsync(
                                 "Loaded Ubicaciones map with markers",
@@ -1525,8 +1523,7 @@ namespace Advance_Control.Views.Pages
                                 "Ubicaciones",
                                 "TabView_SelectionChanged");
                             await LoadAreasMapAsync();
-                            
-                            _currentlyLoadedMap = TAB_AREAS;
+                            // Note: LoadAreasMapAsync sets _currentlyLoadedMap = TAB_AREAS
                         }
                         else
                         {
