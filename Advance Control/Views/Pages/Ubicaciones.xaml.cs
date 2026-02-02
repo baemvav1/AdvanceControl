@@ -240,6 +240,7 @@ namespace Advance_Control.Views.Pages
         // Constants
         const SEARCH_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
         const EDIT_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
+        const SELECTED_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/green-dot.png';
         const MARKER_ICON_SIZE = 40;
 
         let map;
@@ -252,6 +253,8 @@ namespace Advance_Control.Views.Pages
         let geocoder = null;
         let isFormVisible = false;
         let searchMarker = null;
+        let selectedLocationMarker = null;
+        let selectedMarkerTimeout = null;
 
         // HTML encoding function for defense-in-depth security
         // Encodes HTML special characters to prevent XSS by leveraging
@@ -626,6 +629,43 @@ namespace Advance_Control.Views.Pages
             infoWindow.setContent(content);
             infoWindow.setPosition(position);
             infoWindow.open(map);
+        }}
+
+        function showSelectedLocationMarker(ubicacion, position) {{
+            // Clear any existing timeout to prevent race conditions
+            if (selectedMarkerTimeout) {{
+                clearTimeout(selectedMarkerTimeout);
+                selectedMarkerTimeout = null;
+            }}
+
+            // Remove previous selected location marker if exists
+            if (selectedLocationMarker) {{
+                selectedLocationMarker.setMap(null);
+            }}
+
+            // Create a new marker for the selected location with distinctive green color
+            selectedLocationMarker = new google.maps.Marker({{
+                position: position,
+                map: map,
+                title: ubicacion.nombre,
+                icon: {{
+                    url: SELECTED_MARKER_ICON,
+                    scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
+                }},
+                animation: google.maps.Animation.BOUNCE,
+                zIndex: 9999 // Ensure it's on top
+            }});
+
+            // Stop bouncing after 2 seconds, storing the timeout reference
+            selectedMarkerTimeout = setTimeout(() => {{
+                if (selectedLocationMarker) {{
+                    selectedLocationMarker.setAnimation(null);
+                }}
+                selectedMarkerTimeout = null;
+            }}, 2000);
+
+            // Show info window for the selected location
+            showUbicacionInfo(ubicacion, position);
         }}
 
         // Inicializar el mapa cuando cargue la página
@@ -1009,7 +1049,7 @@ namespace Advance_Control.Views.Pages
                             var position = {{ lat: {latStr}, lng: {lngStr} }};
                             map.setCenter(position);
                             map.setZoom(15);
-                            showUbicacionInfo(ubicacion, position);
+                            showSelectedLocationMarker(ubicacion, position);
                         }})();
                     ";
                     await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
