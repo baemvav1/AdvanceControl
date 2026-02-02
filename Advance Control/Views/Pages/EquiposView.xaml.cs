@@ -18,6 +18,7 @@ using Advance_Control.Views.Equipos;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Ubicaciones;
+using Advance_Control.Views.Pages;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
