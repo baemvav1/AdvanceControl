@@ -169,8 +169,9 @@ namespace Advance_Control.Views.Pages
                                         }
                                         catch (Exception ex)
                                         {
-                                            // Log error but don't throw - this is a UI update
-                                            _loggingService.LogErrorAsync("Error al actualizar campo de búsqueda", ex, "Ubicaciones", "CoreWebView2_WebMessageReceived").GetAwaiter().GetResult();
+                                            // Fire-and-forget logging to avoid blocking the UI thread
+                                            // We don't await here since this is a UI thread callback
+                                            _ = _loggingService.LogErrorAsync("Error al actualizar campo de búsqueda", ex, "Ubicaciones", "CoreWebView2_WebMessageReceived");
                                         }
                                     });
                                     
