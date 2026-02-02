@@ -35,6 +35,7 @@ namespace Advance_Control.Views.Pages
         private bool _isEditMode = false;
         private int? _editingUbicacionId = null;
         private bool _isFormVisible = false;
+        private bool _isCenteringMap = false;
 
         public Ubicaciones()
         {
@@ -721,6 +722,10 @@ namespace Advance_Control.Views.Pages
         /// </summary>
         private async void UbicacionesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Prevent multiple simultaneous map centering operations
+            if (_isCenteringMap)
+                return;
+
             // When a location is selected from the list, clear search box and show location on map
             if (ViewModel.SelectedUbicacion != null && 
                 ViewModel.SelectedUbicacion.Latitud.HasValue && 
@@ -728,6 +733,8 @@ namespace Advance_Control.Views.Pages
             {
                 try
                 {
+                    _isCenteringMap = true;
+
                     // Clear the search box
                     MapSearchBox.Text = string.Empty;
 
@@ -737,6 +744,10 @@ namespace Advance_Control.Views.Pages
                 catch (Exception ex)
                 {
                     await _loggingService.LogErrorAsync("Error al mostrar ubicación en el mapa", ex, "Ubicaciones", "UbicacionesList_SelectionChanged");
+                }
+                finally
+                {
+                    _isCenteringMap = false;
                 }
             }
         }
@@ -977,7 +988,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Centra el mapa en una ubicación y muestra su información
         /// </summary>
-        private async System.Threading.Tasks.Task CenterMapOnUbicacion(UbicacionDto ubicacion)
+        private async Task CenterMapOnUbicacion(UbicacionDto ubicacion)
         {
             try
             {
@@ -988,12 +999,13 @@ namespace Advance_Control.Views.Pages
                     
                     // Serialize the ubicacion for the JavaScript function
                     var ubicacionJson = JsonSerializer.Serialize(ubicacion);
-                    // Use proper JavaScript encoding to prevent XSS attacks
-                    var encodedJson = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(ubicacionJson);
+                    // Convert to base64 to safely pass JSON data to JavaScript
+                    var base64Json = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(ubicacionJson));
                     
                     var script = $@"
                         (function() {{
-                            var ubicacion = JSON.parse('{encodedJson}');
+                            var ubicacionJson = atob('{base64Json}');
+                            var ubicacion = JSON.parse(ubicacionJson);
                             var position = {{ lat: {latStr}, lng: {lngStr} }};
                             map.setCenter(position);
                             map.setZoom(15);
