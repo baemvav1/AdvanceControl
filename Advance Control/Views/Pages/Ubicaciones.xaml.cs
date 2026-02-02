@@ -153,7 +153,7 @@ namespace Advance_Control.Views.Pages
                                 }
 
                                 await _loggingService.LogInformationAsync(
-                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, Pais={_currentPais}", 
+                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}", 
                                     "Ubicaciones", 
                                     "CoreWebView2_WebMessageReceived");
                             }
