@@ -316,9 +316,18 @@ namespace Advance_Control.Views.Pages
                     }
                     else if (messageType == "shapeDrawn" || messageType == "shapeEdited")
                     {
+                        await _loggingService.LogInformationAsync(
+                            $"Shape message received: type={messageType}, AreasPage={(AreasPage != null ? "EXISTS" : "NULL")}",
+                            "Ubicaciones",
+                            "CoreWebView2_WebMessageReceived");
+                        
                         // Forward shape messages to Areas page if it exists
                         if (AreasPage != null)
                         {
+                            await _loggingService.LogInformationAsync(
+                                $"Forwarding shape message immediately to AreasPage",
+                                "Ubicaciones",
+                                "CoreWebView2_WebMessageReceived");
                             await AreasPage.HandleShapeMessageAsync(jsonDoc);
                         }
                         else
