@@ -264,11 +264,11 @@ namespace Advance_Control.Views.Pages
                 }
                 catch (JsonException ex)
                 {
-                    _loggingService.LogWarningAsync(
+                    _ = _loggingService.LogWarningAsync(
                         $"Error parsing path JSON for area {area.IdArea}",
                         "AreasView",
                         "ParsePathJson",
-                        ex).ConfigureAwait(false);
+                        ex);
                 }
             }
             return null;
