@@ -61,8 +61,10 @@ namespace Advance_Control.Views.Pages
         private Dictionary<string, JsonElement>? _pendingShapeMessage = null;
         
         // WebView2 initialization state
-        private bool _isWebView2Initialized = false;
+        // Volatile ensures visibility across threads
+        private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
+        private bool _isDisposed = false;
 
         public Ubicaciones()
         {
@@ -87,8 +89,22 @@ namespace Advance_Control.Views.Pages
         /// </summary>
         private void Ubicaciones_Unloaded(object sender, RoutedEventArgs e)
         {
-            // Dispose of SemaphoreSlim to prevent resource leaks
-            _webView2InitLock?.Dispose();
+            // Mark as disposed to prevent further operations
+            _isDisposed = true;
+            
+            // Give a brief moment for any in-flight initialization to complete
+            // This is a best-effort approach to avoid ObjectDisposedException
+            Task.Delay(100).ContinueWith(_ =>
+            {
+                try
+                {
+                    _webView2InitLock?.Dispose();
+                }
+                catch (ObjectDisposedException)
+                {
+                    // Semaphore already disposed, ignore
+                }
+            });
         }
 
         /// <summary>
@@ -98,6 +114,13 @@ namespace Advance_Control.Views.Pages
         /// </summary>
         private async Task EnsureWebView2InitializedAsync()
         {
+            // Check if page is disposed
+            if (_isDisposed)
+            {
+                await _loggingService.LogWarningAsync("Cannot initialize WebView2 - page is disposed", "Ubicaciones", "EnsureWebView2InitializedAsync");
+                return;
+            }
+            
             if (_isWebView2Initialized)
             {
                 return; // Already initialized
@@ -108,9 +131,9 @@ namespace Advance_Control.Views.Pages
             try
             {
                 // Double-check after acquiring lock
-                if (_isWebView2Initialized)
+                if (_isWebView2Initialized || _isDisposed)
                 {
-                    return; // Already initialized by another thread
+                    return; // Already initialized by another thread or page is disposed
                 }
 
                 await _loggingService.LogInformationAsync("Initializing CoreWebView2 and message handler", "Ubicaciones", "EnsureWebView2InitializedAsync");
