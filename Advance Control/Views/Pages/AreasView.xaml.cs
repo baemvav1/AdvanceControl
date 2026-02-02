@@ -262,9 +262,13 @@ namespace Advance_Control.Views.Pages
                         return JsonSerializer.Deserialize<object>(pathElement.GetRawText());
                     }
                 }
-                catch
+                catch (JsonException ex)
                 {
-                    // Ignore parsing errors
+                    _loggingService.LogWarningAsync(
+                        $"Error parsing path JSON for area {area.IdArea}",
+                        "AreasView",
+                        "ParsePathJson",
+                        ex).ConfigureAwait(false);
                 }
             }
             return null;
@@ -763,11 +767,11 @@ namespace Advance_Control.Views.Pages
                         }
                         catch (JsonException ex)
                         {
-                            _loggingService.LogErrorAsync(
+                            _ = _loggingService.LogErrorAsync(
                                 "Error al parsear MetadataJSON del área",
                                 ex,
                                 "AreasView",
-                                "EditButton_Click").ConfigureAwait(false);
+                                "EditButton_Click");
                         }
                     }
                 }
@@ -934,7 +938,14 @@ namespace Advance_Control.Views.Pages
                         area.CentroLongitud = center.GetValueOrDefault("lng");
                     }
                 }
-                catch { }
+                catch (JsonException ex)
+                {
+                    _ = _loggingService.LogWarningAsync(
+                        "Error parsing center JSON",
+                        "AreasView",
+                        "SaveButton_Click",
+                        ex);
+                }
             }
 
             if (!string.IsNullOrEmpty(_currentShapeBounds))
@@ -950,7 +961,14 @@ namespace Advance_Control.Views.Pages
                         area.BoundingBoxSW_Lng = bounds.GetValueOrDefault("west");
                     }
                 }
-                catch { }
+                catch (JsonException ex)
+                {
+                    _ = _loggingService.LogWarningAsync(
+                        "Error parsing bounds JSON",
+                        "AreasView",
+                        "SaveButton_Click",
+                        ex);
+                }
             }
 
             if (_currentShapeRadius.HasValue)
