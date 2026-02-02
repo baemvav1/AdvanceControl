@@ -34,6 +34,10 @@ namespace Advance_Control.Views.Pages
         // Delay in milliseconds to ensure map is initialized before centering
         private const int MAP_INITIALIZATION_DELAY_MS = 500;
 
+        // Tab header names for TabView
+        private const string TAB_UBICACIONES = "Ubicaciones";
+        private const string TAB_AREAS = "Áreas";
+
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
         private bool _isEditMode = false;
@@ -412,6 +416,11 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        /// <summary>
+        /// Extrae el path (coordenadas) de un área desde su MetadataJSON
+        /// </summary>
+        /// <param name="area">DTO del área con MetadataJSON</param>
+        /// <returns>Objeto con array de coordenadas, o null si no se encuentra</returns>
         private object? ParseAreaPath(AreaDto area)
         {
             if (!string.IsNullOrEmpty(area.MetadataJSON))
@@ -432,6 +441,11 @@ namespace Advance_Control.Views.Pages
             return null;
         }
 
+        /// <summary>
+        /// Extrae las coordenadas del centro de un área
+        /// </summary>
+        /// <param name="area">DTO del área con CentroLatitud y CentroLongitud</param>
+        /// <returns>Objeto con lat/lng, o null si no están disponibles</returns>
         private object? ParseAreaCenter(AreaDto area)
         {
             if (area.CentroLatitud.HasValue && area.CentroLongitud.HasValue)
@@ -1228,13 +1242,13 @@ namespace Advance_Control.Views.Pages
                     await _loggingService.LogInformationAsync($"Tab seleccionada: {tabHeader}", "Ubicaciones", "TabView_SelectionChanged");
 
                     // Recargar el mapa basado en la pestaña seleccionada
-                    if (tabHeader == "Ubicaciones")
+                    if (tabHeader == TAB_UBICACIONES)
                     {
                         // Recargar el mapa para ubicaciones con marcadores
                         await ViewModel.LoadUbicacionesAsync();
                         await LoadMapAsync();
                     }
-                    else if (tabHeader == "Áreas")
+                    else if (tabHeader == TAB_AREAS)
                     {
                         // Recargar el mapa para áreas con herramientas de dibujo
                         await LoadAreasMapAsync();
