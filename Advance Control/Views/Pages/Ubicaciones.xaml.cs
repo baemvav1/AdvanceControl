@@ -79,9 +79,17 @@ namespace Advance_Control.Views.Pages
 
             // Setup WebView2 message handler
             this.Loaded += Ubicaciones_Loaded;
+            this.Unloaded += Ubicaciones_Unloaded;
         }
 
-        private bool _isWebView2Initialized = false;
+        /// <summary>
+        /// Cleanup resources when page is unloaded
+        /// </summary>
+        private void Ubicaciones_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // Dispose of SemaphoreSlim to prevent resource leaks
+            _webView2InitLock?.Dispose();
+        }
 
         /// <summary>
         /// Ensures WebView2 is initialized and message handler is registered
