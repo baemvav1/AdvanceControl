@@ -17,6 +17,7 @@ using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Ubicaciones;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -31,7 +32,7 @@ namespace Advance_Control.Views
         public EquiposViewModel ViewModel { get; }
         private readonly IRelacionService _relacionService;
         private readonly INotificacionService _notificacionService;
-        private readonly Services.Ubicaciones.IUbicacionService _ubicacionService;
+        private readonly IUbicacionService _ubicacionService;
 
         public EquiposView()
         {
@@ -45,7 +46,7 @@ namespace Advance_Control.Views
             _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
             
             // Resolver el servicio de ubicaciones desde DI
-            _ubicacionService = ((App)Application.Current).Host.Services.GetRequiredService<Services.Ubicaciones.IUbicacionService>();
+            _ubicacionService = ((App)Application.Current).Host.Services.GetRequiredService<IUbicacionService>();
             
             this.InitializeComponent();
             
