@@ -44,6 +44,9 @@ namespace Advance_Control.Models
         [JsonPropertyName("estatus")]
         public bool? Estatus { get; set; }
 
+        [JsonPropertyName("idUbicacion")]
+        public int? IdUbicacion { get; set; }
+
         private bool _expand = false;
 
         /// <summary>

@@ -39,5 +39,10 @@ namespace Advance_Control.Models
         /// Búsqueda parcial por identificador (LIKE)
         /// </summary>
         public string? Identificador { get; set; }
+
+        /// <summary>
+        /// Filtro exacto por ID de ubicación
+        /// </summary>
+        public int? IdUbicacion { get; set; }
     }
 }

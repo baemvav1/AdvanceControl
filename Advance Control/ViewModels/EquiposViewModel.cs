@@ -315,13 +315,13 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Crea un nuevo equipo
         /// </summary>
-        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, int? idUbicacion = null, CancellationToken cancellationToken = default)
         {
             try
             {
                 await _logger.LogInformationAsync($"Creando nuevo equipo...", "EquiposViewModel", "CreateEquipoAsync");
 
-                var result = await _equipoService.CreateEquipoAsync(marca, creado, paradas, kilogramos, personas, descripcion, identificador, estatus, cancellationToken);
+                var result = await _equipoService.CreateEquipoAsync(marca, creado, paradas, kilogramos, personas, descripcion, identificador, estatus, idUbicacion, cancellationToken);
 
                 if (result)
                 {
