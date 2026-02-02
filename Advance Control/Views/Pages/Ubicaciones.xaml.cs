@@ -115,7 +115,7 @@ namespace Advance_Control.Views.Pages
                                     
                                     if (addressData != null)
                                     {
-                                        // Extract formatted address
+                                         // Extract formatted address
                                         if (addressData.TryGetValue("formatted", out var formattedElement) && 
                                             formattedElement.ValueKind == JsonValueKind.String)
                                         {
@@ -125,9 +125,10 @@ namespace Advance_Control.Views.Pages
                                             // This provides the user with immediate feedback about the selected location
                                             if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
                                             {
+                                                var addressToDisplay = _currentDireccionCompleta;
                                                 this.DispatcherQueue.TryEnqueue(() =>
                                                 {
-                                                    MapSearchBox.Text = _currentDireccionCompleta;
+                                                    MapSearchBox.Text = addressToDisplay;
                                                 });
                                             }
                                         }
@@ -162,8 +163,14 @@ namespace Advance_Control.Views.Pages
                                     }
                                 }
 
+                                var logMessage = $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}";
+                                if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
+                                {
+                                    logMessage += $", Dirección={_currentDireccionCompleta}. Campo de búsqueda actualizado con la dirección.";
+                                }
+                                
                                 await _loggingService.LogInformationAsync(
-                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Dirección={_currentDireccionCompleta}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}. Campo de búsqueda actualizado con la dirección.", 
+                                    logMessage, 
                                     "Ubicaciones", 
                                     "CoreWebView2_WebMessageReceived");
                             }
