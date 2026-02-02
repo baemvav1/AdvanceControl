@@ -218,11 +218,21 @@ namespace Advance_Control.Services.Areas
                     return new ApiResponse { Success = false, Message = "El área no puede ser nula" };
                 }
 
+                // Validate required field 'nombre' before making API call
+                if (string.IsNullOrWhiteSpace(area.Nombre))
+                {
+                    return new ApiResponse { Success = false, Message = "El nombre del área es requerido" };
+                }
+
                 var url = _endpoints.GetEndpoint("api", "Areas");
+
+                // Build query parameters to match the API controller's [FromQuery] parameters
+                var queryParams = BuildAreaQueryParams(area, isCreate: true);
+                url = $"{url}?{string.Join("&", queryParams)}";
 
                 await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasService", "CreateAreaAsync");
 
-                var response = await _http.PostAsJsonAsync(url, area, cancellationToken).ConfigureAwait(false);
+                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -282,9 +292,17 @@ namespace Advance_Control.Services.Areas
 
                 var url = _endpoints.GetEndpoint("api", "Areas", idArea.ToString());
 
+                // Build query parameters to match the API controller's [FromQuery] parameters
+                var queryParams = BuildAreaQueryParams(area, isCreate: false);
+
+                if (queryParams.Count > 0)
+                {
+                    url = $"{url}?{string.Join("&", queryParams)}";
+                }
+
                 await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
 
-                var response = await _http.PutAsJsonAsync(url, area, cancellationToken).ConfigureAwait(false);
+                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -376,6 +394,73 @@ namespace Advance_Control.Services.Areas
                 await _logger.LogErrorAsync("Error inesperado al eliminar área", ex, "AreasService", "DeleteAreaAsync");
                 return new ApiResponse { Success = false, Message = "Error inesperado al eliminar área" };
             }
+        }
+
+        /// <summary>
+        /// Builds query parameters from an AreaDto to match the API controller's [FromQuery] parameters
+        /// </summary>
+        private List<string> BuildAreaQueryParams(AreaDto area, bool isCreate)
+        {
+            var queryParams = new List<string>();
+
+            // nombre - should always be present since it's validated before calling this method for create
+            if (!string.IsNullOrWhiteSpace(area.Nombre))
+                queryParams.Add($"nombre={Uri.EscapeDataString(area.Nombre)}");
+
+            // Optional parameters
+            if (!string.IsNullOrWhiteSpace(area.Descripcion))
+                queryParams.Add($"descripcion={Uri.EscapeDataString(area.Descripcion)}");
+
+            if (!string.IsNullOrWhiteSpace(area.ColorMapa))
+                queryParams.Add($"colorMapa={Uri.EscapeDataString(area.ColorMapa)}");
+
+            if (area.Opacidad.HasValue)
+                queryParams.Add($"opacidad={area.Opacidad.Value}");
+
+            if (!string.IsNullOrWhiteSpace(area.ColorBorde))
+                queryParams.Add($"colorBorde={Uri.EscapeDataString(area.ColorBorde)}");
+
+            if (area.AnchoBorde.HasValue)
+                queryParams.Add($"anchoBorde={area.AnchoBorde.Value}");
+
+            if (area.Activo.HasValue)
+                queryParams.Add($"activo={(area.Activo.Value ? "true" : "false")}");
+
+            if (!string.IsNullOrWhiteSpace(area.TipoGeometria))
+                queryParams.Add($"tipoGeometria={Uri.EscapeDataString(area.TipoGeometria)}");
+
+            if (area.CentroLatitud.HasValue)
+                queryParams.Add($"centroLatitud={area.CentroLatitud.Value}");
+
+            if (area.CentroLongitud.HasValue)
+                queryParams.Add($"centroLongitud={area.CentroLongitud.Value}");
+
+            if (area.Radio.HasValue)
+                queryParams.Add($"radio={area.Radio.Value}");
+
+            if (area.EtiquetaMostrar.HasValue)
+                queryParams.Add($"etiquetaMostrar={(area.EtiquetaMostrar.Value ? "true" : "false")}");
+
+            if (!string.IsNullOrWhiteSpace(area.EtiquetaTexto))
+                queryParams.Add($"etiquetaTexto={Uri.EscapeDataString(area.EtiquetaTexto)}");
+
+            if (area.NivelZoom.HasValue)
+                queryParams.Add($"nivelZoom={area.NivelZoom.Value}");
+
+            if (!string.IsNullOrWhiteSpace(area.MetadataJSON))
+                queryParams.Add($"metadataJSON={Uri.EscapeDataString(area.MetadataJSON)}");
+
+            // User tracking parameters
+            if (isCreate && !string.IsNullOrWhiteSpace(area.UsuarioCreacion))
+                queryParams.Add($"usuarioCreacion={Uri.EscapeDataString(area.UsuarioCreacion)}");
+
+            if (!isCreate && !string.IsNullOrWhiteSpace(area.UsuarioModificacion))
+                queryParams.Add($"usuarioModificacion={Uri.EscapeDataString(area.UsuarioModificacion)}");
+
+            // The API also supports: coordenadas, autoCalcularCentro, validarPoligonoLargo
+            // These are not in the current AreaDto, but MetadataJSON can contain coordinate data
+
+            return queryParams;
         }
     }
 }
