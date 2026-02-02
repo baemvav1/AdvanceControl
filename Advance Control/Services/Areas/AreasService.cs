@@ -203,5 +203,179 @@ namespace Advance_Control.Services.Areas
                 throw;
             }
         }
+
+        /// <summary>
+        /// Crea una nueva área geográfica
+        /// </summary>
+        public async Task<ApiResponse> CreateAreaAsync(
+            AreaDto area,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (area == null)
+                {
+                    return new ApiResponse { Success = false, Message = "El área no puede ser nula" };
+                }
+
+                var url = _endpoints.GetEndpoint("api", "Areas");
+
+                await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasService", "CreateAreaAsync");
+
+                var response = await _http.PostAsJsonAsync(url, area, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al crear área. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "AreasService",
+                        "CreateAreaAsync");
+                    return new ApiResponse { Success = false, Message = $"Error del servidor: {response.StatusCode}" };
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (result?.Success == true)
+                {
+                    await _logger.LogInformationAsync($"Área creada exitosamente: {area.Nombre}", "AreasService", "CreateAreaAsync");
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"No se pudo crear el área. Mensaje: {result?.Message}", "AreasService", "CreateAreaAsync");
+                }
+
+                return result ?? new ApiResponse { Success = false, Message = "Error desconocido al crear área" };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al crear área", ex, "AreasService", "CreateAreaAsync");
+                return new ApiResponse { Success = false, Message = "Error de comunicación con el servidor" };
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al crear área", ex, "AreasService", "CreateAreaAsync");
+                return new ApiResponse { Success = false, Message = "Error inesperado al crear área" };
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un área geográfica existente
+        /// </summary>
+        public async Task<ApiResponse> UpdateAreaAsync(
+            int idArea,
+            AreaDto area,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (area == null)
+                {
+                    return new ApiResponse { Success = false, Message = "El área no puede ser nula" };
+                }
+
+                if (idArea <= 0)
+                {
+                    return new ApiResponse { Success = false, Message = "ID de área inválido" };
+                }
+
+                var url = _endpoints.GetEndpoint("api", "Areas", idArea.ToString());
+
+                await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
+
+                var response = await _http.PutAsJsonAsync(url, area, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al actualizar área. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "AreasService",
+                        "UpdateAreaAsync");
+                    return new ApiResponse { Success = false, Message = $"Error del servidor: {response.StatusCode}" };
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (result?.Success == true)
+                {
+                    await _logger.LogInformationAsync($"Área actualizada exitosamente: {idArea}", "AreasService", "UpdateAreaAsync");
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"No se pudo actualizar el área. Mensaje: {result?.Message}", "AreasService", "UpdateAreaAsync");
+                }
+
+                return result ?? new ApiResponse { Success = false, Message = "Error desconocido al actualizar área" };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al actualizar área", ex, "AreasService", "UpdateAreaAsync");
+                return new ApiResponse { Success = false, Message = "Error de comunicación con el servidor" };
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al actualizar área", ex, "AreasService", "UpdateAreaAsync");
+                return new ApiResponse { Success = false, Message = "Error inesperado al actualizar área" };
+            }
+        }
+
+        /// <summary>
+        /// Elimina un área geográfica
+        /// </summary>
+        public async Task<ApiResponse> DeleteAreaAsync(
+            int idArea,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (idArea <= 0)
+                {
+                    return new ApiResponse { Success = false, Message = "ID de área inválido" };
+                }
+
+                var url = _endpoints.GetEndpoint("api", "Areas", idArea.ToString());
+
+                await _logger.LogInformationAsync($"Eliminando área ID: {idArea}", "AreasService", "DeleteAreaAsync");
+
+                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al eliminar área. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "AreasService",
+                        "DeleteAreaAsync");
+                    return new ApiResponse { Success = false, Message = $"Error del servidor: {response.StatusCode}" };
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                if (result?.Success == true)
+                {
+                    await _logger.LogInformationAsync($"Área eliminada exitosamente: {idArea}", "AreasService", "DeleteAreaAsync");
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"No se pudo eliminar el área. Mensaje: {result?.Message}", "AreasService", "DeleteAreaAsync");
+                }
+
+                return result ?? new ApiResponse { Success = false, Message = "Error desconocido al eliminar área" };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al eliminar área", ex, "AreasService", "DeleteAreaAsync");
+                return new ApiResponse { Success = false, Message = "Error de comunicación con el servidor" };
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al eliminar área", ex, "AreasService", "DeleteAreaAsync");
+                return new ApiResponse { Success = false, Message = "Error inesperado al eliminar área" };
+            }
+        }
     }
 }

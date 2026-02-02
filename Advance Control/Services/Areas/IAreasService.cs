@@ -36,5 +36,27 @@ namespace Advance_Control.Services.Areas
             decimal longitud,
             int? idArea = null,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Crea una nueva área geográfica
+        /// </summary>
+        Task<ApiResponse> CreateAreaAsync(
+            AreaDto area,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Actualiza un área geográfica existente
+        /// </summary>
+        Task<ApiResponse> UpdateAreaAsync(
+            int idArea,
+            AreaDto area,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Elimina un área geográfica
+        /// </summary>
+        Task<ApiResponse> DeleteAreaAsync(
+            int idArea,
+            CancellationToken cancellationToken = default);
     }
 }
