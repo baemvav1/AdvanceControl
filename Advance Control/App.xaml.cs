@@ -505,5 +505,8 @@ namespace Advance_Control
 
             window.Activate();
         }
+
+
+       
     }
 }

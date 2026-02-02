@@ -631,7 +631,7 @@ namespace Advance_Control.Views
                 return;
 
             // Navegar a la página de Ubicaciones pasando el ID de ubicación
-            Frame.Navigate(typeof(Ubicaciones), equipo.IdUbicacion.Value);
+            Frame.Navigate(typeof(UbicacionesView), equipo.IdUbicacion.Value);
         }
 
     }

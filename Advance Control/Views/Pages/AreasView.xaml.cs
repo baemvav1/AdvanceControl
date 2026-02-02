@@ -267,8 +267,7 @@ namespace Advance_Control.Views.Pages
                     _ = _loggingService.LogWarningAsync(
                         $"Error parsing path JSON for area {area.IdArea}",
                         "AreasView",
-                        "ParsePathJson",
-                        ex);
+                        "ParsePathJson");
                 }
             }
             return null;
@@ -943,8 +942,7 @@ namespace Advance_Control.Views.Pages
                     _ = _loggingService.LogWarningAsync(
                         "Error parsing center JSON",
                         "AreasView",
-                        "SaveButton_Click",
-                        ex);
+                        "SaveButton_Click");
                 }
             }
 
@@ -966,8 +964,7 @@ namespace Advance_Control.Views.Pages
                     _ = _loggingService.LogWarningAsync(
                         "Error parsing bounds JSON",
                         "AreasView",
-                        "SaveButton_Click",
-                        ex);
+                        "SaveButton_Click");
                 }
             }
 
