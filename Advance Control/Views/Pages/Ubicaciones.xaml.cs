@@ -123,10 +123,13 @@ namespace Advance_Control.Views.Pages
                                             
                                             // Update search box with the formatted address for visual validation
                                             // This provides the user with immediate feedback about the selected location
-                                            this.DispatcherQueue.TryEnqueue(() =>
+                                            if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
                                             {
-                                                MapSearchBox.Text = _currentDireccionCompleta;
-                                            });
+                                                this.DispatcherQueue.TryEnqueue(() =>
+                                                {
+                                                    MapSearchBox.Text = _currentDireccionCompleta;
+                                                });
+                                            }
                                         }
                                         
                                         // Extract city
@@ -160,7 +163,7 @@ namespace Advance_Control.Views.Pages
                                 }
 
                                 await _loggingService.LogInformationAsync(
-                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Dirección={_currentDireccionCompleta}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}. Campo de búsqueda actualizado con dirección.", 
+                                    $"Ubicación actualizada: Lat={lat}, Lng={lng}, Dirección={_currentDireccionCompleta}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}. Campo de búsqueda actualizado con la dirección.", 
                                     "Ubicaciones", 
                                     "CoreWebView2_WebMessageReceived");
                             }
