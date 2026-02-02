@@ -240,21 +240,6 @@
              PlaceholderText="Descripción opcional"
              TextWrapping="Wrap" />
 
-                            <TextBox
-             x:Name="LatitudTextBox"
-             Header="Latitud *"
-             PlaceholderText="19.4326" />
-
-                            <TextBox
-             x:Name="LongitudTextBox"
-             Header="Longitud *"
-             PlaceholderText="-99.1332" />
-
-                            <TextBox
-             x:Name="DireccionTextBox"
-             Header="Dirección Completa"
-             PlaceholderText="Dirección opcional" />
-
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <Button
                  x:Name="SaveButton"
