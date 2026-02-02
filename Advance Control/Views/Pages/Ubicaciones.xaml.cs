@@ -1356,6 +1356,13 @@ namespace Advance_Control.Views.Pages
                     }
                     else if (tabHeader == TAB_AREAS)
                     {
+                        // Ensure AreasViewModel is initialized before loading the map
+                        var areasViewModel = AreasPage?.ViewModel;
+                        if (areasViewModel != null && !areasViewModel.IsMapInitialized)
+                        {
+                            await areasViewModel.InitializeAsync();
+                        }
+                        
                         // Recargar el mapa para áreas con herramientas de dibujo
                         await LoadAreasMapAsync();
                     }
