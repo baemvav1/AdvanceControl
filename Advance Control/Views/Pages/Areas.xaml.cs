@@ -189,12 +189,9 @@ namespace Advance_Control.Views.Pages
             ColorComboBox.SelectedIndex = 0;
             ActivoCheckBox.IsChecked = true;
 
-            // Clear shape data to ensure clean state for new area
-            _currentShapeType = null;
-            _currentShapePath = null;
-            _currentShapeCenter = null;
-            _currentShapeRadius = null;
-            _currentShapeBounds = null;
+            // Do NOT clear shape data - preserve any shape already drawn on the map
+            // This allows users to draw a shape first, then click "Agregar" and save immediately
+            // Shape data will be cleared when canceling or after successfully saving
 
             // Show form
             AreaForm.Visibility = Visibility.Visible;
