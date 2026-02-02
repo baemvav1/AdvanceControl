@@ -120,17 +120,6 @@ namespace Advance_Control.Views.Pages
                                             formattedElement.ValueKind == JsonValueKind.String)
                                         {
                                             _currentDireccionCompleta = formattedElement.GetString();
-                                            
-                                            // Update search box with the formatted address for visual validation
-                                            // This provides the user with immediate feedback about the selected location
-                                            if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
-                                            {
-                                                var addressToDisplay = _currentDireccionCompleta;
-                                                this.DispatcherQueue.TryEnqueue(() =>
-                                                {
-                                                    MapSearchBox.Text = addressToDisplay;
-                                                });
-                                            }
                                         }
                                         
                                         // Extract city
@@ -163,10 +152,44 @@ namespace Advance_Control.Views.Pages
                                     }
                                 }
 
+                                // Update search box with the formatted address for visual validation
+                                // This provides the user with immediate feedback about the selected location
+                                var searchBoxUpdated = false;
+                                if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
+                                {
+                                    var addressToDisplay = _currentDireccionCompleta;
+                                    var enqueued = this.DispatcherQueue.TryEnqueue(() =>
+                                    {
+                                        try
+                                        {
+                                            if (MapSearchBox != null)
+                                            {
+                                                MapSearchBox.Text = addressToDisplay;
+                                            }
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            // Log error but don't throw - this is a UI update
+                                            _loggingService.LogErrorAsync("Error al actualizar campo de búsqueda", ex, "Ubicaciones", "CoreWebView2_WebMessageReceived").GetAwaiter().GetResult();
+                                        }
+                                    });
+                                    
+                                    searchBoxUpdated = enqueued;
+                                    
+                                    if (!enqueued)
+                                    {
+                                        await _loggingService.LogWarningAsync("No se pudo encolar la actualización del campo de búsqueda", "Ubicaciones", "CoreWebView2_WebMessageReceived");
+                                    }
+                                }
+
                                 var logMessage = $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}";
                                 if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
                                 {
-                                    logMessage += $", Dirección={_currentDireccionCompleta}. Campo de búsqueda actualizado con la dirección.";
+                                    logMessage += $", Dirección={_currentDireccionCompleta}";
+                                    if (searchBoxUpdated)
+                                    {
+                                        logMessage += ". Campo de búsqueda actualizado con la dirección";
+                                    }
                                 }
                                 
                                 await _loggingService.LogInformationAsync(
