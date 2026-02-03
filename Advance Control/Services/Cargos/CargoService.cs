@@ -72,6 +72,12 @@ namespace Advance_Control.Services.Cargos
                     if (query.IdProveedor.HasValue)
                         queryParams.Add($"idProveedor={query.IdProveedor.Value}");
 
+                    if (query.Cantidad.HasValue)
+                        queryParams.Add($"cantidad={query.Cantidad.Value}");
+
+                    if (query.Unitario.HasValue)
+                        queryParams.Add($"unitario={query.Unitario.Value}");
+
                     if (queryParams.Count > 0)
                     {
                         url = $"{url}?{string.Join("&", queryParams)}";
@@ -191,6 +197,12 @@ namespace Advance_Control.Services.Cargos
                 if (query.IdProveedor.HasValue)
                     queryParams.Add($"idProveedor={query.IdProveedor.Value}");
 
+                if (query.Cantidad.HasValue)
+                    queryParams.Add($"cantidad={query.Cantidad.Value}");
+
+                if (query.Unitario.HasValue)
+                    queryParams.Add($"unitario={query.Unitario.Value}");
+
                 url = $"{url}?{string.Join("&", queryParams)}";
 
                 await _logger.LogInformationAsync($"Creando cargo en: {url}", "CargoService", "CreateCargoAsync");
@@ -242,7 +254,9 @@ namespace Advance_Control.Services.Cargos
                             IdOperacion = query.IdOperacion,
                             IdRelacionCargo = query.IdRelacionCargo,
                             Monto = query.Monto,
-                            Nota = query.Nota
+                            Nota = query.Nota,
+                            Cantidad = query.Cantidad,
+                            Unitario = query.Unitario
                         };
                     }
                     else
@@ -292,6 +306,12 @@ namespace Advance_Control.Services.Cargos
 
                 if (query.IdProveedor.HasValue)
                     queryParams.Add($"idProveedor={query.IdProveedor.Value}");
+
+                if (query.Cantidad.HasValue)
+                    queryParams.Add($"cantidad={query.Cantidad.Value}");
+
+                if (query.Unitario.HasValue)
+                    queryParams.Add($"unitario={query.Unitario.Value}");
 
                 if (queryParams.Count > 0)
                 {

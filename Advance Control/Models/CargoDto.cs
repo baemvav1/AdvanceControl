@@ -182,5 +182,41 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        private double? _cantidad;
+        /// <summary>
+        /// Cantidad del cargo
+        /// </summary>
+        [JsonPropertyName("cantidad")]
+        public double? Cantidad
+        {
+            get => _cantidad;
+            set
+            {
+                if (_cantidad != value)
+                {
+                    _cantidad = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private double? _unitario;
+        /// <summary>
+        /// Precio unitario del cargo
+        /// </summary>
+        [JsonPropertyName("unitario")]
+        public double? Unitario
+        {
+            get => _unitario;
+            set
+            {
+                if (_unitario != value)
+                {
+                    _unitario = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }

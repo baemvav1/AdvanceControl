@@ -44,5 +44,15 @@ namespace Advance_Control.Models
         /// ID del proveedor
         /// </summary>
         public int? IdProveedor { get; set; }
+
+        /// <summary>
+        /// Cantidad del cargo
+        /// </summary>
+        public double? Cantidad { get; set; }
+
+        /// <summary>
+        /// Precio unitario del cargo
+        /// </summary>
+        public double? Unitario { get; set; }
     }
 }

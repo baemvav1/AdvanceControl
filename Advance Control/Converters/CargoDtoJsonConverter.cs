@@ -74,6 +74,14 @@ namespace Advance_Control.Converters
                 {
                     cargo.Proveedor = reader.TokenType == JsonTokenType.Null ? null : reader.GetString();
                 }
+                else if (propertyName.Equals("cantidad", StringComparison.OrdinalIgnoreCase))
+                {
+                    cargo.Cantidad = reader.TokenType == JsonTokenType.Null ? null : reader.GetDouble();
+                }
+                else if (propertyName.Equals("unitario", StringComparison.OrdinalIgnoreCase))
+                {
+                    cargo.Unitario = reader.TokenType == JsonTokenType.Null ? null : reader.GetDouble();
+                }
                 else
                 {
                     // Skip unknown properties
@@ -130,6 +138,16 @@ namespace Advance_Control.Converters
                 writer.WriteString("proveedor", value.Proveedor);
             else
                 writer.WriteNull("proveedor");
+            
+            if (value.Cantidad.HasValue)
+                writer.WriteNumber("cantidad", value.Cantidad.Value);
+            else
+                writer.WriteNull("cantidad");
+            
+            if (value.Unitario.HasValue)
+                writer.WriteNumber("unitario", value.Unitario.Value);
+            else
+                writer.WriteNull("unitario");
             
             writer.WriteEndObject();
         }
