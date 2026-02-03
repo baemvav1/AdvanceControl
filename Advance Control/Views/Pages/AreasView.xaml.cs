@@ -150,6 +150,10 @@ namespace Advance_Control.Views.Pages
                         if (jsonDoc.TryGetValue("path", out var pathElement))
                         {
                             _currentShapePath = pathElement.GetRawText();
+                            await _loggingService.LogInformationAsync(
+                                $"[DATA_FLOW] Step 1 - Raw path received from WebView: {_currentShapePath}",
+                                "AreasView",
+                                "CoreWebView2_WebMessageReceived");
                         }
 
                         if (jsonDoc.TryGetValue("center", out var centerElement))
@@ -928,6 +932,12 @@ namespace Advance_Control.Views.Pages
                         ["radius"] = _currentShapeRadius
                     })
             };
+
+            // Log the serialized MetadataJSON for debugging data flow
+            await _loggingService.LogInformationAsync(
+                $"[DATA_FLOW] Step 2 - MetadataJSON being sent to service: {area.MetadataJSON ?? "NULL"}",
+                "AreasView",
+                "SaveButton_Click");
 
             if (!string.IsNullOrEmpty(_currentShapeCenter))
             {
