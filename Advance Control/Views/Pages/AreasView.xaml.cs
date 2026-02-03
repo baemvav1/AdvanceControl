@@ -55,7 +55,7 @@ namespace Advance_Control.Views.Pages
         }
         
         /// <summary>
-        /// Safely truncates a string for logging, respecting character boundaries
+        /// Truncates a string for logging to avoid log bloat
         /// </summary>
         private static string TruncateForLog(string? value, int maxLength = 150)
         {
@@ -65,9 +65,7 @@ namespace Advance_Control.Views.Pages
             if (value.Length <= maxLength)
                 return value;
             
-            // Ensure we don't cut in the middle of a multi-byte character
-            var truncated = value.AsSpan(0, maxLength);
-            return $"{new string(truncated)}... (total: {value.Length} chars)";
+            return $"{value.Substring(0, maxLength)}... (total: {value.Length} chars)";
         }
 
         private void AreasView_Unloaded(object sender, RoutedEventArgs e)
