@@ -264,7 +264,7 @@ namespace Advance_Control.Views.Pages
                     {
                         idArea = a.IdArea,
                         nombre = a.Nombre,
-                        type = a.TipoGeometria ?? "Polygon",
+                        type = string.IsNullOrEmpty(a.TipoGeometria) ? "Polygon" : a.TipoGeometria,
                         path = ParsePathJson(a),
                         center = ParseCenterJson(a),
                         radius = a.Radio,
@@ -291,6 +291,7 @@ namespace Advance_Control.Views.Pages
 
         private object? ParsePathJson(AreaDto area)
         {
+            // First try to get path from MetadataJSON
             if (!string.IsNullOrEmpty(area.MetadataJSON))
             {
                 try
@@ -301,7 +302,7 @@ namespace Advance_Control.Views.Pages
                         return JsonSerializer.Deserialize<object>(pathElement.GetRawText());
                     }
                 }
-                catch (JsonException ex)
+                catch (JsonException)
                 {
                     _ = _loggingService.LogWarningAsync(
                         $"Error parsing path JSON for area {area.IdArea}",
@@ -309,6 +310,21 @@ namespace Advance_Control.Views.Pages
                         "ParsePathJson");
                 }
             }
+
+            // Fallback: Create path from bounding box coordinates if available
+            if (area.BoundingBoxNE_Lat.HasValue && area.BoundingBoxNE_Lng.HasValue &&
+                area.BoundingBoxSW_Lat.HasValue && area.BoundingBoxSW_Lng.HasValue)
+            {
+                // Create a rectangle path from bounding box (4 corners)
+                return new[]
+                {
+                    new { lat = area.BoundingBoxNE_Lat.Value, lng = area.BoundingBoxSW_Lng.Value }, // NW
+                    new { lat = area.BoundingBoxNE_Lat.Value, lng = area.BoundingBoxNE_Lng.Value }, // NE
+                    new { lat = area.BoundingBoxSW_Lat.Value, lng = area.BoundingBoxNE_Lng.Value }, // SE
+                    new { lat = area.BoundingBoxSW_Lat.Value, lng = area.BoundingBoxSW_Lng.Value }  // SW
+                };
+            }
+
             return null;
         }
 
