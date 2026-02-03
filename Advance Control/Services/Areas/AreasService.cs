@@ -231,12 +231,7 @@ namespace Advance_Control.Services.Areas
                 url = $"{url}?{string.Join("&", queryParams)}";
 
                 await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasService", "CreateAreaAsync");
-                // Log data flow info without sensitive URL details
-                var metadataLen = area.MetadataJSON?.Length ?? 0;
-                await _logger.LogInformationAsync(
-                    $"[DATA_FLOW] Step 3 - MetadataJSON received ({metadataLen} chars), Query params count: {queryParams.Count}",
-                    "AreasService", 
-                    "CreateAreaAsync");
+                await LogDataFlowInfoAsync(area, queryParams.Count, "CreateAreaAsync");
 
                 var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
@@ -307,12 +302,7 @@ namespace Advance_Control.Services.Areas
                 }
 
                 await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
-                // Log data flow info without sensitive URL details
-                var metadataLen = area.MetadataJSON?.Length ?? 0;
-                await _logger.LogInformationAsync(
-                    $"[DATA_FLOW] Step 3 - MetadataJSON received ({metadataLen} chars), Query params count: {queryParams.Count}",
-                    "AreasService", 
-                    "UpdateAreaAsync");
+                await LogDataFlowInfoAsync(area, queryParams.Count, "UpdateAreaAsync");
 
                 var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
@@ -406,6 +396,18 @@ namespace Advance_Control.Services.Areas
                 await _logger.LogErrorAsync("Error inesperado al eliminar área", ex, "AreasService", "DeleteAreaAsync");
                 return new ApiResponse { Success = false, Message = "Error inesperado al eliminar área" };
             }
+        }
+
+        /// <summary>
+        /// Logs data flow information for create/update operations
+        /// </summary>
+        private async Task LogDataFlowInfoAsync(AreaDto area, int queryParamsCount, string methodName)
+        {
+            var metadataLen = area.MetadataJSON?.Length ?? 0;
+            await _logger.LogInformationAsync(
+                $"[DATA_FLOW] Step 3 - MetadataJSON received ({metadataLen} chars), Query params count: {queryParamsCount}",
+                "AreasService",
+                methodName);
         }
 
         /// <summary>

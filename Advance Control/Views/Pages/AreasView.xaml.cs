@@ -169,6 +169,13 @@ namespace Advance_Control.Views.Pages
                                 "AreasView",
                                 "CoreWebView2_WebMessageReceived");
                         }
+                        else
+                        {
+                            await _loggingService.LogWarningAsync(
+                                "[DATA_FLOW] Step 1 - Path not found in shape message",
+                                "AreasView",
+                                "CoreWebView2_WebMessageReceived");
+                        }
 
                         if (jsonDoc.TryGetValue("center", out var centerElement))
                         {
