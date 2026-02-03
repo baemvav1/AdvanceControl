@@ -60,12 +60,12 @@ namespace Advance_Control.Views.Pages
         private static string TruncateForLog(string? value, int maxLength = 150)
         {
             if (string.IsNullOrEmpty(value))
-                return "NULL";
+                return "(null or empty)";
             
             if (value.Length <= maxLength)
                 return value;
             
-            return $"{value.Substring(0, maxLength)}... (total: {value.Length} chars)";
+            return $"{value[..maxLength]}... (total: {value.Length} chars)";
         }
 
         private void AreasView_Unloaded(object sender, RoutedEventArgs e)
