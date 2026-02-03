@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
@@ -160,10 +161,11 @@ namespace Advance_Control.Services.Areas
             try
             {
                 var url = _endpoints.GetEndpoint("api", "Areas", "validate-point");
+                // Format coordinates using invariant culture to avoid numeric conversion errors
                 var queryParams = new List<string>
                 {
-                    $"latitud={latitud}",
-                    $"longitud={longitud}"
+                    $"latitud={latitud.ToString(CultureInfo.InvariantCulture)}",
+                    $"longitud={longitud.ToString(CultureInfo.InvariantCulture)}"
                 };
 
                 if (idArea.HasValue && idArea.Value > 0)
@@ -428,36 +430,55 @@ namespace Advance_Control.Services.Areas
             if (!string.IsNullOrWhiteSpace(area.ColorMapa))
                 queryParams.Add($"colorMapa={Uri.EscapeDataString(area.ColorMapa)}");
 
+            // Format decimal values using invariant culture to avoid numeric conversion errors
             if (area.Opacidad.HasValue)
-                queryParams.Add($"opacidad={area.Opacidad.Value}");
+                queryParams.Add($"opacidad={area.Opacidad.Value.ToString(CultureInfo.InvariantCulture)}");
 
             if (!string.IsNullOrWhiteSpace(area.ColorBorde))
                 queryParams.Add($"colorBorde={Uri.EscapeDataString(area.ColorBorde)}");
 
+            // Border width (int) remains as-is
             if (area.AnchoBorde.HasValue)
                 queryParams.Add($"anchoBorde={area.AnchoBorde.Value}");
 
+            // Active flag (bool) remains as-is
             if (area.Activo.HasValue)
                 queryParams.Add($"activo={(area.Activo.Value ? "true" : "false")}");
 
             if (!string.IsNullOrWhiteSpace(area.TipoGeometria))
                 queryParams.Add($"tipoGeometria={Uri.EscapeDataString(area.TipoGeometria)}");
 
+            // Format decimal coordinate values using invariant culture to avoid numeric conversion errors
             if (area.CentroLatitud.HasValue)
-                queryParams.Add($"centroLatitud={area.CentroLatitud.Value}");
+                queryParams.Add($"centroLatitud={area.CentroLatitud.Value.ToString(CultureInfo.InvariantCulture)}");
 
             if (area.CentroLongitud.HasValue)
-                queryParams.Add($"centroLongitud={area.CentroLongitud.Value}");
+                queryParams.Add($"centroLongitud={area.CentroLongitud.Value.ToString(CultureInfo.InvariantCulture)}");
 
             if (area.Radio.HasValue)
-                queryParams.Add($"radio={area.Radio.Value}");
+                queryParams.Add($"radio={area.Radio.Value.ToString(CultureInfo.InvariantCulture)}");
 
+            // Bounding box decimal values - format using invariant culture
+            if (area.BoundingBoxNE_Lat.HasValue)
+                queryParams.Add($"boundingBoxNE_Lat={area.BoundingBoxNE_Lat.Value.ToString(CultureInfo.InvariantCulture)}");
+
+            if (area.BoundingBoxNE_Lng.HasValue)
+                queryParams.Add($"boundingBoxNE_Lng={area.BoundingBoxNE_Lng.Value.ToString(CultureInfo.InvariantCulture)}");
+
+            if (area.BoundingBoxSW_Lat.HasValue)
+                queryParams.Add($"boundingBoxSW_Lat={area.BoundingBoxSW_Lat.Value.ToString(CultureInfo.InvariantCulture)}");
+
+            if (area.BoundingBoxSW_Lng.HasValue)
+                queryParams.Add($"boundingBoxSW_Lng={area.BoundingBoxSW_Lng.Value.ToString(CultureInfo.InvariantCulture)}");
+
+            // Label display flag (bool) remains as-is
             if (area.EtiquetaMostrar.HasValue)
                 queryParams.Add($"etiquetaMostrar={(area.EtiquetaMostrar.Value ? "true" : "false")}");
 
             if (!string.IsNullOrWhiteSpace(area.EtiquetaTexto))
                 queryParams.Add($"etiquetaTexto={Uri.EscapeDataString(area.EtiquetaTexto)}");
 
+            // Zoom level (int) remains as-is
             if (area.NivelZoom.HasValue)
                 queryParams.Add($"nivelZoom={area.NivelZoom.Value}");
 
