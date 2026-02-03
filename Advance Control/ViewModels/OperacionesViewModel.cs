@@ -1,10 +1,13 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Operaciones;
+using Advance_Control.Services.Equipos;
+using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Quotes;
 
@@ -16,7 +19,14 @@ namespace Advance_Control.ViewModels
     /// </summary>
     public class OperacionesViewModel : ViewModelBase
     {
+        /// <summary>
+        /// IVA rate (16%) for Mexican tax calculation
+        /// </summary>
+        private const double IVA_RATE = 0.16;
+        
         private readonly IOperacionService _operacionService;
+        private readonly IEquipoService _equipoService;
+        private readonly IUbicacionService _ubicacionService;
         private readonly ILoggingService _logger;
         private readonly IQuoteService _quoteService;
         private ObservableCollection<OperacionDto> _operaciones;
@@ -30,9 +40,11 @@ namespace Advance_Control.ViewModels
         private string? _selectedClienteText;
         private string? _selectedEquipoText;
 
-        public OperacionesViewModel(IOperacionService operacionService, ILoggingService logger, IQuoteService quoteService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService)
         {
             _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
+            _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
+            _ubicacionService = ubicacionService ?? throw new ArgumentNullException(nameof(ubicacionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _quoteService = quoteService ?? throw new ArgumentNullException(nameof(quoteService));
             _operaciones = new ObservableCollection<OperacionDto>();
@@ -269,7 +281,59 @@ namespace Advance_Control.ViewModels
 
                 await _logger.LogInformationAsync($"Generando cotización para operación {operacion.IdOperacion}...", "OperacionesViewModel", "GenerateQuoteAsync");
 
-                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos);
+                // Get equipment location if available
+                string? ubicacionNombre = null;
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(operacion.Identificador))
+                    {
+                        // Search for equipment by identifier
+                        var equipos = await _equipoService.GetEquiposAsync(new EquipoQueryDto { Identificador = operacion.Identificador }, cancellationToken);
+                        var equipo = equipos?.FirstOrDefault();
+                        
+                        if (equipo?.IdUbicacion.HasValue == true && equipo.IdUbicacion.Value > 0)
+                        {
+                            var ubicacion = await _ubicacionService.GetUbicacionByIdAsync(equipo.IdUbicacion.Value, cancellationToken);
+                            ubicacionNombre = ubicacion?.Nombre;
+                            await _logger.LogInformationAsync($"Ubicación encontrada para equipo {operacion.Identificador}: {ubicacionNombre}", "OperacionesViewModel", "GenerateQuoteAsync");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail if we can't get the location
+                    await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
+                }
+
+                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre);
+
+                // Calculate total with IVA and update operation monto
+                if (operacion.IdOperacion.HasValue)
+                {
+                    try
+                    {
+                        var subtotal = operacion.Cargos.Sum(c => c.Monto ?? 0);
+                        var iva = subtotal * IVA_RATE;
+                        var totalConIva = (decimal)(subtotal + iva);
+
+                        var updateResult = await _operacionService.UpdateOperacionMontoAsync(operacion.IdOperacion.Value, totalConIva, cancellationToken);
+                        if (updateResult)
+                        {
+                            // Update local model
+                            operacion.Monto = totalConIva;
+                            await _logger.LogInformationAsync($"Monto de operación {operacion.IdOperacion} actualizado a {totalConIva:N2}", "OperacionesViewModel", "GenerateQuoteAsync");
+                        }
+                        else
+                        {
+                            await _logger.LogWarningAsync($"No se pudo actualizar el monto de la operación {operacion.IdOperacion}", "OperacionesViewModel", "GenerateQuoteAsync");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log but don't fail the quote generation if update fails
+                        await _logger.LogWarningAsync($"Error al actualizar monto de operación: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
+                    }
+                }
 
                 await _logger.LogInformationAsync($"Cotización generada exitosamente: {filePath}", "OperacionesViewModel", "GenerateQuoteAsync");
 

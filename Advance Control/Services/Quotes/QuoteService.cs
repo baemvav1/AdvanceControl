@@ -16,6 +16,11 @@ namespace Advance_Control.Services.Quotes
     /// </summary>
     public class QuoteService : IQuoteService
     {
+        /// <summary>
+        /// IVA rate (16%) for Mexican tax calculation
+        /// </summary>
+        private const double IVA_RATE = 0.16;
+        
         private readonly ILoggingService _logger;
 
         public QuoteService(ILoggingService logger)
@@ -29,7 +34,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Genera un PDF de cotización a partir de una operación y sus cargos
         /// </summary>
-        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos)
+        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null)
         {
             if (operacion == null)
                 throw new ArgumentNullException(nameof(operacion));
@@ -102,6 +107,10 @@ namespace Advance_Control.Services.Quotes
                                         col.Item().PaddingTop(5);
                                         col.Item().Text($"Cliente: {operacion.RazonSocial ?? "N/A"}");
                                         col.Item().Text($"Equipo: {operacion.Identificador ?? "N/A"}");
+                                        if (!string.IsNullOrWhiteSpace(ubicacionNombre))
+                                        {
+                                            col.Item().Text($"Ubicación: {ubicacionNombre}");
+                                        }
                                     });
 
                                     row.RelativeItem().Column(col =>
@@ -156,12 +165,28 @@ namespace Advance_Control.Services.Quotes
                                     }
                                 });
 
-                                // Total
-                                var total = cargosList.Sum(c => c.Monto ?? 0);
-                                column.Item().PaddingTop(10).AlignRight().Row(row =>
+                                // Totals section with IVA
+                                var subtotal = cargosList.Sum(c => c.Monto ?? 0);
+                                var iva = subtotal * IVA_RATE;
+                                var total = subtotal + iva;
+
+                                column.Item().PaddingTop(10).AlignRight().Column(totalsCol =>
                                 {
-                                    row.AutoItem().Text("TOTAL: ").Bold().FontSize(14);
-                                    row.AutoItem().Text($"${total:N2}").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
+                                    totalsCol.Item().Row(row =>
+                                    {
+                                        row.AutoItem().Text("Subtotal: ").FontSize(12);
+                                        row.AutoItem().Text($"${subtotal:N2}").FontSize(12);
+                                    });
+                                    totalsCol.Item().PaddingTop(3).Row(row =>
+                                    {
+                                        row.AutoItem().Text("IVA (16%): ").FontSize(12);
+                                        row.AutoItem().Text($"${iva:N2}").FontSize(12);
+                                    });
+                                    totalsCol.Item().PaddingTop(5).Row(row =>
+                                    {
+                                        row.AutoItem().Text("TOTAL: ").Bold().FontSize(14);
+                                        row.AutoItem().Text($"${total:N2}").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
+                                    });
                                 });
 
                                 // Additional notes

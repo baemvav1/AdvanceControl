@@ -158,5 +158,48 @@ namespace Advance_Control.Services.Operaciones
                 throw;
             }
         }
+
+        /// <summary>
+        /// Actualiza el monto de una operación
+        /// </summary>
+        public async Task<bool> UpdateOperacionMontoAsync(int idOperacion, decimal monto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Use InvariantCulture to ensure decimal point is always '.' regardless of locale
+                var montoString = monto.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                
+                // Construir la URL con parámetros de consulta
+                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}?idOperacion={idOperacion}&monto={montoString}";
+
+                await _logger.LogInformationAsync($"Actualizando monto de operación {idOperacion} a {monto} en: {url}", "OperacionService", "UpdateOperacionMontoAsync");
+
+                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al actualizar monto de operación. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "OperacionService",
+                        "UpdateOperacionMontoAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Monto de operación {idOperacion} actualizado correctamente a {monto}", "OperacionService", "UpdateOperacionMontoAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al actualizar monto de operación", ex, "OperacionService", "UpdateOperacionMontoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al actualizar monto de operación", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al actualizar monto de operación", ex, "OperacionService", "UpdateOperacionMontoAsync");
+                throw;
+            }
+        }
     }
 }
