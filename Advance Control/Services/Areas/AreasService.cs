@@ -161,7 +161,7 @@ namespace Advance_Control.Services.Areas
             try
             {
                 var url = _endpoints.GetEndpoint("api", "Areas", "validate-point");
-                // Send coordinates as strings to avoid numeric conversion errors
+                // Format coordinates using invariant culture to avoid numeric conversion errors
                 var queryParams = new List<string>
                 {
                     $"latitud={latitud.ToString(CultureInfo.InvariantCulture)}",
@@ -430,25 +430,25 @@ namespace Advance_Control.Services.Areas
             if (!string.IsNullOrWhiteSpace(area.ColorMapa))
                 queryParams.Add($"colorMapa={Uri.EscapeDataString(area.ColorMapa)}");
 
-            // Send decimal values as strings to avoid numeric conversion errors
+            // Format decimal values using invariant culture to avoid numeric conversion errors
             if (area.Opacidad.HasValue)
                 queryParams.Add($"opacidad={area.Opacidad.Value.ToString(CultureInfo.InvariantCulture)}");
 
             if (!string.IsNullOrWhiteSpace(area.ColorBorde))
                 queryParams.Add($"colorBorde={Uri.EscapeDataString(area.ColorBorde)}");
 
-            // int values remain as-is
+            // Border width (int) remains as-is
             if (area.AnchoBorde.HasValue)
                 queryParams.Add($"anchoBorde={area.AnchoBorde.Value}");
 
-            // bool values remain as-is
+            // Active flag (bool) remains as-is
             if (area.Activo.HasValue)
                 queryParams.Add($"activo={(area.Activo.Value ? "true" : "false")}");
 
             if (!string.IsNullOrWhiteSpace(area.TipoGeometria))
                 queryParams.Add($"tipoGeometria={Uri.EscapeDataString(area.TipoGeometria)}");
 
-            // Send decimal coordinate values as strings to avoid numeric conversion errors
+            // Format decimal coordinate values using invariant culture to avoid numeric conversion errors
             if (area.CentroLatitud.HasValue)
                 queryParams.Add($"centroLatitud={area.CentroLatitud.Value.ToString(CultureInfo.InvariantCulture)}");
 
@@ -458,7 +458,7 @@ namespace Advance_Control.Services.Areas
             if (area.Radio.HasValue)
                 queryParams.Add($"radio={area.Radio.Value.ToString(CultureInfo.InvariantCulture)}");
 
-            // Send bounding box decimal values as strings
+            // Bounding box decimal values - format using invariant culture
             if (area.BoundingBoxNE_Lat.HasValue)
                 queryParams.Add($"boundingBoxNE_Lat={area.BoundingBoxNE_Lat.Value.ToString(CultureInfo.InvariantCulture)}");
 
@@ -471,14 +471,14 @@ namespace Advance_Control.Services.Areas
             if (area.BoundingBoxSW_Lng.HasValue)
                 queryParams.Add($"boundingBoxSW_Lng={area.BoundingBoxSW_Lng.Value.ToString(CultureInfo.InvariantCulture)}");
 
-            // bool values remain as-is
+            // Label display flag (bool) remains as-is
             if (area.EtiquetaMostrar.HasValue)
                 queryParams.Add($"etiquetaMostrar={(area.EtiquetaMostrar.Value ? "true" : "false")}");
 
             if (!string.IsNullOrWhiteSpace(area.EtiquetaTexto))
                 queryParams.Add($"etiquetaTexto={Uri.EscapeDataString(area.EtiquetaTexto)}");
 
-            // int values remain as-is
+            // Zoom level (int) remains as-is
             if (area.NivelZoom.HasValue)
                 queryParams.Add($"nivelZoom={area.NivelZoom.Value}");
 
