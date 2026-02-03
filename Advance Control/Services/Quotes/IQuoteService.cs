@@ -14,7 +14,8 @@ namespace Advance_Control.Services.Quotes
         /// </summary>
         /// <param name="operacion">La operación que contiene la información del cliente y equipo</param>
         /// <param name="cargos">Lista de cargos a incluir en la cotización</param>
+        /// <param name="ubicacionNombre">Nombre de la ubicación del equipo (opcional)</param>
         /// <returns>La ruta del archivo PDF generado</returns>
-        Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos);
+        Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null);
     }
 }

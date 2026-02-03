@@ -25,5 +25,14 @@ namespace Advance_Control.Services.Operaciones
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<bool> DeleteOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Actualiza el monto de una operación
+        /// </summary>
+        /// <param name="idOperacion">ID de la operación a actualizar</param>
+        /// <param name="monto">Nuevo monto de la operación</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado de la operación</returns>
+        Task<bool> UpdateOperacionMontoAsync(int idOperacion, decimal monto, CancellationToken cancellationToken = default);
     }
 }
