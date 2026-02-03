@@ -16,6 +16,11 @@ namespace Advance_Control.Services.Quotes
     /// </summary>
     public class QuoteService : IQuoteService
     {
+        /// <summary>
+        /// IVA rate (16%) for Mexican tax calculation
+        /// </summary>
+        private const double IVA_RATE = 0.16;
+        
         private readonly ILoggingService _logger;
 
         public QuoteService(ILoggingService logger)
@@ -162,7 +167,7 @@ namespace Advance_Control.Services.Quotes
 
                                 // Totals section with IVA
                                 var subtotal = cargosList.Sum(c => c.Monto ?? 0);
-                                var iva = subtotal * 0.16;
+                                var iva = subtotal * IVA_RATE;
                                 var total = subtotal + iva;
 
                                 column.Item().PaddingTop(10).AlignRight().Column(totalsCol =>

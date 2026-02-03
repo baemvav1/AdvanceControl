@@ -166,8 +166,11 @@ namespace Advance_Control.Services.Operaciones
         {
             try
             {
+                // Use InvariantCulture to ensure decimal point is always '.' regardless of locale
+                var montoString = monto.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                
                 // Construir la URL con parámetros de consulta
-                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}?idOperacion={idOperacion}&monto={monto}";
+                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}?idOperacion={idOperacion}&monto={montoString}";
 
                 await _logger.LogInformationAsync($"Actualizando monto de operación {idOperacion} a {monto} en: {url}", "OperacionService", "UpdateOperacionMontoAsync");
 

@@ -19,6 +19,11 @@ namespace Advance_Control.ViewModels
     /// </summary>
     public class OperacionesViewModel : ViewModelBase
     {
+        /// <summary>
+        /// IVA rate (16%) for Mexican tax calculation
+        /// </summary>
+        private const double IVA_RATE = 0.16;
+        
         private readonly IOperacionService _operacionService;
         private readonly IEquipoService _equipoService;
         private readonly IUbicacionService _ubicacionService;
@@ -308,7 +313,7 @@ namespace Advance_Control.ViewModels
                     try
                     {
                         var subtotal = operacion.Cargos.Sum(c => c.Monto ?? 0);
-                        var iva = subtotal * 0.16;
+                        var iva = subtotal * IVA_RATE;
                         var totalConIva = (decimal)(subtotal + iva);
 
                         var updateResult = await _operacionService.UpdateOperacionMontoAsync(operacion.IdOperacion.Value, totalConIva, cancellationToken);
