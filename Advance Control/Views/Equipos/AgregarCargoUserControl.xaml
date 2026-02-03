@@ -87,22 +87,22 @@
                 </StackPanel>
 
 
-                <!--  Monto  -->
+                <!--  Unitario (Costo unitario del cargo)  -->
                 <StackPanel
-                    x:Name="MontoPanel"
+                    x:Name="UnitarioPanel"
                     Margin="0,0,0,12"
                     Visibility="Collapsed">
                     <TextBlock
                         Margin="0,0,0,4"
                         FontWeight="SemiBold"
-                        Text="Monto:" />
+                        Text="Unitario:" />
                     <NumberBox
-                        x:Name="MontoNumberBox"
-                        AutomationProperties.Name="Monto del cargo"
+                        x:Name="UnitarioNumberBox"
+                        AutomationProperties.Name="Costo unitario del cargo"
                         LargeChange="1"
                         Maximum="999999.99"
                         Minimum="0.01"
-                        PlaceholderText="Ingrese monto (mayor a 0)"
+                        PlaceholderText="Ingrese costo unitario (mayor a 0)"
                         SmallChange="0.01"
                         SpinButtonPlacementMode="Compact" />
                 </StackPanel>
