@@ -751,9 +751,107 @@ namespace Advance_Control.Views.Pages
             }}
         }}
 
+        // Variable to store the currently selected/drawn shape for selection highlighting
+        let selectedAreaShape = null;
+
+        function drawSelectedArea(areaData) {{
+            // First check if the area is already in existingShapes
+            const existingItem = existingShapes.find(item => item.id === areaData.idArea);
+            if (existingItem && existingItem.shape) {{
+                // Area already exists, just highlight it
+                highlightArea(areaData.idArea);
+                return;
+            }}
+
+            // Remove previous selected area shape if it exists
+            if (selectedAreaShape) {{
+                selectedAreaShape.setMap(null);
+                selectedAreaShape = null;
+            }}
+
+            let shape = null;
+            const options = {{
+                fillColor: areaData.fillColor || '#FF0000',
+                fillOpacity: areaData.fillOpacity || 0.35,
+                strokeColor: '#000000',
+                strokeWeight: 4,
+                zIndex: 999,
+                editable: false,
+                draggable: false
+            }};
+
+            // Create shape based on type
+            const type = (areaData.type || 'Polygon').toLowerCase();
+            
+            if (type === 'polygon' && areaData.path && areaData.path.length > 0) {{
+                shape = new google.maps.Polygon({{
+                    paths: areaData.path,
+                    ...options
+                }});
+            }} 
+            else if (type === 'circle' && areaData.center && areaData.radius) {{
+                shape = new google.maps.Circle({{
+                    center: areaData.center,
+                    radius: areaData.radius,
+                    ...options
+                }});
+            }}
+            else if (type === 'rectangle' && areaData.path && areaData.path.length > 0) {{
+                const bounds = new google.maps.LatLngBounds();
+                areaData.path.forEach(point => bounds.extend(point));
+                shape = new google.maps.Rectangle({{
+                    bounds: bounds,
+                    ...options
+                }});
+            }}
+            // Fallback: if we have a center but no path/radius, create a small circle as marker
+            else if (areaData.center) {{
+                shape = new google.maps.Circle({{
+                    center: areaData.center,
+                    radius: 100, // Small radius as visual indicator
+                    ...options
+                }});
+            }}
+
+            if (shape) {{
+                shape.setMap(map);
+                selectedAreaShape = shape;
+                
+                // Add to existingShapes so highlightArea can work with it later
+                existingShapes.push({{ id: areaData.idArea, name: areaData.nombre, shape: shape }});
+
+                // Show info window
+                let position;
+                if (shape.getBounds) {{
+                    position = shape.getBounds().getCenter();
+                }} else if (shape.getCenter) {{
+                    position = shape.getCenter();
+                }} else if (shape.getPath) {{
+                    const path = shape.getPath();
+                    const latLngBounds = new google.maps.LatLngBounds();
+                    path.forEach(point => latLngBounds.extend(point));
+                    position = latLngBounds.getCenter();
+                }}
+
+                if (position) {{
+                    const safeName = escapeHtml(areaData.nombre || 'Área seleccionada');
+                    const content = `
+                        <div style='padding: 8px; min-width: 150px;'>
+                            <h3 style='margin: 0 0 4px 0; color: #1a73e8; font-size: 14px;'>${{safeName}}</h3>
+                            <p style='margin: 0; color: #5f6368; font-size: 12px;'>Área seleccionada</p>
+                        </div>
+                    `;
+                    infoWindow.setContent(content);
+                    infoWindow.setPosition(position);
+                    infoWindow.open(map);
+                }}
+            }}
+        }}
+
         window.clearCurrentShape = clearCurrentShape;
         window.searchLocation = searchLocation;
         window.highlightArea = highlightArea;
+        window.drawSelectedArea = drawSelectedArea;
     </script>
 </body>
 </html>";
@@ -1231,7 +1329,7 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
-        /// Centra el mapa en un área seleccionada y la resalta
+        /// Centra el mapa en un área seleccionada y la dibuja si no existe
         /// </summary>
         private async Task CenterMapOnAreaAsync(AreaDto area)
         {
@@ -1248,19 +1346,19 @@ namespace Advance_Control.Views.Pages
                 {
                     var latStr = area.CentroLatitud.Value.ToString("F6", CultureInfo.InvariantCulture);
                     var lngStr = area.CentroLongitud.Value.ToString("F6", CultureInfo.InvariantCulture);
-                    
-                    // Validate and sanitize the area ID (ensure it's a valid integer)
-                    var areaIdStr = area.IdArea.ToString(CultureInfo.InvariantCulture);
 
                     await ShowDebugDialogAsync("Centrando Mapa", 
                         $"Área: {area.Nombre}\nLat: {latStr}\nLng: {lngStr}");
+
+                    // Prepare area data JSON for drawing on the map
+                    var areaDataJson = PrepareAreaDataJsonForDrawing(area);
 
                     var script = $@"
                         (function() {{
                             var position = {{ lat: {latStr}, lng: {lngStr} }};
                             map.setCenter(position);
                             map.setZoom(16);
-                            highlightArea({areaIdStr});
+                            drawSelectedArea({areaDataJson});
                         }})();
                     ";
                     await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
@@ -1282,6 +1380,44 @@ namespace Advance_Control.Views.Pages
             {
                 await _loggingService.LogErrorAsync("Error al centrar el mapa en el área", ex, "AreasView", "CenterMapOnAreaAsync");
                 await ShowDebugDialogAsync("Excepción CenterMapOnArea", $"Error: {ex.Message}\nStack: {ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// Prepara los datos del área en formato JSON para ser dibujada en el mapa
+        /// </summary>
+        private string PrepareAreaDataJsonForDrawing(AreaDto area)
+        {
+            try
+            {
+                var areaData = new
+                {
+                    idArea = area.IdArea,
+                    nombre = area.Nombre,
+                    type = string.IsNullOrEmpty(area.TipoGeometria) ? "Polygon" : area.TipoGeometria,
+                    path = ParsePathJson(area),
+                    center = ParseCenterJson(area),
+                    radius = area.Radio,
+                    fillColor = area.ColorMapa ?? "#FF0000",
+                    fillOpacity = (double)(area.Opacidad ?? 0.35m)
+                };
+
+                return JsonSerializer.Serialize(areaData);
+            }
+            catch (Exception ex)
+            {
+                _ = _loggingService.LogErrorAsync("Error al preparar JSON de área para dibujo", ex, "AreasView", "PrepareAreaDataJsonForDrawing");
+                // Return minimal data to at least show the center point
+                return JsonSerializer.Serialize(new
+                {
+                    idArea = area.IdArea,
+                    nombre = area.Nombre,
+                    type = "Circle",
+                    center = ParseCenterJson(area),
+                    radius = 100,
+                    fillColor = "#FF0000",
+                    fillOpacity = 0.35
+                });
             }
         }
 
