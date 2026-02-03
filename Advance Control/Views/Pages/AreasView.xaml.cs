@@ -53,6 +53,20 @@ namespace Advance_Control.Views.Pages
             this.Loaded += AreasView_Loaded;
             this.Unloaded += AreasView_Unloaded;
         }
+        
+        /// <summary>
+        /// Truncates a string for logging to avoid log bloat
+        /// </summary>
+        private static string TruncateForLog(string? value, int maxLength = 150)
+        {
+            if (string.IsNullOrEmpty(value))
+                return "(null or empty)";
+            
+            if (value.Length <= maxLength)
+                return value;
+            
+            return $"{value[..maxLength]}... (total: {value.Length} chars)";
+        }
 
         private void AreasView_Unloaded(object sender, RoutedEventArgs e)
         {
@@ -150,6 +164,17 @@ namespace Advance_Control.Views.Pages
                         if (jsonDoc.TryGetValue("path", out var pathElement))
                         {
                             _currentShapePath = pathElement.GetRawText();
+                            await _loggingService.LogInformationAsync(
+                                $"[DATA_FLOW] Step 1 - Path received: {TruncateForLog(_currentShapePath)}",
+                                "AreasView",
+                                "CoreWebView2_WebMessageReceived");
+                        }
+                        else
+                        {
+                            await _loggingService.LogWarningAsync(
+                                "[DATA_FLOW] Step 1 - Path not found in shape message",
+                                "AreasView",
+                                "CoreWebView2_WebMessageReceived");
                         }
 
                         if (jsonDoc.TryGetValue("center", out var centerElement))
@@ -928,6 +953,12 @@ namespace Advance_Control.Views.Pages
                         ["radius"] = _currentShapeRadius
                     })
             };
+
+            // Log the serialized MetadataJSON for debugging data flow
+            await _loggingService.LogInformationAsync(
+                $"[DATA_FLOW] Step 2 - MetadataJSON: {TruncateForLog(area.MetadataJSON)}",
+                "AreasView",
+                "SaveButton_Click");
 
             if (!string.IsNullOrEmpty(_currentShapeCenter))
             {
