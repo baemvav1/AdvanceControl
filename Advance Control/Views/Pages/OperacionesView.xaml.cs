@@ -524,8 +524,8 @@ namespace Advance_Control.Views
             if (columnHeader == "Cantidad" && cargo.TipoCargo == "Servicio")
             {
                 // For Servicio type, always set cantidad to 1
+                // The binding will update the UI with the corrected value
                 cargo.Cantidad = 1;
-                e.Cancel = true; // Cancel the edit because we're forcing the value
                 
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Información",
@@ -535,8 +535,9 @@ namespace Advance_Control.Views
             }
 
             // After editing Cantidad or Unitario, the Monto will be recalculated automatically 
-            // via the CargoDto.RecalculateMonto method called by property setters
-            // The TotalMonto will be updated through PropertyChanged events already set up in LoadCargosForOperacionAsync
+            // via the CargoDto.RecalculateMonto method called by property setters.
+            // The TotalMonto will be updated through PropertyChanged events already set up in LoadCargosForOperacionAsync.
+            // Note: Changes are persisted to the database when the user presses Enter (handled by CargosDataGrid_KeyDown).
         }
 
         private async void ViewRefaccionFromCargoButton_Click(object sender, RoutedEventArgs e)
