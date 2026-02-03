@@ -24,6 +24,9 @@ namespace Advance_Control.Views.Pages
         private const string DEFAULT_LONGITUDE = "-99.1332";
         private const int DEFAULT_ZOOM = 12;
         
+        // Fallback radius in meters for areas without geometry data
+        private const int FALLBACK_CIRCLE_RADIUS_METERS = 100;
+        
         public AreasViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
         private bool _isEditMode = false;
@@ -370,6 +373,7 @@ namespace Advance_Control.Views.Pages
     <script>
         const SEARCH_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
         const MARKER_ICON_SIZE = 40;
+        const FALLBACK_CIRCLE_RADIUS = 100; // Radius in meters for fallback circle when area has no geometry
 
         let map;
         let drawingManager;
@@ -751,8 +755,8 @@ namespace Advance_Control.Views.Pages
             }}
         }}
 
-        // Variable to store the currently selected/drawn shape for selection highlighting
-        let selectedAreaShape = null;
+        // Variable to store dynamically drawn shape when selecting an area that wasn't pre-loaded
+        let dynamicallyDrawnAreaShape = null;
 
         function drawSelectedArea(areaData) {{
             // First check if the area is already in existingShapes
@@ -763,10 +767,10 @@ namespace Advance_Control.Views.Pages
                 return;
             }}
 
-            // Remove previous selected area shape if it exists
-            if (selectedAreaShape) {{
-                selectedAreaShape.setMap(null);
-                selectedAreaShape = null;
+            // Remove previous dynamically drawn shape if it exists
+            if (dynamicallyDrawnAreaShape) {{
+                dynamicallyDrawnAreaShape.setMap(null);
+                dynamicallyDrawnAreaShape = null;
             }}
 
             let shape = null;
@@ -808,14 +812,14 @@ namespace Advance_Control.Views.Pages
             else if (areaData.center) {{
                 shape = new google.maps.Circle({{
                     center: areaData.center,
-                    radius: 100, // Small radius as visual indicator
+                    radius: FALLBACK_CIRCLE_RADIUS,
                     ...options
                 }});
             }}
 
             if (shape) {{
                 shape.setMap(map);
-                selectedAreaShape = shape;
+                dynamicallyDrawnAreaShape = shape;
                 
                 // Add to existingShapes so highlightArea can work with it later
                 existingShapes.push({{ id: areaData.idArea, name: areaData.nombre, shape: shape }});
@@ -1414,7 +1418,7 @@ namespace Advance_Control.Views.Pages
                     nombre = area.Nombre,
                     type = "Circle",
                     center = ParseCenterJson(area),
-                    radius = 100,
+                    radius = FALLBACK_CIRCLE_RADIUS_METERS,
                     fillColor = "#FF0000",
                     fillOpacity = 0.35
                 });
