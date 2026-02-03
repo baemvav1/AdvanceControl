@@ -76,12 +76,12 @@ namespace Advance_Control.Views.Equipos
             if (cargoType != 0)
             {
                 NotaPanel.Visibility = Visibility.Visible;
-                MontoPanel.Visibility = Visibility.Visible;
+                UnitarioPanel.Visibility = Visibility.Visible;
             }
             else
             {
                 NotaPanel.Visibility = Visibility.Collapsed;
-                MontoPanel.Visibility = Visibility.Collapsed;
+                UnitarioPanel.Visibility = Visibility.Collapsed;
             }
             if (cargoType == TIPO_CARGO_REFACCION && _refaccionSelector == null)
             {
@@ -104,12 +104,12 @@ namespace Advance_Control.Views.Equipos
         {
             if (costo.HasValue && costo.Value >= 0)
             {
-                MontoNumberBox.Value = costo.Value;
+                UnitarioNumberBox.Value = costo.Value;
             }
             else
             {
                 // Clear the value by setting to 0 instead of NaN for better UI behavior
-                MontoNumberBox.Value = 0;
+                UnitarioNumberBox.Value = 0;
             }
         }
 
@@ -123,7 +123,7 @@ namespace Advance_Control.Views.Equipos
                 if (TipoCargoComboBox.SelectedIndex < 0)
                     return false;
 
-                if (double.IsNaN(MontoNumberBox.Value) || MontoNumberBox.Value <= 0)
+                if (double.IsNaN(UnitarioNumberBox.Value) || UnitarioNumberBox.Value <= 0)
                     return false;
 
                 // Check if a selection has been made in the appropriate selector
@@ -154,6 +154,9 @@ namespace Advance_Control.Views.Equipos
             int idRelacionCargo = 0;
             int? idProveedor = null;
             
+            // Set cantidad: 1 for Servicio, default to 1 for Refaccion as well (can be changed later in DataGrid)
+            double cantidad = 1;
+            
             if (idTipoCargo == TIPO_CARGO_REFACCION && _refaccionSelector?.HasSelection == true)
             {
                 idRelacionCargo = _refaccionSelector.SelectedRefaccion?.IdRefaccion ?? 0;
@@ -165,7 +168,12 @@ namespace Advance_Control.Views.Equipos
                 idRelacionCargo = _servicioSelector.SelectedServicio?.IdServicio ?? 0;
                 // For Servicio, automatically copy idAtiende from operation as idProveedor
                 idProveedor = _idProveedor;
+                // For Servicio, cantidad is always 1
+                cantidad = 1;
             }
+
+            double unitario = UnitarioNumberBox.Value;
+            double monto = cantidad * unitario;
 
             return new CargoEditDto
             {
@@ -173,9 +181,11 @@ namespace Advance_Control.Views.Equipos
                 IdOperacion = _idOperacion,
                 IdTipoCargo = idTipoCargo,
                 IdRelacionCargo = idRelacionCargo,
-                Monto = MontoNumberBox.Value,
+                Monto = monto,
                 Nota = string.IsNullOrWhiteSpace(NotaTextBox.Text) ? null : NotaTextBox.Text.Trim(),
-                IdProveedor = idProveedor
+                IdProveedor = idProveedor,
+                Cantidad = cantidad,
+                Unitario = unitario
             };
         }
 

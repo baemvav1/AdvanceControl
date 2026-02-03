@@ -197,6 +197,7 @@ namespace Advance_Control.Models
                 {
                     _cantidad = value;
                     OnPropertyChanged();
+                    RecalculateMonto();
                 }
             }
         }
@@ -215,7 +216,19 @@ namespace Advance_Control.Models
                 {
                     _unitario = value;
                     OnPropertyChanged();
+                    RecalculateMonto();
                 }
+            }
+        }
+
+        /// <summary>
+        /// Recalcula el monto basado en cantidad * unitario
+        /// </summary>
+        private void RecalculateMonto()
+        {
+            if (_cantidad.HasValue && _unitario.HasValue)
+            {
+                Monto = _cantidad.Value * _unitario.Value;
             }
         }
     }

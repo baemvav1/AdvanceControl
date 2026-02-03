@@ -471,7 +471,9 @@ namespace Advance_Control.Views
                     IdTipoCargo = cargo.IdTipoCargo,
                     IdRelacionCargo = cargo.IdRelacionCargo,
                     Monto = cargo.Monto,
-                    Nota = cargo.Nota
+                    Nota = cargo.Nota,
+                    Cantidad = cargo.Cantidad,
+                    Unitario = cargo.Unitario
                 };
 
                 var success = await _cargoService.UpdateCargoAsync(query);
@@ -499,6 +501,43 @@ namespace Advance_Control.Views
                     nota: "Ocurrió un error al actualizar el cargo. Por favor, intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
             }
+        }
+
+        private async void CargosDataGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            // Get the cargo being edited
+            if (e.Row.DataContext is not Models.CargoDto cargo)
+                return;
+
+            // Get the column being edited
+            var columnHeader = e.Column.Header?.ToString();
+            
+            // Get the DataGrid
+            if (sender is not DataGrid dataGrid)
+                return;
+
+            // Get the operation from DataGrid's Tag
+            if (dataGrid.Tag is not Models.OperacionDto operacion)
+                return;
+
+            // Handle Cantidad changes - if cargo type is Servicio, cantidad must be 1
+            if (columnHeader == "Cantidad" && cargo.TipoCargo == "Servicio")
+            {
+                // For Servicio type, always set cantidad to 1
+                // The binding will update the UI with the corrected value
+                cargo.Cantidad = 1;
+                
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Información",
+                    nota: "Para cargos de tipo Servicio, la cantidad siempre es 1.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // After editing Cantidad or Unitario, the Monto will be recalculated automatically 
+            // via the CargoDto.RecalculateMonto method called by property setters.
+            // The TotalMonto will be updated through PropertyChanged events already set up in LoadCargosForOperacionAsync.
+            // Note: Changes are persisted to the database when the user presses Enter (handled by CargosDataGrid_KeyDown).
         }
 
         private async void ViewRefaccionFromCargoButton_Click(object sender, RoutedEventArgs e)
