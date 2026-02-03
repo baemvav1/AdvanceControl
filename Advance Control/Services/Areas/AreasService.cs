@@ -231,8 +231,12 @@ namespace Advance_Control.Services.Areas
                 url = $"{url}?{string.Join("&", queryParams)}";
 
                 await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasService", "CreateAreaAsync");
-                await _logger.LogInformationAsync($"[DATA_FLOW] Step 3 - MetadataJSON received by service: {area.MetadataJSON ?? "NULL"}", "AreasService", "CreateAreaAsync");
-                await _logger.LogInformationAsync($"[DATA_FLOW] Step 4 - Full URL being sent to API: {url}", "AreasService", "CreateAreaAsync");
+                // Log data flow info without sensitive URL details
+                var metadataLen = area.MetadataJSON?.Length ?? 0;
+                await _logger.LogInformationAsync(
+                    $"[DATA_FLOW] Step 3 - MetadataJSON received ({metadataLen} chars), Query params count: {queryParams.Count}",
+                    "AreasService", 
+                    "CreateAreaAsync");
 
                 var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
@@ -303,8 +307,12 @@ namespace Advance_Control.Services.Areas
                 }
 
                 await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
-                await _logger.LogInformationAsync($"[DATA_FLOW] Step 3 - MetadataJSON received by service (update): {area.MetadataJSON ?? "NULL"}", "AreasService", "UpdateAreaAsync");
-                await _logger.LogInformationAsync($"[DATA_FLOW] Step 4 - Full URL being sent to API (update): {url}", "AreasService", "UpdateAreaAsync");
+                // Log data flow info without sensitive URL details
+                var metadataLenUpdate = area.MetadataJSON?.Length ?? 0;
+                await _logger.LogInformationAsync(
+                    $"[DATA_FLOW] Step 3 - MetadataJSON received ({metadataLenUpdate} chars), Query params count: {queryParams.Count}",
+                    "AreasService", 
+                    "UpdateAreaAsync");
 
                 var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 

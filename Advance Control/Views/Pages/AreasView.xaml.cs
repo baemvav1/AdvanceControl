@@ -150,8 +150,12 @@ namespace Advance_Control.Views.Pages
                         if (jsonDoc.TryGetValue("path", out var pathElement))
                         {
                             _currentShapePath = pathElement.GetRawText();
+                            // Log path info without full data to avoid performance issues
+                            var pathPreview = _currentShapePath.Length > 100 
+                                ? _currentShapePath.Substring(0, 100) + "..." 
+                                : _currentShapePath;
                             await _loggingService.LogInformationAsync(
-                                $"[DATA_FLOW] Step 1 - Raw path received from WebView: {_currentShapePath}",
+                                $"[DATA_FLOW] Step 1 - Path received ({_currentShapePath.Length} chars): {pathPreview}",
                                 "AreasView",
                                 "CoreWebView2_WebMessageReceived");
                         }
@@ -933,9 +937,12 @@ namespace Advance_Control.Views.Pages
                     })
             };
 
-            // Log the serialized MetadataJSON for debugging data flow
+            // Log the serialized MetadataJSON for debugging data flow (truncated to avoid log bloat)
+            var metadataPreview = area.MetadataJSON != null && area.MetadataJSON.Length > 200
+                ? area.MetadataJSON.Substring(0, 200) + "..."
+                : area.MetadataJSON ?? "NULL";
             await _loggingService.LogInformationAsync(
-                $"[DATA_FLOW] Step 2 - MetadataJSON being sent to service: {area.MetadataJSON ?? "NULL"}",
+                $"[DATA_FLOW] Step 2 - MetadataJSON ({area.MetadataJSON?.Length ?? 0} chars): {metadataPreview}",
                 "AreasView",
                 "SaveButton_Click");
 
