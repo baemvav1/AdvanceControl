@@ -40,6 +40,9 @@ namespace Advance_Control.Views.Pages
         private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
+        
+        // Log truncation constants
+        private const int LogPreviewMaxLength = 150;
 
         public AreasView()
         {
@@ -52,6 +55,22 @@ namespace Advance_Control.Views.Pages
 
             this.Loaded += AreasView_Loaded;
             this.Unloaded += AreasView_Unloaded;
+        }
+        
+        /// <summary>
+        /// Safely truncates a string for logging, respecting character boundaries
+        /// </summary>
+        private static string TruncateForLog(string? value, int maxLength = LogPreviewMaxLength)
+        {
+            if (string.IsNullOrEmpty(value))
+                return "NULL";
+            
+            if (value.Length <= maxLength)
+                return value;
+            
+            // Ensure we don't cut in the middle of a multi-byte character
+            var truncated = value.AsSpan(0, maxLength);
+            return $"{new string(truncated)}... (total: {value.Length} chars)";
         }
 
         private void AreasView_Unloaded(object sender, RoutedEventArgs e)
@@ -150,12 +169,8 @@ namespace Advance_Control.Views.Pages
                         if (jsonDoc.TryGetValue("path", out var pathElement))
                         {
                             _currentShapePath = pathElement.GetRawText();
-                            // Log path info without full data to avoid performance issues
-                            var pathPreview = _currentShapePath.Length > 100 
-                                ? _currentShapePath.Substring(0, 100) + "..." 
-                                : _currentShapePath;
                             await _loggingService.LogInformationAsync(
-                                $"[DATA_FLOW] Step 1 - Path received ({_currentShapePath.Length} chars): {pathPreview}",
+                                $"[DATA_FLOW] Step 1 - Path received: {TruncateForLog(_currentShapePath)}",
                                 "AreasView",
                                 "CoreWebView2_WebMessageReceived");
                         }
@@ -937,12 +952,9 @@ namespace Advance_Control.Views.Pages
                     })
             };
 
-            // Log the serialized MetadataJSON for debugging data flow (truncated to avoid log bloat)
-            var metadataPreview = area.MetadataJSON != null && area.MetadataJSON.Length > 200
-                ? area.MetadataJSON.Substring(0, 200) + "..."
-                : area.MetadataJSON ?? "NULL";
+            // Log the serialized MetadataJSON for debugging data flow
             await _loggingService.LogInformationAsync(
-                $"[DATA_FLOW] Step 2 - MetadataJSON ({area.MetadataJSON?.Length ?? 0} chars): {metadataPreview}",
+                $"[DATA_FLOW] Step 2 - MetadataJSON: {TruncateForLog(area.MetadataJSON)}",
                 "AreasView",
                 "SaveButton_Click");
 
