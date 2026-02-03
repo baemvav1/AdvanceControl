@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Linq;
 using System.Threading;
+using System.Globalization;
 
 namespace Advance_Control.Views.Pages
 {
@@ -40,6 +41,16 @@ namespace Advance_Control.Views.Pages
         private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
+        
+        // Flag to prevent multiple simultaneous map centering operations (0 = not centering, 1 = centering)
+        private int _isCenteringMapInt = 0;
+        
+        /// <summary>
+        /// Debug flag to enable/disable detailed dialog messages for developers.
+        /// Set to true to show detailed debugging dialogs with technical information.
+        /// Set to false for production to show only user-friendly messages.
+        /// </summary>
+        private const bool ENABLE_DEBUG_DIALOGS = false;
 
         public AreasView()
         {
@@ -570,7 +581,7 @@ namespace Advance_Control.Views.Pages
 
                 if (shape) {{
                     shape.setMap(map);
-                    existingShapes.push({{ id: area.idArea, shape: shape }});
+                    existingShapes.push({{ id: area.idArea, name: area.nombre, shape: shape }});
                 }}
             }});
         }}
@@ -662,8 +673,71 @@ namespace Advance_Control.Views.Pages
             }}
         }}
 
+        function highlightArea(areaId) {{
+            // Reset all existing shapes to their original style
+            existingShapes.forEach(item => {{
+                if (item.shape) {{
+                    if (item.shape.setOptions) {{
+                        item.shape.setOptions({{
+                            strokeWeight: 2,
+                            strokeColor: item.shape.originalStrokeColor || item.shape.get('strokeColor'),
+                            zIndex: 1
+                        }});
+                    }}
+                }}
+            }});
+
+            // Find and highlight the selected area
+            const selectedItem = existingShapes.find(item => item.id === areaId);
+            if (selectedItem && selectedItem.shape) {{
+                // Store original stroke color if not already stored
+                if (!selectedItem.shape.originalStrokeColor) {{
+                    selectedItem.shape.originalStrokeColor = selectedItem.shape.get('strokeColor');
+                }}
+                
+                // Apply highlight style
+                selectedItem.shape.setOptions({{
+                    strokeWeight: 4,
+                    strokeColor: '#000000',
+                    zIndex: 999
+                }});
+
+                // Open info window with area name
+                const bounds = selectedItem.shape.getBounds ? selectedItem.shape.getBounds() : null;
+                let position;
+                
+                if (bounds) {{
+                    position = bounds.getCenter();
+                }} else if (selectedItem.shape.getCenter) {{
+                    position = selectedItem.shape.getCenter();
+                }} else if (selectedItem.shape.getPath) {{
+                    const path = selectedItem.shape.getPath();
+                    const latLngBounds = new google.maps.LatLngBounds();
+                    path.forEach(point => latLngBounds.extend(point));
+                    position = latLngBounds.getCenter();
+                }}
+
+                if (position) {{
+                    const areaData = existingShapes.find(a => a.id === areaId);
+                    const safeName = escapeHtml(areaData?.name || 'Área seleccionada');
+                    
+                    const content = `
+                        <div style='padding: 8px; min-width: 150px;'>
+                            <h3 style='margin: 0 0 4px 0; color: #1a73e8; font-size: 14px;'>${{safeName}}</h3>
+                            <p style='margin: 0; color: #5f6368; font-size: 12px;'>Área resaltada</p>
+                        </div>
+                    `;
+                    
+                    infoWindow.setContent(content);
+                    infoWindow.setPosition(position);
+                    infoWindow.open(map);
+                }}
+            }}
+        }}
+
         window.clearCurrentShape = clearCurrentShape;
         window.searchLocation = searchLocation;
+        window.highlightArea = highlightArea;
     </script>
 </body>
 </html>";
@@ -722,9 +796,36 @@ namespace Advance_Control.Views.Pages
             _isFormVisible = true;
         }
 
-        private void AreasList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void AreasList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Handle area selection - could zoom to area on map
+            // Prevent multiple simultaneous map centering operations using Interlocked for thread safety
+            if (Interlocked.CompareExchange(ref _isCenteringMapInt, 1, 0) != 0)
+                return;
+
+            try
+            {
+                // When an area is selected from the list, visualize it on the map
+                if (ViewModel.SelectedArea != null)
+                {
+                    await ShowDebugDialogAsync("Área Seleccionada", 
+                        $"ID: {ViewModel.SelectedArea.IdArea}\n" +
+                        $"Nombre: {ViewModel.SelectedArea.Nombre}\n" +
+                        $"Tipo: {ViewModel.SelectedArea.TipoGeometria}\n" +
+                        $"Centro: ({ViewModel.SelectedArea.CentroLatitud}, {ViewModel.SelectedArea.CentroLongitud})");
+
+                    // Center the map on the selected area and highlight it
+                    await CenterMapOnAreaAsync(ViewModel.SelectedArea);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al mostrar área en el mapa", ex, "AreasView", "AreasList_SelectionChanged");
+                await ShowUserErrorDialogAsync("Error", "Ocurrió un error al mostrar el área en el mapa.");
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _isCenteringMapInt, 0);
+            }
         }
 
         private void EditButton_Click(object sender, RoutedEventArgs e)
@@ -1071,6 +1172,156 @@ namespace Advance_Control.Views.Pages
             else
             {
                 await _loggingService.LogErrorAsync($"WebView2 navegación falló. Status: {args.WebErrorStatus}", null, "AreasView", "MapWebView_NavigationCompleted");
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de búsqueda del mapa
+        /// </summary>
+        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var searchQuery = MapSearchBox.Text?.Trim();
+
+                if (string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    await ShowUserErrorDialogAsync("Búsqueda", "Por favor ingrese una ubicación para buscar");
+                    return;
+                }
+
+                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "AreasView", "SearchButton_Click");
+                await ShowDebugDialogAsync("Búsqueda Iniciada", $"Query: {searchQuery}");
+
+                if (MapWebView?.CoreWebView2 != null)
+                {
+                    // Use proper JavaScript encoding to prevent XSS attacks
+                    var encodedQuery = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(searchQuery);
+                    var script = $"searchLocation('{encodedQuery}');";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                }
+                else
+                {
+                    await ShowDebugDialogAsync("Error de WebView", "MapWebView o CoreWebView2 es null");
+                    await ShowUserErrorDialogAsync("Error", "El mapa no está listo. Por favor espere a que cargue.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "AreasView", "SearchButton_Click");
+                await ShowDebugDialogAsync("Excepción en Búsqueda", $"Error: {ex.Message}\nStack: {ex.StackTrace}");
+                await ShowUserErrorDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
+            }
+        }
+
+        /// <summary>
+        /// Centra el mapa en un área seleccionada y la resalta
+        /// </summary>
+        private async Task CenterMapOnAreaAsync(AreaDto area)
+        {
+            try
+            {
+                if (MapWebView?.CoreWebView2 == null)
+                {
+                    await ShowDebugDialogAsync("Error CenterMapOnArea", "MapWebView o CoreWebView2 es null");
+                    return;
+                }
+
+                // Check if area has center coordinates
+                if (area.CentroLatitud.HasValue && area.CentroLongitud.HasValue)
+                {
+                    var latStr = area.CentroLatitud.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    var lngStr = area.CentroLongitud.Value.ToString("F6", CultureInfo.InvariantCulture);
+                    
+                    // Validate and sanitize the area ID (ensure it's a valid integer)
+                    var areaIdStr = area.IdArea.ToString(CultureInfo.InvariantCulture);
+
+                    await ShowDebugDialogAsync("Centrando Mapa", 
+                        $"Área: {area.Nombre}\nLat: {latStr}\nLng: {lngStr}");
+
+                    var script = $@"
+                        (function() {{
+                            var position = {{ lat: {latStr}, lng: {lngStr} }};
+                            map.setCenter(position);
+                            map.setZoom(16);
+                            highlightArea({areaIdStr});
+                        }})();
+                    ";
+                    await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+
+                    await _loggingService.LogInformationAsync(
+                        $"Mapa centrado en área: {area.Nombre} ({latStr}, {lngStr})",
+                        "AreasView",
+                        "CenterMapOnAreaAsync");
+                }
+                else
+                {
+                    await ShowDebugDialogAsync("Sin Coordenadas", 
+                        $"El área '{area.Nombre}' no tiene coordenadas de centro definidas.");
+                    await ShowUserErrorDialogAsync("Información", 
+                        "El área seleccionada no tiene coordenadas de centro. No se puede centrar en el mapa.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al centrar el mapa en el área", ex, "AreasView", "CenterMapOnAreaAsync");
+                await ShowDebugDialogAsync("Excepción CenterMapOnArea", $"Error: {ex.Message}\nStack: {ex.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// Muestra un diálogo de mensaje para el usuario final.
+        /// Siempre se muestra independientemente del flag de debug.
+        /// </summary>
+        private async Task ShowUserErrorDialogAsync(string title, string message)
+        {
+            try
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = title,
+                    Content = message,
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al mostrar diálogo de usuario", ex, "AreasView", "ShowUserErrorDialogAsync");
+            }
+        }
+
+        /// <summary>
+        /// Muestra un diálogo de depuración con información técnica detallada.
+        /// Solo se muestra si ENABLE_DEBUG_DIALOGS es true.
+        /// Útil para verificar el funcionamiento durante el desarrollo.
+        /// </summary>
+        private async Task ShowDebugDialogAsync(string title, string message)
+        {
+            if (!ENABLE_DEBUG_DIALOGS)
+            {
+                // Solo registrar en el log si los diálogos de debug están desactivados
+                await _loggingService.LogInformationAsync($"[DEBUG] {title}: {message}", "AreasView", "ShowDebugDialogAsync");
+                return;
+            }
+
+            try
+            {
+                var dialog = new ContentDialog
+                {
+                    Title = $"[DEBUG] {title}",
+                    Content = message,
+                    CloseButtonText = "OK",
+                    XamlRoot = this.XamlRoot
+                };
+
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al mostrar diálogo de debug", ex, "AreasView", "ShowDebugDialogAsync");
             }
         }
     }
