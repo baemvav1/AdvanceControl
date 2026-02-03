@@ -40,9 +40,6 @@ namespace Advance_Control.Views.Pages
         private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
-        
-        // Log truncation constants
-        private const int LogPreviewMaxLength = 150;
 
         public AreasView()
         {
@@ -60,7 +57,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Safely truncates a string for logging, respecting character boundaries
         /// </summary>
-        private static string TruncateForLog(string? value, int maxLength = LogPreviewMaxLength)
+        private static string TruncateForLog(string? value, int maxLength = 150)
         {
             if (string.IsNullOrEmpty(value))
                 return "NULL";

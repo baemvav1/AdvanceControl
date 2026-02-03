@@ -308,9 +308,9 @@ namespace Advance_Control.Services.Areas
 
                 await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
                 // Log data flow info without sensitive URL details
-                var metadataLenUpdate = area.MetadataJSON?.Length ?? 0;
+                var metadataLen = area.MetadataJSON?.Length ?? 0;
                 await _logger.LogInformationAsync(
-                    $"[DATA_FLOW] Step 3 - MetadataJSON received ({metadataLenUpdate} chars), Query params count: {queryParams.Count}",
+                    $"[DATA_FLOW] Step 3 - MetadataJSON received ({metadataLen} chars), Query params count: {queryParams.Count}",
                     "AreasService", 
                     "UpdateAreaAsync");
 
