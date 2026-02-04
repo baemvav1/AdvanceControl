@@ -480,18 +480,6 @@ namespace Advance_Control.Views
 
                 if (success)
                 {
-                    // Reload cargos from API to get updated data and ensure consistency
-                    try
-                    {
-                        operacion.CargosLoaded = false;
-                        await LoadCargosForOperacionAsync(operacion);
-                    }
-                    catch (Exception reloadEx)
-                    {
-                        System.Diagnostics.Debug.WriteLine($"Error al recargar cargos: {reloadEx.Message}");
-                        // Continue showing success notification even if reload fails
-                    }
-                    
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Cargo actualizado",
                         nota: "El cargo se ha actualizado correctamente.",
@@ -499,7 +487,6 @@ namespace Advance_Control.Views
                 }
                 else
                 {
-                    // Don't reload on error - preserve user's changes so they can retry
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
                         nota: "No se pudo actualizar el cargo. Por favor, intente nuevamente.",
@@ -509,7 +496,6 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al actualizar cargo: {ex.GetType().Name} - {ex.Message}");
-                // Don't reload on error - preserve user's changes so they can retry
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
                     nota: "Ocurrió un error al actualizar el cargo. Por favor, intente nuevamente.",
