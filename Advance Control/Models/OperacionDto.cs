@@ -56,11 +56,23 @@ namespace Advance_Control.Models
         [JsonPropertyName("idAtiende")]
         public int? IdAtiende { get; set; }
 
+        private decimal _monto;
         /// <summary>
         /// Monto de la operación
         /// </summary>
         [JsonPropertyName("monto")]
-        public decimal Monto { get; set; }
+        public decimal Monto
+        {
+            get => _monto;
+            set
+            {
+                if (_monto != value)
+                {
+                    _monto = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         /// <summary>
         /// Nota asociada a la operación
