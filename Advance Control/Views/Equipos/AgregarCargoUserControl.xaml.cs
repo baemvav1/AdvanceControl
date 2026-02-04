@@ -153,9 +153,9 @@ namespace Advance_Control.Views.Equipos
 
             int idRelacionCargo = 0;
             int? idProveedor = null;
-            
-            // Set cantidad: 1 for Servicio, default to 1 for Refaccion as well (can be changed later in DataGrid)
             double cantidad = 1;
+
+            
             
             if (idTipoCargo == TIPO_CARGO_REFACCION && _refaccionSelector?.HasSelection == true)
             {

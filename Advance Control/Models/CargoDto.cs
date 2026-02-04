@@ -228,7 +228,7 @@ namespace Advance_Control.Models
         {
             if (_cantidad.HasValue && _unitario.HasValue)
             {
-                Monto = _cantidad.Value * _unitario.Value;
+                //Monto = _cantidad.Value * _unitario.Value;
             }
         }
     }

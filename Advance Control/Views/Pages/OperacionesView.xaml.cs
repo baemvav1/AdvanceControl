@@ -441,7 +441,7 @@ namespace Advance_Control.Views
                 }
             }
         }
-
+        
         private async void CargosDataGrid_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key != Windows.System.VirtualKey.Enter)
