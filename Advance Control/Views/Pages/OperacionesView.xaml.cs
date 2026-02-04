@@ -464,6 +464,10 @@ namespace Advance_Control.Views
 
             try
             {
+                // Commit any pending edit to ensure bindings are updated before reading values
+                dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+                dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
                 // Actualizar el cargo
                 var query = new CargoEditDto
                 {
