@@ -436,8 +436,13 @@ namespace Advance_Control.Services.GoogleCloudStorage
         /// </summary>
         private static string GenerateRandomString(int length)
         {
-            var bytes = RandomNumberGenerator.GetBytes(length);
-            return Base64UrlEncode(bytes).Substring(0, length);
+            // Generate enough bytes to ensure Base64 output is at least 'length' characters
+            // Base64 encodes 3 bytes to 4 characters, so we need at least (length * 3 / 4) bytes
+            var bytesNeeded = (int)Math.Ceiling(length * 3.0 / 4.0) + 1;
+            var bytes = RandomNumberGenerator.GetBytes(bytesNeeded);
+            var encoded = Base64UrlEncode(bytes);
+            // Ensure we don't exceed the encoded string length
+            return encoded.Length >= length ? encoded.Substring(0, length) : encoded;
         }
 
         /// <summary>
@@ -530,7 +535,7 @@ namespace Advance_Control.Services.GoogleCloudStorage
             var buffer = Encoding.UTF8.GetBytes(html);
             response.ContentType = "text/html; charset=utf-8";
             response.ContentLength64 = buffer.Length;
-            await response.OutputStream.WriteAsync(buffer);
+            await response.OutputStream.WriteAsync(buffer, 0, buffer.Length);
             response.Close();
         }
 
