@@ -453,9 +453,14 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
-                    // Registrar CargoImageService para Google Cloud Storage
+                    // Registrar CargoImageService para operaciones de imágenes (usando backend API como proxy para GCS)
                     services.AddHttpClient<ICargoImageService, CargoImageService>((sp, client) =>
                     {
+                        var apiOptions = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Services.EndPointProvider.ExternalApiOptions>>();
+                        if (!string.IsNullOrEmpty(apiOptions.Value?.BaseUrl) && Uri.TryCreate(apiOptions.Value.BaseUrl, UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
                         {
@@ -463,9 +468,10 @@ namespace Advance_Control
                         }
                         else
                         {
-                            client.Timeout = TimeSpan.FromSeconds(60); // Más tiempo para subir imágenes
+                            client.Timeout = TimeSpan.FromSeconds(120); // Más tiempo para subir imágenes grandes
                         }
-                    });
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();
