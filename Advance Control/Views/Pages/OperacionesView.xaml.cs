@@ -1,7 +1,9 @@
 using Advance_Control.Models;
 using Advance_Control.Services.Cargos;
+using Advance_Control.Services.GoogleCloudStorage;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
+using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +14,11 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.Globalization.NumberFormatting;
+using Windows.Storage.Pickers;
 
 namespace Advance_Control.Views
 {
@@ -26,6 +31,7 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly ICargoService _cargoService;
         private readonly IUserInfoService _userInfoService;
+        private readonly ICargoImageService _cargoImageService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -45,6 +51,9 @@ namespace Advance_Control.Views
 
             // Resolver el servicio de información de usuario desde DI
             _userInfoService = ((App)Application.Current).Host.Services.GetRequiredService<IUserInfoService>();
+
+            // Resolver el servicio de imágenes de cargo desde DI
+            _cargoImageService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoImageService>();
 
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
@@ -116,7 +125,7 @@ namespace Advance_Control.Views
             }
         }
 
-        private async System.Threading.Tasks.Task LoadCargosForOperacionAsync(Models.OperacionDto operacion)
+        private async Task LoadCargosForOperacionAsync(Models.OperacionDto operacion)
         {
             if (!operacion.IdOperacion.HasValue)
                 return;
@@ -148,6 +157,9 @@ namespace Advance_Control.Views
                                 operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
                             }
                         };
+
+                        // Load images for this cargo asynchronously with error handling
+                        _ = LoadImagesForCargoSafeAsync(cargo);
                     }
 
                     // Subscribe to collection changes to update total when items are added/removed
@@ -688,6 +700,232 @@ namespace Advance_Control.Views
                     nota: "Ocurrió un error al generar la cotización. Por favor, intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
             }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de cargar imagen para un cargo
+        /// </summary>
+        private async void UploadCargoImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cargo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
+                return;
+
+            if (cargo.IdCargo <= 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "El cargo no tiene un ID válido para cargar imágenes.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            try
+            {
+                // Crear el selector de archivos
+                var picker = new FileOpenPicker();
+                
+                // Obtener el HWND de la ventana principal para inicializar el picker
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                // Configurar tipos de archivo permitidos
+                picker.ViewMode = PickerViewMode.Thumbnail;
+                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                picker.FileTypeFilter.Add(".jpg");
+                picker.FileTypeFilter.Add(".jpeg");
+                picker.FileTypeFilter.Add(".png");
+                picker.FileTypeFilter.Add(".gif");
+                picker.FileTypeFilter.Add(".bmp");
+
+                // Mostrar el selector
+                var file = await picker.PickSingleFileAsync();
+
+                if (file == null)
+                {
+                    // Usuario canceló la selección
+                    return;
+                }
+
+                // Mostrar indicador de carga
+                cargo.IsLoadingImages = true;
+
+                // Leer el archivo como stream
+                using var stream = await file.OpenStreamForReadAsync();
+                
+                // Determinar el tipo de contenido basado en la extensión
+                var contentType = GetContentTypeFromExtension(file.FileType);
+
+                // Subir la imagen
+                var result = await _cargoImageService.UploadImageAsync(cargo.IdCargo, stream, contentType);
+
+                if (result != null)
+                {
+                    // Agregar la imagen a la colección del cargo
+                    cargo.Images.Add(result);
+                    cargo.NotifyImagesChanged();
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Imagen cargada",
+                        nota: $"La imagen {result.FileName} se ha cargado correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo cargar la imagen. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar imagen: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al cargar la imagen. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+            finally
+            {
+                cargo.IsLoadingImages = false;
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de eliminar imagen de un cargo
+        /// </summary>
+        private async void DeleteCargoImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la imagen desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CargoImageDto image)
+                return;
+
+            if (string.IsNullOrEmpty(image.FileName))
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "La imagen no tiene un nombre de archivo válido.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Mostrar diálogo de confirmación
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea eliminar la imagen {image.FileName}?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var dialogResult = await dialog.ShowAsync();
+
+            if (dialogResult == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var success = await _cargoImageService.DeleteImageAsync(image.FileName);
+
+                    if (success)
+                    {
+                        // Use IdCargo from image to find the parent cargo more efficiently
+                        var targetCargo = ViewModel.Operaciones
+                            .SelectMany(op => op.Cargos)
+                            .FirstOrDefault(c => c.IdCargo == image.IdCargo);
+
+                        if (targetCargo != null)
+                        {
+                            var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.FileName == image.FileName);
+                            if (imageToRemove != null)
+                            {
+                                targetCargo.Images.Remove(imageToRemove);
+                                targetCargo.NotifyImagesChanged();
+                            }
+                        }
+
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Imagen eliminada",
+                            nota: "La imagen se ha eliminado correctamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo eliminar la imagen. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al eliminar imagen: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Safe wrapper for LoadImagesForCargoAsync that catches and logs any unhandled exceptions
+        /// </summary>
+        private async Task LoadImagesForCargoSafeAsync(Models.CargoDto cargo)
+        {
+            try
+            {
+                await LoadImagesForCargoAsync(cargo);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception but don't throw - this is a fire-and-forget operation
+                System.Diagnostics.Debug.WriteLine($"Error inesperado al cargar imágenes para cargo {cargo?.IdCargo}: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Carga las imágenes para un cargo específico
+        /// </summary>
+        private async Task LoadImagesForCargoAsync(Models.CargoDto cargo)
+        {
+            if (cargo.IdCargo <= 0 || cargo.ImagesLoaded || cargo.IsLoadingImages)
+                return;
+
+            try
+            {
+                cargo.IsLoadingImages = true;
+
+                var images = await _cargoImageService.GetImagesAsync(cargo.IdCargo);
+
+                cargo.Images.Clear();
+                foreach (var image in images)
+                {
+                    cargo.Images.Add(image);
+                }
+
+                cargo.NotifyImagesChanged();
+                cargo.ImagesLoaded = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar imágenes del cargo {cargo.IdCargo}: {ex.GetType().Name} - {ex.Message}");
+                // No mostrar error al usuario, simplemente no se cargan las imágenes
+            }
+            finally
+            {
+                cargo.IsLoadingImages = false;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el tipo de contenido basado en la extensión del archivo
+        /// </summary>
+        private static string GetContentTypeFromExtension(string extension)
+        {
+            return ImageContentTypeHelper.GetContentTypeFromExtension(extension);
         }
     }
 }

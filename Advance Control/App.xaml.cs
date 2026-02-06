@@ -27,6 +27,7 @@ using Advance_Control.Services.Quotes;
 using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Areas;
 using Advance_Control.Services.Ubicaciones;
+using Advance_Control.Services.GoogleCloudStorage;
 
 namespace Advance_Control
 {
@@ -451,6 +452,20 @@ namespace Advance_Control
                         }
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar CargoImageService para Google Cloud Storage
+                    services.AddHttpClient<ICargoImageService, CargoImageService>((sp, client) =>
+                    {
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(60); // Más tiempo para subir imágenes
+                        }
+                    });
 
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();

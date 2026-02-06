@@ -339,130 +339,191 @@
                                                     </Grid>
                                                     
                                                     <!-- ItemsRepeater for Cargos -->
-                                                    <ScrollViewer Grid.Row="2" MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                                    <ScrollViewer Grid.Row="2" MaxHeight="400" VerticalScrollBarVisibility="Auto">
                                                         <ItemsRepeater ItemsSource="{x:Bind Cargos, Mode=OneWay}">
                                                             <ItemsRepeater.Layout>
                                                                 <StackLayout Spacing="2" />
                                                             </ItemsRepeater.Layout>
                                                             <ItemsRepeater.ItemTemplate>
                                                                 <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CargoDto">
-                                                                    <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="8,6" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
-                                                                        <Grid.ColumnDefinitions>
-                                                                            <ColumnDefinition Width="100" />
-                                                                            <ColumnDefinition Width="120" />
-                                                                            <ColumnDefinition Width="80" />
-                                                                            <ColumnDefinition Width="100" />
-                                                                            <ColumnDefinition Width="100" />
-                                                                            <ColumnDefinition Width="*" />
-                                                                            <ColumnDefinition Width="120" />
-                                                                            <ColumnDefinition Width="80" />
-                                                                        </Grid.ColumnDefinitions>
+                                                                    <StackPanel Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+                                                                        <!-- Main cargo row -->
+                                                                        <Grid Padding="8,6">
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="100" />
+                                                                                <ColumnDefinition Width="120" />
+                                                                                <ColumnDefinition Width="80" />
+                                                                                <ColumnDefinition Width="100" />
+                                                                                <ColumnDefinition Width="100" />
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="120" />
+                                                                                <ColumnDefinition Width="110" />
+                                                                            </Grid.ColumnDefinitions>
                                                                         
-                                                                        <!-- Tipo Cargo (ReadOnly) -->
-                                                                        <TextBlock Grid.Column="0" Text="{x:Bind TipoCargo, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                                            <!-- Tipo Cargo (ReadOnly) -->
+                                                                            <TextBlock Grid.Column="0" Text="{x:Bind TipoCargo, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
                                                                         
-                                                                        <!-- Detalle (ReadOnly) -->
-                                                                        <TextBlock Grid.Column="1" Text="{x:Bind DetalleRelacionado, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                                            <!-- Detalle (ReadOnly) -->
+                                                                            <TextBlock Grid.Column="1" Text="{x:Bind DetalleRelacionado, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
                                                                         
-                                                                        <!-- Cantidad (Read-only display when not editing) -->
-                                                                        <TextBlock Grid.Column="2" 
-                                                                                   Text="{x:Bind Cantidad, Mode=OneWay}" 
-                                                                                   VerticalAlignment="Center" 
-                                                                                   Foreground="WhiteSmoke" 
-                                                                                   FontSize="12"
-                                                                                   Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
-                                                                        <!-- Cantidad (Editable when in edit mode) -->
-                                                                        <TextBox Grid.Column="2" 
-                                                                                 Text="{x:Bind Cantidad, Mode=TwoWay}" 
-                                                                                 VerticalAlignment="Center" 
-                                                                                 Margin="0,0,4,0"
-                                                                                 MinHeight="28"
-                                                                                 Padding="4,2"
-                                                                                 FontSize="12"
-                                                                                 KeyDown="CargoField_KeyDown"
-                                                                                 Tag="{x:Bind}"
-                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                                            <!-- Cantidad (Read-only display when not editing) -->
+                                                                            <TextBlock Grid.Column="2" 
+                                                                                       Text="{x:Bind Cantidad, Mode=OneWay}" 
+                                                                                       VerticalAlignment="Center" 
+                                                                                       Foreground="WhiteSmoke" 
+                                                                                       FontSize="12"
+                                                                                       Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
+                                                                            <!-- Cantidad (Editable when in edit mode) -->
+                                                                            <TextBox Grid.Column="2" 
+                                                                                     Text="{x:Bind Cantidad, Mode=TwoWay}" 
+                                                                                     VerticalAlignment="Center" 
+                                                                                     Margin="0,0,4,0"
+                                                                                     MinHeight="28"
+                                                                                     Padding="4,2"
+                                                                                     FontSize="12"
+                                                                                     KeyDown="CargoField_KeyDown"
+                                                                                     Tag="{x:Bind}"
+                                                                                     Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                                         
-                                                                        <!-- Unitario (Read-only display when not editing) -->
-                                                                        <TextBlock Grid.Column="3" 
-                                                                                   Text="{x:Bind Unitario, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" 
-                                                                                   VerticalAlignment="Center" 
-                                                                                   Foreground="WhiteSmoke" 
-                                                                                   FontSize="12"
-                                                                                   Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
-                                                                        <!-- Unitario (Editable when in edit mode) -->
-                                                                        <TextBox Grid.Column="3" 
-                                                                                 Text="{x:Bind Unitario, Mode=TwoWay}" 
-                                                                                 VerticalAlignment="Center" 
-                                                                                 Margin="0,0,4,0"
-                                                                                 MinHeight="28"
-                                                                                 Padding="4,2"
-                                                                                 FontSize="12"
-                                                                                 KeyDown="CargoField_KeyDown"
-                                                                                 Tag="{x:Bind}"
-                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                                            <!-- Unitario (Read-only display when not editing) -->
+                                                                            <TextBlock Grid.Column="3" 
+                                                                                       Text="{x:Bind Unitario, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" 
+                                                                                       VerticalAlignment="Center" 
+                                                                                       Foreground="WhiteSmoke" 
+                                                                                       FontSize="12"
+                                                                                       Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
+                                                                            <!-- Unitario (Editable when in edit mode) -->
+                                                                            <TextBox Grid.Column="3" 
+                                                                                     Text="{x:Bind Unitario, Mode=TwoWay}" 
+                                                                                     VerticalAlignment="Center" 
+                                                                                     Margin="0,0,4,0"
+                                                                                     MinHeight="28"
+                                                                                     Padding="4,2"
+                                                                                     FontSize="12"
+                                                                                     KeyDown="CargoField_KeyDown"
+                                                                                     Tag="{x:Bind}"
+                                                                                     Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                                         
-                                                                        <!-- Monto (ReadOnly) -->
-                                                                        <TextBlock Grid.Column="4" Text="{x:Bind Monto, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" />
+                                                                            <!-- Monto (ReadOnly) -->
+                                                                            <TextBlock Grid.Column="4" Text="{x:Bind Monto, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" />
                                                                         
-                                                                        <!-- Nota (Read-only display when not editing) -->
-                                                                        <TextBlock Grid.Column="5" 
-                                                                                   Text="{x:Bind Nota, Mode=OneWay}" 
-                                                                                   VerticalAlignment="Center" 
-                                                                                   Foreground="WhiteSmoke" 
-                                                                                   FontSize="12"
-                                                                                   TextTrimming="CharacterEllipsis"
-                                                                                   Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
-                                                                        <!-- Nota (Editable when in edit mode) -->
-                                                                        <TextBox Grid.Column="5" 
-                                                                                 Text="{x:Bind Nota, Mode=TwoWay}" 
-                                                                                 VerticalAlignment="Center" 
-                                                                                 Margin="0,0,4,0"
-                                                                                 MinHeight="28"
-                                                                                 Padding="4,2"
-                                                                                 FontSize="12"
-                                                                                 KeyDown="CargoField_KeyDown"
-                                                                                 Tag="{x:Bind}"
-                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                                            <!-- Nota (Read-only display when not editing) -->
+                                                                            <TextBlock Grid.Column="5" 
+                                                                                       Text="{x:Bind Nota, Mode=OneWay}" 
+                                                                                       VerticalAlignment="Center" 
+                                                                                       Foreground="WhiteSmoke" 
+                                                                                       FontSize="12"
+                                                                                       TextTrimming="CharacterEllipsis"
+                                                                                       Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
+                                                                            <!-- Nota (Editable when in edit mode) -->
+                                                                            <TextBox Grid.Column="5" 
+                                                                                     Text="{x:Bind Nota, Mode=TwoWay}" 
+                                                                                     VerticalAlignment="Center" 
+                                                                                     Margin="0,0,4,0"
+                                                                                     MinHeight="28"
+                                                                                     Padding="4,2"
+                                                                                     FontSize="12"
+                                                                                     KeyDown="CargoField_KeyDown"
+                                                                                     Tag="{x:Bind}"
+                                                                                     Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                                         
-                                                                        <!-- Proveedor (ReadOnly) -->
-                                                                        <TextBlock Grid.Column="6" Text="{x:Bind Proveedor, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                                            <!-- Proveedor (ReadOnly) -->
+                                                                            <TextBlock Grid.Column="6" Text="{x:Bind Proveedor, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
                                                                         
-                                                                        <!-- Actions -->
-                                                                        <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-                                                                            <Button
-                                                                                Click="EditCargoButton_Click"
-                                                                                Tag="{x:Bind}"
-                                                                                Background="Transparent"
-                                                                                Padding="4"
-                                                                                MinHeight="24"
-                                                                                MinWidth="24"
-                                                                                ToolTipService.ToolTip="Editar cargo">
-                                                                                <SymbolIcon Symbol="Edit" />
-                                                                            </Button>
-                                                                            <Button
-                                                                                Click="DeleteCargoButton_Click"
-                                                                                Tag="{x:Bind}"
-                                                                                Background="Transparent"
-                                                                                Padding="4"
-                                                                                MinHeight="24"
-                                                                                MinWidth="24"
-                                                                                ToolTipService.ToolTip="Eliminar cargo">
-                                                                                <SymbolIcon Symbol="Delete" />
-                                                                            </Button>
-                                                                            <Button
-                                                                                Click="ViewRefaccionFromCargoButton_Click"
-                                                                                Tag="{x:Bind}"
-                                                                                Background="Transparent"
-                                                                                Padding="4"
-                                                                                MinHeight="24"
-                                                                                MinWidth="24"
-                                                                                ToolTipService.ToolTip="Ver detalles de refacción"
-                                                                                Visibility="{x:Bind TipoCargo, Converter={StaticResource RefaccionVisibilityConverter}}">
-                                                                                <SymbolIcon Symbol="View" />
-                                                                            </Button>
-                                                                        </StackPanel>
-                                                                    </Grid>
+                                                                            <!-- Actions -->
+                                                                            <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                                                                <Button
+                                                                                    Click="UploadCargoImageButton_Click"
+                                                                                    Tag="{x:Bind}"
+                                                                                    Background="Transparent"
+                                                                                    Padding="4"
+                                                                                    MinHeight="24"
+                                                                                    MinWidth="24"
+                                                                                    ToolTipService.ToolTip="Cargar imagen">
+                                                                                    <SymbolIcon Symbol="Camera" />
+                                                                                </Button>
+                                                                                <Button
+                                                                                    Click="EditCargoButton_Click"
+                                                                                    Tag="{x:Bind}"
+                                                                                    Background="Transparent"
+                                                                                    Padding="4"
+                                                                                    MinHeight="24"
+                                                                                    MinWidth="24"
+                                                                                    ToolTipService.ToolTip="Editar cargo">
+                                                                                    <SymbolIcon Symbol="Edit" />
+                                                                                </Button>
+                                                                                <Button
+                                                                                    Click="DeleteCargoButton_Click"
+                                                                                    Tag="{x:Bind}"
+                                                                                    Background="Transparent"
+                                                                                    Padding="4"
+                                                                                    MinHeight="24"
+                                                                                    MinWidth="24"
+                                                                                    ToolTipService.ToolTip="Eliminar cargo">
+                                                                                    <SymbolIcon Symbol="Delete" />
+                                                                                </Button>
+                                                                                <Button
+                                                                                    Click="ViewRefaccionFromCargoButton_Click"
+                                                                                    Tag="{x:Bind}"
+                                                                                    Background="Transparent"
+                                                                                    Padding="4"
+                                                                                    MinHeight="24"
+                                                                                    MinWidth="24"
+                                                                                    ToolTipService.ToolTip="Ver detalles de refacción"
+                                                                                    Visibility="{x:Bind TipoCargo, Converter={StaticResource RefaccionVisibilityConverter}}">
+                                                                                    <SymbolIcon Symbol="View" />
+                                                                                </Button>
+                                                                            </StackPanel>
+                                                                        </Grid>
+                                                                        
+                                                                        <!-- Images row - only visible if cargo has images -->
+                                                                        <Grid Padding="8,4" 
+                                                                              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                                              Visibility="{x:Bind HasImages, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                            <Grid.RowDefinitions>
+                                                                                <RowDefinition Height="Auto" />
+                                                                                <RowDefinition Height="Auto" />
+                                                                            </Grid.RowDefinitions>
+                                                                            
+                                                                            <TextBlock Grid.Row="0" 
+                                                                                       Text="Imágenes:" 
+                                                                                       FontSize="11" 
+                                                                                       FontWeight="SemiBold" 
+                                                                                       Foreground="WhiteSmoke" 
+                                                                                       Margin="0,0,0,4" />
+                                                                            
+                                                                            <!-- ItemsRepeater for cargo images -->
+                                                                            <ItemsRepeater Grid.Row="1" ItemsSource="{x:Bind Images, Mode=OneWay}">
+                                                                                <ItemsRepeater.Layout>
+                                                                                    <StackLayout Orientation="Horizontal" Spacing="8" />
+                                                                                </ItemsRepeater.Layout>
+                                                                                <ItemsRepeater.ItemTemplate>
+                                                                                    <DataTemplate x:DataType="models:CargoImageDto">
+                                                                                        <Grid Width="100" Height="100" CornerRadius="4" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                                                                                            <Image Source="{x:Bind Url, Mode=OneWay}" 
+                                                                                                   Stretch="UniformToFill" 
+                                                                                                   VerticalAlignment="Center" 
+                                                                                                   HorizontalAlignment="Center" />
+                                                                                            <!-- Delete button overlay -->
+                                                                                            <Button Click="DeleteCargoImageButton_Click"
+                                                                                                    Tag="{x:Bind}"
+                                                                                                    HorizontalAlignment="Right"
+                                                                                                    VerticalAlignment="Top"
+                                                                                                    Background="#CC000000"
+                                                                                                    Padding="4"
+                                                                                                    MinHeight="20"
+                                                                                                    MinWidth="20"
+                                                                                                    Margin="0,2,2,0"
+                                                                                                    CornerRadius="10"
+                                                                                                    ToolTipService.ToolTip="Eliminar imagen">
+                                                                                                <SymbolIcon Symbol="Cancel" Foreground="White" />
+                                                                                            </Button>
+                                                                                        </Grid>
+                                                                                    </DataTemplate>
+                                                                                </ItemsRepeater.ItemTemplate>
+                                                                            </ItemsRepeater>
+                                                                        </Grid>
+                                                                    </StackPanel>
                                                                 </DataTemplate>
                                                             </ItemsRepeater.ItemTemplate>
                                                         </ItemsRepeater>

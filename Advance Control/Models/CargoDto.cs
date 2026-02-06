@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -237,6 +238,76 @@ namespace Advance_Control.Models
                     OnPropertyChanged();
                 }
             }
+        }
+
+        private ObservableCollection<CargoImageDto> _images = new ObservableCollection<CargoImageDto>();
+        /// <summary>
+        /// Colección de imágenes asociadas al cargo
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<CargoImageDto> Images
+        {
+            get => _images;
+            set
+            {
+                if (_images != value)
+                {
+                    _images = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(HasImages));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si el cargo tiene imágenes cargadas
+        /// </summary>
+        [JsonIgnore]
+        public bool HasImages => _images.Count > 0;
+
+        private bool _imagesLoaded;
+        /// <summary>
+        /// Indica si las imágenes del cargo ya fueron cargadas
+        /// </summary>
+        [JsonIgnore]
+        public bool ImagesLoaded
+        {
+            get => _imagesLoaded;
+            set
+            {
+                if (_imagesLoaded != value)
+                {
+                    _imagesLoaded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _isLoadingImages;
+        /// <summary>
+        /// Indica si se están cargando las imágenes
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingImages
+        {
+            get => _isLoadingImages;
+            set
+            {
+                if (_isLoadingImages != value)
+                {
+                    _isLoadingImages = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Notifica que la colección de imágenes ha cambiado
+        /// </summary>
+        public void NotifyImagesChanged()
+        {
+            OnPropertyChanged(nameof(Images));
+            OnPropertyChanged(nameof(HasImages));
         }
 
         /// <summary>
