@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -97,8 +98,8 @@ namespace Advance_Control.Services.CargoImages
 
                 using var content = new MultipartFormDataContent();
                 
-                // Add the image file
-                using var streamContent = new StreamContent(imageStream);
+                // Add the image file - do not use 'using' here as MultipartFormDataContent manages disposal
+                var streamContent = new StreamContent(imageStream);
                 streamContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                 content.Add(streamContent, "file", imageName);
                 
@@ -193,16 +194,8 @@ namespace Advance_Control.Services.CargoImages
                     return 1;
                 }
 
-                // Find the maximum image number and add 1
-                int maxNumber = 0;
-                foreach (var image in existingImages)
-                {
-                    if (image.ImageNumber > maxNumber)
-                    {
-                        maxNumber = image.ImageNumber;
-                    }
-                }
-
+                // Find the maximum image number and add 1 using LINQ
+                var maxNumber = existingImages.Max(i => i.ImageNumber);
                 return maxNumber + 1;
             }
             catch (Exception ex)

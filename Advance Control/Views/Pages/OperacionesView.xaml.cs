@@ -718,8 +718,6 @@ namespace Advance_Control.Views
                     cargo.Images.Add(image);
                 }
                 
-                cargo.ImagesLoaded = true;
-                
                 // Notify that HasImages should be re-evaluated
                 cargo.OnPropertyChanged(nameof(cargo.HasImages));
             }
@@ -727,6 +725,11 @@ namespace Advance_Control.Views
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar imágenes del cargo {cargo.IdCargo}: {ex.GetType().Name} - {ex.Message}");
                 // Don't show notification for image loading errors to avoid spam
+            }
+            finally
+            {
+                // Mark as loaded to prevent repeated attempts (even on failure)
+                cargo.ImagesLoaded = true;
             }
         }
 
@@ -838,20 +841,24 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        // Find the cargo that contains this image and remove it
+                        // Find the cargo that contains this image using IdCargo for efficiency
+                        CargoDto? targetCargo = null;
                         foreach (var operacion in ViewModel.Operaciones)
                         {
-                            foreach (var cargo in operacion.Cargos)
+                            targetCargo = operacion.Cargos.FirstOrDefault(c => c.IdCargo == image.IdCargo);
+                            if (targetCargo != null)
+                                break;
+                        }
+                        
+                        if (targetCargo != null)
+                        {
+                            var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.IdCargoImage == image.IdCargoImage);
+                            if (imageToRemove != null)
                             {
-                                var imageToRemove = cargo.Images.FirstOrDefault(i => i.IdCargoImage == image.IdCargoImage);
-                                if (imageToRemove != null)
-                                {
-                                    cargo.Images.Remove(imageToRemove);
-                                    
-                                    // Notify that HasImages should be re-evaluated
-                                    cargo.OnPropertyChanged(nameof(cargo.HasImages));
-                                    break;
-                                }
+                                targetCargo.Images.Remove(imageToRemove);
+                                
+                                // Notify that HasImages should be re-evaluated
+                                targetCargo.OnPropertyChanged(nameof(targetCargo.HasImages));
                             }
                         }
 
