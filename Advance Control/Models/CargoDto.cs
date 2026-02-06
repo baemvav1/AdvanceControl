@@ -221,6 +221,24 @@ namespace Advance_Control.Models
             }
         }
 
+        private bool _isEditing;
+        /// <summary>
+        /// Indica si el cargo está en modo edición
+        /// </summary>
+        [JsonIgnore]
+        public bool IsEditing
+        {
+            get => _isEditing;
+            set
+            {
+                if (_isEditing != value)
+                {
+                    _isEditing = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         /// <summary>
         /// Recalcula el monto basado en cantidad * unitario
         /// </summary>
