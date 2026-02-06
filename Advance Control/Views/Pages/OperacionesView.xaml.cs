@@ -4,7 +4,6 @@ using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
-using CommunityToolkit.WinUI.UI.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -442,21 +441,17 @@ namespace Advance_Control.Views
             }
         }
         
-        private async void CargosDataGrid_KeyDown(object sender, KeyRoutedEventArgs e)
+        private async void CargoField_KeyDown(object sender, KeyRoutedEventArgs e)
         {
             if (e.Key != Windows.System.VirtualKey.Enter)
                 return;
 
-            // Obtener el DataGrid
-            if (sender is not DataGrid dataGrid)
+            // Obtener el TextBox
+            if (sender is not TextBox textBox)
                 return;
 
-            // Obtener la operación desde el Tag del DataGrid
-            if (dataGrid.Tag is not Models.OperacionDto operacion)
-                return;
-
-            // Obtener el cargo seleccionado
-            if (dataGrid.SelectedItem is not Models.CargoDto cargo)
+            // Obtener el cargo desde el Tag del TextBox
+            if (textBox.Tag is not Models.CargoDto cargo)
                 return;
 
             if (cargo.IdCargo <= 0)
@@ -464,9 +459,16 @@ namespace Advance_Control.Views
 
             try
             {
-                // Commit any pending edit to ensure bindings are updated before reading values
-                dataGrid.CommitEdit(DataGridEditingUnit.Cell, true);
-                dataGrid.CommitEdit(DataGridEditingUnit.Row, true);
+                // Handle Cantidad changes - if cargo type is Servicio, cantidad must be 1
+                if (cargo.TipoCargo == "Servicio" && cargo.Cantidad != 1)
+                {
+                    cargo.Cantidad = 1;
+                    
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Información",
+                        nota: "Para cargos de tipo Servicio, la cantidad siempre es 1.",
+                        fechaHoraInicio: DateTime.Now);
+                }
 
                 // Actualizar el cargo
                 var query = new CargoEditDto
@@ -484,6 +486,16 @@ namespace Advance_Control.Views
 
                 if (success)
                 {
+                    // Notify that TotalMonto should be recalculated
+                    foreach (var operacion in ViewModel.Operaciones)
+                    {
+                        if (operacion.Cargos.Contains(cargo))
+                        {
+                            operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
+                            break;
+                        }
+                    }
+
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Cargo actualizado",
                         nota: "El cargo se ha actualizado correctamente.",
@@ -505,43 +517,6 @@ namespace Advance_Control.Views
                     nota: "Ocurrió un error al actualizar el cargo. Por favor, intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
             }
-        }
-
-        private async void CargosDataGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
-        {
-            // Get the cargo being edited
-            if (e.Row.DataContext is not Models.CargoDto cargo)
-                return;
-
-            // Get the column being edited
-            var columnHeader = e.Column.Header?.ToString();
-            
-            // Get the DataGrid
-            if (sender is not DataGrid dataGrid)
-                return;
-
-            // Get the operation from DataGrid's Tag
-            if (dataGrid.Tag is not Models.OperacionDto operacion)
-                return;
-
-            // Handle Cantidad changes - if cargo type is Servicio, cantidad must be 1
-            if (columnHeader == "Cantidad" && cargo.TipoCargo == "Servicio")
-            {
-                // For Servicio type, always set cantidad to 1
-                // The binding will update the UI with the corrected value
-                cargo.Cantidad = 1;
-                
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Información",
-                    nota: "Para cargos de tipo Servicio, la cantidad siempre es 1.",
-                    fechaHoraInicio: DateTime.Now);
-                return;
-            }
-
-            // After editing Cantidad or Unitario, the Monto will be recalculated automatically 
-            // via the CargoDto.RecalculateMonto method called by property setters.
-            // The TotalMonto will be updated through PropertyChanged events already set up in LoadCargosForOperacionAsync.
-            // Note: Changes are persisted to the database when the user presses Enter (handled by CargosDataGrid_KeyDown).
         }
 
         private async void ViewRefaccionFromCargoButton_Click(object sender, RoutedEventArgs e)
