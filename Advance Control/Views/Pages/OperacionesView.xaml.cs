@@ -440,6 +440,16 @@ namespace Advance_Control.Views
                 }
             }
         }
+
+        private void EditCargoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cargo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
+                return;
+
+            // Toggle edit mode
+            cargo.IsEditing = !cargo.IsEditing;
+        }
         
         private async void CargoField_KeyDown(object sender, KeyRoutedEventArgs e)
         {
@@ -486,6 +496,9 @@ namespace Advance_Control.Views
 
                 if (success)
                 {
+                    // Exit edit mode after successful save
+                    cargo.IsEditing = false;
+
                     // Notify that TotalMonto should be recalculated
                     foreach (var operacion in ViewModel.Operaciones)
                     {

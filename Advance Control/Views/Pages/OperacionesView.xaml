@@ -364,7 +364,14 @@
                                                                         <!-- Detalle (ReadOnly) -->
                                                                         <TextBlock Grid.Column="1" Text="{x:Bind DetalleRelacionado, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
                                                                         
-                                                                        <!-- Cantidad (Editable) -->
+                                                                        <!-- Cantidad (Read-only display when not editing) -->
+                                                                        <TextBlock Grid.Column="2" 
+                                                                                   Text="{x:Bind Cantidad, Mode=OneWay}" 
+                                                                                   VerticalAlignment="Center" 
+                                                                                   Foreground="WhiteSmoke" 
+                                                                                   FontSize="12"
+                                                                                   Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
+                                                                        <!-- Cantidad (Editable when in edit mode) -->
                                                                         <TextBox Grid.Column="2" 
                                                                                  Text="{x:Bind Cantidad, Mode=TwoWay}" 
                                                                                  VerticalAlignment="Center" 
@@ -373,9 +380,17 @@
                                                                                  Padding="4,2"
                                                                                  FontSize="12"
                                                                                  KeyDown="CargoField_KeyDown"
-                                                                                 Tag="{x:Bind}" />
+                                                                                 Tag="{x:Bind}"
+                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                                         
-                                                                        <!-- Unitario (Editable) -->
+                                                                        <!-- Unitario (Read-only display when not editing) -->
+                                                                        <TextBlock Grid.Column="3" 
+                                                                                   Text="{x:Bind Unitario, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" 
+                                                                                   VerticalAlignment="Center" 
+                                                                                   Foreground="WhiteSmoke" 
+                                                                                   FontSize="12"
+                                                                                   Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
+                                                                        <!-- Unitario (Editable when in edit mode) -->
                                                                         <TextBox Grid.Column="3" 
                                                                                  Text="{x:Bind Unitario, Mode=TwoWay}" 
                                                                                  VerticalAlignment="Center" 
@@ -384,12 +399,21 @@
                                                                                  Padding="4,2"
                                                                                  FontSize="12"
                                                                                  KeyDown="CargoField_KeyDown"
-                                                                                 Tag="{x:Bind}" />
+                                                                                 Tag="{x:Bind}"
+                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                                         
                                                                         <!-- Monto (ReadOnly) -->
                                                                         <TextBlock Grid.Column="4" Text="{x:Bind Monto, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" />
                                                                         
-                                                                        <!-- Nota (Editable) -->
+                                                                        <!-- Nota (Read-only display when not editing) -->
+                                                                        <TextBlock Grid.Column="5" 
+                                                                                   Text="{x:Bind Nota, Mode=OneWay}" 
+                                                                                   VerticalAlignment="Center" 
+                                                                                   Foreground="WhiteSmoke" 
+                                                                                   FontSize="12"
+                                                                                   TextTrimming="CharacterEllipsis"
+                                                                                   Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
+                                                                        <!-- Nota (Editable when in edit mode) -->
                                                                         <TextBox Grid.Column="5" 
                                                                                  Text="{x:Bind Nota, Mode=TwoWay}" 
                                                                                  VerticalAlignment="Center" 
@@ -398,13 +422,24 @@
                                                                                  Padding="4,2"
                                                                                  FontSize="12"
                                                                                  KeyDown="CargoField_KeyDown"
-                                                                                 Tag="{x:Bind}" />
+                                                                                 Tag="{x:Bind}"
+                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
                                                                         
                                                                         <!-- Proveedor (ReadOnly) -->
                                                                         <TextBlock Grid.Column="6" Text="{x:Bind Proveedor, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
                                                                         
                                                                         <!-- Actions -->
                                                                         <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                                                            <Button
+                                                                                Click="EditCargoButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                Background="Transparent"
+                                                                                Padding="4"
+                                                                                MinHeight="24"
+                                                                                MinWidth="24"
+                                                                                ToolTipService.ToolTip="Editar cargo">
+                                                                                <SymbolIcon Symbol="Edit" />
+                                                                            </Button>
                                                                             <Button
                                                                                 Click="DeleteCargoButton_Click"
                                                                                 Tag="{x:Bind}"
