@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -11,7 +12,7 @@ namespace Advance_Control.Models
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        public void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
@@ -25,6 +26,8 @@ namespace Advance_Control.Models
         private string? _detalleRelacionado;
         private string? _tipoCargo;
         private string? _proveedor;
+        private ObservableCollection<CargoImageDto> _images = new();
+        private bool _imagesLoaded;
 
         /// <summary>
         /// ID único del cargo
@@ -238,6 +241,47 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        /// <summary>
+        /// Collection of images associated with this cargo
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<CargoImageDto> Images
+        {
+            get => _images;
+            set
+            {
+                if (_images != value)
+                {
+                    _images = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(HasImages));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether images have been loaded for this cargo
+        /// </summary>
+        [JsonIgnore]
+        public bool ImagesLoaded
+        {
+            get => _imagesLoaded;
+            set
+            {
+                if (_imagesLoaded != value)
+                {
+                    _imagesLoaded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether this cargo has any images
+        /// </summary>
+        [JsonIgnore]
+        public bool HasImages => _images.Count > 0;
 
         /// <summary>
         /// Recalcula el monto basado en cantidad * unitario
