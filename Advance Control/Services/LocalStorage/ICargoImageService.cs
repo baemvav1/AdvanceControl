@@ -4,15 +4,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 
-namespace Advance_Control.Services.GoogleCloudStorage
+namespace Advance_Control.Services.LocalStorage
 {
     /// <summary>
-    /// Interfaz para el servicio de almacenamiento de imágenes de cargos en Google Cloud Storage
+    /// Interfaz para el servicio de almacenamiento de imágenes de cargos
     /// </summary>
     public interface ICargoImageService
     {
         /// <summary>
-        /// Sube una imagen a Google Cloud Storage para un cargo específico
+        /// Sube una imagen para un cargo específico
         /// </summary>
         /// <param name="idCargo">ID del cargo</param>
         /// <param name="imageStream">Stream con los datos de la imagen</param>

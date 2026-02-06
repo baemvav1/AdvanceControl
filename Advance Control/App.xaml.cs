@@ -27,7 +27,7 @@ using Advance_Control.Services.Quotes;
 using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Areas;
 using Advance_Control.Services.Ubicaciones;
-using Advance_Control.Services.GoogleCloudStorage;
+using Advance_Control.Services.LocalStorage;
 
 namespace Advance_Control
 {
@@ -57,9 +57,6 @@ namespace Advance_Control
 
                     // Enlazar sección "DevelopmentMode" de appsettings.json a DevelopmentModeOptions
                     services.Configure<Settings.DevelopmentModeOptions>(context.Configuration.GetSection("DevelopmentMode"));
-
-                    // Enlazar sección "GoogleCloudStorage" de appsettings.json a GoogleCloudStorageOptions
-                    services.Configure<Settings.GoogleCloudStorageOptions>(context.Configuration.GetSection("GoogleCloudStorage"));
 
                     // Registrar el provider que compone endpoints (usa IOptions<ExternalApiOptions>)
                     services.AddSingleton<IApiEndpointProvider, ApiEndpointProvider>();
@@ -456,33 +453,8 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
-                    // Registrar GoogleCloudStorageAuthService para autenticación OAuth 2.0 con GCS
-                    services.AddHttpClient<IGoogleCloudStorageAuthService, GoogleCloudStorageAuthService>((sp, client) =>
-                    {
-                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
-                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
-                        {
-                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
-                        }
-                        else
-                        {
-                            client.Timeout = TimeSpan.FromSeconds(30);
-                        }
-                    });
-
-                    // Registrar CargoImageService para Google Cloud Storage
-                    services.AddHttpClient<ICargoImageService, CargoImageService>((sp, client) =>
-                    {
-                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
-                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
-                        {
-                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
-                        }
-                        else
-                        {
-                            client.Timeout = TimeSpan.FromSeconds(60); // Más tiempo para subir imágenes
-                        }
-                    });
+                    // Registrar LocalCargoImageService para almacenamiento local de imágenes de cargos
+                    services.AddSingleton<ICargoImageService, LocalCargoImageService>();
 
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();
