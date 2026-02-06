@@ -388,7 +388,48 @@ namespace Advance_Control.ViewModels
 
                 await _logger.LogInformationAsync($"Generando reporte para operación {operacion.IdOperacion}...", "OperacionesViewModel", "GenerateReporteAsync");
 
-                var filePath = await _quoteService.GenerateReportePdfAsync(operacion, operacion.Cargos);
+                // Get active entity to use company name
+                string? nombreEmpresa = null;
+                try
+                {
+                    var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
+                    nombreEmpresa = entidadActiva?.NombreComercial;
+                    if (!string.IsNullOrWhiteSpace(nombreEmpresa))
+                    {
+                        await _logger.LogInformationAsync($"Usando nombre comercial de entidad activa: {nombreEmpresa}", "OperacionesViewModel", "GenerateReporteAsync");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail if we can't get the entity
+                    await _logger.LogWarningAsync($"No se pudo obtener la entidad activa: {ex.Message}", "OperacionesViewModel", "GenerateReporteAsync");
+                }
+
+                // Get equipment location if available
+                string? ubicacionNombre = null;
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(operacion.Identificador))
+                    {
+                        // Search for equipment by identifier
+                        var equipos = await _equipoService.GetEquiposAsync(new EquipoQueryDto { Identificador = operacion.Identificador }, cancellationToken);
+                        var equipo = equipos?.FirstOrDefault();
+                        
+                        if (equipo?.IdUbicacion.HasValue == true && equipo.IdUbicacion.Value > 0)
+                        {
+                            var ubicacion = await _ubicacionService.GetUbicacionByIdAsync(equipo.IdUbicacion.Value, cancellationToken);
+                            ubicacionNombre = ubicacion?.Nombre;
+                            await _logger.LogInformationAsync($"Ubicación encontrada para equipo {operacion.Identificador}: {ubicacionNombre}", "OperacionesViewModel", "GenerateReporteAsync");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail if we can't get the location
+                    await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateReporteAsync");
+                }
+
+                var filePath = await _quoteService.GenerateReportePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa);
 
                 await _logger.LogInformationAsync($"Reporte generado exitosamente: {filePath}", "OperacionesViewModel", "GenerateReporteAsync");
 
