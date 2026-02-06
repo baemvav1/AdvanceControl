@@ -1,5 +1,6 @@
 using Advance_Control.Models;
 using Advance_Control.Services.Cargos;
+using Advance_Control.Services.CargoImages;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.ViewModels;
@@ -12,8 +13,10 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using Windows.Globalization.NumberFormatting;
+using Windows.Storage.Pickers;
 
 namespace Advance_Control.Views
 {
@@ -25,6 +28,7 @@ namespace Advance_Control.Views
         public OperacionesViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly ICargoService _cargoService;
+        private readonly ICargoImageService _cargoImageService;
         private readonly IUserInfoService _userInfoService;
 
         /// <summary>
@@ -42,6 +46,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de cargos desde DI
             _cargoService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoService>();
+
+            // Resolver el servicio de imágenes de cargo desde DI
+            _cargoImageService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoImageService>();
 
             // Resolver el servicio de información de usuario desde DI
             _userInfoService = ((App)Application.Current).Host.Services.GetRequiredService<IUserInfoService>();
@@ -148,6 +155,9 @@ namespace Advance_Control.Views
                                 operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
                             }
                         };
+                        
+                        // Load images for this cargo
+                        await LoadCargoImagesAsync(cargo);
                     }
 
                     // Subscribe to collection changes to update total when items are added/removed
@@ -687,6 +697,192 @@ namespace Advance_Control.Views
                     titulo: "Error",
                     nota: "Ocurrió un error al generar la cotización. Por favor, intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        /// <summary>
+        /// Loads images for a cargo
+        /// </summary>
+        private async System.Threading.Tasks.Task LoadCargoImagesAsync(Models.CargoDto cargo)
+        {
+            if (cargo.IdCargo <= 0 || cargo.ImagesLoaded)
+                return;
+
+            try
+            {
+                var images = await _cargoImageService.GetCargoImagesAsync(cargo.IdCargo);
+                
+                cargo.Images.Clear();
+                foreach (var image in images)
+                {
+                    cargo.Images.Add(image);
+                }
+                
+                // Notify that HasImages should be re-evaluated
+                cargo.OnPropertyChanged(nameof(cargo.HasImages));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar imágenes del cargo {cargo.IdCargo}: {ex.GetType().Name} - {ex.Message}");
+                // Don't show notification for image loading errors to avoid spam
+            }
+            finally
+            {
+                // Mark as loaded to prevent repeated attempts (even on failure)
+                cargo.ImagesLoaded = true;
+            }
+        }
+
+        /// <summary>
+        /// Handles uploading an image for a cargo
+        /// </summary>
+        private async void UploadCargoImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cargo desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
+                return;
+
+            if (cargo.IdCargo <= 0)
+                return;
+
+            try
+            {
+                // Create file picker
+                var picker = new FileOpenPicker();
+                
+                // Initialize picker with window handle for WinUI 3
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+                
+                picker.ViewMode = PickerViewMode.Thumbnail;
+                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                picker.FileTypeFilter.Add(".jpg");
+                picker.FileTypeFilter.Add(".jpeg");
+                picker.FileTypeFilter.Add(".png");
+                picker.FileTypeFilter.Add(".gif");
+                picker.FileTypeFilter.Add(".bmp");
+
+                var file = await picker.PickSingleFileAsync();
+                
+                if (file == null)
+                    return;
+
+                // Get the file stream
+                using var stream = await file.OpenStreamForReadAsync();
+                
+                // Upload the image
+                var result = await _cargoImageService.UploadCargoImageAsync(
+                    cargo.IdCargo, 
+                    stream, 
+                    file.Name, 
+                    file.ContentType);
+
+                if (result != null)
+                {
+                    // Add the new image to the cargo's image collection
+                    cargo.Images.Add(result);
+                    
+                    // Notify that HasImages should be re-evaluated
+                    cargo.OnPropertyChanged(nameof(cargo.HasImages));
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Imagen cargada",
+                        nota: $"La imagen {result.ImageName} se ha cargado correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo cargar la imagen. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar imagen: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al cargar la imagen. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        /// <summary>
+        /// Handles deleting an image from a cargo
+        /// </summary>
+        private async void DeleteCargoImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la imagen desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CargoImageDto image)
+                return;
+
+            if (image.IdCargoImage <= 0)
+                return;
+
+            // Mostrar diálogo de confirmación
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea eliminar la imagen {image.ImageName}?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var success = await _cargoImageService.DeleteCargoImageAsync(image.IdCargoImage);
+
+                    if (success)
+                    {
+                        // Find the cargo that contains this image using IdCargo for efficiency
+                        CargoDto? targetCargo = null;
+                        foreach (var operacion in ViewModel.Operaciones)
+                        {
+                            targetCargo = operacion.Cargos.FirstOrDefault(c => c.IdCargo == image.IdCargo);
+                            if (targetCargo != null)
+                                break;
+                        }
+                        
+                        if (targetCargo != null)
+                        {
+                            var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.IdCargoImage == image.IdCargoImage);
+                            if (imageToRemove != null)
+                            {
+                                targetCargo.Images.Remove(imageToRemove);
+                                
+                                // Notify that HasImages should be re-evaluated
+                                targetCargo.OnPropertyChanged(nameof(targetCargo.HasImages));
+                            }
+                        }
+
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Imagen eliminada",
+                            nota: "La imagen se ha eliminado correctamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo eliminar la imagen. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al eliminar imagen: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
             }
         }
     }
