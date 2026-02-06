@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
@@ -58,6 +59,9 @@ namespace Advance_Control.Services.Entidades
 
                     if (!string.IsNullOrWhiteSpace(query.Ciudad))
                         queryParams.Add($"ciudad={Uri.EscapeDataString(query.Ciudad)}");
+
+                    if (query.Estatus.HasValue)
+                        queryParams.Add($"estatus={query.Estatus.Value.ToString().ToLowerInvariant()}");
 
                     if (queryParams.Count > 0)
                     {
@@ -314,6 +318,38 @@ namespace Advance_Control.Services.Entidades
             {
                 await _logger.LogErrorAsync("Error inesperado al eliminar entidad", ex, "EntidadService", "DeleteEntidadAsync");
                 throw;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene la primera entidad activa (estatus = true)
+        /// </summary>
+        public async Task<EntidadDto?> GetActiveEntidadAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync("Obteniendo entidad activa...", "EntidadService", "GetActiveEntidadAsync");
+
+                var query = new EntidadQueryDto { Estatus = true };
+                var entidades = await GetEntidadesAsync(query, cancellationToken);
+
+                var entidadActiva = entidades?.FirstOrDefault();
+
+                if (entidadActiva != null)
+                {
+                    await _logger.LogInformationAsync($"Entidad activa encontrada: {entidadActiva.NombreComercial}", "EntidadService", "GetActiveEntidadAsync");
+                }
+                else
+                {
+                    await _logger.LogWarningAsync("No se encontró ninguna entidad activa", "EntidadService", "GetActiveEntidadAsync");
+                }
+
+                return entidadActiva;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al obtener entidad activa", ex, "EntidadService", "GetActiveEntidadAsync");
+                return null;
             }
         }
     }

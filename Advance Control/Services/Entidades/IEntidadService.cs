@@ -91,5 +91,12 @@ namespace Advance_Control.Services.Entidades
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<ApiResponse> DeleteEntidadAsync(int id, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene la primera entidad activa (estatus = true)
+        /// </summary>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>La primera entidad activa o null si no existe</returns>
+        Task<EntidadDto?> GetActiveEntidadAsync(CancellationToken cancellationToken = default);
     }
 }

@@ -34,5 +34,10 @@ namespace Advance_Control.Models
         /// Búsqueda parcial por ciudad
         /// </summary>
         public string? Ciudad { get; set; }
+
+        /// <summary>
+        /// Filtro por estatus de la entidad (opcional)
+        /// </summary>
+        public bool? Estatus { get; set; }
     }
 }
