@@ -10,6 +10,7 @@ using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Quotes;
+using Advance_Control.Services.Entidades;
 
 namespace Advance_Control.ViewModels
 {
@@ -29,6 +30,7 @@ namespace Advance_Control.ViewModels
         private readonly IUbicacionService _ubicacionService;
         private readonly ILoggingService _logger;
         private readonly IQuoteService _quoteService;
+        private readonly IEntidadService _entidadService;
         private ObservableCollection<OperacionDto> _operaciones;
         private bool _isLoading;
         private string? _errorMessage;
@@ -40,13 +42,14 @@ namespace Advance_Control.ViewModels
         private string? _selectedClienteText;
         private string? _selectedEquipoText;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService)
         {
             _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
             _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
             _ubicacionService = ubicacionService ?? throw new ArgumentNullException(nameof(ubicacionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _quoteService = quoteService ?? throw new ArgumentNullException(nameof(quoteService));
+            _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
             _operaciones = new ObservableCollection<OperacionDto>();
         }
 
@@ -281,6 +284,23 @@ namespace Advance_Control.ViewModels
 
                 await _logger.LogInformationAsync($"Generando cotización para operación {operacion.IdOperacion}...", "OperacionesViewModel", "GenerateQuoteAsync");
 
+                // Get active entity to use company name
+                string? nombreEmpresa = null;
+                try
+                {
+                    var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
+                    nombreEmpresa = entidadActiva?.NombreComercial;
+                    if (!string.IsNullOrWhiteSpace(nombreEmpresa))
+                    {
+                        await _logger.LogInformationAsync($"Usando nombre comercial de entidad activa: {nombreEmpresa}", "OperacionesViewModel", "GenerateQuoteAsync");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Log but don't fail if we can't get the entity
+                    await _logger.LogWarningAsync($"No se pudo obtener la entidad activa: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
+                }
+
                 // Get equipment location if available
                 string? ubicacionNombre = null;
                 try
@@ -305,7 +325,7 @@ namespace Advance_Control.ViewModels
                     await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
                 }
 
-                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre);
+                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa);
 
                 // Calculate total with IVA and update operation monto
                 if (operacion.IdOperacion.HasValue)
@@ -343,6 +363,41 @@ namespace Advance_Control.ViewModels
             {
                 ErrorMessage = $"Error al generar cotización: {ex.Message}";
                 await _logger.LogErrorAsync($"Error al generar cotización para operación {operacion?.IdOperacion}", ex, "OperacionesViewModel", "GenerateQuoteAsync");
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Genera un reporte PDF para la operación especificada con sus cargos y fotografías
+        /// </summary>
+        public async Task<string?> GenerateReporteAsync(OperacionDto operacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (operacion == null)
+                {
+                    ErrorMessage = "No se puede generar reporte: operación no válida.";
+                    return null;
+                }
+
+                if (operacion.Cargos == null || operacion.Cargos.Count == 0)
+                {
+                    ErrorMessage = "No se puede generar reporte: no hay cargos asociados a esta operación.";
+                    return null;
+                }
+
+                await _logger.LogInformationAsync($"Generando reporte para operación {operacion.IdOperacion}...", "OperacionesViewModel", "GenerateReporteAsync");
+
+                var filePath = await _quoteService.GenerateReportePdfAsync(operacion, operacion.Cargos);
+
+                await _logger.LogInformationAsync($"Reporte generado exitosamente: {filePath}", "OperacionesViewModel", "GenerateReporteAsync");
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar reporte: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al generar reporte para operación {operacion?.IdOperacion}", ex, "OperacionesViewModel", "GenerateReporteAsync");
                 return null;
             }
         }

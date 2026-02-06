@@ -702,6 +702,75 @@ namespace Advance_Control.Views
             }
         }
 
+        private async void GenerarReporteButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            if (!operacion.IdOperacion.HasValue)
+                return;
+
+            // Verificar que la operación tenga cargos cargados
+            if (operacion.Cargos == null || operacion.Cargos.Count == 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "No hay cargos",
+                    nota: "No se puede generar un reporte porque no hay cargos asociados a esta operación.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            try
+            {
+                // Generar el reporte
+                var filePath = await ViewModel.GenerateReporteAsync(operacion);
+
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    // Mostrar diálogo de éxito con opción de abrir el archivo
+                    var dialog = new ContentDialog
+                    {
+                        Title = "Reporte generado",
+                        Content = $"El reporte se ha generado exitosamente en:\n\n{filePath}\n\n¿Desea abrir el archivo?",
+                        PrimaryButtonText = "Abrir",
+                        CloseButtonText = "Cerrar",
+                        DefaultButton = ContentDialogButton.Primary,
+                        XamlRoot = this.XamlRoot
+                    };
+
+                    var result = await dialog.ShowAsync();
+
+                    if (result == ContentDialogResult.Primary)
+                    {
+                        // Abrir el archivo PDF con la aplicación predeterminada
+                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                        await Windows.System.Launcher.LaunchFileAsync(file);
+                    }
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Reporte generado",
+                        nota: "El reporte PDF se ha generado correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo generar el reporte. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al generar reporte: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al generar el reporte. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
         /// <summary>
         /// Maneja el clic en el botón de cargar imagen para un cargo
         /// </summary>

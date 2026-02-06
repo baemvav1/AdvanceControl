@@ -34,7 +34,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Genera un PDF de cotización a partir de una operación y sus cargos
         /// </summary>
-        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null)
+        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null)
         {
             if (operacion == null)
                 throw new ArgumentNullException(nameof(operacion));
@@ -63,6 +63,10 @@ namespace Advance_Control.Services.Quotes
                 
                 var filePath = Path.Combine(quotesFolder, fileName);
 
+                // Use company name from entity or default
+                var companyTitle = !string.IsNullOrWhiteSpace(nombreEmpresa) ? nombreEmpresa.ToUpperInvariant() : "ADVANCE CONTROL";
+                var quotationTitle = $"Cotización {operacion.IdOperacion}";
+
                 // Generate PDF
                 var document = Document.Create(container =>
                 {
@@ -74,19 +78,27 @@ namespace Advance_Control.Services.Quotes
                         page.DefaultTextStyle(x => x.FontSize(11));
 
                         page.Header()
-                            .Height(100)
+                            .Height(120)
                             .Background(Colors.Blue.Lighten3)
                             .Padding(20)
                             .Column(column =>
                             {
-                                column.Item().AlignCenter().Text("ADVANCE CONTROL")
+                                column.Item().AlignCenter().Text(companyTitle)
                                     .FontSize(24)
                                     .Bold()
                                     .FontColor(Colors.Blue.Darken3);
                                 
-                                column.Item().AlignCenter().Text("Cotización de Servicio")
+                                column.Item().AlignCenter().Text(quotationTitle)
                                     .FontSize(16)
                                     .FontColor(Colors.Blue.Darken2);
+                                
+                                // Add Referencia with operation note
+                                if (!string.IsNullOrWhiteSpace(operacion.Nota))
+                                {
+                                    column.Item().PaddingTop(5).AlignCenter().Text($"Referencia: {operacion.Nota}")
+                                        .FontSize(12)
+                                        .FontColor(Colors.Blue.Darken1);
+                                }
                             });
 
                         page.Content()
@@ -188,16 +200,6 @@ namespace Advance_Control.Services.Quotes
                                         row.AutoItem().Text($"${total:N2}").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
                                     });
                                 });
-
-                                // Additional notes
-                                if (!string.IsNullOrWhiteSpace(operacion.Nota))
-                                {
-                                    column.Item().PaddingTop(20).Column(col =>
-                                    {
-                                        col.Item().Text("Notas Adicionales").Bold().FontSize(12);
-                                        col.Item().PaddingTop(5).Text(operacion.Nota);
-                                    });
-                                }
                             });
 
                         page.Footer()
@@ -234,6 +236,133 @@ namespace Advance_Control.Services.Quotes
                 2 => "Preventivo",
                 _ => "N/A"
             };
+        }
+
+        /// <summary>
+        /// Genera un PDF de reporte de cotización con fotos de cargos
+        /// </summary>
+        public async Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos)
+        {
+            if (operacion == null)
+                throw new ArgumentNullException(nameof(operacion));
+
+            if (cargos == null)
+                throw new ArgumentNullException(nameof(cargos));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Generando reporte PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateReportePdfAsync");
+
+                // Generate filename
+                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
+                var fileName = $"Reporte_Cotizacion_{operacion.IdOperacion}_{timestamp}.pdf";
+                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                var reportsFolder = Path.Combine(documentsPath, "Advance Control", "Reportes");
+                
+                // Create directory if it doesn't exist
+                Directory.CreateDirectory(reportsFolder);
+                
+                var filePath = Path.Combine(reportsFolder, fileName);
+
+                var reportTitle = $"Reporte Cotización {operacion.IdOperacion}";
+                var cargosList = cargos.ToList();
+
+                // Generate PDF
+                var document = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.Letter);
+                        page.Margin(2, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(11));
+
+                        page.Header()
+                            .Height(60)
+                            .Background(Colors.Blue.Lighten3)
+                            .Padding(15)
+                            .AlignCenter()
+                            .Text(reportTitle)
+                            .FontSize(20)
+                            .Bold()
+                            .FontColor(Colors.Blue.Darken3);
+
+                        page.Content()
+                            .PaddingVertical(1, Unit.Centimetre)
+                            .Column(column =>
+                            {
+                                column.Spacing(15);
+
+                                // Cargo rows
+                                foreach (var cargo in cargosList)
+                                {
+                                    column.Item().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingBottom(10).Column(cargoCol =>
+                                    {
+                                        // Row 1: Tipo, Detalle, Nota
+                                        cargoCol.Item().Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
+                                        {
+                                            row.RelativeItem(1).Text($"Tipo: {cargo.TipoCargo ?? "N/A"}").Bold();
+                                            row.RelativeItem(2).Text($"Detalle: {cargo.DetalleRelacionado ?? "N/A"}");
+                                            row.RelativeItem(3).Text($"Nota: {cargo.Nota ?? "-"}");
+                                        });
+
+                                        // Row 2: Photos if they exist
+                                        if (cargo.Images != null && cargo.Images.Count > 0)
+                                        {
+                                            cargoCol.Item().PaddingTop(5).Row(imagesRow =>
+                                            {
+                                                foreach (var image in cargo.Images)
+                                                {
+                                                    if (!string.IsNullOrWhiteSpace(image.Url) && File.Exists(image.Url))
+                                                    {
+                                                        try
+                                                        {
+                                                            imagesRow.AutoItem().Padding(2).Width(100).Image(image.Url);
+                                                        }
+                                                        catch
+                                                        {
+                                                            // Skip images that can't be loaded
+                                                            imagesRow.AutoItem().Padding(2).Text($"[Imagen: {image.FileName}]").FontSize(9).Italic();
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                }
+
+                                // Quien atiende section
+                                column.Item().PaddingTop(20).Background(Colors.Blue.Lighten4).Padding(10).Column(atiendeCol =>
+                                {
+                                    atiendeCol.Item().Text("Atendido por:").Bold().FontSize(14);
+                                    atiendeCol.Item().PaddingTop(5).Text(operacion.Atiende ?? "N/A").FontSize(12);
+                                });
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span("Página ");
+                                x.CurrentPageNumber();
+                                x.Span(" de ");
+                                x.TotalPages();
+                            });
+                    });
+                });
+
+                // Generate and save PDF
+                document.GeneratePdf(filePath);
+
+                await _logger.LogInformationAsync($"Reporte PDF generado exitosamente: {filePath}", "QuoteService", "GenerateReportePdfAsync");
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al generar reporte PDF", ex, "QuoteService", "GenerateReportePdfAsync");
+                throw;
+            }
         }
     }
 }

@@ -314,6 +314,15 @@
                                                                 <TextBlock Text="Generar Cotización" />
                                                             </StackPanel>
                                                         </Button>
+                                                        <Button
+                                                            Click="GenerarReporteButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            Background="{ThemeResource SystemAccentColorLight2}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Pictures" />
+                                                                <TextBlock Text="Generar Reporte" />
+                                                            </StackPanel>
+                                                        </Button>
                                                     </StackPanel>
 
                                                     <!-- Header Row for Cargos Table -->
