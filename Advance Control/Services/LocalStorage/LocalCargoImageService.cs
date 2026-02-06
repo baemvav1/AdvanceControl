@@ -63,8 +63,11 @@ namespace Advance_Control.Services.LocalStorage
                 var fullFileName = $"{fileName}{extension}";
                 var fullPath = Path.Combine(_basePath, fullFileName);
 
-                // Guardar el archivo
-                using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                // Verificar cancelación antes de iniciar operación de archivo
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Guardar el archivo de forma asíncrona
+                await using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
                 {
                     await imageStream.CopyToAsync(fileStream, cancellationToken);
                 }
@@ -72,13 +75,18 @@ namespace Advance_Control.Services.LocalStorage
                 var cargoImage = new CargoImageDto
                 {
                     FileName = fullFileName,
-                    Url = fullPath, // Ruta local en lugar de URL
+                    Url = fullPath, // Ruta local
                     IdCargo = idCargo,
                     ImageNumber = nextImageNumber
                 };
 
                 await _logger.LogInformationAsync($"Imagen guardada exitosamente: {fullFileName}", "LocalCargoImageService", "UploadImageAsync");
                 return cargoImage;
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Operación cancelada al guardar imagen", "LocalCargoImageService", "UploadImageAsync");
+                throw;
             }
             catch (Exception ex)
             {
@@ -155,10 +163,19 @@ namespace Advance_Control.Services.LocalStorage
                     return false;
                 }
 
-                File.Delete(fullPath);
+                // Verificar cancelación antes de eliminar
+                cancellationToken.ThrowIfCancellationRequested();
+
+                // Eliminar archivo de forma asíncrona para no bloquear el hilo
+                await Task.Run(() => File.Delete(fullPath), cancellationToken);
 
                 await _logger.LogInformationAsync($"Imagen eliminada exitosamente: {fileName}", "LocalCargoImageService", "DeleteImageAsync");
                 return true;
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Operación cancelada al eliminar imagen", "LocalCargoImageService", "DeleteImageAsync");
+                throw;
             }
             catch (Exception ex)
             {
@@ -177,13 +194,14 @@ namespace Advance_Control.Services.LocalStorage
             if (!fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 return 0;
 
-            var remainder = fileName.Substring(prefix.Length);
+            // Usar AsSpan para evitar asignaciones de cadena adicionales
+            var remainder = fileName.AsSpan(prefix.Length);
             
             // Remover la extensión si existe
             var dotIndex = remainder.LastIndexOf('.');
             if (dotIndex > 0)
             {
-                remainder = remainder.Substring(0, dotIndex);
+                remainder = remainder.Slice(0, dotIndex);
             }
 
             if (int.TryParse(remainder, out var number))
