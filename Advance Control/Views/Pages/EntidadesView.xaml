@@ -3,12 +3,264 @@
     x:Class="Advance_Control.Views.Pages.EntidadesView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Advance_Control.Views.Pages"
+    xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Advance_Control.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
-    <Grid>
+    <Page.Resources>
+        <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
+    </Page.Resources>
 
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Header  -->
+        <StackPanel
+            Grid.Row="0" Margin="0,0,0,24" Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock
+                    FontSize="32" FontWeight="Bold" Text="Entidades" />
+                <Button
+                    x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nueva entidad">
+                    <SymbolIcon Symbol="Add" />
+                </Button>
+            </StackPanel>
+            <TextBlock
+                FontSize="16"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Gestión de entidades del sistema" />
+        </StackPanel>
+
+        <!--  Filtros  -->
+        <StackPanel
+            Grid.Row="1" Margin="0,0,0,16" Spacing="12">
+            <TextBlock
+                FontSize="16" FontWeight="SemiBold" Text="Filtros de búsqueda" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Nombre Comercial"
+                    PlaceholderText="Nombre comercial"
+                    Text="{x:Bind ViewModel.NombreComercialFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Razón Social"
+                    PlaceholderText="Razón social"
+                    Text="{x:Bind ViewModel.RazonSocialFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="RFC"
+                    PlaceholderText="RFC de la entidad"
+                    Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="Estado"
+                    PlaceholderText="Estado"
+                    Text="{x:Bind ViewModel.EstadoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Ciudad"
+                    PlaceholderText="Ciudad"
+                    Text="{x:Bind ViewModel.CiudadFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <StackPanel
+                    Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
+                    <Button
+                        Click="SearchButton_Click" Content="Buscar"
+                        Style="{StaticResource AccentButtonStyle}" />
+                    <Button Click="ClearButton_Click" Content="Limpiar" />
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!--  Lista de entidades  -->
+        <Grid Grid.Row="2">
+            <!--  Loading indicator  -->
+            <ProgressRing
+                Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+
+            <!--  ItemsRepeater con ScrollViewer  -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Entidades, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="0" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:EntidadDto">
+                            <Grid Margin="0,5,20,5">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid
+                                        Grid.Row="0" MinHeight="90" Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="0,0,0,1" 
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
+                                        Tapped="HeadGrid_Tapped"
+                                        Tag="{x:Bind}"
+                                        x:Name="Head">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!--  Información principal de la entidad  -->
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock
+                                                FontSize="16" FontWeight="SemiBold"
+                                                Text="{x:Bind RazonSocial}" />
+                                            <TextBlock
+                                                FontSize="14"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind NombreComercial}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="RFC: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind RFC}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Ciudad: " />
+                                                    <Run Text="{x:Bind Ciudad}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!--  Botón para expandir/colapsar  -->
+                                        <Button
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Click="ToggleExpandButton_Click"
+                                            Tag="{x:Bind}"
+                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
+                                    </Grid>
+                                    <Grid
+                                        Grid.Row="1" 
+                                        Background="Black" 
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
+                                        Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
+                                        Padding="8"
+                                        x:Name="Body">
+                                        <Pivot>
+                                            <!-- Información de Dirección -->
+                                            <PivotItem Header="Dirección">
+                                                <Grid Padding="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Calle:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Calle}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Colonia:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Colonia}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Núm. Exterior:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind NumExt}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Núm. Interior:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind NumInt}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="CP:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind CP}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Estado:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Estado}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="3" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Ciudad:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Ciudad}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="3" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="País:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Pais}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </PivotItem>
+                                            
+                                            <!-- Información Legal -->
+                                            <PivotItem Header="Legal">
+                                                <Grid Padding="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="RFC:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind RFC}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Apoderado:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Apoderado}" TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Entidad:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdEntidad}" />
+                                                    </StackPanel>
+                                                    
+                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
+                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Estatus:" />
+                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Estatus}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </PivotItem>
+                                        </Pivot>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </Page>
