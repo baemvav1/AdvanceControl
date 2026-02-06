@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.GoogleCloudStorage
 {
@@ -292,16 +293,7 @@ namespace Advance_Control.Services.GoogleCloudStorage
         /// </summary>
         private static string GetExtensionFromContentType(string contentType)
         {
-            return contentType.ToLowerInvariant() switch
-            {
-                "image/jpeg" => ".jpg",
-                "image/jpg" => ".jpg",
-                "image/png" => ".png",
-                "image/gif" => ".gif",
-                "image/webp" => ".webp",
-                "image/bmp" => ".bmp",
-                _ => ".jpg"
-            };
+            return ImageContentTypeHelper.GetExtensionFromContentType(contentType);
         }
     }
 }

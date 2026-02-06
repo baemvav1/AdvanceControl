@@ -3,6 +3,7 @@ using Advance_Control.Services.Cargos;
 using Advance_Control.Services.GoogleCloudStorage;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
+using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Equipos;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +16,7 @@ using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.Globalization.NumberFormatting;
 using Windows.Storage.Pickers;
 
@@ -123,7 +125,7 @@ namespace Advance_Control.Views
             }
         }
 
-        private async System.Threading.Tasks.Task LoadCargosForOperacionAsync(Models.OperacionDto operacion)
+        private async Task LoadCargosForOperacionAsync(Models.OperacionDto operacion)
         {
             if (!operacion.IdOperacion.HasValue)
                 return;
@@ -871,7 +873,7 @@ namespace Advance_Control.Views
         /// <summary>
         /// Carga las imágenes para un cargo específico
         /// </summary>
-        private async System.Threading.Tasks.Task LoadImagesForCargoAsync(Models.CargoDto cargo)
+        private async Task LoadImagesForCargoAsync(Models.CargoDto cargo)
         {
             if (cargo.IdCargo <= 0 || cargo.ImagesLoaded || cargo.IsLoadingImages)
                 return;
@@ -907,15 +909,7 @@ namespace Advance_Control.Views
         /// </summary>
         private static string GetContentTypeFromExtension(string extension)
         {
-            return extension.ToLowerInvariant() switch
-            {
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".png" => "image/png",
-                ".gif" => "image/gif",
-                ".bmp" => "image/bmp",
-                ".webp" => "image/webp",
-                _ => "image/jpeg"
-            };
+            return ImageContentTypeHelper.GetContentTypeFromExtension(extension);
         }
     }
 }
