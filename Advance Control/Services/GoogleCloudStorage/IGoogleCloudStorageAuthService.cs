@@ -31,6 +31,14 @@ namespace Advance_Control.Services.GoogleCloudStorage
         Task<bool> AuthenticateAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Inicia el flujo de autenticación OAuth 2.0 con Google y devuelve información detallada del resultado.
+        /// Útil para manejar errores específicos como 'org_internal' (cliente configurado solo para uso interno).
+        /// </summary>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Resultado detallado de la autenticación incluyendo códigos y mensajes de error</returns>
+        Task<GoogleCloudStorageAuthResult> AuthenticateWithResultAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Limpia los tokens almacenados y cierra la sesión de Google Cloud Storage
         /// </summary>
         Task ClearAuthenticationAsync();

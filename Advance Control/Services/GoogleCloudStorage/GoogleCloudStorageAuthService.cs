@@ -111,9 +111,19 @@ namespace Advance_Control.Services.GoogleCloudStorage
         /// </summary>
         public async Task<bool> AuthenticateAsync(CancellationToken cancellationToken = default)
         {
+            var result = await AuthenticateWithResultAsync(cancellationToken);
+            return result.Success;
+        }
+
+        /// <summary>
+        /// Inicia el flujo de autenticación OAuth 2.0 con Google y devuelve información detallada del resultado.
+        /// Útil para manejar errores específicos como 'org_internal' (cliente configurado solo para uso interno).
+        /// </summary>
+        public async Task<GoogleCloudStorageAuthResult> AuthenticateWithResultAsync(CancellationToken cancellationToken = default)
+        {
             try
             {
-                await _logger.LogInformationAsync("Iniciando flujo de autenticación OAuth 2.0 con Google", "GoogleCloudStorageAuthService", "AuthenticateAsync");
+                await _logger.LogInformationAsync("Iniciando flujo de autenticación OAuth 2.0 con Google", "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
 
                 // Generar code verifier y challenge para PKCE
                 var codeVerifier = GenerateCodeVerifier();
@@ -144,7 +154,7 @@ namespace Advance_Control.Services.GoogleCloudStorage
                     UseShellExecute = true
                 });
 
-                await _logger.LogInformationAsync("Esperando respuesta de autorización de Google...", "GoogleCloudStorageAuthService", "AuthenticateAsync");
+                await _logger.LogInformationAsync("Esperando respuesta de autorización de Google...", "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
 
                 // Esperar el callback con el código de autorización
                 var context = await listener.GetContextAsync().WaitAsync(cancellationToken);
@@ -159,24 +169,27 @@ namespace Advance_Control.Services.GoogleCloudStorage
                 if (!queryParams.TryGetValue("state", out var returnedState) || returnedState != state)
                 {
                     await SendHtmlResponse(response, "Error: Estado inválido. Por favor, intente nuevamente.", false);
-                    await _logger.LogErrorAsync("Estado OAuth no coincide", null, "GoogleCloudStorageAuthService", "AuthenticateAsync");
-                    return false;
+                    await _logger.LogErrorAsync("Estado OAuth no coincide", null, "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
+                    return GoogleCloudStorageAuthResult.Failed("state_mismatch", "El estado de la solicitud OAuth no coincide");
                 }
 
-                // Verificar error
+                // Verificar error - manejar errores específicos de OAuth
                 if (queryParams.TryGetValue("error", out var error))
                 {
-                    await SendHtmlResponse(response, $"Error de autenticación: {error}", false);
-                    await _logger.LogErrorAsync($"Error en autorización OAuth: {error}", null, "GoogleCloudStorageAuthService", "AuthenticateAsync");
-                    return false;
+                    var errorDescription = queryParams.TryGetValue("error_description", out var desc) ? desc : error;
+                    var result = GoogleCloudStorageAuthResult.Failed(error, errorDescription);
+                    
+                    await SendHtmlResponse(response, result.UserFriendlyMessage ?? $"Error de autenticación: {error}", false);
+                    await _logger.LogErrorAsync($"Error en autorización OAuth: {error} - {errorDescription}", null, "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
+                    return result;
                 }
 
                 // Obtener código de autorización
                 if (!queryParams.TryGetValue("code", out var authCode))
                 {
                     await SendHtmlResponse(response, "Error: No se recibió código de autorización.", false);
-                    await _logger.LogErrorAsync("No se recibió código de autorización", null, "GoogleCloudStorageAuthService", "AuthenticateAsync");
-                    return false;
+                    await _logger.LogErrorAsync("No se recibió código de autorización", null, "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
+                    return GoogleCloudStorageAuthResult.Failed("no_code", "No se recibió el código de autorización de Google");
                 }
 
                 // Enviar respuesta de éxito al navegador
@@ -184,17 +197,27 @@ namespace Advance_Control.Services.GoogleCloudStorage
                 listener.Stop();
 
                 // Intercambiar código por tokens
-                return await ExchangeCodeForTokensAsync(authCode, codeVerifier, cancellationToken);
+                var tokenSuccess = await ExchangeCodeForTokensAsync(authCode, codeVerifier, cancellationToken);
+                if (tokenSuccess)
+                {
+                    return GoogleCloudStorageAuthResult.Succeeded();
+                }
+                return GoogleCloudStorageAuthResult.Failed("token_exchange_failed", "No se pudieron obtener los tokens de acceso");
             }
             catch (OperationCanceledException)
             {
-                await _logger.LogWarningAsync("Autenticación OAuth cancelada por el usuario", "GoogleCloudStorageAuthService", "AuthenticateAsync");
-                return false;
+                await _logger.LogWarningAsync("Autenticación OAuth cancelada por el usuario", "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
+                return GoogleCloudStorageAuthResult.Failed("cancelled", "La autenticación fue cancelada por el usuario");
+            }
+            catch (TimeoutException)
+            {
+                await _logger.LogWarningAsync("Autenticación OAuth excedió el tiempo de espera", "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
+                return GoogleCloudStorageAuthResult.Failed("timeout", "La autenticación excedió el tiempo de espera");
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error durante la autenticación OAuth", ex, "GoogleCloudStorageAuthService", "AuthenticateAsync");
-                return false;
+                await _logger.LogErrorAsync("Error durante la autenticación OAuth", ex, "GoogleCloudStorageAuthService", "AuthenticateWithResultAsync");
+                return GoogleCloudStorageAuthResult.Failed("unknown", ex.Message);
             }
         }
 

@@ -740,13 +740,17 @@ namespace Advance_Control.Views
                             nota: "Se abrirá el navegador para autenticarse con Google Cloud Storage.",
                             fechaHoraInicio: DateTime.Now);
 
-                        var authenticated = await _gcsAuthService.AuthenticateAsync();
+                        var authResult = await _gcsAuthService.AuthenticateWithResultAsync();
                         
-                        if (!authenticated)
+                        if (!authResult.Success)
                         {
+                            // Mostrar mensaje de error específico según el tipo de error
+                            var errorMessage = authResult.UserFriendlyMessage ?? 
+                                "No se pudo autenticar con Google Cloud Storage. Por favor, intente nuevamente.";
+                            
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Error de autenticación",
-                                nota: "No se pudo autenticar con Google Cloud Storage. Por favor, intente nuevamente.",
+                                nota: errorMessage,
                                 fechaHoraInicio: DateTime.Now);
                             return;
                         }
