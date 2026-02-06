@@ -8,14 +8,14 @@ namespace Advance_Control.Models
     public class CargoImageDto
     {
         /// <summary>
-        /// Nombre del archivo de la imagen en Google Cloud Storage
-        /// Formato: Cargo_Id_{idCargo}_{numeroImagen}
+        /// Nombre del archivo de la imagen
+        /// Formato: Cargo_Id_{idCargo}_{numeroImagen}.extension
         /// </summary>
         [JsonPropertyName("fileName")]
         public string FileName { get; set; } = string.Empty;
 
         /// <summary>
-        /// URL pública o firmada para acceder a la imagen
+        /// Ruta local para acceder a la imagen
         /// </summary>
         [JsonPropertyName("url")]
         public string Url { get; set; } = string.Empty;
