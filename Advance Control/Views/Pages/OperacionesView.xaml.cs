@@ -158,8 +158,8 @@ namespace Advance_Control.Views
                             }
                         };
 
-                        // Load images for this cargo
-                        _ = LoadImagesForCargoAsync(cargo);
+                        // Load images for this cargo asynchronously with error handling
+                        _ = LoadImagesForCargoSafeAsync(cargo);
                     }
 
                     // Subscribe to collection changes to update total when items are added/removed
@@ -831,18 +831,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        // Buscar el cargo que contiene esta imagen y removerla
-                        foreach (var operacion in ViewModel.Operaciones)
+                        // Use IdCargo from image to find the parent cargo more efficiently
+                        var targetCargo = ViewModel.Operaciones
+                            .SelectMany(op => op.Cargos)
+                            .FirstOrDefault(c => c.IdCargo == image.IdCargo);
+
+                        if (targetCargo != null)
                         {
-                            foreach (var cargo in operacion.Cargos)
+                            var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.FileName == image.FileName);
+                            if (imageToRemove != null)
                             {
-                                var imageToRemove = cargo.Images.FirstOrDefault(i => i.FileName == image.FileName);
-                                if (imageToRemove != null)
-                                {
-                                    cargo.Images.Remove(imageToRemove);
-                                    cargo.NotifyImagesChanged();
-                                    break;
-                                }
+                                targetCargo.Images.Remove(imageToRemove);
+                                targetCargo.NotifyImagesChanged();
                             }
                         }
 
@@ -867,6 +867,22 @@ namespace Advance_Control.Views
                         nota: "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Safe wrapper for LoadImagesForCargoAsync that catches and logs any unhandled exceptions
+        /// </summary>
+        private async Task LoadImagesForCargoSafeAsync(Models.CargoDto cargo)
+        {
+            try
+            {
+                await LoadImagesForCargoAsync(cargo);
+            }
+            catch (Exception ex)
+            {
+                // Log the exception but don't throw - this is a fire-and-forget operation
+                System.Diagnostics.Debug.WriteLine($"Error inesperado al cargar imágenes para cargo {cargo?.IdCargo}: {ex.GetType().Name} - {ex.Message}");
             }
         }
 

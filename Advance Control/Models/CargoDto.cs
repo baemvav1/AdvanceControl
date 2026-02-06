@@ -263,7 +263,7 @@ namespace Advance_Control.Models
         /// Indica si el cargo tiene imágenes cargadas
         /// </summary>
         [JsonIgnore]
-        public bool HasImages => _images != null && _images.Count > 0;
+        public bool HasImages => _images.Count > 0;
 
         private bool _imagesLoaded;
         /// <summary>
