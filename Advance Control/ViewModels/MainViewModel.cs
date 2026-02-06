@@ -203,6 +203,8 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.AcesoriaView>("Asesoria");
             _navigationService.Configure<Views.MttoView>("Mantenimiento");
             _navigationService.Configure<Views.ClientesView>("Clientes");
+            _navigationService.Configure<Views.Pages.EntidadesView>("Entidades");
+            _navigationService.Configure<Views.Pages.ContactosView>("Contactos");
             _navigationService.Configure<Views.EquiposView>("Equipos");
             _navigationService.Configure<Views.RefaaccionView>("Refacciones");
             _navigationService.Configure<Views.ProveedoresView>("Proveedores");

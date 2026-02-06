@@ -28,6 +28,7 @@ using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Areas;
 using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.LocalStorage;
+using Advance_Control.Services.Entidades;
 
 namespace Advance_Control
 {
@@ -453,6 +454,26 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar EntidadService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IEntidadService, EntidadService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar LocalCargoImageService para almacenamiento local de imágenes de cargos
                     services.AddSingleton<ICargoImageService, LocalCargoImageService>();
 
@@ -470,6 +491,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.ServiciosViewModel>();
                     services.AddTransient<ViewModels.UbicacionesViewModel>();
                     services.AddTransient<ViewModels.AreasViewModel>();
+                    services.AddTransient<ViewModels.EntidadesViewModel>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
