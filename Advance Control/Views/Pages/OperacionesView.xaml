@@ -7,7 +7,6 @@
     xmlns:local="using:Advance_Control.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:controls="using:CommunityToolkit.WinUI.UI.Controls"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
 
@@ -290,6 +289,7 @@
                                                 <Grid Padding="8">
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="*" />
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
@@ -316,62 +316,102 @@
                                                         </Button>
                                                     </StackPanel>
 
-                                                    <!-- DataGrid for Cargos -->
-                                                    <controls:DataGrid
-                                                        Grid.Row="1"
-                                                        x:Name="CargosDataGrid"
-                                                        ItemsSource="{x:Bind Cargos, Mode=OneWay}"
-                                                        AutoGenerateColumns="False"
-                                                        CanUserReorderColumns="False"
-                                                        CanUserSortColumns="True"
-                                                        GridLinesVisibility="All"
-                                                        HeadersVisibility="Column"
-                                                        IsReadOnly="False"
-                                                        SelectionMode="Single"
-                                                        KeyDown="CargosDataGrid_KeyDown"
-                                                        CellEditEnding="CargosDataGrid_CellEditEnding"
-                                                        Tag="{x:Bind}">
-                                                        <controls:DataGrid.Columns>
-                                                            <controls:DataGridTextColumn
-                                                                Header="Tipo Cargo"
-                                                                Binding="{Binding TipoCargo, Mode=OneWay}"
-                                                                IsReadOnly="True"
-                                                                Width="120" />
-                                                            <controls:DataGridTextColumn
-                                                                Header="Detalle"
-                                                                Binding="{Binding DetalleRelacionado, Mode=OneWay}"
-                                                                IsReadOnly="True"
-                                                                Width="150" />
-                                                            <controls:DataGridTextColumn
-                                                                Header="Cantidad"
-                                                                Binding="{Binding Cantidad, Mode=TwoWay}"
-                                                                Width="80" />
-                                                            <controls:DataGridTextColumn
-                                                                Header="Unitario"
-                                                                Binding="{Binding Unitario, Mode=TwoWay, Converter={StaticResource CurrencyConverter}}"
-                                                                Width="100" />
-                                                            <controls:DataGridTextColumn
-                                                                Header="Monto"
-                                                                Binding="{Binding Monto, Mode=OneWay, Converter={StaticResource CurrencyConverter}}"
-                                                                IsReadOnly="True"
-                                                                Width="100" />
-                                                            <controls:DataGridTextColumn
-                                                                Header="Nota"
-                                                                Binding="{Binding Nota, Mode=TwoWay}"
-                                                                Width="150" />
-                                                            <controls:DataGridTextColumn
-                                                                Header="Proveedor"
-                                                                Binding="{Binding Proveedor}"
-                                                                IsReadOnly="True"
-                                                                Width="*" />
-                                                            <controls:DataGridTemplateColumn Header="Acciones" Width="Auto">
-                                                                <controls:DataGridTemplateColumn.CellTemplate>
-                                                                    <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CargoDto">
-                                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <!-- Header Row for Cargos Table -->
+                                                    <Grid Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" Padding="8,4" Margin="0,0,0,2">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="100" />
+                                                            <ColumnDefinition Width="120" />
+                                                            <ColumnDefinition Width="80" />
+                                                            <ColumnDefinition Width="100" />
+                                                            <ColumnDefinition Width="100" />
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="120" />
+                                                            <ColumnDefinition Width="80" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Grid.Column="0" Text="Tipo" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="1" Text="Detalle" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="2" Text="Cantidad" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="3" Text="Unitario" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="4" Text="Monto" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="5" Text="Nota" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="6" Text="Proveedor" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="7" Text="Acciones" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                    </Grid>
+                                                    
+                                                    <!-- ItemsRepeater for Cargos -->
+                                                    <ScrollViewer Grid.Row="2" MaxHeight="300" VerticalScrollBarVisibility="Auto">
+                                                        <ItemsRepeater ItemsSource="{x:Bind Cargos, Mode=OneWay}">
+                                                            <ItemsRepeater.Layout>
+                                                                <StackLayout Spacing="2" />
+                                                            </ItemsRepeater.Layout>
+                                                            <ItemsRepeater.ItemTemplate>
+                                                                <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CargoDto">
+                                                                    <Grid Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" Padding="8,6" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="100" />
+                                                                            <ColumnDefinition Width="120" />
+                                                                            <ColumnDefinition Width="80" />
+                                                                            <ColumnDefinition Width="100" />
+                                                                            <ColumnDefinition Width="100" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="120" />
+                                                                            <ColumnDefinition Width="80" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        
+                                                                        <!-- Tipo Cargo (ReadOnly) -->
+                                                                        <TextBlock Grid.Column="0" Text="{x:Bind TipoCargo, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                                        
+                                                                        <!-- Detalle (ReadOnly) -->
+                                                                        <TextBlock Grid.Column="1" Text="{x:Bind DetalleRelacionado, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                                        
+                                                                        <!-- Cantidad (Editable) -->
+                                                                        <TextBox Grid.Column="2" 
+                                                                                 Text="{x:Bind Cantidad, Mode=TwoWay}" 
+                                                                                 VerticalAlignment="Center" 
+                                                                                 Margin="0,0,4,0"
+                                                                                 MinHeight="28"
+                                                                                 Padding="4,2"
+                                                                                 FontSize="12"
+                                                                                 KeyDown="CargoField_KeyDown"
+                                                                                 Tag="{x:Bind}" />
+                                                                        
+                                                                        <!-- Unitario (Editable) -->
+                                                                        <TextBox Grid.Column="3" 
+                                                                                 Text="{x:Bind Unitario, Mode=TwoWay}" 
+                                                                                 VerticalAlignment="Center" 
+                                                                                 Margin="0,0,4,0"
+                                                                                 MinHeight="28"
+                                                                                 Padding="4,2"
+                                                                                 FontSize="12"
+                                                                                 KeyDown="CargoField_KeyDown"
+                                                                                 Tag="{x:Bind}" />
+                                                                        
+                                                                        <!-- Monto (ReadOnly) -->
+                                                                        <TextBlock Grid.Column="4" Text="{x:Bind Monto, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" />
+                                                                        
+                                                                        <!-- Nota (Editable) -->
+                                                                        <TextBox Grid.Column="5" 
+                                                                                 Text="{x:Bind Nota, Mode=TwoWay}" 
+                                                                                 VerticalAlignment="Center" 
+                                                                                 Margin="0,0,4,0"
+                                                                                 MinHeight="28"
+                                                                                 Padding="4,2"
+                                                                                 FontSize="12"
+                                                                                 KeyDown="CargoField_KeyDown"
+                                                                                 Tag="{x:Bind}" />
+                                                                        
+                                                                        <!-- Proveedor (ReadOnly) -->
+                                                                        <TextBlock Grid.Column="6" Text="{x:Bind Proveedor, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
+                                                                        
+                                                                        <!-- Actions -->
+                                                                        <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
                                                                             <Button
                                                                                 Click="DeleteCargoButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 Background="Transparent"
+                                                                                Padding="4"
+                                                                                MinHeight="24"
+                                                                                MinWidth="24"
                                                                                 ToolTipService.ToolTip="Eliminar cargo">
                                                                                 <SymbolIcon Symbol="Delete" />
                                                                             </Button>
@@ -379,19 +419,22 @@
                                                                                 Click="ViewRefaccionFromCargoButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 Background="Transparent"
+                                                                                Padding="4"
+                                                                                MinHeight="24"
+                                                                                MinWidth="24"
                                                                                 ToolTipService.ToolTip="Ver detalles de refacción"
                                                                                 Visibility="{x:Bind TipoCargo, Converter={StaticResource RefaccionVisibilityConverter}}">
                                                                                 <SymbolIcon Symbol="View" />
                                                                             </Button>
                                                                         </StackPanel>
-                                                                    </DataTemplate>
-                                                                </controls:DataGridTemplateColumn.CellTemplate>
-                                                            </controls:DataGridTemplateColumn>
-                                                        </controls:DataGrid.Columns>
-                                                    </controls:DataGrid>
+                                                                    </Grid>
+                                                                </DataTemplate>
+                                                            </ItemsRepeater.ItemTemplate>
+                                                        </ItemsRepeater>
+                                                    </ScrollViewer>
 
                                                     <!-- Total Sum NumberBox -->
-                                                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" Spacing="8">
+                                                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" Spacing="8">
                                                         <TextBlock Text="Total:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="WhiteSmoke" />
                                                         <NumberBox
                                                             Value="{x:Bind TotalMonto, Mode=OneWay}"
