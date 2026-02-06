@@ -241,7 +241,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Genera un PDF de reporte de cotización con fotos de cargos
         /// </summary>
-        public async Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos)
+        public async Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null)
         {
             if (operacion == null)
                 throw new ArgumentNullException(nameof(operacion));
@@ -267,6 +267,12 @@ namespace Advance_Control.Services.Quotes
                 var reportTitle = $"Reporte Cotización {operacion.IdOperacion}";
                 var cargosList = cargos.ToList();
 
+                // Use company name from entity or default
+                var companyTitle = !string.IsNullOrWhiteSpace(nombreEmpresa) ? nombreEmpresa.ToUpperInvariant() : "ADVANCE CONTROL";
+
+                // Use current date for the report
+                var reportDate = DateTime.Now;
+
                 // Generate PDF
                 var document = Document.Create(container =>
                 {
@@ -278,20 +284,54 @@ namespace Advance_Control.Services.Quotes
                         page.DefaultTextStyle(x => x.FontSize(11));
 
                         page.Header()
-                            .Height(60)
+                            .Height(100)
                             .Background(Colors.Blue.Lighten3)
                             .Padding(15)
-                            .AlignCenter()
-                            .Text(reportTitle)
-                            .FontSize(20)
-                            .Bold()
-                            .FontColor(Colors.Blue.Darken3);
+                            .Column(column =>
+                            {
+                                column.Item().AlignCenter().Text(companyTitle)
+                                    .FontSize(24)
+                                    .Bold()
+                                    .FontColor(Colors.Blue.Darken3);
+                                
+                                column.Item().AlignCenter().Text(reportTitle)
+                                    .FontSize(16)
+                                    .FontColor(Colors.Blue.Darken2);
+                            });
 
                         page.Content()
                             .PaddingVertical(1, Unit.Centimetre)
                             .Column(column =>
                             {
                                 column.Spacing(15);
+
+                                // Information section (Client and Operation info)
+                                column.Item().Row(row =>
+                                {
+                                    row.RelativeItem().Column(col =>
+                                    {
+                                        col.Item().Text("Información del Cliente").Bold().FontSize(14);
+                                        col.Item().PaddingTop(5);
+                                        col.Item().Text($"Cliente: {operacion.RazonSocial ?? "N/A"}");
+                                        col.Item().Text($"Equipo: {operacion.Identificador ?? "N/A"}");
+                                        if (!string.IsNullOrWhiteSpace(ubicacionNombre))
+                                        {
+                                            col.Item().Text($"Ubicación: {ubicacionNombre}");
+                                        }
+                                    });
+
+                                    row.RelativeItem().Column(col =>
+                                    {
+                                        col.Item().Text("Información de la Operación").Bold().FontSize(14);
+                                        col.Item().PaddingTop(5);
+                                        col.Item().Text($"Fecha: {reportDate:dd/MM/yyyy}");
+                                        col.Item().Text($"Atendido por: {operacion.Atiende ?? "N/A"}");
+                                        col.Item().Text($"Tipo: {GetTipoOperacion(operacion.IdTipo)}");
+                                    });
+                                });
+
+                                // Separator before cargo rows
+                                column.Item().PaddingTop(10);
 
                                 // Cargo rows
                                 foreach (var cargo in cargosList)
@@ -330,13 +370,6 @@ namespace Advance_Control.Services.Quotes
                                         }
                                     });
                                 }
-
-                                // Quien atiende section
-                                column.Item().PaddingTop(20).Background(Colors.Blue.Lighten4).Padding(10).Column(atiendeCol =>
-                                {
-                                    atiendeCol.Item().Text("Atendido por:").Bold().FontSize(14);
-                                    atiendeCol.Item().PaddingTop(5).Text(operacion.Atiende ?? "N/A").FontSize(12);
-                                });
                             });
 
                         page.Footer()

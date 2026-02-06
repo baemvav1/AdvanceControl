@@ -24,7 +24,9 @@ namespace Advance_Control.Services.Quotes
         /// </summary>
         /// <param name="operacion">La operación que contiene la información</param>
         /// <param name="cargos">Lista de cargos a incluir en el reporte</param>
+        /// <param name="ubicacionNombre">Nombre de la ubicación del equipo (opcional)</param>
+        /// <param name="nombreEmpresa">Nombre comercial de la empresa (opcional, usa nombre por defecto si es null)</param>
         /// <returns>La ruta del archivo PDF generado</returns>
-        Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos);
+        Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null);
     }
 }
