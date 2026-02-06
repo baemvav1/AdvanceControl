@@ -58,6 +58,9 @@ namespace Advance_Control
                     // Enlazar sección "DevelopmentMode" de appsettings.json a DevelopmentModeOptions
                     services.Configure<Settings.DevelopmentModeOptions>(context.Configuration.GetSection("DevelopmentMode"));
 
+                    // Enlazar sección "GoogleCloudStorage" de appsettings.json a GoogleCloudStorageOptions
+                    services.Configure<Settings.GoogleCloudStorageOptions>(context.Configuration.GetSection("GoogleCloudStorage"));
+
                     // Registrar el provider que compone endpoints (usa IOptions<ExternalApiOptions>)
                     services.AddSingleton<IApiEndpointProvider, ApiEndpointProvider>();
 
@@ -452,6 +455,20 @@ namespace Advance_Control
                         }
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar GoogleCloudStorageAuthService para autenticación OAuth 2.0 con GCS
+                    services.AddHttpClient<IGoogleCloudStorageAuthService, GoogleCloudStorageAuthService>((sp, client) =>
+                    {
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    });
 
                     // Registrar CargoImageService para Google Cloud Storage
                     services.AddHttpClient<ICargoImageService, CargoImageService>((sp, client) =>

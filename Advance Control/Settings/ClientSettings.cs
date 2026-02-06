@@ -34,4 +34,30 @@ namespace Advance_Control.Settings
         /// </summary>
         public bool DisableHttpTimeouts { get; set; } = false;
     }
+
+    /// <summary>
+    /// Configuración para Google Cloud Storage OAuth 2.0
+    /// </summary>
+    public class GoogleCloudStorageOptions
+    {
+        /// <summary>
+        /// ID del cliente OAuth 2.0 de Google
+        /// </summary>
+        public string ClientId { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Secreto del cliente OAuth 2.0 de Google
+        /// </summary>
+        public string ClientSecret { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Nombre del bucket de Google Cloud Storage
+        /// </summary>
+        public string BucketName { get; set; } = "advance-control-cargo-images";
+
+        /// <summary>
+        /// URI de redirección para el flujo OAuth
+        /// </summary>
+        public string RedirectUri { get; set; } = "http://127.0.0.1:8484/";
+    }
 }

@@ -8,36 +8,39 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
-using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Logging;
+using Advance_Control.Settings;
 using Advance_Control.Utilities;
+using Microsoft.Extensions.Options;
 
 namespace Advance_Control.Services.GoogleCloudStorage
 {
     /// <summary>
     /// Implementación del servicio de almacenamiento de imágenes de cargos en Google Cloud Storage.
-    /// Usa la API JSON de Google Cloud Storage para operaciones directas cliente-GCS.
+    /// Usa la API JSON de Google Cloud Storage con autenticación OAuth 2.0 para operaciones directas cliente-GCS.
     /// </summary>
     public class CargoImageService : ICargoImageService
     {
         private readonly HttpClient _http;
-        private readonly IGoogleMapsConfigService _googleMapsConfigService;
+        private readonly IGoogleCloudStorageAuthService _authService;
         private readonly ILoggingService _logger;
+        private readonly GoogleCloudStorageOptions _options;
         
-        // Google Cloud Storage bucket name
-        private const string BucketName = "advance-control-cargo-images";
+        // Google Cloud Storage API URLs
         private const string GcsApiBaseUrl = "https://storage.googleapis.com/storage/v1";
         private const string GcsUploadUrl = "https://storage.googleapis.com/upload/storage/v1";
         private const string GcsPublicUrl = "https://storage.googleapis.com";
 
         public CargoImageService(
             HttpClient http,
-            IGoogleMapsConfigService googleMapsConfigService,
-            ILoggingService logger)
+            IGoogleCloudStorageAuthService authService,
+            ILoggingService logger,
+            IOptions<GoogleCloudStorageOptions> options)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
-            _googleMapsConfigService = googleMapsConfigService ?? throw new ArgumentNullException(nameof(googleMapsConfigService));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
         }
 
         /// <summary>
@@ -49,11 +52,11 @@ namespace Advance_Control.Services.GoogleCloudStorage
             {
                 await _logger.LogInformationAsync($"Subiendo imagen para cargo {idCargo}", "CargoImageService", "UploadImageAsync");
 
-                // Obtener la API key
-                var apiKey = await _googleMapsConfigService.GetApiKeyAsync(cancellationToken);
-                if (string.IsNullOrEmpty(apiKey))
+                // Obtener el token de acceso OAuth 2.0
+                var accessToken = await _authService.GetAccessTokenAsync(cancellationToken);
+                if (string.IsNullOrEmpty(accessToken))
                 {
-                    await _logger.LogErrorAsync("No se pudo obtener la API key de Google", null, "CargoImageService", "UploadImageAsync");
+                    await _logger.LogErrorAsync("No se pudo obtener el token de acceso de Google Cloud Storage. Es necesario autenticarse.", null, "CargoImageService", "UploadImageAsync");
                     return null;
                 }
 
@@ -70,8 +73,8 @@ namespace Advance_Control.Services.GoogleCloudStorage
                 var extension = GetExtensionFromContentType(contentType);
                 var fullFileName = $"{fileName}{extension}";
 
-                // URL para subir a GCS usando la API JSON
-                var uploadUrl = $"{GcsUploadUrl}/b/{BucketName}/o?uploadType=media&name={Uri.EscapeDataString(fullFileName)}&key={apiKey}";
+                // URL para subir a GCS usando la API JSON (sin API key, usando Bearer token)
+                var uploadUrl = $"{GcsUploadUrl}/b/{_options.BucketName}/o?uploadType=media&name={Uri.EscapeDataString(fullFileName)}";
 
                 // Leer el stream en un byte array
                 byte[] imageBytes;
@@ -85,8 +88,13 @@ namespace Advance_Control.Services.GoogleCloudStorage
                 using var content = new ByteArrayContent(imageBytes);
                 content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
 
+                // Crear la solicitud con el header de autorización
+                using var request = new HttpRequestMessage(HttpMethod.Post, uploadUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                request.Content = content;
+
                 // Realizar la solicitud POST para subir la imagen
-                var response = await _http.PostAsync(uploadUrl, content, cancellationToken).ConfigureAwait(false);
+                var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -104,7 +112,7 @@ namespace Advance_Control.Services.GoogleCloudStorage
                 var responseObj = JsonSerializer.Deserialize<JsonElement>(responseText);
 
                 // Construir la URL pública de la imagen
-                var publicUrl = $"{GcsPublicUrl}/{BucketName}/{fullFileName}";
+                var publicUrl = $"{GcsPublicUrl}/{_options.BucketName}/{fullFileName}";
 
                 var cargoImage = new CargoImageDto
                 {
@@ -140,21 +148,25 @@ namespace Advance_Control.Services.GoogleCloudStorage
             {
                 await _logger.LogInformationAsync($"Obteniendo imágenes para cargo {idCargo}", "CargoImageService", "GetImagesAsync");
 
-                // Obtener la API key
-                var apiKey = await _googleMapsConfigService.GetApiKeyAsync(cancellationToken);
-                if (string.IsNullOrEmpty(apiKey))
+                // Obtener el token de acceso OAuth 2.0
+                var accessToken = await _authService.GetAccessTokenAsync(cancellationToken);
+                if (string.IsNullOrEmpty(accessToken))
                 {
-                    await _logger.LogErrorAsync("No se pudo obtener la API key de Google", null, "CargoImageService", "GetImagesAsync");
+                    await _logger.LogErrorAsync("No se pudo obtener el token de acceso de Google Cloud Storage. Es necesario autenticarse.", null, "CargoImageService", "GetImagesAsync");
                     return images;
                 }
 
                 // Prefijo para buscar las imágenes de este cargo
                 var prefix = $"Cargo_Id_{idCargo}_";
 
-                // URL para listar objetos en el bucket con el prefijo
-                var listUrl = $"{GcsApiBaseUrl}/b/{BucketName}/o?prefix={Uri.EscapeDataString(prefix)}&key={apiKey}";
+                // URL para listar objetos en el bucket con el prefijo (sin API key, usando Bearer token)
+                var listUrl = $"{GcsApiBaseUrl}/b/{_options.BucketName}/o?prefix={Uri.EscapeDataString(prefix)}";
 
-                var response = await _http.GetAsync(listUrl, cancellationToken).ConfigureAwait(false);
+                // Crear la solicitud con el header de autorización
+                using var request = new HttpRequestMessage(HttpMethod.Get, listUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -186,7 +198,7 @@ namespace Advance_Control.Services.GoogleCloudStorage
                                 images.Add(new CargoImageDto
                                 {
                                     FileName = fileName,
-                                    Url = $"{GcsPublicUrl}/{BucketName}/{fileName}",
+                                    Url = $"{GcsPublicUrl}/{_options.BucketName}/{fileName}",
                                     IdCargo = idCargo,
                                     ImageNumber = imageNumber
                                 });
@@ -222,18 +234,22 @@ namespace Advance_Control.Services.GoogleCloudStorage
             {
                 await _logger.LogInformationAsync($"Eliminando imagen: {fileName}", "CargoImageService", "DeleteImageAsync");
 
-                // Obtener la API key
-                var apiKey = await _googleMapsConfigService.GetApiKeyAsync(cancellationToken);
-                if (string.IsNullOrEmpty(apiKey))
+                // Obtener el token de acceso OAuth 2.0
+                var accessToken = await _authService.GetAccessTokenAsync(cancellationToken);
+                if (string.IsNullOrEmpty(accessToken))
                 {
-                    await _logger.LogErrorAsync("No se pudo obtener la API key de Google", null, "CargoImageService", "DeleteImageAsync");
+                    await _logger.LogErrorAsync("No se pudo obtener el token de acceso de Google Cloud Storage. Es necesario autenticarse.", null, "CargoImageService", "DeleteImageAsync");
                     return false;
                 }
 
-                // URL para eliminar el objeto
-                var deleteUrl = $"{GcsApiBaseUrl}/b/{BucketName}/o/{Uri.EscapeDataString(fileName)}?key={apiKey}";
+                // URL para eliminar el objeto (sin API key, usando Bearer token)
+                var deleteUrl = $"{GcsApiBaseUrl}/b/{_options.BucketName}/o/{Uri.EscapeDataString(fileName)}";
 
-                var response = await _http.DeleteAsync(deleteUrl, cancellationToken).ConfigureAwait(false);
+                // Crear la solicitud con el header de autorización
+                using var request = new HttpRequestMessage(HttpMethod.Delete, deleteUrl);
+                request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                var response = await _http.SendAsync(request, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

@@ -32,6 +32,7 @@ namespace Advance_Control.Views
         private readonly ICargoService _cargoService;
         private readonly IUserInfoService _userInfoService;
         private readonly ICargoImageService _cargoImageService;
+        private readonly IGoogleCloudStorageAuthService _gcsAuthService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -54,6 +55,9 @@ namespace Advance_Control.Views
 
             // Resolver el servicio de imágenes de cargo desde DI
             _cargoImageService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoImageService>();
+
+            // Resolver el servicio de autenticación de Google Cloud Storage desde DI
+            _gcsAuthService = ((App)Application.Current).Host.Services.GetRequiredService<IGoogleCloudStorageAuthService>();
 
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
@@ -722,6 +726,33 @@ namespace Advance_Control.Views
 
             try
             {
+                // Verificar si está autenticado con Google Cloud Storage
+                if (!_gcsAuthService.IsAuthenticated)
+                {
+                    // Intentar restaurar sesión desde tokens almacenados
+                    var restored = await _gcsAuthService.TryRestoreSessionAsync();
+                    
+                    if (!restored)
+                    {
+                        // Si no hay sesión, pedir autenticación
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Autenticación requerida",
+                            nota: "Se abrirá el navegador para autenticarse con Google Cloud Storage.",
+                            fechaHoraInicio: DateTime.Now);
+
+                        var authenticated = await _gcsAuthService.AuthenticateAsync();
+                        
+                        if (!authenticated)
+                        {
+                            await _notificacionService.MostrarNotificacionAsync(
+                                titulo: "Error de autenticación",
+                                nota: "No se pudo autenticar con Google Cloud Storage. Por favor, intente nuevamente.",
+                                fechaHoraInicio: DateTime.Now);
+                            return;
+                        }
+                    }
+                }
+
                 // Crear el selector de archivos
                 var picker = new FileOpenPicker();
                 
@@ -774,7 +805,7 @@ namespace Advance_Control.Views
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: "No se pudo cargar la imagen. Por favor, intente nuevamente.",
+                        nota: "No se pudo cargar la imagen. Es posible que necesite autenticarse nuevamente con Google Cloud Storage.",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
@@ -898,16 +929,31 @@ namespace Advance_Control.Views
             {
                 cargo.IsLoadingImages = true;
 
-                var images = await _cargoImageService.GetImagesAsync(cargo.IdCargo);
-
-                cargo.Images.Clear();
-                foreach (var image in images)
+                // Intentar restaurar sesión de GCS si no está autenticado
+                if (!_gcsAuthService.IsAuthenticated)
                 {
-                    cargo.Images.Add(image);
+                    await _gcsAuthService.TryRestoreSessionAsync();
                 }
 
-                cargo.NotifyImagesChanged();
-                cargo.ImagesLoaded = true;
+                // Solo intentar cargar si hay autenticación
+                if (_gcsAuthService.IsAuthenticated)
+                {
+                    var images = await _cargoImageService.GetImagesAsync(cargo.IdCargo);
+
+                    cargo.Images.Clear();
+                    foreach (var image in images)
+                    {
+                        cargo.Images.Add(image);
+                    }
+
+                    cargo.NotifyImagesChanged();
+                    cargo.ImagesLoaded = true;
+                }
+                else
+                {
+                    // Si no hay autenticación, marcar como cargado para no reintentar constantemente
+                    System.Diagnostics.Debug.WriteLine($"No hay autenticación de GCS para cargar imágenes del cargo {cargo.IdCargo}");
+                }
             }
             catch (Exception ex)
             {
