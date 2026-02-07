@@ -320,6 +320,24 @@ namespace Advance_Control.Models
             }
         }
 
+        private bool _isSelected;
+        /// <summary>
+        /// Indica si el cargo está seleccionado en la lista
+        /// </summary>
+        [JsonIgnore]
+        public bool IsSelected
+        {
+            get => _isSelected;
+            set
+            {
+                if (_isSelected != value)
+                {
+                    _isSelected = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         /// <summary>
         /// Indica si se debe mostrar la galería (tiene imágenes Y está expandida)
         /// </summary>

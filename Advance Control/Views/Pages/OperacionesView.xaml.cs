@@ -1019,5 +1019,395 @@ namespace Advance_Control.Views
         {
             return ImageContentTypeHelper.GetContentTypeFromExtension(extension);
         }
+
+        /// <summary>
+        /// Obtiene todos los cargos seleccionados de una operación
+        /// </summary>
+        private System.Collections.Generic.List<Models.CargoDto> GetSelectedCargos(Models.OperacionDto operacion)
+        {
+            return operacion.Cargos.Where(c => c.IsSelected).ToList();
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de cargar imagen para el cargo seleccionado
+        /// </summary>
+        private async void UploadSelectedCargoImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Sin selección",
+                    nota: "Por favor, seleccione un cargo para cargar una imagen.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+
+            if (selectedCargo.IdCargo <= 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "El cargo no tiene un ID válido para cargar imágenes.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            try
+            {
+                // Crear el selector de archivos
+                var picker = new FileOpenPicker();
+                
+                // Obtener el HWND de la ventana principal para inicializar el picker
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                // Configurar tipos de archivo permitidos
+                picker.ViewMode = PickerViewMode.Thumbnail;
+                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                picker.FileTypeFilter.Add(".jpg");
+                picker.FileTypeFilter.Add(".jpeg");
+                picker.FileTypeFilter.Add(".png");
+                picker.FileTypeFilter.Add(".gif");
+                picker.FileTypeFilter.Add(".bmp");
+
+                // Mostrar el selector
+                var file = await picker.PickSingleFileAsync();
+
+                if (file == null)
+                {
+                    // Usuario canceló la selección
+                    return;
+                }
+
+                // Mostrar indicador de carga
+                selectedCargo.IsLoadingImages = true;
+
+                // Leer el archivo como stream
+                using var stream = await file.OpenStreamForReadAsync();
+                
+                // Determinar el tipo de contenido basado en la extensión
+                var contentType = GetContentTypeFromExtension(file.FileType);
+
+                // Guardar la imagen localmente
+                var result = await _cargoImageService.UploadImageAsync(selectedCargo.IdCargo, stream, contentType);
+
+                if (result != null)
+                {
+                    // Agregar la imagen a la colección del cargo
+                    selectedCargo.Images.Add(result);
+                    selectedCargo.NotifyImagesChanged();
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Imagen cargada",
+                        nota: $"La imagen {result.FileName} se ha guardado correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo guardar la imagen. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar imagen: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al cargar la imagen. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+            finally
+            {
+                selectedCargo.IsLoadingImages = false;
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de editar para el cargo seleccionado
+        /// </summary>
+        private async void EditSelectedCargoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Sin selección",
+                    nota: "Por favor, seleccione un cargo para editar.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+
+            // Toggle edit mode
+            selectedCargo.IsEditing = !selectedCargo.IsEditing;
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de eliminar para los cargos seleccionados
+        /// </summary>
+        private async void DeleteSelectedCargosButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Sin selección",
+                    nota: "Por favor, seleccione al menos un cargo para eliminar.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Mostrar diálogo de confirmación
+            var mensaje = selectedCargos.Count == 1 
+                ? $"¿Está seguro de que desea eliminar el cargo con ID {selectedCargos[0].IdCargo}?"
+                : $"¿Está seguro de que desea eliminar {selectedCargos.Count} cargos seleccionados?";
+            
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = mensaje,
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                var eliminados = 0;
+                var errores = 0;
+
+                foreach (var cargo in selectedCargos)
+                {
+                    try
+                    {
+                        if (cargo.IdCargo <= 0)
+                            continue;
+
+                        var success = await _cargoService.DeleteCargoAsync(cargo.IdCargo);
+
+                        if (success)
+                        {
+                            operacion.Cargos.Remove(cargo);
+                            eliminados++;
+                        }
+                        else
+                        {
+                            errores++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"Error al eliminar cargo {cargo.IdCargo}: {ex.GetType().Name} - {ex.Message}");
+                        errores++;
+                    }
+                }
+
+                if (eliminados > 0 && errores == 0)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Cargos eliminados",
+                        nota: eliminados == 1 
+                            ? "El cargo se ha eliminado correctamente."
+                            : $"Se han eliminado {eliminados} cargos correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else if (eliminados > 0 && errores > 0)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Eliminación parcial",
+                        nota: $"Se eliminaron {eliminados} cargos, pero hubo {errores} errores.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudieron eliminar los cargos. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de ver refacción para el cargo seleccionado
+        /// </summary>
+        private async void ViewSelectedRefaccionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Sin selección",
+                    nota: "Por favor, seleccione un cargo para ver los detalles de la refacción.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+
+            // Verificar que el cargo sea de tipo Refaccion
+            if (selectedCargo.TipoCargo != "Refaccion")
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Tipo incorrecto",
+                    nota: "Solo se pueden ver detalles de refacciones para cargos de tipo 'Refaccion'.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Validar que tengamos un IdCargo válido para consultar
+            if (selectedCargo.IdCargo <= 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "No se puede mostrar la refacción porque el cargo no tiene un ID válido.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            try
+            {
+                // Obtener el cargo actualizado desde el API usando su ID
+                var query = new CargoEditDto
+                {
+                    IdCargo = selectedCargo.IdCargo
+                };
+
+                var cargos = await _cargoService.GetCargosAsync(query);
+                var cargoActualizado = cargos?.FirstOrDefault();
+                
+                if (cargoActualizado == null)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo obtener la información del cargo desde el servidor.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                // Verificar que el cargo actualizado tenga un idRelacionCargo
+                if (!cargoActualizado.IdRelacionCargo.HasValue)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se puede mostrar la refacción porque el cargo no tiene una relación válida.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                // Crear el UserControl para visualizar la refacción
+                var viewerControl = new Equipos.RefaccionesViewerUserControl(cargoActualizado.IdRelacionCargo.Value);
+
+                // Crear el diálogo
+                var dialog = new ContentDialog
+                {
+                    Title = "Detalles de la Refacción",
+                    Content = viewerControl,
+                    CloseButtonText = "Cerrar",
+                    DefaultButton = ContentDialogButton.Close,
+                    XamlRoot = this.XamlRoot
+                };
+
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al mostrar detalles de refacción: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "No se pudo cargar la información de la refacción. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de expandir galería para el cargo seleccionado
+        /// </summary>
+        private async void ExpandSelectedGalleryButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Sin selección",
+                    nota: "Por favor, seleccione un cargo para ver las imágenes.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+
+            if (!selectedCargo.HasImages)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Sin imágenes",
+                    nota: "El cargo seleccionado no tiene imágenes.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            // Toggle gallery expansion
+            selectedCargo.IsGalleryExpanded = !selectedCargo.IsGalleryExpanded;
+        }
     }
 }
