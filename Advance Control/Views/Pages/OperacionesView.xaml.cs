@@ -1029,6 +1029,35 @@ namespace Advance_Control.Views
         }
 
         /// <summary>
+        /// Maneja el evento Checked del checkbox de cargo para implementar selección única.
+        /// Cuando se selecciona un cargo, se deseleccionan y colapsan todos los demás cargos de la misma operación.
+        /// </summary>
+        private void CargoCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cargo desde el Tag del CheckBox
+            if (sender is not CheckBox checkBox || checkBox.Tag is not Models.CargoDto selectedCargo)
+                return;
+
+            // Usar IdOperacion del cargo para encontrar la operación padre de forma más eficiente
+            var operacion = selectedCargo.IdOperacion.HasValue
+                ? ViewModel.Operaciones.FirstOrDefault(op => op.IdOperacion == selectedCargo.IdOperacion.Value)
+                : ViewModel.Operaciones.FirstOrDefault(op => op.Cargos.Contains(selectedCargo));
+
+            if (operacion != null)
+            {
+                // Deseleccionar y colapsar todos los demás cargos de esta operación
+                foreach (var cargo in operacion.Cargos)
+                {
+                    if (cargo != selectedCargo)
+                    {
+                        cargo.IsSelected = false;
+                        cargo.IsGalleryExpanded = false;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Maneja el clic en el botón de cargar imagen para el cargo seleccionado
         /// </summary>
         private async void UploadSelectedCargoImageButton_Click(object sender, RoutedEventArgs e)

@@ -446,7 +446,9 @@
                                                                                       HorizontalAlignment="Center" 
                                                                                       VerticalAlignment="Center"
                                                                                       MinWidth="0"
-                                                                                      Padding="0" />
+                                                                                      Padding="0"
+                                                                                      Checked="CargoCheckBox_Checked"
+                                                                                      Tag="{x:Bind}" />
                                                                         </Grid>
                                                                         
                                                                         <!-- Images row - only visible if cargo has images and is expanded -->
