@@ -281,7 +281,6 @@ namespace Advance_Control.ViewModels
                     IdCliente = idCliente,
                     IdProveedor = idProveedor,
                     Activo = activo,
-                    Estatus = estatus
                 };
 
                 var response = await _contactoService.UpdateContactoAsync(contactoDto, cancellationToken);

@@ -10,6 +10,8 @@ namespace Advance_Control.Models
     /// </summary>
     public class ContactoDto : INotifyPropertyChanged
     {
+        private bool _expand;
+
         public event PropertyChangedEventHandler? PropertyChanged;
 
         protected void OnPropertyChanged([CallerMemberName] string? propertyName = null)
