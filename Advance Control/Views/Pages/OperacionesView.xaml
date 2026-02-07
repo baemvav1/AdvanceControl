@@ -292,6 +292,7 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="*" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
 
                                                     <!-- Buttons for Add/Delete -->
@@ -335,7 +336,7 @@
                                                             <ColumnDefinition Width="100" />
                                                             <ColumnDefinition Width="*" />
                                                             <ColumnDefinition Width="120" />
-                                                            <ColumnDefinition Width="80" />
+                                                            <ColumnDefinition Width="50" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock Grid.Column="0" Text="Tipo" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
                                                         <TextBlock Grid.Column="1" Text="Detalle" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
@@ -344,7 +345,7 @@
                                                         <TextBlock Grid.Column="4" Text="Monto" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
                                                         <TextBlock Grid.Column="5" Text="Nota" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
                                                         <TextBlock Grid.Column="6" Text="Proveedor" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
-                                                        <TextBlock Grid.Column="7" Text="Acciones" FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" />
+                                                        <TextBlock Grid.Column="7" Text="Sel." FontWeight="SemiBold" Foreground="WhiteSmoke" VerticalAlignment="Center" HorizontalAlignment="Center" ToolTipService.ToolTip="Seleccionar" />
                                                     </Grid>
                                                     
                                                     <!-- ItemsRepeater for Cargos -->
@@ -358,7 +359,7 @@
                                                                     <StackPanel Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Tapped="CargoRow_Tapped">
                                                                         <!-- Main cargo row -->
                                                                         <Grid Padding="8,6">
-                                                                            <Grid.ColumnDefinitions>
+                                                                             <Grid.ColumnDefinitions>
                                                                                 <ColumnDefinition Width="100" />
                                                                                 <ColumnDefinition Width="120" />
                                                                                 <ColumnDefinition Width="80" />
@@ -366,7 +367,7 @@
                                                                                 <ColumnDefinition Width="100" />
                                                                                 <ColumnDefinition Width="*" />
                                                                                 <ColumnDefinition Width="120" />
-                                                                                <ColumnDefinition Width="110" />
+                                                                                <ColumnDefinition Width="50" />
                                                                             </Grid.ColumnDefinitions>
                                                                         
                                                                             <!-- Tipo Cargo (ReadOnly) -->
@@ -439,61 +440,13 @@
                                                                             <!-- Proveedor (ReadOnly) -->
                                                                             <TextBlock Grid.Column="6" Text="{x:Bind Proveedor, Mode=OneWay}" VerticalAlignment="Center" Foreground="WhiteSmoke" FontSize="12" TextTrimming="CharacterEllipsis" />
                                                                         
-                                                                            <!-- Actions -->
-                                                                            <StackPanel Grid.Column="7" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
-                                                                                <Button
-                                                                                    Click="UploadCargoImageButton_Click"
-                                                                                    Tag="{x:Bind}"
-                                                                                    Background="Transparent"
-                                                                                    Padding="4"
-                                                                                    MinHeight="24"
-                                                                                    MinWidth="24"
-                                                                                    ToolTipService.ToolTip="Cargar imagen">
-                                                                                    <SymbolIcon Symbol="Camera" />
-                                                                                </Button>
-                                                                                <Button
-                                                                                    Click="EditCargoButton_Click"
-                                                                                    Tag="{x:Bind}"
-                                                                                    Background="Transparent"
-                                                                                    Padding="4"
-                                                                                    MinHeight="24"
-                                                                                    MinWidth="24"
-                                                                                    ToolTipService.ToolTip="Editar cargo">
-                                                                                    <SymbolIcon Symbol="Edit" />
-                                                                                </Button>
-                                                                                <Button
-                                                                                    Click="DeleteCargoButton_Click"
-                                                                                    Tag="{x:Bind}"
-                                                                                    Background="Transparent"
-                                                                                    Padding="4"
-                                                                                    MinHeight="24"
-                                                                                    MinWidth="24"
-                                                                                    ToolTipService.ToolTip="Eliminar cargo">
-                                                                                    <SymbolIcon Symbol="Delete" />
-                                                                                </Button>
-                                                                                <Button
-                                                                                    Click="ViewRefaccionFromCargoButton_Click"
-                                                                                    Tag="{x:Bind}"
-                                                                                    Background="Transparent"
-                                                                                    Padding="4"
-                                                                                    MinHeight="24"
-                                                                                    MinWidth="24"
-                                                                                    ToolTipService.ToolTip="Ver detalles de refacción"
-                                                                                    Visibility="{x:Bind TipoCargo, Converter={StaticResource RefaccionVisibilityConverter}}">
-                                                                                    <SymbolIcon Symbol="View" />
-                                                                                </Button>
-                                                                                <Button
-                                                                                    Click="ExpandGalleryButton_Click"
-                                                                                    Tag="{x:Bind}"
-                                                                                    Background="Transparent"
-                                                                                    Padding="4"
-                                                                                    MinHeight="24"
-                                                                                    MinWidth="24"
-                                                                                    ToolTipService.ToolTip="Expandir galería de imágenes"
-                                                                                    Visibility="{x:Bind HasImages, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
-                                                                                    <SymbolIcon Symbol="Pictures" />
-                                                                                </Button>
-                                                                            </StackPanel>
+                                                                            <!-- Checkbox para seleccionar -->
+                                                                            <CheckBox Grid.Column="7" 
+                                                                                      IsChecked="{x:Bind IsSelected, Mode=TwoWay}" 
+                                                                                      HorizontalAlignment="Center" 
+                                                                                      VerticalAlignment="Center"
+                                                                                      MinWidth="0"
+                                                                                      Padding="0" />
                                                                         </Grid>
                                                                         
                                                                         <!-- Images row - only visible if cargo has images and is expanded -->
@@ -549,8 +502,58 @@
                                                         </ItemsRepeater>
                                                     </ScrollViewer>
 
+                                                    <!-- Action Buttons for Selected Cargos -->
+                                                    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" Padding="8" CornerRadius="4">
+                                                        <TextBlock Text="Acciones:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="WhiteSmoke" Margin="0,0,8,0" />
+                                                        <Button
+                                                            Click="UploadSelectedCargoImageButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Cargar imagen al cargo seleccionado">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Camera" />
+                                                                <TextBlock Text="Cargar Imagen" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Click="EditSelectedCargoButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Editar cargo seleccionado">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Edit" />
+                                                                <TextBlock Text="Editar" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Click="DeleteSelectedCargosButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Eliminar cargos seleccionados">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Delete" />
+                                                                <TextBlock Text="Eliminar" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Click="ViewSelectedRefaccionButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Ver detalles de refacción seleccionada">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="View" />
+                                                                <TextBlock Text="Ver Refacción" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Click="ExpandSelectedGalleryButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Expandir galería de imágenes del cargo seleccionado">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Pictures" />
+                                                                <TextBlock Text="Ver Imágenes" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
                                                     <!-- Total Sum NumberBox -->
-                                                    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" Spacing="8">
+                                                    <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" Spacing="8">
                                                         <TextBlock Text="Total:" VerticalAlignment="Center" FontWeight="SemiBold" Foreground="WhiteSmoke" />
                                                         <NumberBox
                                                             Value="{x:Bind TotalMonto, Mode=OneWay}"
