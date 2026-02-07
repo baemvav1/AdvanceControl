@@ -1021,14 +1021,6 @@ namespace Advance_Control.Views
         }
 
         /// <summary>
-        /// Obtiene el cargo seleccionado de una operación. Si hay múltiples seleccionados, retorna el primero.
-        /// </summary>
-        private Models.CargoDto? GetSelectedCargo(Models.OperacionDto operacion)
-        {
-            return operacion.Cargos.FirstOrDefault(c => c.IsSelected);
-        }
-
-        /// <summary>
         /// Obtiene todos los cargos seleccionados de una operación
         /// </summary>
         private System.Collections.Generic.List<Models.CargoDto> GetSelectedCargos(Models.OperacionDto operacion)
@@ -1045,14 +1037,24 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
 
-            var selectedCargo = GetSelectedCargo(operacion);
-            if (selectedCargo == null)
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
             {
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Sin selección",
                     nota: "Por favor, seleccione un cargo para cargar una imagen.",
                     fechaHoraInicio: DateTime.Now);
                 return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
             }
 
             if (selectedCargo.IdCargo <= 0)
@@ -1145,14 +1147,24 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
 
-            var selectedCargo = GetSelectedCargo(operacion);
-            if (selectedCargo == null)
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
             {
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Sin selección",
                     nota: "Por favor, seleccione un cargo para editar.",
                     fechaHoraInicio: DateTime.Now);
                 return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
             }
 
             // Toggle edit mode
@@ -1261,14 +1273,24 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
 
-            var selectedCargo = GetSelectedCargo(operacion);
-            if (selectedCargo == null)
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
             {
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Sin selección",
                     nota: "Por favor, seleccione un cargo para ver los detalles de la refacción.",
                     fechaHoraInicio: DateTime.Now);
                 return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
             }
 
             // Verificar que el cargo sea de tipo Refaccion
@@ -1355,14 +1377,24 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
 
-            var selectedCargo = GetSelectedCargo(operacion);
-            if (selectedCargo == null)
+            var selectedCargos = GetSelectedCargos(operacion);
+            if (selectedCargos.Count == 0)
             {
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Sin selección",
                     nota: "Por favor, seleccione un cargo para ver las imágenes.",
                     fechaHoraInicio: DateTime.Now);
                 return;
+            }
+
+            // Usar solo el primer cargo seleccionado
+            var selectedCargo = selectedCargos[0];
+            if (selectedCargos.Count > 1)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Múltiples selecciones",
+                    nota: "Se procesará solo el primer cargo seleccionado.",
+                    fechaHoraInicio: DateTime.Now);
             }
 
             if (!selectedCargo.HasImages)
