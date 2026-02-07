@@ -320,8 +320,8 @@ namespace Advance_Control.Views
             {
                 cliente.IsLoadingContactos = true;
                 
-                var query = new ContactoQueryDto { IdCliente = cliente.IdCliente };
-                var contactos = await _contactoService.GetContactosAsync(query);
+                var contactoQuery = new ContactoQueryDto { IdCliente = cliente.IdCliente };
+                var contactos = await _contactoService.GetContactosAsync(contactoQuery);
                 
                 cliente.Contactos.Clear();
                 foreach (var contacto in contactos)
@@ -334,8 +334,8 @@ namespace Advance_Control.Views
             }
             catch (Exception ex)
             {
-                // Log error silently - the UI will show empty list
-                System.Diagnostics.Debug.WriteLine($"Error al cargar contactos: {ex.GetType().Name} - {ex.Message}");
+                // Log error - the UI will show empty list
+                await _loggingService.LogErrorAsync("Error al cargar contactos del cliente", ex, "ClientesView", "LoadContactosForClienteAsync");
                 cliente.ContactosLoaded = true;
                 cliente.NotifyNoContactosMessageChanged();
             }
@@ -392,9 +392,12 @@ namespace Advance_Control.Views
                             },
                             new TextBlock
                             {
-                                Text = contacto.Correo ?? contacto.Telefono ?? "",
+                                Text = !string.IsNullOrWhiteSpace(contacto.Correo) ? contacto.Correo :
+                                       !string.IsNullOrWhiteSpace(contacto.Telefono) ? contacto.Telefono : "",
                                 FontSize = 11,
-                                Foreground = new SolidColorBrush(Microsoft.UI.Colors.DimGray)
+                                Foreground = new SolidColorBrush(Microsoft.UI.Colors.DimGray),
+                                Visibility = (!string.IsNullOrWhiteSpace(contacto.Correo) || !string.IsNullOrWhiteSpace(contacto.Telefono))
+                                    ? Visibility.Visible : Visibility.Collapsed
                             }
                         }
                     };
@@ -473,7 +476,7 @@ namespace Advance_Control.Views
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al agregar contacto: {ex.GetType().Name} - {ex.Message}");
+                await _loggingService.LogErrorAsync("Error al agregar contacto", ex, "ClientesView", "NuevoContacto_Click");
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
                     nota: "Ocurrió un error al agregar el contacto. Por favor, intente nuevamente.",
@@ -550,7 +553,7 @@ namespace Advance_Control.Views
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error al quitar contacto: {ex.GetType().Name} - {ex.Message}");
+                    await _loggingService.LogErrorAsync("Error al quitar contacto del cliente", ex, "ClientesView", "DeleteContactoButton_Click");
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
                         nota: "Ocurrió un error al quitar el contacto. Por favor, intente nuevamente.",
