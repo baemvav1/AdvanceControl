@@ -475,6 +475,16 @@ namespace Advance_Control.Views
                 cargo.IsGalleryExpanded = !cargo.IsGalleryExpanded;
             }
         }
+
+        private void ExpandGalleryButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cargo desde el Tag del botón
+            if (sender is not Button button || button.Tag is not Models.CargoDto cargo)
+                return;
+
+            // Toggle gallery expansion
+            cargo.IsGalleryExpanded = !cargo.IsGalleryExpanded;
+        }
         
         private async void CargoField_KeyDown(object sender, KeyRoutedEventArgs e)
         {
