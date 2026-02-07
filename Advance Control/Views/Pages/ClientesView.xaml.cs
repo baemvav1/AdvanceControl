@@ -16,6 +16,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Contactos;
+using Advance_Control.Models;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -30,6 +32,7 @@ namespace Advance_Control.Views
         public CustomersViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly ILoggingService _loggingService;
+        private readonly IContactoService _contactoService;
 
         public ClientesView()
         {
@@ -41,6 +44,9 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de logging desde DI
             _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
+            
+            // Resolver el servicio de contactos desde DI
+            _contactoService = ((App)Application.Current).Host.Services.GetRequiredService<IContactoService>();
             
             this.InitializeComponent();
             
@@ -275,21 +281,284 @@ namespace Advance_Control.Views
             }
         }
 
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
             // Get the CustomerDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is Models.CustomerDto customer)
             {
                 customer.Expand = !customer.Expand;
+                
+                // Load contactos when expanding if not already loaded
+                if (customer.Expand && !customer.ContactosLoaded)
+                {
+                    await LoadContactosForClienteAsync(customer);
+                }
             }
         }
 
-        private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
+        private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
             // Get the CustomerDto from the sender's Tag property
             if (sender is FrameworkElement element && element.Tag is Models.CustomerDto customer)
             {
                 customer.Expand = !customer.Expand;
+                
+                // Load contactos when expanding if not already loaded
+                if (customer.Expand && !customer.ContactosLoaded)
+                {
+                    await LoadContactosForClienteAsync(customer);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadContactosForClienteAsync(Models.CustomerDto cliente)
+        {
+            if (cliente.IsLoadingContactos)
+                return;
+
+            try
+            {
+                cliente.IsLoadingContactos = true;
+                
+                var contactoQuery = new ContactoQueryDto { IdCliente = cliente.IdCliente };
+                var contactos = await _contactoService.GetContactosAsync(contactoQuery);
+                
+                cliente.Contactos.Clear();
+                foreach (var contacto in contactos)
+                {
+                    cliente.Contactos.Add(contacto);
+                }
+                
+                cliente.ContactosLoaded = true;
+                cliente.NotifyNoContactosMessageChanged();
+            }
+            catch (Exception ex)
+            {
+                // Log error - the UI will show empty list
+                await _loggingService.LogErrorAsync("Error al cargar contactos del cliente", ex, "ClientesView", "LoadContactosForClienteAsync");
+                cliente.ContactosLoaded = true;
+                cliente.NotifyNoContactosMessageChanged();
+            }
+            finally
+            {
+                cliente.IsLoadingContactos = false;
+            }
+        }
+
+        private async void NuevoContacto_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cliente desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CustomerDto cliente)
+                return;
+
+            try
+            {
+                // Obtener contactos sin cliente asignado (IdCliente = 0 o null)
+                var contactosSinCliente = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = 0 });
+                
+                if (contactosSinCliente == null || contactosSinCliente.Count == 0)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Sin contactos disponibles",
+                        nota: "No hay contactos sin cliente asignado disponibles para agregar.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                // Crear ListView para seleccionar contacto
+                var contactoListView = new ListView
+                {
+                    SelectionMode = ListViewSelectionMode.Single,
+                    MaxHeight = 300
+                };
+
+                foreach (var contacto in contactosSinCliente)
+                {
+                    var itemContent = new StackPanel
+                    {
+                        Spacing = 2,
+                        Children =
+                        {
+                            new TextBlock
+                            {
+                                Text = contacto.NombreCompleto,
+                                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                            },
+                            new TextBlock
+                            {
+                                Text = contacto.Cargo ?? "Sin cargo",
+                                FontSize = 12,
+                                Foreground = new SolidColorBrush(Microsoft.UI.Colors.Gray)
+                            },
+                            new TextBlock
+                            {
+                                Text = !string.IsNullOrWhiteSpace(contacto.Correo) ? contacto.Correo :
+                                       !string.IsNullOrWhiteSpace(contacto.Telefono) ? contacto.Telefono : "",
+                                FontSize = 11,
+                                Foreground = new SolidColorBrush(Microsoft.UI.Colors.DimGray),
+                                Visibility = (!string.IsNullOrWhiteSpace(contacto.Correo) || !string.IsNullOrWhiteSpace(contacto.Telefono))
+                                    ? Visibility.Visible : Visibility.Collapsed
+                            }
+                        }
+                    };
+
+                    contactoListView.Items.Add(new ListViewItem { Content = itemContent, Tag = contacto });
+                }
+
+                var dialogContent = new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock
+                        {
+                            Text = $"Seleccione un contacto para asignar al cliente \"{cliente.NombreComercial}\":",
+                            TextWrapping = TextWrapping.Wrap
+                        },
+                        contactoListView
+                    }
+                };
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Agregar Contacto",
+                    Content = dialogContent,
+                    PrimaryButtonText = "Agregar",
+                    CloseButtonText = "Cancelar",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await dialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary && contactoListView.SelectedItem is ListViewItem selectedItem 
+                    && selectedItem.Tag is ContactoDto selectedContacto)
+                {
+                    // Actualizar el idCliente del contacto
+                    var updateDto = new ContactoEditDto
+                    {
+                        ContactoId = selectedContacto.ContactoId,
+                        IdCliente = cliente.IdCliente,
+                        // Mantener los demás campos
+                        Nombre = selectedContacto.Nombre,
+                        Apellido = selectedContacto.Apellido,
+                        Correo = selectedContacto.Correo,
+                        Telefono = selectedContacto.Telefono,
+                        Departamento = selectedContacto.Departamento,
+                        CodigoInterno = selectedContacto.CodigoInterno,
+                        Activo = selectedContacto.Activo,
+                        Notas = selectedContacto.Notas,
+                        IdProveedor = selectedContacto.IdProveedor,
+                        Cargo = selectedContacto.Cargo
+                    };
+
+                    var updateResult = await _contactoService.UpdateContactoAsync(updateDto);
+
+                    if (updateResult.Success)
+                    {
+                        // Recargar contactos del cliente
+                        cliente.ContactosLoaded = false;
+                        await LoadContactosForClienteAsync(cliente);
+
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Contacto agregado",
+                            nota: $"Contacto \"{selectedContacto.NombreCompleto}\" agregado correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo agregar el contacto. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al agregar contacto", ex, "ClientesView", "NuevoContacto_Click");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al agregar el contacto. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        private async void DeleteContactoButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el contacto desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not ContactoDto contacto)
+                return;
+
+            // Buscar el cliente que contiene este contacto
+            var cliente = ViewModel.Customers.FirstOrDefault(c => c.Contactos.Contains(contacto));
+            if (cliente == null)
+                return;
+
+            // Mostrar diálogo de confirmación
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea quitar el contacto \"{contacto.NombreCompleto}\" de este cliente?",
+                PrimaryButtonText = "Quitar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    // Actualizar el idCliente del contacto a 0 (sin cliente)
+                    var updateDto = new ContactoEditDto
+                    {
+                        ContactoId = contacto.ContactoId,
+                        IdCliente = 0,
+                        // Mantener los demás campos
+                        Nombre = contacto.Nombre,
+                        Apellido = contacto.Apellido,
+                        Correo = contacto.Correo,
+                        Telefono = contacto.Telefono,
+                        Departamento = contacto.Departamento,
+                        CodigoInterno = contacto.CodigoInterno,
+                        Activo = contacto.Activo,
+                        Notas = contacto.Notas,
+                        IdProveedor = contacto.IdProveedor,
+                        Cargo = contacto.Cargo
+                    };
+
+                    var updateResult = await _contactoService.UpdateContactoAsync(updateDto);
+
+                    if (updateResult.Success)
+                    {
+                        // Eliminar el contacto de la colección local
+                        cliente.Contactos.Remove(contacto);
+                        cliente.NotifyNoContactosMessageChanged();
+
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Contacto quitado",
+                            nota: "Contacto quitado del cliente correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo quitar el contacto. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _loggingService.LogErrorAsync("Error al quitar contacto del cliente", ex, "ClientesView", "DeleteContactoButton_Click");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al quitar el contacto. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
             }
         }
     }

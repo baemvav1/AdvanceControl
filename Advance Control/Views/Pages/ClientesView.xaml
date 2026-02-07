@@ -11,6 +11,7 @@
         <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
         <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
         <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -263,6 +264,89 @@
 
                                             <PivotItem Header="Facturas">
                                                 
+                                            </PivotItem>
+
+                                            <!-- Contactos Relacionados -->
+                                            <PivotItem Header="Contactos">
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <TextBlock
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="WhiteSmoke" Text="Contactos Relacionados" />
+                                                        <Button
+                                                            x:Name="NuevoContacto" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                            Click="NuevoContacto_Click" ToolTipService.ToolTip="Agregar contacto" Foreground="DarkGray"
+                                                            Tag="{x:Bind}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!--  Loading indicator for contactos  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingContactos, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingContactos, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Lista de contactos  -->
+                                                    <ItemsRepeater ItemsSource="{x:Bind Contactos, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="4" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:ContactoDto">
+                                                                <Border
+                                                                    Padding="12" Background="DarkGray"
+                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                    BorderThickness="1" CornerRadius="4">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                                            <TextBlock
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                                Text="{x:Bind NombreCompleto}" />
+                                                                            <TextBlock
+                                                                                FontSize="12" Foreground="Gray"
+                                                                                Text="{x:Bind Cargo}" />
+                                                                            <TextBlock
+                                                                                FontSize="11" Foreground="DimGray"
+                                                                                Text="{x:Bind Correo}"
+                                                                                Visibility="{x:Bind Correo, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                            <TextBlock
+                                                                                FontSize="11" Foreground="DimGray"
+                                                                                Text="{x:Bind Telefono}"
+                                                                                Visibility="{x:Bind Telefono, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        </StackPanel>
+                                                                        <TextBlock
+                                                                            Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
+                                                                            Foreground="Gray">
+                                                                            <Run Text="ID: " />
+                                                                            <Run Text="{x:Bind ContactoId}" />
+                                                                        </TextBlock>
+                                                                        <StackPanel
+                                                                            Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                                            <Button
+                                                                                AutomationProperties.Name="Eliminar contacto del cliente" Background="Transparent" BorderThickness="0" Click="DeleteContactoButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Quitar contacto del cliente">
+                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+
+                                                    <!--  Mensaje cuando no hay contactos  -->
+                                                    <TextBlock
+                                                        FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay contactos relacionados"
+                                                        Visibility="{x:Bind ShowNoContactosMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                </StackPanel>
                                             </PivotItem>
                                         </Pivot>
                                     </Grid>
