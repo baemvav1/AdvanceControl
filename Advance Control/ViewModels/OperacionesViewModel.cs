@@ -286,13 +286,19 @@ namespace Advance_Control.ViewModels
 
                 // Get active entity to use company name
                 string? nombreEmpresa = null;
+                string? apoderadoNombre = null;
                 try
                 {
                     var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
                     nombreEmpresa = entidadActiva?.NombreComercial;
+                    apoderadoNombre = entidadActiva?.Apoderado;
                     if (!string.IsNullOrWhiteSpace(nombreEmpresa))
                     {
                         await _logger.LogInformationAsync($"Usando nombre comercial de entidad activa: {nombreEmpresa}", "OperacionesViewModel", "GenerateQuoteAsync");
+                    }
+                    if (!string.IsNullOrWhiteSpace(apoderadoNombre))
+                    {
+                        await _logger.LogInformationAsync($"Usando apoderado de entidad activa: {apoderadoNombre}", "OperacionesViewModel", "GenerateQuoteAsync");
                     }
                 }
                 catch (Exception ex)
@@ -325,7 +331,7 @@ namespace Advance_Control.ViewModels
                     await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
                 }
 
-                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa);
+                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre);
 
                 // Calculate total with IVA and update operation monto
                 if (operacion.IdOperacion.HasValue)
