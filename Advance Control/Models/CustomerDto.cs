@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -85,6 +86,82 @@ namespace Advance_Control.Models
                     OnPropertyChanged();
                 }
             }
+        }
+
+        private ObservableCollection<ContactoDto> _contactos = new ObservableCollection<ContactoDto>();
+
+        /// <summary>
+        /// Colección de contactos para este cliente.
+        /// Se carga desde el endpoint de contactos cuando se expande el item.
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<ContactoDto> Contactos
+        {
+            get => _contactos;
+            set
+            {
+                if (_contactos != value)
+                {
+                    _contactos = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoContactosMessage));
+                }
+            }
+        }
+
+        private bool _contactosLoaded = false;
+
+        /// <summary>
+        /// Indica si los contactos ya han sido cargados para este cliente.
+        /// </summary>
+        [JsonIgnore]
+        public bool ContactosLoaded
+        {
+            get => _contactosLoaded;
+            set
+            {
+                if (_contactosLoaded != value)
+                {
+                    _contactosLoaded = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoContactosMessage));
+                }
+            }
+        }
+
+        private bool _isLoadingContactos = false;
+
+        /// <summary>
+        /// Indica si los contactos están siendo cargados.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingContactos
+        {
+            get => _isLoadingContactos;
+            set
+            {
+                if (_isLoadingContactos != value)
+                {
+                    _isLoadingContactos = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se debe mostrar el mensaje de que no hay contactos.
+        /// True cuando ContactosLoaded es true y Contactos está vacía.
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoContactosMessage => ContactosLoaded && Contactos.Count == 0;
+
+        /// <summary>
+        /// Actualiza el estado del mensaje de no contactos.
+        /// Debe llamarse después de modificar Contactos o ContactosLoaded.
+        /// </summary>
+        public void NotifyNoContactosMessageChanged()
+        {
+            OnPropertyChanged(nameof(ShowNoContactosMessage));
         }
     }
 }
