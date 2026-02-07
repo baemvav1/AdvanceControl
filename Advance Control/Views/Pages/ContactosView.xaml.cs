@@ -246,16 +246,17 @@ namespace Advance_Control.Views.Pages
 
         private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            // Get the ContactoDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.ContactoDto contacto)
-            {
-                contacto.Expand = !contacto.Expand;
-            }
+            ToggleContactoExpand(sender);
         }
 
         private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
-            // Get the ContactoDto from the sender's Tag property
+            ToggleContactoExpand(sender);
+        }
+
+        private void ToggleContactoExpand(object sender)
+        {
+            // Get the ContactoDto from the sender's Tag property and toggle expand state
             if (sender is FrameworkElement element && element.Tag is Models.ContactoDto contacto)
             {
                 contacto.Expand = !contacto.Expand;
