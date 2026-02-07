@@ -107,13 +107,6 @@ namespace Advance_Control.Models
         [JsonPropertyName("idCliente")]
         public int? IdCliente { get; set; }
 
-        /// <summary>
-        /// Estatus del contacto
-        /// </summary>
-        [JsonPropertyName("estatus")]
-        public bool? Estatus { get; set; }
-
-        private bool _expand = false;
 
         /// <summary>
         /// Propiedad interna para controlar el estado de expansión en la UI.

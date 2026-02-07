@@ -257,9 +257,6 @@ namespace Advance_Control.Services.Contactos
                 if (query.IdCliente.HasValue)
                     queryParams.Add($"idCliente={query.IdCliente.Value}");
 
-                if (query.Estatus.HasValue)
-                    queryParams.Add($"estatus={query.Estatus.Value.ToString().ToLower()}");
-
                 if (queryParams.Count > 0)
                 {
                     url = $"{url}?{string.Join("&", queryParams)}";

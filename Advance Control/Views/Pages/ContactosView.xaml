@@ -383,20 +383,6 @@
                                                             Foreground="WhiteSmoke"
                                                             Text="{x:Bind ActualizadoEn}" />
                                                     </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="2"
-                                                        Grid.Column="0"
-                                                        Margin="0,4,8,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="Gray"
-                                                            Text="Estatus:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="WhiteSmoke"
-                                                            Text="{x:Bind Estatus}" />
-                                                    </StackPanel>
                                                 </Grid>
                                             </PivotItem>
                                         </Pivot>
