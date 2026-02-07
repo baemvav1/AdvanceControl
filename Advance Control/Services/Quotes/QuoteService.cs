@@ -34,7 +34,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Genera un PDF de cotización a partir de una operación y sus cargos
         /// </summary>
-        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null)
+        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? apoderadoNombre = null)
         {
             if (operacion == null)
                 throw new ArgumentNullException(nameof(operacion));
@@ -199,6 +199,28 @@ namespace Advance_Control.Services.Quotes
                                         row.AutoItem().Text("TOTAL: ").Bold().FontSize(14);
                                         row.AutoItem().Text($"${total:N2}").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
                                     });
+                                });
+
+                                // Payment terms and validity notes section
+                                column.Item().PaddingTop(25).Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(15).Column(notesCol =>
+                                {
+                                    notesCol.Item().Text("Condiciones de pago:").Bold().FontSize(11).FontColor(Colors.Blue.Darken2);
+                                    notesCol.Item().PaddingTop(8).Text("• Se solicita anticipo del 70% para realizar este trabajo").FontSize(10);
+                                    notesCol.Item().PaddingTop(4).Text("• El 30% restante, al término de este").FontSize(10);
+                                    notesCol.Item().PaddingTop(4).Text("• Vigencia de esta cotización: treinta días naturales").FontSize(10);
+                                });
+
+                                // Closing salutation section
+                                column.Item().PaddingTop(25).Column(closingCol =>
+                                {
+                                    closingCol.Item().Text("En la confianza de recibir su pronta respuesta, le envío un cordial saludo.")
+                                        .FontSize(11).Italic();
+                                    
+                                    closingCol.Item().PaddingTop(20).Text("Atentamente,").FontSize(11);
+                                    
+                                    var apoderado = !string.IsNullOrWhiteSpace(apoderadoNombre) ? apoderadoNombre : "La Dirección";
+                                    closingCol.Item().PaddingTop(25).Text(apoderado).Bold().FontSize(12);
+                                    closingCol.Item().Text("Director General").FontSize(11).FontColor(Colors.Grey.Darken1);
                                 });
                             });
 
