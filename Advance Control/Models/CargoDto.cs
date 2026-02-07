@@ -301,6 +301,31 @@ namespace Advance_Control.Models
             }
         }
 
+        private bool _isGalleryExpanded;
+        /// <summary>
+        /// Indica si la galería de imágenes está expandida (visible)
+        /// </summary>
+        [JsonIgnore]
+        public bool IsGalleryExpanded
+        {
+            get => _isGalleryExpanded;
+            set
+            {
+                if (_isGalleryExpanded != value)
+                {
+                    _isGalleryExpanded = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShouldShowGallery));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se debe mostrar la galería (tiene imágenes Y está expandida)
+        /// </summary>
+        [JsonIgnore]
+        public bool ShouldShowGallery => HasImages && IsGalleryExpanded;
+
         /// <summary>
         /// Notifica que la colección de imágenes ha cambiado
         /// </summary>
@@ -308,6 +333,7 @@ namespace Advance_Control.Models
         {
             OnPropertyChanged(nameof(Images));
             OnPropertyChanged(nameof(HasImages));
+            OnPropertyChanged(nameof(ShouldShowGallery));
         }
 
         /// <summary>

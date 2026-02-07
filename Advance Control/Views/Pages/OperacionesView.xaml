@@ -355,7 +355,7 @@
                                                             </ItemsRepeater.Layout>
                                                             <ItemsRepeater.ItemTemplate>
                                                                 <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CargoDto">
-                                                                    <StackPanel Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+                                                                    <StackPanel Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="0,0,0,1" Tapped="CargoRow_Tapped">
                                                                         <!-- Main cargo row -->
                                                                         <Grid Padding="8,6">
                                                                             <Grid.ColumnDefinitions>
@@ -485,10 +485,10 @@
                                                                             </StackPanel>
                                                                         </Grid>
                                                                         
-                                                                        <!-- Images row - only visible if cargo has images -->
+                                                                        <!-- Images row - only visible if cargo has images and is expanded -->
                                                                         <Grid Padding="8,4" 
                                                                               Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                                                              Visibility="{x:Bind HasImages, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                              Visibility="{x:Bind ShouldShowGallery, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                                             <Grid.RowDefinitions>
                                                                                 <RowDefinition Height="Auto" />
                                                                                 <RowDefinition Height="Auto" />

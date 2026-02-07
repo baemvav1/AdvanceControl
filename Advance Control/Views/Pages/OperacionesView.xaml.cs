@@ -462,6 +462,19 @@ namespace Advance_Control.Views
             // Toggle edit mode
             cargo.IsEditing = !cargo.IsEditing;
         }
+
+        private void CargoRow_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            // Obtener el cargo desde el DataContext del StackPanel
+            if (sender is not FrameworkElement element || element.DataContext is not Models.CargoDto cargo)
+                return;
+
+            // Solo toggle si el cargo tiene imágenes
+            if (cargo.HasImages)
+            {
+                cargo.IsGalleryExpanded = !cargo.IsGalleryExpanded;
+            }
+        }
         
         private async void CargoField_KeyDown(object sender, KeyRoutedEventArgs e)
         {
