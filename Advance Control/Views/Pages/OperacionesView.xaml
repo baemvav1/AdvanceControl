@@ -482,6 +482,17 @@
                                                                                     Visibility="{x:Bind TipoCargo, Converter={StaticResource RefaccionVisibilityConverter}}">
                                                                                     <SymbolIcon Symbol="View" />
                                                                                 </Button>
+                                                                                <Button
+                                                                                    Click="ExpandGalleryButton_Click"
+                                                                                    Tag="{x:Bind}"
+                                                                                    Background="Transparent"
+                                                                                    Padding="4"
+                                                                                    MinHeight="24"
+                                                                                    MinWidth="24"
+                                                                                    ToolTipService.ToolTip="Expandir galería de imágenes"
+                                                                                    Visibility="{x:Bind HasImages, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                                                    <SymbolIcon Symbol="Pictures" />
+                                                                                </Button>
                                                                             </StackPanel>
                                                                         </Grid>
                                                                         
