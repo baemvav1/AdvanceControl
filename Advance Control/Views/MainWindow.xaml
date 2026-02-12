@@ -93,6 +93,8 @@
                             Content="Ubicaciones" Icon="MapPin" Tag="Ubicaciones" />
                         <NavigationViewItem
                             Content="Áreas" Icon="Map" Tag="Areas" />
+                        <NavigationViewItem
+                            Content="Es Cuenta" Icon="Account" Tag="EsCuenta" />
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>
