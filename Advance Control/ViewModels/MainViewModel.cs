@@ -211,6 +211,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.ServiciosView>("Servicios");
             _navigationService.Configure<Views.Pages.UbicacionesView>("Ubicaciones");
             _navigationService.Configure<Views.Pages.AreasView>("Areas");
+            _navigationService.Configure<Views.Pages.EsCuentaView>("EsCuenta");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
