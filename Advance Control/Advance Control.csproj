@@ -23,6 +23,7 @@
     <None Remove="Views\Pages\ContactosView.xaml" />
     <None Remove="Views\Pages\EntidadesView.xaml" />
     <None Remove="Views\Pages\EquiposView.xaml" />
+    <None Remove="Views\Pages\EsCuentaView.xaml" />
     <None Remove="Views\Pages\ProveedoresView.xaml" />
     <None Remove="Views\Pages\RefaaccionView.xaml" />
     <None Remove="Views\Pages\ServiciosView.xaml" />
@@ -72,6 +73,11 @@
     <PackageReference Include="ScottPlot.WinUI" Version="5.0.53" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\EsCuentaView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\Pages\EntidadesView.xaml">
