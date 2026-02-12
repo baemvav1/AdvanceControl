@@ -30,7 +30,6 @@ using Advance_Control.Services.Areas;
 using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Entidades;
-using Advance_Control.Services.EstadoCuenta;
 
 namespace Advance_Control
 {
@@ -478,26 +477,6 @@ namespace Advance_Control
 
                     // Registrar ContactoService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IContactoService, ContactoService>((sp, client) =>
-                    {
-                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
-                        {
-                            client.BaseAddress = baseUri;
-                        }
-                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
-                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
-                        {
-                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
-                        }
-                        else
-                        {
-                            client.Timeout = TimeSpan.FromSeconds(30);
-                        }
-                    })
-                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
-
-                    // Registrar EstadoCuentaService y su HttpClient pipeline con autenticación
-                    services.AddHttpClient<IEstadoCuentaService, EstadoCuentaService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
