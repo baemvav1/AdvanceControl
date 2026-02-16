@@ -7,6 +7,7 @@ namespace Advance_Control.Models
     {
         /// <summary>
         /// Fecha de la transacción
+        /// Almacenado como string para permitir diferentes formatos de XML
         /// </summary>
         public string? Fecha { get; set; }
 

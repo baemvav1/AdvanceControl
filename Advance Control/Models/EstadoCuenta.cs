@@ -24,11 +24,13 @@ namespace Advance_Control.Models
 
         /// <summary>
         /// Fecha de inicio del período
+        /// Almacenado como string para permitir diferentes formatos de XML
         /// </summary>
         public string? FechaInicio { get; set; }
 
         /// <summary>
         /// Fecha de fin del período
+        /// Almacenado como string para permitir diferentes formatos de XML
         /// </summary>
         public string? FechaFin { get; set; }
 

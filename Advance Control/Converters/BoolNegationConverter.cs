@@ -14,7 +14,8 @@ namespace Advance_Control.Converters
             {
                 return !boolValue;
             }
-            return true;
+            // Si no es booleano, retornar false para comportamiento predecible
+            return false;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)
@@ -23,6 +24,7 @@ namespace Advance_Control.Converters
             {
                 return !boolValue;
             }
+            // Consistente con Convert, retornar false para valores no-booleanos
             return false;
         }
     }
