@@ -18,6 +18,10 @@
 
             <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
 
+            <converters:BoolNegationConverter x:Key="BoolNegationConverter" />
+
+            <converters:NullToBoolConverter x:Key="NullToBoolConverter" />
+
             <converters:DateTimeFormatConverter x:Key="DateTimeFormatConverter" />
 
             <converters:BooleanToArrowConverter x:Key="BoolToArrowConverter" />
