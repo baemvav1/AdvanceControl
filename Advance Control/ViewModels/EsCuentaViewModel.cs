@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -144,16 +145,16 @@ namespace Advance_Control.ViewModels
                     estadoCuenta.FechaFin = raiz.Element("FechaFin")?.Value;
 
                     // Parsear valores decimales
-                    if (decimal.TryParse(raiz.Element("SaldoInicial")?.Value, out decimal saldoInicial))
+                    if (decimal.TryParse(raiz.Element("SaldoInicial")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal saldoInicial))
                         estadoCuenta.SaldoInicial = saldoInicial;
                     
-                    if (decimal.TryParse(raiz.Element("SaldoFinal")?.Value, out decimal saldoFinal))
+                    if (decimal.TryParse(raiz.Element("SaldoFinal")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal saldoFinal))
                         estadoCuenta.SaldoFinal = saldoFinal;
                     
-                    if (decimal.TryParse(raiz.Element("TotalCargos")?.Value, out decimal totalCargos))
+                    if (decimal.TryParse(raiz.Element("TotalCargos")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal totalCargos))
                         estadoCuenta.TotalCargos = totalCargos;
                     
-                    if (decimal.TryParse(raiz.Element("TotalAbonos")?.Value, out decimal totalAbonos))
+                    if (decimal.TryParse(raiz.Element("TotalAbonos")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal totalAbonos))
                         estadoCuenta.TotalAbonos = totalAbonos;
 
                     // Parsear transacciones
@@ -172,11 +173,11 @@ namespace Advance_Control.ViewModels
                             };
 
                             // Parsear monto
-                            if (decimal.TryParse(transElement.Element("Monto")?.Value, out decimal monto))
+                            if (decimal.TryParse(transElement.Element("Monto")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal monto))
                                 transaccion.Monto = monto;
 
                             // Parsear saldo
-                            if (decimal.TryParse(transElement.Element("Saldo")?.Value, out decimal saldo))
+                            if (decimal.TryParse(transElement.Element("Saldo")?.Value, NumberStyles.Any, CultureInfo.InvariantCulture, out decimal saldo))
                                 transaccion.Saldo = saldo;
 
                             estadoCuenta.Transacciones.Add(transaccion);
