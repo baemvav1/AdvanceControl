@@ -32,6 +32,7 @@ namespace Advance_Control.Views
         private readonly ICargoService _cargoService;
         private readonly IUserInfoService _userInfoService;
         private readonly ICargoImageService _cargoImageService;
+        private readonly IOperacionImageService _operacionImageService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -54,6 +55,9 @@ namespace Advance_Control.Views
 
             // Resolver el servicio de imágenes de cargo desde DI
             _cargoImageService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoImageService>();
+
+            // Resolver el servicio de imágenes de operación desde DI
+            _operacionImageService = ((App)Application.Current).Host.Services.GetRequiredService<IOperacionImageService>();
 
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
@@ -1437,6 +1441,113 @@ namespace Advance_Control.Views
 
             // Toggle gallery expansion
             selectedCargo.IsGalleryExpanded = !selectedCargo.IsGalleryExpanded;
+        }
+
+        /// <summary>
+        /// Helper method to upload an operation image (Prefactura or Orden Compra)
+        /// </summary>
+        private async Task UploadOperacionImageAsync(Models.OperacionDto operacion, string imageType)
+        {
+            if (!operacion.IdOperacion.HasValue || operacion.IdOperacion.Value <= 0)
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "La operación no tiene un ID válido para cargar imágenes.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            try
+            {
+                // Crear el selector de archivos
+                var picker = new FileOpenPicker();
+                
+                // Obtener el HWND de la ventana principal para inicializar el picker
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                // Configurar tipos de archivo permitidos
+                picker.ViewMode = PickerViewMode.Thumbnail;
+                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                picker.FileTypeFilter.Add(".jpg");
+                picker.FileTypeFilter.Add(".jpeg");
+                picker.FileTypeFilter.Add(".png");
+                picker.FileTypeFilter.Add(".gif");
+                picker.FileTypeFilter.Add(".bmp");
+
+                // Mostrar el selector
+                var file = await picker.PickSingleFileAsync();
+
+                if (file == null)
+                {
+                    // Usuario canceló la selección
+                    return;
+                }
+
+                // Leer el archivo como stream
+                using var stream = await file.OpenStreamForReadAsync();
+                
+                // Determinar el tipo de contenido basado en la extensión
+                var contentType = GetContentTypeFromExtension(file.FileType);
+
+                // Guardar la imagen según el tipo
+                Models.OperacionImageDto? result = null;
+                if (imageType == "Prefactura")
+                {
+                    result = await _operacionImageService.UploadPrefacturaAsync(operacion.IdOperacion.Value, stream, contentType);
+                }
+                else if (imageType == "Orden Compra")
+                {
+                    result = await _operacionImageService.UploadOrdenCompraAsync(operacion.IdOperacion.Value, stream, contentType);
+                }
+
+                if (result != null)
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: $"{imageType} cargada",
+                        nota: $"La {imageType.ToLower()} {result.FileName} se ha guardado correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: $"No se pudo guardar la {imageType.ToLower()}. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar {imageType.ToLower()}: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: $"Ocurrió un error al cargar la {imageType.ToLower()}. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de cargar prefactura
+        /// </summary>
+        private async void UploadPrefacturaButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            await UploadOperacionImageAsync(operacion, "Prefactura");
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de cargar orden de compra
+        /// </summary>
+        private async void UploadOrdenCompraButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            await UploadOperacionImageAsync(operacion, "Orden Compra");
         }
     }
 }

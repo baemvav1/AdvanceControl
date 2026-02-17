@@ -498,6 +498,9 @@ namespace Advance_Control
                     // Registrar LocalCargoImageService para almacenamiento local de imágenes de cargos
                     services.AddSingleton<ICargoImageService, LocalCargoImageService>();
 
+                    // Registrar LocalOperacionImageService para almacenamiento local de imágenes de operaciones (Prefacturas y Órdenes de Compra)
+                    services.AddSingleton<IOperacionImageService, LocalOperacionImageService>();
+
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();
                     services.AddTransient<ViewModels.LoginViewModel>();

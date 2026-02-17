@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.LocalStorage;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -22,10 +23,12 @@ namespace Advance_Control.Services.Quotes
         private const double IVA_RATE = 0.16;
         
         private readonly ILoggingService _logger;
+        private readonly IOperacionImageService _operacionImageService;
 
-        public QuoteService(ILoggingService logger)
+        public QuoteService(ILoggingService logger, IOperacionImageService operacionImageService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _operacionImageService = operacionImageService ?? throw new ArgumentNullException(nameof(operacionImageService));
             
             // Configure QuestPDF license
             QuestPDF.Settings.License = LicenseType.Community;
@@ -295,6 +298,16 @@ namespace Advance_Control.Services.Quotes
                 // Use current date for the report
                 var reportDate = DateTime.Now;
 
+                // Load Prefactura and Orden Compra images
+                List<OperacionImageDto> prefacturas = new List<OperacionImageDto>();
+                List<OperacionImageDto> ordenesCompra = new List<OperacionImageDto>();
+                
+                if (operacion.IdOperacion.HasValue)
+                {
+                    prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
+                    ordenesCompra = await _operacionImageService.GetOrdenesCompraAsync(operacion.IdOperacion.Value);
+                }
+
                 // Generate PDF
                 var document = Document.Create(container =>
                 {
@@ -326,6 +339,64 @@ namespace Advance_Control.Services.Quotes
                             .Column(column =>
                             {
                                 column.Spacing(15);
+
+                                // Add Prefactura images at the beginning if they exist
+                                if (prefacturas != null && prefacturas.Count > 0)
+                                {
+                                    column.Item().Column(prefacturaCol =>
+                                    {
+                                        prefacturaCol.Item().Text("Prefacturas").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                                        prefacturaCol.Item().PaddingTop(10);
+                                        
+                                        foreach (var prefactura in prefacturas)
+                                        {
+                                            if (!string.IsNullOrWhiteSpace(prefactura.Url) && File.Exists(prefactura.Url))
+                                            {
+                                                try
+                                                {
+                                                    prefacturaCol.Item().PaddingBottom(10).Image(prefactura.Url).FitWidth();
+                                                }
+                                                catch
+                                                {
+                                                    // Skip images that can't be loaded
+                                                    prefacturaCol.Item().Text($"[Error al cargar: {prefactura.FileName}]").FontSize(10).Italic();
+                                                }
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Add separator after prefacturas
+                                    column.Item().PaddingTop(10);
+                                }
+
+                                // Add Orden Compra images if they exist
+                                if (ordenesCompra != null && ordenesCompra.Count > 0)
+                                {
+                                    column.Item().Column(ordenCompraCol =>
+                                    {
+                                        ordenCompraCol.Item().Text("Órdenes de Compra").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                                        ordenCompraCol.Item().PaddingTop(10);
+                                        
+                                        foreach (var ordenCompra in ordenesCompra)
+                                        {
+                                            if (!string.IsNullOrWhiteSpace(ordenCompra.Url) && File.Exists(ordenCompra.Url))
+                                            {
+                                                try
+                                                {
+                                                    ordenCompraCol.Item().PaddingBottom(10).Image(ordenCompra.Url).FitWidth();
+                                                }
+                                                catch
+                                                {
+                                                    // Skip images that can't be loaded
+                                                    ordenCompraCol.Item().Text($"[Error al cargar: {ordenCompra.FileName}]").FontSize(10).Italic();
+                                                }
+                                            }
+                                        }
+                                    });
+                                    
+                                    // Add separator after ordenes de compra
+                                    column.Item().PaddingTop(10);
+                                }
 
                                 // Information section (Client and Operation info)
                                 column.Item().Row(row =>
