@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.LocalStorage;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -22,9 +23,9 @@ namespace Advance_Control.Services.Quotes
         private const double IVA_RATE = 0.16;
         
         private readonly ILoggingService _logger;
-        private readonly Services.LocalStorage.IOperacionImageService _operacionImageService;
+        private readonly IOperacionImageService _operacionImageService;
 
-        public QuoteService(ILoggingService logger, Services.LocalStorage.IOperacionImageService operacionImageService)
+        public QuoteService(ILoggingService logger, IOperacionImageService operacionImageService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _operacionImageService = operacionImageService ?? throw new ArgumentNullException(nameof(operacionImageService));
@@ -298,8 +299,8 @@ namespace Advance_Control.Services.Quotes
                 var reportDate = DateTime.Now;
 
                 // Load Prefactura and Orden Compra images
-                List<Models.OperacionImageDto> prefacturas = new List<Models.OperacionImageDto>();
-                List<Models.OperacionImageDto> ordenesCompra = new List<Models.OperacionImageDto>();
+                List<OperacionImageDto> prefacturas = new List<OperacionImageDto>();
+                List<OperacionImageDto> ordenesCompra = new List<OperacionImageDto>();
                 
                 if (operacion.IdOperacion.HasValue)
                 {
