@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Application
-    x:Class="Advance_Control.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Advance_Control.Converters">
+    x:Class="Advance_Control.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Advance_Control.Converters">
 
     <Application.Resources>
         <ResourceDictionary>
@@ -12,7 +15,9 @@
 
             <!--  Global converters / recursos  -->
             <converters:BooleanToSystemColorBrushConverter
-                x:Key="Green_transparentBoolColorConverter" FalseColorName="Transparent" TrueColorName="Green" />
+                x:Key="Green_transparentBoolColorConverter"
+                FalseColorName="Transparent"
+                TrueColorName="Green" />
 
             <converters:BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
 
@@ -27,7 +32,9 @@
             <converters:BooleanToArrowConverter x:Key="BoolToArrowConverter" />
 
             <converters:BooleanToSystemColorBrushConverter
-                x:Key="NotificationColorConverter" TrueColorName="Green" FalseColorName="Gray" />
+                x:Key="NotificationColorConverter"
+                FalseColorName="Gray"
+                TrueColorName="Green" />
 
             <!--  Other app resources here  -->
         </ResourceDictionary>

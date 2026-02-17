@@ -6,6 +6,11 @@ namespace Advance_Control.Models
     public class Transaccion
     {
         /// <summary>
+        /// ID Transaccion
+        /// Almacenado como string para permitir diferentes formatos de XML
+        /// </summary>
+        public int? Id { get; set; }
+        /// <summary>
         /// Fecha de la transacción
         /// Almacenado como string para permitir diferentes formatos de XML
         /// </summary>
