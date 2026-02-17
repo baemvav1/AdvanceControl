@@ -354,12 +354,6 @@ namespace Advance_Control.Services.Quotes
                                             {
                                                 try
                                                 {
-                                                    // Calculate page width minus margins (2cm on each side = 4cm total)
-                                                    // Letter page width is 21.59 cm (8.5 inches)
-                                                    float pageWidthCm = 21.59f;
-                                                    float marginsCm = 4f;
-                                                    float imageWidthCm = pageWidthCm - marginsCm;
-                                                    
                                                     prefacturaCol.Item().PaddingBottom(10).Image(prefactura.Url).FitWidth();
                                                 }
                                                 catch
@@ -380,7 +374,7 @@ namespace Advance_Control.Services.Quotes
                                 {
                                     column.Item().Column(ordenCompraCol =>
                                     {
-                                        ordenCompraCol.Item().Text("Ordenes de Compra").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                                        ordenCompraCol.Item().Text("Órdenes de Compra").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
                                         ordenCompraCol.Item().PaddingTop(10);
                                         
                                         foreach (var ordenCompra in ordenesCompra)
@@ -389,11 +383,6 @@ namespace Advance_Control.Services.Quotes
                                             {
                                                 try
                                                 {
-                                                    // Calculate page width minus margins
-                                                    float pageWidthCm = 21.59f;
-                                                    float marginsCm = 4f;
-                                                    float imageWidthCm = pageWidthCm - marginsCm;
-                                                    
                                                     ordenCompraCol.Item().PaddingBottom(10).Image(ordenCompra.Url).FitWidth();
                                                 }
                                                 catch

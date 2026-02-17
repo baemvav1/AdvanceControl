@@ -1444,14 +1444,10 @@ namespace Advance_Control.Views
         }
 
         /// <summary>
-        /// Maneja el clic en el botón de cargar prefactura
+        /// Helper method to upload an operation image (Prefactura or Orden Compra)
         /// </summary>
-        private async void UploadPrefacturaButton_Click(object sender, RoutedEventArgs e)
+        private async Task UploadOperacionImageAsync(Models.OperacionDto operacion, string imageType)
         {
-            // Obtener la operación desde el Tag del botón
-            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
-                return;
-
             if (!operacion.IdOperacion.HasValue || operacion.IdOperacion.Value <= 0)
             {
                 await _notificacionService.MostrarNotificacionAsync(
@@ -1494,32 +1490,52 @@ namespace Advance_Control.Views
                 // Determinar el tipo de contenido basado en la extensión
                 var contentType = GetContentTypeFromExtension(file.FileType);
 
-                // Guardar la imagen de prefactura
-                var result = await _operacionImageService.UploadPrefacturaAsync(operacion.IdOperacion.Value, stream, contentType);
+                // Guardar la imagen según el tipo
+                Models.OperacionImageDto? result = null;
+                if (imageType == "Prefactura")
+                {
+                    result = await _operacionImageService.UploadPrefacturaAsync(operacion.IdOperacion.Value, stream, contentType);
+                }
+                else if (imageType == "Orden Compra")
+                {
+                    result = await _operacionImageService.UploadOrdenCompraAsync(operacion.IdOperacion.Value, stream, contentType);
+                }
 
                 if (result != null)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Prefactura cargada",
-                        nota: $"La prefactura {result.FileName} se ha guardado correctamente.",
+                        titulo: $"{imageType} cargada",
+                        nota: $"La {imageType.ToLower()} {result.FileName} se ha guardado correctamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
                 else
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
-                        nota: "No se pudo guardar la prefactura. Por favor, intente nuevamente.",
+                        nota: $"No se pudo guardar la {imageType.ToLower()}. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al cargar prefactura: {ex.GetType().Name} - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error al cargar {imageType.ToLower()}: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
-                    nota: "Ocurrió un error al cargar la prefactura. Por favor, intente nuevamente.",
+                    nota: $"Ocurrió un error al cargar la {imageType.ToLower()}. Por favor, intente nuevamente.",
                     fechaHoraInicio: DateTime.Now);
             }
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de cargar prefactura
+        /// </summary>
+        private async void UploadPrefacturaButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            await UploadOperacionImageAsync(operacion, "Prefactura");
         }
 
         /// <summary>
@@ -1531,74 +1547,7 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
 
-            if (!operacion.IdOperacion.HasValue || operacion.IdOperacion.Value <= 0)
-            {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "La operación no tiene un ID válido para cargar imágenes.",
-                    fechaHoraInicio: DateTime.Now);
-                return;
-            }
-
-            try
-            {
-                // Crear el selector de archivos
-                var picker = new FileOpenPicker();
-                
-                // Obtener el HWND de la ventana principal para inicializar el picker
-                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
-
-                // Configurar tipos de archivo permitidos
-                picker.ViewMode = PickerViewMode.Thumbnail;
-                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-                picker.FileTypeFilter.Add(".jpg");
-                picker.FileTypeFilter.Add(".jpeg");
-                picker.FileTypeFilter.Add(".png");
-                picker.FileTypeFilter.Add(".gif");
-                picker.FileTypeFilter.Add(".bmp");
-
-                // Mostrar el selector
-                var file = await picker.PickSingleFileAsync();
-
-                if (file == null)
-                {
-                    // Usuario canceló la selección
-                    return;
-                }
-
-                // Leer el archivo como stream
-                using var stream = await file.OpenStreamForReadAsync();
-                
-                // Determinar el tipo de contenido basado en la extensión
-                var contentType = GetContentTypeFromExtension(file.FileType);
-
-                // Guardar la imagen de orden de compra
-                var result = await _operacionImageService.UploadOrdenCompraAsync(operacion.IdOperacion.Value, stream, contentType);
-
-                if (result != null)
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Orden de compra cargada",
-                        nota: $"La orden de compra {result.FileName} se ha guardado correctamente.",
-                        fechaHoraInicio: DateTime.Now);
-                }
-                else
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo guardar la orden de compra. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error al cargar orden de compra: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al cargar la orden de compra. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
-            }
+            await UploadOperacionImageAsync(operacion, "Orden Compra");
         }
     }
 }
