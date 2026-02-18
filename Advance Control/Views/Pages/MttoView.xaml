@@ -1,14 +1,14 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="Advance_Control.Views.MttoView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:Advance_Control.Converters"
-    xmlns:local="using:Advance_Control.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Advance_Control.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d"
-    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
 
     <Page.Resources>
         <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
@@ -26,13 +26,21 @@
 
         <!--  Header  -->
         <StackPanel
-            Grid.Row="0" Margin="0,0,0,24" Spacing="8">
+            Grid.Row="0"
+            Margin="0,0,0,24"
+            Spacing="8">
             <StackPanel Orientation="Horizontal" Spacing="5">
                 <TextBlock
-                    FontSize="32" FontWeight="Bold" Text="Mantenimiento" />
+                    FontSize="32"
+                    FontWeight="Bold"
+                    Text="Mantenimiento" />
                 <Button
-                    x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
-                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo mantenimiento">
+                    x:Name="Nuevo"
+                    VerticalAlignment="Center"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="NuevoButton_Click"
+                    ToolTipService.ToolTip="Crear nuevo mantenimiento">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <SymbolIcon Symbol="Add" />
                         <TextBlock VerticalAlignment="Center" />
@@ -47,9 +55,13 @@
 
         <!--  Filtros  -->
         <StackPanel
-            Grid.Row="1" Margin="0,0,0,16" Spacing="12">
+            Grid.Row="1"
+            Margin="0,0,0,16"
+            Spacing="12">
             <TextBlock
-                FontSize="16" FontWeight="SemiBold" Text="Filtros de búsqueda" />
+                FontSize="16"
+                FontWeight="SemiBold"
+                Text="Filtros de búsqueda" />
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
@@ -58,15 +70,21 @@
                 </Grid.ColumnDefinitions>
 
                 <TextBox
-                    Grid.Column="0" Margin="0,0,8,8" Header="Identificador de Equipo"
+                    Grid.Column="0"
+                    Margin="0,0,8,8"
+                    Header="Identificador de Equipo"
                     PlaceholderText="Identificador del equipo"
                     Text="{x:Bind ViewModel.IdentificadorFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <StackPanel
-                    Grid.Column="2" HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
+                    Grid.Column="2"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    Orientation="Horizontal"
+                    Spacing="8">
                     <Button
-                        Click="SearchButton_Click" Content="Buscar"
+                        Click="SearchButton_Click"
+                        Content="Buscar"
                         Style="{StaticResource AccentButtonStyle}" />
                     <Button Click="ClearButton_Click" Content="Limpiar" />
                 </StackPanel>
@@ -77,7 +95,10 @@
         <Grid Grid.Row="2">
             <!--  Loading indicator  -->
             <ProgressRing
-                Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                Width="50"
+                Height="50"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
                 IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
 
             <!--  ItemsRepeater con ScrollViewer  -->
@@ -91,7 +112,10 @@
                             <Grid Margin="0,5,20,5">
                                 <StackPanel Orientation="Vertical">
                                     <Grid
-                                        x:Name="Head" Grid.Row="0" MinHeight="90" Padding="16"
+                                        x:Name="Head"
+                                        Grid.Row="0"
+                                        MinHeight="90"
+                                        Padding="16"
                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="0,0,0,1"
@@ -106,7 +130,8 @@
                                         <!--  Información principal del mantenimiento  -->
                                         <StackPanel Grid.Column="0" Spacing="6">
                                             <TextBlock
-                                                FontSize="16" FontWeight="SemiBold"
+                                                FontSize="16"
+                                                FontWeight="SemiBold"
                                                 Text="{x:Bind TipoMantenimiento}" />
                                             <TextBlock
                                                 FontSize="14"
@@ -122,17 +147,23 @@
 
                                         <!--  Botón para expandir/colapsar  -->
                                         <Button
-                                            Grid.Column="1" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                                            Grid.Column="1"
+                                            VerticalAlignment="Center"
+                                            Background="Transparent"
+                                            BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
                                             Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        x:Name="Body" Grid.Row="1" Padding="8" Background="Black"
+                                        x:Name="Body"
+                                        Grid.Row="1"
+                                        Padding="8"
+                                        Background="Black"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
-                                            <!-- Información del Mantenimiento -->
+                                            <!--  Información del Mantenimiento  -->
                                             <PivotItem Header="Información">
                                                 <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
@@ -143,69 +174,105 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
 
                                                     <StackPanel
-                                                        Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
+                                                        Grid.Row="0"
+                                                        Grid.Column="0"
+                                                        Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="ID Mantenimiento:" />
+                                                            FontSize="12"
+                                                            Foreground="Gray"
+                                                            Text="ID Mantenimiento:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13"
+                                                            Foreground="WhiteSmoke"
                                                             Text="{x:Bind IdMantenimiento}" />
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
+                                                        Grid.Row="0"
+                                                        Grid.Column="1"
+                                                        Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Tipo:" />
+                                                            FontSize="12"
+                                                            Foreground="Gray"
+                                                            Text="Tipo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13"
+                                                            Foreground="WhiteSmoke"
                                                             Text="{x:Bind TipoMantenimiento}" />
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
+                                                        Grid.Row="1"
+                                                        Grid.Column="0"
+                                                        Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Razón Social:" />
+                                                            FontSize="12"
+                                                            Foreground="Gray"
+                                                            Text="Razón Social:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13"
+                                                            Foreground="WhiteSmoke"
                                                             Text="{x:Bind RazonSocial}" />
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
+                                                        Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Nombre Comercial:" />
+                                                            FontSize="12"
+                                                            Foreground="Gray"
+                                                            Text="Nombre Comercial:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13"
+                                                            Foreground="WhiteSmoke"
                                                             Text="{x:Bind NombreComercial}" />
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
+                                                        Grid.Row="2"
+                                                        Grid.Column="0"
+                                                        Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Identificador Equipo:" />
+                                                            FontSize="12"
+                                                            Foreground="Gray"
+                                                            Text="Identificador Equipo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13"
+                                                            Foreground="WhiteSmoke"
                                                             Text="{x:Bind Identificador}" />
                                                     </StackPanel>
+
+
+                                                    <StackPanel
+                                                        Grid.Row="3"
+                                                        Grid.ColumnSpan="2"
+                                                        Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="Gray"
+                                                            Text="Descripcion" />
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            Foreground="WhiteSmoke"
+                                                            Text="{x:Bind Descripcion}" 
+                                                            Visibility="{x:Bind Descripcion, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                                    </StackPanel>
+
                                                 </Grid>
                                             </PivotItem>
 
-                                            <!-- Nota -->
-                                            <PivotItem Header="Nota">
-                                                <StackPanel Padding="8">
-                                                    <TextBlock
-                                                        FontSize="13" Foreground="WhiteSmoke"
-                                                        Text="{x:Bind Nota}"
-                                                        TextWrapping="Wrap"
-                                                        Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-                                                </StackPanel>
-                                            </PivotItem>
-
-                                            <!-- Acciones -->
+                                            <!--  Acciones  -->
                                             <PivotItem Header="Acciones">
-                                                <StackPanel Padding="8" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                                                <StackPanel
+                                                    Padding="8"
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8">
                                                     <Button
                                                         AutomationProperties.Name="Atender mantenimiento"
                                                         Click="AtenderMantenimientoButton_Click"

@@ -43,8 +43,8 @@ namespace Advance_Control.Models
         /// <summary>
         /// Nota asociada al mantenimiento
         /// </summary>
-        [JsonPropertyName("nota")]
-        public string? Nota { get; set; }
+        [JsonPropertyName("descripcion")]
+        public string? Descripcion { get; set; }
 
         /// <summary>
         /// Identificador del equipo
