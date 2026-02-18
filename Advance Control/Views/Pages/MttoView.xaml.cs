@@ -391,7 +391,10 @@ namespace Advance_Control.Views
 
                     if (confirmResult == ContentDialogResult.Primary)
                     {
-                        var success = await ViewModel.UpdateAtendidoAsync(mantenimiento.IdMantenimiento.Value, selectedContacto.ContactoId);
+                        var success = await ViewModel.UpdateAtendidoAsync(
+                            mantenimiento.IdMantenimiento.Value,
+                            (int)selectedContacto.ContactoId // Conversión explícita de long a int
+                        );
 
                         if (success)
                         {

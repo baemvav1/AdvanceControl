@@ -472,7 +472,7 @@ namespace Advance_Control.Views
 
                 var diasCreditoNumberBox = new NumberBox
                 {
-                    Value = cliente.DiasCredito ?? double.NaN,
+                    Value = cliente.DiasCredito.HasValue ? cliente.DiasCredito.Value : double.NaN,
                     PlaceholderText = "Días de crédito",
                     Minimum = 0,
                     SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
@@ -490,7 +490,7 @@ namespace Advance_Control.Views
 
                 var prioridadNumberBox = new NumberBox
                 {
-                    Value = cliente.Prioridad ?? double.NaN,
+                    Value = cliente.Prioridad != 0 ? cliente.Prioridad : double.NaN,
                     PlaceholderText = "Prioridad (0-10)",
                     Minimum = 0,
                     Maximum = 10,

@@ -329,7 +329,7 @@ namespace Advance_Control.Views
                 return;
             var userInfo = await _userInfoService.GetUserInfoAsync();
             // Crear el UserControl para agregar cargo, pasando idProveedor registrado en el contacto que realiza la operacion
-            var agregarCargoControl = new Equipos.AgregarCargoUserControl(operacion.IdOperacion.Value, userInfo?.IdProveedor);
+            var agregarCargoControl = new Dialogs.AgregarCargoUserControl(operacion.IdOperacion.Value, userInfo?.IdProveedor);
 
             var dialog = new ContentDialog
             {
@@ -636,7 +636,7 @@ namespace Advance_Control.Views
                 }
 
                 // Crear el UserControl para visualizar la refacción usando el ID de la relación del cargo actualizado
-                var viewerControl = new Equipos.RefaccionesViewerUserControl(cargoActualizado.IdRelacionCargo.Value);
+                var viewerControl = new Dialogs.RefaccionesViewerUserControl(cargoActualizado.IdRelacionCargo.Value);
 
                 // Crear el diálogo
                 var dialog = new ContentDialog
@@ -1377,7 +1377,7 @@ namespace Advance_Control.Views
                 }
 
                 // Crear el UserControl para visualizar la refacción
-                var viewerControl = new Equipos.RefaccionesViewerUserControl(cargoActualizado.IdRelacionCargo.Value);
+                var viewerControl = new Dialogs.RefaccionesViewerUserControl(cargoActualizado.IdRelacionCargo.Value);
 
                 // Crear el diálogo
                 var dialog = new ContentDialog
