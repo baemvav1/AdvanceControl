@@ -5,7 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Models;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
     /// UserControl para agregar un cargo a una operación

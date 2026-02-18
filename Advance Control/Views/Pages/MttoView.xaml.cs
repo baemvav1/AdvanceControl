@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
-using Advance_Control.Views.Equipos;
+using Advance_Control.Views.Dialogs;
 
 namespace Advance_Control.Views
 {

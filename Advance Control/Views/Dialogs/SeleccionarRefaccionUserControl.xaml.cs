@@ -10,7 +10,7 @@ using Advance_Control.Services.Refacciones;
 using Advance_Control.Services.RelacionesProveedorRefaccion;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
     /// UserControl para seleccionar una refacción de la lista

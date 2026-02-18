@@ -3,7 +3,7 @@ using Microsoft.UI.Xaml.Controls;
 using Advance_Control.ViewModels;
 using System;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
     /// Vista para crear un nuevo equipo.

@@ -9,7 +9,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Clientes;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
     /// UserControl para seleccionar un cliente de la lista

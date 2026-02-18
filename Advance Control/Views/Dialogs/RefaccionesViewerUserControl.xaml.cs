@@ -8,7 +8,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Refacciones;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
     /// UserControl para visualizar los detalles de una refacción
