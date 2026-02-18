@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.LocalStorage;
+using Advance_Control.Services.Notificacion;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -24,14 +25,108 @@ namespace Advance_Control.Services.Quotes
         
         private readonly ILoggingService _logger;
         private readonly IOperacionImageService _operacionImageService;
+        private readonly INotificacionService _notificacionService;
 
-        public QuoteService(ILoggingService logger, IOperacionImageService operacionImageService)
+        public QuoteService(ILoggingService logger, IOperacionImageService operacionImageService, INotificacionService notificacionService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _operacionImageService = operacionImageService ?? throw new ArgumentNullException(nameof(operacionImageService));
+            _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
             
             // Configure QuestPDF license
             QuestPDF.Settings.License = LicenseType.Community;
+        }
+
+        /// <summary>
+        /// Obtiene la ruta de la carpeta de firmas
+        /// </summary>
+        private string GetFirmasFolder()
+        {
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            return Path.Combine(documentsPath, "Advance Control", "Firmas");
+        }
+
+        /// <summary>
+        /// Busca la firma del operador por su idAtiende en la carpeta de Firmas.
+        /// Los archivos tienen formato {id}_{nombre}.png
+        /// </summary>
+        private string? FindFirmaOperador(string firmasFolder, int idAtiende)
+        {
+            if (!Directory.Exists(firmasFolder))
+                return null;
+
+            foreach (var file in Directory.EnumerateFiles(firmasFolder, "*.png"))
+            {
+                var fileName = Path.GetFileNameWithoutExtension(file);
+                var parts = fileName.Split('_');
+                if (parts.Length >= 2 && int.TryParse(parts[0], out int fileId) && fileId == idAtiende)
+                {
+                    return file;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Agrega la sección de firmas al final del contenido del PDF.
+        /// FirmaDireccion.png a la izquierda y firma del operador a la derecha.
+        /// Si no existe firma del operador, FirmaDireccion.png se centra y se notifica error.
+        /// </summary>
+        private void AddFirmasSection(QuestPDF.Infrastructure.IContainer container, int? idAtiende)
+        {
+            var firmasFolder = GetFirmasFolder();
+            var firmaDireccionPath = Path.Combine(firmasFolder, "FirmaDireccion.png");
+            string? firmaOperadorPath = null;
+
+            if (idAtiende.HasValue)
+            {
+                firmaOperadorPath = FindFirmaOperador(firmasFolder, idAtiende.Value);
+            }
+
+            bool hasFirmaDireccion = File.Exists(firmaDireccionPath);
+            bool hasFirmaOperador = firmaOperadorPath != null && File.Exists(firmaOperadorPath);
+
+            if (!hasFirmaOperador)
+            {
+                try
+                {
+                    _ = _notificacionService.MostrarNotificacionAsync("No existe firma para operador");
+                }
+                catch
+                {
+                    // Notification failure should not prevent PDF generation
+                }
+            }
+
+            if (!hasFirmaDireccion)
+            {
+                try
+                {
+                    _ = _notificacionService.MostrarNotificacionAsync("No existe firma de dirección");
+                }
+                catch
+                {
+                    // Notification failure should not prevent PDF generation
+                }
+            }
+
+            container.PaddingTop(25).Column(firmasCol =>
+            {
+                if (hasFirmaDireccion && hasFirmaOperador)
+                {
+                    // Both signatures: direction on left, operator on right
+                    firmasCol.Item().Row(row =>
+                    {
+                        row.RelativeItem().AlignLeft().Height(100).Image(firmaDireccionPath).FitArea();
+                        row.RelativeItem().AlignRight().Height(100).Image(firmaOperadorPath).FitArea();
+                    });
+                }
+                else if (hasFirmaDireccion)
+                {
+                    // Only direction signature: center it
+                    firmasCol.Item().AlignCenter().Height(100).Image(firmaDireccionPath).FitArea();
+                }
+            });
         }
 
         /// <summary>
@@ -214,13 +309,10 @@ namespace Advance_Control.Services.Quotes
                                 {
                                     closingCol.Item().Text("En la confianza de recibir su pronta respuesta, le envío un cordial saludo.")
                                         .FontSize(11).Italic();
-                                    
-                                    closingCol.Item().PaddingTop(20).Text("Atentamente,").FontSize(11);
-                                    
-                                    var apoderado = !string.IsNullOrWhiteSpace(apoderadoNombre) ? apoderadoNombre : "La Dirección";
-                                    closingCol.Item().PaddingTop(25).Text(apoderado).Bold().FontSize(12);
-                                    closingCol.Item().Text("Director General").FontSize(11).FontColor(Colors.Grey.Darken1);
                                 });
+
+                                // Signature images section
+                                AddFirmasSection(column.Item(), operacion.IdAtiende);
                             });
 
                         page.Footer()
@@ -461,6 +553,9 @@ namespace Advance_Control.Services.Quotes
                                         }
                                     });
                                 }
+
+                                // Signature images section
+                                AddFirmasSection(column.Item(), operacion.IdAtiende);
                             });
 
                         page.Footer()
