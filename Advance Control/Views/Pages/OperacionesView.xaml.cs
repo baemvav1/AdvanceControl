@@ -106,10 +106,11 @@ namespace Advance_Control.Views
             {
                 operacion.Expand = !operacion.Expand;
                 
-                // Load cargos when expanding
+                // Load cargos and image indicators when expanding
                 if (operacion.Expand && operacion.IdOperacion.HasValue)
                 {
                     await LoadCargosForOperacionAsync(operacion);
+                    await RefreshImageIndicatorsAsync(operacion);
                 }
             }
         }
@@ -121,10 +122,11 @@ namespace Advance_Control.Views
             {
                 operacion.Expand = !operacion.Expand;
                 
-                // Load cargos when expanding
+                // Load cargos and image indicators when expanding
                 if (operacion.Expand && operacion.IdOperacion.HasValue)
                 {
                     await LoadCargosForOperacionAsync(operacion);
+                    await RefreshImageIndicatorsAsync(operacion);
                 }
             }
         }
@@ -1506,9 +1508,16 @@ namespace Advance_Control.Views
                 {
                     result = await _operacionImageService.UploadHojaServicioAsync(operacion.IdOperacion.Value, stream, contentType);
                 }
+                else if (imageType == "OrdenCompra")
+                {
+                    result = await _operacionImageService.UploadOrdenCompraAsync(operacion.IdOperacion.Value, stream, contentType);
+                }
 
                 if (result != null)
                 {
+                    // Update indicator on the operacion model
+                    await RefreshImageIndicatorsAsync(operacion);
+
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: $"{imageType} cargada",
                         nota: $"La {imageType.ToLower()} {result.FileName} se ha guardado correctamente.",
@@ -1554,6 +1563,42 @@ namespace Advance_Control.Views
                 return;
 
             await UploadOperacionImageAsync(operacion, "HojaServicio");
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de cargar orden de compra
+        /// </summary>
+        private async void UploadOrdenCompraButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            await UploadOperacionImageAsync(operacion, "OrdenCompra");
+        }
+
+        /// <summary>
+        /// Actualiza los indicadores de imágenes para una operación
+        /// </summary>
+        private async Task RefreshImageIndicatorsAsync(Models.OperacionDto operacion)
+        {
+            if (!operacion.IdOperacion.HasValue)
+                return;
+
+            try
+            {
+                var prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
+                var hojasServicio = await _operacionImageService.GetHojasServicioAsync(operacion.IdOperacion.Value);
+                var ordenesCompra = await _operacionImageService.GetOrdenComprasAsync(operacion.IdOperacion.Value);
+
+                operacion.HasPrefactura = prefacturas.Count > 0;
+                operacion.HasHojaServicio = hojasServicio.Count > 0;
+                operacion.HasOrdenCompra = ordenesCompra.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al actualizar indicadores de imágenes: {ex.GetType().Name} - {ex.Message}");
+            }
         }
     }
 }

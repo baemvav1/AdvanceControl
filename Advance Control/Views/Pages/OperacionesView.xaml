@@ -181,6 +181,7 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
 
                                                     <StackPanel
@@ -254,6 +255,30 @@
                                                             FontSize="13" Foreground="WhiteSmoke"
                                                             Text="{x:Bind Finalizado}" />
                                                     </StackPanel>
+
+                                                    <!-- Indicadores de imágenes -->
+                                                    <StackPanel
+                                                        Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                                                        Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                                        <Border
+                                                            Background="#1A6B3A"
+                                                            CornerRadius="4" Padding="6,3"
+                                                            Visibility="{x:Bind HasPrefactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                            <TextBlock FontSize="11" Foreground="#4EC48A" Text="📄 Prefactura" />
+                                                        </Border>
+                                                        <Border
+                                                            Background="#1A3F6B"
+                                                            CornerRadius="4" Padding="6,3"
+                                                            Visibility="{x:Bind HasHojaServicio, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                            <TextBlock FontSize="11" Foreground="#4E9CC4" Text="📋 Hoja Servicio" />
+                                                        </Border>
+                                                        <Border
+                                                            Background="#5C3A1A"
+                                                            CornerRadius="4" Padding="6,3"
+                                                            Visibility="{x:Bind HasOrdenCompra, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                            <TextBlock FontSize="11" Foreground="#C49A4E" Text="🛒 Orden Compra" />
+                                                        </Border>
+                                                    </StackPanel>
                                                 </Grid>
                                             </PivotItem>
 
@@ -315,6 +340,16 @@
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Camera" />
                                                                 <TextBlock Text="Hoja Servicio" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Click="UploadOrdenCompraButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            Background="{ThemeResource SystemAccentColorDark1}"
+                                                            ToolTipService.ToolTip="Cargar imagen de orden de compra">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Camera" />
+                                                                <TextBlock Text="Orden Compra" />
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>
