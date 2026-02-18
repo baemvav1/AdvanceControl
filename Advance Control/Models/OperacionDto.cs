@@ -196,5 +196,62 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        private bool _hasPrefactura = false;
+
+        /// <summary>
+        /// Indica si existen imágenes de prefactura para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public bool HasPrefactura
+        {
+            get => _hasPrefactura;
+            set
+            {
+                if (_hasPrefactura != value)
+                {
+                    _hasPrefactura = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _hasHojaServicio = false;
+
+        /// <summary>
+        /// Indica si existen imágenes de hoja de servicio para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public bool HasHojaServicio
+        {
+            get => _hasHojaServicio;
+            set
+            {
+                if (_hasHojaServicio != value)
+                {
+                    _hasHojaServicio = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _hasOrdenCompra = false;
+
+        /// <summary>
+        /// Indica si existen imágenes de orden de compra para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public bool HasOrdenCompra
+        {
+            get => _hasOrdenCompra;
+            set
+            {
+                if (_hasOrdenCompra != value)
+                {
+                    _hasOrdenCompra = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }
