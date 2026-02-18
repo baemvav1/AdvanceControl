@@ -99,6 +99,18 @@ namespace Advance_Control.Views
             await ViewModel.ClearFiltersAsync();
         }
 
+        private void ToggleFiltros_Click(object sender, RoutedEventArgs e)
+        {
+            Filtros.Visibility = Filtros.Visibility == Visibility.Visible
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+        }
+
+        private void ReporteGeneral_Click(object sender, RoutedEventArgs e)
+        {
+            // Funcionalidad pendiente de implementar
+        }
+
         private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
             // Get the OperacionDto from the sender's Tag property

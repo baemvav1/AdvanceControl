@@ -23,6 +23,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -43,8 +44,27 @@
                 Text="Gestión de operaciones del sistema" />
         </StackPanel>
 
+        <!--  Cinta de botones  -->
+        <StackPanel
+            Grid.Row="1"
+            Margin="0,0,0,8"
+            Orientation="Horizontal"
+            Spacing="8">
+            <Button
+                x:Name="ToggleFiltrosButton"
+                Click="ToggleFiltros_Click"
+                Content="Filtros" />
+            <Button
+                x:Name="ReporteGeneralButton"
+                Click="ReporteGeneral_Click"
+                Content="Reporte General" />
+        </StackPanel>
+
         <!--  Filtros  -->
-        <Grid Grid.Row="1" x:Name="Fitros" >
+        <Grid
+            Grid.Row="2"
+            x:Name="Filtros"
+            Visibility="Collapsed">
             <StackPanel Margin="0,0,0,16" Spacing="12">
                 <TextBlock
                     FontSize="16"
@@ -138,7 +158,7 @@
         </Grid>
 
         <!--  Lista de operaciones  -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="3">
             <!--  Loading indicator  -->
             <ProgressRing
                 Width="50"
