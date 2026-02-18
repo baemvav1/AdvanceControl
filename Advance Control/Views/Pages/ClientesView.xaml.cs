@@ -18,6 +18,7 @@ using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Models;
+using Advance_Control.Views.Dialogs;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -74,114 +75,13 @@ namespace Advance_Control.Views
 
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
         {
-            // Crear los campos del formulario
-            var rfcTextBox = new TextBox
-            {
-                PlaceholderText = "RFC del cliente (requerido)",
-                MaxLength = 13,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var razonSocialTextBox = new TextBox
-            {
-                PlaceholderText = "Razón social (requerido)",
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var nombreComercialTextBox = new TextBox
-            {
-                PlaceholderText = "Nombre comercial (requerido)",
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var regimenFiscalTextBox = new TextBox
-            {
-                PlaceholderText = "Régimen fiscal (opcional)",
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var usoCfdiTextBox = new TextBox
-            {
-                PlaceholderText = "Uso CFDI (opcional)",
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var diasCreditoNumberBox = new NumberBox
-            {
-                PlaceholderText = "Días de crédito",
-                Minimum = 0,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var limiteCreditoNumberBox = new NumberBox
-            {
-                PlaceholderText = "Límite de crédito",
-                Minimum = 0,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var prioridadNumberBox = new NumberBox
-            {
-                PlaceholderText = "Prioridad (0-10)",
-                Minimum = 0,
-                Maximum = 10,
-                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var notasTextBox = new TextBox
-            {
-                PlaceholderText = "Notas adicionales (opcional)",
-                AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap,
-                MinHeight = 80,
-                MaxHeight = 150,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var estatusCheckBox = new CheckBox
-            {
-                Content = "Activo",
-                IsChecked = true
-            };
-
-            var dialogContent = new ScrollViewer
-            {
-                Content = new StackPanel
-                {
-                    Spacing = 8,
-                    Children =
-                    {
-                        new TextBlock { Text = "RFC:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
-                        rfcTextBox,
-                        new TextBlock { Text = "Razón Social:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
-                        razonSocialTextBox,
-                        new TextBlock { Text = "Nombre Comercial:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
-                        nombreComercialTextBox,
-                        new TextBlock { Text = "Régimen Fiscal:" },
-                        regimenFiscalTextBox,
-                        new TextBlock { Text = "Uso CFDI:" },
-                        usoCfdiTextBox,
-                        new TextBlock { Text = "Días de Crédito:" },
-                        diasCreditoNumberBox,
-                        new TextBlock { Text = "Límite de Crédito:" },
-                        limiteCreditoNumberBox,
-                        new TextBlock { Text = "Prioridad:" },
-                        prioridadNumberBox,
-                        new TextBlock { Text = "Notas:" },
-                        notasTextBox,
-                        estatusCheckBox
-                    }
-                },
-                MaxHeight = 500
-            };
+            // Crear el UserControl para el nuevo cliente
+            var nuevoClienteControl = new NuevoClienteUserControl();
 
             var dialog = new ContentDialog
             {
                 Title = "Nuevo Cliente",
-                Content = dialogContent,
+                Content = nuevoClienteControl,
                 PrimaryButtonText = "Guardar",
                 CloseButtonText = "Cancelar",
                 DefaultButton = ContentDialogButton.Primary,
@@ -193,72 +93,35 @@ namespace Advance_Control.Views
             if (result == ContentDialogResult.Primary)
             {
                 // Validar campos requeridos
-                if (string.IsNullOrWhiteSpace(rfcTextBox.Text))
+                if (!nuevoClienteControl.IsValid)
                 {
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Validación",
-                        nota: "El RFC es obligatorio",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(razonSocialTextBox.Text))
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "La razón social es obligatoria",
-                        fechaHoraInicio: DateTime.Now);
-                    return;
-                }
-
-                if (string.IsNullOrWhiteSpace(nombreComercialTextBox.Text))
-                {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "El nombre comercial es obligatorio",
+                        nota: "Por favor complete todos los campos obligatorios (RFC, Razón Social y Nombre Comercial)",
                         fechaHoraInicio: DateTime.Now);
                     return;
                 }
 
                 try
                 {
-                    // Convertir valores de NumberBox de manera segura
-                    int? diasCredito = null;
-                    if (!double.IsNaN(diasCreditoNumberBox.Value))
-                    {
-                        diasCredito = Convert.ToInt32(Math.Round(diasCreditoNumberBox.Value));
-                    }
-
-                    decimal? limiteCredito = null;
-                    if (!double.IsNaN(limiteCreditoNumberBox.Value))
-                    {
-                        limiteCredito = Convert.ToDecimal(limiteCreditoNumberBox.Value);
-                    }
-
-                    int? prioridad = null;
-                    if (!double.IsNaN(prioridadNumberBox.Value))
-                    {
-                        prioridad = Convert.ToInt32(Math.Round(prioridadNumberBox.Value));
-                    }
-
                     var success = await ViewModel.CreateClienteAsync(
-                        rfc: rfcTextBox.Text.Trim(),
-                        razonSocial: razonSocialTextBox.Text.Trim(),
-                        nombreComercial: nombreComercialTextBox.Text.Trim(),
-                        regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim(),
-                        usoCfdi: string.IsNullOrWhiteSpace(usoCfdiTextBox.Text) ? null : usoCfdiTextBox.Text.Trim(),
-                        diasCredito: diasCredito,
-                        limiteCredito: limiteCredito,
-                        prioridad: prioridad,
-                        notas: string.IsNullOrWhiteSpace(notasTextBox.Text) ? null : notasTextBox.Text.Trim(),
-                        estatus: estatusCheckBox.IsChecked ?? true
+                        rfc: nuevoClienteControl.Rfc,
+                        razonSocial: nuevoClienteControl.RazonSocial,
+                        nombreComercial: nuevoClienteControl.NombreComercial,
+                        regimenFiscal: nuevoClienteControl.RegimenFiscal,
+                        usoCfdi: nuevoClienteControl.UsoCfdi,
+                        diasCredito: nuevoClienteControl.DiasCredito,
+                        limiteCredito: nuevoClienteControl.LimiteCredito,
+                        prioridad: nuevoClienteControl.Prioridad,
+                        notas: nuevoClienteControl.Notas,
+                        estatus: nuevoClienteControl.Estatus
                     );
 
                     if (success)
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Cliente creado",
-                            nota: $"Cliente \"{nombreComercialTextBox.Text.Trim()}\" creado correctamente",
+                            nota: $"Cliente \"{nuevoClienteControl.NombreComercial}\" creado correctamente",
                             fechaHoraInicio: DateTime.Now);
                     }
                     else
@@ -557,6 +420,280 @@ namespace Advance_Control.Views
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Error",
                         nota: "Ocurrió un error al quitar el contacto. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async void EditClienteButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cliente desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CustomerDto cliente)
+                return;
+
+            try
+            {
+                // Crear los campos del formulario con los valores actuales
+                var rfcTextBox = new TextBox
+                {
+                    Text = cliente.Rfc ?? "",
+                    PlaceholderText = "RFC del cliente (requerido)",
+                    MaxLength = 13,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var razonSocialTextBox = new TextBox
+                {
+                    Text = cliente.RazonSocial ?? "",
+                    PlaceholderText = "Razón social (requerido)",
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var nombreComercialTextBox = new TextBox
+                {
+                    Text = cliente.NombreComercial ?? "",
+                    PlaceholderText = "Nombre comercial (requerido)",
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var regimenFiscalTextBox = new TextBox
+                {
+                    Text = cliente.RegimenFiscal ?? "",
+                    PlaceholderText = "Régimen fiscal (opcional)",
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var usoCfdiTextBox = new TextBox
+                {
+                    Text = cliente.UsoCfdi ?? "",
+                    PlaceholderText = "Uso CFDI (opcional)",
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var diasCreditoNumberBox = new NumberBox
+                {
+                    Value = cliente.DiasCredito ?? double.NaN,
+                    PlaceholderText = "Días de crédito",
+                    Minimum = 0,
+                    SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var limiteCreditoNumberBox = new NumberBox
+                {
+                    Value = cliente.LimiteCredito.HasValue ? (double)cliente.LimiteCredito.Value : double.NaN,
+                    PlaceholderText = "Límite de crédito",
+                    Minimum = 0,
+                    SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var prioridadNumberBox = new NumberBox
+                {
+                    Value = cliente.Prioridad ?? double.NaN,
+                    PlaceholderText = "Prioridad (0-10)",
+                    Minimum = 0,
+                    Maximum = 10,
+                    SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var notasTextBox = new TextBox
+                {
+                    Text = cliente.Notas ?? "",
+                    PlaceholderText = "Notas adicionales (opcional)",
+                    AcceptsReturn = true,
+                    TextWrapping = TextWrapping.Wrap,
+                    MinHeight = 80,
+                    MaxHeight = 150,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var estatusCheckBox = new CheckBox
+                {
+                    Content = "Activo",
+                    IsChecked = cliente.Estatus
+                };
+
+                var dialogContent = new ScrollViewer
+                {
+                    Content = new StackPanel
+                    {
+                        Spacing = 8,
+                        Children =
+                        {
+                            new TextBlock { Text = "RFC:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                            rfcTextBox,
+                            new TextBlock { Text = "Razón Social:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                            razonSocialTextBox,
+                            new TextBlock { Text = "Nombre Comercial:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                            nombreComercialTextBox,
+                            new TextBlock { Text = "Régimen Fiscal:" },
+                            regimenFiscalTextBox,
+                            new TextBlock { Text = "Uso CFDI:" },
+                            usoCfdiTextBox,
+                            new TextBlock { Text = "Días de Crédito:" },
+                            diasCreditoNumberBox,
+                            new TextBlock { Text = "Límite de Crédito:" },
+                            limiteCreditoNumberBox,
+                            new TextBlock { Text = "Prioridad:" },
+                            prioridadNumberBox,
+                            new TextBlock { Text = "Notas:" },
+                            notasTextBox,
+                            estatusCheckBox
+                        }
+                    },
+                    MaxHeight = 500
+                };
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Editar Cliente",
+                    Content = dialogContent,
+                    PrimaryButtonText = "Guardar",
+                    CloseButtonText = "Cancelar",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await dialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    // Validar campos requeridos
+                    if (string.IsNullOrWhiteSpace(rfcTextBox.Text))
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Validación",
+                            nota: "El RFC es obligatorio",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(razonSocialTextBox.Text))
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Validación",
+                            nota: "La razón social es obligatoria",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(nombreComercialTextBox.Text))
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Validación",
+                            nota: "El nombre comercial es obligatorio",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    // Convertir valores de NumberBox de manera segura
+                    int? diasCredito = null;
+                    if (!double.IsNaN(diasCreditoNumberBox.Value))
+                    {
+                        diasCredito = Convert.ToInt32(Math.Round(diasCreditoNumberBox.Value));
+                    }
+
+                    decimal? limiteCredito = null;
+                    if (!double.IsNaN(limiteCreditoNumberBox.Value))
+                    {
+                        limiteCredito = Convert.ToDecimal(limiteCreditoNumberBox.Value);
+                    }
+
+                    int? prioridad = null;
+                    if (!double.IsNaN(prioridadNumberBox.Value))
+                    {
+                        prioridad = Convert.ToInt32(Math.Round(prioridadNumberBox.Value));
+                    }
+
+                    var success = await ViewModel.UpdateClienteAsync(
+                        idCliente: cliente.IdCliente,
+                        rfc: rfcTextBox.Text.Trim(),
+                        razonSocial: razonSocialTextBox.Text.Trim(),
+                        nombreComercial: nombreComercialTextBox.Text.Trim(),
+                        regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim(),
+                        usoCfdi: string.IsNullOrWhiteSpace(usoCfdiTextBox.Text) ? null : usoCfdiTextBox.Text.Trim(),
+                        diasCredito: diasCredito,
+                        limiteCredito: limiteCredito,
+                        prioridad: prioridad,
+                        notas: string.IsNullOrWhiteSpace(notasTextBox.Text) ? null : notasTextBox.Text.Trim(),
+                        estatus: estatusCheckBox.IsChecked ?? true
+                    );
+
+                    if (success)
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Cliente actualizado",
+                            nota: $"Cliente \"{nombreComercialTextBox.Text.Trim()}\" actualizado correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo actualizar el cliente. Verifique los datos e intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al editar cliente desde la UI", ex, "ClientesView", "EditClienteButton_Click");
+                
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al editar el cliente. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        private async void DeleteClienteButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener el cliente desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.CustomerDto cliente)
+                return;
+
+            // Mostrar diálogo de confirmación
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea eliminar el cliente \"{cliente.NombreComercial}\" (RFC: {cliente.Rfc})?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var success = await ViewModel.DeleteClienteAsync(cliente.IdCliente);
+
+                    if (success)
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Cliente eliminado",
+                            nota: "Cliente eliminado correctamente",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo eliminar el cliente. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _loggingService.LogErrorAsync("Error al eliminar cliente desde la UI", ex, "ClientesView", "DeleteClienteButton_Click");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al eliminar el cliente. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
             }

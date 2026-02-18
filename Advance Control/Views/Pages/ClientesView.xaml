@@ -266,6 +266,21 @@
                                                 
                                             </PivotItem>
 
+                                            <!-- Acciones -->
+                                            <PivotItem Header="Acciones">
+                                                <StackPanel
+                                                    Padding="8" Orientation="Horizontal" Spacing="8">
+                                                    <Button
+                                                        Click="EditClienteButton_Click" Content="Editar"
+                                                        Tag="{x:Bind}"
+                                                        ToolTipService.ToolTip="Editar cliente" />
+                                                    <Button
+                                                        Click="DeleteClienteButton_Click" Content="Eliminar"
+                                                        Tag="{x:Bind}"
+                                                        ToolTipService.ToolTip="Eliminar cliente" />
+                                                </StackPanel>
+                                            </PivotItem>
+
                                             <!-- Contactos Relacionados -->
                                             <PivotItem Header="Contactos">
                                                 <StackPanel Padding="8" Spacing="6">
