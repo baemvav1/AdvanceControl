@@ -807,7 +807,7 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.CargoDto cargo)
                 return;
 
-            if (cargo.IdCargo <= 0)
+            if (cargo.IdCargo <= 0 || !cargo.IdOperacion.HasValue || cargo.IdOperacion.Value <= 0)
             {
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
@@ -853,7 +853,7 @@ namespace Advance_Control.Views
                 var contentType = GetContentTypeFromExtension(file.FileType);
 
                 // Guardar la imagen localmente
-                var result = await _cargoImageService.UploadImageAsync(cargo.IdCargo, stream, contentType);
+                var result = await _cargoImageService.UploadImageAsync(cargo.IdOperacion.Value, cargo.IdCargo, stream, contentType);
 
                 if (result != null)
                 {
@@ -923,23 +923,29 @@ namespace Advance_Control.Views
             {
                 try
                 {
-                    var success = await _cargoImageService.DeleteImageAsync(image.FileName);
+                    // Find the parent cargo to get idOperacion
+                    var targetCargo = ViewModel.Operaciones
+                        .SelectMany(op => op.Cargos)
+                        .FirstOrDefault(c => c.IdCargo == image.IdCargo);
+
+                    if (targetCargo == null || !targetCargo.IdOperacion.HasValue || targetCargo.IdOperacion.Value <= 0)
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo determinar la operación del cargo.",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    var success = await _cargoImageService.DeleteImageAsync(targetCargo.IdOperacion.Value, image.FileName);
 
                     if (success)
                     {
-                        // Use IdCargo from image to find the parent cargo more efficiently
-                        var targetCargo = ViewModel.Operaciones
-                            .SelectMany(op => op.Cargos)
-                            .FirstOrDefault(c => c.IdCargo == image.IdCargo);
-
-                        if (targetCargo != null)
+                        var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.FileName == image.FileName);
+                        if (imageToRemove != null)
                         {
-                            var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.FileName == image.FileName);
-                            if (imageToRemove != null)
-                            {
-                                targetCargo.Images.Remove(imageToRemove);
-                                targetCargo.NotifyImagesChanged();
-                            }
+                            targetCargo.Images.Remove(imageToRemove);
+                            targetCargo.NotifyImagesChanged();
                         }
 
                         await _notificacionService.MostrarNotificacionAsync(
@@ -987,14 +993,14 @@ namespace Advance_Control.Views
         /// </summary>
         private async Task LoadImagesForCargoAsync(Models.CargoDto cargo)
         {
-            if (cargo.IdCargo <= 0 || cargo.ImagesLoaded || cargo.IsLoadingImages)
+            if (cargo.IdCargo <= 0 || !cargo.IdOperacion.HasValue || cargo.IdOperacion.Value <= 0 || cargo.ImagesLoaded || cargo.IsLoadingImages)
                 return;
 
             try
             {
                 cargo.IsLoadingImages = true;
 
-                var images = await _cargoImageService.GetImagesAsync(cargo.IdCargo);
+                var images = await _cargoImageService.GetImagesAsync(cargo.IdOperacion.Value, cargo.IdCargo);
 
                 cargo.Images.Clear();
                 foreach (var image in images)
@@ -1090,7 +1096,7 @@ namespace Advance_Control.Views
                     fechaHoraInicio: DateTime.Now);
             }
 
-            if (selectedCargo.IdCargo <= 0)
+            if (selectedCargo.IdCargo <= 0 || !selectedCargo.IdOperacion.HasValue || selectedCargo.IdOperacion.Value <= 0)
             {
                 await _notificacionService.MostrarNotificacionAsync(
                     titulo: "Error",
@@ -1136,7 +1142,7 @@ namespace Advance_Control.Views
                 var contentType = GetContentTypeFromExtension(file.FileType);
 
                 // Guardar la imagen localmente
-                var result = await _cargoImageService.UploadImageAsync(selectedCargo.IdCargo, stream, contentType);
+                var result = await _cargoImageService.UploadImageAsync(selectedCargo.IdOperacion.Value, selectedCargo.IdCargo, stream, contentType);
 
                 if (result != null)
                 {
@@ -1496,7 +1502,7 @@ namespace Advance_Control.Views
                 {
                     result = await _operacionImageService.UploadPrefacturaAsync(operacion.IdOperacion.Value, stream, contentType);
                 }
-                else if (imageType == "Orden Compra")
+                else if (imageType == "OrdenCompra")
                 {
                     result = await _operacionImageService.UploadOrdenCompraAsync(operacion.IdOperacion.Value, stream, contentType);
                 }
@@ -1547,7 +1553,7 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
 
-            await UploadOperacionImageAsync(operacion, "Orden Compra");
+            await UploadOperacionImageAsync(operacion, "OrdenCompra");
         }
     }
 }

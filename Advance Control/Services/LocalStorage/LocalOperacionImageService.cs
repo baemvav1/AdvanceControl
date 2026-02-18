@@ -12,7 +12,7 @@ namespace Advance_Control.Services.LocalStorage
 {
     /// <summary>
     /// Implementación del servicio de almacenamiento de imágenes de operaciones (Prefacturas y Órdenes de Compra) en el sistema de archivos local.
-    /// Las imágenes se guardan en la carpeta Assets/Operaciones.
+    /// Las imágenes se guardan en la carpeta Operacion_{idOperacion} dentro de Documentos/Advance Control.
     /// </summary>
     public class LocalOperacionImageService : IOperacionImageService
     {
@@ -23,15 +23,28 @@ namespace Advance_Control.Services.LocalStorage
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            // Obtener la ruta base de la aplicación y construir la ruta a Assets/Operaciones
-            var appDirectory = AppContext.BaseDirectory;
-            _basePath = Path.Combine(appDirectory, "Assets", "Operaciones");
+            // Obtener la ruta base: Documentos/Advance Control
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            _basePath = Path.Combine(documentsPath, "Advance Control");
             
-            // Asegurar que el directorio existe
+            // Asegurar que el directorio base existe
             if (!Directory.Exists(_basePath))
             {
                 Directory.CreateDirectory(_basePath);
             }
+        }
+
+        /// <summary>
+        /// Obtiene la ruta de la carpeta de la operación: Operacion_{idOperacion}
+        /// </summary>
+        private string GetOperacionFolder(int idOperacion)
+        {
+            var folder = Path.Combine(_basePath, $"Operacion_{idOperacion}");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            return folder;
         }
 
         /// <summary>
@@ -47,7 +60,7 @@ namespace Advance_Control.Services.LocalStorage
         /// </summary>
         public async Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default)
         {
-            return await UploadImageAsync(idOperacion, imageStream, contentType, "Orden Compra", cancellationToken);
+            return await UploadImageAsync(idOperacion, imageStream, contentType, "OrdenCompra", cancellationToken);
         }
 
         /// <summary>
@@ -59,11 +72,7 @@ namespace Advance_Control.Services.LocalStorage
             {
                 await _logger.LogInformationAsync($"Guardando imagen de {tipo} para operación {idOperacion}", "LocalOperacionImageService", "UploadImageAsync");
 
-                // Asegurar que el directorio existe
-                if (!Directory.Exists(_basePath))
-                {
-                    Directory.CreateDirectory(_basePath);
-                }
+                var operacionFolder = GetOperacionFolder(idOperacion);
 
                 // Obtener el próximo número de imagen para este tipo en esta operación
                 var existingImages = tipo == "Prefactura" 
@@ -80,7 +89,7 @@ namespace Advance_Control.Services.LocalStorage
                 // Determinar la extensión según el tipo de contenido
                 var extension = ImageContentTypeHelper.GetExtensionFromContentType(contentType);
                 var fullFileName = $"{fileName}{extension}";
-                var fullPath = Path.Combine(_basePath, fullFileName);
+                var fullPath = Path.Combine(operacionFolder, fullFileName);
 
                 // Verificar cancelación antes de iniciar operación de archivo
                 cancellationToken.ThrowIfCancellationRequested();
@@ -128,7 +137,7 @@ namespace Advance_Control.Services.LocalStorage
         /// </summary>
         public async Task<List<OperacionImageDto>> GetOrdenesCompraAsync(int idOperacion, CancellationToken cancellationToken = default)
         {
-            return await GetImagesAsync(idOperacion, "Orden Compra", cancellationToken);
+            return await GetImagesAsync(idOperacion, "OrdenCompra", cancellationToken);
         }
 
         /// <summary>
@@ -142,18 +151,13 @@ namespace Advance_Control.Services.LocalStorage
             {
                 await _logger.LogInformationAsync($"Obteniendo imágenes de {tipo} para operación {idOperacion}", "LocalOperacionImageService", "GetImagesAsync");
 
-                // Asegurar que el directorio existe
-                if (!Directory.Exists(_basePath))
-                {
-                    Directory.CreateDirectory(_basePath);
-                    return images;
-                }
+                var operacionFolder = GetOperacionFolder(idOperacion);
 
                 // Patrón para buscar las imágenes de este tipo en esta operación: {idOperacion}_*_{tipo}.*
                 var pattern = $"{idOperacion}_*_{tipo}.*";
 
                 // Buscar archivos que coincidan con el patrón
-                var files = Directory.GetFiles(_basePath, pattern);
+                var files = Directory.GetFiles(operacionFolder, pattern);
 
                 foreach (var filePath in files)
                 {
@@ -186,13 +190,14 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Elimina una imagen del almacenamiento local
         /// </summary>
-        public async Task<bool> DeleteImageAsync(string fileName, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteImageAsync(int idOperacion, string fileName, CancellationToken cancellationToken = default)
         {
             try
             {
                 await _logger.LogInformationAsync($"Eliminando imagen: {fileName}", "LocalOperacionImageService", "DeleteImageAsync");
 
-                var fullPath = Path.Combine(_basePath, fileName);
+                var operacionFolder = GetOperacionFolder(idOperacion);
+                var fullPath = Path.Combine(operacionFolder, fileName);
 
                 if (!File.Exists(fullPath))
                 {

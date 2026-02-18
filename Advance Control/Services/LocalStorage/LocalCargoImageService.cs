@@ -12,7 +12,7 @@ namespace Advance_Control.Services.LocalStorage
 {
     /// <summary>
     /// Implementación del servicio de almacenamiento de imágenes de cargos en el sistema de archivos local.
-    /// Las imágenes se guardan en la carpeta Assets/Cargos.
+    /// Las imágenes se guardan en la carpeta Operacion_{idOperacion} dentro de Documentos/Advance Control.
     /// </summary>
     public class LocalCargoImageService : ICargoImageService
     {
@@ -23,11 +23,11 @@ namespace Advance_Control.Services.LocalStorage
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             
-            // Obtener la ruta base de la aplicación y construir la ruta a Assets/Cargos
-            var appDirectory = AppContext.BaseDirectory;
-            _basePath = Path.Combine(appDirectory, "Assets", "Cargos");
+            // Obtener la ruta base: Documentos/Advance Control
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            _basePath = Path.Combine(documentsPath, "Advance Control");
             
-            // Asegurar que el directorio existe
+            // Asegurar que el directorio base existe
             if (!Directory.Exists(_basePath))
             {
                 Directory.CreateDirectory(_basePath);
@@ -35,33 +35,42 @@ namespace Advance_Control.Services.LocalStorage
         }
 
         /// <summary>
+        /// Obtiene la ruta de la carpeta de la operación: Operacion_{idOperacion}
+        /// </summary>
+        private string GetOperacionFolder(int idOperacion)
+        {
+            var folder = Path.Combine(_basePath, $"Operacion_{idOperacion}");
+            if (!Directory.Exists(folder))
+            {
+                Directory.CreateDirectory(folder);
+            }
+            return folder;
+        }
+
+        /// <summary>
         /// Sube una imagen al almacenamiento local para un cargo específico
         /// </summary>
-        public async Task<CargoImageDto?> UploadImageAsync(int idCargo, Stream imageStream, string contentType, CancellationToken cancellationToken = default)
+        public async Task<CargoImageDto?> UploadImageAsync(int idOperacion, int idCargo, Stream imageStream, string contentType, CancellationToken cancellationToken = default)
         {
             try
             {
-                await _logger.LogInformationAsync($"Guardando imagen para cargo {idCargo}", "LocalCargoImageService", "UploadImageAsync");
+                await _logger.LogInformationAsync($"Guardando imagen para cargo {idCargo} en operación {idOperacion}", "LocalCargoImageService", "UploadImageAsync");
 
-                // Asegurar que el directorio existe
-                if (!Directory.Exists(_basePath))
-                {
-                    Directory.CreateDirectory(_basePath);
-                }
+                var operacionFolder = GetOperacionFolder(idOperacion);
 
                 // Obtener el próximo número de imagen para este cargo
-                var existingImages = await GetImagesAsync(idCargo, cancellationToken);
+                var existingImages = await GetImagesAsync(idOperacion, idCargo, cancellationToken);
                 var nextImageNumber = existingImages.Count > 0 
                     ? existingImages.Max(i => i.ImageNumber) + 1 
                     : 1;
 
-                // Generar nombre del archivo: Cargo_Id_{idCargo}_{numero}
-                var fileName = $"Cargo_Id_{idCargo}_{nextImageNumber}";
+                // Generar nombre del archivo: {idOperacion}_{idCargo}_{numero}_Cargo
+                var fileName = $"{idOperacion}_{idCargo}_{nextImageNumber}_Cargo";
                 
                 // Determinar la extensión según el tipo de contenido
                 var extension = ImageContentTypeHelper.GetExtensionFromContentType(contentType);
                 var fullFileName = $"{fileName}{extension}";
-                var fullPath = Path.Combine(_basePath, fullFileName);
+                var fullPath = Path.Combine(operacionFolder, fullFileName);
 
                 // Verificar cancelación antes de iniciar operación de archivo
                 cancellationToken.ThrowIfCancellationRequested();
@@ -98,31 +107,26 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene todas las imágenes de un cargo desde el almacenamiento local
         /// </summary>
-        public async Task<List<CargoImageDto>> GetImagesAsync(int idCargo, CancellationToken cancellationToken = default)
+        public async Task<List<CargoImageDto>> GetImagesAsync(int idOperacion, int idCargo, CancellationToken cancellationToken = default)
         {
             var images = new List<CargoImageDto>();
 
             try
             {
-                await _logger.LogInformationAsync($"Obteniendo imágenes para cargo {idCargo}", "LocalCargoImageService", "GetImagesAsync");
+                await _logger.LogInformationAsync($"Obteniendo imágenes para cargo {idCargo} en operación {idOperacion}", "LocalCargoImageService", "GetImagesAsync");
 
-                // Asegurar que el directorio existe
-                if (!Directory.Exists(_basePath))
-                {
-                    Directory.CreateDirectory(_basePath);
-                    return images;
-                }
+                var operacionFolder = GetOperacionFolder(idOperacion);
 
-                // Prefijo para buscar las imágenes de este cargo
-                var prefix = $"Cargo_Id_{idCargo}_";
+                // Prefijo para buscar las imágenes de este cargo: {idOperacion}_{idCargo}_*_Cargo.*
+                var pattern = $"{idOperacion}_{idCargo}_*_Cargo.*";
 
-                // Buscar archivos que coincidan con el prefijo
-                var files = Directory.GetFiles(_basePath, $"{prefix}*");
+                // Buscar archivos que coincidan con el patrón
+                var files = Directory.GetFiles(operacionFolder, pattern);
 
                 foreach (var filePath in files)
                 {
                     var fileName = Path.GetFileName(filePath);
-                    var imageNumber = ExtractImageNumber(fileName, idCargo);
+                    var imageNumber = ExtractImageNumber(fileName, idOperacion, idCargo);
                     
                     images.Add(new CargoImageDto
                     {
@@ -149,13 +153,14 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Elimina una imagen del almacenamiento local
         /// </summary>
-        public async Task<bool> DeleteImageAsync(string fileName, CancellationToken cancellationToken = default)
+        public async Task<bool> DeleteImageAsync(int idOperacion, string fileName, CancellationToken cancellationToken = default)
         {
             try
             {
                 await _logger.LogInformationAsync($"Eliminando imagen: {fileName}", "LocalCargoImageService", "DeleteImageAsync");
 
-                var fullPath = Path.Combine(_basePath, fileName);
+                var operacionFolder = GetOperacionFolder(idOperacion);
+                var fullPath = Path.Combine(operacionFolder, fileName);
 
                 if (!File.Exists(fullPath))
                 {
@@ -187,24 +192,24 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Extrae el número de imagen del nombre del archivo
         /// </summary>
-        private static int ExtractImageNumber(string fileName, int idCargo)
+        private static int ExtractImageNumber(string fileName, int idOperacion, int idCargo)
         {
-            // Formato esperado: Cargo_Id_{idCargo}_{numero}.extension
-            var prefix = $"Cargo_Id_{idCargo}_";
+            // Formato esperado: {idOperacion}_{idCargo}_{numero}_Cargo.extension
+            var prefix = $"{idOperacion}_{idCargo}_";
             if (!fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 return 0;
 
-            // Usar AsSpan para evitar asignaciones de cadena adicionales
-            var remainder = fileName.AsSpan(prefix.Length);
+            // Obtener la parte entre el prefijo y "_Cargo"
+            var suffix = "_Cargo";
+            var startIndex = prefix.Length;
+            var suffixIndex = fileName.IndexOf(suffix, startIndex, StringComparison.OrdinalIgnoreCase);
             
-            // Remover la extensión si existe
-            var dotIndex = remainder.LastIndexOf('.');
-            if (dotIndex > 0)
-            {
-                remainder = remainder.Slice(0, dotIndex);
-            }
+            if (suffixIndex < 0)
+                return 0;
 
-            if (int.TryParse(remainder, out var number))
+            var numberPart = fileName.Substring(startIndex, suffixIndex - startIndex);
+
+            if (int.TryParse(numberPart, out var number))
             {
                 return number;
             }

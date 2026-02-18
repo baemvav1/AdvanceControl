@@ -49,22 +49,16 @@ namespace Advance_Control.Services.Quotes
             {
                 await _logger.LogInformationAsync($"Generando cotización PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateQuotePdfAsync");
 
-                // Generate filename with sanitized client name
+                // Generate filename: {idOperacion}{fechaActual}Cotizacion.pdf
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var clientName = operacion.RazonSocial ?? "Cliente";
-                
-                // Sanitize the client name to remove invalid filename characters
-                var invalidChars = Path.GetInvalidFileNameChars();
-                var sanitizedClientName = string.Join("_", clientName.Split(invalidChars, StringSplitOptions.RemoveEmptyEntries));
-                
-                var fileName = $"Cotizacion_{sanitizedClientName}_{timestamp}.pdf";
+                var fileName = $"{operacion.IdOperacion}{timestamp}Cotizacion.pdf";
                 var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                var quotesFolder = Path.Combine(documentsPath, "Advance Control", "Cotizaciones");
+                var operacionFolder = Path.Combine(documentsPath, "Advance Control", $"Operacion_{operacion.IdOperacion}");
                 
                 // Create directory if it doesn't exist
-                Directory.CreateDirectory(quotesFolder);
+                Directory.CreateDirectory(operacionFolder);
                 
-                var filePath = Path.Combine(quotesFolder, fileName);
+                var filePath = Path.Combine(operacionFolder, fileName);
 
                 // Use company name from entity or default
                 var companyTitle = !string.IsNullOrWhiteSpace(nombreEmpresa) ? nombreEmpresa.ToUpperInvariant() : "ADVANCE CONTROL";
@@ -280,16 +274,16 @@ namespace Advance_Control.Services.Quotes
             {
                 await _logger.LogInformationAsync($"Generando reporte PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateReportePdfAsync");
 
-                // Generate filename
+                // Generate filename: {idOperacion}{fechaActual}Reporte.pdf
                 var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var fileName = $"Reporte_Cotizacion_{operacion.IdOperacion}_{timestamp}.pdf";
+                var fileName = $"{operacion.IdOperacion}{timestamp}Reporte.pdf";
                 var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                var reportsFolder = Path.Combine(documentsPath, "Advance Control", "Reportes");
+                var operacionFolder = Path.Combine(documentsPath, "Advance Control", $"Operacion_{operacion.IdOperacion}");
                 
                 // Create directory if it doesn't exist
-                Directory.CreateDirectory(reportsFolder);
+                Directory.CreateDirectory(operacionFolder);
                 
-                var filePath = Path.Combine(reportsFolder, fileName);
+                var filePath = Path.Combine(operacionFolder, fileName);
 
                 var reportTitle = $"Reporte Cotización {operacion.IdOperacion}";
                 var cargosList = cargos.ToList();

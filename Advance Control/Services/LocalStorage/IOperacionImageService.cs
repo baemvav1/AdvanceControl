@@ -50,9 +50,10 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Elimina una imagen de operación
         /// </summary>
+        /// <param name="idOperacion">ID de la operación</param>
         /// <param name="fileName">Nombre del archivo a eliminar</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>True si se eliminó correctamente</returns>
-        Task<bool> DeleteImageAsync(string fileName, CancellationToken cancellationToken = default);
+        Task<bool> DeleteImageAsync(int idOperacion, string fileName, CancellationToken cancellationToken = default);
     }
 }

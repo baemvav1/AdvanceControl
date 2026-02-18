@@ -9,7 +9,7 @@ namespace Advance_Control.Models
     {
         /// <summary>
         /// Nombre del archivo de la imagen
-        /// Formato: Cargo_Id_{idCargo}_{numeroImagen}.extension
+        /// Formato: {idOperacion}_{idCargo}_{numeroImagen}_Cargo.extension
         /// </summary>
         [JsonPropertyName("fileName")]
         public string FileName { get; set; } = string.Empty;
