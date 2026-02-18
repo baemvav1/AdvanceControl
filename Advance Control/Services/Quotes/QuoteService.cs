@@ -55,8 +55,7 @@ namespace Advance_Control.Services.Quotes
             if (!Directory.Exists(firmasFolder))
                 return null;
 
-            var files = Directory.GetFiles(firmasFolder, "*.png");
-            foreach (var file in files)
+            foreach (var file in Directory.EnumerateFiles(firmasFolder, "*.png"))
             {
                 var fileName = Path.GetFileNameWithoutExtension(file);
                 var parts = fileName.Split('_');
@@ -89,8 +88,26 @@ namespace Advance_Control.Services.Quotes
 
             if (!hasFirmaOperador)
             {
-                // Fire and forget notification - we're inside a sync PDF generation callback
-                _ = _notificacionService.MostrarNotificacionAsync("No existe firma para operador");
+                try
+                {
+                    _ = _notificacionService.MostrarNotificacionAsync("No existe firma para operador");
+                }
+                catch
+                {
+                    // Notification failure should not prevent PDF generation
+                }
+            }
+
+            if (!hasFirmaDireccion)
+            {
+                try
+                {
+                    _ = _notificacionService.MostrarNotificacionAsync("No existe firma de dirección");
+                }
+                catch
+                {
+                    // Notification failure should not prevent PDF generation
+                }
             }
 
             container.PaddingTop(25).Column(firmasCol =>
