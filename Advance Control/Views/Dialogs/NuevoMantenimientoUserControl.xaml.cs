@@ -10,7 +10,7 @@ using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Relaciones;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
     /// UserControl para crear un nuevo mantenimiento con búsqueda de equipo y selección de cliente relacionado

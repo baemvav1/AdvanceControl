@@ -284,6 +284,16 @@
                                                         </StackPanel>
                                                     </Button>
                                                     <Button
+                                                        AutomationProperties.Name="Atender como contacto"
+                                                        Click="AtenderComoButton_Click"
+                                                        Tag="{x:Bind}"
+                                                        ToolTipService.ToolTip="Atender mantenimiento como contacto">
+                                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                                            <SymbolIcon Symbol="ContactInfo" />
+                                                            <TextBlock Text="Atender Como..." />
+                                                        </StackPanel>
+                                                    </Button>
+                                                    <Button
                                                         AutomationProperties.Name="Eliminar mantenimiento"
                                                         Click="DeleteMantenimientoButton_Click"
                                                         Tag="{x:Bind}"

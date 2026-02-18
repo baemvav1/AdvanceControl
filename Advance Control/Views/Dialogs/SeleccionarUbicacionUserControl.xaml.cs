@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Advance_Control.Models;
 using Microsoft.UI.Xaml.Controls;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     public sealed partial class SeleccionarUbicacionUserControl : UserControl, INotifyPropertyChanged
     {

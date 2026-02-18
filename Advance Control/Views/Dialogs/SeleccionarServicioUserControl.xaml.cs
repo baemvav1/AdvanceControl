@@ -9,7 +9,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Servicios;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Advance_Control.Views.Equipos
+namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
     /// UserControl para seleccionar un servicio de la lista

@@ -5,7 +5,7 @@ using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
-using Advance_Control.Views.Equipos;
+using Advance_Control.Views.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;

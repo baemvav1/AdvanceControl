@@ -236,5 +236,98 @@ namespace Advance_Control.ViewModels
                 return false;
             }
         }
+
+        /// <summary>
+        /// Actualiza un cliente existente
+        /// </summary>
+        public async Task<bool> UpdateClienteAsync(
+            int idCliente,
+            string rfc,
+            string razonSocial,
+            string nombreComercial,
+            string? regimenFiscal = null,
+            string? usoCfdi = null,
+            int? diasCredito = null,
+            decimal? limiteCredito = null,
+            int? prioridad = null,
+            string? notas = null,
+            bool estatus = true,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Actualizando cliente: {nombreComercial}", "CustomersViewModel", "UpdateClienteAsync");
+
+                var clienteDto = new ClienteEditDto
+                {
+                    Operacion = "update",
+                    IdCliente = idCliente,
+                    Rfc = rfc,
+                    RazonSocial = razonSocial,
+                    NombreComercial = nombreComercial,
+                    RegimenFiscal = regimenFiscal,
+                    UsoCfdi = usoCfdi,
+                    DiasCredito = diasCredito,
+                    LimiteCredito = limiteCredito,
+                    Prioridad = prioridad,
+                    Notas = notas,
+                    Estatus = estatus,
+                    IdUsuario = null // TODO: Obtener del contexto de autenticación
+                };
+
+                var response = await _clienteService.UpdateClienteAsync(clienteDto, cancellationToken);
+
+                if (response.Success)
+                {
+                    await _logger.LogInformationAsync($"Cliente actualizado exitosamente: {nombreComercial}", "CustomersViewModel", "UpdateClienteAsync");
+                    
+                    // Recargar la lista de clientes
+                    await LoadClientesAsync(cancellationToken);
+                    return true;
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"No se pudo actualizar el cliente: {response.Message}", "CustomersViewModel", "UpdateClienteAsync");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al actualizar cliente", ex, "CustomersViewModel", "UpdateClienteAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Elimina un cliente (soft delete)
+        /// </summary>
+        public async Task<bool> DeleteClienteAsync(int idCliente, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Eliminando cliente: {idCliente}", "CustomersViewModel", "DeleteClienteAsync");
+
+                var response = await _clienteService.DeleteClienteAsync(idCliente, null, cancellationToken);
+
+                if (response.Success)
+                {
+                    await _logger.LogInformationAsync($"Cliente eliminado exitosamente: {idCliente}", "CustomersViewModel", "DeleteClienteAsync");
+                    
+                    // Recargar la lista de clientes
+                    await LoadClientesAsync(cancellationToken);
+                    return true;
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"No se pudo eliminar el cliente: {response.Message}", "CustomersViewModel", "DeleteClienteAsync");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al eliminar cliente", ex, "CustomersViewModel", "DeleteClienteAsync");
+                return false;
+            }
+        }
     }
 }

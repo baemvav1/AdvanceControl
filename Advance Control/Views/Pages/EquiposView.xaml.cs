@@ -14,7 +14,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
-using Advance_Control.Views.Equipos;
+using Advance_Control.Views.Dialogs;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Ubicaciones;
