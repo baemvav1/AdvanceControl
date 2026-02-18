@@ -7,7 +7,7 @@ using Advance_Control.Models;
 namespace Advance_Control.Services.LocalStorage
 {
     /// <summary>
-    /// Interfaz para el servicio de almacenamiento de imágenes de operaciones (Prefacturas y Órdenes de Compra)
+    /// Interfaz para el servicio de almacenamiento de imágenes de operaciones (Prefacturas y Hojas de Servicio)
     /// </summary>
     public interface IOperacionImageService
     {
@@ -22,14 +22,14 @@ namespace Advance_Control.Services.LocalStorage
         Task<OperacionImageDto?> UploadPrefacturaAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Sube una imagen de orden de compra para una operación específica
+        /// Sube una imagen de hoja de servicio para una operación específica
         /// </summary>
         /// <param name="idOperacion">ID de la operación</param>
         /// <param name="imageStream">Stream con los datos de la imagen</param>
         /// <param name="contentType">Tipo de contenido de la imagen (ej: image/jpeg)</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Información de la imagen subida</returns>
-        Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);
+        Task<OperacionImageDto?> UploadHojaServicioAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Obtiene todas las imágenes de prefacturas de una operación
@@ -40,12 +40,12 @@ namespace Advance_Control.Services.LocalStorage
         Task<List<OperacionImageDto>> GetPrefacturasAsync(int idOperacion, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Obtiene todas las imágenes de órdenes de compra de una operación
+        /// Obtiene todas las imágenes de hojas de servicio de una operación
         /// </summary>
         /// <param name="idOperacion">ID de la operación</param>
         /// <param name="cancellationToken">Token de cancelación</param>
-        /// <returns>Lista de imágenes de órdenes de compra de la operación</returns>
-        Task<List<OperacionImageDto>> GetOrdenesCompraAsync(int idOperacion, CancellationToken cancellationToken = default);
+        /// <returns>Lista de imágenes de hojas de servicio de la operación</returns>
+        Task<List<OperacionImageDto>> GetHojasServicioAsync(int idOperacion, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Elimina una imagen de operación

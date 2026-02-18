@@ -11,7 +11,7 @@ using Advance_Control.Utilities;
 namespace Advance_Control.Services.LocalStorage
 {
     /// <summary>
-    /// Implementación del servicio de almacenamiento de imágenes de operaciones (Prefacturas y Órdenes de Compra) en el sistema de archivos local.
+    /// Implementación del servicio de almacenamiento de imágenes de operaciones (Prefacturas y Hojas de Servicio) en el sistema de archivos local.
     /// Las imágenes se guardan en la carpeta Operacion_{idOperacion} dentro de Documentos/Advance Control.
     /// </summary>
     public class LocalOperacionImageService : IOperacionImageService
@@ -56,11 +56,11 @@ namespace Advance_Control.Services.LocalStorage
         }
 
         /// <summary>
-        /// Sube una imagen de orden de compra para una operación específica
+        /// Sube una imagen de hoja de servicio para una operación específica
         /// </summary>
-        public async Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default)
+        public async Task<OperacionImageDto?> UploadHojaServicioAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default)
         {
-            return await UploadImageAsync(idOperacion, imageStream, contentType, "OrdenCompra", cancellationToken);
+            return await UploadImageAsync(idOperacion, imageStream, contentType, "HojaServicio", cancellationToken);
         }
 
         /// <summary>
@@ -77,14 +77,14 @@ namespace Advance_Control.Services.LocalStorage
                 // Obtener el próximo número de imagen para este tipo en esta operación
                 var existingImages = tipo == "Prefactura" 
                     ? await GetPrefacturasAsync(idOperacion, cancellationToken)
-                    : await GetOrdenesCompraAsync(idOperacion, cancellationToken);
+                    : await GetHojasServicioAsync(idOperacion, cancellationToken);
                 
                 var nextImageNumber = existingImages.Count > 0 
                     ? existingImages.Max(i => i.ImageNumber) + 1 
                     : 1;
 
-                // Generar nombre del archivo: {idOperacion}_{numero}_{tipo}
-                var fileName = $"{idOperacion}_{nextImageNumber}_{tipo}";
+                // Generar nombre del archivo: {idOperacion}_{tipo}_{numero}
+                var fileName = $"{idOperacion}_{tipo}_{nextImageNumber}";
                 
                 // Determinar la extensión según el tipo de contenido
                 var extension = ImageContentTypeHelper.GetExtensionFromContentType(contentType);
@@ -133,11 +133,11 @@ namespace Advance_Control.Services.LocalStorage
         }
 
         /// <summary>
-        /// Obtiene todas las imágenes de órdenes de compra de una operación
+        /// Obtiene todas las imágenes de hojas de servicio de una operación
         /// </summary>
-        public async Task<List<OperacionImageDto>> GetOrdenesCompraAsync(int idOperacion, CancellationToken cancellationToken = default)
+        public async Task<List<OperacionImageDto>> GetHojasServicioAsync(int idOperacion, CancellationToken cancellationToken = default)
         {
-            return await GetImagesAsync(idOperacion, "OrdenCompra", cancellationToken);
+            return await GetImagesAsync(idOperacion, "HojaServicio", cancellationToken);
         }
 
         /// <summary>
@@ -153,8 +153,8 @@ namespace Advance_Control.Services.LocalStorage
 
                 var operacionFolder = GetOperacionFolder(idOperacion);
 
-                // Patrón para buscar las imágenes de este tipo en esta operación: {idOperacion}_*_{tipo}.*
-                var pattern = $"{idOperacion}_*_{tipo}.*";
+                // Patrón para buscar las imágenes de este tipo en esta operación: {idOperacion}_{tipo}_*.*
+                var pattern = $"{idOperacion}_{tipo}_*.*";
 
                 // Buscar archivos que coincidan con el patrón
                 var files = Directory.GetFiles(operacionFolder, pattern);
@@ -231,21 +231,20 @@ namespace Advance_Control.Services.LocalStorage
         /// </summary>
         private static int ExtractImageNumber(string fileName, int idOperacion, string tipo)
         {
-            // Formato esperado: {idOperacion}_{numero}_{tipo}.extension
-            var prefix = $"{idOperacion}_";
-            var suffix = $"_{tipo}";
+            // Formato esperado: {idOperacion}_{tipo}_{numero}.extension
+            var prefix = $"{idOperacion}_{tipo}_";
             
             if (!fileName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 return 0;
 
-            // Obtener la parte entre el prefijo y el sufijo
+            // Obtener la parte después del prefijo (número + extensión)
             var startIndex = prefix.Length;
-            var suffixIndex = fileName.IndexOf(suffix, startIndex, StringComparison.OrdinalIgnoreCase);
+            var dotIndex = fileName.IndexOf('.', startIndex);
             
-            if (suffixIndex < 0)
-                return 0;
+            if (dotIndex < 0)
+                dotIndex = fileName.Length;
 
-            var numberPart = fileName.Substring(startIndex, suffixIndex - startIndex);
+            var numberPart = fileName.Substring(startIndex, dotIndex - startIndex);
 
             if (int.TryParse(numberPart, out var number))
             {

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace Advance_Control.Models
 {
     /// <summary>
-    /// DTO para las imágenes de operaciones (Prefacturas y Órdenes de Compra)
+    /// DTO para las imágenes de operaciones (Prefacturas y Hojas de Servicio)
     /// </summary>
     public class OperacionImageDto : INotifyPropertyChanged
     {
@@ -19,7 +19,7 @@ namespace Advance_Control.Models
         private string? _url;
         private int _idOperacion;
         private int _imageNumber;
-        private string? _tipo; // "Prefactura" o "OrdenCompra"
+        private string? _tipo; // "Prefactura" o "HojaServicio"
 
         /// <summary>
         /// Nombre del archivo de la imagen
@@ -86,7 +86,7 @@ namespace Advance_Control.Models
         }
 
         /// <summary>
-        /// Tipo de imagen: "Prefactura" o "OrdenCompra"
+        /// Tipo de imagen: "Prefactura" o "HojaServicio"
         /// </summary>
         public string? Tipo
         {
