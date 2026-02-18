@@ -213,23 +213,45 @@ namespace Advance_Control.Services.Quotes
                                 {
                                     row.RelativeItem().Column(col =>
                                     {
-                                        col.Item().Text("Información del Cliente").Bold().FontSize(14);
-                                        col.Item().PaddingTop(5);
-                                        col.Item().Text($"Cliente: {operacion.RazonSocial ?? "N/A"}");
-                                        col.Item().Text($"Equipo: {operacion.Identificador ?? "N/A"}");
+                                        col.Item().Text(text =>
+                                        {
+                                            text.Span("Cliente: ").Bold();
+                                            text.Span(operacion.RazonSocial ?? "N/A");
+                                        });
+                                        col.Item().Text(text =>
+                                        {
+                                            text.Span("Equipo: ").Bold();
+                                            text.Span(operacion.Identificador ?? "N/A");
+                                        });
                                         if (!string.IsNullOrWhiteSpace(ubicacionNombre))
                                         {
-                                            col.Item().Text($"Ubicación: {ubicacionNombre}");
+                                            col.Item().Text(text =>
+                                            {
+                                                text.Span("Ubicación: ").Bold();
+                                                text.Span(ubicacionNombre);
+                                            });
                                         }
                                     });
 
-                                    row.RelativeItem().Column(col =>
+                                    row.RelativeItem().PaddingLeft(70).Column(col =>
                                     {
-                                        col.Item().Text("Información de la Operación").Bold().FontSize(14);
-                                        col.Item().PaddingTop(5);
-                                        col.Item().Text($"Fecha: {quoteDate:dd/MM/yyyy}");
-                                        col.Item().Text($"Atendido por: {operacion.Atiende ?? "N/A"}");
-                                        col.Item().Text($"Tipo: {GetTipoOperacion(operacion.IdTipo)}");
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Fecha: ").Bold();
+                                            text.Span($"{quoteDate:dd/MM/yyyy}");
+                                        });
+
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Atendido por: ").Bold();
+                                            text.Span(operacion.Atiende ?? "N/A");
+                                        });
+
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Tipo: ").Bold();
+                                            text.Span(GetTipoOperacion(operacion.IdTipo));
+                                        });
                                     });
                                 });
 
@@ -242,36 +264,37 @@ namespace Advance_Control.Services.Quotes
                                 {
                                     table.ColumnsDefinition(columns =>
                                     {
-                                        columns.RelativeColumn(2);  // Tipo
-                                        columns.RelativeColumn(3);  // Detalle
-                                        columns.RelativeColumn(2);  // Proveedor
-                                        columns.RelativeColumn(3);  // Nota
-                                        columns.RelativeColumn(1);  // Monto
+
+                                        columns.RelativeColumn(1);  // Cantidad
+                                        columns.RelativeColumn(1);  // Tipo
+                                        columns.RelativeColumn(2);  // Detalle
+                                        columns.RelativeColumn(1);  // P.U.
+                                        columns.RelativeColumn(1);  // SubTotal
                                     });
 
                                     // Header
                                     table.Header(header =>
                                     {
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Cantidad").Bold();
                                         header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Tipo").Bold();
                                         header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Detalle").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Proveedor").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Nota").Bold();
-                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).AlignRight().Text("Monto").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("P.U.").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).AlignRight().PaddingLeft(20).Text("Monto").Bold();
                                     });
 
                                     // Rows
                                     foreach (var cargo in cargosList)
                                     {
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
+                                            .Text(cargo.Cantidad.ToString() ?? "N/A");
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
                                             .Text(cargo.TipoCargo ?? "N/A");
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
                                             .Text(cargo.DetalleRelacionado ?? "N/A");
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
-                                            .Text(cargo.Proveedor ?? "N/A");
+                                            .Text($"${cargo.Unitario ?? 0:N2}");
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
-                                            .Text(cargo.Nota ?? "-");
-                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
-                                            .AlignRight().Text($"${cargo.Monto ?? 0:N2}");
+                                            .AlignRight().PaddingLeft(20).Text($"${cargo.Monto ?? 0:N2}");
                                     }
                                 });
 
