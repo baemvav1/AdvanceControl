@@ -47,6 +47,15 @@ namespace Advance_Control.Services.Quotes
         }
 
         /// <summary>
+        /// Obtiene la ruta de la carpeta de cabeceras
+        /// </summary>
+        private string GetCabecerasFolder()
+        {
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            return Path.Combine(documentsPath, "Advance Control", "Cabeceras");
+        }
+
+        /// <summary>
         /// Busca la firma del operador por su idAtiende en la carpeta de Firmas.
         /// Los archivos tienen formato {id}_{nombre}.png
         /// </summary>
@@ -155,9 +164,8 @@ namespace Advance_Control.Services.Quotes
                 
                 var filePath = Path.Combine(operacionFolder, fileName);
 
-                // Use company name from entity or default
-                var companyTitle = !string.IsNullOrWhiteSpace(nombreEmpresa) ? nombreEmpresa.ToUpperInvariant() : "ADVANCE CONTROL";
                 var quotationTitle = $"Cotización {operacion.IdOperacion}";
+                var cotizacionImagePath = Path.Combine(GetCabecerasFolder(), "Cotizacion.png");
 
                 // Generate PDF
                 var document = Document.Create(container =>
@@ -171,22 +179,18 @@ namespace Advance_Control.Services.Quotes
 
                         // Header - only show on first page
                         page.Header()
-                            .Height(120)
-                            .Background(Colors.Blue.Lighten3)
-                            .Padding(20)
                             .ShowOnce()
                             .Column(column =>
                             {
-                                column.Item().AlignCenter().Text(companyTitle)
-                                    .FontSize(24)
-                                    .Bold()
-                                    .FontColor(Colors.Blue.Darken3);
-                                
-                                column.Item().AlignCenter().Text(quotationTitle)
+                                if (File.Exists(cotizacionImagePath))
+                                {
+                                    column.Item().Image(cotizacionImagePath).FitWidth();
+                                }
+
+                                column.Item().AlignRight().Text(quotationTitle)
                                     .FontSize(16)
                                     .FontColor(Colors.Blue.Darken2);
-                                
-                                // Add Referencia with operation note
+
                                 if (!string.IsNullOrWhiteSpace(operacion.Nota))
                                 {
                                     column.Item().PaddingTop(5).AlignCenter().Text($"Referencia: {operacion.Nota}")
@@ -377,11 +381,9 @@ namespace Advance_Control.Services.Quotes
                 
                 var filePath = Path.Combine(operacionFolder, fileName);
 
-                var reportTitle = $"Reporte Cotización {operacion.IdOperacion}";
+                var reportTitle = $"Reporte {operacion.IdOperacion}";
                 var cargosList = cargos.ToList();
-
-                // Use company name from entity or default
-                var companyTitle = !string.IsNullOrWhiteSpace(nombreEmpresa) ? nombreEmpresa.ToUpperInvariant() : "ADVANCE CONTROL";
+                var reporteImagePath = Path.Combine(GetCabecerasFolder(), "Reporte.png");
 
                 // Use current date for the report
                 var reportDate = DateTime.Now;
@@ -408,18 +410,15 @@ namespace Advance_Control.Services.Quotes
 
                         // Header - only show on first page
                         page.Header()
-                            .Height(100)
-                            .Background(Colors.Blue.Lighten3)
-                            .Padding(15)
                             .ShowOnce()
                             .Column(column =>
                             {
-                                column.Item().AlignCenter().Text(companyTitle)
-                                    .FontSize(24)
-                                    .Bold()
-                                    .FontColor(Colors.Blue.Darken3);
-                                
-                                column.Item().AlignCenter().Text(reportTitle)
+                                if (File.Exists(reporteImagePath))
+                                {
+                                    column.Item().Image(reporteImagePath).FitWidth();
+                                }
+
+                                column.Item().AlignRight().Text(reportTitle)
                                     .FontSize(16)
                                     .FontColor(Colors.Blue.Darken2);
                             });
