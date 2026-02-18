@@ -308,13 +308,13 @@
                                                             </StackPanel>
                                                         </Button>
                                                         <Button
-                                                            Click="UploadOrdenCompraButton_Click"
+                                                            Click="UploadHojaServicioButton_Click"
                                                             Tag="{x:Bind}"
                                                             Background="{ThemeResource SystemAccentColor}"
-                                                            ToolTipService.ToolTip="Cargar imagen de orden de compra">
+                                                            ToolTipService.ToolTip="Cargar imagen de hoja de servicio">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Camera" />
-                                                                <TextBlock Text="Orden Compra" />
+                                                                <TextBlock Text="Hoja Servicio" />
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>

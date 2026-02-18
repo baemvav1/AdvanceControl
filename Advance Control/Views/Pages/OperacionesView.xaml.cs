@@ -1450,7 +1450,7 @@ namespace Advance_Control.Views
         }
 
         /// <summary>
-        /// Helper method to upload an operation image (Prefactura or Orden Compra)
+        /// Helper method to upload an operation image (Prefactura or Hoja Servicio)
         /// </summary>
         private async Task UploadOperacionImageAsync(Models.OperacionDto operacion, string imageType)
         {
@@ -1502,9 +1502,9 @@ namespace Advance_Control.Views
                 {
                     result = await _operacionImageService.UploadPrefacturaAsync(operacion.IdOperacion.Value, stream, contentType);
                 }
-                else if (imageType == "OrdenCompra")
+                else if (imageType == "HojaServicio")
                 {
-                    result = await _operacionImageService.UploadOrdenCompraAsync(operacion.IdOperacion.Value, stream, contentType);
+                    result = await _operacionImageService.UploadHojaServicioAsync(operacion.IdOperacion.Value, stream, contentType);
                 }
 
                 if (result != null)
@@ -1545,15 +1545,15 @@ namespace Advance_Control.Views
         }
 
         /// <summary>
-        /// Maneja el clic en el botón de cargar orden de compra
+        /// Maneja el clic en el botón de cargar hoja de servicio
         /// </summary>
-        private async void UploadOrdenCompraButton_Click(object sender, RoutedEventArgs e)
+        private async void UploadHojaServicioButton_Click(object sender, RoutedEventArgs e)
         {
             // Obtener la operación desde el Tag del botón
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
 
-            await UploadOperacionImageAsync(operacion, "OrdenCompra");
+            await UploadOperacionImageAsync(operacion, "HojaServicio");
         }
     }
 }

@@ -388,14 +388,14 @@ namespace Advance_Control.Services.Quotes
                 // Use current date for the report
                 var reportDate = DateTime.Now;
 
-                // Load Prefactura and Orden Compra images
+                // Load Prefactura and Hoja Servicio images
                 List<OperacionImageDto> prefacturas = new List<OperacionImageDto>();
-                List<OperacionImageDto> ordenesCompra = new List<OperacionImageDto>();
+                List<OperacionImageDto> hojasServicio = new List<OperacionImageDto>();
                 
                 if (operacion.IdOperacion.HasValue)
                 {
                     prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
-                    ordenesCompra = await _operacionImageService.GetOrdenesCompraAsync(operacion.IdOperacion.Value);
+                    hojasServicio = await _operacionImageService.GetHojasServicioAsync(operacion.IdOperacion.Value);
                 }
 
                 // Generate PDF
@@ -458,32 +458,32 @@ namespace Advance_Control.Services.Quotes
                                     column.Item().PaddingTop(10);
                                 }
 
-                                // Add Orden Compra images if they exist
-                                if (ordenesCompra != null && ordenesCompra.Count > 0)
+                                // Add Hoja Servicio images if they exist
+                                if (hojasServicio != null && hojasServicio.Count > 0)
                                 {
-                                    column.Item().Column(ordenCompraCol =>
+                                    column.Item().Column(hojaServicioCol =>
                                     {
-                                        ordenCompraCol.Item().Text("Órdenes de Compra").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
-                                        ordenCompraCol.Item().PaddingTop(10);
+                                        hojaServicioCol.Item().Text("Hojas de Servicio").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
+                                        hojaServicioCol.Item().PaddingTop(10);
                                         
-                                        foreach (var ordenCompra in ordenesCompra)
+                                        foreach (var hojaServicio in hojasServicio)
                                         {
-                                            if (!string.IsNullOrWhiteSpace(ordenCompra.Url) && File.Exists(ordenCompra.Url))
+                                            if (!string.IsNullOrWhiteSpace(hojaServicio.Url) && File.Exists(hojaServicio.Url))
                                             {
                                                 try
                                                 {
-                                                    ordenCompraCol.Item().PaddingBottom(10).Image(ordenCompra.Url).FitWidth();
+                                                    hojaServicioCol.Item().PaddingBottom(10).Image(hojaServicio.Url).FitWidth();
                                                 }
                                                 catch
                                                 {
                                                     // Skip images that can't be loaded
-                                                    ordenCompraCol.Item().Text($"[Error al cargar: {ordenCompra.FileName}]").FontSize(10).Italic();
+                                                    hojaServicioCol.Item().Text($"[Error al cargar: {hojaServicio.FileName}]").FontSize(10).Italic();
                                                 }
                                             }
                                         }
                                     });
                                     
-                                    // Add separator after ordenes de compra
+                                    // Add separator after hojas de servicio
                                     column.Item().PaddingTop(10);
                                 }
 
