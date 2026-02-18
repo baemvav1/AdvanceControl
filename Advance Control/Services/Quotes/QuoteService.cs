@@ -80,10 +80,12 @@ namespace Advance_Control.Services.Quotes
                         page.PageColor(Colors.White);
                         page.DefaultTextStyle(x => x.FontSize(11));
 
+                        // Header - only show on first page
                         page.Header()
                             .Height(120)
                             .Background(Colors.Blue.Lighten3)
                             .Padding(20)
+                            .ShowOnce()
                             .Column(column =>
                             {
                                 column.Item().AlignCenter().Text(companyTitle)
@@ -231,9 +233,9 @@ namespace Advance_Control.Services.Quotes
                             .AlignCenter()
                             .Text(x =>
                             {
-                                x.Span("Página ");
+                                x.Span($"Cotización {operacion.IdOperacion}, Hoja ");
                                 x.CurrentPageNumber();
-                                x.Span(" de ");
+                                x.Span("/");
                                 x.TotalPages();
                             });
                     });
@@ -318,10 +320,12 @@ namespace Advance_Control.Services.Quotes
                         page.PageColor(Colors.White);
                         page.DefaultTextStyle(x => x.FontSize(11));
 
+                        // Header - only show on first page
                         page.Header()
                             .Height(100)
                             .Background(Colors.Blue.Lighten3)
                             .Padding(15)
+                            .ShowOnce()
                             .Column(column =>
                             {
                                 column.Item().AlignCenter().Text(companyTitle)
@@ -469,9 +473,9 @@ namespace Advance_Control.Services.Quotes
                             .AlignCenter()
                             .Text(x =>
                             {
-                                x.Span("Página ");
+                                x.Span($"Reporte {operacion.IdOperacion}, Hoja ");
                                 x.CurrentPageNumber();
-                                x.Span(" de ");
+                                x.Span("/");
                                 x.TotalPages();
                             });
                     });
