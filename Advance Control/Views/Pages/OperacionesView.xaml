@@ -441,43 +441,7 @@
                                                         </Button>
                                                     </StackPanel>
 
-                                                    <TextBlock
-                                                        Margin="0,16,0,4"
-                                                        FontSize="14"
-                                                        FontWeight="SemiBold"
-                                                        Text="Cargar Imágenes" />
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <Button
-                                                            Background="{ThemeResource SystemAccentColor}"
-                                                            Click="UploadPrefacturaButton_Click"
-                                                            Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Cargar imagen de prefactura">
-                                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <SymbolIcon Symbol="Camera" />
-                                                                <TextBlock Text="Prefactura" />
-                                                            </StackPanel>
-                                                        </Button>
-                                                        <Button
-                                                            Background="{ThemeResource SystemAccentColor}"
-                                                            Click="UploadHojaServicioButton_Click"
-                                                            Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Cargar imagen de hoja de servicio">
-                                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <SymbolIcon Symbol="Camera" />
-                                                                <TextBlock Text="Hoja Servicio" />
-                                                            </StackPanel>
-                                                        </Button>
-                                                        <Button
-                                                            Background="{ThemeResource SystemAccentColor}"
-                                                            Click="UploadOrdenCompraButton_Click"
-                                                            Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Cargar imagen de orden de compra">
-                                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <SymbolIcon Symbol="Camera" />
-                                                                <TextBlock Text="Orden Compra" />
-                                                            </StackPanel>
-                                                        </Button>
-                                                    </StackPanel>
+
 
                                                     <TextBlock
                                                         Margin="0,16,0,4"
@@ -877,6 +841,49 @@
                                                             NumberFormatter="{x:Bind CurrencyFormatter}"
                                                             SpinButtonPlacementMode="Hidden"
                                                             Value="{x:Bind TotalMonto, Mode=OneWay}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </PivotItem>
+
+                                            <!--  Documentos  -->
+                                            <PivotItem Header="Documentos">
+                                                <Grid Padding="8">
+                                                    <TextBlock
+                                                        Margin="0,16,0,4"
+                                                        FontSize="14"
+                                                        FontWeight="SemiBold"
+                                                        Text="Cargar Imágenes" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <Button
+                                                            Background="{ThemeResource SystemAccentColor}"
+                                                            Click="UploadPrefacturaButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Cargar imagen de prefactura">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Camera" />
+                                                                <TextBlock Text="Prefactura" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Background="{ThemeResource SystemAccentColor}"
+                                                            Click="UploadHojaServicioButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Cargar imagen de hoja de servicio">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Camera" />
+                                                                <TextBlock Text="Hoja Servicio" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            Background="{ThemeResource SystemAccentColor}"
+                                                            Click="UploadOrdenCompraButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Cargar imagen de orden de compra">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Camera" />
+                                                                <TextBlock Text="Orden Compra" />
+                                                            </StackPanel>
+                                                        </Button>
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
