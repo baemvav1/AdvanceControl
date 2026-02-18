@@ -19,7 +19,7 @@ namespace Advance_Control.Models
         private string? _url;
         private int _idOperacion;
         private int _imageNumber;
-        private string? _tipo; // "Prefactura" o "Orden Compra"
+        private string? _tipo; // "Prefactura" o "OrdenCompra"
 
         /// <summary>
         /// Nombre del archivo de la imagen
@@ -86,7 +86,7 @@ namespace Advance_Control.Models
         }
 
         /// <summary>
-        /// Tipo de imagen: "Prefactura" o "Orden Compra"
+        /// Tipo de imagen: "Prefactura" o "OrdenCompra"
         /// </summary>
         public string? Tipo
         {
