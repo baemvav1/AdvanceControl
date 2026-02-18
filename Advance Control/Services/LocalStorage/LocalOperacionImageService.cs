@@ -276,9 +276,9 @@ namespace Advance_Control.Services.LocalStorage
                 if (suffixIndex < 0)
                     return 0;
 
-                var numberPart = afterId.Substring(0, suffixIndex);
+                var ordenNumberPart = afterId[..suffixIndex]; // IDE0057: simplificación de Substring
 
-                if (int.TryParse(numberPart, out var ordenNum))
+                if (int.TryParse(ordenNumberPart, out var ordenNum))
                     return ordenNum;
 
                 return 0;
@@ -297,9 +297,9 @@ namespace Advance_Control.Services.LocalStorage
             if (dotIndex < 0)
                 dotIndex = fileName.Length;
 
-            var numberPart = fileName.Substring(startIndex, dotIndex - startIndex);
+            var standardNumberPart = fileName[startIndex..dotIndex]; // IDE0057: simplificación de Substring
 
-            if (int.TryParse(numberPart, out var number))
+            if (int.TryParse(standardNumberPart, out var number))
             {
                 return number;
             }

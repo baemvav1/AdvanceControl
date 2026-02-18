@@ -22,7 +22,7 @@ namespace Advance_Control.Services.Quotes
         /// IVA rate (16%) for Mexican tax calculation
         /// </summary>
         private const double IVA_RATE = 0.16;
-        
+
         private readonly ILoggingService _logger;
         private readonly IOperacionImageService _operacionImageService;
         private readonly INotificacionService _notificacionService;
@@ -32,7 +32,7 @@ namespace Advance_Control.Services.Quotes
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _operacionImageService = operacionImageService ?? throw new ArgumentNullException(nameof(operacionImageService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
-            
+
             // Configure QuestPDF license
             QuestPDF.Settings.License = LicenseType.Community;
         }
@@ -158,10 +158,10 @@ namespace Advance_Control.Services.Quotes
                 var fileName = $"{operacion.IdOperacion}{timestamp}Cotizacion.pdf";
                 var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                 var operacionFolder = Path.Combine(documentsPath, "Advance Control", $"Operacion_{operacion.IdOperacion}");
-                
+
                 // Create directory if it doesn't exist
                 Directory.CreateDirectory(operacionFolder);
-                
+
                 var filePath = Path.Combine(operacionFolder, fileName);
 
                 var quotationTitle = $"Cotización {operacion.IdOperacion}";
@@ -203,7 +203,7 @@ namespace Advance_Control.Services.Quotes
                             .PaddingVertical(1, Unit.Centimetre)
                             .Column(column =>
                             {
-                                column.Spacing(20);
+                                column.Spacing(5);
 
                                 // Use consistent date throughout the document
                                 var quoteDate = operacion.FechaInicio ?? DateTime.Now;
@@ -255,11 +255,8 @@ namespace Advance_Control.Services.Quotes
                                     });
                                 });
 
-                                // Charges table
-                                column.Item().Text("Desglose de Cargos").Bold().FontSize(14);
-                                
                                 var cargosList = cargos.ToList();
-                                
+
                                 column.Item().Table(table =>
                                 {
                                     table.ColumnsDefinition(columns =>
@@ -307,23 +304,23 @@ namespace Advance_Control.Services.Quotes
                                 {
                                     totalsCol.Item().Row(row =>
                                     {
-                                        row.AutoItem().Text("Subtotal: ").FontSize(12);
-                                        row.AutoItem().Text($"${subtotal:N2}").FontSize(12);
+                                        row.AutoItem().Text("Subtotal: ").FontSize(10);
+                                        row.AutoItem().Text($"${subtotal:N2}").FontSize(10);
                                     });
                                     totalsCol.Item().PaddingTop(3).Row(row =>
                                     {
-                                        row.AutoItem().Text("IVA (16%): ").FontSize(12);
-                                        row.AutoItem().Text($"${iva:N2}").FontSize(12);
+                                        row.AutoItem().Text("IVA (16%): ").FontSize(10);
+                                        row.AutoItem().Text($"${iva:N2}").FontSize(10);
                                     });
                                     totalsCol.Item().PaddingTop(5).Row(row =>
                                     {
-                                        row.AutoItem().Text("TOTAL: ").Bold().FontSize(14);
-                                        row.AutoItem().Text($"${total:N2}").Bold().FontSize(14).FontColor(Colors.Blue.Darken2);
+                                        row.AutoItem().Text("TOTAL: ").Bold().FontSize(10);
+                                        row.AutoItem().Text($"${total:N2}").Bold().FontSize(10).FontColor(Colors.Blue.Darken2);
                                     });
                                 });
 
                                 // Payment terms and validity notes section
-                                column.Item().PaddingTop(25).Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(15).Column(notesCol =>
+                                column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(15).Column(notesCol =>
                                 {
                                     notesCol.Item().Text("Condiciones de pago:").Bold().FontSize(11).FontColor(Colors.Blue.Darken2);
                                     notesCol.Item().PaddingTop(8).Text("• Se solicita anticipo del 70% para realizar este trabajo").FontSize(10);
@@ -334,12 +331,11 @@ namespace Advance_Control.Services.Quotes
                                 // Closing salutation section
                                 column.Item().PaddingTop(25).Column(closingCol =>
                                 {
-                                    closingCol.Item().Text("En la confianza de recibir su pronta respuesta, le envío un cordial saludo.")
-                                        .FontSize(11).Italic();
+                                    AddFirmasSection(column.Item(), operacion.IdAtiende);
                                 });
 
                                 // Signature images section
-                                AddFirmasSection(column.Item(), operacion.IdAtiende);
+
                             });
 
                         page.Footer()
@@ -398,10 +394,10 @@ namespace Advance_Control.Services.Quotes
                 var fileName = $"{operacion.IdOperacion}{timestamp}Reporte.pdf";
                 var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
                 var operacionFolder = Path.Combine(documentsPath, "Advance Control", $"Operacion_{operacion.IdOperacion}");
-                
+
                 // Create directory if it doesn't exist
                 Directory.CreateDirectory(operacionFolder);
-                
+
                 var filePath = Path.Combine(operacionFolder, fileName);
 
                 var reportTitle = $"Reporte {operacion.IdOperacion}";
@@ -414,7 +410,7 @@ namespace Advance_Control.Services.Quotes
                 // Load Prefactura and Hoja Servicio images
                 List<OperacionImageDto> prefacturas = new List<OperacionImageDto>();
                 List<OperacionImageDto> hojasServicio = new List<OperacionImageDto>();
-                
+
                 if (operacion.IdOperacion.HasValue)
                 {
                     prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
@@ -450,7 +446,57 @@ namespace Advance_Control.Services.Quotes
                             .PaddingVertical(1, Unit.Centimetre)
                             .Column(column =>
                             {
-                                column.Spacing(15);
+                                column.Spacing(5);
+
+
+
+                                // Information section (Client and Operation info)
+                                 // Information section
+                                column.Item().Row(row =>
+                                {
+                                    row.RelativeItem().Column(col =>
+                                    {
+                                        col.Item().Text(text =>
+                                        {
+                                            text.Span("Cliente: ").Bold();
+                                            text.Span(operacion.RazonSocial ?? "N/A");
+                                        });
+                                        col.Item().Text(text =>
+                                        {
+                                            text.Span("Equipo: ").Bold();
+                                            text.Span(operacion.Identificador ?? "N/A");
+                                        });
+                                        if (!string.IsNullOrWhiteSpace(ubicacionNombre))
+                                        {
+                                            col.Item().Text(text =>
+                                            {
+                                                text.Span("Ubicación: ").Bold();
+                                                text.Span(ubicacionNombre);
+                                            });
+                                        }
+                                    });
+
+                                    row.RelativeItem().PaddingLeft(70).Column(col =>
+                                    {
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Fecha: ").Bold();
+                                            text.Span($"{reportDate:dd/MM/yyyy}");
+                                        });
+
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Atendido por: ").Bold();
+                                            text.Span(operacion.Atiende ?? "N/A");
+                                        });
+
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Tipo: ").Bold();
+                                            text.Span(GetTipoOperacion(operacion.IdTipo));
+                                        });
+                                    });
+                                });
 
                                 // Add Prefactura images at the beginning if they exist
                                 if (prefacturas != null && prefacturas.Count > 0)
@@ -458,15 +504,15 @@ namespace Advance_Control.Services.Quotes
                                     column.Item().Column(prefacturaCol =>
                                     {
                                         prefacturaCol.Item().Text("Prefacturas").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
-                                        prefacturaCol.Item().PaddingTop(10);
-                                        
+                                        prefacturaCol.Item().PaddingTop(5);
+
                                         foreach (var prefactura in prefacturas)
                                         {
                                             if (!string.IsNullOrWhiteSpace(prefactura.Url) && File.Exists(prefactura.Url))
                                             {
                                                 try
                                                 {
-                                                    prefacturaCol.Item().PaddingBottom(10).Image(prefactura.Url).FitWidth();
+                                                    prefacturaCol.Item().PaddingBottom(5).Image(prefactura.Url).FitWidth();
                                                 }
                                                 catch
                                                 {
@@ -476,7 +522,7 @@ namespace Advance_Control.Services.Quotes
                                             }
                                         }
                                     });
-                                    
+
                                     // Add separator after prefacturas
                                     column.Item().PaddingTop(10);
                                 }
@@ -488,7 +534,7 @@ namespace Advance_Control.Services.Quotes
                                     {
                                         hojaServicioCol.Item().Text("Hojas de Servicio").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
                                         hojaServicioCol.Item().PaddingTop(10);
-                                        
+
                                         foreach (var hojaServicio in hojasServicio)
                                         {
                                             if (!string.IsNullOrWhiteSpace(hojaServicio.Url) && File.Exists(hojaServicio.Url))
@@ -505,35 +551,10 @@ namespace Advance_Control.Services.Quotes
                                             }
                                         }
                                     });
-                                    
+
                                     // Add separator after hojas de servicio
                                     column.Item().PaddingTop(10);
                                 }
-
-                                // Information section (Client and Operation info)
-                                column.Item().Row(row =>
-                                {
-                                    row.RelativeItem().Column(col =>
-                                    {
-                                        col.Item().Text("Información del Cliente").Bold().FontSize(14);
-                                        col.Item().PaddingTop(5);
-                                        col.Item().Text($"Cliente: {operacion.RazonSocial ?? "N/A"}");
-                                        col.Item().Text($"Equipo: {operacion.Identificador ?? "N/A"}");
-                                        if (!string.IsNullOrWhiteSpace(ubicacionNombre))
-                                        {
-                                            col.Item().Text($"Ubicación: {ubicacionNombre}");
-                                        }
-                                    });
-
-                                    row.RelativeItem().Column(col =>
-                                    {
-                                        col.Item().Text("Información de la Operación").Bold().FontSize(14);
-                                        col.Item().PaddingTop(5);
-                                        col.Item().Text($"Fecha: {reportDate:dd/MM/yyyy}");
-                                        col.Item().Text($"Atendido por: {operacion.Atiende ?? "N/A"}");
-                                        col.Item().Text($"Tipo: {GetTipoOperacion(operacion.IdTipo)}");
-                                    });
-                                });
 
                                 // Separator before cargo rows
                                 column.Item().PaddingTop(10);
