@@ -328,8 +328,12 @@ namespace Advance_Control.Services.Quotes
                                 column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(15).Column(notesCol =>
                                 {
                                     notesCol.Item().Text("Condiciones de pago:").Bold().FontSize(11).FontColor(Colors.Blue.Darken2);
-                                    notesCol.Item().PaddingTop(8).Text("• Se solicita anticipo del 70% para realizar este trabajo").FontSize(10);
-                                    notesCol.Item().PaddingTop(4).Text("• El 30% restante, al término de este").FontSize(10);
+                                    if (total>=50000)
+                                    {
+                                        notesCol.Item().PaddingTop(8).Text("• Se solicita anticipo del 70% para realizar este trabajo").FontSize(10);
+                                        notesCol.Item().PaddingTop(4).Text("• El 30% restante, al término de este").FontSize(10);
+                                    }
+                                   
                                     notesCol.Item().PaddingTop(4).Text("• Vigencia de esta cotización: treinta días naturales").FontSize(10);
                                 });
 

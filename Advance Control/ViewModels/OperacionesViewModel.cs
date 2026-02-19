@@ -11,6 +11,7 @@ using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Quotes;
 using Advance_Control.Services.Entidades;
+using Advance_Control.Services.Clientes;
 
 namespace Advance_Control.ViewModels
 {
@@ -31,6 +32,7 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly IQuoteService _quoteService;
         private readonly IEntidadService _entidadService;
+        private readonly IClienteService _clienteService;
         private ObservableCollection<OperacionDto> _operaciones;
         private bool _isLoading;
         private string? _errorMessage;
@@ -42,9 +44,10 @@ namespace Advance_Control.ViewModels
         private string? _selectedClienteText;
         private string? _selectedEquipoText;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService)
         {
             _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
+            _clienteService = clienteService ?? throw new ArgumentException(nameof(clienteService));
             _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
             _ubicacionService = ubicacionService ?? throw new ArgumentNullException(nameof(ubicacionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -330,7 +333,11 @@ namespace Advance_Control.ViewModels
                     // Log but don't fail if we can't get the location
                     await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
                 }
-
+                /*ClienteQueryDto queryCliente = new ClienteQueryDto
+                {
+                    Rfc =  "SE" 
+                };
+                //var cliente = await _clienteService.GetClientesAsync()*/
                 var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre);
 
                 // Calculate total with IVA and update operation monto
