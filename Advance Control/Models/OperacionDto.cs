@@ -253,5 +253,62 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        private ObservableCollection<OperacionImageDto> _imagenesPrefactura = new ObservableCollection<OperacionImageDto>();
+
+        /// <summary>
+        /// Colección de imágenes de prefactura para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<OperacionImageDto> ImagenesPrefactura
+        {
+            get => _imagenesPrefactura;
+            set
+            {
+                if (_imagenesPrefactura != value)
+                {
+                    _imagenesPrefactura = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private ObservableCollection<OperacionImageDto> _imagenesHojaServicio = new ObservableCollection<OperacionImageDto>();
+
+        /// <summary>
+        /// Colección de imágenes de hoja de servicio para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<OperacionImageDto> ImagenesHojaServicio
+        {
+            get => _imagenesHojaServicio;
+            set
+            {
+                if (_imagenesHojaServicio != value)
+                {
+                    _imagenesHojaServicio = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private ObservableCollection<OperacionImageDto> _imagenesOrdenCompra = new ObservableCollection<OperacionImageDto>();
+
+        /// <summary>
+        /// Colección de imágenes de orden de compra para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<OperacionImageDto> ImagenesOrdenCompra
+        {
+            get => _imagenesOrdenCompra;
+            set
+            {
+                if (_imagenesOrdenCompra != value)
+                {
+                    _imagenesOrdenCompra = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }
