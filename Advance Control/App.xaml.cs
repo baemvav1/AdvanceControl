@@ -30,6 +30,7 @@ using Advance_Control.Services.Areas;
 using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Entidades;
+using Advance_Control.Services.ImageViewer;
 
 namespace Advance_Control
 {
@@ -500,6 +501,9 @@ namespace Advance_Control
 
                     // Registrar LocalOperacionImageService para almacenamiento local de imágenes de operaciones (Prefacturas y Órdenes de Compra)
                     services.AddSingleton<IOperacionImageService, LocalOperacionImageService>();
+
+                    // Registrar ImageViewerService para el visor de imágenes reutilizable
+                    services.AddSingleton<IImageViewerService, ImageViewerService>();
 
                     // Registrar ViewModels
                     services.AddTransient<ViewModels.MainViewModel>();

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Advance_Control.Views.Dialogs.ImageViewerUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid
+        Width="700"
+        Height="500">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Image viewer with zoom support  -->
+        <Border
+            Grid.Row="0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            CornerRadius="4">
+            <ScrollViewer
+                x:Name="ImageScrollViewer"
+                HorizontalScrollBarVisibility="Auto"
+                MaxZoomFactor="8.0"
+                MinZoomFactor="0.1"
+                VerticalScrollBarVisibility="Auto"
+                ZoomMode="Enabled">
+                <Image
+                    x:Name="ViewerImage"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Stretch="Uniform" />
+            </ScrollViewer>
+        </Border>
+
+        <!--  Zoom controls  -->
+        <StackPanel
+            Grid.Row="1"
+            Margin="0,8,0,0"
+            HorizontalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="8">
+            <Button
+                Click="ZoomOutButton_Click"
+                ToolTipService.ToolTip="Reducir zoom">
+                <SymbolIcon Symbol="Remove" />
+            </Button>
+            <TextBlock
+                x:Name="ZoomLevelText"
+                VerticalAlignment="Center"
+                FontSize="13"
+                Text="100%" />
+            <Button
+                Click="ZoomInButton_Click"
+                ToolTipService.ToolTip="Ampliar zoom">
+                <SymbolIcon Symbol="Add" />
+            </Button>
+            <Button
+                Click="ZoomResetButton_Click"
+                ToolTipService.ToolTip="Restablecer zoom">
+                <TextBlock Text="100%" />
+            </Button>
+        </StackPanel>
+    </Grid>
+</UserControl>
