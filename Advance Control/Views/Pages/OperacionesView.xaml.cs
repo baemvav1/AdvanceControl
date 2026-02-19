@@ -1606,6 +1606,10 @@ namespace Advance_Control.Views
                 operacion.HasPrefactura = prefacturas.Count > 0;
                 operacion.HasHojaServicio = hojasServicio.Count > 0;
                 operacion.HasOrdenCompra = ordenesCompra.Count > 0;
+
+                operacion.ImagenesPrefactura = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(prefacturas);
+                operacion.ImagenesHojaServicio = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(hojasServicio);
+                operacion.ImagenesOrdenCompra = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(ordenesCompra);
             }
             catch (Exception ex)
             {
