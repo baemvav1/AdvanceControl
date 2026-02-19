@@ -300,22 +300,22 @@ namespace Advance_Control.Services.Quotes
                                 var iva = subtotal * IVA_RATE;
                                 var total = subtotal + iva;
 
-                                column.Item().PaddingTop(10).AlignRight().Column(totalsCol =>
+                                column.Item().PaddingTop(10).AlignRight().Width(200).Column(totalsCol =>
                                 {
                                     totalsCol.Item().Row(row =>
                                     {
-                                        row.AutoItem().Text("Subtotal: ").FontSize(10);
-                                        row.AutoItem().Text($"${subtotal:N2}").FontSize(10);
+                                        row.RelativeItem().Text("SUBTOTAL: ").FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${subtotal:N2}").FontSize(10).AlignRight();
                                     });
                                     totalsCol.Item().PaddingTop(3).Row(row =>
                                     {
-                                        row.AutoItem().Text("IVA (16%): ").FontSize(10);
-                                        row.AutoItem().Text($"${iva:N2}").FontSize(10);
+                                        row.RelativeItem().Text("IVA (16%): ").FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${iva:N2}").FontSize(10).AlignRight();
                                     });
                                     totalsCol.Item().PaddingTop(5).Row(row =>
                                     {
-                                        row.AutoItem().Text("TOTAL: ").Bold().FontSize(10);
-                                        row.AutoItem().Text($"${total:N2}").Bold().FontSize(10).FontColor(Colors.Blue.Darken2);
+                                        row.RelativeItem().Text("TOTAL: ").Bold().FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${total:N2}").Bold().FontSize(10).FontColor(Colors.Blue.Darken2).AlignRight();
                                     });
                                 });
 
@@ -451,7 +451,7 @@ namespace Advance_Control.Services.Quotes
 
 
                                 // Information section (Client and Operation info)
-                                 // Information section
+                                // Information section
                                 column.Item().Row(row =>
                                 {
                                     row.RelativeItem().Column(col =>
