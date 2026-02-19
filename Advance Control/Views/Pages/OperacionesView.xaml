@@ -892,24 +892,52 @@
                                                         <TextBlock
                                                             FontSize="13"
                                                             FontWeight="SemiBold"
-                                                            Text="Hojas de servicio:" />
-                                                        <ItemsRepeater ItemsSource="{x:Bind ImagenesHojaServicio, Mode=OneWay}">
+                                                            Text="Hojas de servicio:"
+                                                            Visibility="{x:Bind HasHojaServicio, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                        <ItemsRepeater
+                                                            ItemsSource="{x:Bind ImagenesHojaServicio, Mode=OneWay}"
+                                                            Visibility="{x:Bind HasHojaServicio, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                                             <ItemsRepeater.Layout>
                                                                 <StackLayout Orientation="Horizontal" Spacing="8" />
                                                             </ItemsRepeater.Layout>
                                                             <ItemsRepeater.ItemTemplate>
                                                                 <DataTemplate xmlns:docmodels="using:Advance_Control.Models" x:DataType="docmodels:OperacionImageDto">
-                                                                    <Border
+                                                                    <Grid
                                                                         Width="100"
                                                                         Height="100"
                                                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                                         CornerRadius="4">
-                                                                        <Image
-                                                                            HorizontalAlignment="Center"
-                                                                            VerticalAlignment="Center"
-                                                                            Source="{x:Bind Url, Mode=OneWay}"
-                                                                            Stretch="UniformToFill" />
-                                                                    </Border>
+                                                                        <Button
+                                                                            Padding="0"
+                                                                            HorizontalAlignment="Stretch"
+                                                                            VerticalAlignment="Stretch"
+                                                                            Background="Transparent"
+                                                                            BorderThickness="0"
+                                                                            Click="ViewOperacionImageButton_Click"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Ver imagen">
+                                                                            <Image
+                                                                                HorizontalAlignment="Center"
+                                                                                VerticalAlignment="Center"
+                                                                                Source="{x:Bind Url, Mode=OneWay}"
+                                                                                Stretch="UniformToFill" />
+                                                                        </Button>
+                                                                        <!--  Delete button overlay  -->
+                                                                        <Button
+                                                                            MinWidth="20"
+                                                                            MinHeight="20"
+                                                                            Margin="0,2,2,0"
+                                                                            Padding="4"
+                                                                            HorizontalAlignment="Right"
+                                                                            VerticalAlignment="Top"
+                                                                            Background="#CC000000"
+                                                                            Click="DeleteOperacionImageButton_Click"
+                                                                            CornerRadius="10"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                                            <SymbolIcon Foreground="White" Symbol="Cancel" />
+                                                                        </Button>
+                                                                    </Grid>
                                                                 </DataTemplate>
                                                             </ItemsRepeater.ItemTemplate>
                                                         </ItemsRepeater>
@@ -918,24 +946,52 @@
                                                         <TextBlock
                                                             FontSize="13"
                                                             FontWeight="SemiBold"
-                                                            Text="Prefacturas:" />
-                                                        <ItemsRepeater ItemsSource="{x:Bind ImagenesPrefactura, Mode=OneWay}">
+                                                            Text="Prefacturas:"
+                                                            Visibility="{x:Bind HasPrefactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                        <ItemsRepeater
+                                                            ItemsSource="{x:Bind ImagenesPrefactura, Mode=OneWay}"
+                                                            Visibility="{x:Bind HasPrefactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                                             <ItemsRepeater.Layout>
                                                                 <StackLayout Orientation="Horizontal" Spacing="8" />
                                                             </ItemsRepeater.Layout>
                                                             <ItemsRepeater.ItemTemplate>
                                                                 <DataTemplate xmlns:docmodels="using:Advance_Control.Models" x:DataType="docmodels:OperacionImageDto">
-                                                                    <Border
+                                                                    <Grid
                                                                         Width="100"
                                                                         Height="100"
                                                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                                         CornerRadius="4">
-                                                                        <Image
-                                                                            HorizontalAlignment="Center"
-                                                                            VerticalAlignment="Center"
-                                                                            Source="{x:Bind Url, Mode=OneWay}"
-                                                                            Stretch="UniformToFill" />
-                                                                    </Border>
+                                                                        <Button
+                                                                            Padding="0"
+                                                                            HorizontalAlignment="Stretch"
+                                                                            VerticalAlignment="Stretch"
+                                                                            Background="Transparent"
+                                                                            BorderThickness="0"
+                                                                            Click="ViewOperacionImageButton_Click"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Ver imagen">
+                                                                            <Image
+                                                                                HorizontalAlignment="Center"
+                                                                                VerticalAlignment="Center"
+                                                                                Source="{x:Bind Url, Mode=OneWay}"
+                                                                                Stretch="UniformToFill" />
+                                                                        </Button>
+                                                                        <!--  Delete button overlay  -->
+                                                                        <Button
+                                                                            MinWidth="20"
+                                                                            MinHeight="20"
+                                                                            Margin="0,2,2,0"
+                                                                            Padding="4"
+                                                                            HorizontalAlignment="Right"
+                                                                            VerticalAlignment="Top"
+                                                                            Background="#CC000000"
+                                                                            Click="DeleteOperacionImageButton_Click"
+                                                                            CornerRadius="10"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                                            <SymbolIcon Foreground="White" Symbol="Cancel" />
+                                                                        </Button>
+                                                                    </Grid>
                                                                 </DataTemplate>
                                                             </ItemsRepeater.ItemTemplate>
                                                         </ItemsRepeater>
@@ -944,24 +1000,52 @@
                                                         <TextBlock
                                                             FontSize="13"
                                                             FontWeight="SemiBold"
-                                                            Text="Ordenes de compra:" />
-                                                        <ItemsRepeater ItemsSource="{x:Bind ImagenesOrdenCompra, Mode=OneWay}">
+                                                            Text="Ordenes de compra:"
+                                                            Visibility="{x:Bind HasOrdenCompra, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                        <ItemsRepeater
+                                                            ItemsSource="{x:Bind ImagenesOrdenCompra, Mode=OneWay}"
+                                                            Visibility="{x:Bind HasOrdenCompra, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                                             <ItemsRepeater.Layout>
                                                                 <StackLayout Orientation="Horizontal" Spacing="8" />
                                                             </ItemsRepeater.Layout>
                                                             <ItemsRepeater.ItemTemplate>
                                                                 <DataTemplate xmlns:docmodels="using:Advance_Control.Models" x:DataType="docmodels:OperacionImageDto">
-                                                                    <Border
+                                                                    <Grid
                                                                         Width="100"
                                                                         Height="100"
                                                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                                         CornerRadius="4">
-                                                                        <Image
-                                                                            HorizontalAlignment="Center"
-                                                                            VerticalAlignment="Center"
-                                                                            Source="{x:Bind Url, Mode=OneWay}"
-                                                                            Stretch="UniformToFill" />
-                                                                    </Border>
+                                                                        <Button
+                                                                            Padding="0"
+                                                                            HorizontalAlignment="Stretch"
+                                                                            VerticalAlignment="Stretch"
+                                                                            Background="Transparent"
+                                                                            BorderThickness="0"
+                                                                            Click="ViewOperacionImageButton_Click"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Ver imagen">
+                                                                            <Image
+                                                                                HorizontalAlignment="Center"
+                                                                                VerticalAlignment="Center"
+                                                                                Source="{x:Bind Url, Mode=OneWay}"
+                                                                                Stretch="UniformToFill" />
+                                                                        </Button>
+                                                                        <!--  Delete button overlay  -->
+                                                                        <Button
+                                                                            MinWidth="20"
+                                                                            MinHeight="20"
+                                                                            Margin="0,2,2,0"
+                                                                            Padding="4"
+                                                                            HorizontalAlignment="Right"
+                                                                            VerticalAlignment="Top"
+                                                                            Background="#CC000000"
+                                                                            Click="DeleteOperacionImageButton_Click"
+                                                                            CornerRadius="10"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                                            <SymbolIcon Foreground="White" Symbol="Cancel" />
+                                                                        </Button>
+                                                                    </Grid>
                                                                 </DataTemplate>
                                                             </ItemsRepeater.ItemTemplate>
                                                         </ItemsRepeater>

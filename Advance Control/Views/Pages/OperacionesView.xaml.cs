@@ -1,5 +1,6 @@
 using Advance_Control.Models;
 using Advance_Control.Services.Cargos;
+using Advance_Control.Services.ImageViewer;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
@@ -33,6 +34,7 @@ namespace Advance_Control.Views
         private readonly IUserInfoService _userInfoService;
         private readonly ICargoImageService _cargoImageService;
         private readonly IOperacionImageService _operacionImageService;
+        private readonly IImageViewerService _imageViewerService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -58,6 +60,9 @@ namespace Advance_Control.Views
 
             // Resolver el servicio de imágenes de operación desde DI
             _operacionImageService = ((App)Application.Current).Host.Services.GetRequiredService<IOperacionImageService>();
+
+            // Resolver el servicio de visor de imágenes desde DI
+            _imageViewerService = ((App)Application.Current).Host.Services.GetRequiredService<IImageViewerService>();
 
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
@@ -1614,6 +1619,95 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al actualizar indicadores de imágenes: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Maneja el clic en una imagen de operación para abrirla en el visor
+        /// </summary>
+        private async void ViewOperacionImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionImageDto image)
+                return;
+
+            if (string.IsNullOrEmpty(image.Url))
+                return;
+
+            await _imageViewerService.ShowImageAsync(image.Url, image.Tipo);
+        }
+
+        /// <summary>
+        /// Maneja el clic en el botón de eliminar imagen de una operación (Prefactura, Hoja de Servicio u Orden de Compra)
+        /// </summary>
+        private async void DeleteOperacionImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionImageDto image)
+                return;
+
+            if (string.IsNullOrEmpty(image.FileName))
+            {
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "La imagen no tiene un nombre de archivo válido.",
+                    fechaHoraInicio: DateTime.Now);
+                return;
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea eliminar la imagen {image.FileName}?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var dialogResult = await dialog.ShowAsync();
+
+            if (dialogResult == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var operacion = ViewModel.Operaciones
+                        .FirstOrDefault(op => op.IdOperacion.HasValue && op.IdOperacion.Value == image.IdOperacion);
+
+                    if (operacion == null)
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo determinar la operación de la imagen.",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    var success = await _operacionImageService.DeleteImageAsync(image.IdOperacion, image.FileName);
+
+                    if (success)
+                    {
+                        await RefreshImageIndicatorsAsync(operacion);
+
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Imagen eliminada",
+                            nota: "La imagen se ha eliminado correctamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo eliminar la imagen. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al eliminar imagen de operación: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
             }
         }
     }
