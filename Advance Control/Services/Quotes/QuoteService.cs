@@ -1,15 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
 using Advance_Control.Models;
-using Advance_Control.Services.Logging;
 using Advance_Control.Services.LocalStorage;
+using Advance_Control.Services.Logging;
 using Advance_Control.Services.Notificacion;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Advance_Control.Services.Quotes
 {
@@ -170,6 +171,7 @@ namespace Advance_Control.Services.Quotes
                 // Generate PDF
                 var document = Document.Create(container =>
                 {
+                    var usCulture = new CultureInfo("en-US");
                     container.Page(page =>
                     {
                         page.Size(PageSizes.Letter);
@@ -203,6 +205,7 @@ namespace Advance_Control.Services.Quotes
                             .PaddingVertical(1, Unit.Centimetre)
                             .Column(column =>
                             {
+
                                 column.Spacing(5);
 
                                 // Use consistent date throughout the document
@@ -289,9 +292,9 @@ namespace Advance_Control.Services.Quotes
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
                                             .Text(cargo.DetalleRelacionado ?? "N/A");
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
-                                            .Text($"${cargo.Unitario ?? 0:N2}");
+                                            .Text($"${(cargo.Unitario ?? 0).ToString("N2", usCulture)}");
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
-                                            .AlignRight().PaddingLeft(20).Text($"${cargo.Monto ?? 0:N2}");
+                                            .AlignRight().PaddingLeft(20).Text($"${(cargo.Monto ?? 0).ToString("N2", usCulture)}");
                                     }
                                 });
 
@@ -300,22 +303,24 @@ namespace Advance_Control.Services.Quotes
                                 var iva = subtotal * IVA_RATE;
                                 var total = subtotal + iva;
 
-                                column.Item().PaddingTop(10).AlignRight().Width(200).Column(totalsCol =>
+                                
+
+                                column.Item().PaddingTop(10).AlignRight().Width(140).Column(totalsCol =>
                                 {
                                     totalsCol.Item().Row(row =>
                                     {
                                         row.RelativeItem().Text("SUBTOTAL: ").FontSize(10).AlignLeft();
-                                        row.RelativeItem().Text($"${subtotal:N2}").FontSize(10).AlignRight();
+                                        row.RelativeItem().Text($"${subtotal.ToString("N2", usCulture)}").FontSize(10).AlignRight();
                                     });
                                     totalsCol.Item().PaddingTop(3).Row(row =>
                                     {
                                         row.RelativeItem().Text("IVA (16%): ").FontSize(10).AlignLeft();
-                                        row.RelativeItem().Text($"${iva:N2}").FontSize(10).AlignRight();
+                                        row.RelativeItem().Text($"${iva.ToString("N2", usCulture)}").FontSize(10).AlignRight();
                                     });
                                     totalsCol.Item().PaddingTop(5).Row(row =>
                                     {
                                         row.RelativeItem().Text("TOTAL: ").Bold().FontSize(10).AlignLeft();
-                                        row.RelativeItem().Text($"${total:N2}").Bold().FontSize(10).FontColor(Colors.Blue.Darken2).AlignRight();
+                                        row.RelativeItem().Text($"${total.ToString("N2", usCulture)}").Bold().FontSize(10).FontColor(Colors.Blue.Darken2).AlignRight();
                                     });
                                 });
 
