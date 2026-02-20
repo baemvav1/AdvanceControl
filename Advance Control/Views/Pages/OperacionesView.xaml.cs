@@ -225,6 +225,89 @@ namespace Advance_Control.Views
             }
         }
 
+        private async void EditOperacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Obtener la operación desde el Tag del botón
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            if (!operacion.IdOperacion.HasValue)
+                return;
+
+            try
+            {
+                var montoNumberBox = new NumberBox
+                {
+                    Value = (double)operacion.Monto,
+                    PlaceholderText = "Monto de la operación",
+                    Minimum = 0,
+                    SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
+                var dialogContent = new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock { Text = "Monto:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                        montoNumberBox
+                    }
+                };
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Editar Operación",
+                    Content = dialogContent,
+                    PrimaryButtonText = "Guardar",
+                    CloseButtonText = "Cancelar",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = this.XamlRoot
+                };
+
+                var result = await dialog.ShowAsync();
+
+                if (result == ContentDialogResult.Primary)
+                {
+                    if (double.IsNaN(montoNumberBox.Value))
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Validación",
+                            nota: "El monto es obligatorio",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    var monto = Math.Round(Convert.ToDecimal(montoNumberBox.Value), 2);
+
+                    var success = await ViewModel.UpdateOperacionMontoAsync(operacion.IdOperacion.Value, monto);
+
+                    if (success)
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Operación actualizada",
+                            nota: $"El monto de la operación se actualizó correctamente a {monto:N2}",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo actualizar la operación. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al editar operación: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al editar la operación. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
         private async void DeleteOperacionButton_Click(object sender, RoutedEventArgs e)
         {
             // Obtener la operación desde el Tag del botón
