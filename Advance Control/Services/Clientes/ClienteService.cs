@@ -99,6 +99,56 @@ namespace Advance_Control.Services.Clientes
             }
         }
 
+
+        /// <summary>
+        /// Obtiene una lista de clientes según los criterios de búsqueda proporcionados
+        /// </summary>
+        public async Task<List<CustomerDto>> GetClienteByIdAsync(int idCliente, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                // Construir la URL base
+                var url = $"{_endpoints.GetEndpoint("api", "Clientes")}/{idCliente}";
+
+                // Agregar parámetros de consulta si existen
+                                
+
+                await _logger.LogInformationAsync($"Obteniendo clientes desde: {url}", "ClienteService", "GetClientesAsync");
+
+                // Realizar la petición GET
+                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                // Verificar si la respuesta fue exitosa
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al obtener clientes. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "ClienteService",
+                        "GetClientesAsync");
+                    return new List<CustomerDto>();
+                }
+
+                // Deserializar la respuesta
+                var clientes = await response.Content.ReadFromJsonAsync<List<CustomerDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                await _logger.LogInformationAsync($"Se obtuvieron {clientes?.Count ?? 0} clientes", "ClienteService", "GetClientesAsync");
+
+                return clientes ?? new List<CustomerDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al obtener clientes", ex, "ClienteService", "GetClientesAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al obtener clientes", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al obtener clientes", ex, "ClienteService", "GetClientesAsync");
+                throw;
+            }
+        }
+
         /// <summary>
         /// Crea un nuevo cliente usando el procedimiento almacenado sp_cliente_edit
         /// </summary>

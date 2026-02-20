@@ -19,6 +19,15 @@ namespace Advance_Control.Services.Clientes
         Task<List<CustomerDto>> GetClientesAsync(ClienteQueryDto? query = null, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Obtiene una lista de clientes según los criterios de búsqueda proporcionados
+        /// </summary>
+        /// <param name="query">Parámetros de búsqueda opcionales</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Lista de clientes que cumplen con los criterios</returns>
+        Task<List<CustomerDto>> GetClienteByIdAsync(int idCliente, CancellationToken cancellationToken = default);
+
+
+        /// <summary>
         /// Crea un nuevo cliente usando el procedimiento almacenado sp_cliente_edit
         /// </summary>
         /// <param name="query">Datos del cliente a crear</param>

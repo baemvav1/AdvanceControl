@@ -336,8 +336,8 @@ namespace Advance_Control.ViewModels
                 /*ClienteQueryDto queryCliente = new ClienteQueryDto
                 {
                     Rfc =  "SE" 
-                };
-                //var cliente = await _clienteService.GetClientesAsync()*/
+                };*/
+                var cliente = await _clienteService.GetClienteByIdAsync(2, cancellationToken);
                 var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre);
 
                 // Calculate total with IVA and update operation monto
