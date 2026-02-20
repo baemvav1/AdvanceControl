@@ -267,6 +267,38 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Actualiza el monto de una operación
+        /// </summary>
+        public async Task<bool> UpdateOperacionMontoAsync(int idOperacion, decimal monto, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Actualizando monto de operación {idOperacion} a {monto}...", "OperacionesViewModel", "UpdateOperacionMontoAsync");
+
+                var result = await _operacionService.UpdateOperacionMontoAsync(idOperacion, monto, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync($"Monto de operación {idOperacion} actualizado exitosamente a {monto}", "OperacionesViewModel", "UpdateOperacionMontoAsync");
+                    await LoadOperacionesAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo actualizar el monto de la operación.";
+                    await _logger.LogWarningAsync($"No se pudo actualizar el monto de la operación {idOperacion}", "OperacionesViewModel", "UpdateOperacionMontoAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al actualizar monto de operación: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al actualizar monto de operación {idOperacion}", ex, "OperacionesViewModel", "UpdateOperacionMontoAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Genera una cotización PDF para la operación especificada con sus cargos
         /// </summary>
         public async Task<string?> GenerateQuoteAsync(OperacionDto operacion, CancellationToken cancellationToken = default)

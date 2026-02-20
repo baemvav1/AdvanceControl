@@ -447,6 +447,25 @@
                                                         Margin="0,16,0,4"
                                                         FontSize="14"
                                                         FontWeight="SemiBold"
+                                                        Text="Editar" />
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <Button
+                                                            AutomationProperties.Name="Editar operación"
+                                                            Background="{ThemeResource SystemAccentColor}"
+                                                            Click="EditOperacionButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Editar monto de operación">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Edit" />
+                                                                <TextBlock Text="Editar Operación" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <TextBlock
+                                                        Margin="0,16,0,4"
+                                                        FontSize="14"
+                                                        FontWeight="SemiBold"
                                                         Text="Eliminar" />
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <Button
