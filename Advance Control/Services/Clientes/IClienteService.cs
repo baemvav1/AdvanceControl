@@ -50,6 +50,6 @@ namespace Advance_Control.Services.Clientes
         /// <param name="idUsuario">ID del usuario que realiza la operación</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default);
+        Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, CancellationToken cancellationToken = default);
     }
 }

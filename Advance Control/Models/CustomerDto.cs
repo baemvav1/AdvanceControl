@@ -51,9 +51,6 @@ namespace Advance_Control.Models
         [JsonPropertyName("estatus")]
         public bool Estatus { get; set; }
 
-        [JsonPropertyName("credencialId")]
-        public int? CredencialId { get; set; }
-
         [JsonPropertyName("notas")]
         public string Notas { get; set; } = string.Empty;
 
@@ -62,12 +59,6 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("actualizadoEn")]
         public DateTime? ActualizadoEn { get; set; }
-
-        [JsonPropertyName("idUsuarioCreador")]
-        public int IdUsuarioCreador { get; set; }
-
-        [JsonPropertyName("idUsuarioAct")]
-        public int? IdUsuarioAct { get; set; }
 
         private bool _expand = false;
 

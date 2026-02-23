@@ -173,12 +173,8 @@ namespace Advance_Control.Services.Clientes
                     queryParams.Add($"limiteCredito={query.LimiteCredito.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
                 if (query.Prioridad.HasValue)
                     queryParams.Add($"prioridad={query.Prioridad.Value}");
-                if (query.CredencialId.HasValue)
-                    queryParams.Add($"credencialId={query.CredencialId.Value}");
                 if (!string.IsNullOrWhiteSpace(query.Notas))
                     queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
-                if (query.IdUsuario.HasValue)
-                    queryParams.Add($"idUsuario={query.IdUsuario.Value}");
                 if (queryParams.Count > 0)
                     url = $"{url}?{string.Join("&", queryParams)}";
 
@@ -248,12 +244,8 @@ namespace Advance_Control.Services.Clientes
                     queryParams.Add($"limiteCredito={query.LimiteCredito.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
                 if (query.Prioridad.HasValue)
                     queryParams.Add($"prioridad={query.Prioridad.Value}");
-                if (query.CredencialId.HasValue)
-                    queryParams.Add($"credencialId={query.CredencialId.Value}");
                 if (!string.IsNullOrWhiteSpace(query.Notas))
                     queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
-                if (query.IdUsuario.HasValue)
-                    queryParams.Add($"idUsuario={query.IdUsuario.Value}");
                 if (queryParams.Count > 0)
                     url = $"{url}?{string.Join("&", queryParams)}";
 
@@ -296,18 +288,11 @@ namespace Advance_Control.Services.Clientes
         /// <summary>
         /// Elimina (soft delete) un cliente por su ID
         /// </summary>
-        public async Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, int? idUsuario, CancellationToken cancellationToken = default)
+        public async Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, CancellationToken cancellationToken = default)
         {
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "Clientes")}/{idCliente}";
-
-                if (idUsuario.HasValue)
-                {
-                    url = $"{url}?idUsuario={idUsuario.Value}";
-                }
-
-                await _logger.LogInformationAsync($"Eliminando cliente en: {url}", "ClienteService", "DeleteClienteAsync");
 
                 // Realizar la petición DELETE
                 var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);

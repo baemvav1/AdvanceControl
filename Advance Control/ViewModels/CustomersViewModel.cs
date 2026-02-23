@@ -210,8 +210,7 @@ namespace Advance_Control.ViewModels
                     LimiteCredito = limiteCredito,
                     Prioridad = prioridad,
                     Notas = notas,
-                    Estatus = estatus,
-                    IdUsuario = _userSessionService.IdUsuario > 0 ? _userSessionService.IdUsuario : (int?)null
+                    Estatus = estatus
                 };
 
                 var response = await _clienteService.CreateClienteAsync(clienteDto, cancellationToken);
@@ -271,8 +270,7 @@ namespace Advance_Control.ViewModels
                     LimiteCredito = limiteCredito,
                     Prioridad = prioridad,
                     Notas = notas,
-                    Estatus = estatus,
-                    IdUsuario = _userSessionService.IdUsuario > 0 ? _userSessionService.IdUsuario : (int?)null
+                    Estatus = estatus
                 };
 
                 var response = await _clienteService.UpdateClienteAsync(clienteDto, cancellationToken);
@@ -307,7 +305,7 @@ namespace Advance_Control.ViewModels
             {
                 await _logger.LogInformationAsync($"Eliminando cliente: {idCliente}", "CustomersViewModel", "DeleteClienteAsync");
 
-                var response = await _clienteService.DeleteClienteAsync(idCliente, null, cancellationToken);
+                var response = await _clienteService.DeleteClienteAsync(idCliente, cancellationToken);
 
                 if (response.Success)
                 {

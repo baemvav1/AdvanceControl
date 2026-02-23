@@ -16,7 +16,6 @@ namespace Advance_Control.Services.Session
         private readonly IUserInfoService _userInfoService;
         private readonly ILoggingService _logger;
 
-        public int IdUsuario => CredencialId;
         public int CredencialId { get; private set; }
         public int IdProveedor { get; private set; }
         public string? NombreCompleto { get; private set; }

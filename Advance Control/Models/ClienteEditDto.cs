@@ -61,18 +61,8 @@ namespace Advance_Control.Models
         public bool Estatus { get; set; } = true;
 
         /// <summary>
-        /// ID de credencial asociada
-        /// </summary>
-        public int? CredencialId { get; set; }
-
-        /// <summary>
         /// Notas adicionales
         /// </summary>
         public string? Notas { get; set; }
-
-        /// <summary>
-        /// ID del usuario que realiza la operación
-        /// </summary>
-        public int? IdUsuario { get; set; }
     }
 }

@@ -9,9 +9,6 @@ namespace Advance_Control.Services.Session
     /// </summary>
     public interface IUserSessionService
     {
-        /// <summary>ID del usuario autenticado (equivalente a CredencialId)</summary>
-        int IdUsuario { get; }
-
         /// <summary>ID de credencial del usuario autenticado</summary>
         int CredencialId { get; }
 

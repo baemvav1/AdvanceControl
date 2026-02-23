@@ -265,7 +265,7 @@ namespace Advance_Control.ViewModels
                 
                 if (success)
                 {
-                    // Cargar datos de sesión (IdUsuario, CredencialId, IdProveedor, etc.) una sola vez
+                    // Cargar datos de sesión (CredencialId, IdProveedor, etc.) una sola vez
                     await _userSessionService.LoadAsync();
                     LoginSuccessful = true;
                     await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {User}", "LoginViewModel", "ExecuteLogin");
@@ -494,7 +494,7 @@ namespace Advance_Control.ViewModels
                 var restored = await _authService.TryRestoreSessionAsync();
                 if (restored)
                 {
-                    // Cargar datos de sesión (IdUsuario, CredencialId, IdProveedor, etc.) una sola vez
+                    // Cargar datos de sesión (CredencialId, IdProveedor, etc.) una sola vez
                     await _userSessionService.LoadAsync();
                     _user = savedUsername;
                     _rememberMe = true;
