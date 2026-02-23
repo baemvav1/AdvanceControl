@@ -60,8 +60,6 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = null;
                 
                 await _logger.LogInformationAsync("Vista de Asesoría inicializada", "AcesoriaViewModel", "InitializeAsync");
-                
-                // TODO: Cargar datos iniciales si es necesario
             }
             catch (Exception ex)
             {
