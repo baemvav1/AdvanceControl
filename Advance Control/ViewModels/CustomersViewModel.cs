@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Logging;
-using Advance_Control.Services.UserInfo;
+using Advance_Control.Services.Session;
 
 namespace Advance_Control.ViewModels
 {
@@ -16,7 +16,7 @@ namespace Advance_Control.ViewModels
     {
         private readonly IClienteService _clienteService;
         private readonly ILoggingService _logger;
-        private readonly IUserInfoService _userInfoService;
+        private readonly IUserSessionService _userSessionService;
         private ObservableCollection<CustomerDto> _customers;
         private bool _isLoading;
         private string? _errorMessage;
@@ -26,11 +26,11 @@ namespace Advance_Control.ViewModels
         private string? _notasFilter;
         private double? _prioridadFilter;
 
-        public CustomersViewModel(IClienteService clienteService, ILoggingService logger, IUserInfoService userInfoService)
+        public CustomersViewModel(IClienteService clienteService, ILoggingService logger, IUserSessionService userSessionService)
         {
             _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
+            _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             _customers = new ObservableCollection<CustomerDto>();
         }
 
@@ -198,8 +198,6 @@ namespace Advance_Control.ViewModels
             {
                 await _logger.LogInformationAsync($"Creando cliente: {nombreComercial}", "CustomersViewModel", "CreateClienteAsync");
 
-                var userInfo = await _userInfoService.GetUserInfoAsync(cancellationToken);
-
                 var clienteDto = new ClienteEditDto
                 {
                     Operacion = "create",
@@ -213,7 +211,7 @@ namespace Advance_Control.ViewModels
                     Prioridad = prioridad,
                     Notas = notas,
                     Estatus = estatus,
-                    IdUsuario = userInfo?.CredencialId
+                    IdUsuario = _userSessionService.IdUsuario > 0 ? _userSessionService.IdUsuario : (int?)null
                 };
 
                 var response = await _clienteService.CreateClienteAsync(clienteDto, cancellationToken);
@@ -260,8 +258,6 @@ namespace Advance_Control.ViewModels
             {
                 await _logger.LogInformationAsync($"Actualizando cliente: {nombreComercial}", "CustomersViewModel", "UpdateClienteAsync");
 
-                var userInfo = await _userInfoService.GetUserInfoAsync(cancellationToken);
-
                 var clienteDto = new ClienteEditDto
                 {
                     Operacion = "update",
@@ -276,7 +272,7 @@ namespace Advance_Control.ViewModels
                     Prioridad = prioridad,
                     Notas = notas,
                     Estatus = estatus,
-                    IdUsuario = userInfo?.CredencialId
+                    IdUsuario = _userSessionService.IdUsuario > 0 ? _userSessionService.IdUsuario : (int?)null
                 };
 
                 var response = await _clienteService.UpdateClienteAsync(clienteDto, cancellationToken);

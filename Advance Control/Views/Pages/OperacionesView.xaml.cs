@@ -3,7 +3,7 @@ using Advance_Control.Services.Cargos;
 using Advance_Control.Services.ImageViewer;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Notificacion;
-using Advance_Control.Services.UserInfo;
+using Advance_Control.Services.Session;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Dialogs;
@@ -31,7 +31,7 @@ namespace Advance_Control.Views
         public OperacionesViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly ICargoService _cargoService;
-        private readonly IUserInfoService _userInfoService;
+        private readonly IUserSessionService _userSessionService;
         private readonly ICargoImageService _cargoImageService;
         private readonly IOperacionImageService _operacionImageService;
         private readonly IImageViewerService _imageViewerService;
@@ -52,8 +52,8 @@ namespace Advance_Control.Views
             // Resolver el servicio de cargos desde DI
             _cargoService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoService>();
 
-            // Resolver el servicio de información de usuario desde DI
-            _userInfoService = ((App)Application.Current).Host.Services.GetRequiredService<IUserInfoService>();
+            // Resolver el servicio de sesión de usuario desde DI
+            _userSessionService = ((App)Application.Current).Host.Services.GetRequiredService<IUserSessionService>();
 
             // Resolver el servicio de imágenes de cargo desde DI
             _cargoImageService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoImageService>();
@@ -417,9 +417,8 @@ namespace Advance_Control.Views
 
             if (!operacion.IdOperacion.HasValue)
                 return;
-            var userInfo = await _userInfoService.GetUserInfoAsync();
-            // Crear el UserControl para agregar cargo, pasando idProveedor registrado en el contacto que realiza la operacion
-            var agregarCargoControl = new Dialogs.AgregarCargoUserControl(operacion.IdOperacion.Value, userInfo?.IdProveedor);
+            // Usar IdProveedor de la sesión de usuario (cargada en el login, sin llamadas adicionales al API)
+            var agregarCargoControl = new Dialogs.AgregarCargoUserControl(operacion.IdOperacion.Value, _userSessionService.IdProveedor > 0 ? _userSessionService.IdProveedor : (int?)null);
 
             var dialog = new ContentDialog
             {

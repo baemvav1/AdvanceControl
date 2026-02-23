@@ -6,6 +6,7 @@ using Advance_Control.Services.Auth;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Security;
+using Advance_Control.Services.Session;
 
 namespace Advance_Control.ViewModels
 {
@@ -19,6 +20,7 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly INotificacionService _notificacionService;
         private readonly ISecureStorage _secureStorage;
+        private readonly IUserSessionService _userSessionService;
         
         private string _user = string.Empty;
         private string _password = string.Empty;
@@ -31,12 +33,13 @@ namespace Advance_Control.ViewModels
         private const string Key_RememberMe = "login.remember_me";
         private const string Key_SavedUsername = "login.saved_username";
 
-        public LoginViewModel(IAuthService authService, ILoggingService logger, INotificacionService notificacionService, ISecureStorage secureStorage)
+        public LoginViewModel(IAuthService authService, ILoggingService logger, INotificacionService notificacionService, ISecureStorage secureStorage, IUserSessionService userSessionService)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
             _secureStorage = secureStorage ?? throw new ArgumentNullException(nameof(secureStorage));
+            _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             
             // Inicializar el comando de login y logout
             LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
@@ -262,6 +265,8 @@ namespace Advance_Control.ViewModels
                 
                 if (success)
                 {
+                    // Cargar datos de sesión (IdUsuario, CredencialId, IdProveedor, etc.) una sola vez
+                    await _userSessionService.LoadAsync();
                     LoginSuccessful = true;
                     await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {User}", "LoginViewModel", "ExecuteLogin");
                     
@@ -328,6 +333,7 @@ namespace Advance_Control.ViewModels
                 
                 if (success)
                 {
+                    _userSessionService.Clear();
                     IsAuthenticated = false;
                     LoginSuccessful = false;
                     await _logger.LogInformationAsync($"Usuario cerró sesión exitosamente: {User}", "LoginViewModel", "ExecuteLogoutAsync");
@@ -488,6 +494,8 @@ namespace Advance_Control.ViewModels
                 var restored = await _authService.TryRestoreSessionAsync();
                 if (restored)
                 {
+                    // Cargar datos de sesión (IdUsuario, CredencialId, IdProveedor, etc.) una sola vez
+                    await _userSessionService.LoadAsync();
                     _user = savedUsername;
                     _rememberMe = true;
                     OnPropertyChanged(nameof(User));

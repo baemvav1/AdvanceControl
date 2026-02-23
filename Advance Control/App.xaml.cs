@@ -16,6 +16,7 @@ using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
+using Advance_Control.Services.Session;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Services.Refacciones;
@@ -216,7 +217,10 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
-                    // Registrar RelacionService y su HttpClient pipeline con autenticación
+                    // Singleton de sesión de usuario: se carga una vez tras el login y está disponible en toda la app
+                    services.AddSingleton<IUserSessionService, UserSessionService>();
+
+                    // Registrar RelacionServicey su HttpClient pipeline con autenticación
                     services.AddHttpClient<IRelacionService, RelacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
