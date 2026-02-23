@@ -2,9 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Advance_Control.Navigation
 {
@@ -12,7 +9,7 @@ namespace Advance_Control.Navigation
     {
         private Frame _frame;
         private readonly Dictionary<string, RouteEntry> _routes = new(StringComparer.OrdinalIgnoreCase);
-        private string _currentTag;
+        private string _currentTag = string.Empty;
 
         private record RouteEntry(Type PageType, Func<object> Factory);
 

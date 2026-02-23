@@ -301,9 +301,12 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                await _logger.LogInformationAsync($"Creando ubicación: {ubicacion?.Nombre}", "UbicacionesViewModel", "CreateUbicacionAsync");
+                if (ubicacion == null)
+                    return new ApiResponse { Success = false, Message = "La ubicación no puede ser nula" };
 
-                var result = await _ubicacionService.CreateUbicacionAsync(ubicacion!, cancellationToken);
+                await _logger.LogInformationAsync($"Creando ubicación: {ubicacion.Nombre}", "UbicacionesViewModel", "CreateUbicacionAsync");
+
+                var result = await _ubicacionService.CreateUbicacionAsync(ubicacion, cancellationToken);
 
                 if (result.Success)
                 {

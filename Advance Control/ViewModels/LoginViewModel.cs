@@ -30,7 +30,6 @@ namespace Advance_Control.ViewModels
         
         private const string Key_RememberMe = "login.remember_me";
         private const string Key_SavedUsername = "login.saved_username";
-        private const string Key_SavedPassword = "login.saved_password";
 
         public LoginViewModel(IAuthService authService, ILoggingService logger, INotificacionService notificacionService, ISecureStorage secureStorage)
         {
@@ -382,7 +381,6 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(RememberMe));
                     
                     var savedUsername = await _secureStorage.GetAsync(Key_SavedUsername);
-                    var savedPassword = await _secureStorage.GetAsync(Key_SavedPassword);
                     
                     if (!string.IsNullOrEmpty(savedUsername))
                     {
@@ -390,13 +388,7 @@ namespace Advance_Control.ViewModels
                         OnPropertyChanged(nameof(User));
                     }
                     
-                    if (!string.IsNullOrEmpty(savedPassword))
-                    {
-                        _password = savedPassword;
-                        OnPropertyChanged(nameof(Password));
-                    }
-                    
-                    await _logger.LogDebugAsync("Credenciales cargadas desde almacenamiento seguro", "LoginViewModel", "LoadSavedCredentialsAsync");
+                    await _logger.LogDebugAsync("Usuario guardado cargado desde almacenamiento seguro", "LoginViewModel", "LoadSavedCredentialsAsync");
                 }
             }
             catch (Exception ex)
@@ -413,11 +405,10 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                if (RememberMe && !string.IsNullOrEmpty(User) && !string.IsNullOrEmpty(Password))
+                if (RememberMe && !string.IsNullOrEmpty(User))
                 {
                     await _secureStorage.SetAsync(Key_SavedUsername, User);
-                    await _secureStorage.SetAsync(Key_SavedPassword, Password);
-                    await _logger.LogDebugAsync("Credenciales guardadas en almacenamiento seguro", "LoginViewModel", "SaveCredentialsAsync");
+                    await _logger.LogDebugAsync("Usuario guardado en almacenamiento seguro", "LoginViewModel", "SaveCredentialsAsync");
                 }
             }
             catch (Exception ex)
@@ -459,7 +450,6 @@ namespace Advance_Control.ViewModels
             {
                 await _secureStorage.RemoveAsync(Key_RememberMe);
                 await _secureStorage.RemoveAsync(Key_SavedUsername);
-                await _secureStorage.RemoveAsync(Key_SavedPassword);
                 _rememberMe = false;
                 OnPropertyChanged(nameof(RememberMe));
                 await _logger.LogDebugAsync("Credenciales guardadas eliminadas", "LoginViewModel", "ClearSavedCredentialsAsync");
@@ -487,47 +477,35 @@ namespace Advance_Control.ViewModels
                 }
 
                 var savedUsername = await _secureStorage.GetAsync(Key_SavedUsername);
-                var savedPassword = await _secureStorage.GetAsync(Key_SavedPassword);
 
-                if (string.IsNullOrEmpty(savedUsername) || string.IsNullOrEmpty(savedPassword))
+                if (string.IsNullOrEmpty(savedUsername))
                 {
-                    await _logger.LogDebugAsync("Auto-login omitido: No hay credenciales guardadas", "LoginViewModel", "TryAutoLoginAsync");
+                    await _logger.LogDebugAsync("Auto-login omitido: No hay usuario guardado", "LoginViewModel", "TryAutoLoginAsync");
                     return false;
                 }
 
-                await _logger.LogInformationAsync($"Intentando login automático para usuario: {savedUsername}", "LoginViewModel", "TryAutoLoginAsync");
-
-                // Establecer las credenciales
-                _user = savedUsername;
-                _password = savedPassword;
-                _rememberMe = true;
-                OnPropertyChanged(nameof(User));
-                OnPropertyChanged(nameof(Password));
-                OnPropertyChanged(nameof(RememberMe));
-
-                // Intentar autenticar
-                var success = await _authService.AuthenticateAsync(savedUsername, savedPassword);
-                
-                if (success)
+                // Auto-login usando sesión restaurada (refresh token), no contraseña guardada
+                var restored = await _authService.TryRestoreSessionAsync();
+                if (restored)
                 {
+                    _user = savedUsername;
+                    _rememberMe = true;
+                    OnPropertyChanged(nameof(User));
+                    OnPropertyChanged(nameof(RememberMe));
                     LoginSuccessful = true;
-                    await _logger.LogInformationAsync($"Login automático exitoso para usuario: {savedUsername}", "LoginViewModel", "TryAutoLoginAsync");
-                    
-                    // Mostrar notificación de bienvenida
+                    await _logger.LogInformationAsync("Sesión restaurada automáticamente", "LoginViewModel", "TryAutoLoginAsync");
+
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: "Bienvenido",
                         nota: $"Usuario {savedUsername} ha iniciado sesión automáticamente",
                         fechaHoraInicio: DateTime.Now);
-                    
+
                     return true;
                 }
-                else
-                {
-                    await _logger.LogWarningAsync($"Login automático falló para usuario: {savedUsername}", "LoginViewModel", "TryAutoLoginAsync");
-                    // Limpiar credenciales inválidas
-                    await ClearSavedCredentialsAsync();
-                    return false;
-                }
+
+                await _logger.LogDebugAsync("Auto-login omitido: no se pudo restaurar la sesión", "LoginViewModel", "TryAutoLoginAsync");
+                await ClearSavedCredentialsAsync();
+                return false;
             }
             catch (Exception ex)
             {

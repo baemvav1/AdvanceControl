@@ -47,7 +47,7 @@ namespace Advance_Control.ViewModels
         public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService)
         {
             _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
-            _clienteService = clienteService ?? throw new ArgumentException(nameof(clienteService));
+            _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
             _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
             _ubicacionService = ubicacionService ?? throw new ArgumentNullException(nameof(ubicacionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -267,38 +267,6 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Actualiza el monto de una operación
-        /// </summary>
-        public async Task<bool> UpdateOperacionMontoAsync(int idOperacion, decimal monto, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                await _logger.LogInformationAsync($"Actualizando monto de operación {idOperacion} a {monto}...", "OperacionesViewModel", "UpdateOperacionMontoAsync");
-
-                var result = await _operacionService.UpdateOperacionMontoAsync(idOperacion, monto, cancellationToken);
-
-                if (result)
-                {
-                    await _logger.LogInformationAsync($"Monto de operación {idOperacion} actualizado exitosamente a {monto}", "OperacionesViewModel", "UpdateOperacionMontoAsync");
-                    await LoadOperacionesAsync(cancellationToken);
-                }
-                else
-                {
-                    ErrorMessage = "No se pudo actualizar el monto de la operación.";
-                    await _logger.LogWarningAsync($"No se pudo actualizar el monto de la operación {idOperacion}", "OperacionesViewModel", "UpdateOperacionMontoAsync");
-                }
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error al actualizar monto de operación: {ex.Message}";
-                await _logger.LogErrorAsync($"Error al actualizar monto de operación {idOperacion}", ex, "OperacionesViewModel", "UpdateOperacionMontoAsync");
-                return false;
-            }
-        }
-
-        /// <summary>
         /// Genera una cotización PDF para la operación especificada con sus cargos
         /// </summary>
         public async Task<string?> GenerateQuoteAsync(OperacionDto operacion, CancellationToken cancellationToken = default)
@@ -365,39 +333,15 @@ namespace Advance_Control.ViewModels
                     // Log but don't fail if we can't get the location
                     await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
                 }
-                /*ClienteQueryDto queryCliente = new ClienteQueryDto
-                {
-                    Rfc =  "SE" 
-                };*/
-                var cliente = await _clienteService.GetClienteByIdAsync(2, cancellationToken);
                 var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre);
 
-                // Calculate total with IVA and update operation monto
+                // Calculate total with IVA and update local model
                 if (operacion.IdOperacion.HasValue)
                 {
-                    try
-                    {
-                        var subtotal = operacion.Cargos.Sum(c => c.Monto ?? 0);
-                        var iva = subtotal * IVA_RATE;
-                        var totalConIva = (decimal)(subtotal + iva);
-
-                        var updateResult = await _operacionService.UpdateOperacionMontoAsync(operacion.IdOperacion.Value, totalConIva, cancellationToken);
-                        if (updateResult)
-                        {
-                            // Update local model
-                            operacion.Monto = totalConIva;
-                            await _logger.LogInformationAsync($"Monto de operación {operacion.IdOperacion} actualizado a {totalConIva:N2}", "OperacionesViewModel", "GenerateQuoteAsync");
-                        }
-                        else
-                        {
-                            await _logger.LogWarningAsync($"No se pudo actualizar el monto de la operación {operacion.IdOperacion}", "OperacionesViewModel", "GenerateQuoteAsync");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log but don't fail the quote generation if update fails
-                        await _logger.LogWarningAsync($"Error al actualizar monto de operación: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
-                    }
+                    var subtotal = operacion.Cargos.Sum(c => c.Monto ?? 0);
+                    var iva = subtotal * IVA_RATE;
+                    operacion.Monto = (decimal)(subtotal + iva);
+                    await _logger.LogInformationAsync($"Monto local de operación {operacion.IdOperacion} calculado: {operacion.Monto:N2}", "OperacionesViewModel", "GenerateQuoteAsync");
                 }
 
                 await _logger.LogInformationAsync($"Cotización generada exitosamente: {filePath}", "OperacionesViewModel", "GenerateQuoteAsync");

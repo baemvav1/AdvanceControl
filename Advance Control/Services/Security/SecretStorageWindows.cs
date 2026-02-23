@@ -27,7 +27,7 @@ namespace Advance_Control.Services.Security
 
         public Task SetAsync(string key, string value)
         {
-            if (string.IsNullOrEmpty(key)) throw new ArgumentException(nameof(key));
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
             if (value is null) throw new ArgumentNullException(nameof(value));
 
             var resource = ResourceForKey(key);
@@ -85,7 +85,7 @@ namespace Advance_Control.Services.Security
 
         public Task<string?> GetAsync(string key)
         {
-            if (string.IsNullOrEmpty(key)) throw new ArgumentException(nameof(key));
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
             var resource = ResourceForKey(key);
 
             try
@@ -138,7 +138,7 @@ namespace Advance_Control.Services.Security
 
         public Task RemoveAsync(string key)
         {
-            if (string.IsNullOrEmpty(key)) throw new ArgumentException(nameof(key));
+            if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty.", nameof(key));
             var resource = ResourceForKey(key);
 
             try

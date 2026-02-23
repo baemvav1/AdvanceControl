@@ -161,16 +161,17 @@ namespace Advance_Control.Services.Auth
 
         public async Task<bool> RefreshTokenAsync(CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrEmpty(_refreshToken))
-            {
-                _refreshToken = await _secureStorage.GetAsync(Key_RefreshToken);
-            }
-
-            if (string.IsNullOrEmpty(_refreshToken)) return false;
-
             await _refreshLock.WaitAsync(cancellationToken);
             try
             {
+                // Load refresh token from storage inside the lock to avoid race conditions
+                if (string.IsNullOrEmpty(_refreshToken))
+                {
+                    _refreshToken = await _secureStorage.GetAsync(Key_RefreshToken);
+                }
+
+                if (string.IsNullOrEmpty(_refreshToken)) return false;
+
                 // En modo desarrollo con timeouts deshabilitados, no refrescar si hay token
                 if (_devMode.Enabled && _devMode.DisableAuthTimeouts)
                 {
@@ -452,8 +453,6 @@ namespace Advance_Control.Services.Auth
             public string? accessToken { get; set; }
             public string? refreshToken { get; set; }
             public int expiresIn { get; set; }
-            public string? tokenType { get; set; }
-            public object? user { get; set; }
         }
 
         private class RefreshResponseDto

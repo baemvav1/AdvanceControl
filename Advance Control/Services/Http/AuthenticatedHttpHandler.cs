@@ -114,7 +114,7 @@ namespace Advance_Control.Services.Http
         private bool ShouldAttachToken(Uri? requestUri)
         {
             if (requestUri == null) return false;
-            if (!_apiHost.HasValue()) return true; // if we couldn't determine API host, be permissive (optional policy)
+            if (!_apiHost.HasValue()) return false; // if we couldn't determine API host, deny to prevent token leakage
             try
             {
                 var host = requestUri.Host?.ToLowerInvariant();

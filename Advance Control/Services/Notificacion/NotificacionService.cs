@@ -178,7 +178,7 @@ namespace Advance_Control.Services.Notificacion
                 _notificaciones.Clear();
             }
 
-            _logger.LogInformationAsync(
+            _ = _logger.LogInformationAsync(
                 "Todas las notificaciones han sido limpiadas", 
                 "NotificacionService", 
                 "LimpiarNotificaciones");
@@ -216,7 +216,7 @@ namespace Advance_Control.Services.Notificacion
                     _notificaciones.Remove(notificacion);
                 }
 
-                _logger.LogInformationAsync(
+                _ = _logger.LogInformationAsync(
                     $"Notificación eliminada: {notificacion.Titulo}", 
                     "NotificacionService", 
                     "EliminarNotificacion");

@@ -42,14 +42,8 @@ namespace Advance_Control.Services.Clientes
                 {
                     var queryParams = new List<string>();
 
-                    if (!string.IsNullOrWhiteSpace(query.Search))
-                        queryParams.Add($"search={Uri.EscapeDataString(query.Search)}");
-
                     if (!string.IsNullOrWhiteSpace(query.Rfc))
                         queryParams.Add($"rfc={Uri.EscapeDataString(query.Rfc)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Curp))
-                        queryParams.Add($"curp={Uri.EscapeDataString(query.Curp)}");
 
                     if (!string.IsNullOrWhiteSpace(query.Notas))
                         queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
@@ -113,7 +107,7 @@ namespace Advance_Control.Services.Clientes
                 // Agregar parámetros de consulta si existen
                                 
 
-                await _logger.LogInformationAsync($"Obteniendo clientes desde: {url}", "ClienteService", "GetClientesAsync");
+                await _logger.LogInformationAsync($"Obteniendo clientes desde: {url}", "ClienteService", "GetClienteByIdAsync");
 
                 // Realizar la petición GET
                 var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
@@ -126,25 +120,25 @@ namespace Advance_Control.Services.Clientes
                         $"Error al obtener clientes. Status: {response.StatusCode}, Content: {errorContent}",
                         null,
                         "ClienteService",
-                        "GetClientesAsync");
+                        "GetClienteByIdAsync");
                     return new List<CustomerDto>();
                 }
 
-                // Deserializar la respuesta
-                var clientes = await response.Content.ReadFromJsonAsync<List<CustomerDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                // Deserializar la respuesta (el API retorna un único objeto CustomerDto)
+                var cliente = await response.Content.ReadFromJsonAsync<CustomerDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
 
-                await _logger.LogInformationAsync($"Se obtuvieron {clientes?.Count ?? 0} clientes", "ClienteService", "GetClientesAsync");
+                await _logger.LogInformationAsync($"Se obtuvo {(cliente != null ? 1 : 0)} cliente", "ClienteService", "GetClienteByIdAsync");
 
-                return clientes ?? new List<CustomerDto>();
+                return cliente != null ? new List<CustomerDto> { cliente } : new List<CustomerDto>();
             }
             catch (HttpRequestException ex)
             {
-                await _logger.LogErrorAsync("Error de red al obtener clientes", ex, "ClienteService", "GetClientesAsync");
+                await _logger.LogErrorAsync("Error de red al obtener clientes", ex, "ClienteService", "GetClienteByIdAsync");
                 throw new InvalidOperationException("Error de comunicación con el servidor al obtener clientes", ex);
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error inesperado al obtener clientes", ex, "ClienteService", "GetClientesAsync");
+                await _logger.LogErrorAsync("Error inesperado al obtener clientes", ex, "ClienteService", "GetClienteByIdAsync");
                 throw;
             }
         }
@@ -161,10 +155,37 @@ namespace Advance_Control.Services.Clientes
             {
                 var url = _endpoints.GetEndpoint("api", "Clientes");
 
+                // Construir parámetros de consulta según lo que el API espera [FromQuery]
+                var queryParams = new List<string>();
+                if (!string.IsNullOrWhiteSpace(query.Rfc))
+                    queryParams.Add($"rfc={Uri.EscapeDataString(query.Rfc)}");
+                if (!string.IsNullOrWhiteSpace(query.RazonSocial))
+                    queryParams.Add($"razonSocial={Uri.EscapeDataString(query.RazonSocial)}");
+                if (!string.IsNullOrWhiteSpace(query.NombreComercial))
+                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(query.NombreComercial)}");
+                if (!string.IsNullOrWhiteSpace(query.RegimenFiscal))
+                    queryParams.Add($"regimenFiscal={Uri.EscapeDataString(query.RegimenFiscal)}");
+                if (!string.IsNullOrWhiteSpace(query.UsoCfdi))
+                    queryParams.Add($"usoCfdi={Uri.EscapeDataString(query.UsoCfdi)}");
+                if (query.DiasCredito.HasValue)
+                    queryParams.Add($"diasCredito={query.DiasCredito.Value}");
+                if (query.LimiteCredito.HasValue)
+                    queryParams.Add($"limiteCredito={query.LimiteCredito.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+                if (query.Prioridad.HasValue)
+                    queryParams.Add($"prioridad={query.Prioridad.Value}");
+                if (query.CredencialId.HasValue)
+                    queryParams.Add($"credencialId={query.CredencialId.Value}");
+                if (!string.IsNullOrWhiteSpace(query.Notas))
+                    queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
+                if (query.IdUsuario.HasValue)
+                    queryParams.Add($"idUsuario={query.IdUsuario.Value}");
+                if (queryParams.Count > 0)
+                    url = $"{url}?{string.Join("&", queryParams)}";
+
                 await _logger.LogInformationAsync($"Creando cliente en: {url}", "ClienteService", "CreateClienteAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsJsonAsync(url, query, cancellationToken).ConfigureAwait(false);
+                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -209,10 +230,37 @@ namespace Advance_Control.Services.Clientes
             {
                 var url = $"{_endpoints.GetEndpoint("api", "Clientes")}/{query.IdCliente}";
 
+                // Construir parámetros de consulta según lo que el API espera [FromQuery]
+                var queryParams = new List<string>();
+                if (!string.IsNullOrWhiteSpace(query.Rfc))
+                    queryParams.Add($"rfc={Uri.EscapeDataString(query.Rfc)}");
+                if (!string.IsNullOrWhiteSpace(query.RazonSocial))
+                    queryParams.Add($"razonSocial={Uri.EscapeDataString(query.RazonSocial)}");
+                if (!string.IsNullOrWhiteSpace(query.NombreComercial))
+                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(query.NombreComercial)}");
+                if (!string.IsNullOrWhiteSpace(query.RegimenFiscal))
+                    queryParams.Add($"regimenFiscal={Uri.EscapeDataString(query.RegimenFiscal)}");
+                if (!string.IsNullOrWhiteSpace(query.UsoCfdi))
+                    queryParams.Add($"usoCfdi={Uri.EscapeDataString(query.UsoCfdi)}");
+                if (query.DiasCredito.HasValue)
+                    queryParams.Add($"diasCredito={query.DiasCredito.Value}");
+                if (query.LimiteCredito.HasValue)
+                    queryParams.Add($"limiteCredito={query.LimiteCredito.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
+                if (query.Prioridad.HasValue)
+                    queryParams.Add($"prioridad={query.Prioridad.Value}");
+                if (query.CredencialId.HasValue)
+                    queryParams.Add($"credencialId={query.CredencialId.Value}");
+                if (!string.IsNullOrWhiteSpace(query.Notas))
+                    queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
+                if (query.IdUsuario.HasValue)
+                    queryParams.Add($"idUsuario={query.IdUsuario.Value}");
+                if (queryParams.Count > 0)
+                    url = $"{url}?{string.Join("&", queryParams)}";
+
                 await _logger.LogInformationAsync($"Actualizando cliente en: {url}", "ClienteService", "UpdateClienteAsync");
 
                 // Realizar la petición PUT
-                var response = await _http.PutAsJsonAsync(url, query, cancellationToken).ConfigureAwait(false);
+                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)

@@ -71,7 +71,7 @@ namespace Advance_Control.Services.Logging
                 using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
                 cts.CancelAfter(TimeSpan.FromSeconds(5));
 
-                var response = await _http.PostAsJsonAsync(url, logEntry, cts.Token);
+                _ = await _http.PostAsJsonAsync(url, logEntry, cts.Token);
                 
                 // No lanzar excepción si falla, para evitar que el logging cause problemas
                 // en la aplicación principal

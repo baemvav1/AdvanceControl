@@ -280,22 +280,10 @@ namespace Advance_Control.Views
 
                     var monto = Math.Round(Convert.ToDecimal(montoNumberBox.Value), 2);
 
-                    var success = await ViewModel.UpdateOperacionMontoAsync(operacion.IdOperacion.Value, monto);
-
-                    if (success)
-                    {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Operación actualizada",
-                            nota: $"El monto de la operación se actualizó correctamente a {monto:N2}",
-                            fechaHoraInicio: DateTime.Now);
-                    }
-                    else
-                    {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo actualizar la operación. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
-                    }
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "No disponible",
+                        nota: "La actualización de monto no está soportada por el servidor.",
+                        fechaHoraInicio: DateTime.Now);
                 }
             }
             catch (Exception ex)

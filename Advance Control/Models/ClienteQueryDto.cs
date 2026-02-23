@@ -8,19 +8,9 @@ namespace Advance_Control.Models
     public class ClienteQueryDto
     {
         /// <summary>
-        /// Búsqueda en razon_social OR nombre_comercial (LIKE)
-        /// </summary>
-        public string? Search { get; set; }
-
-        /// <summary>
         /// Búsqueda parcial por RFC (LIKE)
         /// </summary>
         public string? Rfc { get; set; }
-
-        /// <summary>
-        /// Búsqueda parcial por CURP (LIKE)
-        /// </summary>
-        public string? Curp { get; set; }
 
         /// <summary>
         /// Búsqueda parcial en notas (LIKE)
