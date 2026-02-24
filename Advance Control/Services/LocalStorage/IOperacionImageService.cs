@@ -67,12 +67,23 @@ namespace Advance_Control.Services.LocalStorage
         Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Sube un archivo PDF de factura para una operación (solo se permite uno)
+        /// </summary>
+        Task<OperacionImageDto?> UploadFacturaAsync(int idOperacion, Stream pdfStream, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene la factura PDF de una operación si existe
+        /// </summary>
+        Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Indica si existe una factura PDF para la operación
+        /// </summary>
+        Task<bool> HasFacturaAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Elimina una imagen de operación
         /// </summary>
-        /// <param name="idOperacion">ID de la operación</param>
-        /// <param name="fileName">Nombre del archivo a eliminar</param>
-        /// <param name="cancellationToken">Token de cancelación</param>
-        /// <returns>True si se eliminó correctamente</returns>
         Task<bool> DeleteImageAsync(int idOperacion, string fileName, CancellationToken cancellationToken = default);
     }
 }

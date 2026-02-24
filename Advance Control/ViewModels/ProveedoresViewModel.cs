@@ -164,5 +164,101 @@ namespace Advance_Control.ViewModels
                 await _logger.LogErrorAsync("Error al limpiar filtros", ex, "ProveedoresViewModel", "ClearFiltersAsync");
             }
         }
+
+        /// <summary>
+        /// Crea un nuevo proveedor
+        /// </summary>
+        public async Task<bool> CreateProveedorAsync(string rfc, string? razonSocial, string? nombreComercial, string? nota, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync("Creando nuevo proveedor...", "ProveedoresViewModel", "CreateProveedorAsync");
+
+                var result = await _proveedorService.CreateProveedorAsync(rfc, razonSocial, nombreComercial, nota, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync("Proveedor creado exitosamente", "ProveedoresViewModel", "CreateProveedorAsync");
+                    await LoadProveedoresAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo crear el proveedor.";
+                    await _logger.LogWarningAsync("No se pudo crear el proveedor", "ProveedoresViewModel", "CreateProveedorAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Error al crear proveedor. Por favor, intente nuevamente.";
+                await _logger.LogErrorAsync("Error al crear proveedor", ex, "ProveedoresViewModel", "CreateProveedorAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un proveedor existente
+        /// </summary>
+        public async Task<bool> UpdateProveedorAsync(int id, string? rfc, string? razonSocial, string? nombreComercial, string? nota, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Actualizando proveedor {id}...", "ProveedoresViewModel", "UpdateProveedorAsync");
+
+                var result = await _proveedorService.UpdateProveedorAsync(id, rfc, razonSocial, nombreComercial, nota, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync($"Proveedor {id} actualizado exitosamente", "ProveedoresViewModel", "UpdateProveedorAsync");
+                    await LoadProveedoresAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo actualizar el proveedor.";
+                    await _logger.LogWarningAsync($"No se pudo actualizar el proveedor {id}", "ProveedoresViewModel", "UpdateProveedorAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Error al actualizar proveedor. Por favor, intente nuevamente.";
+                await _logger.LogErrorAsync($"Error al actualizar proveedor {id}", ex, "ProveedoresViewModel", "UpdateProveedorAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Elimina un proveedor por su ID
+        /// </summary>
+        public async Task<bool> DeleteProveedorAsync(int id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Eliminando proveedor {id}...", "ProveedoresViewModel", "DeleteProveedorAsync");
+
+                var result = await _proveedorService.DeleteProveedorAsync(id, cancellationToken);
+
+                if (result)
+                {
+                    await _logger.LogInformationAsync($"Proveedor {id} eliminado exitosamente", "ProveedoresViewModel", "DeleteProveedorAsync");
+                    await LoadProveedoresAsync(cancellationToken);
+                }
+                else
+                {
+                    ErrorMessage = "No se pudo eliminar el proveedor.";
+                    await _logger.LogWarningAsync($"No se pudo eliminar el proveedor {id}", "ProveedoresViewModel", "DeleteProveedorAsync");
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = "Error al eliminar proveedor. Por favor, intente nuevamente.";
+                await _logger.LogErrorAsync($"Error al eliminar proveedor {id}", ex, "ProveedoresViewModel", "DeleteProveedorAsync");
+                return false;
+            }
+        }
     }
 }

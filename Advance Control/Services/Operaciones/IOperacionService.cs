@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,9 +22,16 @@ namespace Advance_Control.Services.Operaciones
         /// <summary>
         /// Elimina (soft delete) una operación por su ID
         /// </summary>
-        /// <param name="idOperacion">ID de la operación a eliminar</param>
-        /// <param name="cancellationToken">Token de cancelación</param>
-        /// <returns>Resultado de la operación</returns>
         Task<bool> DeleteOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Actualiza una operación (monto, fechaFinal, etc.)
+        /// </summary>
+        Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, double monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Reabre una operación limpiando su fechaFinal
+        /// </summary>
+        Task<bool> ReopenOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
     }
 }

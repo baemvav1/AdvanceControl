@@ -247,7 +247,6 @@ namespace Advance_Control.ViewModels
                 if (result)
                 {
                     await _logger.LogInformationAsync($"Operación {idOperacion} eliminada exitosamente", "OperacionesViewModel", "DeleteOperacionAsync");
-                    // Recargar la lista de operaciones
                     await LoadOperacionesAsync(cancellationToken);
                 }
                 else
@@ -262,6 +261,42 @@ namespace Advance_Control.ViewModels
             {
                 ErrorMessage = $"Error al eliminar operación: {ex.Message}";
                 await _logger.LogErrorAsync($"Error al eliminar operación {idOperacion}", ex, "OperacionesViewModel", "DeleteOperacionAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza el monto u otros campos de una operación
+        /// </summary>
+        public async Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, double monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Actualizando operación {idOperacion}...", "OperacionesViewModel", "UpdateOperacionAsync");
+                return await _operacionService.UpdateOperacionAsync(idOperacion, idTipo, idCliente, idEquipo, idAtiende, monto, nota, fechaFinal, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al actualizar operación: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al actualizar operación {idOperacion}", ex, "OperacionesViewModel", "UpdateOperacionAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Reabre una operación limpiando su fechaFinal
+        /// </summary>
+        public async Task<bool> ReopenOperacionAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Reabriendo operación {idOperacion}...", "OperacionesViewModel", "ReopenOperacionAsync");
+                return await _operacionService.ReopenOperacionAsync(idOperacion, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al reabrir operación: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al reabrir operación {idOperacion}", ex, "OperacionesViewModel", "ReopenOperacionAsync");
                 return false;
             }
         }

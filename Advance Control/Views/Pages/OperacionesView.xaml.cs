@@ -280,10 +280,22 @@ namespace Advance_Control.Views
 
                     var monto = Math.Round(Convert.ToDecimal(montoNumberBox.Value), 2);
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "No disponible",
-                        nota: "La actualización de monto no está soportada por el servidor.",
-                        fechaHoraInicio: DateTime.Now);
+                    var success = await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, monto: (double)monto);
+                    if (success)
+                    {
+                        operacion.Monto = monto;
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Operación actualizada",
+                            nota: $"El monto se actualizó a {monto:C2}",
+                            fechaHoraInicio: DateTime.Now);
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "No se pudo actualizar el monto. Por favor, intente nuevamente.",
+                            fechaHoraInicio: DateTime.Now);
+                    }
                 }
             }
             catch (Exception ex)
@@ -456,6 +468,13 @@ namespace Advance_Control.Views
                         // Recargar los cargos para obtener los datos completos desde la API
                         operacion.CargosLoaded = false;
                         await LoadCargosForOperacionAsync(operacion);
+
+                        // Actualizar el monto de la operación con la suma de los cargos
+                        if (operacion.TotalMonto > 0)
+                        {
+                            await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, monto: operacion.TotalMonto);
+                            operacion.Monto = (decimal)operacion.TotalMonto;
+                        }
 
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Cargo creado",
@@ -1677,10 +1696,12 @@ namespace Advance_Control.Views
                 var prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
                 var hojasServicio = await _operacionImageService.GetHojasServicioAsync(operacion.IdOperacion.Value);
                 var ordenesCompra = await _operacionImageService.GetOrdenComprasAsync(operacion.IdOperacion.Value);
+                var hasFactura = await _operacionImageService.HasFacturaAsync(operacion.IdOperacion.Value);
 
                 operacion.HasPrefactura = prefacturas.Count > 0;
                 operacion.HasHojaServicio = hojasServicio.Count > 0;
                 operacion.HasOrdenCompra = ordenesCompra.Count > 0;
+                operacion.HasFactura = hasFactura;
 
                 operacion.ImagenesPrefactura = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(prefacturas);
                 operacion.ImagenesHojaServicio = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(hojasServicio);
@@ -1778,6 +1799,162 @@ namespace Advance_Control.Views
                         nota: "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.",
                         fechaHoraInicio: DateTime.Now);
                 }
+            }
+        }
+        /// <summary>
+        /// Maneja el clic en el botón de cargar factura PDF (finaliza la operación)
+        /// </summary>
+        private async void UploadFacturaButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            if (!operacion.IdOperacion.HasValue || operacion.IdOperacion.Value <= 0)
+                return;
+
+            try
+            {
+                var picker = new FileOpenPicker();
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+                picker.ViewMode = PickerViewMode.List;
+                picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+                picker.FileTypeFilter.Add(".pdf");
+
+                var file = await picker.PickSingleFileAsync();
+                if (file == null)
+                    return;
+
+                using var stream = await file.OpenStreamForReadAsync();
+
+                var result = await _operacionImageService.UploadFacturaAsync(operacion.IdOperacion.Value, stream);
+
+                if (result != null)
+                {
+                    // Finalizar la operación con la fecha de hoy
+                    var fechaFinal = DateTime.Today;
+                    var updated = await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, fechaFinal: fechaFinal);
+
+                    if (updated)
+                    {
+                        operacion.FechaFinal = fechaFinal;
+                    }
+
+                    operacion.HasFactura = true;
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Factura cargada",
+                        nota: "La factura PDF se guardó correctamente y la operación fue finalizada.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo guardar la factura. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al cargar factura: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al cargar la factura. Por favor, intente nuevamente.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        /// <summary>
+        /// Abre la factura PDF con el visor predeterminado del sistema
+        /// </summary>
+        private async void VerFacturaButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            if (!operacion.IdOperacion.HasValue)
+                return;
+
+            try
+            {
+                var factura = await _operacionImageService.GetFacturaAsync(operacion.IdOperacion.Value);
+                if (factura == null || string.IsNullOrEmpty(factura.Url))
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se encontró el archivo de factura.",
+                        fechaHoraInicio: DateTime.Now);
+                    return;
+                }
+
+                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(factura.Url);
+                await Windows.System.Launcher.LaunchFileAsync(file);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al abrir factura: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "No se pudo abrir el archivo de factura.",
+                    fechaHoraInicio: DateTime.Now);
+            }
+        }
+
+        /// <summary>
+        /// Reabre una operación limpiando su fechaFinal
+        /// </summary>
+        private async void ReabrirOperacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            if (!operacion.IdOperacion.HasValue)
+                return;
+
+            var dialog = new ContentDialog
+            {
+                Title = "Reabrir operación",
+                Content = "¿Está seguro de que desea reabrir esta operación? Se eliminará la fecha de finalización.",
+                PrimaryButtonText = "Reabrir",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+                return;
+
+            try
+            {
+                var success = await ViewModel.ReopenOperacionAsync(operacion.IdOperacion.Value);
+
+                if (success)
+                {
+                    operacion.FechaFinal = null;
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Operación reabierta",
+                        nota: "La operación fue reabierta correctamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                else
+                {
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "No se pudo reabrir la operación. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al reabrir operación: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarNotificacionAsync(
+                    titulo: "Error",
+                    nota: "Ocurrió un error al reabrir la operación.",
+                    fechaHoraInicio: DateTime.Now);
             }
         }
     }

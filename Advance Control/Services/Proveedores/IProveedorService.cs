@@ -17,5 +17,20 @@ namespace Advance_Control.Services.Proveedores
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Lista de proveedores que cumplen con los criterios</returns>
         Task<List<ProveedorDto>> GetProveedoresAsync(ProveedorQueryDto? query = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Crea un nuevo proveedor
+        /// </summary>
+        Task<bool> CreateProveedorAsync(string rfc, string? razonSocial, string? nombreComercial, string? nota, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Actualiza un proveedor existente
+        /// </summary>
+        Task<bool> UpdateProveedorAsync(int id, string? rfc, string? razonSocial, string? nombreComercial, string? nota, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Elimina (soft delete) un proveedor por su ID
+        /// </summary>
+        Task<bool> DeleteProveedorAsync(int id, CancellationToken cancellationToken = default);
     }
 }

@@ -27,6 +27,136 @@ namespace Advance_Control.Services.Proveedores
         }
 
         /// <summary>
+        /// Crea un nuevo proveedor
+        /// </summary>
+        public async Task<bool> CreateProveedorAsync(string rfc, string? razonSocial, string? nombreComercial, string? nota, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "proveedores");
+                var queryParams = new List<string> { $"rfc={Uri.EscapeDataString(rfc)}" };
+
+                if (!string.IsNullOrWhiteSpace(razonSocial))
+                    queryParams.Add($"razonSocial={Uri.EscapeDataString(razonSocial)}");
+                if (!string.IsNullOrWhiteSpace(nombreComercial))
+                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(nombreComercial)}");
+                if (!string.IsNullOrWhiteSpace(nota))
+                    queryParams.Add($"nota={Uri.EscapeDataString(nota)}");
+
+                url = $"{url}?{string.Join("&", queryParams)}";
+
+                await _logger.LogInformationAsync($"Creando proveedor en: {url}", "ProveedorService", "CreateProveedorAsync");
+
+                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync($"Error al crear proveedor. Status: {response.StatusCode}, Content: {errorContent}", null, "ProveedorService", "CreateProveedorAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync("Proveedor creado correctamente", "ProveedorService", "CreateProveedorAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al crear proveedor", ex, "ProveedorService", "CreateProveedorAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al crear proveedor", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al crear proveedor", ex, "ProveedorService", "CreateProveedorAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un proveedor existente
+        /// </summary>
+        public async Task<bool> UpdateProveedorAsync(int id, string? rfc, string? razonSocial, string? nombreComercial, string? nota, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "proveedores");
+                url = $"{url}/{id}";
+
+                var queryParams = new List<string>();
+                if (!string.IsNullOrWhiteSpace(rfc))
+                    queryParams.Add($"rfc={Uri.EscapeDataString(rfc)}");
+                if (!string.IsNullOrWhiteSpace(razonSocial))
+                    queryParams.Add($"razonSocial={Uri.EscapeDataString(razonSocial)}");
+                if (!string.IsNullOrWhiteSpace(nombreComercial))
+                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(nombreComercial)}");
+                if (!string.IsNullOrWhiteSpace(nota))
+                    queryParams.Add($"nota={Uri.EscapeDataString(nota)}");
+
+                if (queryParams.Count > 0)
+                    url = $"{url}?{string.Join("&", queryParams)}";
+
+                await _logger.LogInformationAsync($"Actualizando proveedor {id} en: {url}", "ProveedorService", "UpdateProveedorAsync");
+
+                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync($"Error al actualizar proveedor. Status: {response.StatusCode}, Content: {errorContent}", null, "ProveedorService", "UpdateProveedorAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Proveedor {id} actualizado correctamente", "ProveedorService", "UpdateProveedorAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al actualizar proveedor", ex, "ProveedorService", "UpdateProveedorAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al actualizar proveedor", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al actualizar proveedor", ex, "ProveedorService", "UpdateProveedorAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Elimina (soft delete) un proveedor por su ID
+        /// </summary>
+        public async Task<bool> DeleteProveedorAsync(int id, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "proveedores");
+                url = $"{url}/{id}";
+
+                await _logger.LogInformationAsync($"Eliminando proveedor {id} en: {url}", "ProveedorService", "DeleteProveedorAsync");
+
+                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync($"Error al eliminar proveedor. Status: {response.StatusCode}, Content: {errorContent}", null, "ProveedorService", "DeleteProveedorAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Proveedor {id} eliminado correctamente", "ProveedorService", "DeleteProveedorAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al eliminar proveedor", ex, "ProveedorService", "DeleteProveedorAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al eliminar proveedor", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al eliminar proveedor", ex, "ProveedorService", "DeleteProveedorAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Obtiene una lista de proveedores según los criterios de búsqueda proporcionados
         /// </summary>
         public async Task<List<ProveedorDto>> GetProveedoresAsync(ProveedorQueryDto? query = null, CancellationToken cancellationToken = default)

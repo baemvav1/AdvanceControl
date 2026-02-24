@@ -74,17 +74,63 @@ namespace Advance_Control.Models
         [JsonPropertyName("fechaInicio")]
         public DateTime? FechaInicio { get; set; }
 
+        private DateTime? _fechaFinal;
+
         /// <summary>
         /// Fecha de finalización de la operación
         /// </summary>
         [JsonPropertyName("fechaFinal")]
-        public DateTime? FechaFinal { get; set; }
+        public DateTime? FechaFinal
+        {
+            get => _fechaFinal;
+            set
+            {
+                if (_fechaFinal != value)
+                {
+                    _fechaFinal = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsFinalized));
+                    OnPropertyChanged(nameof(IsEditable));
+                }
+            }
+        }
+
+        /// <summary>
+        /// True si la operación tiene fecha final (está finalizada)
+        /// </summary>
+        [JsonIgnore]
+        public bool IsFinalized => FechaFinal != null;
+
+        /// <summary>
+        /// True si la operación puede ser editada (no está finalizada)
+        /// </summary>
+        [JsonIgnore]
+        public bool IsEditable => FechaFinal == null;
 
         /// <summary>
         /// Indica si la operación ha finalizado
         /// </summary>
         [JsonPropertyName("finalizado")]
         public bool Finalizado { get; set; }
+
+        private bool _hasFactura = false;
+
+        /// <summary>
+        /// Indica si existe factura PDF para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public bool HasFactura
+        {
+            get => _hasFactura;
+            set
+            {
+                if (_hasFactura != value)
+                {
+                    _hasFactura = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         private bool _expand = false;
 

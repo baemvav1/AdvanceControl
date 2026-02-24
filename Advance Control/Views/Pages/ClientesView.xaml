@@ -223,44 +223,7 @@
                                             </PivotItem>
                                             
                                             <!-- Información de Auditoría -->
-                                            <PivotItem Header="Auditoría">
-                                                <Grid Padding="8">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                    </Grid.RowDefinitions>
-                                                    
-                                                    <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Creado En:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind CreadoEn}" />
-                                                    </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Usuario Creador:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdUsuarioCreador}" />
-                                                    </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Actualizado En:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind ActualizadoEn}" />
-                                                    </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Usuario Actualizador:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdUsuarioAct}" />
-                                                    </StackPanel>
-                                                    
-                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Credencial ID:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind CredencialId}" />
-                                                    </StackPanel>
-                                                </Grid>
-                                            </PivotItem>
+                                            
 
                                             <PivotItem Header="Facturas">
                                                 

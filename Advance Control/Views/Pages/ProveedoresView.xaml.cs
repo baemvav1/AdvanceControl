@@ -587,6 +587,199 @@ namespace Advance_Control.Views
             }
         }
 
+        private async void NuevoButton_Click(object sender, RoutedEventArgs e)
+        {
+            var rfcTextBox = new TextBox { PlaceholderText = "RFC (obligatorio)", Margin = new Thickness(0, 0, 0, 8) };
+            var razonSocialTextBox = new TextBox { PlaceholderText = "Razón Social", Margin = new Thickness(0, 0, 0, 8) };
+            var nombreComercialTextBox = new TextBox { PlaceholderText = "Nombre Comercial", Margin = new Thickness(0, 0, 0, 8) };
+            var notaTextBox = new TextBox
+            {
+                PlaceholderText = "Nota (opcional)",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 80,
+                MaxHeight = 150,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var dialogContent = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "RFC:" },
+                    rfcTextBox,
+                    new TextBlock { Text = "Razón Social:" },
+                    razonSocialTextBox,
+                    new TextBlock { Text = "Nombre Comercial:" },
+                    nombreComercialTextBox,
+                    new TextBlock { Text = "Nota:" },
+                    notaTextBox
+                }
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "Nuevo Proveedor",
+                Content = dialogContent,
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    if (string.IsNullOrWhiteSpace(rfcTextBox.Text))
+                    {
+                        await _notificacionService.MostrarNotificacionAsync(
+                            titulo: "Error",
+                            nota: "El RFC es obligatorio.",
+                            fechaHoraInicio: DateTime.Now);
+                        return;
+                    }
+
+                    var success = await ViewModel.CreateProveedorAsync(
+                        rfcTextBox.Text,
+                        string.IsNullOrWhiteSpace(razonSocialTextBox.Text) ? null : razonSocialTextBox.Text,
+                        string.IsNullOrWhiteSpace(nombreComercialTextBox.Text) ? null : nombreComercialTextBox.Text,
+                        string.IsNullOrWhiteSpace(notaTextBox.Text) ? null : notaTextBox.Text
+                    );
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: success ? "Proveedor creado" : "Error",
+                        nota: success ? "Proveedor creado correctamente" : "No se pudo crear el proveedor. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al crear proveedor: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al crear el proveedor. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async void EditProveedorButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.ProveedorDto proveedor)
+                return;
+
+            var rfcTextBox = new TextBox { Text = proveedor.Rfc ?? string.Empty, PlaceholderText = "RFC", Margin = new Thickness(0, 0, 0, 8) };
+            var razonSocialTextBox = new TextBox { Text = proveedor.RazonSocial ?? string.Empty, PlaceholderText = "Razón Social", Margin = new Thickness(0, 0, 0, 8) };
+            var nombreComercialTextBox = new TextBox { Text = proveedor.NombreComercial ?? string.Empty, PlaceholderText = "Nombre Comercial", Margin = new Thickness(0, 0, 0, 8) };
+            var notaTextBox = new TextBox
+            {
+                Text = proveedor.Nota ?? string.Empty,
+                PlaceholderText = "Nota (opcional)",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 80,
+                MaxHeight = 150,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var dialogContent = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "RFC:" },
+                    rfcTextBox,
+                    new TextBlock { Text = "Razón Social:" },
+                    razonSocialTextBox,
+                    new TextBlock { Text = "Nombre Comercial:" },
+                    nombreComercialTextBox,
+                    new TextBlock { Text = "Nota:" },
+                    notaTextBox
+                }
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "Editar Proveedor",
+                Content = dialogContent,
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var success = await ViewModel.UpdateProveedorAsync(
+                        proveedor.IdProveedor,
+                        string.IsNullOrWhiteSpace(rfcTextBox.Text) ? null : rfcTextBox.Text,
+                        string.IsNullOrWhiteSpace(razonSocialTextBox.Text) ? null : razonSocialTextBox.Text,
+                        string.IsNullOrWhiteSpace(nombreComercialTextBox.Text) ? null : nombreComercialTextBox.Text,
+                        string.IsNullOrWhiteSpace(notaTextBox.Text) ? null : notaTextBox.Text
+                    );
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: success ? "Proveedor actualizado" : "Error",
+                        nota: success ? "Proveedor actualizado correctamente" : "No se pudo actualizar el proveedor. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al actualizar proveedor: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al actualizar el proveedor. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
+        private async void DeleteProveedorButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.ProveedorDto proveedor)
+                return;
+
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Está seguro de que desea eliminar el proveedor \"{proveedor.RazonSocial ?? proveedor.Rfc}\"?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var success = await ViewModel.DeleteProveedorAsync(proveedor.IdProveedor);
+
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: success ? "Proveedor eliminado" : "Error",
+                        nota: success ? "Proveedor eliminado correctamente" : "No se pudo eliminar el proveedor. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error al eliminar proveedor: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarNotificacionAsync(
+                        titulo: "Error",
+                        nota: "Ocurrió un error al eliminar el proveedor. Por favor, intente nuevamente.",
+                        fechaHoraInicio: DateTime.Now);
+                }
+            }
+        }
+
         /// <summary>
         /// Parses a price string value using invariant culture for consistent number parsing.
         /// </summary>

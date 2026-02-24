@@ -394,6 +394,16 @@
                                                                 Foreground="#C49A4E"
                                                                 Text="🛒 Orden Compra" />
                                                         </Border>
+                                                        <Border
+                                                            Padding="6,3"
+                                                            Background="#3A1A5C"
+                                                            CornerRadius="4"
+                                                            Visibility="{x:Bind HasFactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                            <TextBlock
+                                                                FontSize="11"
+                                                                Foreground="#A04EC4"
+                                                                Text="🧾 Factura" />
+                                                        </Border>
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
@@ -480,6 +490,28 @@
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>
+
+                                                    <TextBlock
+                                                        Margin="0,16,0,4"
+                                                        FontSize="14"
+                                                        FontWeight="SemiBold"
+                                                        Text="Reabrir"
+                                                        Visibility="{x:Bind IsFinalized, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                    <StackPanel
+                                                        Orientation="Horizontal"
+                                                        Spacing="8"
+                                                        Visibility="{x:Bind IsFinalized, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        <Button
+                                                            Background="#1A5C3A"
+                                                            Click="ReabrirOperacionButton_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Quitar fecha final y reabrir la operación">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Refresh" />
+                                                                <TextBlock Text="Reabrir Operación" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
                                                 </StackPanel>
                                             </PivotItem>
 
@@ -502,6 +534,7 @@
                                                         Spacing="8">
                                                         <Button
                                                             Click="AddCargoButton_Click"
+                                                            IsEnabled="{x:Bind IsEditable, Mode=OneWay}"
                                                             Style="{StaticResource AccentButtonStyle}"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
@@ -878,6 +911,7 @@
                                                             <Button
                                                                 Background="{ThemeResource SystemAccentColor}"
                                                                 Click="UploadPrefacturaButton_Click"
+                                                                IsEnabled="{x:Bind IsEditable, Mode=OneWay}"
                                                                 Tag="{x:Bind}"
                                                                 ToolTipService.ToolTip="Cargar imagen de prefactura">
                                                                 <StackPanel Orientation="Horizontal" Spacing="4">
@@ -888,6 +922,7 @@
                                                             <Button
                                                                 Background="{ThemeResource SystemAccentColor}"
                                                                 Click="UploadHojaServicioButton_Click"
+                                                                IsEnabled="{x:Bind IsEditable, Mode=OneWay}"
                                                                 Tag="{x:Bind}"
                                                                 ToolTipService.ToolTip="Cargar imagen de hoja de servicio">
                                                                 <StackPanel Orientation="Horizontal" Spacing="4">
@@ -898,11 +933,45 @@
                                                             <Button
                                                                 Background="{ThemeResource SystemAccentColor}"
                                                                 Click="UploadOrdenCompraButton_Click"
+                                                                IsEnabled="{x:Bind IsEditable, Mode=OneWay}"
                                                                 Tag="{x:Bind}"
                                                                 ToolTipService.ToolTip="Cargar imagen de orden de compra">
                                                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                                                     <SymbolIcon Symbol="Camera" />
                                                                     <TextBlock Text="Orden Compra" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                            <Button
+                                                                Background="#4A1A7A"
+                                                                Click="UploadFacturaButton_Click"
+                                                                IsEnabled="{x:Bind IsEditable, Mode=OneWay}"
+                                                                Tag="{x:Bind}"
+                                                                ToolTipService.ToolTip="Cargar factura PDF (finaliza la operación)">
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <SymbolIcon Symbol="Attach" />
+                                                                    <TextBlock Text="Factura" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </StackPanel>
+
+                                                        <!--  Factura  -->
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            FontWeight="SemiBold"
+                                                            Text="Factura:"
+                                                            Visibility="{x:Bind HasFactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                        <StackPanel
+                                                            Orientation="Horizontal"
+                                                            Spacing="8"
+                                                            Visibility="{x:Bind HasFactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                            <Button
+                                                                Background="{ThemeResource SystemAccentColor}"
+                                                                Click="VerFacturaButton_Click"
+                                                                Tag="{x:Bind}"
+                                                                ToolTipService.ToolTip="Abrir factura PDF">
+                                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                    <SymbolIcon Symbol="OpenFile" />
+                                                                    <TextBlock Text="Ver Factura" />
                                                                 </StackPanel>
                                                             </Button>
                                                         </StackPanel>

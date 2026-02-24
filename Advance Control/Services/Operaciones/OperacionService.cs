@@ -126,7 +126,6 @@ namespace Advance_Control.Services.Operaciones
         {
             try
             {
-                // Construir la URL con parámetros de consulta
                 var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}?idOperacion={idOperacion}";
 
                 await _logger.LogInformationAsync($"Eliminando operación {idOperacion} en: {url}", "OperacionService", "DeleteOperacionAsync");
@@ -138,9 +137,7 @@ namespace Advance_Control.Services.Operaciones
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
                     await _logger.LogErrorAsync(
                         $"Error al eliminar operación. Status: {response.StatusCode}, Content: {errorContent}",
-                        null,
-                        "OperacionService",
-                        "DeleteOperacionAsync");
+                        null, "OperacionService", "DeleteOperacionAsync");
                     return false;
                 }
 
@@ -155,6 +152,96 @@ namespace Advance_Control.Services.Operaciones
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error inesperado al eliminar operación", ex, "OperacionService", "DeleteOperacionAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza una operación (monto, fechaFinal, etc.)
+        /// </summary>
+        public async Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, double monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var queryParams = new System.Collections.Generic.List<string>
+                {
+                    $"idOperacion={idOperacion}",
+                    $"idTipo={idTipo}",
+                    $"idCliente={idCliente}",
+                    $"idEquipo={idEquipo}",
+                    $"idAtiende={idAtiende}",
+                    $"monto={monto}"
+                };
+
+                if (!string.IsNullOrWhiteSpace(nota))
+                    queryParams.Add($"nota={Uri.EscapeDataString(nota)}");
+
+                if (fechaFinal.HasValue)
+                    queryParams.Add($"fechaFinal={fechaFinal.Value:yyyy-MM-dd}");
+
+                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}?{string.Join("&", queryParams)}";
+
+                await _logger.LogInformationAsync($"Actualizando operación {idOperacion} en: {url}", "OperacionService", "UpdateOperacionAsync");
+
+                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al actualizar operación. Status: {response.StatusCode}, Content: {errorContent}",
+                        null, "OperacionService", "UpdateOperacionAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Operación {idOperacion} actualizada correctamente", "OperacionService", "UpdateOperacionAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al actualizar operación", ex, "OperacionService", "UpdateOperacionAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al actualizar operación", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al actualizar operación", ex, "OperacionService", "UpdateOperacionAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Reabre una operación limpiando su fechaFinal
+        /// </summary>
+        public async Task<bool> ReopenOperacionAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}/reabrir?idOperacion={idOperacion}";
+
+                await _logger.LogInformationAsync($"Reabriendo operación {idOperacion} en: {url}", "OperacionService", "ReopenOperacionAsync");
+
+                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al reabrir operación. Status: {response.StatusCode}, Content: {errorContent}",
+                        null, "OperacionService", "ReopenOperacionAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Operación {idOperacion} reabierta correctamente", "OperacionService", "ReopenOperacionAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al reabrir operación", ex, "OperacionService", "ReopenOperacionAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al reabrir operación", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al reabrir operación", ex, "OperacionService", "ReopenOperacionAsync");
                 throw;
             }
         }

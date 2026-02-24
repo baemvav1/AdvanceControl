@@ -144,6 +144,83 @@ namespace Advance_Control.Services.LocalStorage
         }
 
         /// <summary>
+        /// Sube un archivo PDF de factura para una operación (solo se permite uno, reemplaza el anterior)
+        /// </summary>
+        public async Task<OperacionImageDto?> UploadFacturaAsync(int idOperacion, Stream pdfStream, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Guardando factura PDF para operación {idOperacion}", "LocalOperacionImageService", "UploadFacturaAsync");
+
+                var operacionFolder = GetOperacionFolder(idOperacion);
+                var fileName = $"{idOperacion}_Factura.pdf";
+                var fullPath = Path.Combine(operacionFolder, fileName);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                await using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                {
+                    await pdfStream.CopyToAsync(fileStream, cancellationToken);
+                }
+
+                var result = new OperacionImageDto
+                {
+                    FileName = fileName,
+                    Url = fullPath,
+                    IdOperacion = idOperacion,
+                    ImageNumber = 1,
+                    Tipo = "Factura"
+                };
+
+                await _logger.LogInformationAsync($"Factura guardada exitosamente: {fileName}", "LocalOperacionImageService", "UploadFacturaAsync");
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Operación cancelada al guardar factura", "LocalOperacionImageService", "UploadFacturaAsync");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al guardar factura", ex, "LocalOperacionImageService", "UploadFacturaAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Obtiene la factura PDF de una operación si existe
+        /// </summary>
+        public Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            var folder = Path.Combine(_basePath, $"Operacion_{idOperacion}");
+            var fileName = $"{idOperacion}_Factura.pdf";
+            var fullPath = Path.Combine(folder, fileName);
+
+            if (!File.Exists(fullPath))
+                return Task.FromResult<OperacionImageDto?>(null);
+
+            return Task.FromResult<OperacionImageDto?>(new OperacionImageDto
+            {
+                FileName = fileName,
+                Url = fullPath,
+                IdOperacion = idOperacion,
+                ImageNumber = 1,
+                Tipo = "Factura"
+            });
+        }
+
+        /// <summary>
+        /// Indica si existe una factura PDF para la operación
+        /// </summary>
+        public Task<bool> HasFacturaAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            var folder = Path.Combine(_basePath, $"Operacion_{idOperacion}");
+            var fileName = $"{idOperacion}_Factura.pdf";
+            var fullPath = Path.Combine(folder, fileName);
+            return Task.FromResult(File.Exists(fullPath));
+        }
+
+        /// <summary>
         /// Obtiene todas las imágenes de prefacturas de una operación
         /// </summary>
         public async Task<List<OperacionImageDto>> GetPrefacturasAsync(int idOperacion, CancellationToken cancellationToken = default)
