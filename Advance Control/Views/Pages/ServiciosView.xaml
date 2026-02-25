@@ -135,7 +135,7 @@
                                             Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        x:Name="Body" Grid.Row="1" Padding="8" Background="Black"
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
@@ -155,36 +155,36 @@
                                                     <StackPanel
                                                         Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="ID Servicio:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Servicio:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind IdServicio}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Concepto:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Concepto:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Concepto}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Costo:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Costo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Costo}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Estatus:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Estatus:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Estatus}" />
                                                     </StackPanel>
 
@@ -206,7 +206,7 @@
                                             <PivotItem Header="Descripción">
                                                 <StackPanel Padding="8">
                                                     <TextBlock
-                                                        FontSize="13" Foreground="WhiteSmoke"
+                                                        FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                         Text="{x:Bind Descripcion}"
                                                         TextWrapping="Wrap" />
                                                 </StackPanel>

@@ -10,7 +10,7 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
-            <RowDefinition Height="10" />
+            <RowDefinition Height="28" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0" Grid.Column="0">
             <Grid.RowDefinitions>
@@ -25,23 +25,30 @@
                         <ColumnDefinition Width="1*" />
                     </Grid.ColumnDefinitions>
                     <Grid Grid.Column="0">
-                        <!--  Boton login/logout  -->
-                        <Button
-                            x:Name="LogIn" Width="50" Height="32" VerticalAlignment="Center"
-                            Background="{ThemeResource AccentFillColorDefaultBrush}"
-                            Click="LoginButton_Click" CornerRadius="16">
+                        <!--  Botón login/logout con PersonPicture  -->
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Button
+                                x:Name="LogIn" Width="36" Height="36" VerticalAlignment="Center"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                Click="LoginButton_Click" CornerRadius="18" Padding="0"
+                                ToolTipService.ToolTip="Cuenta de usuario">
+                                <TextBlock
+                                    HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="13" FontWeight="Bold"
+                                    Foreground="White"
+                                    Text="{Binding UserInitials}" />
+                            </Button>
                             <TextBlock
-                                HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="12" FontWeight="Bold"
-                                Foreground="White"
-                                Text="{Binding UserInitials}" />
-                        </Button>
+                                VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                Text="{Binding UserType}" />
+                        </StackPanel>
                     </Grid>
 
-                    <Grid Grid.Column="1"> 
+                    <Grid Grid.Column="1">
                         <TextBlock
-                            VerticalAlignment="Center" FontSize="14" FontWeight="SemiBold"
-                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                            Text="{Binding UserType}" HorizontalAlignment="Center"/>
+                            VerticalAlignment="Center" FontSize="15" FontWeight="Bold"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Text="Advance Control" HorizontalAlignment="Center" />
                     </Grid>
 
                     <Grid Grid.Column="2">
@@ -49,15 +56,15 @@
                             x:Name="ToggleNotificacionesButton"
                             Click="ToggleNotificaciones_Click" 
                             HorizontalAlignment="Right"
-                            Width="32"
-                            Height="32"
+                            Width="36"
+                            Height="36"
                             Padding="0"
-                            CornerRadius="16"
+                            CornerRadius="18"
+                            ToolTipService.ToolTip="Notificaciones"
                             Background="{Binding HasUnseenNotifications, Converter={StaticResource NotificationColorConverter}}">
-                            <TextBlock 
-                                Text="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToArrowConverter}}"
-                                FontSize="18"
-                                FontWeight="Bold"
+                            <FontIcon 
+                                Glyph="&#xEA8F;"
+                                FontSize="16"
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center" />
                         </Button>
@@ -69,32 +76,84 @@
                     x:Name="nvSample" IsBackButtonVisible="Auto"
                     IsBackEnabled="{Binding IsBackEnabled, Mode=OneWay}">
                     <NavigationView.MenuItems>
-                        <NavigationViewItem
-                            Content="Operaciones" Icon="Calculator" Tag="Operaciones" />
-                        <NavigationViewItem
-                            Content="Asesoría" Icon="ContactInfo" Tag="Asesoria" />
-                        <NavigationViewItem
-                            Content="Mantenimiento" Icon="Repair" Tag="Mantenimiento" />
-                        <NavigationViewItem
-                            Content="Clientes" Icon="People" Tag="Clientes" />
-                        <NavigationViewItem
-                            Content="Entidades" Icon="Library" Tag="Entidades" />
-                        <NavigationViewItem
-                            Content="Contactos" Icon="Contact2" Tag="Contactos" />
-                        <NavigationViewItem
-                            Content="Equipos" Icon="AllApps" Tag="Equipos" />
-                        <NavigationViewItem
-                            Content="Refacciones" Icon="Setting" Tag="Refacciones" />
-                        <NavigationViewItem
-                            Content="Servicios" Icon="Repair" Tag="Servicios" />
-                        <NavigationViewItem
-                            Content="Proveedores" Icon="Contact" Tag="Proveedores" />
-                        <NavigationViewItem
-                            Content="Ubicaciones" Icon="MapPin" Tag="Ubicaciones" />
-                        <NavigationViewItem
-                            Content="Áreas" Icon="Map" Tag="Areas" />
-                        <NavigationViewItem
-                            Content="Es Cuenta" Icon="Account" Tag="EsCuenta" />
+                        <NavigationViewItem Content="Inicio" Tag="Inicio">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE80F;" />
+                            </NavigationViewItem.Icon>
+                        </NavigationViewItem>
+                        <NavigationViewItemSeparator />
+
+                        <!-- Grupo: Negocios -->
+                        <NavigationViewItem Content="Negocios" IsExpanded="True">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE9F9;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Operaciones" Icon="Calculator" Tag="Operaciones" />
+                                <NavigationViewItem
+                                    Content="Asesoría" Icon="ContactInfo" Tag="Asesoria" />
+                                <NavigationViewItem
+                                    Content="Mantenimiento" Icon="Repair" Tag="Mantenimiento" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
+                        <!-- Grupo: Clientes -->
+                        <NavigationViewItem Content="Clientes" IsExpanded="True">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE716;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Clientes" Icon="People" Tag="Clientes" />
+                                <NavigationViewItem
+                                    Content="Contactos" Icon="Contact2" Tag="Contactos" />
+                                <NavigationViewItem
+                                    Content="Entidades" Icon="Library" Tag="Entidades" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
+                        <!-- Grupo: Catálogos -->
+                        <NavigationViewItem Content="Catálogos" IsExpanded="True">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE7C8;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Equipos" Icon="AllApps" Tag="Equipos" />
+                                <NavigationViewItem
+                                    Content="Refacciones" Icon="Setting" Tag="Refacciones" />
+                                <NavigationViewItem
+                                    Content="Servicios" Icon="Repair" Tag="Servicios" />
+                                <NavigationViewItem
+                                    Content="Proveedores" Icon="Contact" Tag="Proveedores" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
+                        <!-- Grupo: Ubicaciones -->
+                        <NavigationViewItem Content="Ubicaciones" IsExpanded="True">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE81D;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Ubicaciones" Icon="MapPin" Tag="Ubicaciones" />
+                                <NavigationViewItem
+                                    Content="Áreas" Icon="Map" Tag="Areas" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
+                        <!-- Grupo: Financiero -->
+                        <NavigationViewItem Content="Financiero" IsExpanded="True">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE7BF;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Estado de Cuenta" Icon="Account" Tag="EsCuenta" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>
@@ -111,8 +170,8 @@
 
             <!--  Header  -->
             <TextBlock
-                Grid.Row="0" Margin="0,0,0,10" FontFamily="Consolas" FontSize="16"
-                FontWeight="Bold" Text="NOTIFICACIONES" />
+                Grid.Row="0" Margin="0,0,0,10" FontSize="14"
+                FontWeight="SemiBold" Text="Notificaciones" />
 
             <!--  Notification List  -->
             <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
@@ -190,9 +249,20 @@
             </ScrollViewer>
         </Grid>
         <Grid
-            Grid.Row="1" Grid.ColumnSpan="2" Background="Green">
-            <TextBlock
-                FontFamily="Consolas" FontSize="8" Text="EN LINEA" />
+            Grid.Row="1" Grid.ColumnSpan="2" Padding="12,0"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="0,1,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                <Ellipse Width="8" Height="8" Fill="{ThemeResource SystemFillColorSuccessBrush}" />
+                <TextBlock FontSize="11" VerticalAlignment="Center"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="En línea" />
+            </StackPanel>
         </Grid>
     </Grid>
 

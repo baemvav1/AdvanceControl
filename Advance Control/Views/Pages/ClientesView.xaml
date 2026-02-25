@@ -18,6 +18,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -28,9 +29,14 @@
                 <TextBlock
                     FontSize="32" FontWeight="Bold" Text="Clientes" />
                 <Button
-                    x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
-                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo cliente">
-                    <SymbolIcon Symbol="Add" />
+                    x:Name="Nuevo" VerticalAlignment="Center"
+                    Click="NuevoButton_Click"
+                    Style="{StaticResource AccentButtonStyle}"
+                    ToolTipService.ToolTip="Crear nuevo cliente">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <SymbolIcon Symbol="Add" />
+                        <TextBlock VerticalAlignment="Center" Text="Nuevo cliente" />
+                    </StackPanel>
                 </Button>
             </StackPanel>
             <TextBlock
@@ -41,66 +47,69 @@
 
         <!--  Filtros  -->
         <StackPanel
-            Grid.Row="1" Margin="0,0,0,16" Spacing="12">
-            <TextBlock
-                FontSize="16" FontWeight="SemiBold" Text="Filtros de búsqueda" />
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
-                <TextBox
-                    Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Búsqueda"
-                    PlaceholderText="Razón social o nombre comercial"
-                    Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                <TextBox
-                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="RFC"
-                    PlaceholderText="RFC del cliente"
-                    Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                <TextBox
-                    Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="CURP"
-                    PlaceholderText="CURP del cliente"
-                    Text="{x:Bind ViewModel.CurpFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                <TextBox
-                    Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="Notas"
-                    PlaceholderText="Búsqueda en notas"
-                    Text="{x:Bind ViewModel.NotasFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-
-                <!--  Value="{x:Bind ViewModel.PrioridadFilter, Mode=TwoWay}"  -->
-
-                <NumberBox
-                    Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Prioridad"
-                    Minimum="0" PlaceholderText="Prioridad exacta" SpinButtonPlacementMode="Inline" />
-
-                <StackPanel
-                    Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
-                    <Button
-                        Click="SearchButton_Click" Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}" />
-                    <Button Click="ClearButton_Click" Content="Limpiar" />
-                </StackPanel>
-            </Grid>
+            Grid.Row="1" Margin="0,0,0,8" Spacing="8">
+            <Button
+                x:Name="ToggleFiltrosButton"
+                Click="ToggleFiltros_Click"
+                Content="Filtros" />
         </StackPanel>
 
-        <!--  Lista de clientes  -->
-        <Grid Grid.Row="2">
-            <!--  Loading indicator  -->
-            <ProgressRing
-                Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
-                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+        <!--  Panel de Filtros colapsable  -->
+        <Grid
+            Grid.Row="2"
+            x:Name="Filtros"
+            Visibility="Visible">
+            <StackPanel Margin="0,0,0,16" Spacing="12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
+                    <TextBox
+                        Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Búsqueda"
+                        PlaceholderText="Razón social o nombre comercial"
+                        Text="{x:Bind ViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBox
+                        Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="RFC"
+                        PlaceholderText="RFC del cliente"
+                        Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBox
+                        Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="CURP"
+                        PlaceholderText="CURP del cliente"
+                        Text="{x:Bind ViewModel.CurpFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <TextBox
+                        Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="Notas"
+                        PlaceholderText="Búsqueda en notas"
+                        Text="{x:Bind ViewModel.NotasFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                    <NumberBox
+                        Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Prioridad"
+                        Minimum="0" PlaceholderText="Prioridad exacta" SpinButtonPlacementMode="Inline" />
+
+                    <StackPanel
+                        Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right"
+                        VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
+                        <Button
+                            Click="SearchButton_Click" Content="Buscar"
+                            Style="{StaticResource AccentButtonStyle}" />
+                        <Button Click="ClearButton_Click" Content="Limpiar" />
+                    </StackPanel>
+                </Grid>
+            </StackPanel>
+        </Grid>
+
+        <!--  Lista de clientes  -->
+        <Grid Grid.Row="3">
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Customers, Mode=OneWay}">
@@ -123,6 +132,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
                                         <!--  Información principal del cliente  -->
@@ -143,9 +153,28 @@
                                             </StackPanel>
                                         </StackPanel>
 
+                                        <!--  Botones de acción rápida  -->
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                            <Button
+                                                Background="Transparent" BorderThickness="0"
+                                                Click="EditClienteButton_Click"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Editar cliente">
+                                                <SymbolIcon Symbol="Edit" />
+                                            </Button>
+                                            <Button
+                                                Background="Transparent" BorderThickness="0"
+                                                Click="DeleteClienteButton_Click"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Eliminar cliente">
+                                                <SymbolIcon Symbol="Delete"
+                                                    Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
+                                            </Button>
+                                        </StackPanel>
+
                                         <!--  Botón para expandir/colapsar  -->
                                         <Button
-                                            Grid.Column="1"
+                                            Grid.Column="2"
                                             VerticalAlignment="Center"
                                             Background="Transparent"
                                             BorderThickness="0"
@@ -155,7 +184,7 @@
                                     </Grid>
                                     <Grid
                                         Grid.Row="1" 
-                                        Background="Black" 
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}" 
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                                         Padding="8"
@@ -174,23 +203,23 @@
                                                     </Grid.RowDefinitions>
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Régimen Fiscal:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind RegimenFiscal}" TextWrapping="Wrap" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Régimen Fiscal:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind RegimenFiscal}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Uso CFDI:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind UsoCfdi}" TextWrapping="Wrap" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Uso CFDI:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind UsoCfdi}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Estatus:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Estatus}" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Estatus:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Cliente:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdCliente}" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Cliente:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind IdCliente}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
@@ -204,13 +233,13 @@
                                                     </Grid.ColumnDefinitions>
                                                     
                                                     <StackPanel Grid.Column="0" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Días de Crédito:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind DiasCredito}" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Días de Crédito:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind DiasCredito}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Column="1" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Límite de Crédito:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind LimiteCredito}" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Límite de Crédito:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind LimiteCredito}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
@@ -218,7 +247,7 @@
                                             <!-- Notas -->
                                             <PivotItem Header="Notas">
                                                 <StackPanel Padding="8">
-                                                    <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Notas}" TextWrapping="Wrap" />
+                                                    <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind Notas}" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </PivotItem>
                                             
@@ -229,30 +258,17 @@
                                                 
                                             </PivotItem>
 
-                                            <!-- Acciones -->
-                                            <PivotItem Header="Acciones">
-                                                <StackPanel
-                                                    Padding="8" Orientation="Horizontal" Spacing="8">
-                                                    <Button
-                                                        Click="EditClienteButton_Click" Content="Editar"
-                                                        Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Editar cliente" />
-                                                    <Button
-                                                        Click="DeleteClienteButton_Click" Content="Eliminar"
-                                                        Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Eliminar cliente" />
-                                                </StackPanel>
-                                            </PivotItem>
+                                            <!-- Acciones eliminadas del Pivot; ahora están en el header de la tarjeta -->
 
                                             <!-- Contactos Relacionados -->
                                             <PivotItem Header="Contactos">
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <StackPanel Orientation="Horizontal" Spacing="5">
                                                         <TextBlock
-                                                            FontSize="14" FontWeight="SemiBold" Foreground="WhiteSmoke" Text="Contactos Relacionados" />
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Contactos Relacionados" />
                                                         <Button
-                                                            x:Name="NuevoContacto" VerticalAlignment="Center" Background="Black" BorderThickness="0"
-                                                            Click="NuevoContacto_Click" ToolTipService.ToolTip="Agregar contacto" Foreground="DarkGray"
+                                                            x:Name="NuevoContacto" VerticalAlignment="Center" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="0"
+                                                            Click="NuevoContacto_Click" ToolTipService.ToolTip="Agregar contacto" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Add" />
@@ -274,7 +290,7 @@
                                                         <ItemsRepeater.ItemTemplate>
                                                             <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:ContactoDto">
                                                                 <Border
-                                                                    Padding="12" Background="DarkGray"
+                                                                    Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                                     BorderThickness="1" CornerRadius="4">
                                                                     <Grid>
@@ -285,23 +301,23 @@
                                                                         </Grid.ColumnDefinitions>
                                                                         <StackPanel Grid.Column="0" Spacing="2">
                                                                             <TextBlock
-                                                                                FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind NombreCompleto}" />
                                                                             <TextBlock
-                                                                                FontSize="12" Foreground="Gray"
+                                                                                FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                                                 Text="{x:Bind Cargo}" />
                                                                             <TextBlock
-                                                                                FontSize="11" Foreground="DimGray"
+                                                                                FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                                                 Text="{x:Bind Correo}"
                                                                                 Visibility="{x:Bind Correo, Converter={StaticResource NullToVisibilityConverter}}" />
                                                                             <TextBlock
-                                                                                FontSize="11" Foreground="DimGray"
+                                                                                FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                                                 Text="{x:Bind Telefono}"
                                                                                 Visibility="{x:Bind Telefono, Converter={StaticResource NullToVisibilityConverter}}" />
                                                                         </StackPanel>
                                                                         <TextBlock
                                                                             Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
-                                                                            Foreground="Gray">
+                                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                                                             <Run Text="ID: " />
                                                                             <Run Text="{x:Bind ContactoId}" />
                                                                         </TextBlock>
@@ -311,7 +327,7 @@
                                                                                 AutomationProperties.Name="Eliminar contacto del cliente" Background="Transparent" BorderThickness="0" Click="DeleteContactoButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 ToolTipService.ToolTip="Quitar contacto del cliente">
-                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Delete" />
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
                                                                             </Button>
                                                                         </StackPanel>
                                                                     </Grid>
@@ -322,7 +338,7 @@
 
                                                     <!--  Mensaje cuando no hay contactos  -->
                                                     <TextBlock
-                                                        FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay contactos relacionados"
+                                                        FontSize="12" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="No hay contactos relacionados"
                                                         Visibility="{x:Bind ShowNoContactosMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                                 </StackPanel>
                                             </PivotItem>
@@ -335,6 +351,35 @@
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
             </ScrollViewer>
+
+            <!--  Estado vacío  -->
+            <StackPanel
+                HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12"
+                IsHitTestVisible="False"
+                Visibility="{x:Bind ViewModel.IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                <FontIcon Glyph="&#xE716;" FontSize="48"
+                          Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock
+                    FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Sin clientes" />
+                <TextBlock
+                    FontSize="13" HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Text="No se encontraron clientes con los filtros actuales." />
+                <Button IsHitTestVisible="True"
+                    HorizontalAlignment="Center" Click="ClearButton_Click"
+                    Content="Limpiar filtros" />
+            </StackPanel>
+
+            <!--  Loading overlay  -->
+            <Grid
+                Visibility="{x:Bind ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                <Rectangle Fill="{ThemeResource ApplicationPageBackgroundThemeBrush}" Opacity="0.7" />
+                <ProgressRing
+                    Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    IsActive="True" />
+            </Grid>
         </Grid>
     </Grid>
 </Page>

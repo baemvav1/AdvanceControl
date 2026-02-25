@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Session;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,23 +18,29 @@ namespace Advance_Control.ViewModels
     {
         private readonly IMantenimientoService _mantenimientoService;
         private readonly ILoggingService _logger;
+        private readonly IUserSessionService _userSession;
         private ObservableCollection<MantenimientoDto> _mantenimientos;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _identificadorFilter;
         private int _idClienteFilter;
 
-        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger)
+        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession)
         {
             _mantenimientoService = mantenimientoService ?? throw new ArgumentNullException(nameof(mantenimientoService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _userSession = userSession ?? throw new ArgumentNullException(nameof(userSession));
             _mantenimientos = new ObservableCollection<MantenimientoDto>();
         }
 
         public ObservableCollection<MantenimientoDto> Mantenimientos
         {
             get => _mantenimientos;
-            set => SetProperty(ref _mantenimientos, value);
+            set
+            {
+                if (SetProperty(ref _mantenimientos, value))
+                    OnPropertyChanged(nameof(IsEmpty));
+            }
         }
 
         /// <summary>
@@ -42,8 +49,17 @@ namespace Advance_Control.ViewModels
         public bool IsLoading
         {
             get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                    OnPropertyChanged(nameof(IsEmpty));
+            }
         }
+
+        /// <summary>
+        /// Indica si la lista está vacía y no está cargando
+        /// </summary>
+        public bool IsEmpty => !_isLoading && _mantenimientos.Count == 0;
 
         /// <summary>
         /// Mensaje de error para mostrar al usuario
@@ -104,6 +120,7 @@ namespace Advance_Control.ViewModels
                 {
                     Mantenimientos.Add(mantenimiento);
                 }
+                OnPropertyChanged(nameof(IsEmpty));
 
                 await _logger.LogInformationAsync($"Se cargaron {mantenimientos.Count} mantenimientos exitosamente", "MttoViewModel", "LoadMantenimientosAsync");
             }
@@ -187,9 +204,10 @@ namespace Advance_Control.ViewModels
         {
             try
             {
+                var credencialId = _userSession.IsLoaded ? _userSession.CredencialId : 0;
                 await _logger.LogInformationAsync($"Creando nuevo mantenimiento...", "MttoViewModel", "CreateMantenimientoAsync");
 
-                var result = await _mantenimientoService.CreateMantenimientoAsync(idTipoMantenimiento, idCliente, idEquipo, nota, cancellationToken);
+                var result = await _mantenimientoService.CreateMantenimientoAsync(idTipoMantenimiento, idCliente, idEquipo, nota, credencialId, cancellationToken);
 
                 if (result)
                 {

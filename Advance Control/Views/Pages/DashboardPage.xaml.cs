@@ -1,0 +1,45 @@
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
+using Microsoft.Extensions.DependencyInjection;
+using Advance_Control.ViewModels;
+using Advance_Control.Navigation;
+
+namespace Advance_Control.Views.Pages
+{
+    /// <summary>
+    /// Página de inicio del sistema.
+    /// Muestra bienvenida personalizada al usuario autenticado y secciones
+    /// placeholder que a futuro mostrarán métricas, tareas y actividad reciente.
+    /// </summary>
+    public sealed partial class DashboardPage : Page
+    {
+        public DashboardViewModel ViewModel { get; }
+        private readonly INavigationService _navigationService;
+
+        public DashboardPage()
+        {
+            ViewModel = ((App)App.Current).Host.Services.GetRequiredService<DashboardViewModel>();
+            _navigationService = ((App)App.Current).Host.Services.GetRequiredService<INavigationService>();
+            this.InitializeComponent();
+            this.DataContext = ViewModel;
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            await ViewModel.LoadAsync();
+        }
+
+        private async void RefreshActividad_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+            => await ViewModel.LoadActividadAsync();
+
+        private void IrOperaciones_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+            => _navigationService.Navigate("Operaciones");
+
+        private void IrMantenimiento_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+            => _navigationService.Navigate("Mantenimiento");
+
+        private void IrClientes_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+            => _navigationService.Navigate("Clientes");
+    }
+}

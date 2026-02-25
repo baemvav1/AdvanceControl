@@ -59,7 +59,11 @@ namespace Advance_Control.ViewModels
         public ObservableCollection<OperacionDto> Operaciones
         {
             get => _operaciones;
-            set => SetProperty(ref _operaciones, value);
+            set
+            {
+                if (SetProperty(ref _operaciones, value))
+                    OnPropertyChanged(nameof(IsEmpty));
+            }
         }
 
         /// <summary>
@@ -68,8 +72,17 @@ namespace Advance_Control.ViewModels
         public bool IsLoading
         {
             get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                    OnPropertyChanged(nameof(IsEmpty));
+            }
         }
+
+        /// <summary>
+        /// Indica si la lista está vacía y no está cargando
+        /// </summary>
+        public bool IsEmpty => !_isLoading && _operaciones.Count == 0;
 
         /// <summary>
         /// Mensaje de error para mostrar al usuario
@@ -185,6 +198,7 @@ namespace Advance_Control.ViewModels
                 {
                     Operaciones.Add(operacion);
                 }
+                OnPropertyChanged(nameof(IsEmpty));
 
                 await _logger.LogInformationAsync($"Se cargaron {operaciones.Count} operaciones exitosamente", "OperacionesViewModel", "LoadOperacionesAsync");
             }

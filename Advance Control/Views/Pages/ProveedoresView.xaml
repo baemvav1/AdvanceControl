@@ -147,7 +147,7 @@
                                     </Grid>
                                     <Grid
                                         Grid.Row="1" 
-                                        Background="Black" 
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}" 
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}"
                                         Padding="8"
@@ -166,18 +166,18 @@
                                                     </Grid.RowDefinitions>
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="ID Proveedor:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind IdProveedor}" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Proveedor:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind IdProveedor}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Estatus:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Estatus}" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Estatus:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                     
                                                     <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,4,0,0">
-                                                        <TextBlock FontSize="12" Foreground="Gray" Text="Nota:" />
-                                                        <TextBlock FontSize="13" Foreground="WhiteSmoke" Text="{x:Bind Nota}" TextWrapping="Wrap" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Nota:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind Nota}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
@@ -192,7 +192,7 @@
                                                             Click="NuevaRelacionRefaccion_Click" ToolTipService.ToolTip="Crear nueva relacion con refacción" Foreground="DarkGray"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="Black" Text="Nueva Refaccion" VerticalAlignment="Center" />
+                                                                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Nueva Refaccion" VerticalAlignment="Center" />
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>
@@ -211,7 +211,7 @@
                                                         <ItemsRepeater.ItemTemplate>
                                                             <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionProveedorRefaccionDto">
                                                                 <Border
-                                                                    Padding="12" Background="DarkGray"
+                                                                    Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                                     BorderThickness="1" CornerRadius="4">
                                                                     <Grid>
@@ -222,25 +222,25 @@
                                                                         </Grid.ColumnDefinitions>
                                                                         <StackPanel Grid.Column="0" Spacing="2">
                                                                             <TextBlock
-                                                                                FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind Marca}" />
                                                                             <TextBlock
-                                                                                FontSize="12" Foreground="Black"
+                                                                                FontSize="12" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind Serie}" />
                                                                             <TextBlock
-                                                                                FontSize="12" Foreground="Black">
+                                                                                FontSize="12" Foreground="{ThemeResource TextFillColorPrimaryBrush}">
                                                                                 <Run Text="Precio: $" />
                                                                                 <Run FontWeight="SemiBold" Text="{x:Bind Precio}" />
                                                                             </TextBlock>
                                                                             <TextBlock
-                                                                                FontSize="11" FontStyle="Italic" Foreground="DimGray"
+                                                                                FontSize="11" FontStyle="Italic" Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                                                 Text="{x:Bind Nota}"
                                                                                 TextWrapping="Wrap"
                                                                                 Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
                                                                         </StackPanel>
                                                                         <TextBlock
                                                                             Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
-                                                                            Foreground="Gray">
+                                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                                                             <Run Text="ID: " />
                                                                             <Run Text="{x:Bind IdRefaccion}" />
                                                                         </TextBlock>
@@ -250,13 +250,13 @@
                                                                                 AutomationProperties.Name="Editar relación refacción" Background="Transparent" BorderThickness="0" Click="EditRelacionRefaccionButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 ToolTipService.ToolTip="Editar precio/nota">
-                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Edit" />
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Edit" />
                                                                             </Button>
                                                                             <Button
                                                                                 AutomationProperties.Name="Eliminar relación refacción" Background="Transparent" BorderThickness="0" Click="DeleteRelacionRefaccionButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 ToolTipService.ToolTip="Eliminar relación">
-                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Delete" />
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
                                                                             </Button>
                                                                         </StackPanel>
                                                                     </Grid>
@@ -267,7 +267,7 @@
 
                                                     <!--  Mensaje cuando no hay relaciones refaccion  -->
                                                     <TextBlock
-                                                        FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay refacciones relacionadas"
+                                                        FontSize="12" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="No hay refacciones relacionadas"
                                                         Visibility="{x:Bind ShowNoRelacionesRefaccionMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                                 </StackPanel>
                                             </PivotItem>

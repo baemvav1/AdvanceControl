@@ -154,9 +154,9 @@
                                             <TextBlock FontWeight="SemiBold" Text="{x:Bind Nombre}" />
                                             <TextBlock
                                                 FontSize="12"
-                                                Foreground="Gray"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Text="{x:Bind Descripcion}" />
-                                            <TextBlock FontSize="11" Foreground="Gray">
+                                            <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                                 <Run Text="Lat: " />
                                                 <Run Text="{x:Bind Latitud}" />
                                                 <Run Text=", Lng: " />

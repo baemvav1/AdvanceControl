@@ -198,6 +198,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Initialize(contentFrame);
 
             // Configure routes for each page
+            _navigationService.Configure<Views.Pages.DashboardPage>("Inicio");
             _navigationService.Configure<Views.OperacionesView>("Operaciones");
             _navigationService.Configure<Views.AcesoriaView>("Asesoria");
             _navigationService.Configure<Views.MttoView>("Mantenimiento");
@@ -216,7 +217,7 @@ namespace Advance_Control.ViewModels
             contentFrame.Navigated += OnFrameNavigated;
 
             // Navigate to initial page
-            _navigationService.Navigate("Operaciones");
+            _navigationService.Navigate("Inicio");
 
             // Update back button state
             UpdateBackButtonState();

@@ -7,65 +7,40 @@ namespace Advance_Control.Models
     /// </summary>
     public class LogEntry
     {
-        /// <summary>
-        /// Identificador único del log (generado en cliente)
-        /// </summary>
         public string? Id { get; set; }
-
-        /// <summary>
-        /// Nivel de severidad del log
-        /// </summary>
         public LogLevel Level { get; set; }
-
-        /// <summary>
-        /// Mensaje descriptivo del log
-        /// </summary>
         public string? Message { get; set; }
-
-        /// <summary>
-        /// Información de la excepción si existe
-        /// </summary>
         public string? Exception { get; set; }
-
-        /// <summary>
-        /// Stack trace de la excepción
-        /// </summary>
         public string? StackTrace { get; set; }
-
-        /// <summary>
-        /// Nombre de la clase o componente que generó el log
-        /// </summary>
+        /// <summary>Nombre de la clase/servicio que generó el log</summary>
         public string? Source { get; set; }
-
-        /// <summary>
-        /// Nombre del método que generó el log
-        /// </summary>
         public string? Method { get; set; }
-
-        /// <summary>
-        /// Usuario que estaba usando la aplicación (si está autenticado)
-        /// </summary>
+        /// <summary>Nombre de usuario (texto)</summary>
         public string? Username { get; set; }
-
-        /// <summary>
-        /// Identificador de la máquina/dispositivo
-        /// </summary>
         public string? MachineName { get; set; }
-
-        /// <summary>
-        /// Versión de la aplicación
-        /// </summary>
         public string? AppVersion { get; set; }
-
-        /// <summary>
-        /// Fecha y hora UTC de creación del log
-        /// </summary>
         public DateTime Timestamp { get; set; }
+        public string? AdditionalData { get; set; }
+
+        // ── Campos nuevos ─────────────────────────────────────────────────────
 
         /// <summary>
-        /// Datos adicionales en formato JSON
+        /// ID numérico de la credencial del usuario autenticado.
+        /// Se auto-popula desde IUserSessionService en LoggingService.
         /// </summary>
-        public string? AdditionalData { get; set; }
+        public int? CredencialId { get; set; }
+
+        /// <summary>
+        /// Categoría de negocio para filtrado en el dashboard.
+        /// Valores: Operacion | Mantenimiento | Cliente | Equipo | Proveedor | Autenticacion | Sistema
+        /// </summary>
+        public string? Categoria { get; set; }
+
+        /// <summary>
+        /// Nombre de la vista/página donde se originó el log.
+        /// Ej: "OperacionesView", "MttoView", "ClientesView"
+        /// </summary>
+        public string? Page { get; set; }
     }
 
     /// <summary>
@@ -81,3 +56,4 @@ namespace Advance_Control.Models
         Critical = 5
     }
 }
+

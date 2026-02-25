@@ -82,6 +82,12 @@ namespace Advance_Control
                     // Registrar implementación de almacenamiento seguro (Windows PasswordVault)
                     services.AddSingleton<ISecureStorage, SecretStorageWindows>();
 
+                    // Registrar Lazy<IUserSessionService> para romper dependencia circular
+                    // LoggingService necesita la sesión pero UserSessionService necesita al LoggingService
+                    services.AddSingleton(sp =>
+                        new Lazy<Services.Session.IUserSessionService>(
+                            () => sp.GetRequiredService<Services.Session.IUserSessionService>()));
+
                     // Registrar AuthenticatedHttpHandler con Lazy<IAuthService> para romper dependencia circular
                     services.AddTransient<Services.Http.AuthenticatedHttpHandler>(sp =>
                     {
@@ -525,6 +531,15 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.AreasViewModel>();
                     services.AddTransient<ViewModels.EntidadesViewModel>();
                     services.AddTransient<ViewModels.ContactosViewModel>();
+                    services.AddTransient<ViewModels.DashboardViewModel>();
+
+                    // Registrar ActivityService para el dashboard
+                    services.AddHttpClient<Services.Activity.IActivityService, Services.Activity.ActivityService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                    });
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();

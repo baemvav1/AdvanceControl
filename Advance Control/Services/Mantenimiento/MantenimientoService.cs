@@ -132,7 +132,7 @@ namespace Advance_Control.Services.Mantenimiento
         /// <summary>
         /// Crea un nuevo mantenimiento
         /// </summary>
-        public async Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, int credencialId = 0, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -144,7 +144,8 @@ namespace Advance_Control.Services.Mantenimiento
                 {
                     $"idTipoMantenimiento={idTipoMantenimiento}",
                     $"idCliente={idCliente}",
-                    $"idEquipo={idEquipo}"
+                    $"idEquipo={idEquipo}",
+                    $"credencialId={credencialId}"
                 };
 
                 if (!string.IsNullOrWhiteSpace(nota))

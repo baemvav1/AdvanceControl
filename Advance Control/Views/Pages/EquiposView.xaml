@@ -173,7 +173,7 @@
                                             Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
-                                        x:Name="Body" Grid.Row="1" Padding="8" Background="Black"
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
@@ -195,72 +195,72 @@
                                                     <StackPanel
                                                         Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="ID Equipo:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Equipo:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind IdEquipo}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Marca:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Marca:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Marca}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Año de Creación:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Año de Creación:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Creado}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Identificador:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Identificador:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Identificador}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Número de Paradas:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Número de Paradas:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Paradas}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="2" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Capacidad en Kilogramos:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Capacidad en Kilogramos:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Kilogramos}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="3" Grid.Column="0" Margin="0,4,0,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Capacidad de Personas:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Capacidad de Personas:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Personas}" />
                                                     </StackPanel>
 
                                                     <StackPanel
                                                         Grid.Row="3" Grid.Column="1" Margin="0,4,8,0">
                                                         <TextBlock
-                                                            FontSize="12" Foreground="Gray" Text="Estatus:" />
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Estatus:" />
                                                         <TextBlock
-                                                            FontSize="13" Foreground="WhiteSmoke"
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Estatus}" />
                                                     </StackPanel>
                                                 </Grid>
@@ -270,7 +270,7 @@
                                             <PivotItem Header="Descripción">
                                                 <StackPanel Padding="8">
                                                     <TextBlock
-                                                        FontSize="13" Foreground="WhiteSmoke"
+                                                        FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                         Text="{x:Bind Descripcion}"
                                                         TextWrapping="Wrap" />
                                                 </StackPanel>
@@ -281,9 +281,9 @@
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <StackPanel Orientation="Horizontal" Spacing="5">
                                                         <TextBlock
-                                                            FontSize="14" FontWeight="SemiBold" Foreground="WhiteSmoke" Text="Clientes Relacionados" />
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Clientes Relacionados" />
                                                         <Button
-                                                            x:Name="NuevaRelacion" VerticalAlignment="Center" Background="Black" BorderThickness="0"
+                                                            x:Name="NuevaRelacion" VerticalAlignment="Center" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="0"
                                                             Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
@@ -306,7 +306,7 @@
                                                         <ItemsRepeater.ItemTemplate>
                                                             <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionClienteDto">
                                                                 <Border
-                                                                    Padding="12" Background="DarkGray"
+                                                                    Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                                     BorderThickness="1" CornerRadius="4">
                                                                     <Grid>
@@ -317,20 +317,20 @@
                                                                         </Grid.ColumnDefinitions>
                                                                         <StackPanel Grid.Column="0" Spacing="2">
                                                                             <TextBlock
-                                                                                FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind RazonSocial}" />
                                                                             <TextBlock
-                                                                                FontSize="12" Foreground="Gray"
+                                                                                FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                                                 Text="{x:Bind NombreComercial}" />
                                                                             <TextBlock
-                                                                                FontSize="11" FontStyle="Italic" Foreground="DimGray"
+                                                                                FontSize="11" FontStyle="Italic" Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                                                 Text="{x:Bind Nota}"
                                                                                 TextWrapping="Wrap"
                                                                                 Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
                                                                         </StackPanel>
                                                                         <TextBlock
                                                                             Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
-                                                                            Foreground="Gray">
+                                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                                                                             <Run Text="ID: " />
                                                                             <Run Text="{x:Bind IdCliente}" />
                                                                         </TextBlock>
@@ -340,13 +340,13 @@
                                                                                 AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" Click="EditRelacionButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 ToolTipService.ToolTip="Editar nota">
-                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Edit" />
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Edit" />
                                                                             </Button>
                                                                             <Button
                                                                                 AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0" Click="DeleteRelacionButton_Click"
                                                                                 Tag="{x:Bind}"
                                                                                 ToolTipService.ToolTip="Eliminar relación">
-                                                                                <SymbolIcon Foreground="WhiteSmoke" Symbol="Delete" />
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
                                                                             </Button>
                                                                         </StackPanel>
                                                                     </Grid>
@@ -357,7 +357,7 @@
 
                                                     <!--  Mensaje cuando no hay relaciones  -->
                                                     <TextBlock
-                                                        FontSize="12" FontStyle="Italic" Foreground="Gray" Text="No hay clientes relacionados"
+                                                        FontSize="12" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="No hay clientes relacionados"
                                                         Visibility="{x:Bind ShowNoRelacionesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                                 </StackPanel>
                                             </PivotItem>
@@ -365,7 +365,7 @@
                                             <PivotItem Header="Ubicacion">
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <TextBlock
-                                                        FontSize="14" FontWeight="SemiBold" Foreground="WhiteSmoke" Text="Ubicación del Equipo" />
+                                                        FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Ubicación del Equipo" />
 
                                                     <!--  Loading indicator for ubicacion  -->
                                                     <ProgressRing
@@ -378,10 +378,10 @@
                                                         Spacing="8"
                                                         Visibility="{x:Bind ShowNoUbicacionMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                                         <TextBlock
-                                                            FontSize="12" FontStyle="Italic" Foreground="Gray" Text="Sin ubicación" />
+                                                            FontSize="12" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Sin ubicación" />
                                                         <Button
-                                                            x:Name="AgregarUbicacionButton" Background="Black" BorderThickness="1" BorderBrush="DarkGray"
-                                                            Click="AgregarUbicacionButton_Click" Foreground="WhiteSmoke"
+                                                            x:Name="AgregarUbicacionButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="AgregarUbicacionButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="8">
                                                                 <SymbolIcon Symbol="MapPin" />
@@ -397,18 +397,18 @@
                                                         
                                                         <!--  Mostrar detalles de ubicación solo cuando no está cargando y tiene datos  -->
                                                         <Border
-                                                            Padding="12" Background="DarkGray"
+                                                            Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                                             BorderThickness="1" CornerRadius="4"
                                                             Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}">
                                                             <StackPanel Spacing="4">
                                                                 <TextBlock
-                                                                    FontSize="13" FontWeight="SemiBold" Foreground="Black"
+                                                                    FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                     Text="{x:Bind Ubicacion.Nombre, Mode=OneWay}" />
                                                                 <TextBlock
-                                                                    FontSize="12" Foreground="Gray"
+                                                                    FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                                     Text="{x:Bind Ubicacion.Descripcion, Mode=OneWay}" />
-                                                                <TextBlock FontSize="11" Foreground="DimGray">
+                                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}">
                                                                     <Run Text="Lat: " />
                                                                     <Run Text="{x:Bind Ubicacion.Latitud, Mode=OneWay}" />
                                                                     <Run Text=", Lng: " />
@@ -417,8 +417,8 @@
                                                             </StackPanel>
                                                         </Border>
                                                         <Button
-                                                            x:Name="EditarUbicacionButton" Background="Black" BorderThickness="1" BorderBrush="DarkGray"
-                                                            Click="EditarUbicacionButton_Click" Foreground="WhiteSmoke"
+                                                            x:Name="EditarUbicacionButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="EditarUbicacionButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Tag="{x:Bind}"
                                                             Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}">
                                                             <StackPanel Orientation="Horizontal" Spacing="8">
@@ -427,8 +427,8 @@
                                                             </StackPanel>
                                                         </Button>
                                                         <Button
-                                                            x:Name="VerEnMapaButton" Background="Black" BorderThickness="1" BorderBrush="DarkGray"
-                                                            Click="VerEnMapaButton_Click" Foreground="WhiteSmoke"
+                                                            x:Name="VerEnMapaButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="VerEnMapaButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Tag="{x:Bind}"
                                                             Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}">
                                                             <StackPanel Orientation="Horizontal" Spacing="8">

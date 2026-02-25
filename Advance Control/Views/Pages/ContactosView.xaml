@@ -199,7 +199,7 @@
                                         x:Name="Body"
                                         Grid.Row="1"
                                         Padding="8"
-                                        Background="Black"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
@@ -222,11 +222,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Departamento:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Departamento}"
                                                             TextWrapping="Wrap" />
                                                     </StackPanel>
@@ -237,11 +237,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Cargo:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Cargo}"
                                                             TextWrapping="Wrap" />
                                                     </StackPanel>
@@ -252,11 +252,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Código Interno:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind CodigoInterno}" />
                                                     </StackPanel>
 
@@ -266,11 +266,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Activo:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Activo}" />
                                                     </StackPanel>
 
@@ -280,11 +280,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="ID Cliente:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind IdCliente}" />
                                                     </StackPanel>
 
@@ -294,11 +294,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="ID Proveedor:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind IdProveedor}" />
                                                     </StackPanel>
                                                 </Grid>
@@ -309,7 +309,7 @@
                                                 <StackPanel Padding="8">
                                                     <TextBlock
                                                         FontSize="13"
-                                                        Foreground="WhiteSmoke"
+                                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                         Text="{x:Bind Notas}"
                                                         TextWrapping="Wrap" />
                                                 </StackPanel>
@@ -334,11 +334,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Contacto ID:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind ContactoId}" />
                                                     </StackPanel>
 
@@ -348,11 +348,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Credencial ID:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind CredencialId}" />
                                                     </StackPanel>
 
@@ -362,11 +362,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Creado En:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind CreadoEn}" />
                                                     </StackPanel>
 
@@ -376,11 +376,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Actualizado En:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind ActualizadoEn}" />
                                                     </StackPanel>
                                                 </Grid>

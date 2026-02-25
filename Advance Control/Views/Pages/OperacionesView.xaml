@@ -159,14 +159,6 @@
 
         <!--  Lista de operaciones  -->
         <Grid Grid.Row="3">
-            <!--  Loading indicator  -->
-            <ProgressRing
-                Width="50"
-                Height="50"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
-
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Operaciones, Mode=OneWay}">
@@ -225,7 +217,7 @@
                                         x:Name="Body"
                                         Grid.Row="1"
                                         Padding="8"
-                                        Background="Black"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
@@ -250,11 +242,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="ID Tipo:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind IdTipo}" />
                                                     </StackPanel>
 
@@ -264,11 +256,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Monto:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Monto}" />
                                                     </StackPanel>
 
@@ -278,11 +270,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Razón Social:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind RazonSocial}" />
                                                     </StackPanel>
 
@@ -292,11 +284,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Fecha Inicio:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind FechaInicio}" />
                                                     </StackPanel>
 
@@ -306,11 +298,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Identificador Equipo:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Identificador}" />
                                                     </StackPanel>
 
@@ -320,11 +312,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Fecha Final:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind FechaFinal}" />
                                                     </StackPanel>
 
@@ -334,11 +326,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Atiende:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Atiende}" />
                                                     </StackPanel>
 
@@ -348,11 +340,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Finalizado:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Finalizado}" />
                                                     </StackPanel>
 
@@ -413,7 +405,7 @@
                                                 <StackPanel Padding="8">
                                                     <TextBlock
                                                         FontSize="13"
-                                                        Foreground="WhiteSmoke"
+                                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                         Text="{x:Bind Nota}"
                                                         TextWrapping="Wrap"
                                                         Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
@@ -480,7 +472,7 @@
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <Button
                                                             AutomationProperties.Name="Eliminar operación"
-                                                            Background="Red"
+                                                            Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
                                                             Click="DeleteOperacionButton_Click"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Eliminar operación">
@@ -502,7 +494,7 @@
                                                         Spacing="8"
                                                         Visibility="{x:Bind IsFinalized, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                                         <Button
-                                                            Background="#1A5C3A"
+                                                            Background="{ThemeResource AccentFillColorTertiaryBrush}"
                                                             Click="ReabrirOperacionButton_Click"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Quitar fecha final y reabrir la operación">
@@ -564,50 +556,50 @@
                                                             Grid.Column="0"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Tipo" />
                                                         <TextBlock
                                                             Grid.Column="1"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Detalle" />
                                                         <TextBlock
                                                             Grid.Column="2"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Cantidad" />
                                                         <TextBlock
                                                             Grid.Column="3"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Unitario" />
                                                         <TextBlock
                                                             Grid.Column="4"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Monto" />
                                                         <TextBlock
                                                             Grid.Column="5"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Nota" />
                                                         <TextBlock
                                                             Grid.Column="6"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Proveedor" />
                                                         <TextBlock
                                                             Grid.Column="7"
                                                             HorizontalAlignment="Center"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Sel."
                                                             ToolTipService.ToolTip="Seleccionar" />
                                                     </Grid>
@@ -646,7 +638,7 @@
                                                                                 Grid.Column="0"
                                                                                 VerticalAlignment="Center"
                                                                                 FontSize="12"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind TipoCargo, Mode=OneWay}"
                                                                                 TextTrimming="CharacterEllipsis" />
 
@@ -655,7 +647,7 @@
                                                                                 Grid.Column="1"
                                                                                 VerticalAlignment="Center"
                                                                                 FontSize="12"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind DetalleRelacionado, Mode=OneWay}"
                                                                                 TextTrimming="CharacterEllipsis" />
 
@@ -664,7 +656,7 @@
                                                                                 Grid.Column="2"
                                                                                 VerticalAlignment="Center"
                                                                                 FontSize="12"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind Cantidad, Mode=OneWay}"
                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
                                                                             <!--  Cantidad (Editable when in edit mode)  -->
@@ -685,7 +677,7 @@
                                                                                 Grid.Column="3"
                                                                                 VerticalAlignment="Center"
                                                                                 FontSize="12"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind Unitario, Mode=OneWay, Converter={StaticResource CurrencyConverter}}"
                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
                                                                             <!--  Unitario (Editable when in edit mode)  -->
@@ -706,7 +698,7 @@
                                                                                 Grid.Column="4"
                                                                                 VerticalAlignment="Center"
                                                                                 FontSize="12"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind Monto, Mode=OneWay, Converter={StaticResource CurrencyConverter}}" />
 
                                                                             <!--  Nota (Read-only display when not editing)  -->
@@ -714,7 +706,7 @@
                                                                                 Grid.Column="5"
                                                                                 VerticalAlignment="Center"
                                                                                 FontSize="12"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind Nota, Mode=OneWay}"
                                                                                 TextTrimming="CharacterEllipsis"
                                                                                 Visibility="{x:Bind IsEditing, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
@@ -736,7 +728,7 @@
                                                                                 Grid.Column="6"
                                                                                 VerticalAlignment="Center"
                                                                                 FontSize="12"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind Proveedor, Mode=OneWay}"
                                                                                 TextTrimming="CharacterEllipsis" />
 
@@ -767,7 +759,7 @@
                                                                                 Margin="0,0,0,4"
                                                                                 FontSize="11"
                                                                                 FontWeight="SemiBold"
-                                                                                Foreground="WhiteSmoke"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="Imágenes:" />
 
                                                                             <!--  ItemsRepeater for cargo images  -->
@@ -826,7 +818,7 @@
                                                             Margin="0,0,8,0"
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Acciones:" />
                                                         <Button
                                                             Click="UploadSelectedCargoImageButton_Click"
@@ -885,7 +877,7 @@
                                                         <TextBlock
                                                             VerticalAlignment="Center"
                                                             FontWeight="SemiBold"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Total:" />
                                                         <NumberBox
                                                             Width="150"
@@ -1150,6 +1142,35 @@
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
             </ScrollViewer>
+
+            <!--  Estado vacío  -->
+            <StackPanel
+                HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12"
+                IsHitTestVisible="False"
+                Visibility="{x:Bind ViewModel.IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                <FontIcon Glyph="&#xE9F9;" FontSize="48"
+                          Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock
+                    FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Sin operaciones" />
+                <TextBlock
+                    FontSize="13" HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Text="No se encontraron operaciones con los filtros actuales." />
+                <Button IsHitTestVisible="True"
+                    HorizontalAlignment="Center" Click="ClearButton_Click"
+                    Content="Limpiar filtros" />
+            </StackPanel>
+
+            <!--  Loading overlay  -->
+            <Grid
+                Visibility="{x:Bind ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                <Rectangle Fill="{ThemeResource ApplicationPageBackgroundThemeBrush}" Opacity="0.7" />
+                <ProgressRing
+                    Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    IsActive="True" />
+            </Grid>
         </Grid>
     </Grid>
 </Page>

@@ -37,13 +37,12 @@
                 <Button
                     x:Name="Nuevo"
                     VerticalAlignment="Center"
-                    Background="Transparent"
-                    BorderThickness="0"
                     Click="NuevoButton_Click"
+                    Style="{StaticResource AccentButtonStyle}"
                     ToolTipService.ToolTip="Crear nuevo mantenimiento">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
                         <SymbolIcon Symbol="Add" />
-                        <TextBlock VerticalAlignment="Center" />
+                        <TextBlock VerticalAlignment="Center" Text="Nuevo" />
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -93,14 +92,6 @@
 
         <!--  Lista de mantenimientos  -->
         <Grid Grid.Row="2">
-            <!--  Loading indicator  -->
-            <ProgressRing
-                Width="50"
-                Height="50"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
-
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Mantenimientos, Mode=OneWay}">
@@ -159,7 +150,7 @@
                                         x:Name="Body"
                                         Grid.Row="1"
                                         Padding="8"
-                                        Background="Black"
+                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
@@ -183,11 +174,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="ID Mantenimiento:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind IdMantenimiento}" />
                                                     </StackPanel>
 
@@ -197,11 +188,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Tipo:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind TipoMantenimiento}" />
                                                     </StackPanel>
 
@@ -211,11 +202,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Razón Social:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind RazonSocial}" />
                                                     </StackPanel>
 
@@ -225,11 +216,11 @@
                                                         Margin="0,4,8,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Nombre Comercial:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind NombreComercial}" />
                                                     </StackPanel>
 
@@ -239,11 +230,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Identificador Equipo:" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Identificador}" />
                                                     </StackPanel>
 
@@ -254,11 +245,11 @@
                                                         Margin="0,4,0,0">
                                                         <TextBlock
                                                             FontSize="12"
-                                                            Foreground="Gray"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                             Text="Descripcion" />
                                                         <TextBlock
                                                             FontSize="13"
-                                                            Foreground="WhiteSmoke"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Descripcion}" 
                                                             Visibility="{x:Bind Descripcion, Converter={StaticResource NullToVisibilityConverter}}"/>
                                                     </StackPanel>
@@ -314,6 +305,35 @@
                     </ItemsRepeater.ItemTemplate>
                 </ItemsRepeater>
             </ScrollViewer>
+
+            <!--  Estado vacío  -->
+            <StackPanel
+                HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12"
+                IsHitTestVisible="False"
+                Visibility="{x:Bind ViewModel.IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                <FontIcon Glyph="&#xE90F;" FontSize="48"
+                          Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock
+                    FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Sin mantenimientos" />
+                <TextBlock
+                    FontSize="13" HorizontalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Text="No se encontraron mantenimientos con los filtros actuales." />
+                <Button IsHitTestVisible="True"
+                    HorizontalAlignment="Center" Click="ClearButton_Click"
+                    Content="Limpiar filtros" />
+            </StackPanel>
+
+            <!--  Loading overlay  -->
+            <Grid
+                Visibility="{x:Bind ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                <Rectangle Fill="{ThemeResource ApplicationPageBackgroundThemeBrush}" Opacity="0.7" />
+                <ProgressRing
+                    Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    IsActive="True" />
+            </Grid>
         </Grid>
     </Grid>
 </Page>

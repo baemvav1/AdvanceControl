@@ -52,6 +52,12 @@ namespace Advance_Control.Models
         [JsonPropertyName("identificador")]
         public string? Identificador { get; set; }
 
+        /// <summary>
+        /// ID de la credencial del usuario que creó el mantenimiento
+        /// </summary>
+        [JsonPropertyName("credencialId")]
+        public int? CredencialId { get; set; }
+
         private bool _expand = false;
 
         /// <summary>

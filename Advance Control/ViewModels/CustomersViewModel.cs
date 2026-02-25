@@ -37,14 +37,27 @@ namespace Advance_Control.ViewModels
         public ObservableCollection<CustomerDto> Customers
         {
             get => _customers;
-            set => SetProperty(ref _customers, value);
+            set
+            {
+                if (SetProperty(ref _customers, value))
+                    OnPropertyChanged(nameof(IsEmpty));
+            }
         }
 
         public bool IsLoading
         {
             get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                    OnPropertyChanged(nameof(IsEmpty));
+            }
         }
+
+        /// <summary>
+        /// Indica si la lista está vacía y no está cargando
+        /// </summary>
+        public bool IsEmpty => !_isLoading && _customers.Count == 0;
 
         /// <summary>
         /// Mensaje de error para mostrar al usuario
@@ -131,6 +144,7 @@ namespace Advance_Control.ViewModels
                 {
                     Customers.Add(cliente);
                 }
+                OnPropertyChanged(nameof(IsEmpty));
 
                 await _logger.LogInformationAsync($"Se cargaron {clientes.Count} clientes exitosamente", "CustomersViewModel", "LoadClientesAsync");
             }
