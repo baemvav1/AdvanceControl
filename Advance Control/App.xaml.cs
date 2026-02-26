@@ -97,6 +97,10 @@ namespace Advance_Control
                         return new Services.Http.AuthenticatedHttpHandler(lazyAuthService, endpointProvider, logger);
                     });
 
+                    // Registrar servicio de configuración de notificaciones permitidas en el dashboard
+                    services.AddSingleton<Services.NotificationSettings.INotificationSettingsService,
+                                          Services.NotificationSettings.NotificationSettingsService>();
+
                     // Registrar LoggingService como HttpClient tipado
                     services.AddHttpClient<ILoggingService, LoggingService>((sp, client) =>
                     {
@@ -540,6 +544,22 @@ namespace Advance_Control
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                     });
+
+                    // Registrar NivelService con autenticación
+                    services.AddHttpClient<Services.Nivel.INivelService, Services.Nivel.NivelService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Singleton de control de acceso por nivel
+                    services.AddSingleton<Services.AccessControl.IAccessControlService, Services.AccessControl.AccessControlService>();
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();

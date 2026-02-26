@@ -223,19 +223,19 @@
 
                 <StackPanel Orientation="Horizontal" Spacing="12">
                     <Button x:Name="IrOperaciones" Click="IrOperaciones_Click"
-                            Style="{StaticResource AccentButtonStyle}">
+                            Style="{StaticResource AccentButtonStyle}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE9F9;" FontSize="16" />
                             <TextBlock Text="Operaciones" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="IrMantenimiento" Click="IrMantenimiento_Click">
+                    <Button x:Name="IrMantenimiento" Click="IrMantenimiento_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE90F;" FontSize="16" />
                             <TextBlock Text="Mantenimiento" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="IrClientes" Click="IrClientes_Click">
+                    <Button x:Name="IrClientes" Click="IrClientes_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon Glyph="&#xE716;" FontSize="16" />
                             <TextBlock Text="Clientes" VerticalAlignment="Center" />
@@ -284,7 +284,7 @@
                             <Button Grid.Column="1"
                                     x:Name="RefreshActividad" Click="RefreshActividad_Click"
                                     Style="{StaticResource SubtleButtonStyle}"
-                                    Padding="6" ToolTipService.ToolTip="Actualizar">
+                                    Padding="6" ToolTipService.ToolTip="Actualizar" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                 <FontIcon Glyph="&#xE72C;" FontSize="14" />
                             </Button>
                         </Grid>
@@ -366,12 +366,27 @@
                                                         </StackPanel>
                                                     </StackPanel>
 
-                                                    <!-- Timestamp -->
-                                                    <TextBlock Grid.Column="3"
-                                                               FontSize="11"
-                                                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                               VerticalAlignment="Top"
-                                                               Text="{x:Bind TimestampLabel}" />
+                                                    <!-- Timestamp + botón silenciar -->
+                                                    <StackPanel Grid.Column="3" Spacing="2" HorizontalAlignment="Right">
+                                                        <TextBlock
+                                                            FontSize="11"
+                                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                            HorizontalAlignment="Right"
+                                                            Text="{x:Bind TimestampLabel}" />
+                                                        <!-- Botón silenciar (solo visible si hay categoría) -->
+                                                        <Button
+                                                            x:Name="SilenciarButton"
+                                                            Padding="4" Width="24" Height="20"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="SilenciarCategoria_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Silenciar esta categoría de notificaciones"
+                                                            Visibility="{x:Bind HasCategoria}">
+                                                            <FontIcon Glyph="&#xEC42;" FontSize="11"
+                                                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                                        </Button>
+                                                    </StackPanel>
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

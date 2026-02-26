@@ -57,6 +57,35 @@ namespace Advance_Control.Services.Quotes
         }
 
         /// <summary>
+        /// Obtiene la ruta de la carpeta de una operación
+        /// </summary>
+        private static string GetOperacionFolder(int idOperacion)
+        {
+            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            return Path.Combine(documentsPath, "Advance Control", $"Operacion_{idOperacion}");
+        }
+
+        /// <inheritdoc/>
+        public string? FindExistingPdf(int idOperacion, string tipo)
+        {
+            var folder = GetOperacionFolder(idOperacion);
+            if (!Directory.Exists(folder)) return null;
+            return Directory.GetFiles(folder, $"{tipo}_{idOperacion}_*.pdf").FirstOrDefault();
+        }
+
+        /// <inheritdoc/>
+        public void DeleteOperacionPdfs(int idOperacion, string tipo)
+        {
+            var folder = GetOperacionFolder(idOperacion);
+            if (!Directory.Exists(folder)) return;
+            var pattern = tipo == "*" ? "*.pdf" : $"{tipo}_{idOperacion}_*.pdf";
+            foreach (var file in Directory.GetFiles(folder, pattern))
+            {
+                try { File.Delete(file); } catch { /* ignorar si está en uso */ }
+            }
+        }
+
+        /// <summary>
         /// Busca la firma del operador por su idAtiende en la carpeta de Firmas.
         /// Los archivos tienen formato {id}_{nombre}.png
         /// </summary>
@@ -142,7 +171,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Genera un PDF de cotización a partir de una operación y sus cargos
         /// </summary>
-        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? apoderadoNombre = null)
+        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? apoderadoNombre = null, decimal? limiteCredito = null)
         {
             if (operacion == null)
                 throw new ArgumentNullException(nameof(operacion));
@@ -154,17 +183,17 @@ namespace Advance_Control.Services.Quotes
             {
                 await _logger.LogInformationAsync($"Generando cotización PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateQuotePdfAsync");
 
-                // Generate filename: {idOperacion}{fechaActual}Cotizacion.pdf
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var fileName = $"{operacion.IdOperacion}{timestamp}Cotizacion.pdf";
-                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                var operacionFolder = Path.Combine(documentsPath, "Advance Control", $"Operacion_{operacion.IdOperacion}");
+                // Generate filename: Cotizacion_{idOperacion}_{identificador}_{fechaActual}.pdf
+                var fecha = DateTime.Now.ToString("yyyyMMdd");
+                var idStr = operacion.Identificador ?? "sin-equipo";
+                var safeId = string.Concat(idStr.Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"Cotizacion_{operacion.IdOperacion}_{safeId}_{fecha}.pdf";
+                var operacionFolder = GetOperacionFolder(operacion.IdOperacion ?? 0);
 
                 // Create directory if it doesn't exist
                 Directory.CreateDirectory(operacionFolder);
 
                 var filePath = Path.Combine(operacionFolder, fileName);
-
                 var quotationTitle = $"Cotización {operacion.IdOperacion}";
                 var cotizacionImagePath = Path.Combine(GetCabecerasFolder(), "Cotizacion.png");
 
@@ -328,7 +357,7 @@ namespace Advance_Control.Services.Quotes
                                 column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(15).Column(notesCol =>
                                 {
                                     notesCol.Item().Text("Condiciones de pago:").Bold().FontSize(11).FontColor(Colors.Blue.Darken2);
-                                    if (total>=50000)
+                                    if (limiteCredito.HasValue && (decimal)total >= limiteCredito.Value)
                                     {
                                         notesCol.Item().PaddingTop(8).Text("• Se solicita anticipo del 70% para realizar este trabajo").FontSize(10);
                                         notesCol.Item().PaddingTop(4).Text("• El 30% restante, al término de este").FontSize(10);
@@ -398,11 +427,12 @@ namespace Advance_Control.Services.Quotes
             {
                 await _logger.LogInformationAsync($"Generando reporte PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateReportePdfAsync");
 
-                // Generate filename: {idOperacion}{fechaActual}Reporte.pdf
-                var timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
-                var fileName = $"{operacion.IdOperacion}{timestamp}Reporte.pdf";
-                var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-                var operacionFolder = Path.Combine(documentsPath, "Advance Control", $"Operacion_{operacion.IdOperacion}");
+                // Generate filename: Reporte_{idOperacion}_{identificador}_{fechaActual}.pdf
+                var fecha = DateTime.Now.ToString("yyyyMMdd");
+                var idStr = operacion.Identificador ?? "sin-equipo";
+                var safeId = string.Concat(idStr.Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"Reporte_{operacion.IdOperacion}_{safeId}_{fecha}.pdf";
+                var operacionFolder = GetOperacionFolder(operacion.IdOperacion ?? 0);
 
                 // Create directory if it doesn't exist
                 Directory.CreateDirectory(operacionFolder);

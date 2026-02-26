@@ -33,6 +33,12 @@ namespace Advance_Control.Models
         public int? IdTipo { get; set; }
 
         /// <summary>
+        /// ID del cliente asociado a la operación
+        /// </summary>
+        [JsonPropertyName("idCliente")]
+        public int? IdCliente { get; set; }
+
+        /// <summary>
         /// Razón social del cliente
         /// </summary>
         [JsonPropertyName("razonSocial")]

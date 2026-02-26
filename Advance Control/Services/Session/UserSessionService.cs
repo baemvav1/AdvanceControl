@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Advance_Control.Services.AccessControl;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.UserInfo;
 
@@ -50,6 +51,9 @@ namespace Advance_Control.Services.Session
                     Nivel = userInfo.Nivel;
                     TipoUsuario = userInfo.TipoUsuario;
                     IsLoaded = true;
+                    // Forzar nivel 1 al iniciar sesión (nivel máximo).
+                    // En el futuro se usará Nivel real del usuario.
+                    AccessControlService.Current.SetNivel(1);
                     await _logger.LogInformationAsync(
                         $"Sesión de usuario cargada: CredencialId={CredencialId}, IdProveedor={IdProveedor}",
                         "UserSessionService", "LoadAsync");

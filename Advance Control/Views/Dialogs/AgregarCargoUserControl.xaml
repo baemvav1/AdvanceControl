@@ -79,7 +79,7 @@
                                 <Button
                                     HorizontalAlignment="Right"
                                     Click="CerrarVisorButton_Click"
-                                    Content="Cerrar Visor" />
+                                    Content="Cerrar Visor"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                             </Grid>
                             <ContentControl x:Name="RefaccionesViewerContainer" />
                         </StackPanel>

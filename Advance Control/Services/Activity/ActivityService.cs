@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.NotificationSettings;
 
 namespace Advance_Control.Services.Activity
 {
@@ -19,12 +21,16 @@ namespace Advance_Control.Services.Activity
         private readonly HttpClient _http;
         private readonly IApiEndpointProvider _endpoints;
         private readonly ILoggingService _logger;
+        private readonly INotificationSettingsService _notificationSettings;
 
-        public ActivityService(HttpClient http, IApiEndpointProvider endpoints, ILoggingService logger)
+        public ActivityService(HttpClient http, IApiEndpointProvider endpoints,
+            ILoggingService logger,
+            INotificationSettingsService notificationSettings)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _notificationSettings = notificationSettings ?? throw new ArgumentNullException(nameof(notificationSettings));
         }
 
         public async Task<IReadOnlyList<ActivityItem>> GetActividadRecienteAsync(
@@ -47,7 +53,12 @@ namespace Advance_Control.Services.Activity
                     .GetFromJsonAsync<List<ActivityItem>>(url, cancellationToken)
                     .ConfigureAwait(false);
 
-                return items as IReadOnlyList<ActivityItem> ?? Array.Empty<ActivityItem>();
+                return items is null
+                    ? Array.Empty<ActivityItem>()
+                    : items
+                        .Where(i => _notificationSettings.IsCategoryAllowed(i.Categoria))
+                        .ToList()
+                        .AsReadOnly();
             }
             catch (HttpRequestException ex)
             {

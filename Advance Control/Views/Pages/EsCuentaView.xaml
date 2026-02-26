@@ -26,9 +26,7 @@
                     Content="Cargar Archivo XML" 
                     Click="BtnCargarXml_Click"
                     IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}">
-                <Button.KeyboardAccelerators>
-                    <KeyboardAccelerator Modifiers="Control" Key="O"/>
-                </Button.KeyboardAccelerators>
+                
             </Button>
         </StackPanel>
 

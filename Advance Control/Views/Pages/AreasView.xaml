@@ -50,7 +50,7 @@
                     x:Name="SearchButton"
                     Grid.Column="1"
                     Click="SearchButton_Click"
-                    Style="{StaticResource AccentButtonStyle}">
+                    Style="{StaticResource AccentButtonStyle}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <SymbolIcon Symbol="Find" />
                         <TextBlock Text="Buscar" />
@@ -121,14 +121,14 @@
                                 Background="Transparent"
                                 BorderThickness="0"
                                 Click="RefreshButton_Click"
-                                ToolTipService.ToolTip="Recargar áreas">
+                                ToolTipService.ToolTip="Recargar áreas" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                 <SymbolIcon Symbol="Refresh" />
                             </Button>
                         </StackPanel>
                         <Button
                             x:Name="AddButton"
                             Margin="0,8,0,0"
-                            Click="AddButton_Click">
+                            Click="AddButton_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <SymbolIcon Symbol="Add" />
                                 <TextBlock Text="Agregar Área" />
@@ -180,13 +180,13 @@
                                             <Button
                                                 Click="EditButton_Click"
                                                 Tag="{x:Bind IdArea}"
-                                                ToolTipService.ToolTip="Editar">
+                                                ToolTipService.ToolTip="Editar" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                 <SymbolIcon Symbol="Edit" />
                                             </Button>
                                             <Button
                                                 Click="DeleteButton_Click"
                                                 Tag="{x:Bind IdArea}"
-                                                ToolTipService.ToolTip="Eliminar">
+                                                ToolTipService.ToolTip="Eliminar" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                 <SymbolIcon Symbol="Delete" />
                                             </Button>
                                         </StackPanel>
@@ -258,7 +258,7 @@
                             <Button
                                 x:Name="SaveButton"
                                 Click="SaveButton_Click"
-                                Style="{StaticResource AccentButtonStyle}">
+                                Style="{StaticResource AccentButtonStyle}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <SymbolIcon Symbol="Save" />
                                     <TextBlock Text="Guardar" />
@@ -266,7 +266,7 @@
                             </Button>
                             <Button
                                 x:Name="CancelButton"
-                                Click="CancelButton_Click">
+                                Click="CancelButton_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                 Cancelar
                             </Button>
                         </StackPanel>

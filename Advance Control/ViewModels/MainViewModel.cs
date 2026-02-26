@@ -15,7 +15,9 @@ using Advance_Control.Services.Notificacion;
 using System.Collections.ObjectModel;
 using Advance_Control.Models;
 using CommunityToolkit.Mvvm.Input;
+using Advance_Control.Services.AccessControl;
 using Advance_Control.Services.UserInfo;
+using Advance_Control.Services.NotificationSettings;
 
 namespace Advance_Control.ViewModels
 {
@@ -29,6 +31,7 @@ namespace Advance_Control.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
+        private readonly INotificationSettingsService _notificationSettings;
         private NotificacionService? _notifServiceReference;
         private bool _disposed;
 
@@ -37,6 +40,7 @@ namespace Advance_Control.ViewModels
         private bool _isBackEnabled;
         private bool _isNotificacionesVisible = true;
         private ObservableCollection<NotificacionDto> _notificaciones;
+        private ObservableCollection<NotificacionSilenciadaVm> _notificacionesSilenciadas = new();
         private string _userInitials = "";
         private string _userType = "";
         private bool _hasUnseenNotifications;
@@ -50,7 +54,8 @@ namespace Advance_Control.ViewModels
             IDialogService dialogService,
             IServiceProvider serviceProvider,
             INotificacionService notificacionService,
-            IUserInfoService userInfoService)
+            IUserInfoService userInfoService,
+            INotificationSettingsService notificationSettings)
         {
             _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
@@ -60,6 +65,7 @@ namespace Advance_Control.ViewModels
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
             _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
+            _notificationSettings = notificationSettings ?? throw new ArgumentNullException(nameof(notificationSettings));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -164,6 +170,44 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _notificaciones, value);
         }
 
+        public ObservableCollection<NotificacionSilenciadaVm> NotificacionesSilenciadas
+        {
+            get => _notificacionesSilenciadas;
+            private set => SetProperty(ref _notificacionesSilenciadas, value);
+        }
+
+        /// <summary>
+        /// Carga (o recarga) la lista de categorías silenciadas desde el servicio de configuración.
+        /// </summary>
+        public void LoadSilenciadas()
+        {
+            _notificacionesSilenciadas.Clear();
+            foreach (var entry in _notificationSettings.GetAll().Where(e => !e.Habilitada))
+            {
+                _notificacionesSilenciadas.Add(new NotificacionSilenciadaVm
+                {
+                    Categoria = entry.Categoria,
+                    Page = entry.Page,
+                    Habilitada = entry.Habilitada
+                });
+            }
+        }
+
+        /// <summary>
+        /// Activa o desactiva una categoría silenciada desde el panel de notificaciones.
+        /// </summary>
+        public async Task SetCategoryEnabledAsync(string categoria, bool enabled)
+        {
+            await _notificationSettings.SetCategoryEnabledAsync(categoria, enabled).ConfigureAwait(false);
+            if (enabled)
+            {
+                var toRemove = _notificacionesSilenciadas
+                    .FirstOrDefault(x => string.Equals(x.Categoria, categoria, StringComparison.OrdinalIgnoreCase));
+                if (toRemove != null)
+                    _notificacionesSilenciadas.Remove(toRemove);
+            }
+        }
+
         public string UserInitials
         {
             get => _userInitials;
@@ -223,6 +267,26 @@ namespace Advance_Control.ViewModels
             UpdateBackButtonState();
         }
 
+        // Niveles de acceso requeridos por página (1 = máximo acceso).
+        // Actualizar aquí cuando se quiera restringir páginas a niveles específicos.
+        private static readonly Dictionary<string, int> _pageAccessLevels = new()
+        {
+            { "Inicio",        1 },
+            { "Operaciones",   1 },
+            { "Asesoria",      1 },
+            { "Mantenimiento", 1 },
+            { "Clientes",      1 },
+            { "Entidades",     1 },
+            { "Contactos",     1 },
+            { "Equipos",       1 },
+            { "Refacciones",   1 },
+            { "Proveedores",   1 },
+            { "Servicios",     1 },
+            { "Ubicaciones",   1 },
+            { "Areas",         1 },
+            { "EsCuenta",      1 },
+        };
+
         public void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.InvokedItemContainer is NavigationViewItem item)
@@ -230,6 +294,11 @@ namespace Advance_Control.ViewModels
                 var tag = item.Tag?.ToString();
                 if (!string.IsNullOrEmpty(tag))
                 {
+                    if (_pageAccessLevels.TryGetValue(tag, out var required)
+                        && !AccessControlService.Current.CanAccess(required))
+                    {
+                        return; // Sin acceso: ignorar navegación
+                    }
                     _navigationService.Navigate(tag);
                 }
             }

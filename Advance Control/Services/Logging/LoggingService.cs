@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
+using Advance_Control.Services.NotificationSettings;
 using Advance_Control.Services.Session;
 
 namespace Advance_Control.Services.Logging
@@ -20,14 +21,18 @@ namespace Advance_Control.Services.Logging
         private readonly HttpClient _http;
         private readonly IApiEndpointProvider _endpoints;
         private readonly Lazy<IUserSessionService> _session;
+        private readonly INotificationSettingsService _notificationSettings;
         private readonly string _machineName;
         private readonly string _appVersion;
 
-        public LoggingService(HttpClient http, IApiEndpointProvider endpoints, Lazy<IUserSessionService> session)
+        public LoggingService(HttpClient http, IApiEndpointProvider endpoints,
+            Lazy<IUserSessionService> session,
+            INotificationSettingsService notificationSettings)
         {
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _session = session ?? throw new ArgumentNullException(nameof(session));
+            _notificationSettings = notificationSettings ?? throw new ArgumentNullException(nameof(notificationSettings));
             _machineName = Environment.MachineName;
             _appVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
         }
@@ -75,6 +80,13 @@ namespace Advance_Control.Services.Logging
                 }
             }
             catch { /* sesión aún no lista — se omite */ }
+
+            try
+            {
+                // Registrar la categoría en la lista de notificaciones permitidas si es nueva
+                await _notificationSettings.EnsureCategoryRegisteredAsync(logEntry.Categoria, logEntry.Page).ConfigureAwait(false);
+            }
+            catch { /* silenciar */ }
 
             try
             {

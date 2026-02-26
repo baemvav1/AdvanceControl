@@ -39,7 +39,7 @@
                     Background="Transparent"
                     BorderThickness="0"
                     Click="NuevoButton_Click"
-                    ToolTipService.ToolTip="Crear nuevo contacto">
+                    ToolTipService.ToolTip="Crear nuevo contacto" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                     <SymbolIcon Symbol="Add" />
                 </Button>
             </StackPanel>
@@ -121,8 +121,8 @@
                     <Button
                         Click="SearchButton_Click"
                         Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}" />
-                    <Button Click="ClearButton_Click" Content="Limpiar" />
+                        Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                    <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
@@ -193,7 +193,7 @@
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                            Tag="{x:Bind}" />
+                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                                     </Grid>
                                     <Grid
                                         x:Name="Body"

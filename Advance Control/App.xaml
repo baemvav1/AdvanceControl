@@ -36,6 +36,9 @@
                 FalseColorName="Gray"
                 TrueColorName="Green" />
 
+            <!--  Control de acceso por nivel  -->
+            <converters:AccessLevelConverter x:Key="AccessLevelConverter" />
+
             <!--  Other app resources here  -->
         </ResourceDictionary>
     </Application.Resources>

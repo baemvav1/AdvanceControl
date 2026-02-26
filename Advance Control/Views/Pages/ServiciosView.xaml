@@ -26,7 +26,7 @@
                     FontSize="32" FontWeight="Bold" Text="Servicios" />
                 <Button
                     x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
-                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo servicio">
+                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo servicio" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                     <SymbolIcon Symbol="Add" />
                 </Button>
             </StackPanel>
@@ -73,8 +73,8 @@
                     VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
                     <Button
                         Click="SearchButton_Click" Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}" />
-                    <Button Click="ClearButton_Click" Content="Limpiar" />
+                        Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                    <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
@@ -132,7 +132,7 @@
                                             Grid.Column="1" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                            Tag="{x:Bind}" />
+                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                                     </Grid>
                                     <Grid
                                         x:Name="Body" Grid.Row="1" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}"
@@ -193,11 +193,11 @@
                                                         <Button
                                                             Background="DarkOrange" BorderThickness="0"
                                                             Click="EditarButton_Click" Content="Editar" Foreground="White"
-                                                            Tag="{x:Bind}" />
+                                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                                                         <Button
                                                             Background="DarkRed" BorderThickness="0"
                                                             Click="EliminarButton_Click" Content="Eliminar" Foreground="White"
-                                                            Tag="{x:Bind}" />
+                                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>

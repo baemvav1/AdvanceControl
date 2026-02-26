@@ -33,6 +33,12 @@ namespace Advance_Control.Views.Pages
         private async void RefreshActividad_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => await ViewModel.LoadActividadAsync();
 
+        private async void SilenciarCategoria_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            if (sender is Microsoft.UI.Xaml.Controls.Button btn && btn.Tag is Models.ActivityItem item)
+                await ViewModel.SilenciarCategoriaAsync(item);
+        }
+
         private void IrOperaciones_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => _navigationService.Navigate("Operaciones");
 

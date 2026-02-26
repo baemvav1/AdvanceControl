@@ -56,6 +56,19 @@ namespace Advance_Control
             NotificacionesColumn.Width = _viewModel.IsNotificacionesVisible 
                 ? new GridLength(2, GridUnitType.Star) 
                 : new GridLength(0);
+
+            // Cargar (o recargar) la lista de silenciadas al abrir el panel
+            if (_viewModel.IsNotificacionesVisible)
+                _viewModel.LoadSilenciadas();
+        }
+
+        private async void SilenciadaToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (sender is Microsoft.UI.Xaml.Controls.ToggleSwitch toggle
+                && toggle.Tag is string categoria)
+            {
+                await _viewModel.SetCategoryEnabledAsync(categoria, toggle.IsOn);
+            }
         }
     }
 }

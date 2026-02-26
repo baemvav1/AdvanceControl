@@ -465,6 +465,9 @@ namespace Advance_Control.Views
 
                     if (newCargo != null)
                     {
+                        // Invalidar PDFs existentes porque los cargos cambiaron
+                        ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "*");
+
                         // Recargar los cargos para obtener los datos completos desde la API
                         operacion.CargosLoaded = false;
                         await LoadCargosForOperacionAsync(operacion);
@@ -530,6 +533,11 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        // Invalidar PDFs existentes porque los cargos cambiaron
+                        var parentOp = ViewModel.Operaciones.FirstOrDefault(o => o.Cargos.Any(c => c.IdCargo == cargo.IdCargo));
+                        if (parentOp?.IdOperacion.HasValue == true)
+                            ViewModel.DeleteOperacionPdfs(parentOp.IdOperacion.Value, "*");
+
                         // Encontrar la operación que contiene este cargo y eliminarlo de la colección
                         foreach (var operacion in ViewModel.Operaciones)
                         {
@@ -645,6 +653,16 @@ namespace Advance_Control.Views
                 {
                     // Exit edit mode after successful save
                     cargo.IsEditing = false;
+
+                    // Invalidar PDFs existentes porque los cargos cambiaron
+                    foreach (var operacion in ViewModel.Operaciones)
+                    {
+                        if (operacion.Cargos.Contains(cargo) && operacion.IdOperacion.HasValue)
+                        {
+                            ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "*");
+                            break;
+                        }
+                    }
 
                     // Notify that TotalMonto should be recalculated
                     foreach (var operacion in ViewModel.Operaciones)
@@ -789,6 +807,38 @@ namespace Advance_Control.Views
 
             try
             {
+                // Verificar si ya existe una cotización para esta operación
+                var existingPath = ViewModel.FindExistingPdf(operacion.IdOperacion.Value, "Cotizacion");
+                if (!string.IsNullOrEmpty(existingPath))
+                {
+                    var checkDialog = new ContentDialog
+                    {
+                        Title = "Ya existe una cotización",
+                        Content = $"Ya existe una cotización para esta operación:\n\n{System.IO.Path.GetFileName(existingPath)}\n\n¿Qué desea hacer?",
+                        PrimaryButtonText = "Abrir",
+                        SecondaryButtonText = "Regenerar",
+                        CloseButtonText = "Cancelar",
+                        DefaultButton = ContentDialogButton.Primary,
+                        XamlRoot = this.XamlRoot
+                    };
+
+                    var checkResult = await checkDialog.ShowAsync();
+
+                    if (checkResult == ContentDialogResult.Primary)
+                    {
+                        var existingFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(existingPath);
+                        await Windows.System.Launcher.LaunchFileAsync(existingFile);
+                        return;
+                    }
+                    else if (checkResult == ContentDialogResult.None)
+                    {
+                        return; // Cancelar
+                    }
+
+                    // Secondary ("Regenerar"): eliminar el existente y continuar
+                    ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "Cotizacion");
+                }
+
                 // Generar la cotización
                 var filePath = await ViewModel.GenerateQuoteAsync(operacion);
 
@@ -858,6 +908,38 @@ namespace Advance_Control.Views
 
             try
             {
+                // Verificar si ya existe un reporte para esta operación
+                var existingPath = ViewModel.FindExistingPdf(operacion.IdOperacion.Value, "Reporte");
+                if (!string.IsNullOrEmpty(existingPath))
+                {
+                    var checkDialog = new ContentDialog
+                    {
+                        Title = "Ya existe un reporte",
+                        Content = $"Ya existe un reporte para esta operación:\n\n{System.IO.Path.GetFileName(existingPath)}\n\n¿Qué desea hacer?",
+                        PrimaryButtonText = "Abrir",
+                        SecondaryButtonText = "Regenerar",
+                        CloseButtonText = "Cancelar",
+                        DefaultButton = ContentDialogButton.Primary,
+                        XamlRoot = this.XamlRoot
+                    };
+
+                    var checkResult = await checkDialog.ShowAsync();
+
+                    if (checkResult == ContentDialogResult.Primary)
+                    {
+                        var existingFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(existingPath);
+                        await Windows.System.Launcher.LaunchFileAsync(existingFile);
+                        return;
+                    }
+                    else if (checkResult == ContentDialogResult.None)
+                    {
+                        return; // Cancelar
+                    }
+
+                    // Secondary ("Regenerar"): eliminar el existente y continuar
+                    ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "Reporte");
+                }
+
                 // Generar el reporte
                 var filePath = await ViewModel.GenerateReporteAsync(operacion);
 

@@ -382,7 +382,22 @@ namespace Advance_Control.ViewModels
                     // Log but don't fail if we can't get the location
                     await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
                 }
-                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre);
+                // Get client credit limit if available
+                decimal? limiteCredito = null;
+                try
+                {
+                    if (operacion.IdCliente.HasValue && operacion.IdCliente.Value > 0)
+                    {
+                        var clientes = await _clienteService.GetClienteByIdAsync(operacion.IdCliente.Value, cancellationToken);
+                        limiteCredito = clientes?.FirstOrDefault()?.LimiteCredito;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.LogWarningAsync($"No se pudo obtener el límite de crédito del cliente: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
+                }
+
+                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre, limiteCredito);
 
                 // Calculate total with IVA and update local model
                 if (operacion.IdOperacion.HasValue)
@@ -480,5 +495,17 @@ namespace Advance_Control.ViewModels
                 return null;
             }
         }
+
+        /// <summary>
+        /// Busca un PDF existente de cotización o reporte para una operación.
+        /// </summary>
+        public string? FindExistingPdf(int idOperacion, string tipo)
+            => _quoteService.FindExistingPdf(idOperacion, tipo);
+
+        /// <summary>
+        /// Elimina todos los PDFs de un tipo para una operación. tipo: "Cotizacion", "Reporte" o "*" para ambos.
+        /// </summary>
+        public void DeleteOperacionPdfs(int idOperacion, string tipo)
+            => _quoteService.DeleteOperacionPdfs(idOperacion, tipo);
     }
 }

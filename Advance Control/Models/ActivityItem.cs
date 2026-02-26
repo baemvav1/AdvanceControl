@@ -29,6 +29,9 @@ namespace Advance_Control.Models
         /// <summary>Indica si hay nombre de página para mostrar en la UI</summary>
         public bool HasPage => !string.IsNullOrEmpty(Page);
 
+        /// <summary>Indica si hay categoría (para mostrar el botón de silenciar)</summary>
+        public bool HasCategoria => !string.IsNullOrEmpty(Categoria);
+
         /// <summary>Color del indicador según nivel</summary>
         public Windows.UI.Color LevelColor => Level switch
         {

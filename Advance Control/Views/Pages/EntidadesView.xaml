@@ -31,7 +31,7 @@
                     FontSize="32" FontWeight="Bold" Text="Entidades" />
                 <Button
                     x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
-                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nueva entidad">
+                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nueva entidad" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                     <SymbolIcon Symbol="Add" />
                 </Button>
             </StackPanel>
@@ -88,8 +88,8 @@
                     VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
                     <Button
                         Click="SearchButton_Click" Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}" />
-                    <Button Click="ClearButton_Click" Content="Limpiar" />
+                        Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                    <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
@@ -154,7 +154,7 @@
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Tag="{x:Bind}"
-                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
+                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                                     </Grid>
                                     <Grid
                                         Grid.Row="1" 

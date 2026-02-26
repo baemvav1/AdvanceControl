@@ -154,7 +154,7 @@
             <Button
                 x:Name="CancelButton"
                 Click="CancelButton_Click"
-                Content="Cancelar" />
+                Content="Cancelar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
         </StackPanel>
     </Grid>
 </UserControl>

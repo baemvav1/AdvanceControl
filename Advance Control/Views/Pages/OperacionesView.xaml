@@ -53,11 +53,11 @@
             <Button
                 x:Name="ToggleFiltrosButton"
                 Click="ToggleFiltros_Click"
-                Content="Filtros" />
+                Content="Filtros"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
             <Button
                 x:Name="ReporteGeneralButton"
                 Click="ReporteGeneral_Click"
-                Content="Reporte General" />
+                Content="Reporte General"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
         </StackPanel>
 
         <!--  Filtros  -->
@@ -105,7 +105,7 @@
                         <Button
                             x:Name="SelectClienteButton"
                             HorizontalAlignment="Stretch"
-                            Click="SelectClienteButton_Click">
+                            Click="SelectClienteButton_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                             <TextBlock Text="{x:Bind ViewModel.SelectedClienteText, Mode=OneWay, FallbackValue='Seleccionar cliente...'}" />
                         </Button>
                     </StackPanel>
@@ -118,7 +118,7 @@
                         <Button
                             x:Name="SelectEquipoButton"
                             HorizontalAlignment="Stretch"
-                            Click="SelectEquipoButton_Click">
+                            Click="SelectEquipoButton_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                             <TextBlock Text="{x:Bind ViewModel.SelectedEquipoText, Mode=OneWay, FallbackValue='Seleccionar equipo...'}" />
                         </Button>
                     </StackPanel>
@@ -150,8 +150,8 @@
                         <Button
                             Click="SearchButton_Click"
                             Content="Buscar"
-                            Style="{StaticResource AccentButtonStyle}" />
-                        <Button Click="ClearButton_Click" Content="Limpiar" />
+                            Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                        <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                     </StackPanel>
                 </Grid>
             </StackPanel>
@@ -211,7 +211,7 @@
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                            Tag="{x:Bind}" />
+                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
                                     </Grid>
                                     <Grid
                                         x:Name="Body"
@@ -425,7 +425,7 @@
                                                             Background="{ThemeResource SystemAccentColor}"
                                                             Click="GenerarCotizacionButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Generar cotización PDF">
+                                                            ToolTipService.ToolTip="Generar cotización PDF" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Document" />
                                                                 <TextBlock Text="Generar Cotización" />
@@ -435,7 +435,7 @@
                                                             Background="{ThemeResource SystemAccentColor}"
                                                             Click="GenerarReporteButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Generar reporte PDF con imágenes">
+                                                            ToolTipService.ToolTip="Generar reporte PDF con imágenes" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Pictures" />
                                                                 <TextBlock Text="Generar Reporte" />
@@ -456,7 +456,7 @@
                                                             Background="{ThemeResource SystemAccentColor}"
                                                             Click="EditOperacionButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Editar monto de operación">
+                                                            ToolTipService.ToolTip="Editar monto de operación" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Edit" />
                                                                 <TextBlock Text="Editar Operación" />
@@ -475,7 +475,7 @@
                                                             Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
                                                             Click="DeleteOperacionButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar operación">
+                                                            ToolTipService.ToolTip="Eliminar operación" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Delete" />
                                                                 <TextBlock Text="Eliminar Operación" />
@@ -497,7 +497,7 @@
                                                             Background="{ThemeResource AccentFillColorTertiaryBrush}"
                                                             Click="ReabrirOperacionButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Quitar fecha final y reabrir la operación">
+                                                            ToolTipService.ToolTip="Quitar fecha final y reabrir la operación" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Refresh" />
                                                                 <TextBlock Text="Reabrir Operación" />
@@ -513,7 +513,7 @@
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="*" />
+                                                        <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
@@ -605,14 +605,12 @@
                                                     </Grid>
 
                                                     <!--  ItemsRepeater for Cargos  -->
-                                                    <ScrollViewer
+                                                    <ItemsRepeater
                                                         Grid.Row="2"
-                                                        MaxHeight="400"
-                                                        VerticalScrollBarVisibility="Auto">
-                                                        <ItemsRepeater ItemsSource="{x:Bind Cargos, Mode=OneWay}">
-                                                            <ItemsRepeater.Layout>
-                                                                <StackLayout Spacing="2" />
-                                                            </ItemsRepeater.Layout>
+                                                        ItemsSource="{x:Bind Cargos, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="2" />
+                                                        </ItemsRepeater.Layout>
                                                             <ItemsRepeater.ItemTemplate>
                                                                 <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CargoDto">
                                                                     <StackPanel
@@ -791,7 +789,7 @@
                                                                                                 Click="DeleteCargoImageButton_Click"
                                                                                                 CornerRadius="10"
                                                                                                 Tag="{x:Bind}"
-                                                                                                ToolTipService.ToolTip="Eliminar imagen">
+                                                                                                ToolTipService.ToolTip="Eliminar imagen" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                                                 <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                                             </Button>
                                                                                         </Grid>
@@ -803,7 +801,6 @@
                                                                 </DataTemplate>
                                                             </ItemsRepeater.ItemTemplate>
                                                         </ItemsRepeater>
-                                                    </ScrollViewer>
 
                                                     <!--  Action Buttons for Selected Cargos  -->
                                                     <StackPanel
@@ -823,7 +820,7 @@
                                                         <Button
                                                             Click="UploadSelectedCargoImageButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Cargar imagen al cargo seleccionado">
+                                                            ToolTipService.ToolTip="Cargar imagen al cargo seleccionado" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Camera" />
                                                                 <TextBlock Text="Cargar Imagen" />
@@ -832,7 +829,7 @@
                                                         <Button
                                                             Click="EditSelectedCargoButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Editar cargo seleccionado">
+                                                            ToolTipService.ToolTip="Editar cargo seleccionado" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Edit" />
                                                                 <TextBlock Text="Editar" />
@@ -841,7 +838,7 @@
                                                         <Button
                                                             Click="DeleteSelectedCargosButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar cargos seleccionados">
+                                                            ToolTipService.ToolTip="Eliminar cargos seleccionados" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Delete" />
                                                                 <TextBlock Text="Eliminar" />
@@ -850,7 +847,7 @@
                                                         <Button
                                                             Click="ViewSelectedRefaccionButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Ver detalles de refacción seleccionada">
+                                                            ToolTipService.ToolTip="Ver detalles de refacción seleccionada" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="View" />
                                                                 <TextBlock Text="Ver Refacción" />
@@ -859,7 +856,7 @@
                                                         <Button
                                                             Click="ExpandSelectedGalleryButton_Click"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Expandir galería de imágenes del cargo seleccionado">
+                                                            ToolTipService.ToolTip="Expandir galería de imágenes del cargo seleccionado" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Pictures" />
                                                                 <TextBlock Text="Ver Imágenes" />
@@ -960,7 +957,7 @@
                                                                 Background="{ThemeResource SystemAccentColor}"
                                                                 Click="VerFacturaButton_Click"
                                                                 Tag="{x:Bind}"
-                                                                ToolTipService.ToolTip="Abrir factura PDF">
+                                                                ToolTipService.ToolTip="Abrir factura PDF" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                 <StackPanel Orientation="Horizontal" Spacing="4">
                                                                     <SymbolIcon Symbol="OpenFile" />
                                                                     <TextBlock Text="Ver Factura" />
@@ -995,7 +992,7 @@
                                                                             BorderThickness="0"
                                                                             Click="ViewOperacionImageButton_Click"
                                                                             Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Ver imagen">
+                                                                            ToolTipService.ToolTip="Ver imagen" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                             <Image
                                                                                 HorizontalAlignment="Center"
                                                                                 VerticalAlignment="Center"
@@ -1014,7 +1011,7 @@
                                                                             Click="DeleteOperacionImageButton_Click"
                                                                             CornerRadius="10"
                                                                             Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                                            ToolTipService.ToolTip="Eliminar imagen" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                         </Button>
                                                                     </Grid>
@@ -1049,7 +1046,7 @@
                                                                             BorderThickness="0"
                                                                             Click="ViewOperacionImageButton_Click"
                                                                             Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Ver imagen">
+                                                                            ToolTipService.ToolTip="Ver imagen" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                             <Image
                                                                                 HorizontalAlignment="Center"
                                                                                 VerticalAlignment="Center"
@@ -1068,7 +1065,7 @@
                                                                             Click="DeleteOperacionImageButton_Click"
                                                                             CornerRadius="10"
                                                                             Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                                            ToolTipService.ToolTip="Eliminar imagen" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                         </Button>
                                                                     </Grid>
@@ -1103,7 +1100,7 @@
                                                                             BorderThickness="0"
                                                                             Click="ViewOperacionImageButton_Click"
                                                                             Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Ver imagen">
+                                                                            ToolTipService.ToolTip="Ver imagen" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                             <Image
                                                                                 HorizontalAlignment="Center"
                                                                                 VerticalAlignment="Center"
@@ -1122,7 +1119,7 @@
                                                                             Click="DeleteOperacionImageButton_Click"
                                                                             CornerRadius="10"
                                                                             Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                                            ToolTipService.ToolTip="Eliminar imagen" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                         </Button>
                                                                     </Grid>
@@ -1160,7 +1157,7 @@
                     Text="No se encontraron operaciones con los filtros actuales." />
                 <Button IsHitTestVisible="True"
                     HorizontalAlignment="Center" Click="ClearButton_Click"
-                    Content="Limpiar filtros" />
+                    Content="Limpiar filtros"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
             </StackPanel>
 
             <!--  Loading overlay  -->

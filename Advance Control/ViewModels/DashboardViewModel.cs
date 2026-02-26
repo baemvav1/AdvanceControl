@@ -1,10 +1,12 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.NotificationSettings;
 using Advance_Control.Services.Session;
 
 namespace Advance_Control.ViewModels
@@ -18,6 +20,7 @@ namespace Advance_Control.ViewModels
         private readonly IUserSessionService _userSessionService;
         private readonly ILoggingService _logger;
         private readonly IActivityService _activityService;
+        private readonly INotificationSettingsService _notificationSettings;
 
         private string _saludo = "Bienvenido";
         private string _nombreUsuario = string.Empty;
@@ -31,11 +34,13 @@ namespace Advance_Control.ViewModels
         public DashboardViewModel(
             IUserSessionService userSessionService,
             ILoggingService logger,
-            IActivityService activityService)
+            IActivityService activityService,
+            INotificationSettingsService notificationSettings)
         {
             _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activityService = activityService ?? throw new ArgumentNullException(nameof(activityService));
+            _notificationSettings = notificationSettings ?? throw new ArgumentNullException(nameof(notificationSettings));
             ActividadReciente = new ObservableCollection<ActivityItem>();
         }
 
@@ -179,6 +184,34 @@ namespace Advance_Control.ViewModels
                 >= 12 and < 19 => "Buenas tardes",
                 _ => "Buenas noches"
             };
+        }
+
+        /// <summary>
+        /// Silencia las notificaciones de la categoría del item dado y lo elimina de la lista visible.
+        /// </summary>
+        public async Task SilenciarCategoriaAsync(ActivityItem item)
+        {
+            if (item == null || string.IsNullOrWhiteSpace(item.Categoria)) return;
+            try
+            {
+                await _notificationSettings.SetCategoryEnabledAsync(item.Categoria, false).ConfigureAwait(false);
+
+                // Quitar todos los items de esa categoría de la lista visible
+                var toRemove = ActividadReciente
+                    .Where(i => string.Equals(i.Categoria, item.Categoria, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                foreach (var r in toRemove)
+                    ActividadReciente.Remove(r);
+
+                _isActividadEmpty = ActividadReciente.Count == 0;
+                OnPropertyChanged(nameof(IsActividadEmpty));
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync($"Error al silenciar categoría '{item.Categoria}'", ex,
+                    "DashboardViewModel", "SilenciarCategoriaAsync");
+            }
         }
     }
 }
