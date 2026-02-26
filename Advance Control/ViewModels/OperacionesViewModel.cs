@@ -12,6 +12,7 @@ using Advance_Control.Services.Logging;
 using Advance_Control.Services.Quotes;
 using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Clientes;
+using Advance_Control.Services.Activity;
 
 namespace Advance_Control.ViewModels
 {
@@ -33,6 +34,7 @@ namespace Advance_Control.ViewModels
         private readonly IQuoteService _quoteService;
         private readonly IEntidadService _entidadService;
         private readonly IClienteService _clienteService;
+        private readonly IActivityService _activityService;
         private ObservableCollection<OperacionDto> _operaciones;
         private bool _isLoading;
         private string? _errorMessage;
@@ -44,15 +46,16 @@ namespace Advance_Control.ViewModels
         private string? _selectedClienteText;
         private string? _selectedEquipoText;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService)
         {
-            _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
-            _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
-            _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
-            _ubicacionService = ubicacionService ?? throw new ArgumentNullException(nameof(ubicacionService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _quoteService = quoteService ?? throw new ArgumentNullException(nameof(quoteService));
-            _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
+            _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
+            _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
+            _equipoService     = equipoService     ?? throw new ArgumentNullException(nameof(equipoService));
+            _ubicacionService  = ubicacionService  ?? throw new ArgumentNullException(nameof(ubicacionService));
+            _logger            = logger            ?? throw new ArgumentNullException(nameof(logger));
+            _quoteService      = quoteService      ?? throw new ArgumentNullException(nameof(quoteService));
+            _entidadService    = entidadService    ?? throw new ArgumentNullException(nameof(entidadService));
+            _activityService   = activityService   ?? throw new ArgumentNullException(nameof(activityService));
             _operaciones = new ObservableCollection<OperacionDto>();
         }
 
@@ -260,6 +263,7 @@ namespace Advance_Control.ViewModels
 
                 if (result)
                 {
+                    await _activityService.CrearActividadAsync("Operaciones", $"Operación eliminada (ID: {idOperacion})");
                     await _logger.LogInformationAsync($"Operación {idOperacion} eliminada exitosamente", "OperacionesViewModel", "DeleteOperacionAsync");
                     await LoadOperacionesAsync(cancellationToken);
                 }
@@ -287,7 +291,10 @@ namespace Advance_Control.ViewModels
             try
             {
                 await _logger.LogInformationAsync($"Actualizando operación {idOperacion}...", "OperacionesViewModel", "UpdateOperacionAsync");
-                return await _operacionService.UpdateOperacionAsync(idOperacion, idTipo, idCliente, idEquipo, idAtiende, monto, nota, fechaFinal, cancellationToken);
+                var resultado = await _operacionService.UpdateOperacionAsync(idOperacion, idTipo, idCliente, idEquipo, idAtiende, monto, nota, fechaFinal, cancellationToken);
+                if (resultado)
+                    await _activityService.CrearActividadAsync("Operaciones", $"Operación actualizada (ID: {idOperacion})");
+                return resultado;
             }
             catch (Exception ex)
             {

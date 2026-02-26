@@ -6,23 +6,27 @@ using Advance_Control.Models;
 namespace Advance_Control.Services.Activity
 {
     /// <summary>
-    /// Servicio que obtiene la actividad reciente del sistema para mostrar en el dashboard.
-    /// Consume el endpoint GET /api/Logging/actividad.
+    /// Servicio que gestiona la actividad de usuario para el dashboard.
+    /// Consume GET /api/Actividad y POST /api/Actividad.
     /// </summary>
     public interface IActivityService
     {
         /// <summary>
-        /// Obtiene los últimos registros de actividad de negocio.
+        /// Obtiene las actividades registradas del usuario autenticado.
         /// </summary>
-        /// <param name="credencialId">Filtrar por usuario. Null = todos.</param>
-        /// <param name="categoria">Filtrar por categoría: Operacion | Mantenimiento | Cliente | Equipo | Proveedor | Autenticacion. Null = todas.</param>
-        /// <param name="soloErrores">True = solo Warning/Error/Critical.</param>
-        /// <param name="top">Máximo de registros. Default 30.</param>
-        Task<IReadOnlyList<ActivityItem>> GetActividadRecienteAsync(
-            int? credencialId = null,
-            string? categoria = null,
-            bool soloErrores = false,
-            int top = 30,
+        Task<IReadOnlyList<ActivityItem>> GetActividadAsync(
+            int credencialId,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Registra una nueva actividad realizada por el usuario autenticado.
+        /// El credencial_id se obtiene de la sesión activa.
+        /// </summary>
+        /// <param name="origen">Módulo que origina la acción (ej: "Clientes", "Operaciones").</param>
+        /// <param name="titulo">Descripción legible de la acción realizada.</param>
+        Task CrearActividadAsync(
+            string origen,
+            string titulo,
             CancellationToken cancellationToken = default);
     }
 }

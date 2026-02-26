@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Views.Pages
 {
@@ -31,6 +32,7 @@ namespace Advance_Control.Views.Pages
             _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
             
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, _loggingService, nameof(ContactosView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;

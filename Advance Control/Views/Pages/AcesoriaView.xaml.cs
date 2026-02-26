@@ -3,6 +3,8 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Views
 {
@@ -19,6 +21,7 @@ namespace Advance_Control.Views
             ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<AcesoriaViewModel>();
             
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(AcesoriaView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;

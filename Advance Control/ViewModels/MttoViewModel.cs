@@ -7,6 +7,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Session;
+using Advance_Control.Services.Activity;
 
 namespace Advance_Control.ViewModels
 {
@@ -19,17 +20,19 @@ namespace Advance_Control.ViewModels
         private readonly IMantenimientoService _mantenimientoService;
         private readonly ILoggingService _logger;
         private readonly IUserSessionService _userSession;
+        private readonly IActivityService _activityService;
         private ObservableCollection<MantenimientoDto> _mantenimientos;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _identificadorFilter;
         private int _idClienteFilter;
 
-        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession)
+        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService)
         {
             _mantenimientoService = mantenimientoService ?? throw new ArgumentNullException(nameof(mantenimientoService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _userSession = userSession ?? throw new ArgumentNullException(nameof(userSession));
+            _logger               = logger               ?? throw new ArgumentNullException(nameof(logger));
+            _userSession          = userSession          ?? throw new ArgumentNullException(nameof(userSession));
+            _activityService      = activityService      ?? throw new ArgumentNullException(nameof(activityService));
             _mantenimientos = new ObservableCollection<MantenimientoDto>();
         }
 
@@ -177,6 +180,7 @@ namespace Advance_Control.ViewModels
 
                 if (result)
                 {
+                    await _activityService.CrearActividadAsync("Mantenimiento", $"Mantenimiento eliminado (ID: {idMantenimiento})");
                     await _logger.LogInformationAsync($"Mantenimiento {idMantenimiento} eliminado exitosamente", "MttoViewModel", "DeleteMantenimientoAsync");
                     // Recargar la lista de mantenimientos
                     await LoadMantenimientosAsync(cancellationToken);
@@ -211,6 +215,7 @@ namespace Advance_Control.ViewModels
 
                 if (result)
                 {
+                    await _activityService.CrearActividadAsync("Mantenimiento", "Mantenimiento registrado");
                     await _logger.LogInformationAsync($"Mantenimiento creado exitosamente", "MttoViewModel", "CreateMantenimientoAsync");
                     // Recargar la lista de mantenimientos
                     await LoadMantenimientosAsync(cancellationToken);

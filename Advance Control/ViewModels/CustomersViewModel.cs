@@ -9,6 +9,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Session;
+using Advance_Control.Services.Activity;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,6 +18,7 @@ namespace Advance_Control.ViewModels
         private readonly IClienteService _clienteService;
         private readonly ILoggingService _logger;
         private readonly IUserSessionService _userSessionService;
+        private readonly IActivityService _activityService;
         private ObservableCollection<CustomerDto> _customers;
         private bool _isLoading;
         private string? _errorMessage;
@@ -26,11 +28,12 @@ namespace Advance_Control.ViewModels
         private string? _notasFilter;
         private double? _prioridadFilter;
 
-        public CustomersViewModel(IClienteService clienteService, ILoggingService logger, IUserSessionService userSessionService)
+        public CustomersViewModel(IClienteService clienteService, ILoggingService logger, IUserSessionService userSessionService, IActivityService activityService)
         {
-            _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
+            _clienteService      = clienteService      ?? throw new ArgumentNullException(nameof(clienteService));
+            _logger              = logger              ?? throw new ArgumentNullException(nameof(logger));
+            _userSessionService  = userSessionService  ?? throw new ArgumentNullException(nameof(userSessionService));
+            _activityService     = activityService     ?? throw new ArgumentNullException(nameof(activityService));
             _customers = new ObservableCollection<CustomerDto>();
         }
 
@@ -231,6 +234,7 @@ namespace Advance_Control.ViewModels
 
                 if (response.Success)
                 {
+                    await _activityService.CrearActividadAsync("Clientes", $"Cliente registrado: {nombreComercial}");
                     await _logger.LogInformationAsync($"Cliente creado exitosamente: {nombreComercial}", "CustomersViewModel", "CreateClienteAsync");
                     
                     // Recargar la lista de clientes
@@ -291,6 +295,7 @@ namespace Advance_Control.ViewModels
 
                 if (response.Success)
                 {
+                    await _activityService.CrearActividadAsync("Clientes", $"Cliente actualizado: {nombreComercial}");
                     await _logger.LogInformationAsync($"Cliente actualizado exitosamente: {nombreComercial}", "CustomersViewModel", "UpdateClienteAsync");
                     
                     // Recargar la lista de clientes
@@ -323,6 +328,7 @@ namespace Advance_Control.ViewModels
 
                 if (response.Success)
                 {
+                    await _activityService.CrearActividadAsync("Clientes", $"Cliente eliminado (ID: {idCliente})");
                     await _logger.LogInformationAsync($"Cliente eliminado exitosamente: {idCliente}", "CustomersViewModel", "DeleteClienteAsync");
                     
                     // Recargar la lista de clientes

@@ -6,8 +6,11 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Services.Contactos;
+using Advance_Control.Services.Activity;
 using Advance_Control.Views.Dialogs;
 using Advance_Control.Models;
 
@@ -22,6 +25,7 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
         private readonly IContactoService _contactoService;
+        private readonly IActivityService _activityService;
 
         public MttoView()
         {
@@ -37,7 +41,11 @@ namespace Advance_Control.Views
             // Resolver el servicio de contactos desde DI
             _contactoService = ((App)Application.Current).Host.Services.GetRequiredService<IContactoService>();
 
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(MttoView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -258,6 +266,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Mantenimiento", "Mant. atendido");
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Mantenimiento atendido",
                             nota: "El mantenimiento se ha marcado como atendido correctamente.",
@@ -398,6 +407,7 @@ namespace Advance_Control.Views
 
                         if (success)
                         {
+                            _ = _activityService.CrearActividadAsync("Mantenimiento", "Atendido como tipo");
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Mantenimiento atendido",
                                 nota: $"El mantenimiento se ha marcado como atendido por {selectedContacto.NombreCompleto}.",

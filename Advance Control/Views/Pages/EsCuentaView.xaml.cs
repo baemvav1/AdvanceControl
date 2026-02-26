@@ -13,7 +13,11 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Advance_Control.ViewModels;
+using Advance_Control.Services.Activity;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using WinRT.Interop;
+using Microsoft.Extensions.DependencyInjection;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -26,11 +30,14 @@ namespace Advance_Control.Views.Pages
     public sealed partial class EsCuentaView : Page
     {
         public EsCuentaViewModel ViewModel { get; }
+        private readonly IActivityService _activityService;
 
         public EsCuentaView()
         {
             InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)App.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(EsCuentaView));
             ViewModel = new EsCuentaViewModel();
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
         }
 
         private async void BtnCargarXml_Click(object sender, RoutedEventArgs e)
@@ -38,6 +45,8 @@ namespace Advance_Control.Views.Pages
             // Obtener el window handle para el FileOpenPicker
             var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
             await ViewModel.CargarArchivoXmlAsync(hwnd);
+            if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
+                _ = _activityService.CrearActividadAsync("EsCuenta", "XML cargado");
         }
     }
 }

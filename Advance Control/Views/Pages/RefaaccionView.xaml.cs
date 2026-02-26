@@ -9,7 +9,10 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using Advance_Control.Services.RelacionesRefaccionEquipo;
+using Advance_Control.Services.Activity;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Models;
 
@@ -24,6 +27,7 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly IRelacionRefaccionEquipoService _relacionRefaccionEquipoService;
         private readonly IEquipoService _equipoService;
+        private readonly IActivityService _activityService;
 
         public RefaaccionView()
         {
@@ -38,8 +42,12 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de equipos desde DI
             _equipoService = ((App)Application.Current).Host.Services.GetRequiredService<IEquipoService>();
+
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
             
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(RefaaccionView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -666,6 +674,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Refacciones", "Equipo asociado");
                         // Recargar las relaciones para actualizar la UI
                         refaccion.RelacionesEquipoLoaded = false;
                         await LoadRelacionesEquipoForRefaccionAsync(refaccion);
@@ -762,6 +771,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Refacciones", "Relación modificada");
                         // Actualizar la nota en el objeto local
                         relacion.Nota = nuevaNota;
 
@@ -831,6 +841,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Refacciones", "Relación eliminada");
                         // Eliminar la relación de la colección local
                         refaccion.RelacionesEquipo.Remove(relacion);
                         refaccion.NotifyNoRelacionesEquipoMessageChanged();

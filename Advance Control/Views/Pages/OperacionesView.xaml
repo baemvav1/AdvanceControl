@@ -544,10 +544,10 @@
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="100" />
+                                                            <ColumnDefinition Width="160" />
+                                                            <ColumnDefinition Width="70" />
                                                             <ColumnDefinition Width="120" />
-                                                            <ColumnDefinition Width="80" />
-                                                            <ColumnDefinition Width="100" />
-                                                            <ColumnDefinition Width="100" />
+                                                            <ColumnDefinition Width="120" />
                                                             <ColumnDefinition Width="*" />
                                                             <ColumnDefinition Width="120" />
                                                             <ColumnDefinition Width="50" />
@@ -622,10 +622,10 @@
                                                                         <Grid Padding="8,6">
                                                                             <Grid.ColumnDefinitions>
                                                                                 <ColumnDefinition Width="100" />
+                                                                                <ColumnDefinition Width="160" />
+                                                                                <ColumnDefinition Width="70" />
                                                                                 <ColumnDefinition Width="120" />
-                                                                                <ColumnDefinition Width="80" />
-                                                                                <ColumnDefinition Width="100" />
-                                                                                <ColumnDefinition Width="100" />
+                                                                                <ColumnDefinition Width="120" />
                                                                                 <ColumnDefinition Width="*" />
                                                                                 <ColumnDefinition Width="120" />
                                                                                 <ColumnDefinition Width="50" />
@@ -640,14 +640,32 @@
                                                                                 Text="{x:Bind TipoCargo, Mode=OneWay}"
                                                                                 TextTrimming="CharacterEllipsis" />
 
-                                                                            <!--  Detalle (ReadOnly)  -->
-                                                                            <TextBlock
+                                                                            <!--  Detalle (ReadOnly) - 3 líneas para refacciones (marca/serie/descripción)  -->
+                                                                            <StackPanel
                                                                                 Grid.Column="1"
                                                                                 VerticalAlignment="Center"
-                                                                                FontSize="12"
-                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                                                Text="{x:Bind DetalleRelacionado, Mode=OneWay}"
-                                                                                TextTrimming="CharacterEllipsis" />
+                                                                                Spacing="1">
+                                                                                <TextBlock
+                                                                                    FontSize="12"
+                                                                                    FontWeight="SemiBold"
+                                                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                                    Text="{x:Bind DetalleLinea1, Mode=OneWay}"
+                                                                                    TextTrimming="CharacterEllipsis"
+                                                                                    ToolTipService.ToolTip="{x:Bind DetalleLinea1, Mode=OneWay}" />
+                                                                                <TextBlock
+                                                                                    FontSize="11"
+                                                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                    Text="{x:Bind DetalleLinea2, Mode=OneWay}"
+                                                                                    TextTrimming="CharacterEllipsis"
+                                                                                    Visibility="{x:Bind TieneSubdetalle, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                                                <TextBlock
+                                                                                    FontSize="11"
+                                                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                    Text="{x:Bind DetalleLinea3, Mode=OneWay}"
+                                                                                    TextTrimming="CharacterEllipsis"
+                                                                                    ToolTipService.ToolTip="{x:Bind DetalleLinea3, Mode=OneWay}"
+                                                                                    Visibility="{x:Bind TieneSubdetalle, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                                            </StackPanel>
 
                                                                             <!--  Cantidad (Read-only display when not editing)  -->
                                                                             <TextBlock

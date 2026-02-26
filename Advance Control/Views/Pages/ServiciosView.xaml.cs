@@ -1,5 +1,8 @@
 using Advance_Control.Models;
+using Advance_Control.Services.Activity;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -30,6 +33,7 @@ namespace Advance_Control.Views.Pages
     {
         public ServiciosViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
+        private readonly IActivityService _activityService;
 
         public ServiciosView()
         {
@@ -39,7 +43,11 @@ namespace Advance_Control.Views.Pages
             // Resolver el servicio de notificaciones desde DI
             _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
 
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(ServiciosView));
 
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -49,7 +57,7 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
 
-            // Cargar los servicios cuando se navega a esta página
+            // Cargar los servicios cuando se navega a esta pï¿½gina
             await ViewModel.LoadServiciosAsync();
         }
 
@@ -74,7 +82,7 @@ namespace Advance_Control.Views.Pages
 
             var descripcionTextBox = new TextBox
             {
-                PlaceholderText = "Ingrese la descripción",
+                PlaceholderText = "Ingrese la descripciï¿½n",
                 AcceptsReturn = true,
                 TextWrapping = TextWrapping.Wrap,
                 MinHeight = 100,
@@ -102,7 +110,7 @@ namespace Advance_Control.Views.Pages
                 {
                     new TextBlock { Text = "Concepto:" },
                     conceptoTextBox,
-                    new TextBlock { Text = "Descripción:" },
+                    new TextBlock { Text = "Descripciï¿½n:" },
                     descripcionTextBox,
                     new TextBlock { Text = "Costo:" },
                     costoTextBox,
@@ -141,7 +149,7 @@ namespace Advance_Control.Views.Pages
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Campo requerido",
-                            nota: "La descripción es obligatoria.",
+                            nota: "La descripciï¿½n es obligatoria.",
                             fechaHoraInicio: DateTime.Now
                         );
                         return;
@@ -160,7 +168,7 @@ namespace Advance_Control.Views.Pages
                     {
                         await _notificacionService.MostrarNotificacionAsync(
                             titulo: "Servicio creado",
-                            nota: "El servicio se creó exitosamente.",
+                            nota: "El servicio se creï¿½ exitosamente.",
                             fechaHoraInicio: DateTime.Now
                         );
                     }
@@ -215,7 +223,7 @@ namespace Advance_Control.Views.Pages
                 var descripcionTextBox = new TextBox
                 {
                     Text = servicio.Descripcion,
-                    PlaceholderText = "Ingrese la descripción",
+                    PlaceholderText = "Ingrese la descripciï¿½n",
                     AcceptsReturn = true,
                     TextWrapping = TextWrapping.Wrap,
                     MinHeight = 100,
@@ -244,7 +252,7 @@ namespace Advance_Control.Views.Pages
                     {
                         new TextBlock { Text = "Concepto:" },
                         conceptoTextBox,
-                        new TextBlock { Text = "Descripción:" },
+                        new TextBlock { Text = "Descripciï¿½n:" },
                         descripcionTextBox,
                         new TextBlock { Text = "Costo:" },
                         costoTextBox,
@@ -283,7 +291,7 @@ namespace Advance_Control.Views.Pages
                         {
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Campo requerido",
-                                nota: "La descripción es obligatoria.",
+                                nota: "La descripciï¿½n es obligatoria.",
                                 fechaHoraInicio: DateTime.Now
                             );
                             return;
@@ -303,9 +311,10 @@ namespace Advance_Control.Views.Pages
 
                         if (success)
                         {
+                            _ = _activityService.CrearActividadAsync("Servicios", "Servicio modificado");
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Servicio actualizado",
-                                nota: "El servicio se actualizó exitosamente.",
+                                nota: "El servicio se actualizï¿½ exitosamente.",
                                 fechaHoraInicio: DateTime.Now
                             );
                         }
@@ -334,12 +343,12 @@ namespace Advance_Control.Views.Pages
         {
             if (sender is Button button && button.Tag is ServicioDto servicio)
             {
-                // Mostrar confirmación
+                // Mostrar confirmaciï¿½n
                 var confirmDialog = new ContentDialog
                 {
-                    Title = "Confirmar eliminación",
-                    Content = $"¿Está seguro de que desea eliminar el servicio '{servicio.Concepto}'?",
-                    PrimaryButtonText = "Sí, eliminar",
+                    Title = "Confirmar eliminaciï¿½n",
+                    Content = $"ï¿½Estï¿½ seguro de que desea eliminar el servicio '{servicio.Concepto}'?",
+                    PrimaryButtonText = "Sï¿½, eliminar",
                     CloseButtonText = "Cancelar",
                     DefaultButton = ContentDialogButton.Close,
                     XamlRoot = this.XamlRoot
@@ -355,9 +364,10 @@ namespace Advance_Control.Views.Pages
 
                         if (success)
                         {
+                            _ = _activityService.CrearActividadAsync("Servicios", "Servicio eliminado");
                             await _notificacionService.MostrarNotificacionAsync(
                                 titulo: "Servicio eliminado",
-                                nota: "El servicio se eliminó exitosamente.",
+                                nota: "El servicio se eliminï¿½ exitosamente.",
                                 fechaHoraInicio: DateTime.Now
                             );
                         }
@@ -391,7 +401,7 @@ namespace Advance_Control.Views.Pages
 
             if (!double.TryParse(costoText, NumberStyles.Any, CultureInfo.InvariantCulture, out var costo))
             {
-                throw new ArgumentException("El costo debe ser un número válido.");
+                throw new ArgumentException("El costo debe ser un nï¿½mero vï¿½lido.");
             }
 
             if (costo < 0)

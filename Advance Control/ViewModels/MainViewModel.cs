@@ -17,7 +17,8 @@ using Advance_Control.Models;
 using CommunityToolkit.Mvvm.Input;
 using Advance_Control.Services.AccessControl;
 using Advance_Control.Services.UserInfo;
-using Advance_Control.Services.NotificationSettings;
+using Advance_Control.Services.Alertas;
+using Advance_Control.Services.Activity;
 
 namespace Advance_Control.ViewModels
 {
@@ -31,7 +32,8 @@ namespace Advance_Control.ViewModels
         private readonly IServiceProvider _serviceProvider;
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
-        private readonly INotificationSettingsService _notificationSettings;
+        private readonly INotificacionAlertaService _alertaService;
+        private readonly IActivityService _activityService;
         private NotificacionService? _notifServiceReference;
         private bool _disposed;
 
@@ -40,7 +42,8 @@ namespace Advance_Control.ViewModels
         private bool _isBackEnabled;
         private bool _isNotificacionesVisible = true;
         private ObservableCollection<NotificacionDto> _notificaciones;
-        private ObservableCollection<NotificacionSilenciadaVm> _notificacionesSilenciadas = new();
+        private ObservableCollection<NotificacionAlerta> _alertasDb = new();
+        private bool _hasAlertasDb;
         private string _userInitials = "";
         private string _userType = "";
         private bool _hasUnseenNotifications;
@@ -55,17 +58,19 @@ namespace Advance_Control.ViewModels
             IServiceProvider serviceProvider,
             INotificacionService notificacionService,
             IUserInfoService userInfoService,
-            INotificationSettingsService notificationSettings)
+            INotificacionAlertaService alertaService,
+            IActivityService activityService)
         {
-            _navigationService = navigationService ?? throw new ArgumentNullException(nameof(navigationService));
-            _onlineCheck = onlineCheck ?? throw new ArgumentNullException(nameof(onlineCheck));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
-            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+            _navigationService   = navigationService   ?? throw new ArgumentNullException(nameof(navigationService));
+            _onlineCheck         = onlineCheck         ?? throw new ArgumentNullException(nameof(onlineCheck));
+            _logger              = logger              ?? throw new ArgumentNullException(nameof(logger));
+            _authService         = authService         ?? throw new ArgumentNullException(nameof(authService));
+            _dialogService       = dialogService       ?? throw new ArgumentNullException(nameof(dialogService));
+            _serviceProvider     = serviceProvider     ?? throw new ArgumentNullException(nameof(serviceProvider));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
-            _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
-            _notificationSettings = notificationSettings ?? throw new ArgumentNullException(nameof(notificationSettings));
+            _userInfoService     = userInfoService     ?? throw new ArgumentNullException(nameof(userInfoService));
+            _alertaService       = alertaService       ?? throw new ArgumentNullException(nameof(alertaService));
+            _activityService     = activityService     ?? throw new ArgumentNullException(nameof(activityService));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -170,42 +175,55 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _notificaciones, value);
         }
 
-        public ObservableCollection<NotificacionSilenciadaVm> NotificacionesSilenciadas
+        /// <summary>Alertas inteligentes persistentes generadas por el sistema.</summary>
+        public ObservableCollection<NotificacionAlerta> AlertasDb
         {
-            get => _notificacionesSilenciadas;
-            private set => SetProperty(ref _notificacionesSilenciadas, value);
+            get => _alertasDb;
+            private set => SetProperty(ref _alertasDb, value);
+        }
+
+        public bool HasAlertasDb
+        {
+            get => _hasAlertasDb;
+            private set => SetProperty(ref _hasAlertasDb, value);
         }
 
         /// <summary>
-        /// Carga (o recarga) la lista de categorías silenciadas desde el servicio de configuración.
+        /// Genera y carga las alertas inteligentes del usuario desde la BD.
+        /// Llamar después del login exitoso.
         /// </summary>
-        public void LoadSilenciadas()
+        public async Task CargarAlertasAsync(int credencialId)
         {
-            _notificacionesSilenciadas.Clear();
-            foreach (var entry in _notificationSettings.GetAll().Where(e => !e.Habilitada))
+            try
             {
-                _notificacionesSilenciadas.Add(new NotificacionSilenciadaVm
+                var alertas = await _alertaService.GenerarYObtenerAsync(credencialId).ConfigureAwait(false);
+                await UpdateUIPropertiesAsync(() =>
                 {
-                    Categoria = entry.Categoria,
-                    Page = entry.Page,
-                    Habilitada = entry.Habilitada
+                    _alertasDb.Clear();
+                    foreach (var a in alertas) _alertasDb.Add(a);
+                    HasAlertasDb = _alertasDb.Count > 0;
+                    if (HasAlertasDb) HasUnseenNotifications = true;
                 });
             }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync("No se pudieron cargar alertas del sistema", "MainViewModel", "CargarAlertasAsync");
+            }
         }
 
-        /// <summary>
-        /// Activa o desactiva una categoría silenciada desde el panel de notificaciones.
-        /// </summary>
-        public async Task SetCategoryEnabledAsync(string categoria, bool enabled)
+        /// <summary>Descarta todas las alertas marcándolas como vistas en la BD.</summary>
+        public async Task DescartarAlertasAsync(int credencialId)
         {
-            await _notificationSettings.SetCategoryEnabledAsync(categoria, enabled).ConfigureAwait(false);
-            if (enabled)
+            try
             {
-                var toRemove = _notificacionesSilenciadas
-                    .FirstOrDefault(x => string.Equals(x.Categoria, categoria, StringComparison.OrdinalIgnoreCase));
-                if (toRemove != null)
-                    _notificacionesSilenciadas.Remove(toRemove);
+                await _alertaService.MarcarVistasAsync(credencialId).ConfigureAwait(false);
+                await UpdateUIPropertiesAsync(() =>
+                {
+                    _alertasDb.Clear();
+                    HasAlertasDb = false;
+                });
             }
+            catch { /* silenciar */ }
         }
 
         public string UserInitials
@@ -286,6 +304,7 @@ namespace Advance_Control.ViewModels
             { "Areas",         1 },
             { "EsCuenta",      1 },
         };
+
 
         public void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
@@ -605,6 +624,11 @@ namespace Advance_Control.ViewModels
                     });
                     
                     await _logger.LogInformationAsync($"Información de usuario cargada: {userInfo.NombreCompleto} ({userInfo.TipoUsuario})", "MainViewModel", "LoadUserInfoAsync");
+
+                    // Generar y cargar alertas inteligentes para el usuario recién autenticado
+                    var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+                    if (sessionService?.IsLoaded == true && sessionService.CredencialId > 0)
+                        _ = CargarAlertasAsync(sessionService.CredencialId);
                 }
                 else
                 {

@@ -3,6 +3,8 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Navigation;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Views.Pages
 {
@@ -21,6 +23,7 @@ namespace Advance_Control.Views.Pages
             ViewModel = ((App)App.Current).Host.Services.GetRequiredService<DashboardViewModel>();
             _navigationService = ((App)App.Current).Host.Services.GetRequiredService<INavigationService>();
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)App.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(DashboardPage));
             this.DataContext = ViewModel;
         }
 
@@ -32,12 +35,6 @@ namespace Advance_Control.Views.Pages
 
         private async void RefreshActividad_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => await ViewModel.LoadActividadAsync();
-
-        private async void SilenciarCategoria_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        {
-            if (sender is Microsoft.UI.Xaml.Controls.Button btn && btn.Tag is Models.ActivityItem item)
-                await ViewModel.SilenciarCategoriaAsync(item);
-        }
 
         private void IrOperaciones_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => _navigationService.Navigate("Operaciones");

@@ -9,7 +9,10 @@ using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using Advance_Control.Services.RelacionesProveedorRefaccion;
+using Advance_Control.Services.Activity;
 using Advance_Control.Services.Refacciones;
 using Advance_Control.Models;
 
@@ -24,6 +27,7 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly IRelacionProveedorRefaccionService _relacionProveedorRefaccionService;
         private readonly IRefaccionService _refaccionService;
+        private readonly IActivityService _activityService;
 
         public ProveedoresView()
         {
@@ -38,8 +42,12 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de refacciones desde DI
             _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
+
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
             
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(ProveedoresView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -375,6 +383,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Proveedores", "Refacción añadida");
                         // Recargar las relaciones para actualizar la UI
                         proveedor.RelacionesRefaccionLoaded = false;
                         await LoadRelacionesRefaccionForProveedorAsync(proveedor);
@@ -497,6 +506,7 @@ namespace Advance_Control.Views
 
                     if (precioUpdated || notaUpdated)
                     {
+                        _ = _activityService.CrearActividadAsync("Proveedores", "Relación modificada");
                         // Recargar las relaciones para actualizar la UI
                         proveedor.RelacionesRefaccionLoaded = false;
                         await LoadRelacionesRefaccionForProveedorAsync(proveedor);
@@ -558,6 +568,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Proveedores", "Relación eliminada");
                         // Eliminar la relación de la colección local
                         proveedor.RelacionesRefaccion.Remove(relacion);
                         proveedor.NotifyNoRelacionesRefaccionMessageChanged();

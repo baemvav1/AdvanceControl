@@ -2,19 +2,22 @@ using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.ViewModels;
+using Advance_Control.Services.Session;
 
 namespace Advance_Control
 {
     public sealed partial class MainWindow : Window
     {
         private readonly MainViewModel _viewModel;
+        private readonly IUserSessionService _sessionService;
         private bool _autoLoginAttempted;
 
         // Constructor adapted for DI to inject MainViewModel
-        public MainWindow(MainViewModel viewModel)
+        public MainWindow(MainViewModel viewModel, IUserSessionService sessionService)
         {
             this.InitializeComponent();
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
+            _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
 
             // Set the DataContext to the ViewModel on the root Grid
             // Note: Window class in WinUI 3 doesn't have a DataContext property
@@ -56,19 +59,12 @@ namespace Advance_Control
             NotificacionesColumn.Width = _viewModel.IsNotificacionesVisible 
                 ? new GridLength(2, GridUnitType.Star) 
                 : new GridLength(0);
-
-            // Cargar (o recargar) la lista de silenciadas al abrir el panel
-            if (_viewModel.IsNotificacionesVisible)
-                _viewModel.LoadSilenciadas();
         }
 
-        private async void SilenciadaToggle_Toggled(object sender, RoutedEventArgs e)
+        private async void DescartarAlertas_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Microsoft.UI.Xaml.Controls.ToggleSwitch toggle
-                && toggle.Tag is string categoria)
-            {
-                await _viewModel.SetCategoryEnabledAsync(categoria, toggle.IsOn);
-            }
+            if (_sessionService.IsLoaded && _sessionService.CredencialId > 0)
+                await _viewModel.DescartarAlertasAsync(_sessionService.CredencialId);
         }
     }
 }

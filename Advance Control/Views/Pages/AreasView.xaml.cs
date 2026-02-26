@@ -2,7 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
+using Advance_Control.Services.Activity;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using Advance_Control.Models;
 using System;
 using System.Collections.Generic;
@@ -29,6 +31,7 @@ namespace Advance_Control.Views.Pages
         
         public AreasViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
+        private readonly IActivityService _activityService;
         private bool _isEditMode = false;
         private int? _editingAreaId = null;
         private bool _isFormVisible = false;
@@ -59,8 +62,10 @@ namespace Advance_Control.Views.Pages
         {
             ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<AreasViewModel>();
             _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
 
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, _loggingService, nameof(AreasView));
 
             this.DataContext = ViewModel;
 
@@ -1049,6 +1054,7 @@ namespace Advance_Control.Views.Pages
 
                         if (deleteResult.Success)
                         {
+                            _ = _activityService.CrearActividadAsync("Areas", "Área eliminada");
                             var successDialog = new ContentDialog
                             {
                                 Title = "Éxito",
@@ -1247,6 +1253,7 @@ namespace Advance_Control.Views.Pages
                 };
                 await successDialog.ShowAsync();
 
+                _ = _activityService.CrearActividadAsync("Areas", _isEditMode ? "Área modificada" : "Área creada");
                 CancelButton_Click(sender, e);
 
                 await ExecuteMapScriptAsync("clearCurrentShape();");

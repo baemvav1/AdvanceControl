@@ -327,66 +327,39 @@
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="8" />
+                                                        <ColumnDefinition Width="10" />
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <!-- Indicador de nivel -->
-                                                    <Ellipse Grid.Column="0"
-                                                             Width="8" Height="8"
-                                                             VerticalAlignment="Center">
-                                                        <Ellipse.Fill>
-                                                            <SolidColorBrush Color="{x:Bind LevelColor}" />
-                                                        </Ellipse.Fill>
-                                                    </Ellipse>
+                                                    <!-- Icono del módulo -->
+                                                    <FontIcon Grid.Column="0"
+                                                              Glyph="{x:Bind IconoGlyph}"
+                                                              FontSize="14"
+                                                              VerticalAlignment="Center"
+                                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
 
                                                     <!-- Contenido -->
-                                                    <StackPanel Grid.Column="2" Spacing="2">
+                                                    <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
                                                         <TextBlock
                                                             FontSize="13"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind Message}"
+                                                            Text="{x:Bind Titulo}"
                                                             TextWrapping="NoWrap"
                                                             TextTrimming="CharacterEllipsis" />
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <TextBlock
-                                                                FontSize="11"
-                                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                                Text="{x:Bind Page}" />
-                                                            <TextBlock
-                                                                FontSize="11"
-                                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                                Text="·"
-                                                                Visibility="{x:Bind HasPage}" />
-                                                            <TextBlock
-                                                                FontSize="11"
-                                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                                Text="{x:Bind Username}" />
-                                                        </StackPanel>
-                                                    </StackPanel>
-
-                                                    <!-- Timestamp + botón silenciar -->
-                                                    <StackPanel Grid.Column="3" Spacing="2" HorizontalAlignment="Right">
                                                         <TextBlock
                                                             FontSize="11"
                                                             Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                            HorizontalAlignment="Right"
-                                                            Text="{x:Bind TimestampLabel}" />
-                                                        <!-- Botón silenciar (solo visible si hay categoría) -->
-                                                        <Button
-                                                            x:Name="SilenciarButton"
-                                                            Padding="4" Width="24" Height="20"
-                                                            Background="Transparent"
-                                                            BorderThickness="0"
-                                                            Click="SilenciarCategoria_Click"
-                                                            Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Silenciar esta categoría de notificaciones"
-                                                            Visibility="{x:Bind HasCategoria}">
-                                                            <FontIcon Glyph="&#xEC42;" FontSize="11"
-                                                                      Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                                        </Button>
+                                                            Text="{x:Bind Origen}" />
                                                     </StackPanel>
+
+                                                    <!-- Fecha -->
+                                                    <TextBlock
+                                                        Grid.Column="3"
+                                                        FontSize="11"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                        Text="{x:Bind HoraLabel}" />
                                                 </Grid>
                                             </Border>
                                         </DataTemplate>

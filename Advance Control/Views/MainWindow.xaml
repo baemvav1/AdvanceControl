@@ -165,6 +165,7 @@
             Visibility="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToVisibilityConverter}}">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
@@ -175,8 +176,60 @@
                 Grid.Row="0" Margin="0,0,0,10" FontSize="14"
                 FontWeight="SemiBold" Text="Notificaciones" />
 
-            <!--  Notification List  -->
-            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <!-- Alertas inteligentes del sistema -->
+            <StackPanel Grid.Row="1" Margin="0,0,0,8"
+                        Visibility="{Binding HasAlertasDb, Converter={StaticResource BoolToVisibilityConverter}}">
+                <Grid Margin="0,0,0,6">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" FontSize="12" FontWeight="SemiBold"
+                               Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                               Text="⚠ Alertas del sistema" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Padding="4,2" Background="Transparent" BorderThickness="0"
+                            x:Name="DescartarAlertasButton"
+                            Click="DescartarAlertas_Click"
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            ToolTipService.ToolTip="Marcar todas como vistas">
+                        <FontIcon Glyph="&#xE8BB;" FontSize="11"/>
+                    </Button>
+                </Grid>
+                <ItemsRepeater ItemsSource="{Binding AlertasDb}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="4"/>
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:NotificacionAlerta">
+                            <Border Padding="10,8" CornerRadius="6"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
+                                    BorderThickness="1,1,1,2">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon Grid.Column="0" Glyph="{x:Bind Icono}"
+                                              FontSize="14" Margin="0,0,8,0"
+                                              VerticalAlignment="Top"
+                                              Foreground="{ThemeResource SystemFillColorCautionBrush}"/>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock Text="{x:Bind Titulo}" FontSize="12"
+                                                   TextWrapping="Wrap"/>
+                                        <TextBlock Text="{x:Bind Origen}" FontSize="10"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </StackPanel>
+
+            <!--  Notification List (UI toasts)  -->
+            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding Notificaciones}">
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
@@ -250,56 +303,7 @@
                 </ItemsControl>
             </ScrollViewer>
 
-            <!-- Separador silenciadas -->
-            <Border
-                Grid.Row="2"
-                Margin="0,8,0,4"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="0,0,0,1" />
-
-            <!-- Sección: Notificaciones silenciadas -->
-            <StackPanel Grid.Row="3" Spacing="6">
-                <TextBlock
-                    FontSize="12" FontWeight="SemiBold"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Silenciadas" />
-                <ItemsRepeater x:Name="SilenciadasRepeater" ItemsSource="{Binding NotificacionesSilenciadas}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Spacing="4" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:NotificacionSilenciadaVm">
-                            <Border
-                                Padding="8,6" CornerRadius="4"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        FontSize="12"
-                                        VerticalAlignment="Center"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind Label}"
-                                        TextTrimming="CharacterEllipsis" />
-                                    <ToggleSwitch
-                                        Grid.Column="1"
-                                        MinWidth="0" Margin="4,0,0,0"
-                                        OnContent="" OffContent=""
-                                        IsOn="{x:Bind Habilitada, Mode=TwoWay}"
-                                        Toggled="SilenciadaToggle_Toggled"
-                                        Tag="{x:Bind Categoria}"
-                                        ToolTipService.ToolTip="Reactivar notificaciones de esta categoría" />
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-            </StackPanel>
+            <!-- (Sección de silenciadas eliminada) -->
         </Grid>
         <Grid
             Grid.Row="1" Grid.ColumnSpan="2" Padding="12,0"

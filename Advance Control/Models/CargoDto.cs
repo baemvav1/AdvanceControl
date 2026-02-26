@@ -133,7 +133,7 @@ namespace Advance_Control.Models
 
 
         /// <summary>
-        /// Nota del cargo
+        /// Detalle relacionado del cargo (para refacciones: "marca/serie/descripcion")
         /// </summary>
         [JsonPropertyName("detalleRelacionado")]
         public string? DetalleRelacionado
@@ -145,9 +145,36 @@ namespace Advance_Control.Models
                 {
                     _detalleRelacionado = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(DetalleLinea1));
+                    OnPropertyChanged(nameof(DetalleLinea2));
+                    OnPropertyChanged(nameof(DetalleLinea3));
+                    OnPropertyChanged(nameof(TieneSubdetalle));
                 }
             }
         }
+
+        private string? GetDetalleLinea(int index)
+        {
+            if (string.IsNullOrEmpty(_detalleRelacionado)) return null;
+            var parts = _detalleRelacionado.Split('/');
+            return index < parts.Length ? parts[index].Trim() : null;
+        }
+
+        /// <summary>Línea 1 del detalle (marca para refacciones, concepto para servicios)</summary>
+        [JsonIgnore]
+        public string? DetalleLinea1 => GetDetalleLinea(0);
+
+        /// <summary>Línea 2 del detalle (serie, solo en refacciones)</summary>
+        [JsonIgnore]
+        public string? DetalleLinea2 => GetDetalleLinea(1);
+
+        /// <summary>Línea 3 del detalle (descripción, solo en refacciones)</summary>
+        [JsonIgnore]
+        public string? DetalleLinea3 => GetDetalleLinea(2);
+
+        /// <summary>Indica si el detalle tiene más de una línea (refacciones con formato marca/serie/descripcion)</summary>
+        [JsonIgnore]
+        public bool TieneSubdetalle => !string.IsNullOrEmpty(GetDetalleLinea(1));
 
 
         /// <summary>

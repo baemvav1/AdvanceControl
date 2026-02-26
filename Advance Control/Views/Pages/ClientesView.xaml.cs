@@ -17,8 +17,10 @@ using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Contactos;
+using Advance_Control.Services.Activity;
 using Advance_Control.Models;
 using Advance_Control.Views.Dialogs;
+using Advance_Control.Utilities;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -34,6 +36,7 @@ namespace Advance_Control.Views
         private readonly INotificacionService _notificacionService;
         private readonly ILoggingService _loggingService;
         private readonly IContactoService _contactoService;
+        private readonly IActivityService _activityService;
 
         public ClientesView()
         {
@@ -48,8 +51,12 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de contactos desde DI
             _contactoService = ((App)Application.Current).Host.Services.GetRequiredService<IContactoService>();
+
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
             
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, _loggingService, nameof(ClientesView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -326,6 +333,7 @@ namespace Advance_Control.Views
 
                     if (updateResult.Success)
                     {
+                        _ = _activityService.CrearActividadAsync("Clientes", "Contacto agregado");
                         // Recargar contactos del cliente
                         cliente.ContactosLoaded = false;
                         await LoadContactosForClienteAsync(cliente);
@@ -404,6 +412,7 @@ namespace Advance_Control.Views
 
                     if (updateResult.Success)
                     {
+                        _ = _activityService.CrearActividadAsync("Clientes", "Contacto eliminado");
                         // Eliminar el contacto de la colección local
                         cliente.Contactos.Remove(contacto);
                         cliente.NotifyNoContactosMessageChanged();

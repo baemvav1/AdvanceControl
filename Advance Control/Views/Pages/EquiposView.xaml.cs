@@ -17,7 +17,10 @@ using Advance_Control.ViewModels;
 using Advance_Control.Views.Dialogs;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using Advance_Control.Services.Ubicaciones;
+using Advance_Control.Services.Activity;
 using Advance_Control.Views.Pages;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -34,6 +37,7 @@ namespace Advance_Control.Views
         private readonly IRelacionService _relacionService;
         private readonly INotificacionService _notificacionService;
         private readonly IUbicacionService _ubicacionService;
+        private readonly IActivityService _activityService;
 
         public EquiposView()
         {
@@ -48,8 +52,12 @@ namespace Advance_Control.Views
             
             // Resolver el servicio de ubicaciones desde DI
             _ubicacionService = ((App)Application.Current).Host.Services.GetRequiredService<IUbicacionService>();
+
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
             
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(EquiposView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -244,6 +252,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Equipos", "Relación eliminada");
                         // Eliminar la relación de la colección local
                         equipo.Relaciones.Remove(relacion);
                         equipo.NotifyNoRelacionesMessageChanged();
@@ -343,6 +352,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Equipos", "Relación modificada");
                         // Actualizar la nota en el objeto local
                         relacion.Nota = nuevaNota;
                         
@@ -434,6 +444,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Equipos", "Relación creada");
                         // Recargar las relaciones para actualizar la UI
                         equipo.RelacionesLoaded = false;
                         await LoadRelacionesForEquipoAsync(equipo);
@@ -500,7 +511,7 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
                 return;
 
-            await MostrarDialogoSeleccionUbicacionAsync(equipo);
+            await MostrarDialogoSeleccionUbicacionAsync(equipo, "Ubicación asignada");
         }
 
         private async void EditarUbicacionButton_Click(object sender, RoutedEventArgs e)
@@ -509,10 +520,10 @@ namespace Advance_Control.Views
             if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
                 return;
 
-            await MostrarDialogoSeleccionUbicacionAsync(equipo);
+            await MostrarDialogoSeleccionUbicacionAsync(equipo, "Ubicación modificada");
         }
 
-        private async System.Threading.Tasks.Task MostrarDialogoSeleccionUbicacionAsync(Models.EquipoDto equipo)
+        private async System.Threading.Tasks.Task MostrarDialogoSeleccionUbicacionAsync(Models.EquipoDto equipo, string actividadTitulo = "Ubicación asignada")
         {
             // Crear el UserControl para seleccionar ubicación
             var seleccionarUbicacionControl = new SeleccionarUbicacionUserControl();
@@ -572,6 +583,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Equipos", actividadTitulo);
                         // Actualizar el equipo local con la nueva ubicación
                         equipo.IdUbicacion = selectedUbicacion.IdUbicacion;
                         equipo.Ubicacion = selectedUbicacion;

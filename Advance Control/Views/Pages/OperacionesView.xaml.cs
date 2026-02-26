@@ -1,9 +1,12 @@
 using Advance_Control.Models;
+using Advance_Control.Services.Activity;
 using Advance_Control.Services.Cargos;
 using Advance_Control.Services.ImageViewer;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Session;
+using Advance_Control.Utilities;
+using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Dialogs;
@@ -35,6 +38,7 @@ namespace Advance_Control.Views
         private readonly ICargoImageService _cargoImageService;
         private readonly IOperacionImageService _operacionImageService;
         private readonly IImageViewerService _imageViewerService;
+        private readonly IActivityService _activityService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -64,12 +68,16 @@ namespace Advance_Control.Views
             // Resolver el servicio de visor de imágenes desde DI
             _imageViewerService = ((App)Application.Current).Host.Services.GetRequiredService<IImageViewerService>();
 
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
             currencyFormatter.FractionDigits = 2;
             CurrencyFormatter = currencyFormatter;
             
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(OperacionesView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -465,6 +473,7 @@ namespace Advance_Control.Views
 
                     if (newCargo != null)
                     {
+                        _ = _activityService.CrearActividadAsync("Operaciones", "Cargo agregado");
                         // Invalidar PDFs existentes porque los cargos cambiaron
                         ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "*");
 
@@ -533,6 +542,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Operaciones", "Cargo eliminado");
                         // Invalidar PDFs existentes porque los cargos cambiaron
                         var parentOp = ViewModel.Operaciones.FirstOrDefault(o => o.Cargos.Any(c => c.IdCargo == cargo.IdCargo));
                         if (parentOp?.IdOperacion.HasValue == true)
@@ -651,6 +661,7 @@ namespace Advance_Control.Views
 
                 if (success)
                 {
+                    _ = _activityService.CrearActividadAsync("Operaciones", "Cargo modificado");
                     // Exit edit mode after successful save
                     cargo.IsEditing = false;
 
@@ -844,6 +855,7 @@ namespace Advance_Control.Views
 
                 if (!string.IsNullOrEmpty(filePath))
                 {
+                    _ = _activityService.CrearActividadAsync("Operaciones", "Cotización generada");
                     // Mostrar diálogo de éxito con opción de abrir el archivo
                     var dialog = new ContentDialog
                     {
@@ -945,6 +957,7 @@ namespace Advance_Control.Views
 
                 if (!string.IsNullOrEmpty(filePath))
                 {
+                    _ = _activityService.CrearActividadAsync("Operaciones", "Reporte generado");
                     // Mostrar diálogo de éxito con opción de abrir el archivo
                     var dialog = new ContentDialog
                     {
@@ -1047,6 +1060,7 @@ namespace Advance_Control.Views
 
                 if (result != null)
                 {
+                    _ = _activityService.CrearActividadAsync("Operaciones", "Imagen cargada en cargo");
                     // Agregar la imagen a la colección del cargo
                     cargo.Images.Add(result);
                     cargo.NotifyImagesChanged();
@@ -1131,6 +1145,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Operaciones", "Imagen eliminada");
                         var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.FileName == image.FileName);
                         if (imageToRemove != null)
                         {
@@ -1706,6 +1721,15 @@ namespace Advance_Control.Views
                     // Update indicator on the operacion model
                     await RefreshImageIndicatorsAsync(operacion);
 
+                    var actividadTitulo = imageType switch
+                    {
+                        "Prefactura"   => "Prefactura cargada",
+                        "HojaServicio" => "Hoja servicio cargada",
+                        "OrdenCompra"  => "Orden compra cargada",
+                        _              => $"{imageType} cargada"
+                    };
+                    _ = _activityService.CrearActividadAsync("Operaciones", actividadTitulo);
+
                     await _notificacionService.MostrarNotificacionAsync(
                         titulo: $"{imageType} cargada",
                         nota: $"La {imageType.ToLower()} {result.FileName} se ha guardado correctamente.",
@@ -1858,6 +1882,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
+                        _ = _activityService.CrearActividadAsync("Operaciones", "Doc. op. eliminado");
                         await RefreshImageIndicatorsAsync(operacion);
 
                         await _notificacionService.MostrarNotificacionAsync(
@@ -1914,6 +1939,7 @@ namespace Advance_Control.Views
 
                 if (result != null)
                 {
+                    _ = _activityService.CrearActividadAsync("Operaciones", "Factura cargada");
                     // Finalizar la operación con la fecha de hoy
                     var fechaFinal = DateTime.Today;
                     var updated = await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, fechaFinal: fechaFinal);
@@ -2015,6 +2041,7 @@ namespace Advance_Control.Views
 
                 if (success)
                 {
+                    _ = _activityService.CrearActividadAsync("Operaciones", "Operación reabierta");
                     operacion.FechaFinal = null;
 
                     await _notificacionService.MostrarNotificacionAsync(

@@ -15,7 +15,9 @@ using Windows.Foundation;
 using Windows.Foundation.Collections;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
+using Advance_Control.Services.Activity;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 using Advance_Control.Models;
 using System.Globalization;
 using System.Threading;
@@ -39,6 +41,7 @@ namespace Advance_Control.Views.Pages
 
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
+        private readonly IActivityService _activityService;
         private bool _isEditMode = false;
         private int? _editingUbicacionId = null;
         private bool _isFormVisible = false;
@@ -69,7 +72,11 @@ namespace Advance_Control.Views.Pages
             // Resolver el servicio de logging desde DI
             _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
 
+            // Resolver el servicio de actividades desde DI
+            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+
             this.InitializeComponent();
+            ButtonClickLogger.Attach(this, _loggingService, nameof(UbicacionesView));
 
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -931,6 +938,7 @@ namespace Advance_Control.Views.Pages
                         
                         if (response.Success)
                         {
+                            _ = _activityService.CrearActividadAsync("Ubicaciones", "Ubicación eliminada");
                             await LoadMapAsync();
                             await ShowMessageDialogAsync("Éxito", "Ubicación eliminada correctamente");
                         }
@@ -996,6 +1004,8 @@ namespace Advance_Control.Views.Pages
 
                 if (response.Success)
                 {
+                    var wasEditMode = _isEditMode;
+                    _ = _activityService.CrearActividadAsync("Ubicaciones", wasEditMode ? "Ubicación modificada" : "Ubicación creada");
                     _isFormVisible = false;
                     LocationForm.Visibility = Visibility.Collapsed;
                     ClearForm();
