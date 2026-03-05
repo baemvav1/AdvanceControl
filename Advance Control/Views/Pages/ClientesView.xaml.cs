@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,19 +41,19 @@ namespace Advance_Control.Views
         public ClientesView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<CustomersViewModel>();
+            ViewModel = AppServices.Get<CustomersViewModel>();
             
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             
             // Resolver el servicio de logging desde DI
-            _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
+            _loggingService = AppServices.Get<ILoggingService>();
             
             // Resolver el servicio de contactos desde DI
-            _contactoService = ((App)Application.Current).Host.Services.GetRequiredService<IContactoService>();
+            _contactoService = AppServices.Get<IContactoService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(ClientesView));
@@ -109,10 +109,7 @@ namespace Advance_Control.Views
                 // Validar campos requeridos
                 if (!nuevoClienteControl.IsValid)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "Por favor complete todos los campos obligatorios (RFC, Razón Social y Nombre Comercial)",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Validación", "Por favor complete todos los campos obligatorios (RFC, Razón Social y Nombre Comercial)");
                     return;
                 }
 
@@ -133,27 +130,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Cliente creado",
-                            nota: $"Cliente \"{nuevoClienteControl.NombreComercial}\" creado correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Cliente creado", $"Cliente \"{nuevoClienteControl.NombreComercial}\" creado correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear el cliente. Verifique los datos e intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear el cliente. Verifique los datos e intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     await _loggingService.LogErrorAsync("Error al crear cliente desde la UI", ex, "ClientesView", "NuevoButton_Click");
                     
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear el cliente. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear el cliente. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -235,10 +223,7 @@ namespace Advance_Control.Views
                 
                 if (contactosSinCliente == null || contactosSinCliente.Count == 0)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Sin contactos disponibles",
-                        nota: "No hay contactos sin cliente asignado disponibles para agregar.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Sin contactos disponibles", "No hay contactos sin cliente asignado disponibles para agregar.");
                     return;
                 }
 
@@ -333,32 +318,23 @@ namespace Advance_Control.Views
 
                     if (updateResult.Success)
                     {
-                        _ = _activityService.CrearActividadAsync("Clientes", "Contacto agregado");
+                        _activityService.Registrar("Clientes", "Contacto agregado");
                         // Recargar contactos del cliente
                         cliente.ContactosLoaded = false;
                         await LoadContactosForClienteAsync(cliente);
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Contacto agregado",
-                            nota: $"Contacto \"{selectedContacto.NombreCompleto}\" agregado correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Contacto agregado", $"Contacto \"{selectedContacto.NombreCompleto}\" agregado correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo agregar el contacto. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo agregar el contacto. Por favor, intente nuevamente.");
                     }
                 }
             }
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al agregar contacto", ex, "ClientesView", "NuevoContacto_Click");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al agregar el contacto. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al agregar el contacto. Por favor, intente nuevamente.");
             }
         }
 
@@ -412,31 +388,22 @@ namespace Advance_Control.Views
 
                     if (updateResult.Success)
                     {
-                        _ = _activityService.CrearActividadAsync("Clientes", "Contacto eliminado");
+                        _activityService.Registrar("Clientes", "Contacto eliminado");
                         // Eliminar el contacto de la colección local
                         cliente.Contactos.Remove(contacto);
                         cliente.NotifyNoContactosMessageChanged();
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Contacto quitado",
-                            nota: "Contacto quitado del cliente correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Contacto quitado", "Contacto quitado del cliente correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo quitar el contacto. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo quitar el contacto. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     await _loggingService.LogErrorAsync("Error al quitar contacto del cliente", ex, "ClientesView", "DeleteContactoButton_Click");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al quitar el contacto. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al quitar el contacto. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -579,28 +546,19 @@ namespace Advance_Control.Views
                     // Validar campos requeridos
                     if (string.IsNullOrWhiteSpace(rfcTextBox.Text))
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Validación",
-                            nota: "El RFC es obligatorio",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Validación", "El RFC es obligatorio");
                         return;
                     }
 
                     if (string.IsNullOrWhiteSpace(razonSocialTextBox.Text))
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Validación",
-                            nota: "La razón social es obligatoria",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Validación", "La razón social es obligatoria");
                         return;
                     }
 
                     if (string.IsNullOrWhiteSpace(nombreComercialTextBox.Text))
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Validación",
-                            nota: "El nombre comercial es obligatorio",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Validación", "El nombre comercial es obligatorio");
                         return;
                     }
 
@@ -639,17 +597,11 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Cliente actualizado",
-                            nota: $"Cliente \"{nombreComercialTextBox.Text.Trim()}\" actualizado correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Cliente actualizado", $"Cliente \"{nombreComercialTextBox.Text.Trim()}\" actualizado correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo actualizar el cliente. Verifique los datos e intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo actualizar el cliente. Verifique los datos e intente nuevamente.");
                     }
                 }
             }
@@ -657,10 +609,7 @@ namespace Advance_Control.Views
             {
                 await _loggingService.LogErrorAsync("Error al editar cliente desde la UI", ex, "ClientesView", "EditClienteButton_Click");
                 
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al editar el cliente. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al editar el cliente. Por favor, intente nuevamente.");
             }
         }
 
@@ -691,26 +640,17 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Cliente eliminado",
-                            nota: "Cliente eliminado correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Cliente eliminado", "Cliente eliminado correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar el cliente. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar el cliente. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     await _loggingService.LogErrorAsync("Error al eliminar cliente desde la UI", ex, "ClientesView", "DeleteClienteButton_Click");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar el cliente. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar el cliente. Por favor, intente nuevamente.");
                 }
             }
         }

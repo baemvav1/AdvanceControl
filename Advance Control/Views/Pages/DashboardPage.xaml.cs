@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml.Controls;
+﻿using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
@@ -20,10 +20,10 @@ namespace Advance_Control.Views.Pages
 
         public DashboardPage()
         {
-            ViewModel = ((App)App.Current).Host.Services.GetRequiredService<DashboardViewModel>();
-            _navigationService = ((App)App.Current).Host.Services.GetRequiredService<INavigationService>();
+            ViewModel = AppServices.Get<DashboardViewModel>();
+            _navigationService = AppServices.Get<INavigationService>();
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)App.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(DashboardPage));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(DashboardPage));
             this.DataContext = ViewModel;
         }
 
@@ -35,6 +35,18 @@ namespace Advance_Control.Views.Pages
 
         private async void RefreshActividad_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => await ViewModel.LoadActividadAsync();
+
+        private async void RefreshTareas_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+            => await ViewModel.LoadOperacionesPendientesAsync();
+
+        private void ToggleTodo_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            if (sender is Microsoft.UI.Xaml.Controls.Button btn &&
+                btn.Tag is Advance_Control.Models.OperacionTodoItem item)
+            {
+                item.Expand = !item.Expand;
+            }
+        }
 
         private void IrOperaciones_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => _navigationService.Navigate("Operaciones");

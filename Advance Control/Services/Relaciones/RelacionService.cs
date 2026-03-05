@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Relaciones
 {
@@ -37,17 +38,10 @@ namespace Advance_Control.Services.Relaciones
                 var url = _endpoints.GetEndpoint("api", "Relaciones");
 
                 // Agregar parámetros de consulta
-                var queryParams = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(identificador))
-                    queryParams.Add($"identificador={Uri.EscapeDataString(identificador)}");
-
-                queryParams.Add($"idCliente={idCliente}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .Add("identificador", identificador)
+                    .AddRequired("idCliente", idCliente)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Obteniendo relaciones desde: {url}", "RelacionService", "GetRelacionesAsync");
 

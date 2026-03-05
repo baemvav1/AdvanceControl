@@ -198,6 +198,7 @@ namespace Advance_Control.ViewModels
             int? idCliente = null,
             int? idProveedor = null,
             bool activo = true,
+            string? tratamiento = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -217,7 +218,8 @@ namespace Advance_Control.ViewModels
                     Notas = notas,
                     IdCliente = idCliente,
                     IdProveedor = idProveedor,
-                    Activo = activo
+                    Activo = activo,
+                    Tratamiento = tratamiento
                 };
 
                 var response = await _contactoService.CreateContactoAsync(contactoDto, cancellationToken);
@@ -260,6 +262,7 @@ namespace Advance_Control.ViewModels
             int? idProveedor = null,
             bool? activo = null,
             bool? estatus = null,
+            string? tratamiento = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -281,6 +284,7 @@ namespace Advance_Control.ViewModels
                     IdCliente = idCliente,
                     IdProveedor = idProveedor,
                     Activo = activo,
+                    Tratamiento = tratamiento
                 };
 
                 var response = await _contactoService.UpdateContactoAsync(contactoDto, cancellationToken);

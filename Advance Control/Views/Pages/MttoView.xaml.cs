@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -30,22 +30,22 @@ namespace Advance_Control.Views
         public MttoView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<MttoViewModel>();
+            ViewModel = AppServices.Get<MttoViewModel>();
 
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
 
             // Resolver el servicio de información de usuario desde DI
-            _userInfoService = ((App)Application.Current).Host.Services.GetRequiredService<IUserInfoService>();
+            _userInfoService = AppServices.Get<IUserInfoService>();
 
             // Resolver el servicio de contactos desde DI
-            _contactoService = ((App)Application.Current).Host.Services.GetRequiredService<IContactoService>();
+            _contactoService = AppServices.Get<IContactoService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
 
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(MttoView));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(MttoView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -91,28 +91,19 @@ namespace Advance_Control.Views
                 // Validar campos obligatorios
                 if (!nuevoMantenimientoControl.IdTipoMantenimiento.HasValue)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error de validación",
-                        nota: "Debe seleccionar un tipo de mantenimiento.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un tipo de mantenimiento.");
                     return;
                 }
 
                 if (!nuevoMantenimientoControl.IdEquipo.HasValue)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error de validación",
-                        nota: "Debe seleccionar un equipo.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un equipo.");
                     return;
                 }
 
                 if (!nuevoMantenimientoControl.IdCliente.HasValue)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error de validación",
-                        nota: "Debe seleccionar un cliente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un cliente.");
                     return;
                 }
 
@@ -127,26 +118,17 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Mantenimiento creado",
-                            nota: "El mantenimiento se ha creado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Mantenimiento creado", "El mantenimiento se ha creado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear el mantenimiento. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear el mantenimiento. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al crear mantenimiento: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear el mantenimiento. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear el mantenimiento. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -199,26 +181,17 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Mantenimiento eliminado",
-                            nota: "El mantenimiento se ha eliminado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Mantenimiento eliminado", "El mantenimiento se ha eliminado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar el mantenimiento. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar el mantenimiento. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar mantenimiento: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar el mantenimiento. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar el mantenimiento. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -239,10 +212,7 @@ namespace Advance_Control.Views
 
                 if (userInfo == null)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo obtener la información del usuario autenticado.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo obtener la información del usuario autenticado.");
                     return;
                 }
 
@@ -266,28 +236,19 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Mantenimiento", "Mant. atendido");
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Mantenimiento atendido",
-                            nota: "El mantenimiento se ha marcado como atendido correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        _activityService.Registrar("Mantenimiento", "Mant. atendido");
+                        await _notificacionService.MostrarAsync("Mantenimiento atendido", "El mantenimiento se ha marcado como atendido correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo marcar el mantenimiento como atendido. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo marcar el mantenimiento como atendido. Por favor, intente nuevamente.");
                     }
                 }
             }
             catch (Exception)
             {
                 // Error is already logged in ViewModel and Service layers
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.");
             }
         }
 
@@ -307,10 +268,7 @@ namespace Advance_Control.Views
 
                 if (contactos == null || contactos.Count == 0)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Sin contactos",
-                        nota: "No hay contactos disponibles para atender el mantenimiento.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Sin contactos", "No hay contactos disponibles para atender el mantenimiento.");
                     return;
                 }
 
@@ -402,23 +360,17 @@ namespace Advance_Control.Views
                     {
                         var success = await ViewModel.UpdateAtendidoAsync(
                             mantenimiento.IdMantenimiento.Value,
-                            (int)selectedContacto.ContactoId // Conversión explícita de long a int
+                            Convert.ToInt32(selectedContacto.ContactoId) // Conversión segura de long a int
                         );
 
                         if (success)
                         {
-                            _ = _activityService.CrearActividadAsync("Mantenimiento", "Atendido como tipo");
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Mantenimiento atendido",
-                                nota: $"El mantenimiento se ha marcado como atendido por {selectedContacto.NombreCompleto}.",
-                                fechaHoraInicio: DateTime.Now);
+                            _activityService.Registrar("Mantenimiento", "Atendido como tipo");
+                            await _notificacionService.MostrarAsync("Mantenimiento atendido", $"El mantenimiento se ha marcado como atendido por {selectedContacto.NombreCompleto}.");
                         }
                         else
                         {
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Error",
-                                nota: "No se pudo marcar el mantenimiento como atendido. Por favor, intente nuevamente.",
-                                fechaHoraInicio: DateTime.Now);
+                            await _notificacionService.MostrarAsync("Error", "No se pudo marcar el mantenimiento como atendido. Por favor, intente nuevamente.");
                         }
                     }
                 }
@@ -426,10 +378,7 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al atender mantenimiento como contacto: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.");
             }
         }
     }

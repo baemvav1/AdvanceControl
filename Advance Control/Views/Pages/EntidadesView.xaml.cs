@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -23,13 +23,13 @@ namespace Advance_Control.Views.Pages
         public EntidadesView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<EntidadesViewModel>();
+            ViewModel = AppServices.Get<EntidadesViewModel>();
             
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             
             // Resolver el servicio de logging desde DI
-            _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
+            _loggingService = AppServices.Get<ILoggingService>();
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(EntidadesView));
@@ -186,19 +186,13 @@ namespace Advance_Control.Views.Pages
                 // Validar campos requeridos
                 if (string.IsNullOrWhiteSpace(nombreComercialTextBox.Text))
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "El nombre comercial es obligatorio",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Validación", "El nombre comercial es obligatorio");
                     return;
                 }
 
                 if (string.IsNullOrWhiteSpace(razonSocialTextBox.Text))
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "La razón social es obligatoria",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Validación", "La razón social es obligatoria");
                     return;
                 }
 
@@ -221,27 +215,18 @@ namespace Advance_Control.Views.Pages
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Entidad creada",
-                            nota: $"Entidad \"{nombreComercialTextBox.Text.Trim()}\" creada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Entidad creada", $"Entidad \"{nombreComercialTextBox.Text.Trim()}\" creada correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear la entidad. Verifique los datos e intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear la entidad. Verifique los datos e intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     await _loggingService.LogErrorAsync("Error al crear entidad desde la UI", ex, "EntidadesView", "NuevoButton_Click");
                     
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear la entidad. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear la entidad. Por favor, intente nuevamente.");
                 }
             }
         }

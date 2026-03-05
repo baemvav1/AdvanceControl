@@ -447,6 +447,18 @@ namespace Advance_Control.Services.Dialog
             if (!string.IsNullOrWhiteSpace(closeButtonText))
                 dialog.CloseButtonText = closeButtonText;
 
+            // Si el contenido declara dimensiones mayores al máximo por defecto del ContentDialog (548),
+            // sobreescribir los recursos para que el diálogo pueda acomodarlo.
+            const double defaultMaxWidth = 548;
+            const double dialogChrome  = 96;  // padding + bordes del ContentDialog
+            const double dialogChromeH = 160; // título + botones + padding vertical
+
+            if (content.Width > defaultMaxWidth)
+                dialog.Resources["ContentDialogMaxWidth"] = content.Width + dialogChrome;
+
+            if (content.Height > 0)
+                dialog.Resources["ContentDialogMaxHeight"] = content.Height + dialogChromeH;
+
             return dialog;
         }
 

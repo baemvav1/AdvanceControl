@@ -27,7 +27,7 @@ namespace Advance_Control.Services.Operaciones
         /// <summary>
         /// Actualiza una operación (monto, fechaFinal, etc.)
         /// </summary>
-        Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, double monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default);
+        Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, decimal monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Reabre una operación limpiando su fechaFinal

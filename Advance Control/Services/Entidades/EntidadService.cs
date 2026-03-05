@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Entidades
 {
@@ -40,33 +41,15 @@ namespace Advance_Control.Services.Entidades
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (!string.IsNullOrWhiteSpace(query.NombreComercial))
-                        queryParams.Add($"nombreComercial={Uri.EscapeDataString(query.NombreComercial)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.RazonSocial))
-                        queryParams.Add($"razonSocial={Uri.EscapeDataString(query.RazonSocial)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.RFC))
-                        queryParams.Add($"rfc={Uri.EscapeDataString(query.RFC)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.CP))
-                        queryParams.Add($"cp={Uri.EscapeDataString(query.CP)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Estado))
-                        queryParams.Add($"estado={Uri.EscapeDataString(query.Estado)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Ciudad))
-                        queryParams.Add($"ciudad={Uri.EscapeDataString(query.Ciudad)}");
-
-                    if (query.Estatus.HasValue)
-                        queryParams.Add($"estatus={query.Estatus.Value.ToString().ToLowerInvariant()}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("nombreComercial", query.NombreComercial)
+                        .Add("razonSocial", query.RazonSocial)
+                        .Add("rfc", query.RFC)
+                        .Add("cp", query.CP)
+                        .Add("estado", query.Estado)
+                        .Add("ciudad", query.Ciudad)
+                        .Add("estatus", query.Estatus)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo entidades desde: {url}", "EntidadService", "GetEntidadesAsync");
@@ -128,34 +111,20 @@ namespace Advance_Control.Services.Entidades
                 var url = _endpoints.GetEndpoint("api", "entidad");
 
                 // Construir parámetros de consulta
-                var queryParams = new List<string>
-                {
-                    $"nombreComercial={Uri.EscapeDataString(nombreComercial)}",
-                    $"razonSocial={Uri.EscapeDataString(razonSocial)}"
-                };
-
-                if (!string.IsNullOrWhiteSpace(rfc))
-                    queryParams.Add($"rfc={Uri.EscapeDataString(rfc)}");
-                if (!string.IsNullOrWhiteSpace(cp))
-                    queryParams.Add($"cp={Uri.EscapeDataString(cp)}");
-                if (!string.IsNullOrWhiteSpace(estado))
-                    queryParams.Add($"estado={Uri.EscapeDataString(estado)}");
-                if (!string.IsNullOrWhiteSpace(ciudad))
-                    queryParams.Add($"ciudad={Uri.EscapeDataString(ciudad)}");
-                if (!string.IsNullOrWhiteSpace(pais))
-                    queryParams.Add($"pais={Uri.EscapeDataString(pais)}");
-                if (!string.IsNullOrWhiteSpace(calle))
-                    queryParams.Add($"calle={Uri.EscapeDataString(calle)}");
-                if (!string.IsNullOrWhiteSpace(numExt))
-                    queryParams.Add($"nomExt={Uri.EscapeDataString(numExt)}");
-                if (!string.IsNullOrWhiteSpace(numInt))
-                    queryParams.Add($"numInt={Uri.EscapeDataString(numInt)}");
-                if (!string.IsNullOrWhiteSpace(colonia))
-                    queryParams.Add($"colonia={Uri.EscapeDataString(colonia)}");
-                if (!string.IsNullOrWhiteSpace(apoderado))
-                    queryParams.Add($"apoderado={Uri.EscapeDataString(apoderado)}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .Add("nombreComercial", nombreComercial)
+                    .Add("razonSocial", razonSocial)
+                    .Add("rfc", rfc)
+                    .Add("cp", cp)
+                    .Add("estado", estado)
+                    .Add("ciudad", ciudad)
+                    .Add("pais", pais)
+                    .Add("calle", calle)
+                    .Add("nomExt", numExt)
+                    .Add("numInt", numInt)
+                    .Add("colonia", colonia)
+                    .Add("apoderado", apoderado)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando entidad en: {url}", "EntidadService", "CreateEntidadAsync");
 
@@ -214,37 +183,20 @@ namespace Advance_Control.Services.Entidades
                 var url = $"{_endpoints.GetEndpoint("api", "entidad")}/{id}";
 
                 // Construir parámetros de consulta
-                var queryParams = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(nombreComercial))
-                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(nombreComercial)}");
-                if (!string.IsNullOrWhiteSpace(razonSocial))
-                    queryParams.Add($"razonSocial={Uri.EscapeDataString(razonSocial)}");
-                if (!string.IsNullOrWhiteSpace(rfc))
-                    queryParams.Add($"rfc={Uri.EscapeDataString(rfc)}");
-                if (!string.IsNullOrWhiteSpace(cp))
-                    queryParams.Add($"cp={Uri.EscapeDataString(cp)}");
-                if (!string.IsNullOrWhiteSpace(estado))
-                    queryParams.Add($"estado={Uri.EscapeDataString(estado)}");
-                if (!string.IsNullOrWhiteSpace(ciudad))
-                    queryParams.Add($"ciudad={Uri.EscapeDataString(ciudad)}");
-                if (!string.IsNullOrWhiteSpace(pais))
-                    queryParams.Add($"pais={Uri.EscapeDataString(pais)}");
-                if (!string.IsNullOrWhiteSpace(calle))
-                    queryParams.Add($"calle={Uri.EscapeDataString(calle)}");
-                if (!string.IsNullOrWhiteSpace(numExt))
-                    queryParams.Add($"nomExt={Uri.EscapeDataString(numExt)}");
-                if (!string.IsNullOrWhiteSpace(numInt))
-                    queryParams.Add($"numInt={Uri.EscapeDataString(numInt)}");
-                if (!string.IsNullOrWhiteSpace(colonia))
-                    queryParams.Add($"colonia={Uri.EscapeDataString(colonia)}");
-                if (!string.IsNullOrWhiteSpace(apoderado))
-                    queryParams.Add($"apoderado={Uri.EscapeDataString(apoderado)}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .Add("nombreComercial", nombreComercial)
+                    .Add("razonSocial", razonSocial)
+                    .Add("rfc", rfc)
+                    .Add("cp", cp)
+                    .Add("estado", estado)
+                    .Add("ciudad", ciudad)
+                    .Add("pais", pais)
+                    .Add("calle", calle)
+                    .Add("nomExt", numExt)
+                    .Add("numInt", numInt)
+                    .Add("colonia", colonia)
+                    .Add("apoderado", apoderado)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando entidad en: {url}", "EntidadService", "UpdateEntidadAsync");
 

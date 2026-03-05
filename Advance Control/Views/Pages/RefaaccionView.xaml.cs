@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -32,22 +32,22 @@ namespace Advance_Control.Views
         public RefaaccionView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<RefaccionesViewModel>();
+            ViewModel = AppServices.Get<RefaccionesViewModel>();
             
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             
             // Resolver el servicio de relaciones refacción-equipo desde DI
-            _relacionRefaccionEquipoService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionRefaccionEquipoService>();
+            _relacionRefaccionEquipoService = AppServices.Get<IRelacionRefaccionEquipoService>();
             
             // Resolver el servicio de equipos desde DI
-            _equipoService = ((App)Application.Current).Host.Services.GetRequiredService<IEquipoService>();
+            _equipoService = AppServices.Get<IEquipoService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
             
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(RefaaccionView));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(RefaaccionView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -154,27 +154,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Refacción creada",
-                            nota: "Refacción creada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Refacción creada", "Refacción creada correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear la refacción. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear la refacción. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al crear refacción: {ex.GetType().Name} - {ex.Message}");
                     
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear la refacción. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear la refacción. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -268,27 +259,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Refacción eliminada",
-                            nota: "Refacción eliminada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Refacción eliminada", "Refacción eliminada correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar la refacción. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la refacción. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar refacción: {ex.GetType().Name} - {ex.Message}");
                     
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la refacción. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la refacción. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -388,27 +370,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Refacción actualizada",
-                            nota: "Refacción actualizada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Refacción actualizada", "Refacción actualizada correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo actualizar la refacción. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo actualizar la refacción. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al actualizar refacción: {ex.GetType().Name} - {ex.Message}");
                     
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al actualizar la refacción. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al actualizar la refacción. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -660,10 +633,7 @@ namespace Advance_Control.Views
                 {
                     if (selectedEquipo == null)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "Debe seleccionar un equipo de la lista.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "Debe seleccionar un equipo de la lista.");
                         return;
                     }
 
@@ -674,33 +644,24 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Refacciones", "Equipo asociado");
+                        _activityService.Registrar("Refacciones", "Equipo asociado");
                         // Recargar las relaciones para actualizar la UI
                         refaccion.RelacionesEquipoLoaded = false;
                         await LoadRelacionesEquipoForRefaccionAsync(refaccion);
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Relación creada",
-                            nota: $"Relación con el equipo '{selectedEquipo.Marca} - {selectedEquipo.Identificador}' creada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Relación creada", $"Relación con el equipo '{selectedEquipo.Marca} - {selectedEquipo.Identificador}' creada correctamente");
                     }
                     else
                     {
                         // Mostrar notificación de error - la relación puede que ya exista
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear la relación. Es posible que ya exista una relación con este equipo.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear la relación. Es posible que ya exista una relación con este equipo.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al crear relación equipo: {ex.GetType().Name} - {ex.Message}");
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear la relación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear la relación. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -771,7 +732,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Refacciones", "Relación modificada");
+                        _activityService.Registrar("Refacciones", "Relación modificada");
                         // Actualizar la nota en el objeto local
                         relacion.Nota = nuevaNota;
 
@@ -780,18 +741,12 @@ namespace Advance_Control.Views
                         await LoadRelacionesEquipoForRefaccionAsync(refaccion);
 
                         // Mostrar notificación de éxito
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Nota actualizada",
-                            nota: "Nota actualizada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Nota actualizada", "Nota actualizada correctamente");
                     }
                     else
                     {
                         // Mostrar notificación de error
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo actualizar la nota. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo actualizar la nota. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
@@ -800,10 +755,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al actualizar nota: {ex.GetType().Name} - {ex.Message}");
 
                     // Mostrar notificación de error
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al actualizar la nota. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al actualizar la nota. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -841,24 +793,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Refacciones", "Relación eliminada");
+                        _activityService.Registrar("Refacciones", "Relación eliminada");
                         // Eliminar la relación de la colección local
                         refaccion.RelacionesEquipo.Remove(relacion);
                         refaccion.NotifyNoRelacionesEquipoMessageChanged();
 
                         // Mostrar notificación de éxito
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Relación eliminada",
-                            nota: "Relación eliminada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Relación eliminada", "Relación eliminada correctamente");
                     }
                     else
                     {
                         // Mostrar notificación de error
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar la relación. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la relación. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
@@ -867,10 +813,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar relación: {ex.GetType().Name} - {ex.Message}");
 
                     // Mostrar notificación de error
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.");
                 }
             }
         }

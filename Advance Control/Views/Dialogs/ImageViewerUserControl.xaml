@@ -8,8 +8,8 @@
     mc:Ignorable="d">
 
     <Grid
-        Width="700"
-        Height="500">
+        Width="900"
+        Height="640">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />

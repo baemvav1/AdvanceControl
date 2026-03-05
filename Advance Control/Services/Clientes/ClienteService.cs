@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Clientes
 {
@@ -40,21 +41,11 @@ namespace Advance_Control.Services.Clientes
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (!string.IsNullOrWhiteSpace(query.Rfc))
-                        queryParams.Add($"rfc={Uri.EscapeDataString(query.Rfc)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Notas))
-                        queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
-
-                    if (query.Prioridad.HasValue)
-                        queryParams.Add($"prioridad={query.Prioridad.Value}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("rfc", query.Rfc)
+                        .Add("notas", query.Notas)
+                        .Add("prioridad", query.Prioridad)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo clientes desde: {url}", "ClienteService", "GetClientesAsync");
@@ -75,7 +66,16 @@ namespace Advance_Control.Services.Clientes
                 }
 
                 // Deserializar la respuesta
-                var clientes = await response.Content.ReadFromJsonAsync<List<CustomerDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                List<CustomerDto>? clientes;
+                try
+                {
+                    clientes = await response.Content.ReadFromJsonAsync<List<CustomerDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (System.Text.Json.JsonException ex)
+                {
+                    await _logger.LogErrorAsync("Error al deserializar respuesta de clientes", ex, "ClienteService", "GetClientesAsync");
+                    return new List<CustomerDto>();
+                }
 
                 await _logger.LogInformationAsync($"Se obtuvieron {clientes?.Count ?? 0} clientes", "ClienteService", "GetClientesAsync");
 
@@ -156,27 +156,17 @@ namespace Advance_Control.Services.Clientes
                 var url = _endpoints.GetEndpoint("api", "Clientes");
 
                 // Construir parámetros de consulta según lo que el API espera [FromQuery]
-                var queryParams = new List<string>();
-                if (!string.IsNullOrWhiteSpace(query.Rfc))
-                    queryParams.Add($"rfc={Uri.EscapeDataString(query.Rfc)}");
-                if (!string.IsNullOrWhiteSpace(query.RazonSocial))
-                    queryParams.Add($"razonSocial={Uri.EscapeDataString(query.RazonSocial)}");
-                if (!string.IsNullOrWhiteSpace(query.NombreComercial))
-                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(query.NombreComercial)}");
-                if (!string.IsNullOrWhiteSpace(query.RegimenFiscal))
-                    queryParams.Add($"regimenFiscal={Uri.EscapeDataString(query.RegimenFiscal)}");
-                if (!string.IsNullOrWhiteSpace(query.UsoCfdi))
-                    queryParams.Add($"usoCfdi={Uri.EscapeDataString(query.UsoCfdi)}");
-                if (query.DiasCredito.HasValue)
-                    queryParams.Add($"diasCredito={query.DiasCredito.Value}");
-                if (query.LimiteCredito.HasValue)
-                    queryParams.Add($"limiteCredito={query.LimiteCredito.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
-                if (query.Prioridad.HasValue)
-                    queryParams.Add($"prioridad={query.Prioridad.Value}");
-                if (!string.IsNullOrWhiteSpace(query.Notas))
-                    queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
-                if (queryParams.Count > 0)
-                    url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .Add("rfc", query.Rfc)
+                    .Add("razonSocial", query.RazonSocial)
+                    .Add("nombreComercial", query.NombreComercial)
+                    .Add("regimenFiscal", query.RegimenFiscal)
+                    .Add("usoCfdi", query.UsoCfdi)
+                    .Add("diasCredito", query.DiasCredito)
+                    .Add("limiteCredito", query.LimiteCredito)
+                    .Add("prioridad", query.Prioridad)
+                    .Add("notas", query.Notas)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando cliente en: {url}", "ClienteService", "CreateClienteAsync");
 
@@ -227,27 +217,17 @@ namespace Advance_Control.Services.Clientes
                 var url = $"{_endpoints.GetEndpoint("api", "Clientes")}/{query.IdCliente}";
 
                 // Construir parámetros de consulta según lo que el API espera [FromQuery]
-                var queryParams = new List<string>();
-                if (!string.IsNullOrWhiteSpace(query.Rfc))
-                    queryParams.Add($"rfc={Uri.EscapeDataString(query.Rfc)}");
-                if (!string.IsNullOrWhiteSpace(query.RazonSocial))
-                    queryParams.Add($"razonSocial={Uri.EscapeDataString(query.RazonSocial)}");
-                if (!string.IsNullOrWhiteSpace(query.NombreComercial))
-                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(query.NombreComercial)}");
-                if (!string.IsNullOrWhiteSpace(query.RegimenFiscal))
-                    queryParams.Add($"regimenFiscal={Uri.EscapeDataString(query.RegimenFiscal)}");
-                if (!string.IsNullOrWhiteSpace(query.UsoCfdi))
-                    queryParams.Add($"usoCfdi={Uri.EscapeDataString(query.UsoCfdi)}");
-                if (query.DiasCredito.HasValue)
-                    queryParams.Add($"diasCredito={query.DiasCredito.Value}");
-                if (query.LimiteCredito.HasValue)
-                    queryParams.Add($"limiteCredito={query.LimiteCredito.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)}");
-                if (query.Prioridad.HasValue)
-                    queryParams.Add($"prioridad={query.Prioridad.Value}");
-                if (!string.IsNullOrWhiteSpace(query.Notas))
-                    queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
-                if (queryParams.Count > 0)
-                    url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .Add("rfc", query.Rfc)
+                    .Add("razonSocial", query.RazonSocial)
+                    .Add("nombreComercial", query.NombreComercial)
+                    .Add("regimenFiscal", query.RegimenFiscal)
+                    .Add("usoCfdi", query.UsoCfdi)
+                    .Add("diasCredito", query.DiasCredito)
+                    .Add("limiteCredito", query.LimiteCredito)
+                    .Add("prioridad", query.Prioridad)
+                    .Add("notas", query.Notas)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando cliente en: {url}", "ClienteService", "UpdateClienteAsync");
 

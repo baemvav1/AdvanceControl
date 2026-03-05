@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -42,22 +42,22 @@ namespace Advance_Control.Views
         public EquiposView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<EquiposViewModel>();
+            ViewModel = AppServices.Get<EquiposViewModel>();
             
             // Resolver el servicio de relaciones desde DI
-            _relacionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionService>();
+            _relacionService = AppServices.Get<IRelacionService>();
             
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             
             // Resolver el servicio de ubicaciones desde DI
-            _ubicacionService = ((App)Application.Current).Host.Services.GetRequiredService<IUbicacionService>();
+            _ubicacionService = AppServices.Get<IUbicacionService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
             
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(EquiposView));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(EquiposView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -84,7 +84,7 @@ namespace Advance_Control.Views
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
         {
             // Resolver el ViewModel desde DI
-            var nuevoEquipoViewModel = ((App)Application.Current).Host.Services.GetRequiredService<NuevoEquipoViewModel>();
+            var nuevoEquipoViewModel = AppServices.Get<NuevoEquipoViewModel>();
             var nuevoEquipoView = new NuevoEquipoView(nuevoEquipoViewModel);
             
             // Crear el diálogo similar a como lo hace el Login
@@ -252,24 +252,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Equipos", "Relación eliminada");
+                        _activityService.Registrar("Equipos", "Relación eliminada");
                         // Eliminar la relación de la colección local
                         equipo.Relaciones.Remove(relacion);
                         equipo.NotifyNoRelacionesMessageChanged();
                         
                         // Mostrar notificación de éxito
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Relación eliminada",
-                            nota: "Relación eliminada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Relación eliminada", "Relación eliminada correctamente");
                     }
                     else
                     {
                         // Mostrar notificación de error
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar la relación. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la relación. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
@@ -278,10 +272,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar relación: {ex.GetType().Name} - {ex.Message}");
                     
                     // Mostrar notificación de error
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -352,7 +343,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Equipos", "Relación modificada");
+                        _activityService.Registrar("Equipos", "Relación modificada");
                         // Actualizar la nota en el objeto local
                         relacion.Nota = nuevaNota;
                         
@@ -361,18 +352,12 @@ namespace Advance_Control.Views
                         await LoadRelacionesForEquipoAsync(equipo);
                         
                         // Mostrar notificación de éxito
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Nota actualizada",
-                            nota: "Nota actualizada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Nota actualizada", "Nota actualizada correctamente");
                     }
                     else
                     {
                         // Mostrar notificación de error
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo actualizar la nota. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo actualizar la nota. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
@@ -381,10 +366,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al actualizar nota: {ex.GetType().Name} - {ex.Message}");
                     
                     // Mostrar notificación de error
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al actualizar la nota. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al actualizar la nota. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -444,24 +426,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Equipos", "Relación creada");
+                        _activityService.Registrar("Equipos", "Relación creada");
                         // Recargar las relaciones para actualizar la UI
                         equipo.RelacionesLoaded = false;
                         await LoadRelacionesForEquipoAsync(equipo);
 
                         // Mostrar notificación de éxito
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Relación creada",
-                            nota: $"Relación con el cliente \"{selectedCliente.RazonSocial}\" creada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Relación creada", $"Relación con el cliente \"{selectedCliente.RazonSocial}\" creada correctamente");
                     }
                     else
                     {
                         // Mostrar notificación de error - la relación puede que ya exista
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear la relación. Es posible que ya exista una relación con este cliente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear la relación. Es posible que ya exista una relación con este cliente.");
                     }
                 }
                 catch (Exception ex)
@@ -470,10 +446,7 @@ namespace Advance_Control.Views
                     System.Diagnostics.Debug.WriteLine($"Error al crear relación: {ex.GetType().Name} - {ex.Message}");
 
                     // Mostrar notificación de error
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear la relación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear la relación. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -543,10 +516,7 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar ubicaciones: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "No se pudieron cargar las ubicaciones. Por favor, verifique su conexión e intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "No se pudieron cargar las ubicaciones. Por favor, verifique su conexión e intente nuevamente.");
                 return;
             }
             finally
@@ -583,24 +553,18 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Equipos", actividadTitulo);
+                        _activityService.Registrar("Equipos", actividadTitulo);
                         // Actualizar el equipo local con la nueva ubicación
                         equipo.IdUbicacion = selectedUbicacion.IdUbicacion;
                         equipo.Ubicacion = selectedUbicacion;
 
                         // Mostrar notificación de éxito
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Ubicación actualizada",
-                            nota: $"Ubicación \"{selectedUbicacion.Nombre}\" asignada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Ubicación actualizada", $"Ubicación \"{selectedUbicacion.Nombre}\" asignada correctamente");
                     }
                     else
                     {
                         // Mostrar notificación de error
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo actualizar la ubicación. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo actualizar la ubicación. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
@@ -620,10 +584,7 @@ namespace Advance_Control.Views
                     }
 
                     // Mostrar notificación de error
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: errorMessage,
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", errorMessage);
                 }
             }
         }

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Areas
 {
@@ -40,24 +41,12 @@ namespace Advance_Control.Services.Areas
             try
             {
                 var url = _endpoints.GetEndpoint("api", "Areas");
-                var queryParams = new List<string>();
-
-                if (idArea.HasValue && idArea.Value > 0)
-                    queryParams.Add($"idArea={idArea.Value}");
-
-                if (!string.IsNullOrWhiteSpace(nombre))
-                    queryParams.Add($"nombre={Uri.EscapeDataString(nombre)}");
-
-                if (activo.HasValue)
-                    queryParams.Add($"activo={activo.Value.ToString().ToLower()}");
-
-                if (!string.IsNullOrWhiteSpace(tipoGeometria))
-                    queryParams.Add($"tipoGeometria={Uri.EscapeDataString(tipoGeometria)}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .AddPositive("idArea", idArea ?? 0)
+                    .Add("nombre", nombre)
+                    .Add("activo", activo)
+                    .Add("tipoGeometria", tipoGeometria)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Obteniendo áreas desde: {url}", "AreasService", "GetAreasAsync");
 
@@ -103,18 +92,10 @@ namespace Advance_Control.Services.Areas
             try
             {
                 var url = _endpoints.GetEndpoint("api", "Areas", "googlemaps");
-                var queryParams = new List<string>();
-
-                if (idArea.HasValue && idArea.Value > 0)
-                    queryParams.Add($"idArea={idArea.Value}");
-
-                if (activo.HasValue)
-                    queryParams.Add($"activo={activo.Value.ToString().ToLower()}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .AddPositive("idArea", idArea ?? 0)
+                    .Add("activo", activo)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Obteniendo áreas para Google Maps desde: {url}", "AreasService", "GetAreasForGoogleMapsAsync");
 
@@ -162,16 +143,11 @@ namespace Advance_Control.Services.Areas
             {
                 var url = _endpoints.GetEndpoint("api", "Areas", "validate-point");
                 // Format coordinates using invariant culture to avoid numeric conversion errors
-                var queryParams = new List<string>
-                {
-                    $"latitud={latitud.ToString(CultureInfo.InvariantCulture)}",
-                    $"longitud={longitud.ToString(CultureInfo.InvariantCulture)}"
-                };
-
-                if (idArea.HasValue && idArea.Value > 0)
-                    queryParams.Add($"idArea={idArea.Value}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .AddRequired("latitud", latitud)
+                    .AddRequired("longitud", longitud)
+                    .AddPositive("idArea", idArea ?? 0)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Validando punto ({latitud}, {longitud}) en áreas", "AreasService", "ValidatePointAsync");
 
@@ -229,11 +205,10 @@ namespace Advance_Control.Services.Areas
                 var url = _endpoints.GetEndpoint("api", "Areas");
 
                 // Build query parameters to match the API controller's [FromQuery] parameters
-                var queryParams = BuildAreaQueryParams(area, isCreate: true);
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = BuildAreaQueryParams(area, url, isCreate: true);
 
                 await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasService", "CreateAreaAsync");
-                await LogDataFlowInfoAsync(area, queryParams.Count, "CreateAreaAsync");
+                await LogDataFlowInfoAsync(area, 0, "CreateAreaAsync");
 
                 var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
@@ -296,15 +271,10 @@ namespace Advance_Control.Services.Areas
                 var url = _endpoints.GetEndpoint("api", "Areas", idArea.ToString());
 
                 // Build query parameters to match the API controller's [FromQuery] parameters
-                var queryParams = BuildAreaQueryParams(area, isCreate: false);
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = BuildAreaQueryParams(area, url, isCreate: false);
 
                 await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
-                await LogDataFlowInfoAsync(area, queryParams.Count, "UpdateAreaAsync");
+                await LogDataFlowInfoAsync(area, 0, "UpdateAreaAsync");
 
                 var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
@@ -415,87 +385,31 @@ namespace Advance_Control.Services.Areas
         /// <summary>
         /// Builds query parameters from an AreaDto to match the API controller's [FromQuery] parameters
         /// </summary>
-        private List<string> BuildAreaQueryParams(AreaDto area, bool isCreate)
+        private string BuildAreaQueryParams(AreaDto area, string baseUrl, bool isCreate)
         {
-            var queryParams = new List<string>();
-
-            // nombre - should always be present since it's validated before calling this method for create
-            if (!string.IsNullOrWhiteSpace(area.Nombre))
-                queryParams.Add($"nombre={Uri.EscapeDataString(area.Nombre)}");
-
-            // Optional parameters
-            if (!string.IsNullOrWhiteSpace(area.Descripcion))
-                queryParams.Add($"descripcion={Uri.EscapeDataString(area.Descripcion)}");
-
-            if (!string.IsNullOrWhiteSpace(area.ColorMapa))
-                queryParams.Add($"colorMapa={Uri.EscapeDataString(area.ColorMapa)}");
-
-            // Format decimal values using invariant culture to avoid numeric conversion errors
-            if (area.Opacidad.HasValue)
-                queryParams.Add($"opacidad={area.Opacidad.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            if (!string.IsNullOrWhiteSpace(area.ColorBorde))
-                queryParams.Add($"colorBorde={Uri.EscapeDataString(area.ColorBorde)}");
-
-            // Border width (int) remains as-is
-            if (area.AnchoBorde.HasValue)
-                queryParams.Add($"anchoBorde={area.AnchoBorde.Value}");
-
-            // Active flag (bool) remains as-is
-            if (area.Activo.HasValue)
-                queryParams.Add($"activo={(area.Activo.Value ? "true" : "false")}");
-
-            if (!string.IsNullOrWhiteSpace(area.TipoGeometria))
-                queryParams.Add($"tipoGeometria={Uri.EscapeDataString(area.TipoGeometria)}");
-
-            // Format decimal coordinate values using invariant culture to avoid numeric conversion errors
-            if (area.CentroLatitud.HasValue)
-                queryParams.Add($"centroLatitud={area.CentroLatitud.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            if (area.CentroLongitud.HasValue)
-                queryParams.Add($"centroLongitud={area.CentroLongitud.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            if (area.Radio.HasValue)
-                queryParams.Add($"radio={area.Radio.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            // Bounding box decimal values - format using invariant culture
-            if (area.BoundingBoxNE_Lat.HasValue)
-                queryParams.Add($"boundingBoxNE_Lat={area.BoundingBoxNE_Lat.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            if (area.BoundingBoxNE_Lng.HasValue)
-                queryParams.Add($"boundingBoxNE_Lng={area.BoundingBoxNE_Lng.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            if (area.BoundingBoxSW_Lat.HasValue)
-                queryParams.Add($"boundingBoxSW_Lat={area.BoundingBoxSW_Lat.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            if (area.BoundingBoxSW_Lng.HasValue)
-                queryParams.Add($"boundingBoxSW_Lng={area.BoundingBoxSW_Lng.Value.ToString(CultureInfo.InvariantCulture)}");
-
-            // Label display flag (bool) remains as-is
-            if (area.EtiquetaMostrar.HasValue)
-                queryParams.Add($"etiquetaMostrar={(area.EtiquetaMostrar.Value ? "true" : "false")}");
-
-            if (!string.IsNullOrWhiteSpace(area.EtiquetaTexto))
-                queryParams.Add($"etiquetaTexto={Uri.EscapeDataString(area.EtiquetaTexto)}");
-
-            // Zoom level (int) remains as-is
-            if (area.NivelZoom.HasValue)
-                queryParams.Add($"nivelZoom={area.NivelZoom.Value}");
-
-            if (!string.IsNullOrWhiteSpace(area.MetadataJSON))
-                queryParams.Add($"metadataJSON={Uri.EscapeDataString(area.MetadataJSON)}");
-
-            // User tracking parameters
-            if (isCreate && !string.IsNullOrWhiteSpace(area.UsuarioCreacion))
-                queryParams.Add($"usuarioCreacion={Uri.EscapeDataString(area.UsuarioCreacion)}");
-
-            if (!isCreate && !string.IsNullOrWhiteSpace(area.UsuarioModificacion))
-                queryParams.Add($"usuarioModificacion={Uri.EscapeDataString(area.UsuarioModificacion)}");
-
-            // The API also supports: coordenadas, autoCalcularCentro, validarPoligonoLargo
-            // These are not in the current AreaDto, but MetadataJSON can contain coordinate data
-
-            return queryParams;
+            return new ApiQueryBuilder()
+                .Add("nombre", area.Nombre)
+                .Add("descripcion", area.Descripcion)
+                .Add("colorMapa", area.ColorMapa)
+                .Add("opacidad", area.Opacidad)
+                .Add("colorBorde", area.ColorBorde)
+                .Add("anchoBorde", area.AnchoBorde)
+                .Add("activo", area.Activo)
+                .Add("tipoGeometria", area.TipoGeometria)
+                .Add("centroLatitud", area.CentroLatitud)
+                .Add("centroLongitud", area.CentroLongitud)
+                .Add("radio", area.Radio)
+                .Add("boundingBoxNE_Lat", area.BoundingBoxNE_Lat)
+                .Add("boundingBoxNE_Lng", area.BoundingBoxNE_Lng)
+                .Add("boundingBoxSW_Lat", area.BoundingBoxSW_Lat)
+                .Add("boundingBoxSW_Lng", area.BoundingBoxSW_Lng)
+                .Add("etiquetaMostrar", area.EtiquetaMostrar)
+                .Add("etiquetaTexto", area.EtiquetaTexto)
+                .Add("nivelZoom", area.NivelZoom)
+                .Add("metadataJSON", area.MetadataJSON)
+                .Add(isCreate ? "usuarioCreacion" : "usuarioModificacion",
+                     isCreate ? area.UsuarioCreacion : area.UsuarioModificacion)
+                .Build(baseUrl);
         }
     }
 }

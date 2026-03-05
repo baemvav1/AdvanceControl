@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -23,13 +23,13 @@ namespace Advance_Control.Views.Pages
         public ContactosView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<ContactosViewModel>();
+            ViewModel = AppServices.Get<ContactosViewModel>();
             
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             
             // Resolver el servicio de logging desde DI
-            _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
+            _loggingService = AppServices.Get<ILoggingService>();
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(ContactosView));
@@ -68,6 +68,12 @@ namespace Advance_Control.Views.Pages
             var apellidoTextBox = new TextBox
             {
                 PlaceholderText = "Apellido del contacto",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var tratamientoTextBox = new TextBox
+            {
+                PlaceholderText = "Tratamiento (ej. Ing., Lic., Dr.)",
                 Margin = new Thickness(0, 0, 0, 8)
             };
 
@@ -144,6 +150,8 @@ namespace Advance_Control.Views.Pages
                         nombreTextBox,
                         new TextBlock { Text = "Apellido:" },
                         apellidoTextBox,
+                        new TextBlock { Text = "Tratamiento:" },
+                        tratamientoTextBox,
                         new TextBlock { Text = "Correo electrónico:" },
                         correoTextBox,
                         new TextBlock { Text = "Teléfono:" },
@@ -183,10 +191,7 @@ namespace Advance_Control.Views.Pages
                 // Validar campos requeridos
                 if (string.IsNullOrWhiteSpace(nombreTextBox.Text))
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Validación",
-                        nota: "El nombre es obligatorio",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Validación", "El nombre es obligatorio");
                     return;
                 }
 
@@ -216,32 +221,24 @@ namespace Advance_Control.Views.Pages
                         notas: string.IsNullOrWhiteSpace(notasTextBox.Text) ? null : notasTextBox.Text.Trim(),
                         idCliente: idCliente,
                         idProveedor: idProveedor,
-                        activo: activoCheckBox.IsChecked ?? true
+                        activo: activoCheckBox.IsChecked ?? true,
+                        tratamiento: string.IsNullOrWhiteSpace(tratamientoTextBox.Text) ? null : tratamientoTextBox.Text.Trim()
                     );
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Contacto creado",
-                            nota: $"Contacto \"{nombreTextBox.Text.Trim()}\" creado correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Contacto creado", $"Contacto \"{nombreTextBox.Text.Trim()}\" creado correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear el contacto. Verifique los datos e intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear el contacto. Verifique los datos e intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     await _loggingService.LogErrorAsync("Error al crear contacto desde la UI", ex, "ContactosView", "NuevoButton_Click");
                     
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear el contacto. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear el contacto. Por favor, intente nuevamente.");
                 }
             }
         }

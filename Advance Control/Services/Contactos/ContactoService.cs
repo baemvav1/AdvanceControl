@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Contactos
 {
@@ -39,45 +40,20 @@ namespace Advance_Control.Services.Contactos
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (query.ContactoId.HasValue)
-                        queryParams.Add($"contactoId={query.ContactoId.Value}");
-
-                    if (query.CredencialId.HasValue)
-                        queryParams.Add($"credencialId={query.CredencialId.Value}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Nombre))
-                        queryParams.Add($"nombre={Uri.EscapeDataString(query.Nombre)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Apellido))
-                        queryParams.Add($"apellido={Uri.EscapeDataString(query.Apellido)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Correo))
-                        queryParams.Add($"correo={Uri.EscapeDataString(query.Correo)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Telefono))
-                        queryParams.Add($"telefono={Uri.EscapeDataString(query.Telefono)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Departamento))
-                        queryParams.Add($"departamento={Uri.EscapeDataString(query.Departamento)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.CodigoInterno))
-                        queryParams.Add($"codigoInterno={Uri.EscapeDataString(query.CodigoInterno)}");
-
-                    if (query.IdProveedor.HasValue)
-                        queryParams.Add($"idProveedor={query.IdProveedor.Value}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Cargo))
-                        queryParams.Add($"cargo={Uri.EscapeDataString(query.Cargo)}");
-
-                    if (query.IdCliente.HasValue)
-                        queryParams.Add($"idCliente={query.IdCliente.Value}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("contactoId", query.ContactoId)
+                        .Add("credencialId", query.CredencialId)
+                        .Add("nombre", query.Nombre)
+                        .Add("apellido", query.Apellido)
+                        .Add("correo", query.Correo)
+                        .Add("telefono", query.Telefono)
+                        .Add("departamento", query.Departamento)
+                        .Add("codigoInterno", query.CodigoInterno)
+                        .Add("idProveedor", query.IdProveedor)
+                        .Add("cargo", query.Cargo)
+                        .Add("idCliente", query.IdCliente)
+                        .Add("tratamiento", query.Tratamiento)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo contactos desde: {url}", "ContactoService", "GetContactosAsync");
@@ -128,48 +104,21 @@ namespace Advance_Control.Services.Contactos
             {
                 // Construir la URL con query parameters según el API controller
                 var url = _endpoints.GetEndpoint("api", "Contacto");
-                var queryParams = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(query.Nombre))
-                    queryParams.Add($"nombre={Uri.EscapeDataString(query.Nombre)}");
-
-                if (query.CredencialId.HasValue)
-                    queryParams.Add($"credencialId={query.CredencialId.Value}");
-
-                if (!string.IsNullOrWhiteSpace(query.Apellido))
-                    queryParams.Add($"apellido={Uri.EscapeDataString(query.Apellido)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Correo))
-                    queryParams.Add($"correo={Uri.EscapeDataString(query.Correo)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Telefono))
-                    queryParams.Add($"telefono={Uri.EscapeDataString(query.Telefono)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Departamento))
-                    queryParams.Add($"departamento={Uri.EscapeDataString(query.Departamento)}");
-
-                if (!string.IsNullOrWhiteSpace(query.CodigoInterno))
-                    queryParams.Add($"codigoInterno={Uri.EscapeDataString(query.CodigoInterno)}");
-
-                if (query.Activo.HasValue)
-                    queryParams.Add($"activo={query.Activo.Value.ToString().ToLower()}");
-
-                if (!string.IsNullOrWhiteSpace(query.Notas))
-                    queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
-
-                if (query.IdProveedor.HasValue)
-                    queryParams.Add($"idProveedor={query.IdProveedor.Value}");
-
-                if (!string.IsNullOrWhiteSpace(query.Cargo))
-                    queryParams.Add($"cargo={Uri.EscapeDataString(query.Cargo)}");
-
-                if (query.IdCliente.HasValue)
-                    queryParams.Add($"idCliente={query.IdCliente.Value}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .Add("nombre", query.Nombre)
+                    .Add("credencialId", query.CredencialId)
+                    .Add("apellido", query.Apellido)
+                    .Add("correo", query.Correo)
+                    .Add("telefono", query.Telefono)
+                    .Add("departamento", query.Departamento)
+                    .Add("codigoInterno", query.CodigoInterno)
+                    .Add("activo", query.Activo)
+                    .Add("notas", query.Notas)
+                    .Add("idProveedor", query.IdProveedor)
+                    .Add("cargo", query.Cargo)
+                    .Add("idCliente", query.IdCliente)
+                    .Add("tratamiento", query.Tratamiento)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando contacto en: {url}", "ContactoService", "CreateContactoAsync");
 
@@ -219,48 +168,21 @@ namespace Advance_Control.Services.Contactos
             {
                 // Construir la URL con query parameters según el API controller
                 var url = $"{_endpoints.GetEndpoint("api", "Contacto")}/{query.ContactoId}";
-                var queryParams = new List<string>();
-
-                if (query.CredencialId.HasValue)
-                    queryParams.Add($"credencialId={query.CredencialId.Value}");
-
-                if (!string.IsNullOrWhiteSpace(query.Nombre))
-                    queryParams.Add($"nombre={Uri.EscapeDataString(query.Nombre)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Apellido))
-                    queryParams.Add($"apellido={Uri.EscapeDataString(query.Apellido)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Correo))
-                    queryParams.Add($"correo={Uri.EscapeDataString(query.Correo)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Telefono))
-                    queryParams.Add($"telefono={Uri.EscapeDataString(query.Telefono)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Departamento))
-                    queryParams.Add($"departamento={Uri.EscapeDataString(query.Departamento)}");
-
-                if (!string.IsNullOrWhiteSpace(query.CodigoInterno))
-                    queryParams.Add($"codigoInterno={Uri.EscapeDataString(query.CodigoInterno)}");
-
-                if (query.Activo.HasValue)
-                    queryParams.Add($"activo={query.Activo.Value.ToString().ToLower()}");
-
-                if (!string.IsNullOrWhiteSpace(query.Notas))
-                    queryParams.Add($"notas={Uri.EscapeDataString(query.Notas)}");
-
-                if (query.IdProveedor.HasValue)
-                    queryParams.Add($"idProveedor={query.IdProveedor.Value}");
-
-                if (!string.IsNullOrWhiteSpace(query.Cargo))
-                    queryParams.Add($"cargo={Uri.EscapeDataString(query.Cargo)}");
-
-                if (query.IdCliente.HasValue)
-                    queryParams.Add($"idCliente={query.IdCliente.Value}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .Add("credencialId", query.CredencialId)
+                    .Add("nombre", query.Nombre)
+                    .Add("apellido", query.Apellido)
+                    .Add("correo", query.Correo)
+                    .Add("telefono", query.Telefono)
+                    .Add("departamento", query.Departamento)
+                    .Add("codigoInterno", query.CodigoInterno)
+                    .Add("activo", query.Activo)
+                    .Add("notas", query.Notas)
+                    .Add("idProveedor", query.IdProveedor)
+                    .Add("cargo", query.Cargo)
+                    .Add("idCliente", query.IdCliente)
+                    .Add("tratamiento", query.Tratamiento)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando contacto en: {url}", "ContactoService", "UpdateContactoAsync");
 

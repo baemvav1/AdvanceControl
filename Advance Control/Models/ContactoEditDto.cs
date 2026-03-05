@@ -75,6 +75,9 @@ namespace Advance_Control.Models
         /// </summary>
         public int? IdCliente { get; set; }
 
-       
+        /// <summary>
+        /// Tratamiento del contacto (ej. Ing., Lic., Dr.)
+        /// </summary>
+        public string? Tratamiento { get; set; }
     }
 }

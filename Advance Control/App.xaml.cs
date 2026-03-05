@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using System;
+using System.Net.Http;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.EndPointProvider;
 using Microsoft.Extensions.Configuration;
@@ -97,46 +98,57 @@ namespace Advance_Control
                         return new Services.Http.AuthenticatedHttpHandler(lazyAuthService, endpointProvider, logger);
                     });
 
-                    // Registrar LoggingService como HttpClient tipado
-                    services.AddHttpClient<ILoggingService, LoggingService>((sp, client) =>
+                    // Registrar cliente HTTP nombrado para LoggingService
+                    services.AddHttpClient("LoggingService", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
-                        {
                             client.BaseAddress = baseUri;
-                        }
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
-                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
-                        {
-                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
-                        }
-                        else
-                        {
-                            client.Timeout = TimeSpan.FromSeconds(5);
-                        }
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(5);
                     });
 
-                    // Registrar AuthService y su HttpClient pipeline.
-                    // Configuramos BaseAddress usando la IApiEndpointProvider registrada.
-                    // NOTA: No se agrega AuthenticatedHttpHandler aquí para evitar dependencia circular
-                    // (AuthService maneja endpoints de autenticación que no requieren Bearer token)
-                    services.AddHttpClient<IAuthService, AuthService>((sp, client) =>
+                    // Singleton: una sola instancia para toda la vida de la app.
+                    // LoggingService no tiene estado de sesión propio, solo usa HttpClient y Lazy<IUserSessionService>.
+                    services.AddSingleton<ILoggingService>(sp =>
+                    {
+                        var factory = sp.GetRequiredService<IHttpClientFactory>();
+                        var http = factory.CreateClient("LoggingService");
+                        var endpoints = sp.GetRequiredService<IApiEndpointProvider>();
+                        var session = sp.GetRequiredService<Lazy<Services.Session.IUserSessionService>>();
+                        var navigation = sp.GetRequiredService<INavigationService>();
+                        return new LoggingService(http, endpoints, session, navigation);
+                    });
+
+                    // Registrar cliente HTTP nombrado para AuthService (sin AuthenticatedHttpHandler
+                    // para evitar dependencia circular: Auth no necesita token Bearer para login/refresh)
+                    services.AddHttpClient("AuthService", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
-                        {
                             client.BaseAddress = baseUri;
-                        }
-                        // Configurar timeout según modo desarrollo
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
-                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
-                        {
-                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
-                        }
-                        else
-                        {
-                            client.Timeout = TimeSpan.FromSeconds(30);
-                        }
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    });
+
+                    // SINGLETON CRÍTICO: una sola instancia de AuthService en toda la app.
+                    // Si fuera Transient (AddHttpClient<IAuthService, AuthService>), cada handler
+                    // crearía su propia instancia con su propio estado de tokens. Cuando varias instancias
+                    // intentan refrescar el mismo refresh token simultáneamente, la API detecta
+                    // "token reutilizado" y revoca todas las sesiones, causando logout inesperado.
+                    services.AddSingleton<IAuthService>(sp =>
+                    {
+                        var factory = sp.GetRequiredService<IHttpClientFactory>();
+                        var http = factory.CreateClient("AuthService");
+                        var endpoints = sp.GetRequiredService<IApiEndpointProvider>();
+                        var storage = sp.GetRequiredService<ISecureStorage>();
+                        var logger = sp.GetRequiredService<ILoggingService>();
+                        var devMode = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>();
+                        return new AuthService(http, endpoints, storage, logger, devMode);
                     });
 
                     // Registrar ClienteService y su HttpClient pipeline con autenticación
@@ -286,6 +298,16 @@ namespace Advance_Control
                         {
                             client.Timeout = TimeSpan.FromSeconds(30);
                         }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar CheckOperacionService
+                    services.AddHttpClient<Services.CheckOperacion.ICheckOperacionService, Services.CheckOperacion.CheckOperacionService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        client.Timeout = TimeSpan.FromSeconds(15);
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
@@ -532,6 +554,9 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.EntidadesViewModel>();
                     services.AddTransient<ViewModels.ContactosViewModel>();
                     services.AddTransient<ViewModels.DashboardViewModel>();
+
+                    services.AddSingleton<Services.Email.IEmailService, Services.Email.EmailService>();
+                    services.AddTransient<ViewModels.CorreoViewModel>();
 
                     // Registrar ActivityService para el dashboard
                     services.AddHttpClient<Services.Activity.IActivityService, Services.Activity.ActivityService>((sp, client) =>

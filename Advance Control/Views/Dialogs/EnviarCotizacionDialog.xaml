@@ -1,0 +1,65 @@
+<ContentDialog
+    x:Class="Advance_Control.Views.Dialogs.EnviarCotizacionDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Enviar cotización por correo"
+    PrimaryButtonText="Enviar"
+    CloseButtonText="Cancelar"
+    DefaultButton="Primary">
+
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">620</x:Double>
+    </ContentDialog.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="500">
+        <StackPanel Spacing="10" Width="540" Padding="0,4,0,4">
+
+            <!-- Para -->
+            <TextBlock Text="Para:" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+            <TextBox x:Name="ParaTextBox"
+                     PlaceholderText="correo@ejemplo.com"
+                     ToolTipService.ToolTip="Destinatario principal"/>
+
+            <!-- CC -->
+            <TextBlock Text="CC (copia):" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,4,0,0"/>
+            <Border BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1" CornerRadius="4" MaxHeight="130" Padding="4">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel x:Name="CCPanel" Spacing="4"/>
+                </ScrollViewer>
+            </Border>
+            <TextBox x:Name="CCManualTextBox"
+                     PlaceholderText="Agregar correo manual: correo@ejemplo.com"
+                     ToolTipService.ToolTip="Separa múltiples correos con comas"/>
+
+            <!-- CCO -->
+            <TextBlock Text="CCO (copia oculta):" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,4,0,0"/>
+            <TextBox x:Name="CCOTextBox"
+                     PlaceholderText="correo@ejemplo.com, otro@ejemplo.com"
+                     ToolTipService.ToolTip="Separa múltiples correos con comas"/>
+
+            <!-- Asunto -->
+            <TextBlock Text="Asunto:" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,4,0,0"/>
+            <TextBox x:Name="AsuntoTextBox"/>
+
+            <!-- Mensaje -->
+            <TextBlock Text="Mensaje:" Style="{StaticResource BodyStrongTextBlockStyle}" Margin="0,4,0,0"/>
+            <TextBox x:Name="MensajeTextBox"
+                     Height="110"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     ScrollViewer.VerticalScrollBarVisibility="Auto"
+                     PlaceholderText="Escribe un mensaje opcional..."/>
+
+            <!-- Estado envío -->
+            <InfoBar x:Name="EstadoInfoBar"
+                     IsOpen="False"
+                     IsClosable="False"
+                     Margin="0,4,0,0"/>
+
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 
@@ -109,6 +110,11 @@ namespace Advance_Control.Models
         [JsonPropertyName("idCliente")]
         public int? IdCliente { get; set; }
 
+        /// <summary>
+        /// Tratamiento del contacto (ej. Ing., Lic., Dr.)
+        /// </summary>
+        [JsonPropertyName("tratamiento")]
+        public string? Tratamiento { get; set; }
 
         /// <summary>
         /// Propiedad interna para controlar el estado de expansión en la UI.
@@ -128,8 +134,10 @@ namespace Advance_Control.Models
         }
 
         /// <summary>
-        /// Nombre completo del contacto (Nombre + Apellido)
+        /// Nombre completo del contacto (Tratamiento + Nombre + Apellido)
         /// </summary>
-        public string NombreCompleto => $"{Nombre ?? ""} {Apellido ?? ""}".Trim();
+        public string NombreCompleto =>
+            string.Join(" ", new[] { Tratamiento, Nombre, Apellido }
+                .Where(s => !string.IsNullOrWhiteSpace(s)));
     }
 }

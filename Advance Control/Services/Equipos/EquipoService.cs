@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Equipos
 {
@@ -39,36 +40,16 @@ namespace Advance_Control.Services.Equipos
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (!string.IsNullOrWhiteSpace(query.Marca))
-                        queryParams.Add($"marca={Uri.EscapeDataString(query.Marca)}");
-
-                    if (query.Creado.HasValue)
-                        queryParams.Add($"creado={query.Creado.Value}");
-
-                    if (query.Paradas.HasValue)
-                        queryParams.Add($"paradas={query.Paradas.Value}");
-
-                    if (query.Kilogramos.HasValue)
-                        queryParams.Add($"kilogramos={query.Kilogramos.Value}");
-
-                    if (query.Personas.HasValue)
-                        queryParams.Add($"personas={query.Personas.Value}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Descripcion))
-                        queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Identificador))
-                        queryParams.Add($"identificador={Uri.EscapeDataString(query.Identificador)}");
-
-                    if (query.IdUbicacion.HasValue)
-                        queryParams.Add($"idUbicacion={query.IdUbicacion.Value}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("marca", query.Marca)
+                        .Add("creado", query.Creado)
+                        .Add("paradas", query.Paradas)
+                        .Add("kilogramos", query.Kilogramos)
+                        .Add("personas", query.Personas)
+                        .Add("descripcion", query.Descripcion)
+                        .Add("identificador", query.Identificador)
+                        .Add("idUbicacion", query.IdUbicacion)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo equipos desde: {url}", "EquipoService", "GetEquiposAsync");
@@ -190,36 +171,16 @@ namespace Advance_Control.Services.Equipos
                 // Construir la URL con parámetros de consulta
                 var url = _endpoints.GetEndpoint("api", "equipo_crud", id.ToString());
 
-                var queryParams = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(query.Marca))
-                    queryParams.Add($"marca={Uri.EscapeDataString(query.Marca)}");
-
-                if (query.Creado.HasValue)
-                    queryParams.Add($"creado={query.Creado.Value}");
-
-                if (query.Paradas.HasValue)
-                    queryParams.Add($"paradas={query.Paradas.Value}");
-
-                if (query.Kilogramos.HasValue)
-                    queryParams.Add($"kilogramos={query.Kilogramos.Value}");
-
-                if (query.Personas.HasValue)
-                    queryParams.Add($"personas={query.Personas.Value}");
-
-                if (!string.IsNullOrWhiteSpace(query.Descripcion))
-                    queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Identificador))
-                    queryParams.Add($"identificador={Uri.EscapeDataString(query.Identificador)}");
-
-                if (query.IdUbicacion.HasValue)
-                    queryParams.Add($"idUbicacion={query.IdUbicacion.Value}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .Add("marca", query.Marca)
+                    .Add("creado", query.Creado)
+                    .Add("paradas", query.Paradas)
+                    .Add("kilogramos", query.Kilogramos)
+                    .Add("personas", query.Personas)
+                    .Add("descripcion", query.Descripcion)
+                    .Add("identificador", query.Identificador)
+                    .Add("idUbicacion", query.IdUbicacion)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando equipo {id} en: {url}", "EquipoService", "UpdateEquipoAsync");
 
@@ -279,24 +240,17 @@ namespace Advance_Control.Services.Equipos
                 var url = _endpoints.GetEndpoint("api", "equipo_crud");
 
                 // Agregar parámetros de consulta
-                var queryParams = new List<string>
-                {
-                    $"marca={Uri.EscapeDataString(marca)}",
-                    $"creado={creado}",
-                    $"paradas={paradas}",
-                    $"kilogramos={kilogramos}",
-                    $"personas={personas}",
-                    $"identificador={Uri.EscapeDataString(identificador)}",
-                    $"estatus={estatus.ToString().ToLower()}"
-                };
-
-                if (!string.IsNullOrWhiteSpace(descripcion))
-                    queryParams.Add($"descripcion={Uri.EscapeDataString(descripcion)}");
-
-                if (idUbicacion.HasValue)
-                    queryParams.Add($"idUbicacion={idUbicacion.Value}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .Add("marca", marca)
+                    .AddRequired("creado", creado)
+                    .AddRequired("paradas", paradas)
+                    .AddRequired("kilogramos", kilogramos)
+                    .AddRequired("personas", personas)
+                    .Add("identificador", identificador)
+                    .AddRequired("estatus", estatus)
+                    .Add("descripcion", descripcion)
+                    .Add("idUbicacion", idUbicacion)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando equipo en: {url}", "EquipoService", "CreateEquipoAsync");
 

@@ -1,13 +1,13 @@
-using Advance_Control.Models;
+﻿using Advance_Control.Models;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.Cargos;
+using Advance_Control.Services.Contactos;
 using Advance_Control.Services.ImageViewer;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Session;
 using Advance_Control.Utilities;
 using Advance_Control.Services.Logging;
-using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +16,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.IO;
@@ -39,6 +40,7 @@ namespace Advance_Control.Views
         private readonly IOperacionImageService _operacionImageService;
         private readonly IImageViewerService _imageViewerService;
         private readonly IActivityService _activityService;
+        private readonly IContactoService _contactoService;
 
         /// <summary>
         /// Currency formatter for the NumberBox
@@ -48,28 +50,31 @@ namespace Advance_Control.Views
         public OperacionesView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<OperacionesViewModel>();
+            ViewModel = AppServices.Get<OperacionesViewModel>();
 
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             
             // Resolver el servicio de cargos desde DI
-            _cargoService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoService>();
+            _cargoService = AppServices.Get<ICargoService>();
 
             // Resolver el servicio de sesión de usuario desde DI
-            _userSessionService = ((App)Application.Current).Host.Services.GetRequiredService<IUserSessionService>();
+            _userSessionService = AppServices.Get<IUserSessionService>();
 
             // Resolver el servicio de imágenes de cargo desde DI
-            _cargoImageService = ((App)Application.Current).Host.Services.GetRequiredService<ICargoImageService>();
+            _cargoImageService = AppServices.Get<ICargoImageService>();
 
             // Resolver el servicio de imágenes de operación desde DI
-            _operacionImageService = ((App)Application.Current).Host.Services.GetRequiredService<IOperacionImageService>();
+            _operacionImageService = AppServices.Get<IOperacionImageService>();
 
             // Resolver el servicio de visor de imágenes desde DI
-            _imageViewerService = ((App)Application.Current).Host.Services.GetRequiredService<IImageViewerService>();
+            _imageViewerService = AppServices.Get<IImageViewerService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
+
+            // Resolver el servicio de contactos desde DI
+            _contactoService = AppServices.Get<IContactoService>();
 
             // Initialize currency formatter for Mexican Pesos
             var currencyFormatter = new CurrencyFormatter("MXN");
@@ -77,7 +82,7 @@ namespace Advance_Control.Views
             CurrencyFormatter = currencyFormatter;
             
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(OperacionesView));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(OperacionesView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -124,22 +129,6 @@ namespace Advance_Control.Views
             // Funcionalidad pendiente de implementar
         }
 
-        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            // Get the OperacionDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.OperacionDto operacion)
-            {
-                operacion.Expand = !operacion.Expand;
-                
-                // Load cargos and image indicators when expanding
-                if (operacion.Expand && operacion.IdOperacion.HasValue)
-                {
-                    await LoadCargosForOperacionAsync(operacion);
-                    await RefreshImageIndicatorsAsync(operacion);
-                }
-            }
-        }
-
         private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
             // Get the OperacionDto from the sender's Tag property
@@ -151,7 +140,11 @@ namespace Advance_Control.Views
                 if (operacion.Expand && operacion.IdOperacion.HasValue)
                 {
                     await LoadCargosForOperacionAsync(operacion);
-                    await RefreshImageIndicatorsAsync(operacion);
+                    if (!operacion.ImagesLoaded)
+                        await RefreshImageIndicatorsAsync(operacion);
+                    if (!operacion.TieneCheck)
+                        await ViewModel.LoadCheckAsync(operacion);
+                    ViewModel.RefreshPdfPaths(operacion);
                 }
             }
         }
@@ -183,17 +176,22 @@ namespace Advance_Control.Views
                         cargo.PropertyChanged += (s, e) =>
                         {
                             if (e.PropertyName == nameof(CargoDto.Monto))
-                            {
-                                // Notify bindings to update
                                 operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
-                            }
                         };
 
                         // Load images for this cargo asynchronously with error handling
                         _ = LoadImagesForCargoSafeAsync(cargo);
                     }
+                    
+                    // Notify that TotalMonto should be recalculated after loading cargos
+                    operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
+                    
+                    operacion.CargosLoaded = true;
+                }
 
-                    // Subscribe to collection changes to update total when items are added/removed
+                // Suscribir CollectionChanged solo una vez por operación para evitar acumulación de handlers
+                if (!operacion.CollectionChangedSubscribed)
+                {
                     operacion.Cargos.CollectionChanged += (s, e) =>
                     {
                         if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems != null)
@@ -203,33 +201,46 @@ namespace Advance_Control.Views
                                 cargo.PropertyChanged += (sender, args) =>
                                 {
                                     if (args.PropertyName == nameof(CargoDto.Monto))
-                                    {
                                         operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
-                                    }
                                 };
                             }
                         }
-                        // Notify bindings to update total
                         operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
                     };
-                    
-                    // Notify that TotalMonto should be recalculated after loading cargos
-                    operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
-                    
-                    operacion.CargosLoaded = true;
+                    operacion.CollectionChangedSubscribed = true;
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar cargos: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error al cargar cargos",
-                    nota: "No se pudieron cargar los cargos de la operación. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error al cargar cargos", "No se pudieron cargar los cargos de la operación. Por favor, intente nuevamente.");
             }
             finally
             {
                 operacion.IsLoadingCargos = false;
+            }
+        }
+
+        private void EnsureCollectionChangedSubscribed(Models.OperacionDto operacion)
+        {
+            // Usar un campo de respaldo por operación para evitar suscripciones duplicadas
+            operacion.Cargos.CollectionChanged -= OnCargosCollectionChanged;
+            operacion.Cargos.CollectionChanged += OnCargosCollectionChanged;
+
+            void OnCargosCollectionChanged(object? s, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+            {
+                if (e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Add && e.NewItems != null)
+                {
+                    foreach (CargoDto cargo in e.NewItems)
+                    {
+                        cargo.PropertyChanged += (sender, args) =>
+                        {
+                            if (args.PropertyName == nameof(CargoDto.Monto))
+                                operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
+                        };
+                    }
+                }
+                operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
             }
         }
 
@@ -279,40 +290,28 @@ namespace Advance_Control.Views
                 {
                     if (double.IsNaN(montoNumberBox.Value))
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Validación",
-                            nota: "El monto es obligatorio",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Validación", "El monto es obligatorio");
                         return;
                     }
 
                     var monto = Math.Round(Convert.ToDecimal(montoNumberBox.Value), 2);
 
-                    var success = await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, monto: (double)monto);
+                    var success = await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, monto: monto);
                     if (success)
                     {
                         operacion.Monto = monto;
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Operación actualizada",
-                            nota: $"El monto se actualizó a {monto:C2}",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Operación actualizada", $"El monto se actualizó a {monto:C2}");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo actualizar el monto. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo actualizar el monto. Por favor, intente nuevamente.");
                     }
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al editar operación: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al editar la operación. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al editar la operación. Por favor, intente nuevamente.");
             }
         }
 
@@ -347,26 +346,17 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Operación eliminada",
-                            nota: "La operación se ha eliminado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Operación eliminada", "La operación se ha eliminado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar la operación. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la operación. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar operación: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la operación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la operación. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -429,6 +419,19 @@ namespace Advance_Control.Views
             }
         }
 
+        /// <summary>
+        /// Recalcula el TotalMonto de la operación y lo persiste en el servidor via UpdateOperacionAsync.
+        /// Se llama después de agregar, editar o eliminar cargos.
+        /// </summary>
+        private async Task ActualizarMontoEnServidorAsync(Models.OperacionDto operacion)
+        {
+            if (operacion?.IdOperacion.HasValue != true) return;
+            operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
+            var nuevoMonto = (decimal)operacion.TotalMonto;
+            await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, monto: nuevoMonto);
+            operacion.Monto = nuevoMonto;
+        }
+
         private async void AddCargoButton_Click(object sender, RoutedEventArgs e)
         {
             // Obtener la operación desde el Tag del botón
@@ -473,9 +476,11 @@ namespace Advance_Control.Views
 
                     if (newCargo != null)
                     {
-                        _ = _activityService.CrearActividadAsync("Operaciones", "Cargo agregado");
+                        _activityService.Registrar("Operaciones", "Cargo agregado");
                         // Invalidar PDFs existentes porque los cargos cambiaron
                         ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "*");
+                        operacion.CotizacionPdfPath = null;
+                        operacion.ReportePdfPath = null;
 
                         // Recargar los cargos para obtener los datos completos desde la API
                         operacion.CargosLoaded = false;
@@ -484,30 +489,21 @@ namespace Advance_Control.Views
                         // Actualizar el monto de la operación con la suma de los cargos
                         if (operacion.TotalMonto > 0)
                         {
-                            await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, monto: operacion.TotalMonto);
+                            await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, monto: (decimal)operacion.TotalMonto);
                             operacion.Monto = (decimal)operacion.TotalMonto;
                         }
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Cargo creado",
-                            nota: $"El cargo con ID {newCargo.IdCargo} se ha creado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Cargo creado", $"El cargo con ID {newCargo.IdCargo} se ha creado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear el cargo. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear el cargo. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al crear cargo: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear el cargo. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear el cargo. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -542,11 +538,15 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Operaciones", "Cargo eliminado");
+                        _activityService.Registrar("Operaciones", "Cargo eliminado");
                         // Invalidar PDFs existentes porque los cargos cambiaron
                         var parentOp = ViewModel.Operaciones.FirstOrDefault(o => o.Cargos.Any(c => c.IdCargo == cargo.IdCargo));
                         if (parentOp?.IdOperacion.HasValue == true)
+                        {
                             ViewModel.DeleteOperacionPdfs(parentOp.IdOperacion.Value, "*");
+                            parentOp.CotizacionPdfPath = null;
+                            parentOp.ReportePdfPath = null;
+                        }
 
                         // Encontrar la operación que contiene este cargo y eliminarlo de la colección
                         foreach (var operacion in ViewModel.Operaciones)
@@ -555,30 +555,22 @@ namespace Advance_Control.Views
                             if (cargoToRemove != null)
                             {
                                 operacion.Cargos.Remove(cargoToRemove);
+                                await ActualizarMontoEnServidorAsync(operacion);
                                 break;
                             }
                         }
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Cargo eliminado",
-                            nota: "El cargo se ha eliminado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Cargo eliminado", "El cargo se ha eliminado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar el cargo. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar el cargo. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar cargo: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar el cargo. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar el cargo. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -639,10 +631,7 @@ namespace Advance_Control.Views
                 {
                     cargo.Cantidad = 1;
                     
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Información",
-                        nota: "Para cargos de tipo Servicio, la cantidad siempre es 1.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Información", "Para cargos de tipo Servicio, la cantidad siempre es 1.");
                 }
 
                 // Actualizar el cargo
@@ -661,7 +650,7 @@ namespace Advance_Control.Views
 
                 if (success)
                 {
-                    _ = _activityService.CrearActividadAsync("Operaciones", "Cargo modificado");
+                    _activityService.Registrar("Operaciones", "Cargo modificado");
                     // Exit edit mode after successful save
                     cargo.IsEditing = false;
 
@@ -671,40 +660,33 @@ namespace Advance_Control.Views
                         if (operacion.Cargos.Contains(cargo) && operacion.IdOperacion.HasValue)
                         {
                             ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "*");
+                            operacion.CotizacionPdfPath = null;
+                            operacion.ReportePdfPath = null;
                             break;
                         }
                     }
 
-                    // Notify that TotalMonto should be recalculated
+                    // Recalcular y persistir el monto de la operación
                     foreach (var operacion in ViewModel.Operaciones)
                     {
                         if (operacion.Cargos.Contains(cargo))
                         {
-                            operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
+                            await ActualizarMontoEnServidorAsync(operacion);
                             break;
                         }
                     }
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Cargo actualizado",
-                        nota: "El cargo se ha actualizado correctamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Cargo actualizado", "El cargo se ha actualizado correctamente.");
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo actualizar el cargo. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo actualizar el cargo. Por favor, intente nuevamente.");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al actualizar cargo: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al actualizar el cargo. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al actualizar el cargo. Por favor, intente nuevamente.");
             }
         }
 
@@ -728,10 +710,7 @@ namespace Advance_Control.Views
             if (cargo.IdCargo <= 0)
             {
                 System.Diagnostics.Debug.WriteLine($"IdCargo inválido: {cargo.IdCargo}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "No se puede mostrar la refacción porque el cargo no tiene un ID válido.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "No se puede mostrar la refacción porque el cargo no tiene un ID válido.");
                 return;
             }
 
@@ -752,10 +731,7 @@ namespace Advance_Control.Views
                 if (cargoActualizado == null)
                 {
                     System.Diagnostics.Debug.WriteLine($"No se encontró el cargo {cargo.IdCargo} en el API");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo obtener la información del cargo desde el servidor.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo obtener la información del cargo desde el servidor.");
                     return;
                 }
                 
@@ -765,10 +741,7 @@ namespace Advance_Control.Views
                 if (!cargoActualizado.IdRelacionCargo.HasValue)
                 {
                     System.Diagnostics.Debug.WriteLine($"IdRelacionCargo es null para cargo {cargoActualizado.IdCargo} incluso después de consultar el API");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se puede mostrar la refacción porque el cargo no tiene una relación válida. El campo IdRelacionCargo está vacío en el servidor.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se puede mostrar la refacción porque el cargo no tiene una relación válida. El campo IdRelacionCargo está vacío en el servidor.");
                     return;
                 }
 
@@ -790,10 +763,7 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al mostrar detalles de refacción: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "No se pudo cargar la información de la refacción. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "No se pudo cargar la información de la refacción. Por favor, intente nuevamente.");
             }
         }
 
@@ -809,93 +779,118 @@ namespace Advance_Control.Views
             // Verificar que la operación tenga cargos cargados
             if (operacion.Cargos == null || operacion.Cargos.Count == 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "No hay cargos",
-                    nota: "No se puede generar una cotización porque no hay cargos asociados a esta operación.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("No hay cargos", "No se puede generar una cotización porque no hay cargos asociados a esta operación.");
                 return;
             }
 
             try
             {
-                // Verificar si ya existe una cotización para esta operación
-                var existingPath = ViewModel.FindExistingPdf(operacion.IdOperacion.Value, "Cotizacion");
-                if (!string.IsNullOrEmpty(existingPath))
-                {
-                    var checkDialog = new ContentDialog
-                    {
-                        Title = "Ya existe una cotización",
-                        Content = $"Ya existe una cotización para esta operación:\n\n{System.IO.Path.GetFileName(existingPath)}\n\n¿Qué desea hacer?",
-                        PrimaryButtonText = "Abrir",
-                        SecondaryButtonText = "Regenerar",
-                        CloseButtonText = "Cancelar",
-                        DefaultButton = ContentDialogButton.Primary,
-                        XamlRoot = this.XamlRoot
-                    };
-
-                    var checkResult = await checkDialog.ShowAsync();
-
-                    if (checkResult == ContentDialogResult.Primary)
-                    {
-                        var existingFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(existingPath);
-                        await Windows.System.Launcher.LaunchFileAsync(existingFile);
-                        return;
-                    }
-                    else if (checkResult == ContentDialogResult.None)
-                    {
-                        return; // Cancelar
-                    }
-
-                    // Secondary ("Regenerar"): eliminar el existente y continuar
+                // Si ya existe una cotización, eliminarla para regenerar
+                if (!string.IsNullOrEmpty(ViewModel.FindExistingPdf(operacion.IdOperacion.Value, "Cotizacion")))
                     ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "Cotizacion");
+
+                // Seleccionar contacto "Dirigido a:" si la operación tiene cliente
+                string? dirigidoA = null;
+                ContactoDto? contactoParaCorreo = null;
+                List<ContactoDto> contactosCliente = [];
+                if (operacion.IdCliente.HasValue && operacion.IdCliente.Value > 0)
+                {
+                    try
+                    {
+                        var contactos = await _contactoService.GetContactosAsync(
+                            new Models.ContactoQueryDto { IdCliente = operacion.IdCliente.Value });
+
+                        if (contactos != null && contactos.Count > 0)
+                        {
+                            contactosCliente = contactos;
+                            var listView = new ListView
+                            {
+                                ItemsSource = contactos,
+                                DisplayMemberPath = "NombreCompleto",
+                                SelectionMode = ListViewSelectionMode.Single,
+                                MaxHeight = 300
+                            };
+
+                            var selectDialog = new ContentDialog
+                            {
+                                Title = "¿A quién va dirigida la cotización?",
+                                Content = new ScrollViewer { Content = listView, MaxHeight = 320 },
+                                PrimaryButtonText = "Seleccionar",
+                                SecondaryButtonText = "Omitir",
+                                DefaultButton = ContentDialogButton.Primary,
+                                XamlRoot = this.XamlRoot
+                            };
+
+                            var selectResult = await selectDialog.ShowAsync();
+
+                            if (selectResult == ContentDialogResult.Primary && listView.SelectedItem is Models.ContactoDto contactoSeleccionado)
+                            {
+                                contactoParaCorreo = contactoSeleccionado;
+                                dirigidoA = string.Join(" ", new[] { contactoSeleccionado.Tratamiento, contactoSeleccionado.Nombre, contactoSeleccionado.Apellido }
+                                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Si falla la obtención de contactos, continuar sin "Dirigido a:"
+                    }
                 }
 
                 // Generar la cotización
-                var filePath = await ViewModel.GenerateQuoteAsync(operacion);
+                var filePath = await ViewModel.GenerateQuoteAsync(operacion, dirigidoA);
 
                 if (!string.IsNullOrEmpty(filePath))
                 {
-                    _ = _activityService.CrearActividadAsync("Operaciones", "Cotización generada");
-                    // Mostrar diálogo de éxito con opción de abrir el archivo
-                    var dialog = new ContentDialog
-                    {
-                        Title = "Cotización generada",
-                        Content = $"La cotización se ha generado exitosamente en:\n\n{filePath}\n\n¿Desea abrir el archivo?",
-                        PrimaryButtonText = "Abrir",
-                        CloseButtonText = "Cerrar",
-                        DefaultButton = ContentDialogButton.Primary,
-                        XamlRoot = this.XamlRoot
-                    };
+                    _activityService.Registrar("Operaciones", "Cotización generada");
+                    operacion.CotizacionPdfPath = filePath;
 
-                    var result = await dialog.ShowAsync();
+                    // Marcar cotización como generada
+                    await ViewModel.UpdateCheckAsync(operacion, "cotizacionGenerada");
 
-                    if (result == ContentDialogResult.Primary)
+                    // Mostrar visor de PDF con opciones de envío por correo
+                    var visor = new CotizacionVisorDialog(
+                        filePath,
+                        contactoParaCorreo,
+                        contactosCliente,
+                        operacion.RazonSocial ?? string.Empty,
+                        this.XamlRoot);
+
+                    var visorResult = await visor.ShowAsync();
+                    visor.NotificarResultado(visorResult);
+
+                    if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
                     {
-                        // Abrir el archivo PDF con la aplicación predeterminada
+                        var emailDialog = new EnviarCotizacionDialog(
+                            filePath,
+                            contactoParaCorreo,
+                            contactosCliente,
+                            operacion.RazonSocial ?? string.Empty,
+                            this.XamlRoot,
+                            idOperacion: operacion.IdOperacion);
+
+                        var emailResult = await emailDialog.ShowAsync();
+                        if (emailResult == ContentDialogResult.Primary)
+                        {
+                            await ViewModel.UpdateCheckAsync(operacion, "cotizacionEnviada");
+                            await _notificacionService.MostrarAsync("Correo enviado", "La cotización fue enviada correctamente por correo.");
+                        }
+                    }
+                    else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
+                    {
                         var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
                         await Windows.System.Launcher.LaunchFileAsync(file);
                     }
-
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Cotización generada",
-                        nota: "La cotización PDF se ha generado correctamente.",
-                        fechaHoraInicio: DateTime.Now);
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo generar la cotización. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo generar la cotización. Por favor, intente nuevamente.");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al generar cotización: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al generar la cotización. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al generar la cotización. Por favor, intente nuevamente.");
             }
         }
 
@@ -911,93 +906,169 @@ namespace Advance_Control.Views
             // Verificar que la operación tenga cargos cargados
             if (operacion.Cargos == null || operacion.Cargos.Count == 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "No hay cargos",
-                    nota: "No se puede generar un reporte porque no hay cargos asociados a esta operación.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("No hay cargos", "No se puede generar un reporte porque no hay cargos asociados a esta operación.");
                 return;
             }
 
             try
             {
-                // Verificar si ya existe un reporte para esta operación
-                var existingPath = ViewModel.FindExistingPdf(operacion.IdOperacion.Value, "Reporte");
-                if (!string.IsNullOrEmpty(existingPath))
-                {
-                    var checkDialog = new ContentDialog
-                    {
-                        Title = "Ya existe un reporte",
-                        Content = $"Ya existe un reporte para esta operación:\n\n{System.IO.Path.GetFileName(existingPath)}\n\n¿Qué desea hacer?",
-                        PrimaryButtonText = "Abrir",
-                        SecondaryButtonText = "Regenerar",
-                        CloseButtonText = "Cancelar",
-                        DefaultButton = ContentDialogButton.Primary,
-                        XamlRoot = this.XamlRoot
-                    };
-
-                    var checkResult = await checkDialog.ShowAsync();
-
-                    if (checkResult == ContentDialogResult.Primary)
-                    {
-                        var existingFile = await Windows.Storage.StorageFile.GetFileFromPathAsync(existingPath);
-                        await Windows.System.Launcher.LaunchFileAsync(existingFile);
-                        return;
-                    }
-                    else if (checkResult == ContentDialogResult.None)
-                    {
-                        return; // Cancelar
-                    }
-
-                    // Secondary ("Regenerar"): eliminar el existente y continuar
+                // Si ya existe un reporte, eliminarlo para regenerar
+                if (!string.IsNullOrEmpty(ViewModel.FindExistingPdf(operacion.IdOperacion.Value, "Reporte")))
                     ViewModel.DeleteOperacionPdfs(operacion.IdOperacion.Value, "Reporte");
+
+                // Seleccionar contacto "Dirigido a:" si la operación tiene cliente
+                string? dirigidoAReporte = null;
+                ContactoDto? contactoReporte = null;
+                List<ContactoDto> contactosReporte = [];
+                if (operacion.IdCliente.HasValue && operacion.IdCliente.Value > 0)
+                {
+                    try
+                    {
+                        var contactos = await _contactoService.GetContactosAsync(
+                            new Models.ContactoQueryDto { IdCliente = operacion.IdCliente.Value });
+
+                        if (contactos != null && contactos.Count > 0)
+                        {
+                            contactosReporte = contactos;
+                            var listView = new ListView
+                            {
+                                ItemsSource = contactos,
+                                DisplayMemberPath = "NombreCompleto",
+                                SelectionMode = ListViewSelectionMode.Single,
+                                MaxHeight = 300
+                            };
+
+                            var selectDialog = new ContentDialog
+                            {
+                                Title = "¿A quién va dirigido el reporte?",
+                                Content = new ScrollViewer { Content = listView, MaxHeight = 320 },
+                                PrimaryButtonText = "Seleccionar",
+                                SecondaryButtonText = "Omitir",
+                                DefaultButton = ContentDialogButton.Primary,
+                                XamlRoot = this.XamlRoot
+                            };
+
+                            var selectResult = await selectDialog.ShowAsync();
+
+                            if (selectResult == ContentDialogResult.Primary && listView.SelectedItem is Models.ContactoDto contactoSeleccionado)
+                            {
+                                contactoReporte = contactoSeleccionado;
+                                dirigidoAReporte = string.Join(" ", new[] { contactoSeleccionado.Tratamiento, contactoSeleccionado.Nombre, contactoSeleccionado.Apellido }
+                                    .Where(s => !string.IsNullOrWhiteSpace(s)));
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Si falla la obtención de contactos, continuar sin "Dirigido a:"
+                    }
                 }
 
                 // Generar el reporte
-                var filePath = await ViewModel.GenerateReporteAsync(operacion);
+                var filePath = await ViewModel.GenerateReporteAsync(operacion, dirigidoAReporte);
 
                 if (!string.IsNullOrEmpty(filePath))
                 {
-                    _ = _activityService.CrearActividadAsync("Operaciones", "Reporte generado");
-                    // Mostrar diálogo de éxito con opción de abrir el archivo
-                    var dialog = new ContentDialog
-                    {
-                        Title = "Reporte generado",
-                        Content = $"El reporte se ha generado exitosamente en:\n\n{filePath}\n\n¿Desea abrir el archivo?",
-                        PrimaryButtonText = "Abrir",
-                        CloseButtonText = "Cerrar",
-                        DefaultButton = ContentDialogButton.Primary,
-                        XamlRoot = this.XamlRoot
-                    };
+                    _activityService.Registrar("Operaciones", "Reporte generado");
+                    operacion.ReportePdfPath = filePath;
 
-                    var result = await dialog.ShowAsync();
+                    // Marcar reporte como generado en el check
+                    await ViewModel.UpdateCheckAsync(operacion, "reporteGenerado");
 
-                    if (result == ContentDialogResult.Primary)
+                    // Mostrar visor de PDF con opciones de envío por correo
+                    var visor = new CotizacionVisorDialog(
+                        filePath,
+                        contactoReporte,
+                        contactosReporte,
+                        operacion.RazonSocial ?? string.Empty,
+                        this.XamlRoot,
+                        tipo: "Reporte");
+
+                    var visorResult = await visor.ShowAsync();
+                    visor.NotificarResultado(visorResult);
+
+                    if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
                     {
-                        // Abrir el archivo PDF con la aplicación predeterminada
+                        var emailDialog = new EnviarCotizacionDialog(
+                            filePath,
+                            contactoReporte,
+                            contactosReporte,
+                            operacion.RazonSocial ?? string.Empty,
+                            this.XamlRoot,
+                            tipo: "Reporte",
+                            idOperacion: operacion.IdOperacion);
+
+                        var emailResult = await emailDialog.ShowAsync();
+                        if (emailResult == ContentDialogResult.Primary)
+                        {
+                            await ViewModel.UpdateCheckAsync(operacion, "reporteEnviado");
+                            await _notificacionService.MostrarAsync("Correo enviado", "El reporte fue enviado correctamente por correo.");
+                        }
+                    }
+                    else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
+                    {
                         var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
                         await Windows.System.Launcher.LaunchFileAsync(file);
                     }
-
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Reporte generado",
-                        nota: "El reporte PDF se ha generado correctamente.",
-                        fechaHoraInicio: DateTime.Now);
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo generar el reporte. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    var errMsg = !string.IsNullOrWhiteSpace(ViewModel.ErrorMessage)
+                        ? ViewModel.ErrorMessage
+                        : "No se pudo generar el reporte. Por favor, intente nuevamente.";
+                    await _notificacionService.MostrarAsync("Error al generar reporte", errMsg);
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al generar reporte: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al generar el reporte. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al generar el reporte. Por favor, intente nuevamente.");
+            }
+        }
+
+        /// <summary>
+        /// Abre el PDF de cotización existente para la operación.
+        /// </summary>
+        private async void AbrirCotizacionPdfButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            var path = operacion.CotizacionPdfPath;
+            if (string.IsNullOrEmpty(path)) return;
+
+            try
+            {
+                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
+                await Windows.System.Launcher.LaunchFileAsync(file);
+            }
+            catch
+            {
+                // El archivo puede haber sido eliminado externamente; refrescar estado
+                operacion.CotizacionPdfPath = null;
+            }
+        }
+
+        /// <summary>
+        /// Abre el PDF de reporte existente para la operación.
+        /// </summary>
+        private async void AbrirReportePdfButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+
+            var path = operacion.ReportePdfPath;
+            if (string.IsNullOrEmpty(path)) return;
+
+            try
+            {
+                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
+                await Windows.System.Launcher.LaunchFileAsync(file);
+            }
+            catch
+            {
+                // El archivo puede haber sido eliminado externamente; refrescar estado
+                operacion.ReportePdfPath = null;
             }
         }
 
@@ -1012,10 +1083,7 @@ namespace Advance_Control.Views
 
             if (cargo.IdCargo <= 0 || !cargo.IdOperacion.HasValue || cargo.IdOperacion.Value <= 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "El cargo no tiene un ID válido para cargar imágenes.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "El cargo no tiene un ID válido para cargar imágenes.");
                 return;
             }
 
@@ -1060,31 +1128,22 @@ namespace Advance_Control.Views
 
                 if (result != null)
                 {
-                    _ = _activityService.CrearActividadAsync("Operaciones", "Imagen cargada en cargo");
+                    _activityService.Registrar("Operaciones", "Imagen cargada en cargo");
                     // Agregar la imagen a la colección del cargo
                     cargo.Images.Add(result);
                     cargo.NotifyImagesChanged();
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Imagen cargada",
-                        nota: $"La imagen {result.FileName} se ha guardado correctamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Imagen cargada", $"La imagen {result.FileName} se ha guardado correctamente.");
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo guardar la imagen. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo guardar la imagen. Por favor, intente nuevamente.");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar imagen: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al cargar la imagen. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al cargar la imagen. Por favor, intente nuevamente.");
             }
             finally
             {
@@ -1103,10 +1162,7 @@ namespace Advance_Control.Views
 
             if (string.IsNullOrEmpty(image.FileName))
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "La imagen no tiene un nombre de archivo válido.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "La imagen no tiene un nombre de archivo válido.");
                 return;
             }
 
@@ -1134,10 +1190,7 @@ namespace Advance_Control.Views
 
                     if (targetCargo == null || !targetCargo.IdOperacion.HasValue || targetCargo.IdOperacion.Value <= 0)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo determinar la operación del cargo.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo determinar la operación del cargo.");
                         return;
                     }
 
@@ -1145,7 +1198,7 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Operaciones", "Imagen eliminada");
+                        _activityService.Registrar("Operaciones", "Imagen eliminada");
                         var imageToRemove = targetCargo.Images.FirstOrDefault(i => i.FileName == image.FileName);
                         if (imageToRemove != null)
                         {
@@ -1153,26 +1206,17 @@ namespace Advance_Control.Views
                             targetCargo.NotifyImagesChanged();
                         }
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Imagen eliminada",
-                            nota: "La imagen se ha eliminado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Imagen eliminada", "La imagen se ha eliminado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar la imagen. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la imagen. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar imagen: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -1284,10 +1328,7 @@ namespace Advance_Control.Views
             var selectedCargos = GetSelectedCargos(operacion);
             if (selectedCargos.Count == 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Sin selección",
-                    nota: "Por favor, seleccione un cargo para cargar una imagen.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Sin selección", "Por favor, seleccione un cargo para cargar una imagen.");
                 return;
             }
 
@@ -1295,18 +1336,12 @@ namespace Advance_Control.Views
             var selectedCargo = selectedCargos[0];
             if (selectedCargos.Count > 1)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Múltiples selecciones",
-                    nota: "Se procesará solo el primer cargo seleccionado.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Múltiples selecciones", "Se procesará solo el primer cargo seleccionado.");
             }
 
             if (selectedCargo.IdCargo <= 0 || !selectedCargo.IdOperacion.HasValue || selectedCargo.IdOperacion.Value <= 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "El cargo no tiene un ID válido para cargar imágenes.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "El cargo no tiene un ID válido para cargar imágenes.");
                 return;
             }
 
@@ -1355,26 +1390,17 @@ namespace Advance_Control.Views
                     selectedCargo.Images.Add(result);
                     selectedCargo.NotifyImagesChanged();
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Imagen cargada",
-                        nota: $"La imagen {result.FileName} se ha guardado correctamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Imagen cargada", $"La imagen {result.FileName} se ha guardado correctamente.");
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo guardar la imagen. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo guardar la imagen. Por favor, intente nuevamente.");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar imagen: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al cargar la imagen. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al cargar la imagen. Por favor, intente nuevamente.");
             }
             finally
             {
@@ -1394,10 +1420,7 @@ namespace Advance_Control.Views
             var selectedCargos = GetSelectedCargos(operacion);
             if (selectedCargos.Count == 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Sin selección",
-                    nota: "Por favor, seleccione un cargo para editar.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Sin selección", "Por favor, seleccione un cargo para editar.");
                 return;
             }
 
@@ -1405,10 +1428,7 @@ namespace Advance_Control.Views
             var selectedCargo = selectedCargos[0];
             if (selectedCargos.Count > 1)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Múltiples selecciones",
-                    nota: "Se procesará solo el primer cargo seleccionado.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Múltiples selecciones", "Se procesará solo el primer cargo seleccionado.");
             }
 
             // Toggle edit mode
@@ -1427,10 +1447,7 @@ namespace Advance_Control.Views
             var selectedCargos = GetSelectedCargos(operacion);
             if (selectedCargos.Count == 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Sin selección",
-                    nota: "Por favor, seleccione al menos un cargo para eliminar.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Sin selección", "Por favor, seleccione al menos un cargo para eliminar.");
                 return;
             }
 
@@ -1484,26 +1501,19 @@ namespace Advance_Control.Views
 
                 if (eliminados > 0 && errores == 0)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Cargos eliminados",
-                        nota: eliminados == 1 
+                    await ActualizarMontoEnServidorAsync(operacion);
+                    await _notificacionService.MostrarAsync("Cargos eliminados", eliminados == 1 
                             ? "El cargo se ha eliminado correctamente."
-                            : $"Se han eliminado {eliminados} cargos correctamente.",
-                        fechaHoraInicio: DateTime.Now);
+                            : $"Se han eliminado {eliminados} cargos correctamente.");
                 }
                 else if (eliminados > 0 && errores > 0)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Eliminación parcial",
-                        nota: $"Se eliminaron {eliminados} cargos, pero hubo {errores} errores.",
-                        fechaHoraInicio: DateTime.Now);
+                    await ActualizarMontoEnServidorAsync(operacion);
+                    await _notificacionService.MostrarAsync("Eliminación parcial", $"Se eliminaron {eliminados} cargos, pero hubo {errores} errores.");
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudieron eliminar los cargos. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudieron eliminar los cargos. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -1520,10 +1530,7 @@ namespace Advance_Control.Views
             var selectedCargos = GetSelectedCargos(operacion);
             if (selectedCargos.Count == 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Sin selección",
-                    nota: "Por favor, seleccione un cargo para ver los detalles de la refacción.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Sin selección", "Por favor, seleccione un cargo para ver los detalles de la refacción.");
                 return;
             }
 
@@ -1531,29 +1538,20 @@ namespace Advance_Control.Views
             var selectedCargo = selectedCargos[0];
             if (selectedCargos.Count > 1)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Múltiples selecciones",
-                    nota: "Se procesará solo el primer cargo seleccionado.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Múltiples selecciones", "Se procesará solo el primer cargo seleccionado.");
             }
 
             // Verificar que el cargo sea de tipo Refaccion
             if (selectedCargo.TipoCargo != "Refaccion")
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Tipo incorrecto",
-                    nota: "Solo se pueden ver detalles de refacciones para cargos de tipo 'Refaccion'.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Tipo incorrecto", "Solo se pueden ver detalles de refacciones para cargos de tipo 'Refaccion'.");
                 return;
             }
 
             // Validar que tengamos un IdCargo válido para consultar
             if (selectedCargo.IdCargo <= 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "No se puede mostrar la refacción porque el cargo no tiene un ID válido.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "No se puede mostrar la refacción porque el cargo no tiene un ID válido.");
                 return;
             }
 
@@ -1570,20 +1568,14 @@ namespace Advance_Control.Views
                 
                 if (cargoActualizado == null)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo obtener la información del cargo desde el servidor.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo obtener la información del cargo desde el servidor.");
                     return;
                 }
 
                 // Verificar que el cargo actualizado tenga un idRelacionCargo
                 if (!cargoActualizado.IdRelacionCargo.HasValue)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se puede mostrar la refacción porque el cargo no tiene una relación válida.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se puede mostrar la refacción porque el cargo no tiene una relación válida.");
                     return;
                 }
 
@@ -1605,10 +1597,7 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al mostrar detalles de refacción: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "No se pudo cargar la información de la refacción. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "No se pudo cargar la información de la refacción. Por favor, intente nuevamente.");
             }
         }
 
@@ -1624,10 +1613,7 @@ namespace Advance_Control.Views
             var selectedCargos = GetSelectedCargos(operacion);
             if (selectedCargos.Count == 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Sin selección",
-                    nota: "Por favor, seleccione un cargo para ver las imágenes.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Sin selección", "Por favor, seleccione un cargo para ver las imágenes.");
                 return;
             }
 
@@ -1635,18 +1621,12 @@ namespace Advance_Control.Views
             var selectedCargo = selectedCargos[0];
             if (selectedCargos.Count > 1)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Múltiples selecciones",
-                    nota: "Se procesará solo el primer cargo seleccionado.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Múltiples selecciones", "Se procesará solo el primer cargo seleccionado.");
             }
 
             if (!selectedCargo.HasImages)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Sin imágenes",
-                    nota: "El cargo seleccionado no tiene imágenes.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Sin imágenes", "El cargo seleccionado no tiene imágenes.");
                 return;
             }
 
@@ -1661,10 +1641,7 @@ namespace Advance_Control.Views
         {
             if (!operacion.IdOperacion.HasValue || operacion.IdOperacion.Value <= 0)
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "La operación no tiene un ID válido para cargar imágenes.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "La operación no tiene un ID válido para cargar imágenes.");
                 return;
             }
 
@@ -1718,6 +1695,8 @@ namespace Advance_Control.Views
 
                 if (result != null)
                 {
+                    // Resetear flag para forzar recarga de indicadores
+                    operacion.ImagesLoaded = false;
                     // Update indicator on the operacion model
                     await RefreshImageIndicatorsAsync(operacion);
 
@@ -1728,28 +1707,30 @@ namespace Advance_Control.Views
                         "OrdenCompra"  => "Orden compra cargada",
                         _              => $"{imageType} cargada"
                     };
-                    _ = _activityService.CrearActividadAsync("Operaciones", actividadTitulo);
+                    _activityService.Registrar("Operaciones", actividadTitulo);
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: $"{imageType} cargada",
-                        nota: $"La {imageType.ToLower()} {result.FileName} se ha guardado correctamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    // Actualizar checkOperacion
+                    var campoCheok = imageType switch
+                    {
+                        "Prefactura"   => "prefacturaCargada",
+                        "HojaServicio" => "hojaServicioCargada",
+                        "OrdenCompra"  => "ordenCompraCargada",
+                        _              => null
+                    };
+                    if (campoCheok != null)
+                        await ViewModel.UpdateCheckAsync(operacion, campoCheok);
+
+                    await _notificacionService.MostrarAsync($"{imageType} cargada", $"La {imageType.ToLower()} {result.FileName} se ha guardado correctamente.");
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: $"No se pudo guardar la {imageType.ToLower()}. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", $"No se pudo guardar la {imageType.ToLower()}. Por favor, intente nuevamente.");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar {imageType.ToLower()}: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: $"Ocurrió un error al cargar la {imageType.ToLower()}. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", $"Ocurrió un error al cargar la {imageType.ToLower()}. Por favor, intente nuevamente.");
             }
         }
 
@@ -1812,6 +1793,8 @@ namespace Advance_Control.Views
                 operacion.ImagenesPrefactura = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(prefacturas);
                 operacion.ImagenesHojaServicio = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(hojasServicio);
                 operacion.ImagenesOrdenCompra = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(ordenesCompra);
+
+                operacion.ImagesLoaded = true;
             }
             catch (Exception ex)
             {
@@ -1843,10 +1826,7 @@ namespace Advance_Control.Views
 
             if (string.IsNullOrEmpty(image.FileName))
             {
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "La imagen no tiene un nombre de archivo válido.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "La imagen no tiene un nombre de archivo válido.");
                 return;
             }
 
@@ -1871,10 +1851,7 @@ namespace Advance_Control.Views
 
                     if (operacion == null)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo determinar la operación de la imagen.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo determinar la operación de la imagen.");
                         return;
                     }
 
@@ -1882,29 +1859,21 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Operaciones", "Doc. op. eliminado");
+                        _activityService.Registrar("Operaciones", "Doc. op. eliminado");
+                        operacion.ImagesLoaded = false;
                         await RefreshImageIndicatorsAsync(operacion);
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Imagen eliminada",
-                            nota: "La imagen se ha eliminado correctamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Imagen eliminada", "La imagen se ha eliminado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar la imagen. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la imagen. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar imagen de operación: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la imagen. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -1939,7 +1908,9 @@ namespace Advance_Control.Views
 
                 if (result != null)
                 {
-                    _ = _activityService.CrearActividadAsync("Operaciones", "Factura cargada");
+                    _activityService.Registrar("Operaciones", "Factura cargada");
+                    await ViewModel.UpdateCheckAsync(operacion, "facturaCargada");
+
                     // Finalizar la operación con la fecha de hoy
                     var fechaFinal = DateTime.Today;
                     var updated = await ViewModel.UpdateOperacionAsync(operacion.IdOperacion.Value, fechaFinal: fechaFinal);
@@ -1951,26 +1922,17 @@ namespace Advance_Control.Views
 
                     operacion.HasFactura = true;
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Factura cargada",
-                        nota: "La factura PDF se guardó correctamente y la operación fue finalizada.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Factura cargada", "La factura PDF se guardó correctamente y la operación fue finalizada.");
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo guardar la factura. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo guardar la factura. Por favor, intente nuevamente.");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al cargar factura: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al cargar la factura. Por favor, intente nuevamente.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al cargar la factura. Por favor, intente nuevamente.");
             }
         }
 
@@ -1990,10 +1952,7 @@ namespace Advance_Control.Views
                 var factura = await _operacionImageService.GetFacturaAsync(operacion.IdOperacion.Value);
                 if (factura == null || string.IsNullOrEmpty(factura.Url))
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se encontró el archivo de factura.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se encontró el archivo de factura.");
                     return;
                 }
 
@@ -2003,10 +1962,7 @@ namespace Advance_Control.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al abrir factura: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "No se pudo abrir el archivo de factura.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "No se pudo abrir el archivo de factura.");
             }
         }
 
@@ -2041,29 +1997,20 @@ namespace Advance_Control.Views
 
                 if (success)
                 {
-                    _ = _activityService.CrearActividadAsync("Operaciones", "Operación reabierta");
+                    _activityService.Registrar("Operaciones", "Operación reabierta");
                     operacion.FechaFinal = null;
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Operación reabierta",
-                        nota: "La operación fue reabierta correctamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Operación reabierta", "La operación fue reabierta correctamente.");
                 }
                 else
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "No se pudo reabrir la operación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "No se pudo reabrir la operación. Por favor, intente nuevamente.");
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Error al reabrir operación: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarNotificacionAsync(
-                    titulo: "Error",
-                    nota: "Ocurrió un error al reabrir la operación.",
-                    fechaHoraInicio: DateTime.Now);
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al reabrir la operación.");
             }
         }
     }

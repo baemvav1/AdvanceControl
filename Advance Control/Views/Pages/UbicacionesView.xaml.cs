@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
@@ -67,13 +67,13 @@ namespace Advance_Control.Views.Pages
         public UbicacionesView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<UbicacionesViewModel>();
+            ViewModel = AppServices.Get<UbicacionesViewModel>();
 
             // Resolver el servicio de logging desde DI
-            _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
+            _loggingService = AppServices.Get<ILoggingService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
 
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(UbicacionesView));
@@ -938,7 +938,7 @@ namespace Advance_Control.Views.Pages
                         
                         if (response.Success)
                         {
-                            _ = _activityService.CrearActividadAsync("Ubicaciones", "Ubicación eliminada");
+                            _activityService.Registrar("Ubicaciones", "Ubicación eliminada");
                             await LoadMapAsync();
                             await ShowMessageDialogAsync("Éxito", "Ubicación eliminada correctamente");
                         }
@@ -1005,7 +1005,7 @@ namespace Advance_Control.Views.Pages
                 if (response.Success)
                 {
                     var wasEditMode = _isEditMode;
-                    _ = _activityService.CrearActividadAsync("Ubicaciones", wasEditMode ? "Ubicación modificada" : "Ubicación creada");
+                    _activityService.Registrar("Ubicaciones", wasEditMode ? "Ubicación modificada" : "Ubicación creada");
                     _isFormVisible = false;
                     LocationForm.Visibility = Visibility.Collapsed;
                     ClearForm();

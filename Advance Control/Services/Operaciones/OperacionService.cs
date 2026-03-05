@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Operaciones
 {
@@ -47,27 +48,15 @@ namespace Advance_Control.Services.Operaciones
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (query.IdTipo > 0)
-                        queryParams.Add($"idTipo={query.IdTipo}");
-
-                    if (query.IdCliente > 0)
-                        queryParams.Add($"idCliente={query.IdCliente}");
-
-                    if (query.IdEquipo > 0)
-                        queryParams.Add($"idEquipo={query.IdEquipo}");
-
-                    if (query.IdAtiende > 0)
-                        queryParams.Add($"idAtiende={query.IdAtiende}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Nota))
-                        queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .AddPositive("idTipo", query.IdTipo)
+                        .AddPositive("idCliente", query.IdCliente)
+                        .AddPositive("idEquipo", query.IdEquipo)
+                        .AddPositive("idAtiende", query.IdAtiende)
+                        .Add("nota", query.Nota)
+                        .Add("fechainicial", query.FechaInicial?.ToString("yyyy-MM-dd"))
+                        .Add("fechaFinalFiltro", query.FechaFinalFiltro?.ToString("yyyy-MM-dd"))
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo operaciones desde: {url}", "OperacionService", "GetOperacionesAsync");
@@ -159,31 +148,25 @@ namespace Advance_Control.Services.Operaciones
         /// <summary>
         /// Actualiza una operación (monto, fechaFinal, etc.)
         /// </summary>
-        public async Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, double monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, decimal monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default)
         {
             try
             {
-                var queryParams = new System.Collections.Generic.List<string>
-                {
-                    $"idOperacion={idOperacion}",
-                    $"idTipo={idTipo}",
-                    $"idCliente={idCliente}",
-                    $"idEquipo={idEquipo}",
-                    $"idAtiende={idAtiende}",
-                    $"monto={monto}"
-                };
+                // IDs no sensibles van en query string
+                var url = new ApiQueryBuilder()
+                    .AddRequired("idOperacion", idOperacion)
+                    .AddRequired("idTipo", idTipo)
+                    .AddRequired("idCliente", idCliente)
+                    .AddRequired("idEquipo", idEquipo)
+                    .AddRequired("idAtiende", idAtiende)
+                    .Build(_endpoints.GetEndpoint("api", "Operaciones"));
 
-                if (!string.IsNullOrWhiteSpace(nota))
-                    queryParams.Add($"nota={Uri.EscapeDataString(nota)}");
+                // Datos financieros van en el body (no en query string/logs)
+                var body = new { monto, nota, fechaFinal = fechaFinal?.ToString("yyyy-MM-dd") };
 
-                if (fechaFinal.HasValue)
-                    queryParams.Add($"fechaFinal={fechaFinal.Value:yyyy-MM-dd}");
+                await _logger.LogInformationAsync($"Actualizando operación {idOperacion}", "OperacionService", "UpdateOperacionAsync");
 
-                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}?{string.Join("&", queryParams)}";
-
-                await _logger.LogInformationAsync($"Actualizando operación {idOperacion} en: {url}", "OperacionService", "UpdateOperacionAsync");
-
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                var response = await _http.PutAsJsonAsync(url, body, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

@@ -13,6 +13,7 @@ using Advance_Control.Services.Quotes;
 using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Activity;
+using Advance_Control.Services.CheckOperacion;
 
 namespace Advance_Control.ViewModels
 {
@@ -35,6 +36,7 @@ namespace Advance_Control.ViewModels
         private readonly IEntidadService _entidadService;
         private readonly IClienteService _clienteService;
         private readonly IActivityService _activityService;
+        private readonly ICheckOperacionService _checkService;
         private ObservableCollection<OperacionDto> _operaciones;
         private bool _isLoading;
         private string? _errorMessage;
@@ -45,8 +47,10 @@ namespace Advance_Control.ViewModels
         private string? _notaFilter;
         private string? _selectedClienteText;
         private string? _selectedEquipoText;
+        private DateTimeOffset? _fechaInicialFilter;
+        private DateTimeOffset? _fechaFinalFilter;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
             _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
@@ -56,6 +60,7 @@ namespace Advance_Control.ViewModels
             _quoteService      = quoteService      ?? throw new ArgumentNullException(nameof(quoteService));
             _entidadService    = entidadService    ?? throw new ArgumentNullException(nameof(entidadService));
             _activityService   = activityService   ?? throw new ArgumentNullException(nameof(activityService));
+            _checkService      = checkService      ?? throw new ArgumentNullException(nameof(checkService));
             _operaciones = new ObservableCollection<OperacionDto>();
         }
 
@@ -156,6 +161,24 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Fecha inicial del rango de filtro (fechaInicio >= FechaInicialFilter)
+        /// </summary>
+        public DateTimeOffset? FechaInicialFilter
+        {
+            get => _fechaInicialFilter;
+            set => SetProperty(ref _fechaInicialFilter, value);
+        }
+
+        /// <summary>
+        /// Fecha final del rango de filtro (fechaFinal <= FechaFinalFilter)
+        /// </summary>
+        public DateTimeOffset? FechaFinalFilter
+        {
+            get => _fechaFinalFilter;
+            set => SetProperty(ref _fechaFinalFilter, value);
+        }
+
+        /// <summary>
         /// Inicializa los datos de la vista
         /// </summary>
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -191,7 +214,9 @@ namespace Advance_Control.ViewModels
                     IdCliente = IdClienteFilter,
                     IdEquipo = IdEquipoFilter,
                     IdAtiende = IdAtiendeFilter,
-                    Nota = NotaFilter
+                    Nota = NotaFilter,
+                    FechaInicial = FechaInicialFilter,
+                    FechaFinalFiltro = FechaFinalFilter
                 };
 
                 var operaciones = await _operacionService.GetOperacionesAsync(query, cancellationToken);
@@ -240,6 +265,8 @@ namespace Advance_Control.ViewModels
                 NotaFilter = null;
                 SelectedClienteText = null;
                 SelectedEquipoText = null;
+                FechaInicialFilter = null;
+                FechaFinalFilter = null;
                 ErrorMessage = null;
                 await LoadOperacionesAsync(cancellationToken);
             }
@@ -286,7 +313,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Actualiza el monto u otros campos de una operación
         /// </summary>
-        public async Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, double monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default)
+        public async Task<bool> UpdateOperacionAsync(int idOperacion, int idTipo = 0, int idCliente = 0, int idEquipo = 0, int idAtiende = 0, decimal monto = 0, string? nota = null, DateTime? fechaFinal = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -325,7 +352,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Genera una cotización PDF para la operación especificada con sus cargos
         /// </summary>
-        public async Task<string?> GenerateQuoteAsync(OperacionDto operacion, CancellationToken cancellationToken = default)
+        public async Task<string?> GenerateQuoteAsync(OperacionDto operacion, string? dirigidoA = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -404,7 +431,7 @@ namespace Advance_Control.ViewModels
                     await _logger.LogWarningAsync($"No se pudo obtener el límite de crédito del cliente: {ex.Message}", "OperacionesViewModel", "GenerateQuoteAsync");
                 }
 
-                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre, limiteCredito);
+                var filePath = await _quoteService.GenerateQuotePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre, limiteCredito, dirigidoA);
 
                 // Calculate total with IVA and update local model
                 if (operacion.IdOperacion.HasValue)
@@ -430,7 +457,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Genera un reporte PDF para la operación especificada con sus cargos y fotografías
         /// </summary>
-        public async Task<string?> GenerateReporteAsync(OperacionDto operacion, CancellationToken cancellationToken = default)
+        public async Task<string?> GenerateReporteAsync(OperacionDto operacion, string? dirigidoA = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -489,7 +516,7 @@ namespace Advance_Control.ViewModels
                     await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateReporteAsync");
                 }
 
-                var filePath = await _quoteService.GenerateReportePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa);
+                var filePath = await _quoteService.GenerateReportePdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, dirigidoA);
 
                 await _logger.LogInformationAsync($"Reporte generado exitosamente: {filePath}", "OperacionesViewModel", "GenerateReporteAsync");
 
@@ -514,5 +541,50 @@ namespace Advance_Control.ViewModels
         /// </summary>
         public void DeleteOperacionPdfs(int idOperacion, string tipo)
             => _quoteService.DeleteOperacionPdfs(idOperacion, tipo);
+
+        /// <summary>
+        /// Actualiza las propiedades CotizacionPdfPath y ReportePdfPath del DTO consultando el sistema de archivos.
+        /// </summary>
+        public void RefreshPdfPaths(Models.OperacionDto operacion)
+        {
+            if (!operacion.IdOperacion.HasValue) return;
+            operacion.CotizacionPdfPath = _quoteService.FindExistingPdf(operacion.IdOperacion.Value, "Cotizacion");
+            operacion.ReportePdfPath = _quoteService.FindExistingPdf(operacion.IdOperacion.Value, "Reporte");
+        }
+
+        /// <summary>
+        /// Carga el checkOperacion para una operación y lo asigna a operacion.CheckOperacion.
+        /// </summary>
+        public async Task LoadCheckAsync(OperacionDto operacion)
+        {
+            if (!operacion.IdOperacion.HasValue) return;
+            try
+            {
+                var check = await _checkService.GetAsync(operacion.IdOperacion.Value);
+                operacion.CheckOperacion = check;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync($"No se pudo cargar checkOperacion: {ex.Message}", "OperacionesViewModel", "LoadCheckAsync");
+            }
+        }
+
+        /// <summary>
+        /// Actualiza un campo del checkOperacion a true y refresca operacion.CheckOperacion.
+        /// </summary>
+        public async Task UpdateCheckAsync(OperacionDto operacion, string campo)
+        {
+            if (!operacion.IdOperacion.HasValue) return;
+            try
+            {
+                await _checkService.UpdateCampoAsync(operacion.IdOperacion.Value, campo, true);
+                var check = await _checkService.GetAsync(operacion.IdOperacion.Value);
+                operacion.CheckOperacion = check;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync($"No se pudo actualizar checkOperacion ({campo}): {ex.Message}", "OperacionesViewModel", "UpdateCheckAsync");
+            }
+        }
     }
 }

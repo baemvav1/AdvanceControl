@@ -1,3 +1,5 @@
+using System;
+
 namespace Advance_Control.Models
 {
     /// <summary>
@@ -29,5 +31,15 @@ namespace Advance_Control.Models
         /// Búsqueda parcial en nota (permite búsqueda por texto)
         /// </summary>
         public string? Nota { get; set; }
+
+        /// <summary>
+        /// Fecha inicial del rango (fechaInicio >= FechaInicial). Nulo para no filtrar.
+        /// </summary>
+        public DateTimeOffset? FechaInicial { get; set; }
+
+        /// <summary>
+        /// Fecha final del rango (fechaFinal <= FechaFinalFiltro). Nulo para no filtrar.
+        /// </summary>
+        public DateTimeOffset? FechaFinalFiltro { get; set; }
     }
 }

@@ -1,0 +1,134 @@
+<Page
+    x:Class="Advance_Control.Views.Pages.CorreoView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="32,24,32,32">
+        <StackPanel MaxWidth="520" Spacing="24">
+
+            <!-- Título -->
+            <TextBlock Text="Configuración de Correo"
+                       Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock Text="Ingresa las credenciales de tu cuenta de correo de Hostinger. Se guardan de forma segura en este equipo."
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <!-- Correo electrónico -->
+            <StackPanel Spacing="6">
+                <TextBlock Text="Correo electrónico" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <TextBox
+                    PlaceholderText="ejemplo@tudominio.com"
+                    Text="{Binding Email, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    InputScope="EmailNameOrAddress" />
+            </StackPanel>
+
+            <!-- Contraseña -->
+            <StackPanel Spacing="6">
+                <TextBlock Text="Contraseña" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                <PasswordBox
+                    x:Name="PasswordBoxControl"
+                    PlaceholderText="Contraseña de correo"
+                    PasswordChanged="PasswordBox_PasswordChanged" />
+            </StackPanel>
+
+            <!-- Botones -->
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Content="Guardar"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Command="{Binding GuardarCommand}"
+                        MinWidth="120" />
+                <Button Content="Verificar conexión"
+                        Command="{Binding VerificarConexionCommand}"
+                        MinWidth="150"
+                        IsEnabled="{Binding EsVerificando, Converter={StaticResource BoolNegationConverter}}" />
+            </StackPanel>
+            <ProgressRing IsActive="{Binding EsVerificando}"
+                          Width="28" Height="28"
+                          HorizontalAlignment="Left"
+                          Visibility="{Binding EsVerificando, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            <!-- Estado -->
+            <Border
+                Visibility="{Binding TieneEstado, Converter={StaticResource BoolToVisibilityConverter}}"
+                Background="{Binding EstadoExitoso, Converter={StaticResource Green_transparentBoolColorConverter}}"
+                CornerRadius="4"
+                Padding="12,8"
+                BorderThickness="1"
+                BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}">
+                <TextBlock
+                    Text="{Binding Estado}"
+                    TextWrapping="Wrap"
+                    Style="{StaticResource BodyTextBlockStyle}" />
+            </Border>
+
+            <!-- Separador informativo -->
+            <Rectangle Height="1"
+                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                       Margin="0,8,0,0" />
+
+            <!-- Firma de correo -->
+            <TextBlock Text="Firma de correo"
+                       Style="{StaticResource SubtitleTextBlockStyle}" />
+            <TextBlock Text="La imagen se adjunta automáticamente al final de todos los correos enviados. Se guarda como PNG/JPG con el nombre de tu correo."
+                       Style="{StaticResource BodyTextBlockStyle}"
+                       TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <!-- Vista previa de la firma -->
+            <Border x:Name="FirmaPreviewBorder"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="4"
+                    Padding="8"
+                    MinHeight="80"
+                    HorizontalAlignment="Stretch">
+                <Grid>
+                    <Image x:Name="FirmaPreviewImage"
+                           Stretch="Uniform"
+                           MaxHeight="160"
+                           HorizontalAlignment="Left"/>
+                    <TextBlock x:Name="SinFirmaText"
+                               Text="No hay firma configurada"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                               Style="{StaticResource CaptionTextBlockStyle}" />
+                </Grid>
+            </Border>
+
+            <!-- Botones de firma -->
+            <StackPanel Orientation="Horizontal" Spacing="12">
+                <Button Content="Cargar imagen de firma"
+                        Click="CargarFirma_Click"
+                        MinWidth="180" />
+                <Button Content="Eliminar firma"
+                        Command="{Binding EliminarFirmaCommand}"
+                        MinWidth="130" />
+            </StackPanel>
+
+            <!-- Separador informativo -->
+            <Rectangle Height="1"
+                       Fill="{ThemeResource DividerStrokeColorDefaultBrush}"
+                       Margin="0,8,0,0" />
+
+            <!-- Info servidores -->
+            <StackPanel Spacing="4">
+                <TextBlock Text="Configuración del servidor (Hostinger)"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <TextBlock Text="SMTP: smtp.hostinger.com  ·  Puerto 587  ·  STARTTLS"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <TextBlock Text="IMAP: imap.hostinger.com  ·  Puerto 993  ·  SSL"
+                           Style="{StaticResource CaptionTextBlockStyle}"
+                           Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

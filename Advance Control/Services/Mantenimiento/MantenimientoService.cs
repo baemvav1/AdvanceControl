@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Mantenimiento
 {
@@ -39,18 +40,10 @@ namespace Advance_Control.Services.Mantenimiento
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (!string.IsNullOrWhiteSpace(query.Identificador))
-                        queryParams.Add($"identificador={Uri.EscapeDataString(query.Identificador)}");
-
-                    if (query.IdCliente > 0)
-                        queryParams.Add($"idCliente={query.IdCliente}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("identificador", query.Identificador)
+                        .AddPositive("idCliente", query.IdCliente)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo mantenimientos desde: {url}", "MantenimientoService", "GetMantenimientosAsync");
@@ -71,7 +64,16 @@ namespace Advance_Control.Services.Mantenimiento
                 }
 
                 // Deserializar la respuesta
-                var mantenimientos = await response.Content.ReadFromJsonAsync<List<MantenimientoDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                List<MantenimientoDto>? mantenimientos;
+                try
+                {
+                    mantenimientos = await response.Content.ReadFromJsonAsync<List<MantenimientoDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                }
+                catch (System.Text.Json.JsonException ex)
+                {
+                    await _logger.LogErrorAsync("Error al deserializar respuesta de mantenimientos", ex, "MantenimientoService", "GetMantenimientosAsync");
+                    return new List<MantenimientoDto>();
+                }
 
                 await _logger.LogInformationAsync($"Se obtuvieron {mantenimientos?.Count ?? 0} mantenimientos", "MantenimientoService", "GetMantenimientosAsync");
 
@@ -140,18 +142,13 @@ namespace Advance_Control.Services.Mantenimiento
                 var url = _endpoints.GetEndpoint("api", "Mantenimiento");
 
                 // Agregar parámetros de consulta
-                var queryParams = new List<string>
-                {
-                    $"idTipoMantenimiento={idTipoMantenimiento}",
-                    $"idCliente={idCliente}",
-                    $"idEquipo={idEquipo}",
-                    $"credencialId={credencialId}"
-                };
-
-                if (!string.IsNullOrWhiteSpace(nota))
-                    queryParams.Add($"nota={Uri.EscapeDataString(nota)}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .AddRequired("idTipoMantenimiento", idTipoMantenimiento)
+                    .AddRequired("idCliente", idCliente)
+                    .AddRequired("idEquipo", idEquipo)
+                    .AddRequired("credencialId", credencialId)
+                    .Add("nota", nota)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando mantenimiento en: {url}", "MantenimientoService", "CreateMantenimientoAsync");
 

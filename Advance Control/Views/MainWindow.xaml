@@ -154,6 +154,17 @@
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
+                        <!-- Grupo: Correo -->
+                        <NavigationViewItem Content="Correo" IsExpanded="True">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE715;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Configuración" Icon="Setting" Tag="Correo" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>

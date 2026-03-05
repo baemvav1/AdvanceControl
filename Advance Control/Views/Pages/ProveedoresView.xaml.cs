@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -32,22 +32,22 @@ namespace Advance_Control.Views
         public ProveedoresView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<ProveedoresViewModel>();
+            ViewModel = AppServices.Get<ProveedoresViewModel>();
             
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             
             // Resolver el servicio de relaciones proveedor-refacción desde DI
-            _relacionProveedorRefaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionProveedorRefaccionService>();
+            _relacionProveedorRefaccionService = AppServices.Get<IRelacionProveedorRefaccionService>();
             
             // Resolver el servicio de refacciones desde DI
-            _refaccionService = ((App)Application.Current).Host.Services.GetRequiredService<IRefaccionService>();
+            _refaccionService = AppServices.Get<IRefaccionService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
             
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(ProveedoresView));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(ProveedoresView));
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -359,20 +359,14 @@ namespace Advance_Control.Views
                 {
                     if (selectedRefaccion == null)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "Debe seleccionar una refacción de la lista.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "Debe seleccionar una refacción de la lista.");
                         return;
                     }
 
                     var precio = ParsePrecio(precioTextBox.Text);
                     if (precio == null || precio <= 0)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "Debe ingresar un precio válido mayor que 0.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "Debe ingresar un precio válido mayor que 0.");
                         return;
                     }
 
@@ -383,32 +377,23 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Proveedores", "Refacción añadida");
+                        _activityService.Registrar("Proveedores", "Refacción añadida");
                         // Recargar las relaciones para actualizar la UI
                         proveedor.RelacionesRefaccionLoaded = false;
                         await LoadRelacionesRefaccionForProveedorAsync(proveedor);
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Relación creada",
-                            nota: $"Relación con la refacción '{selectedRefaccion.Marca} - {selectedRefaccion.Serie}' creada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Relación creada", $"Relación con la refacción '{selectedRefaccion.Marca} - {selectedRefaccion.Serie}' creada correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear la relación. Es posible que ya exista una relación con esta refacción.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear la relación. Es posible que ya exista una relación con esta refacción.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al crear relación refacción: {ex.GetType().Name} - {ex.Message}");
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear la relación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear la relación. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -506,32 +491,23 @@ namespace Advance_Control.Views
 
                     if (precioUpdated || notaUpdated)
                     {
-                        _ = _activityService.CrearActividadAsync("Proveedores", "Relación modificada");
+                        _activityService.Registrar("Proveedores", "Relación modificada");
                         // Recargar las relaciones para actualizar la UI
                         proveedor.RelacionesRefaccionLoaded = false;
                         await LoadRelacionesRefaccionForProveedorAsync(proveedor);
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Relación actualizada",
-                            nota: "Relación actualizada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Relación actualizada", "Relación actualizada correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Sin cambios",
-                            nota: "No se realizaron cambios en la relación.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Sin cambios", "No se realizaron cambios en la relación.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al actualizar relación: {ex.GetType().Name} - {ex.Message}");
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al actualizar la relación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al actualizar la relación. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -568,32 +544,23 @@ namespace Advance_Control.Views
 
                     if (success)
                     {
-                        _ = _activityService.CrearActividadAsync("Proveedores", "Relación eliminada");
+                        _activityService.Registrar("Proveedores", "Relación eliminada");
                         // Eliminar la relación de la colección local
                         proveedor.RelacionesRefaccion.Remove(relacion);
                         proveedor.NotifyNoRelacionesRefaccionMessageChanged();
 
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Relación eliminada",
-                            nota: "Relación eliminada correctamente",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Relación eliminada", "Relación eliminada correctamente");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo eliminar la relación. Por favor, intente nuevamente.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la relación. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar relación: {ex.GetType().Name} - {ex.Message}");
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la relación. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -647,10 +614,7 @@ namespace Advance_Control.Views
                 {
                     if (string.IsNullOrWhiteSpace(rfcTextBox.Text))
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "El RFC es obligatorio.",
-                            fechaHoraInicio: DateTime.Now);
+                        await _notificacionService.MostrarAsync("Error", "El RFC es obligatorio.");
                         return;
                     }
 
@@ -661,18 +625,12 @@ namespace Advance_Control.Views
                         string.IsNullOrWhiteSpace(notaTextBox.Text) ? null : notaTextBox.Text
                     );
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: success ? "Proveedor creado" : "Error",
-                        nota: success ? "Proveedor creado correctamente" : "No se pudo crear el proveedor. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync(success ? "Proveedor creado" : "Error", success ? "Proveedor creado correctamente" : "No se pudo crear el proveedor. Por favor, intente nuevamente.");
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al crear proveedor: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al crear el proveedor. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear el proveedor. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -736,18 +694,12 @@ namespace Advance_Control.Views
                         string.IsNullOrWhiteSpace(notaTextBox.Text) ? null : notaTextBox.Text
                     );
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: success ? "Proveedor actualizado" : "Error",
-                        nota: success ? "Proveedor actualizado correctamente" : "No se pudo actualizar el proveedor. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync(success ? "Proveedor actualizado" : "Error", success ? "Proveedor actualizado correctamente" : "No se pudo actualizar el proveedor. Por favor, intente nuevamente.");
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al actualizar proveedor: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al actualizar el proveedor. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al actualizar el proveedor. Por favor, intente nuevamente.");
                 }
             }
         }
@@ -775,18 +727,12 @@ namespace Advance_Control.Views
                 {
                     var success = await ViewModel.DeleteProveedorAsync(proveedor.IdProveedor);
 
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: success ? "Proveedor eliminado" : "Error",
-                        nota: success ? "Proveedor eliminado correctamente" : "No se pudo eliminar el proveedor. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync(success ? "Proveedor eliminado" : "Error", success ? "Proveedor eliminado correctamente" : "No se pudo eliminar el proveedor. Por favor, intente nuevamente.");
                 }
                 catch (Exception ex)
                 {
                     System.Diagnostics.Debug.WriteLine($"Error al eliminar proveedor: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: "Ocurrió un error al eliminar el proveedor. Por favor, intente nuevamente.",
-                        fechaHoraInicio: DateTime.Now);
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar el proveedor. Por favor, intente nuevamente.");
                 }
             }
         }

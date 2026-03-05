@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Servicios
 {
@@ -39,21 +40,11 @@ namespace Advance_Control.Services.Servicios
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (!string.IsNullOrWhiteSpace(query.Concepto))
-                        queryParams.Add($"concepto={Uri.EscapeDataString(query.Concepto)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Descripcion))
-                        queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
-
-                    if (query.Costo.HasValue)
-                        queryParams.Add($"costo={query.Costo.Value}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("concepto", query.Concepto)
+                        .Add("descripcion", query.Descripcion)
+                        .Add("costo", query.Costo)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo servicios desde: {url}", "ServicioService", "GetServiciosAsync");
@@ -141,21 +132,11 @@ namespace Advance_Control.Services.Servicios
                 // Construir la URL con parámetros de consulta
                 var url = _endpoints.GetEndpoint("api", "servicio", id.ToString());
 
-                var queryParams = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(query.Concepto))
-                    queryParams.Add($"concepto={Uri.EscapeDataString(query.Concepto)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Descripcion))
-                    queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
-
-                if (query.Costo.HasValue)
-                    queryParams.Add($"costo={query.Costo.Value}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .Add("concepto", query.Concepto)
+                    .Add("descripcion", query.Descripcion)
+                    .Add("costo", query.Costo)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando servicio {id} en: {url}", "ServicioService", "UpdateServicioAsync");
 
@@ -198,15 +179,12 @@ namespace Advance_Control.Services.Servicios
                 var url = _endpoints.GetEndpoint("api", "servicio");
 
                 // Agregar parámetros de consulta
-                var queryParams = new List<string>
-                {
-                    $"concepto={Uri.EscapeDataString(concepto)}",
-                    $"descripcion={Uri.EscapeDataString(descripcion)}",
-                    $"costo={costo}",
-                    $"estatus={estatus.ToString().ToLowerInvariant()}"
-                };
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .Add("concepto", concepto)
+                    .Add("descripcion", descripcion)
+                    .AddRequired("costo", costo)
+                    .AddRequired("estatus", estatus)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando servicio en: {url}", "ServicioService", "CreateServicioAsync");
 

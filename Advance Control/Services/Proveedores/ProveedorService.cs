@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Proveedores
 {
@@ -34,16 +35,12 @@ namespace Advance_Control.Services.Proveedores
             try
             {
                 var url = _endpoints.GetEndpoint("api", "proveedores");
-                var queryParams = new List<string> { $"rfc={Uri.EscapeDataString(rfc)}" };
-
-                if (!string.IsNullOrWhiteSpace(razonSocial))
-                    queryParams.Add($"razonSocial={Uri.EscapeDataString(razonSocial)}");
-                if (!string.IsNullOrWhiteSpace(nombreComercial))
-                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(nombreComercial)}");
-                if (!string.IsNullOrWhiteSpace(nota))
-                    queryParams.Add($"nota={Uri.EscapeDataString(nota)}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .Add("rfc", rfc)
+                    .Add("razonSocial", razonSocial)
+                    .Add("nombreComercial", nombreComercial)
+                    .Add("nota", nota)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando proveedor en: {url}", "ProveedorService", "CreateProveedorAsync");
 
@@ -81,18 +78,12 @@ namespace Advance_Control.Services.Proveedores
                 var url = _endpoints.GetEndpoint("api", "proveedores");
                 url = $"{url}/{id}";
 
-                var queryParams = new List<string>();
-                if (!string.IsNullOrWhiteSpace(rfc))
-                    queryParams.Add($"rfc={Uri.EscapeDataString(rfc)}");
-                if (!string.IsNullOrWhiteSpace(razonSocial))
-                    queryParams.Add($"razonSocial={Uri.EscapeDataString(razonSocial)}");
-                if (!string.IsNullOrWhiteSpace(nombreComercial))
-                    queryParams.Add($"nombreComercial={Uri.EscapeDataString(nombreComercial)}");
-                if (!string.IsNullOrWhiteSpace(nota))
-                    queryParams.Add($"nota={Uri.EscapeDataString(nota)}");
-
-                if (queryParams.Count > 0)
-                    url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .Add("rfc", rfc)
+                    .Add("razonSocial", razonSocial)
+                    .Add("nombreComercial", nombreComercial)
+                    .Add("nota", nota)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando proveedor {id} en: {url}", "ProveedorService", "UpdateProveedorAsync");
 
@@ -169,24 +160,12 @@ namespace Advance_Control.Services.Proveedores
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (!string.IsNullOrWhiteSpace(query.Rfc))
-                        queryParams.Add($"rfc={Uri.EscapeDataString(query.Rfc)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.RazonSocial))
-                        queryParams.Add($"razonSocial={Uri.EscapeDataString(query.RazonSocial)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.NombreComercial))
-                        queryParams.Add($"nombreComercial={Uri.EscapeDataString(query.NombreComercial)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Nota))
-                        queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("rfc", query.Rfc)
+                        .Add("razonSocial", query.RazonSocial)
+                        .Add("nombreComercial", query.NombreComercial)
+                        .Add("nota", query.Nota)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo proveedores desde: {url}", "ProveedorService", "GetProveedoresAsync");

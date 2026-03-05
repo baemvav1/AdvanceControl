@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Refacciones
 {
@@ -40,24 +41,12 @@ namespace Advance_Control.Services.Refacciones
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (!string.IsNullOrWhiteSpace(query.Marca))
-                        queryParams.Add($"marca={Uri.EscapeDataString(query.Marca)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Serie))
-                        queryParams.Add($"serie={Uri.EscapeDataString(query.Serie)}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Descripcion))
-                        queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
-
-                    if (query.IdRefaccion != 0)
-                        queryParams.Add($"idRefaccion={Uri.EscapeDataString(query.IdRefaccion.ToString())}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .Add("marca", query.Marca)
+                        .Add("serie", query.Serie)
+                        .Add("descripcion", query.Descripcion)
+                        .AddPositive("idRefaccion", query.IdRefaccion)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo refacciones desde: {url}", "RefaccionService", "GetRefaccionesAsync");
@@ -190,24 +179,12 @@ namespace Advance_Control.Services.Refacciones
                 var url = _endpoints.GetEndpoint("api", "refaccion_crud");
                 url = $"{url}/{id}";
 
-                var queryParams = new List<string>();
-
-                if (!string.IsNullOrWhiteSpace(query.Marca))
-                    queryParams.Add($"marca={Uri.EscapeDataString(query.Marca)}");
-
-                if (!string.IsNullOrWhiteSpace(query.Serie))
-                    queryParams.Add($"serie={Uri.EscapeDataString(query.Serie)}");
-
-                if (query.Costo.HasValue)
-                    queryParams.Add($"costo={query.Costo.Value}");
-
-                if (!string.IsNullOrWhiteSpace(query.Descripcion))
-                    queryParams.Add($"descripcion={Uri.EscapeDataString(query.Descripcion)}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .Add("marca", query.Marca)
+                    .Add("serie", query.Serie)
+                    .Add("costo", query.Costo)
+                    .Add("descripcion", query.Descripcion)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando refacción {id} en: {url}", "RefaccionService", "UpdateRefaccionAsync");
 
@@ -250,24 +227,13 @@ namespace Advance_Control.Services.Refacciones
                 var url = _endpoints.GetEndpoint("api", "refaccion_crud");
 
                 // Agregar parámetros de consulta
-                var queryParams = new List<string>
-                {
-                    $"estatus={estatus.ToString().ToLowerInvariant()}"
-                };
-
-                if (!string.IsNullOrWhiteSpace(marca))
-                    queryParams.Add($"marca={Uri.EscapeDataString(marca)}");
-
-                if (!string.IsNullOrWhiteSpace(serie))
-                    queryParams.Add($"serie={Uri.EscapeDataString(serie)}");
-
-                if (costo.HasValue)
-                    queryParams.Add($"costo={costo.Value}");
-
-                if (!string.IsNullOrWhiteSpace(descripcion))
-                    queryParams.Add($"descripcion={Uri.EscapeDataString(descripcion)}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                url = new ApiQueryBuilder()
+                    .AddRequired("estatus", estatus)
+                    .Add("marca", marca)
+                    .Add("serie", serie)
+                    .Add("costo", costo)
+                    .Add("descripcion", descripcion)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Creando refacción en: {url}", "RefaccionService", "CreateRefaccionAsync");
 

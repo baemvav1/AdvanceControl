@@ -59,5 +59,10 @@ namespace Advance_Control.Models
         /// Búsqueda por ID de cliente
         /// </summary>
         public int? IdCliente { get; set; }
+
+        /// <summary>
+        /// Búsqueda parcial por tratamiento
+        /// </summary>
+        public string? Tratamiento { get; set; }
     }
 }

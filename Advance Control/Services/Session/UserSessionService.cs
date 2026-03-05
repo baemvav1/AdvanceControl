@@ -38,6 +38,8 @@ namespace Advance_Control.Services.Session
         /// </summary>
         public async Task LoadAsync(CancellationToken cancellationToken = default)
         {
+            if (IsLoaded) return;
+
             try
             {
                 var userInfo = await _userInfoService.GetUserInfoAsync(cancellationToken);

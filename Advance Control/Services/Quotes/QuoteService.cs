@@ -86,6 +86,17 @@ namespace Advance_Control.Services.Quotes
         }
 
         /// <summary>
+        /// Carga un archivo de imagen como array de bytes de forma segura.
+        /// Devuelve null si el archivo no existe o no se puede leer.
+        /// </summary>
+        private static byte[]? TryLoadBytes(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path)) return null;
+            try { return File.ReadAllBytes(path); }
+            catch { return null; }
+        }
+
+        /// <summary>
         /// Busca la firma del operador por su idAtiende en la carpeta de Firmas.
         /// Los archivos tienen formato {id}_{nombre}.png
         /// </summary>
@@ -171,7 +182,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Genera un PDF de cotización a partir de una operación y sus cargos
         /// </summary>
-        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? apoderadoNombre = null, decimal? limiteCredito = null)
+        public async Task<string> GenerateQuotePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? apoderadoNombre = null, decimal? limiteCredito = null, string? dirigidoA = null)
         {
             if (operacion == null)
                 throw new ArgumentNullException(nameof(operacion));
@@ -222,12 +233,7 @@ namespace Advance_Control.Services.Quotes
                                     .FontSize(16)
                                     .FontColor(Colors.Blue.Darken2);
 
-                                if (!string.IsNullOrWhiteSpace(operacion.Nota))
-                                {
-                                    column.Item().PaddingTop(5).AlignCenter().Text($"Referencia: {operacion.Nota}")
-                                        .FontSize(12)
-                                        .FontColor(Colors.Blue.Darken1);
-                                }
+                                
                             });
 
                         page.Content()
@@ -255,12 +261,12 @@ namespace Advance_Control.Services.Quotes
                                             text.Span("Equipo: ").Bold();
                                             text.Span(operacion.Identificador ?? "N/A");
                                         });
-                                        if (!string.IsNullOrWhiteSpace(ubicacionNombre))
+                                        if (!string.IsNullOrWhiteSpace(dirigidoA))
                                         {
                                             col.Item().Text(text =>
                                             {
-                                                text.Span("Ubicación: ").Bold();
-                                                text.Span(ubicacionNombre);
+                                                text.Span("Dirigido a: ").Bold();
+                                                text.Span(dirigidoA);
                                             });
                                         }
                                     });
@@ -286,6 +292,24 @@ namespace Advance_Control.Services.Quotes
                                         });
                                     });
                                 });
+
+                                // Leyenda de identificación — renglón completo (dos columnas)
+                                column.Item().Text(text =>
+                                {
+                                    text.AlignCenter();
+                                    text.DefaultTextStyle(s => s.FontSize(13));
+                                    text.Span("Cotización No: ").Bold();
+                                    text.Span($"{operacion.IdOperacion}");
+                                });
+
+                                if (!string.IsNullOrWhiteSpace(ubicacionNombre))
+                                {
+                                    column.Item().Text(text =>
+                                    {
+                                        text.Span("Ubicación: ").Bold();
+                                        text.Span(ubicacionNombre);
+                                    });
+                                }
 
                                 var cargosList = cargos.ToList();
 
@@ -314,15 +338,23 @@ namespace Advance_Control.Services.Quotes
                                     // Rows
                                     foreach (var cargo in cargosList)
                                     {
-                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
                                             .Text(cargo.Cantidad.ToString() ?? "N/A");
-                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
                                             .Text(cargo.TipoCargo ?? "N/A");
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
-                                            .Text(cargo.DetalleRelacionado ?? "N/A");
-                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
+                                            .Column(col =>
+                                            {
+                                                col.Item().Text(cargo.DetalleLinea1 ?? "N/A");
+                                                if (cargo.TieneSubdetalle)
+                                                {
+                                                    col.Item().PaddingTop(2).Text(cargo.DetalleLinea2 ?? "").FontSize(9).FontColor(Colors.Grey.Medium);
+                                                    col.Item().Text(cargo.DetalleLinea3 ?? "").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                                }
+                                            });
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
                                             .Text($"${(cargo.Unitario ?? 0).ToString("N2", usCulture)}");
-                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
                                             .AlignRight().PaddingLeft(20).Text($"${(cargo.Monto ?? 0).ToString("N2", usCulture)}");
                                     }
                                 });
@@ -415,7 +447,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Genera un PDF de reporte de cotización con fotos de cargos
         /// </summary>
-        public async Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null)
+        public async Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? dirigidoA = null)
         {
             if (operacion == null)
                 throw new ArgumentNullException(nameof(operacion));
@@ -442,19 +474,45 @@ namespace Advance_Control.Services.Quotes
                 var reportTitle = $"Reporte {operacion.IdOperacion}";
                 var cargosList = cargos.ToList();
                 var reporteImagePath = Path.Combine(GetCabecerasFolder(), "Reporte.png");
-
-                // Use current date for the report
                 var reportDate = DateTime.Now;
 
-                // Load Prefactura and Hoja Servicio images
+                // Cargar listas de imágenes (async, fuera del lambda de QuestPDF)
                 List<OperacionImageDto> prefacturas = new List<OperacionImageDto>();
                 List<OperacionImageDto> hojasServicio = new List<OperacionImageDto>();
+                List<OperacionImageDto> ordenesCompra = new List<OperacionImageDto>();
 
                 if (operacion.IdOperacion.HasValue)
                 {
                     prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
                     hojasServicio = await _operacionImageService.GetHojasServicioAsync(operacion.IdOperacion.Value);
+                    try { ordenesCompra = await _operacionImageService.GetOrdenComprasAsync(operacion.IdOperacion.Value); } catch { }
                 }
+
+                // Filtrar rutas válidas antes del lambda (igual que cotización usa File.Exists)
+                var prefacturasPaths = prefacturas
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url))
+                    .Select(x => x.Url!)
+                    .ToList();
+
+                var hojasPaths = hojasServicio
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url))
+                    .Select(x => x.Url!)
+                    .ToList();
+
+                var ordenesPaths = ordenesCompra
+                    .Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url))
+                    .Select(x => x.Url!)
+                    .ToList();
+
+                // Filtrar rutas de imágenes de cargos (validadas fuera del lambda)
+                var cargosConImagenes = cargosList.Select(cargo => new
+                {
+                    Cargo = cargo,
+                    ImagesPaths = cargo.Images
+                        .Where(img => !string.IsNullOrWhiteSpace(img.Url) && File.Exists(img.Url))
+                        .Select(img => img.Url)
+                        .ToList()
+                }).ToList();
 
                 // Generate PDF
                 var document = Document.Create(container =>
@@ -466,31 +524,28 @@ namespace Advance_Control.Services.Quotes
                         page.PageColor(Colors.White);
                         page.DefaultTextStyle(x => x.FontSize(11));
 
-                        // Header - only show on first page
+                        // ── Cabecera (sólo primera página) ──────────────────────────
                         page.Header()
                             .ShowOnce()
                             .Column(column =>
                             {
                                 if (File.Exists(reporteImagePath))
-                                {
                                     column.Item().Image(reporteImagePath).FitWidth();
-                                }
 
                                 column.Item().AlignRight().Text(reportTitle)
                                     .FontSize(16)
+                                    .Bold()
                                     .FontColor(Colors.Blue.Darken2);
                             });
 
+                        // ── Contenido ───────────────────────────────────────────────
                         page.Content()
                             .PaddingVertical(1, Unit.Centimetre)
                             .Column(column =>
                             {
-                                column.Spacing(5);
+                                column.Spacing(6);
 
-
-
-                                // Information section (Client and Operation info)
-                                // Information section
+                                // ── Datos generales (misma estructura que cotización) ─
                                 column.Item().Row(row =>
                                 {
                                     row.RelativeItem().Column(col =>
@@ -505,6 +560,14 @@ namespace Advance_Control.Services.Quotes
                                             text.Span("Equipo: ").Bold();
                                             text.Span(operacion.Identificador ?? "N/A");
                                         });
+                                        if (!string.IsNullOrWhiteSpace(dirigidoA))
+                                        {
+                                            col.Item().Text(text =>
+                                            {
+                                                text.Span("Dirigido a: ").Bold();
+                                                text.Span(dirigidoA);
+                                            });
+                                        }
                                         if (!string.IsNullOrWhiteSpace(ubicacionNombre))
                                         {
                                             col.Item().Text(text =>
@@ -522,13 +585,11 @@ namespace Advance_Control.Services.Quotes
                                             text.Span("Fecha: ").Bold();
                                             text.Span($"{reportDate:dd/MM/yyyy}");
                                         });
-
                                         col.Item().AlignRight().PaddingLeft(20).Text(text =>
                                         {
                                             text.Span("Atendido por: ").Bold();
                                             text.Span(operacion.Atiende ?? "N/A");
                                         });
-
                                         col.Item().AlignRight().PaddingLeft(20).Text(text =>
                                         {
                                             text.Span("Tipo: ").Bold();
@@ -537,116 +598,117 @@ namespace Advance_Control.Services.Quotes
                                     });
                                 });
 
-                                // Add Prefactura images at the beginning if they exist
-                                if (prefacturas != null && prefacturas.Count > 0)
+                                // Leyenda de identificación — renglón completo (dos columnas)
+                                column.Item().Text(text =>
                                 {
-                                    column.Item().Column(prefacturaCol =>
-                                    {
-                                        prefacturaCol.Item().Text("Prefacturas").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
-                                        prefacturaCol.Item().PaddingTop(5);
+                                    text.AlignCenter();
+                                    text.DefaultTextStyle(s => s.FontSize(13));
+                                    text.Span("Reporte No: ").Bold();
+                                    text.Span($"{operacion.IdOperacion}");
+                                    text.Span(", Cotización No: ").Bold();
+                                    text.Span($"{operacion.IdOperacion}");
+                                    text.Span(", Orden de compra No: ").Bold();
+                                    text.Span("N/D");
+                                });
 
-                                        foreach (var prefactura in prefacturas)
-                                        {
-                                            if (!string.IsNullOrWhiteSpace(prefactura.Url) && File.Exists(prefactura.Url))
-                                            {
-                                                try
-                                                {
-                                                    prefacturaCol.Item().PaddingBottom(5).Image(prefactura.Url).FitWidth();
-                                                }
-                                                catch
-                                                {
-                                                    // Skip images that can't be loaded
-                                                    prefacturaCol.Item().Text($"[Error al cargar: {prefactura.FileName}]").FontSize(10).Italic();
-                                                }
-                                            }
-                                        }
-                                    });
+                                column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-                                    // Add separator after prefacturas
-                                    column.Item().PaddingTop(10);
+                                // ── Órdenes de compra (opcional) ────────────────────
+                                if (ordenesPaths.Count > 0)
+                                {
+                                    column.Item().PaddingTop(4)
+                                        .Background(Colors.Blue.Lighten4).Padding(6)
+                                        .Text("Órdenes de Compra").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
+                                    foreach (var path in ordenesPaths)
+                                        column.Item().PaddingTop(4).Image(path).FitArea();
+                                    column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
-                                // Add Hoja Servicio images if they exist
-                                if (hojasServicio != null && hojasServicio.Count > 0)
+                                // ── Prefacturas (opcional) ──────────────────────────
+                                if (prefacturasPaths.Count > 0)
                                 {
-                                    column.Item().Column(hojaServicioCol =>
-                                    {
-                                        hojaServicioCol.Item().Text("Hojas de Servicio").Bold().FontSize(16).FontColor(Colors.Blue.Darken2);
-                                        hojaServicioCol.Item().PaddingTop(10);
-
-                                        foreach (var hojaServicio in hojasServicio)
-                                        {
-                                            if (!string.IsNullOrWhiteSpace(hojaServicio.Url) && File.Exists(hojaServicio.Url))
-                                            {
-                                                try
-                                                {
-                                                    hojaServicioCol.Item().PaddingBottom(10).Image(hojaServicio.Url).FitWidth();
-                                                }
-                                                catch
-                                                {
-                                                    // Skip images that can't be loaded
-                                                    hojaServicioCol.Item().Text($"[Error al cargar: {hojaServicio.FileName}]").FontSize(10).Italic();
-                                                }
-                                            }
-                                        }
-                                    });
-
-                                    // Add separator after hojas de servicio
-                                    column.Item().PaddingTop(10);
+                                    column.Item().PaddingTop(4)
+                                        .Background(Colors.Blue.Lighten4).Padding(6)
+                                        .Text("Prefacturas").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
+                                    foreach (var path in prefacturasPaths)
+                                        column.Item().PaddingTop(4).Image(path).FitArea();
+                                    column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
-                                // Separator before cargo rows
-                                column.Item().PaddingTop(10);
-
-                                // Cargo rows
-                                foreach (var cargo in cargosList)
+                                // ── Hojas de servicio (opcional) ────────────────────
+                                if (hojasPaths.Count > 0)
                                 {
-                                    column.Item().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingBottom(10).Column(cargoCol =>
-                                    {
-                                        // Row 1: Tipo, Detalle, Nota
-                                        cargoCol.Item().Background(Colors.Grey.Lighten4).Padding(8).Row(row =>
-                                        {
-                                            row.RelativeItem(1).Text($"Tipo: {cargo.TipoCargo ?? "N/A"}").Bold();
-                                            row.RelativeItem(2).Text($"Detalle: {cargo.DetalleRelacionado ?? "N/A"}");
-                                            row.RelativeItem(3).Text($"Nota: {cargo.Nota ?? "-"}");
-                                        });
+                                    column.Item().PaddingTop(4)
+                                        .Background(Colors.Blue.Lighten4).Padding(6)
+                                        .Text("Hojas de Servicio").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
+                                    foreach (var path in hojasPaths)
+                                        column.Item().PaddingTop(4).Image(path).FitArea();
+                                    column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                                }
 
-                                        // Row 2: Photos if they exist
-                                        if (cargo.Images != null && cargo.Images.Count > 0)
+                                // ── Detalle de cargos ───────────────────────────────
+                                column.Item().PaddingTop(4)
+                                    .Background(Colors.Blue.Lighten4).Padding(6)
+                                    .Text("Detalle de Cargos").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
+
+                                foreach (var item in cargosConImagenes)
+                                {
+                                    var cargo = item.Cargo;
+
+                                    // Encabezado del cargo — fondo gris, no paginable (pequeño)
+                                    column.Item().PaddingTop(6)
+                                        .Background(Colors.Grey.Lighten4)
+                                        .BorderTop(1).BorderColor(Colors.Grey.Lighten2)
+                                        .Padding(8)
+                                        .Row(row =>
                                         {
-                                            cargoCol.Item().PaddingTop(5).Row(imagesRow =>
+                                            row.RelativeItem(1)
+                                                .Text($"Tipo: {cargo.TipoCargo ?? "N/A"}")
+                                                .Bold().FontSize(10);
+
+                                            row.RelativeItem(3).Column(detCol =>
                                             {
-                                                foreach (var image in cargo.Images)
+                                                detCol.Item().Text(cargo.DetalleLinea1 ?? "N/A").Bold();
+                                                if (cargo.TieneSubdetalle)
                                                 {
-                                                    if (!string.IsNullOrWhiteSpace(image.Url) && File.Exists(image.Url))
-                                                    {
-                                                        try
-                                                        {
-                                                            imagesRow.AutoItem().Padding(2).Width(100).Image(image.Url);
-                                                        }
-                                                        catch
-                                                        {
-                                                            // Skip images that can't be loaded
-                                                            imagesRow.AutoItem().Padding(2).Text($"[Imagen: {image.FileName}]").FontSize(9).Italic();
-                                                        }
-                                                    }
+                                                    detCol.Item().PaddingTop(2)
+                                                        .Text(cargo.DetalleLinea2 ?? "")
+                                                        .FontSize(9).FontColor(Colors.Grey.Medium);
+                                                    detCol.Item()
+                                                        .Text(cargo.DetalleLinea3 ?? "")
+                                                        .FontSize(9).FontColor(Colors.Grey.Darken1);
                                                 }
                                             });
-                                        }
-                                    });
+                                        });
+
+                                    // Fotografías del cargo — 2 columnas, FitWidth usa el ancho de cada celda
+                                    var imgPaths = item.ImagesPaths;
+                                    for (int i = 0; i < imgPaths.Count; i += 2)
+                                    {
+                                        int idx = i; // captura para lambda
+                                        column.Item().PaddingTop(4).Row(row =>
+                                        {
+                                            row.RelativeItem().Padding(2).Image(imgPaths[idx]).FitWidth();
+                                            if (idx + 1 < imgPaths.Count)
+                                                row.RelativeItem().Padding(2).Image(imgPaths[idx + 1]).FitWidth();
+                                            else
+                                                row.RelativeItem(); // celda vacía para mantener alineación
+                                        });
+                                    }
                                 }
 
-                                // Signature images section
+                                // ── Sección de firmas ───────────────────────────────
                                 AddFirmasSection(column.Item(), operacion.IdAtiende);
                             });
 
+                        // ── Pie de página ───────────────────────────────────────────
                         page.Footer()
                             .AlignCenter()
                             .Text(x =>
                             {
-                                x.Span($"Reporte {operacion.IdOperacion}, Hoja ");
+                                x.Span($"Reporte {operacion.IdOperacion}  ·  Hoja ");
                                 x.CurrentPageNumber();
-                                x.Span("/");
+                                x.Span(" de ");
                                 x.TotalPages();
                             });
                     });

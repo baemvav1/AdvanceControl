@@ -1,4 +1,4 @@
-using Advance_Control.Models;
+﻿using Advance_Control.Models;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Logging;
@@ -38,16 +38,16 @@ namespace Advance_Control.Views.Pages
         public ServiciosView()
         {
             // Resolver el ViewModel desde DI
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<ServiciosViewModel>();
+            ViewModel = AppServices.Get<ServiciosViewModel>();
 
             // Resolver el servicio de notificaciones desde DI
-            _notificacionService = ((App)Application.Current).Host.Services.GetRequiredService<INotificacionService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
 
             // Resolver el servicio de actividades desde DI
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
 
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(ServiciosView));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(ServiciosView));
 
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -137,21 +137,13 @@ namespace Advance_Control.Views.Pages
                     // Validar campos obligatorios
                     if (string.IsNullOrWhiteSpace(conceptoTextBox.Text))
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Campo requerido",
-                            nota: "El concepto es obligatorio.",
-                            fechaHoraInicio: DateTime.Now
-                        );
+                        await _notificacionService.MostrarAsync("Campo requerido", "El concepto es obligatorio.");
                         return;
                     }
 
                     if (string.IsNullOrWhiteSpace(descripcionTextBox.Text))
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Campo requerido",
-                            nota: "La descripci�n es obligatoria.",
-                            fechaHoraInicio: DateTime.Now
-                        );
+                        await _notificacionService.MostrarAsync("Campo requerido", "La descripci�n es obligatoria.");
                         return;
                     }
 
@@ -166,28 +158,16 @@ namespace Advance_Control.Views.Pages
 
                     if (success)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Servicio creado",
-                            nota: "El servicio se cre� exitosamente.",
-                            fechaHoraInicio: DateTime.Now
-                        );
+                        await _notificacionService.MostrarAsync("Servicio creado", "El servicio se cre� exitosamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: "No se pudo crear el servicio.",
-                            fechaHoraInicio: DateTime.Now
-                        );
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear el servicio.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Error",
-                        nota: $"Error al crear servicio: {ex.Message}",
-                        fechaHoraInicio: DateTime.Now
-                    );
+                    await _notificacionService.MostrarAsync("Error", $"Error al crear servicio: {ex.Message}");
                 }
             }
         }
@@ -279,21 +259,13 @@ namespace Advance_Control.Views.Pages
                         // Validar campos obligatorios
                         if (string.IsNullOrWhiteSpace(conceptoTextBox.Text))
                         {
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Campo requerido",
-                                nota: "El concepto es obligatorio.",
-                                fechaHoraInicio: DateTime.Now
-                            );
+                            await _notificacionService.MostrarAsync("Campo requerido", "El concepto es obligatorio.");
                             return;
                         }
 
                         if (string.IsNullOrWhiteSpace(descripcionTextBox.Text))
                         {
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Campo requerido",
-                                nota: "La descripci�n es obligatoria.",
-                                fechaHoraInicio: DateTime.Now
-                            );
+                            await _notificacionService.MostrarAsync("Campo requerido", "La descripci�n es obligatoria.");
                             return;
                         }
 
@@ -311,29 +283,17 @@ namespace Advance_Control.Views.Pages
 
                         if (success)
                         {
-                            _ = _activityService.CrearActividadAsync("Servicios", "Servicio modificado");
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Servicio actualizado",
-                                nota: "El servicio se actualiz� exitosamente.",
-                                fechaHoraInicio: DateTime.Now
-                            );
+                            _activityService.Registrar("Servicios", "Servicio modificado");
+                            await _notificacionService.MostrarAsync("Servicio actualizado", "El servicio se actualiz� exitosamente.");
                         }
                         else
                         {
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Error",
-                                nota: "No se pudo actualizar el servicio.",
-                                fechaHoraInicio: DateTime.Now
-                            );
+                            await _notificacionService.MostrarAsync("Error", "No se pudo actualizar el servicio.");
                         }
                     }
                     catch (Exception ex)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: $"Error al actualizar servicio: {ex.Message}",
-                            fechaHoraInicio: DateTime.Now
-                        );
+                        await _notificacionService.MostrarAsync("Error", $"Error al actualizar servicio: {ex.Message}");
                     }
                 }
             }
@@ -364,29 +324,17 @@ namespace Advance_Control.Views.Pages
 
                         if (success)
                         {
-                            _ = _activityService.CrearActividadAsync("Servicios", "Servicio eliminado");
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Servicio eliminado",
-                                nota: "El servicio se elimin� exitosamente.",
-                                fechaHoraInicio: DateTime.Now
-                            );
+                            _activityService.Registrar("Servicios", "Servicio eliminado");
+                            await _notificacionService.MostrarAsync("Servicio eliminado", "El servicio se elimin� exitosamente.");
                         }
                         else
                         {
-                            await _notificacionService.MostrarNotificacionAsync(
-                                titulo: "Error",
-                                nota: "No se pudo eliminar el servicio.",
-                                fechaHoraInicio: DateTime.Now
-                            );
+                            await _notificacionService.MostrarAsync("Error", "No se pudo eliminar el servicio.");
                         }
                     }
                     catch (Exception ex)
                     {
-                        await _notificacionService.MostrarNotificacionAsync(
-                            titulo: "Error",
-                            nota: $"Error al eliminar servicio: {ex.Message}",
-                            fechaHoraInicio: DateTime.Now
-                        );
+                        await _notificacionService.MostrarAsync("Error", $"Error al eliminar servicio: {ex.Message}");
                     }
                 }
             }

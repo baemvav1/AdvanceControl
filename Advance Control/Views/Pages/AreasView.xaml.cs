@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
@@ -60,9 +60,9 @@ namespace Advance_Control.Views.Pages
 
         public AreasView()
         {
-            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<AreasViewModel>();
-            _loggingService = ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>();
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            ViewModel = AppServices.Get<AreasViewModel>();
+            _loggingService = AppServices.Get<ILoggingService>();
+            _activityService = AppServices.Get<IActivityService>();
 
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(AreasView));
@@ -1054,7 +1054,7 @@ namespace Advance_Control.Views.Pages
 
                         if (deleteResult.Success)
                         {
-                            _ = _activityService.CrearActividadAsync("Areas", "Área eliminada");
+                            _activityService.Registrar("Areas", "Área eliminada");
                             var successDialog = new ContentDialog
                             {
                                 Title = "Éxito",
@@ -1253,7 +1253,7 @@ namespace Advance_Control.Views.Pages
                 };
                 await successDialog.ShowAsync();
 
-                _ = _activityService.CrearActividadAsync("Areas", _isEditMode ? "Área modificada" : "Área creada");
+                _activityService.Registrar("Areas", _isEditMode ? "Área modificada" : "Área creada");
                 CancelButton_Click(sender, e);
 
                 await ExecuteMapScriptAsync("clearCurrentShape();");

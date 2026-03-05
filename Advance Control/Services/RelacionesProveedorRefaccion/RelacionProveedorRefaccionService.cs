@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.RelacionesProveedorRefaccion
 {
@@ -37,18 +38,10 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 var url = _endpoints.GetEndpoint("api", "RelacionProveedorRefaccion");
 
                 // Agregar parámetros de consulta
-                var queryParams = new List<string>();
-
-                if (idProveedor > 0)
-                    queryParams.Add($"idProveedor={idProveedor}");
-
-                if (idRefaccion > 0)
-                    queryParams.Add($"idRefaccion={idRefaccion}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .AddPositive("idProveedor", idProveedor)
+                    .AddPositive("idRefaccion", idRefaccion)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Obteniendo relaciones proveedor-refacción desde: {url}", "RelacionProveedorRefaccionService", "GetRelacionesAsync");
 
@@ -210,8 +203,10 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 }
 
                 // Construir la URL usando el endpoint correcto para actualizar precio
-                var url = _endpoints.GetEndpoint("api", "RelacionProveedorRefaccion/precio");
-                url = $"{url}?idRelacionProveedor={idRelacionProveedor}&precio={precio}";
+                var url = new ApiQueryBuilder()
+                    .AddRequired("idRelacionProveedor", idRelacionProveedor)
+                    .AddRequired("precio", precio)
+                    .Build(_endpoints.GetEndpoint("api", "RelacionProveedorRefaccion/precio"));
 
                 await _logger.LogInformationAsync($"Actualizando precio de relación proveedor-refacción: {url}", "RelacionProveedorRefaccionService", "UpdatePrecioAsync");
 
@@ -271,14 +266,12 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 }
 
                 // Construir la URL usando el endpoint correcto
-                var url = _endpoints.GetEndpoint("api", "RelacionProveedorRefaccion");
-                url = $"{url}?idProveedor={idProveedor}&idRefaccion={idRefaccion}&precio={precio}";
-                
-                // Agregar el parámetro nota solo si no está vacío
-                if (!string.IsNullOrWhiteSpace(nota))
-                {
-                    url = $"{url}&nota={Uri.EscapeDataString(nota)}";
-                }
+                var url = new ApiQueryBuilder()
+                    .AddRequired("idProveedor", idProveedor)
+                    .AddRequired("idRefaccion", idRefaccion)
+                    .AddRequired("precio", precio)
+                    .Add("nota", nota)
+                    .Build(_endpoints.GetEndpoint("api", "RelacionProveedorRefaccion"));
 
                 await _logger.LogInformationAsync($"Creando relación proveedor-refacción: {url}", "RelacionProveedorRefaccionService", "CreateRelacionAsync");
 

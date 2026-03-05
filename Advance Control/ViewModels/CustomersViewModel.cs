@@ -164,7 +164,7 @@ namespace Advance_Control.ViewModels
             
             catch (Exception ex)
             {
-                ErrorMessage = $"Error inesperado al cargar clientes: {ex.Message}";
+                ErrorMessage = "Error inesperado al cargar clientes. Por favor, intente nuevamente.";
                 await _logger.LogErrorAsync("Error inesperado al cargar clientes", ex, "CustomersViewModel", "LoadClientesAsync");
             }
             finally

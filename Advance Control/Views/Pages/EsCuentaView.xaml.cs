@@ -1,4 +1,4 @@
-using Microsoft.UI.Xaml;
+﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Data;
@@ -35,9 +35,9 @@ namespace Advance_Control.Views.Pages
         public EsCuentaView()
         {
             InitializeComponent();
-            ButtonClickLogger.Attach(this, ((App)App.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(EsCuentaView));
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(EsCuentaView));
             ViewModel = new EsCuentaViewModel();
-            _activityService = ((App)Application.Current).Host.Services.GetRequiredService<IActivityService>();
+            _activityService = AppServices.Get<IActivityService>();
         }
 
         private async void BtnCargarXml_Click(object sender, RoutedEventArgs e)
@@ -46,7 +46,7 @@ namespace Advance_Control.Views.Pages
             var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
             await ViewModel.CargarArchivoXmlAsync(hwnd);
             if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
-                _ = _activityService.CrearActividadAsync("EsCuenta", "XML cargado");
+                _activityService.Registrar("EsCuenta", "XML cargado");
         }
     }
 }

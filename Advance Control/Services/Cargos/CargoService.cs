@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Cargos
 {
@@ -49,39 +50,17 @@ namespace Advance_Control.Services.Cargos
                 // Agregar parámetros de consulta si existen
                 if (query != null)
                 {
-                    var queryParams = new List<string>();
-
-                    if (query.IdCargo > 0)
-                        queryParams.Add($"idCargo={query.IdCargo}");
-
-                    if (query.IdTipoCargo.HasValue)
-                        queryParams.Add($"idTipoCargo={query.IdTipoCargo.Value}");
-
-                    if (query.IdOperacion.HasValue)
-                        queryParams.Add($"idOperacion={query.IdOperacion.Value}");
-
-                    if (query.IdRelacionCargo.HasValue)
-                        queryParams.Add($"idRelacionCargo={query.IdRelacionCargo.Value}");
-
-                    if (query.Monto.HasValue)
-                        queryParams.Add($"monto={query.Monto.Value}");
-
-                    if (!string.IsNullOrWhiteSpace(query.Nota))
-                        queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
-
-                    if (query.IdProveedor.HasValue)
-                        queryParams.Add($"idProveedor={query.IdProveedor.Value}");
-
-                    if (query.Cantidad.HasValue)
-                        queryParams.Add($"cantidad={query.Cantidad.Value}");
-
-                    if (query.Unitario.HasValue)
-                        queryParams.Add($"unitario={query.Unitario.Value}");
-
-                    if (queryParams.Count > 0)
-                    {
-                        url = $"{url}?{string.Join("&", queryParams)}";
-                    }
+                    url = new ApiQueryBuilder()
+                        .AddPositive("idCargo", query.IdCargo)
+                        .Add("idTipoCargo", query.IdTipoCargo)
+                        .Add("idOperacion", query.IdOperacion)
+                        .Add("idRelacionCargo", query.IdRelacionCargo)
+                        .Add("monto", query.Monto)
+                        .Add("nota", query.Nota)
+                        .Add("idProveedor", query.IdProveedor)
+                        .Add("cantidad", query.Cantidad)
+                        .Add("unitario", query.Unitario)
+                        .Build(url);
                 }
 
                 await _logger.LogInformationAsync($"Obteniendo cargos desde: {url}", "CargoService", "GetCargosAsync");
@@ -181,29 +160,16 @@ namespace Advance_Control.Services.Cargos
             try
             {
                 // Construir la URL con parámetros de consulta
-                var url = _endpoints.GetEndpoint("api", "Cargos");
-                var queryParams = new List<string>
-                {
-                    $"idTipoCargo={query.IdTipoCargo.Value}",
-                    $"idOperacion={query.IdOperacion.Value}",
-                    $"idRelacionCargo={query.IdRelacionCargo.Value}",
-                    $"monto={query.Monto.Value}"
-                };
-
-                // Parámetro opcional
-                if (!string.IsNullOrWhiteSpace(query.Nota))
-                    queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
-
-                if (query.IdProveedor.HasValue)
-                    queryParams.Add($"idProveedor={query.IdProveedor.Value}");
-
-                if (query.Cantidad.HasValue)
-                    queryParams.Add($"cantidad={query.Cantidad.Value}");
-
-                if (query.Unitario.HasValue)
-                    queryParams.Add($"unitario={query.Unitario.Value}");
-
-                url = $"{url}?{string.Join("&", queryParams)}";
+                var url = new ApiQueryBuilder()
+                    .AddRequired("idTipoCargo", query.IdTipoCargo.Value)
+                    .AddRequired("idOperacion", query.IdOperacion.Value)
+                    .AddRequired("idRelacionCargo", query.IdRelacionCargo.Value)
+                    .AddRequired("monto", query.Monto.Value)
+                    .Add("nota", query.Nota)
+                    .Add("idProveedor", query.IdProveedor)
+                    .Add("cantidad", query.Cantidad)
+                    .Add("unitario", query.Unitario)
+                    .Build(_endpoints.GetEndpoint("api", "Cargos"));
 
                 await _logger.LogInformationAsync($"Creando cargo en: {url}", "CargoService", "CreateCargoAsync");
 
@@ -289,34 +255,15 @@ namespace Advance_Control.Services.Cargos
             try
             {
                 // Construir la URL con parámetros de consulta
-                var url = $"{_endpoints.GetEndpoint("api", "Cargos")}/{query.IdCargo}";
-                var queryParams = new List<string>();
-
-                if (query.IdTipoCargo.HasValue)
-                    queryParams.Add($"idTipoCargo={query.IdTipoCargo.Value}");
-
-                if (query.IdRelacionCargo.HasValue)
-                    queryParams.Add($"idRelacionCargo={query.IdRelacionCargo.Value}");
-
-                if (query.Monto.HasValue)
-                    queryParams.Add($"monto={query.Monto.Value}");
-
-                if (!string.IsNullOrWhiteSpace(query.Nota))
-                    queryParams.Add($"nota={Uri.EscapeDataString(query.Nota)}");
-
-                if (query.IdProveedor.HasValue)
-                    queryParams.Add($"idProveedor={query.IdProveedor.Value}");
-
-                if (query.Cantidad.HasValue)
-                    queryParams.Add($"cantidad={query.Cantidad.Value}");
-
-                if (query.Unitario.HasValue)
-                    queryParams.Add($"unitario={query.Unitario.Value}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                var url = new ApiQueryBuilder()
+                    .Add("idTipoCargo", query.IdTipoCargo)
+                    .Add("idRelacionCargo", query.IdRelacionCargo)
+                    .Add("monto", query.Monto)
+                    .Add("nota", query.Nota)
+                    .Add("idProveedor", query.IdProveedor)
+                    .Add("cantidad", query.Cantidad)
+                    .Add("unitario", query.Unitario)
+                    .Build($"{_endpoints.GetEndpoint("api", "Cargos")}/{query.IdCargo}");
 
                 await _logger.LogInformationAsync($"Actualizando cargo {query.IdCargo} en: {url}", "CargoService", "UpdateCargoAsync");
 

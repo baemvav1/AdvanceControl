@@ -97,6 +97,7 @@ namespace Advance_Control.Models
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsFinalized));
                     OnPropertyChanged(nameof(IsEditable));
+                    OnPropertyChanged(nameof(StatusText));
                 }
             }
         }
@@ -114,10 +115,60 @@ namespace Advance_Control.Models
         public bool IsEditable => FechaFinal == null;
 
         /// <summary>
+        /// Fecha de inicio formateada de forma corta para mostrar en el header (dd/MM/yy)
+        /// </summary>
+        [JsonIgnore]
+        public string FechaInicioCorta => FechaInicio?.ToString("dd/MM/yy") ?? "—";
+
+        /// <summary>
+        /// Texto descriptivo del estado de la operación
+        /// </summary>
+        [JsonIgnore]
+        public string StatusText => IsFinalized ? "Finalizada" : "Abierta";
+
+        /// <summary>
         /// Indica si la operación ha finalizado
         /// </summary>
         [JsonPropertyName("finalizado")]
         public bool Finalizado { get; set; }
+
+        private string? _cotizacionPdfPath;
+
+        /// <summary>
+        /// Ruta al PDF de cotización generado para esta operación. Null si no existe.
+        /// </summary>
+        [JsonIgnore]
+        public string? CotizacionPdfPath
+        {
+            get => _cotizacionPdfPath;
+            set
+            {
+                if (_cotizacionPdfPath != value)
+                {
+                    _cotizacionPdfPath = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private string? _reportePdfPath;
+
+        /// <summary>
+        /// Ruta al PDF de reporte generado para esta operación. Null si no existe.
+        /// </summary>
+        [JsonIgnore]
+        public string? ReportePdfPath
+        {
+            get => _reportePdfPath;
+            set
+            {
+                if (_reportePdfPath != value)
+                {
+                    _reportePdfPath = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         private bool _hasFactura = false;
 
@@ -248,6 +299,61 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        private bool _imagesLoaded = false;
+
+        /// <summary>
+        /// Indica si los indicadores de imágenes ya fueron cargados. Evita repetir 4 HTTP calls por cada expansión de card.
+        /// </summary>
+        [JsonIgnore]
+        public bool ImagesLoaded
+        {
+            get => _imagesLoaded;
+            set
+            {
+                if (_imagesLoaded != value)
+                {
+                    _imagesLoaded = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private bool _collectionChangedSubscribed = false;
+
+        /// <summary>
+        /// Indica si ya se suscribió al CollectionChanged de Cargos. Evita acumulación de handlers.
+        /// </summary>
+        [JsonIgnore]
+        public bool CollectionChangedSubscribed
+        {
+            get => _collectionChangedSubscribed;
+            set => _collectionChangedSubscribed = value;
+        }
+
+        private CheckOperacionDto? _checkOperacion;
+
+        /// <summary>
+        /// Estado del checklist de pasos de esta operación. Se carga al expandir el card.
+        /// </summary>
+        [JsonIgnore]
+        public CheckOperacionDto? CheckOperacion
+        {
+            get => _checkOperacion;
+            set
+            {
+                if (_checkOperacion != value)
+                {
+                    _checkOperacion = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(TieneCheck));
+                }
+            }
+        }
+
+        /// <summary>True cuando el check ya fue cargado.</summary>
+        [JsonIgnore]
+        public bool TieneCheck => _checkOperacion != null;
 
         private bool _hasPrefactura = false;
 

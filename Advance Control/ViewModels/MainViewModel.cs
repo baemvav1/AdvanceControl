@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -274,6 +275,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.UbicacionesView>("Ubicaciones");
             _navigationService.Configure<Views.Pages.AreasView>("Areas");
             _navigationService.Configure<Views.Pages.EsCuentaView>("EsCuenta");
+            _navigationService.Configure<Views.Pages.CorreoView>("Correo");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
@@ -303,6 +305,7 @@ namespace Advance_Control.ViewModels
             { "Ubicaciones",   1 },
             { "Areas",         1 },
             { "EsCuenta",      1 },
+            { "Correo",        1 },
         };
 
 
@@ -497,7 +500,7 @@ namespace Advance_Control.ViewModels
                 };
 
                 // Manejar el cierre automático cuando el login sea exitoso
-                loginViewModel.PropertyChanged += (s, e) =>
+                PropertyChangedEventHandler loginPropertyChangedHandler = (s, e) =>
                 {
                     if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
                     {
@@ -544,8 +547,10 @@ namespace Advance_Control.ViewModels
                         });
                     }
                 };
+                loginViewModel.PropertyChanged += loginPropertyChangedHandler;
 
                 var result = await dialog.ShowAsync();
+                loginViewModel.PropertyChanged -= loginPropertyChangedHandler; // Prevenir memory leak
                 
                 // Retornar true si el login fue exitoso, false si fue cancelado
                 return loginViewModel.LoginSuccessful;

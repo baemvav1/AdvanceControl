@@ -1,10 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Activity;
+using Advance_Control.Services.CheckOperacion;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Session;
 
 namespace Advance_Control.ViewModels
@@ -18,6 +21,8 @@ namespace Advance_Control.ViewModels
         private readonly IUserSessionService _userSessionService;
         private readonly ILoggingService _logger;
         private readonly IActivityService _activityService;
+        private readonly IOperacionService _operacionService;
+        private readonly ICheckOperacionService _checkService;
 
         private string _saludo = "Bienvenido";
         private string _nombreUsuario = string.Empty;
@@ -27,16 +32,23 @@ namespace Advance_Control.ViewModels
         private bool _isLoading;
         private bool _isActividadLoading;
         private bool _isActividadEmpty = true;
+        private bool _isTareasLoading;
+        private bool _isTareasEmpty = true;
 
         public DashboardViewModel(
             IUserSessionService userSessionService,
             ILoggingService logger,
-            IActivityService activityService)
+            IActivityService activityService,
+            IOperacionService operacionService,
+            ICheckOperacionService checkService)
         {
             _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             _logger             = logger             ?? throw new ArgumentNullException(nameof(logger));
             _activityService    = activityService    ?? throw new ArgumentNullException(nameof(activityService));
+            _operacionService   = operacionService   ?? throw new ArgumentNullException(nameof(operacionService));
+            _checkService       = checkService       ?? throw new ArgumentNullException(nameof(checkService));
             ActividadReciente = new ObservableCollection<ActivityItem>();
+            OperacionesPendientes = new ObservableCollection<OperacionTodoItem>();
         }
 
         public string Saludo
@@ -91,7 +103,21 @@ namespace Advance_Control.ViewModels
             get => !_isActividadLoading && _isActividadEmpty;
         }
 
+        public bool IsTareasLoading
+        {
+            get => _isTareasLoading;
+            set
+            {
+                SetProperty(ref _isTareasLoading, value);
+                OnPropertyChanged(nameof(IsTareasEmpty));
+            }
+        }
+
+        /// <summary>True cuando no hay tareas pendientes y no está cargando</summary>
+        public bool IsTareasEmpty => !_isTareasLoading && _isTareasEmpty;
+
         public ObservableCollection<ActivityItem> ActividadReciente { get; }
+        public ObservableCollection<OperacionTodoItem> OperacionesPendientes { get; }
 
         public async Task LoadAsync(CancellationToken cancellationToken = default)
         {
@@ -120,8 +146,10 @@ namespace Advance_Control.ViewModels
                 IsLoading = false;
             }
 
-            // Cargar actividad reciente de forma independiente
-            await LoadActividadAsync(cancellationToken);
+            // Cargar secciones de forma independiente
+            await Task.WhenAll(
+                LoadActividadAsync(cancellationToken),
+                LoadOperacionesPendientesAsync(cancellationToken));
         }
 
         public async Task LoadActividadAsync(CancellationToken cancellationToken = default)
@@ -159,6 +187,65 @@ namespace Advance_Control.ViewModels
             {
                 IsActividadLoading = false;
                 OnPropertyChanged(nameof(IsActividadEmpty));
+            }
+        }
+
+        public async Task LoadOperacionesPendientesAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                IsTareasLoading = true;
+                OperacionesPendientes.Clear();
+                _isTareasEmpty = true;
+
+                if (!_userSessionService.IsLoaded)
+                    await _userSessionService.LoadAsync(cancellationToken);
+
+                if (_userSessionService.CredencialId <= 0) return;
+
+                var query = new OperacionQueryDto { IdAtiende = _userSessionService.CredencialId };
+                var operaciones = await _operacionService.GetOperacionesAsync(query, cancellationToken);
+
+                foreach (var op in operaciones)
+                {
+                    var idOp = op.IdOperacion ?? 0;
+                    if (idOp == 0) continue;
+
+                    var check = await _checkService.GetAsync(idOp);
+                    if (check == null || check.Completo) continue;
+
+                    var item = new OperacionTodoItem
+                    {
+                        IdOperacion = idOp,
+                        Nota        = op.Nota ?? $"#{idOp}",
+                        RazonSocial = op.RazonSocial ?? string.Empty,
+                        Pasos = new List<CheckPasoItem>
+                        {
+                            new() { Nombre = "Cotización generada",    Completado = check.CotizacionGenerada },
+                            new() { Nombre = "Cotización enviada",     Completado = check.CotizacionEnviada  },
+                            new() { Nombre = "Reporte generado",       Completado = check.ReporteGenerado    },
+                            new() { Nombre = "Reporte enviado",        Completado = check.ReporteEnviado     },
+                            new() { Nombre = "Prefactura cargada",     Completado = check.PrefacturaCargada  },
+                            new() { Nombre = "Hoja de servicio",       Completado = check.HojaServicioCargada},
+                            new() { Nombre = "Orden de compra",        Completado = check.OrdenCompraCargada },
+                            new() { Nombre = "Factura cargada",        Completado = check.FacturaCargada     },
+                        }
+                    };
+
+                    OperacionesPendientes.Add(item);
+                }
+
+                _isTareasEmpty = OperacionesPendientes.Count == 0;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al cargar tareas pendientes de operaciones", ex,
+                    "DashboardViewModel", "LoadOperacionesPendientesAsync", "Sistema", "DashboardPage");
+            }
+            finally
+            {
+                IsTareasLoading = false;
+                OnPropertyChanged(nameof(IsTareasEmpty));
             }
         }
 

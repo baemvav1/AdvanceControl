@@ -202,7 +202,7 @@ namespace Advance_Control.Services.Auth
                     return false;
                 }
 
-                var dto = await resp.Content.ReadFromJsonAsync<RefreshResponseDto>(cancellationToken: cancellationToken);
+                var dto = await resp.Content.ReadFromJsonAsync<RefreshResponseDto>(cancellationToken: effectiveToken);
                 if (dto == null || string.IsNullOrEmpty(dto.accessToken)) return false;
 
                 _accessToken = dto.accessToken;

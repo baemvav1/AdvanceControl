@@ -45,7 +45,7 @@ namespace Advance_Control.ViewModels
             _activityService     = activityService     ?? throw new ArgumentNullException(nameof(activityService));
             
             // Inicializar el comando de login y logout
-            LoginCommand = new RelayCommand(ExecuteLogin, CanExecuteLogin);
+            LoginCommand = new AsyncRelayCommand(ExecuteLoginAsync, CanExecuteLogin);
             LogoutCommand = new AsyncRelayCommand(ExecuteLogoutAsync, CanExecuteLogout);
             
             // Verificar si el usuario ya está autenticado
@@ -68,7 +68,7 @@ namespace Advance_Control.ViewModels
                     // Notificar cambio en CanLogin cuando cambia el usuario
                     OnPropertyChanged(nameof(CanLogin));
                     // Actualizar el estado del comando
-                    (LoginCommand as RelayCommand)?.NotifyCanExecuteChanged();
+                    (LoginCommand as IRelayCommand)?.NotifyCanExecuteChanged();
                 }
             }
         }
@@ -86,7 +86,7 @@ namespace Advance_Control.ViewModels
                     // Notificar cambio en CanLogin cuando cambia la contraseña
                     OnPropertyChanged(nameof(CanLogin));
                     // Actualizar el estado del comando
-                    (LoginCommand as RelayCommand)?.NotifyCanExecuteChanged();
+                    (LoginCommand as IRelayCommand)?.NotifyCanExecuteChanged();
                 }
             }
         }
@@ -249,7 +249,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Ejecuta el proceso de inicio de sesión
         /// </summary>
-        private async void ExecuteLogin()
+        private async Task ExecuteLoginAsync()
         {
             try
             {

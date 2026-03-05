@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.RelacionesRefaccionEquipo
 {
@@ -37,18 +38,10 @@ namespace Advance_Control.Services.RelacionesRefaccionEquipo
                 var url = _endpoints.GetEndpoint("api", "RelacionesRefaccionEquipo/equipos");
 
                 // Agregar parámetros de consulta
-                var queryParams = new List<string>();
-
-                if (idRefaccion > 0)
-                    queryParams.Add($"idRefaccion={idRefaccion}");
-
-                if (idEquipo > 0)
-                    queryParams.Add($"idEquipo={idEquipo}");
-
-                if (queryParams.Count > 0)
-                {
-                    url = $"{url}?{string.Join("&", queryParams)}";
-                }
+                url = new ApiQueryBuilder()
+                    .AddPositive("idRefaccion", idRefaccion)
+                    .AddPositive("idEquipo", idEquipo)
+                    .Build(url);
 
                 await _logger.LogInformationAsync($"Obteniendo relaciones refacción-equipo desde: {url}", "RelacionRefaccionEquipoService", "GetRelacionesAsync");
 
