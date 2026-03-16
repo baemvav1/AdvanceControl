@@ -39,6 +39,7 @@ secrets.json
 *.pfx
 *.p12
 *.pem
+installer/Secrets/
 
 # Logs
 *.log

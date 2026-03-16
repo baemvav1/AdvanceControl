@@ -18,32 +18,14 @@ if ([string]::IsNullOrWhiteSpace($AppInstallerPath)) {
     $AppInstallerPath = Join-Path $scriptDirectory '..\artifacts\installer\AdvanceControl.appinstaller'
 }
 
-$resolvedAppInstallerPath = (Resolve-Path $AppInstallerPath).Path
-$msixPath = Join-Path (Split-Path $resolvedAppInstallerPath -Parent) 'AdvanceControl-x64.msix'
+$resolvedAppInstallerPath = if ([string]::IsNullOrWhiteSpace($AppInstallerPath)) { $null } else { (Resolve-Path $AppInstallerPath).Path }
+$msixBaseDirectory = if ($resolvedAppInstallerPath) { Split-Path $resolvedAppInstallerPath -Parent } else { Join-Path $scriptDirectory '..\artifacts\installer' }
+$msixPath = Join-Path $msixBaseDirectory 'AdvanceControl-x64.msix'
 $trustScriptPath = Join-Path $scriptDirectory 'Trust-LocalInstallerCertificate.ps1'
 
 & $trustScriptPath -MsixPath $msixPath
 
 $resolvedMsixPath = (Resolve-Path $msixPath).Path
-$appInstallerUri = ([System.Uri]::new($resolvedAppInstallerPath)).AbsoluteUri
-$msixUri = ([System.Uri]::new($resolvedMsixPath)).AbsoluteUri
-
-[xml]$appInstallerDocument = Get-Content -Path $resolvedAppInstallerPath -Raw
-$appInstallerNode = $appInstallerDocument.SelectSingleNode("/*[local-name()='AppInstaller']")
-$mainPackageNode = $appInstallerDocument.SelectSingleNode("/*[local-name()='AppInstaller']/*[local-name()='MainPackage']")
-
-if (-not $appInstallerNode -or -not $mainPackageNode) {
-    throw "No se pudo interpretar correctamente el archivo '$resolvedAppInstallerPath'."
-}
-
-$appInstallerNode.SetAttribute('Uri', $appInstallerUri)
-$mainPackageNode.SetAttribute('Uri', $msixUri)
-$appInstallerDocument.Save($resolvedAppInstallerPath)
-
-Write-Host "Uri AppInstaller actualizada a '$appInstallerUri'."
-Write-Host "Uri MSIX actualizada a '$msixUri'."
-
-Write-Host "Abriendo instalador '$resolvedAppInstallerPath'..."
-Add-AppxPackage -Path $resolvedAppInstallerPath -AppInstallerFile
-
-Write-Host 'Instalacion iniciada correctamente.'
+Write-Host "Instalando paquete local '$resolvedMsixPath'..."
+Add-AppxPackage -Path $resolvedMsixPath
+Write-Host 'Instalacion local iniciada correctamente.'
