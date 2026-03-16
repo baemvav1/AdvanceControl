@@ -89,7 +89,7 @@
                 <TextBlock
                     FontSize="16" FontWeight="SemiBold"
                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                    Text="Resumen" />
+                    Text="Resumennnn" />
 
                 <Grid>
                     <Grid.ColumnDefinitions>
