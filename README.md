@@ -525,3 +525,17 @@ Para generar el instalador manualmente en una máquina con Visual Studio Build T
 ```
 
 Si solo quieres validar el empaquetado sin firma, puedes omitir `CertificatePath` y `CertificatePassword`; el `.msix` se generará, pero no será apto para distribución final.
+
+### Flujo temporal sin firma
+
+Mientras no exista certificado de firma, el repositorio tambien incluye un fallback temporal:
+
+- Workflow: `.github/workflows/publish-client-portable.yml`
+- Script: `build/Publish-ClientPortable.ps1`
+- Artefacto: `AdvanceControl-portable-x64.zip`
+
+Este flujo sirve para pruebas internas y despliegue manual del cliente, pero **no reemplaza** el flujo `MSIX + App Installer` porque no ofrece instalacion firmada ni autoactualizacion.
+
+La referencia completa de esta decision temporal esta en:
+
+`docs/implementacion-temporal-sin-firma.md`

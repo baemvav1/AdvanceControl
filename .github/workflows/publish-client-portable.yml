@@ -1,0 +1,87 @@
+name: Publicar cliente portable temporal
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Advance Control/**"
+      - "build/**"
+      - ".github/workflows/publish-client-portable.yml"
+      - "docs/implementacion-temporal-sin-firma.md"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-client-portable:
+    runs-on: windows-latest
+
+    env:
+      SOLUTION_PATH: Advance Control.sln
+      PROJECT_PATH: Advance Control/Advance Control.csproj
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Calcular version del paquete
+        id: version
+        shell: pwsh
+        run: |
+          $baseDate = [datetime]'2024-01-01T00:00:00Z'
+          $daysSinceBase = [int]([datetime]::UtcNow - $baseDate).TotalDays
+          $revision = ([int]${{ github.run_number }} * 10) + [int]${{ github.run_attempt }}
+          if ($revision -gt 65535) {
+            $revision = $revision % 65535
+          }
+          $version = "0.9.$daysSinceBase.$revision"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version portable calculada: $version"
+
+      - name: Restaurar
+        run: dotnet restore "${{ env.SOLUTION_PATH }}"
+
+      - name: Compilar
+        run: dotnet build "${{ env.SOLUTION_PATH }}" -c Release -p:Platform=x64 --no-restore -nologo
+
+      - name: Probar
+        run: dotnet test "${{ env.SOLUTION_PATH }}" -c Release -p:Platform=x64 --no-build --verbosity minimal -nologo
+
+      - name: Publicar cliente portable
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          .\build\Publish-ClientPortable.ps1 `
+            -ProjectPath "${{ env.PROJECT_PATH }}" `
+            -Configuration Release `
+            -Platform x64 `
+            -Version $env:PACKAGE_VERSION `
+            -OutputDirectory ".\artifacts\portable"
+
+      - name: Publicar artefactos del workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: cliente-portable-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/portable/AdvanceControl-portable-x64.zip
+            artifacts/portable/LEEME-PORTABLE.txt
+
+      - name: Crear release temporal
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: client-portable-v${{ steps.version.outputs.version }}
+          name: Cliente portable temporal v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          prerelease: true
+          files: |
+            artifacts/portable/AdvanceControl-portable-x64.zip
+            artifacts/portable/LEEME-PORTABLE.txt
