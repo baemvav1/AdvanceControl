@@ -4,6 +4,8 @@ using Microsoft.UI.Xaml;
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.EndPointProvider;
 using Microsoft.Extensions.Configuration;
@@ -40,6 +42,9 @@ namespace Advance_Control
     public partial class App : Application
     {
         public IHost Host { get; }
+        private static readonly string PackagedConfigurationFile = Path.Combine(
+            AppContext.BaseDirectory,
+            "appsettings.json");
         private static readonly string ExternalConfigurationDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Advance Control");
@@ -50,14 +55,61 @@ namespace Advance_Control
         // Almacena la referencia a la ventana principal para acceder a XamlRoot
         public static Window? MainWindow { get; private set; }
 
+        private static void EnsureExternalConfigurationFile()
+        {
+            Directory.CreateDirectory(ExternalConfigurationDirectory);
+
+            if (File.Exists(ExternalConfigurationFile))
+            {
+                return;
+            }
+
+            var configuration = new JsonObject
+            {
+                ["ExternalApi"] = new JsonObject
+                {
+                    ["BaseUrl"] = GetDefaultApiBaseUrl()
+                }
+            };
+
+            File.WriteAllText(
+                ExternalConfigurationFile,
+                configuration.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        private static string GetDefaultApiBaseUrl()
+        {
+            if (!File.Exists(PackagedConfigurationFile))
+            {
+                return "https://localhost:7055/";
+            }
+
+            using var stream = File.OpenRead(PackagedConfigurationFile);
+            using var document = JsonDocument.Parse(stream);
+
+            if (document.RootElement.TryGetProperty("ExternalApi", out var externalApiSection)
+                && externalApiSection.TryGetProperty("BaseUrl", out var baseUrlElement)
+                && baseUrlElement.ValueKind == JsonValueKind.String)
+            {
+                var configuredBaseUrl = baseUrlElement.GetString();
+                if (!string.IsNullOrWhiteSpace(configuredBaseUrl))
+                {
+                    return configuredBaseUrl.Trim();
+                }
+            }
+
+            return "https://localhost:7055/";
+        }
+
         public App()
         {
             this.InitializeComponent();
+            EnsureExternalConfigurationFile();
 
             Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration(cfg =>
                 {
-                    cfg.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"), optional: true, reloadOnChange: true);
+                    cfg.AddJsonFile(PackagedConfigurationFile, optional: true, reloadOnChange: true);
                     cfg.AddJsonFile(ExternalConfigurationFile, optional: true, reloadOnChange: true);
                     cfg.AddEnvironmentVariables(prefix: "ADVANCECONTROL_");
                 })

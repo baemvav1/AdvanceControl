@@ -105,6 +105,8 @@ El paquete instalado puede sobreescribir la URL del API sin recompilar usando al
 1. Archivo local: `%LocalAppData%\Advance Control\appsettings.local.json`
 2. Variable de entorno: `ADVANCECONTROL_ExternalApi__BaseUrl`
 
+En instalaciones MSIX y en la distribucion portable, la app crea automaticamente `%LocalAppData%\Advance Control\appsettings.local.json` en el primer arranque si todavia no existe. Durante esta fase de pruebas puedes editar ese archivo para apuntar el cliente a la IP local actual del API y, mas adelante, cambiarlo de nuevo cuando el API quede publicado, sin recompilar ni reinstalar.
+
 Ejemplo de `%LocalAppData%\Advance Control\appsettings.local.json`:
 
 ```json

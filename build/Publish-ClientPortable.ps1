@@ -60,9 +60,9 @@ Este paquete temporal no usa firma ni App Installer.
 Se distribuye para pruebas internas mientras se configura el certificado MSIX.
 
 Antes de ejecutar el cliente en otra PC:
-1. Crear %LocalAppData%\Advance Control\appsettings.local.json
-2. Configurar ExternalApi:BaseUrl con la IP o nombre local del equipo que hospeda el API
-3. Ejecutar Advance Control.exe desde la carpeta extraida
+1. Ejecutar Advance Control.exe una vez para que la app cree %LocalAppData%\Advance Control\appsettings.local.json
+2. Editar ExternalApi:BaseUrl con la IP o nombre local del equipo que hospeda el API
+3. Volver a ejecutar Advance Control.exe
 "@
 
 Set-Content -Path $notesPath -Value $notes -Encoding UTF8
