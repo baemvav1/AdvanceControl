@@ -1,22 +1,20 @@
-Advance Control - Instalador local
+Advance Control - Instalador GitHub
 
 Contenido de esta carpeta:
-- AdvanceControl.appinstaller
-- AdvanceControl-x64.msix
 - AdvanceControl-signing.cer
-- Install-LocalInstaller.cmd
-- Install-LocalInstaller.ps1
+- Install-AutoUpdateFromGitHub.cmd
+- Install-AutoUpdateFromGitHub.ps1
 - Trust-LocalInstallerCertificate.cmd
 - Trust-LocalInstallerCertificate.ps1
 
 Uso recomendado:
-1. Si quieres instalar localmente sin depender de internet ni de GitHub:
-   - Ejecuta Install-LocalInstaller.cmd
+1. Ejecuta Install-AutoUpdateFromGitHub.cmd
+2. Acepta la elevacion UAC cuando Windows la solicite
+3. El script confia el certificado local y descarga el AppInstaller desde GitHub Releases
 
-2. Si quieres instalar de forma autoactualizable desde GitHub Releases:
-   - Ejecuta Install-AutoUpdateFromGitHub.cmd
-   - Este flujo solo funciona si la URL remota es accesible desde la PC destino
-   - Si el repositorio es privado, GitHub puede bloquear la descarga del AppInstaller/MSIX
+Este flujo solo funciona si:
+- la PC destino puede acceder a GitHub
+- existe un release reciente con AdvanceControl.appinstaller y AdvanceControl-x64.msix
 
 Si solo necesitas confiar el certificado manualmente:
 - Ejecuta Trust-LocalInstallerCertificate.cmd

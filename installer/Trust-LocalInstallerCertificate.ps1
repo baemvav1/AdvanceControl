@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$MsixPath = '',
+    [string]$CertificatePath = '',
     [switch]$SkipElevation
 )
 
@@ -15,8 +15,8 @@ $scriptDirectory = if ($PSScriptRoot) {
     Split-Path -Parent $MyInvocation.MyCommand.Path
 }
 
-if ([string]::IsNullOrWhiteSpace($MsixPath)) {
-    $MsixPath = Join-Path $scriptDirectory 'AdvanceControl-x64.msix'
+if ([string]::IsNullOrWhiteSpace($CertificatePath)) {
+    $CertificatePath = Join-Path $scriptDirectory 'AdvanceControl-signing.cer'
 }
 
 $isElevated = ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).
@@ -28,7 +28,7 @@ if (-not $isElevated -and -not $SkipElevation) {
         '-NoProfile',
         '-ExecutionPolicy', 'Bypass',
         '-File', "`"$resolvedScriptPath`"",
-        '-MsixPath', "`"$MsixPath`"",
+        '-CertificatePath', "`"$CertificatePath`"",
         '-SkipElevation'
     )
 
@@ -59,28 +59,28 @@ function Import-CertificateIfMissing {
 }
 
 try {
-    $resolvedMsixPath = (Resolve-Path $MsixPath).Path
-    $signature = Get-AuthenticodeSignature -FilePath $resolvedMsixPath
-    $signerCertificate = $signature.SignerCertificate
+    $resolvedCertificatePath = (Resolve-Path $CertificatePath).Path
+    $certificate = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($resolvedCertificatePath)
 
-    if (-not $signerCertificate) {
-        throw "No se encontro ningun certificado firmante en '$resolvedMsixPath'."
+    if (-not $certificate.Thumbprint) {
+        throw "No se pudo cargar correctamente el certificado '$resolvedCertificatePath'."
     }
 
     $certificateExportPath = Join-Path $scriptDirectory 'AdvanceControl-signing.cer'
+    if ($resolvedCertificatePath -ne $certificateExportPath) {
+        Copy-Item -Path $resolvedCertificatePath -Destination $certificateExportPath -Force
+    }
+    Write-Host "Certificado listo en '$certificateExportPath'."
 
-    Export-Certificate -Cert $signerCertificate -FilePath $certificateExportPath -Force | Out-Null
-    Write-Host "Certificado exportado en '$certificateExportPath'."
-
-    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\CurrentUser\TrustedPeople' -Thumbprint $signerCertificate.Thumbprint
-    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\CurrentUser\Root' -Thumbprint $signerCertificate.Thumbprint
+    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\CurrentUser\TrustedPeople' -Thumbprint $certificate.Thumbprint
+    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\CurrentUser\Root' -Thumbprint $certificate.Thumbprint
 
     if (-not $isElevated) {
         throw "Se importo el certificado para el usuario actual, pero la instalacion MSIX local requiere tambien importarlo en LocalMachine. Ejecuta este script como administrador."
     }
 
-    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\LocalMachine\TrustedPeople' -Thumbprint $signerCertificate.Thumbprint
-    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\LocalMachine\Root' -Thumbprint $signerCertificate.Thumbprint
+    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\LocalMachine\TrustedPeople' -Thumbprint $certificate.Thumbprint
+    Import-CertificateIfMissing -CertificatePath $certificateExportPath -StoreLocation 'Cert:\LocalMachine\Root' -Thumbprint $certificate.Thumbprint
 
     Write-Host 'El certificado del instalador quedo confiado para esta maquina.'
 }

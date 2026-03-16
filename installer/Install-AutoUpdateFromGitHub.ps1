@@ -19,8 +19,8 @@ Start-Transcript -Path $logPath -Force | Out-Null
 
 try {
     $trustScriptPath = Join-Path $scriptDirectory 'Trust-LocalInstallerCertificate.ps1'
-    $msixPath = Join-Path $scriptDirectory 'AdvanceControl-x64.msix'
-    & $trustScriptPath -MsixPath $msixPath
+    $certificatePath = Join-Path $scriptDirectory 'AdvanceControl-signing.cer'
+    & $trustScriptPath -CertificatePath $certificatePath
 
     $tempAppInstallerPath = Join-Path $env:TEMP 'AdvanceControl-GitHub.appinstaller'
     Write-Host "Descargando AppInstaller remoto desde '$AppInstallerUrl'..."
