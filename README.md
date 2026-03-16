@@ -528,6 +528,31 @@ Para generar el instalador manualmente en una máquina con Visual Studio Build T
 
 Si solo quieres validar el empaquetado sin firma, puedes omitir `CertificatePath` y `CertificatePassword`; el `.msix` se generará, pero no será apto para distribución final.
 
+### Instalacion local en una PC de pruebas
+
+Si al abrir el `.appinstaller` o el `.msix` aparece el error `0x800B0109`, falta confiar el certificado de firma en la maquina.
+
+1. Genera el instalador localmente.
+2. Ejecuta el instalador local de un solo paso:
+
+```cmd
+build\Install-LocalInstaller.cmd
+```
+
+o, si prefieres PowerShell:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\build\Install-LocalInstaller.ps1
+```
+
+Este script:
+
+1. Se eleva automaticamente con UAC cuando hace falta.
+2. Exporta y confia el certificado del paquete en `CurrentUser` y `LocalMachine`.
+3. Inicia la instalacion desde `artifacts\installer\AdvanceControl.appinstaller`.
+
+El script exporta el certificado del paquete a `artifacts\installer\AdvanceControl-signing.cer` e importa ese certificado en `CurrentUser` y `LocalMachine` para que la instalacion MSIX sea confiable en la misma PC.
+
 ### Flujo temporal sin firma
 
 Mientras no exista certificado de firma, el repositorio tambien incluye un fallback temporal:

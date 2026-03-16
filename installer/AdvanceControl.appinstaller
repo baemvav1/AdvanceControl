@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AppInstaller xmlns="http://schemas.microsoft.com/appx/appinstaller/2017" xmlns:s4="http://schemas.microsoft.com/appx/appinstaller/2021" Version="1.0.805.513" Uri="file:///C:/Users/baemv/Documents/GitHub/AdvanceControl/installer/AdvanceControl.appinstaller">
+  <MainPackage Name="8d986287-5be6-489f-bea6-abd0d579b73e" Publisher="CN=baemv" Version="1.0.805.513" ProcessorArchitecture="x64" Uri="file:///C:/Users/baemv/Documents/GitHub/AdvanceControl/installer/AdvanceControl-x64.msix" />
+  <UpdateSettings>
+    <OnLaunch s4:HoursBetweenUpdateChecks="0" s4:ShowPrompt="true" s4:UpdateBlocksActivation="false" />
+  </UpdateSettings>
+</AppInstaller>

@@ -1,0 +1,20 @@
+Advance Control - Instalador local
+
+Contenido de esta carpeta:
+- AdvanceControl.appinstaller
+- AdvanceControl-x64.msix
+- AdvanceControl-signing.cer
+- Install-LocalInstaller.cmd
+- Install-LocalInstaller.ps1
+- Trust-LocalInstallerCertificate.cmd
+- Trust-LocalInstallerCertificate.ps1
+
+Uso recomendado:
+1. Ejecutar Install-LocalInstaller.cmd
+2. Aceptar la elevacion UAC cuando Windows la solicite
+3. Completar la instalacion del App Installer
+
+Si solo necesitas confiar el certificado manualmente:
+- Ejecuta Trust-LocalInstallerCertificate.cmd
+
+Si PowerShell esta restringido, usa los archivos .cmd en lugar de los .ps1.
