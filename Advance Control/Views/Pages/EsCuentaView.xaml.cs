@@ -14,6 +14,7 @@ using global::Windows.Foundation;
 using global::Windows.Foundation.Collections;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Activity;
+using Advance_Control.Services.EstadoCuenta;
 using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using WinRT.Interop;
@@ -36,7 +37,7 @@ namespace Advance_Control.Views.Pages
         {
             InitializeComponent();
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(EsCuentaView));
-            ViewModel = new EsCuentaViewModel();
+            ViewModel = new EsCuentaViewModel(AppServices.Get<IEstadoCuentaXmlService>());
             _activityService = AppServices.Get<IActivityService>();
         }
 
@@ -47,6 +48,13 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarArchivoXmlAsync(hwnd);
             if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
                 _activityService.Registrar("EsCuenta", "XML cargado");
+        }
+
+        private async void BtnGuardarEstadoCuenta_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.GuardarEstadoCuentaAsync();
+            if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
+                _activityService.Registrar("EsCuenta", "Estado de cuenta guardado");
         }
     }
 }

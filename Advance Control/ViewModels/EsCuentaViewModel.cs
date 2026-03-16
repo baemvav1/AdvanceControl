@@ -2,81 +2,80 @@ using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Advance_Control.Models;
+using Advance_Control.Services.EstadoCuenta;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 
 namespace Advance_Control.ViewModels
 {
     /// <summary>
-    /// ViewModel para la vista de Estado de Cuenta
+    /// ViewModel para la vista de Estado de Cuenta.
     /// </summary>
     public class EsCuentaViewModel : ViewModelBase
     {
+        private static readonly Regex CurrencyRegex = new(@"\$\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.\d{2})|[0-9]+\.\d{2})", RegexOptions.Compiled);
+        private readonly IEstadoCuentaXmlService _estadoCuentaXmlService;
         private EstadoCuentaBancario? _estadoCuentaBancario;
         private ObservableCollection<MovimientoBancario> _movimientos;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _successMessage;
 
-        // Inicializar el campo ns para evitar CS8618
-        private XNamespace ns = XNamespace.None;
-
-        public EsCuentaViewModel()
+        public EsCuentaViewModel(IEstadoCuentaXmlService estadoCuentaXmlService)
         {
+            _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _movimientos = new ObservableCollection<MovimientoBancario>();
         }
 
-        /// <summary>
-        /// Estado de cuenta actual cargado
-        /// </summary>
         public EstadoCuentaBancario? EstadoCuentaBancario
         {
             get => _estadoCuentaBancario;
-            set => SetProperty(ref _estadoCuentaBancario, value);
+            set
+            {
+                if (SetProperty(ref _estadoCuentaBancario, value))
+                {
+                    OnPropertyChanged(nameof(CanSave));
+                }
+            }
         }
 
-        /// <summary>
-        /// Colección observable de Movimientos para el binding en la UI
-        /// </summary>
         public ObservableCollection<MovimientoBancario> Movimientos
         {
             get => _movimientos;
             set => SetProperty(ref _movimientos, value);
         }
 
-        /// <summary>
-        /// Indica si se está cargando un archivo
-        /// </summary>
         public bool IsLoading
         {
             get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                {
+                    OnPropertyChanged(nameof(CanSave));
+                }
+            }
         }
 
-        /// <summary>
-        /// Mensaje de error para mostrar al usuario
-        /// </summary>
         public string? ErrorMessage
         {
             get => _errorMessage;
             set => SetProperty(ref _errorMessage, value);
         }
 
-        /// <summary>
-        /// Mensaje de éxito para mostrar al usuario
-        /// </summary>
         public string? SuccessMessage
         {
             get => _successMessage;
             set => SetProperty(ref _successMessage, value);
         }
 
-        /// <summary>
-        /// Carga un archivo XML y parsea el estado de cuenta
-        /// </summary>
+        public bool CanSave => EstadoCuentaBancario != null && !IsLoading;
+
         public async Task CargarArchivoXmlAsync(nint windowHandle)
         {
             try
@@ -85,26 +84,19 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = null;
                 SuccessMessage = null;
 
-                // Configurar el FileOpenPicker
                 var picker = new FileOpenPicker();
                 picker.ViewMode = PickerViewMode.List;
                 picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
                 picker.FileTypeFilter.Add(".xml");
 
-                // Inicializar el picker con el window handle
                 WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
 
-                // Mostrar el picker y obtener el archivo
                 var file = await picker.PickSingleFileAsync();
                 if (file != null)
                 {
-                    // Leer el contenido del archivo
-                    string xmlContent = await FileIO.ReadTextAsync(file);
-                    
-                    // Parsear el XML
+                    var xmlContent = await FileIO.ReadTextAsync(file);
                     ParsearEstadoCuentaXml(xmlContent);
-                    
-                    SuccessMessage = $"Archivo {file.Name} cargado exitosamente. Se encontraron {Movimientos.Count} Movimientos.";
+                    SuccessMessage = $"Archivo {file.Name} cargado exitosamente. Se encontraron {Movimientos.Count} movimientos.";
                 }
             }
             catch (Exception ex)
@@ -117,33 +109,56 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public async Task GuardarEstadoCuentaAsync()
+        {
+            if (EstadoCuentaBancario == null)
+            {
+                ErrorMessage = "Primero debes cargar un archivo XML.";
+                return;
+            }
 
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
 
-        /// <summary>
-        /// Parsea el contenido XML y extrae los datos del estado de cuenta
-        /// Este es un modelo de función para capturar los datos entre llaves
-        /// </summary>
+                var result = await _estadoCuentaXmlService.GuardarEstadoCuentaAsync(CrearRequestDesdeEstadoActual());
+                if (!result.Success)
+                {
+                    ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? "No se pudo guardar el estado de cuenta."
+                        : result.Message;
+                    return;
+                }
+
+                EstadoCuentaBancario.IdEstadoCuentaBancario = result.IdEstadoCuenta;
+                SuccessMessage = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Estado de cuenta guardado correctamente."
+                    : $"{result.Message} Movimientos procesados: {result.MovimientosProcesados}.";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al guardar el estado de cuenta: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private void ParsearEstadoCuentaXml(string xmlContent)
         {
             try
             {
-                // Cargar el documento XML
-                XDocument doc = XDocument.Parse(xmlContent);
-
-                // Obtener el namespace del documento
-                XNamespace ns = doc.Root.GetDefaultNamespace();
-
-                // Obtener el elemento raíz (estadoCuenta)
-                XElement raiz = doc.Root;
-
-                // Crear nueva instancia de EstadoCuenta
+                var doc = XDocument.Parse(xmlContent);
+                var ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+                var raiz = doc.Root ?? throw new InvalidDataException("El XML no contiene un nodo raiz valido.");
                 var estadoCuenta = new EstadoCuentaBancario();
 
-                // Procesar información general
                 var infoGeneral = raiz.Element(ns + "informacionGeneral");
                 if (infoGeneral != null)
                 {
-                    // Procesar banco
                     var banco = infoGeneral.Element(ns + "banco");
                     if (banco != null)
                     {
@@ -153,7 +168,6 @@ namespace Advance_Control.ViewModels
                         estadoCuenta.DireccionSucursal = banco.Element(ns + "direccion")?.Value;
                     }
 
-                    // Procesar titular
                     var titular = infoGeneral.Element(ns + "titular");
                     if (titular != null)
                     {
@@ -163,7 +177,6 @@ namespace Advance_Control.ViewModels
                         estadoCuenta.DireccionTitular = titular.Element(ns + "direccion")?.Value;
                     }
 
-                    // Procesar cuenta
                     var cuenta = infoGeneral.Element(ns + "cuenta");
                     if (cuenta != null)
                     {
@@ -173,25 +186,19 @@ namespace Advance_Control.ViewModels
                         estadoCuenta.TipoMoneda = cuenta.Element(ns + "moneda")?.Value;
                     }
 
-                    // Procesar período
                     var periodo = infoGeneral.Element(ns + "periodo");
                     if (periodo != null)
                     {
-                        estadoCuenta.Periodo = $"{periodo.Element(ns + "fechaInicio")?.Value} - {periodo.Element(ns + "fechaFin")?.Value}";
-                        // Conversión segura de string a DateTime
-                        var fechaInicioStr = periodo.Element(ns + "fechaInicio")?.Value;
-                        var fechaFinStr = periodo.Element(ns + "fechaFin")?.Value;
-                        var fechaCorteStr = periodo.Element(ns + "fechaCorte")?.Value;
+                        var fechaInicioTexto = periodo.Element(ns + "fechaInicio")?.Value;
+                        var fechaFinTexto = periodo.Element(ns + "fechaFin")?.Value;
+                        var fechaCorteTexto = periodo.Element(ns + "fechaCorte")?.Value;
 
-                        if (DateTime.TryParse(fechaInicioStr, out var fechaInicio))
-                            estadoCuenta.PeriodoInicio = fechaInicio;
-                        if (DateTime.TryParse(fechaFinStr, out var fechaFin))
-                            estadoCuenta.PeriodoFin = fechaFin;
-                        if (DateTime.TryParse(fechaCorteStr, out var fechaCorte))
-                            estadoCuenta.FechaCorte = fechaCorte;
+                        estadoCuenta.Periodo = $"{fechaInicioTexto} - {fechaFinTexto}";
+                        estadoCuenta.PeriodoInicio = ParseFechaEstadoCuenta(fechaInicioTexto) ?? DateTime.Today;
+                        estadoCuenta.PeriodoFin = ParseFechaEstadoCuenta(fechaFinTexto) ?? estadoCuenta.PeriodoInicio;
+                        estadoCuenta.FechaCorte = ParseFechaEstadoCuenta(fechaCorteTexto) ?? estadoCuenta.PeriodoFin;
                     }
 
-                    // Procesar resumen
                     var resumen = infoGeneral.Element(ns + "resumen");
                     if (resumen != null)
                     {
@@ -203,145 +210,259 @@ namespace Advance_Control.ViewModels
                         estadoCuenta.SaldoPromedio = ObtenerValorDecimal(ns, resumen, "saldoPromedio");
                     }
                 }
-                
-                // Procesar CFDI información
+
                 var cfdiInfo = raiz.Element(ns + "cfdiInformacion");
                 if (cfdiInfo != null)
                 {
-                    estadoCuenta.FolioFiscal = cfdiInfo.Element(ns + "folioFiscal")?.Value;
+                    estadoCuenta.FolioFiscal = cfdiInfo.Element(ns + "folioFiscal")?.Value ?? string.Empty;
 
-                    // Procesar certificados
                     var certificados = cfdiInfo.Element(ns + "certificados");
                     if (certificados != null)
                     {
                         var certEmisor = certificados.Element(ns + "certificadoEmisor");
                         if (certEmisor != null)
                         {
-                            estadoCuenta.CertificadoEmisor = certEmisor.Element(ns + "numero")?.Value;
-                            estadoCuenta.FechaEmisionCert = certEmisor.Element(ns + "fechaEmision")?.Value;
+                            estadoCuenta.CertificadoEmisor = certEmisor.Element(ns + "numero")?.Value ?? string.Empty;
+                            estadoCuenta.FechaEmisionCert = certEmisor.Element(ns + "fechaEmision")?.Value ?? string.Empty;
                         }
 
-                        var certSAT = certificados.Element(ns + "certificadoSAT");
-                        if (certSAT != null)
+                        var certSat = certificados.Element(ns + "certificadoSAT");
+                        if (certSat != null)
                         {
-                            estadoCuenta.CertificadoSAT = certSAT.Element(ns + "numero")?.Value;
-                            estadoCuenta.FechaCertificacionSAT = certSAT.Element(ns + "fechaCertificacion")?.Value;
+                            estadoCuenta.CertificadoSAT = certSat.Element(ns + "numero")?.Value ?? string.Empty;
+                            estadoCuenta.FechaCertificacionSAT = certSat.Element(ns + "fechaCertificacion")?.Value ?? string.Empty;
                         }
                     }
 
-                    // Procesar datos fiscales
                     var datosFiscales = cfdiInfo.Element(ns + "datosFiscales");
                     if (datosFiscales != null)
                     {
-                        estadoCuenta.RegimenFiscal = datosFiscales.Element(ns + "regimenFiscal")?.Value;
-                        estadoCuenta.MetodoPago = datosFiscales.Element(ns + "metodoPago")?.Value;
-                        estadoCuenta.FormaPago = datosFiscales.Element(ns + "formaPago")?.Value;
-                        estadoCuenta.UsoCFDI = datosFiscales.Element(ns + "usoCFDI")?.Value;
-                        estadoCuenta.ClaveProdServ = datosFiscales.Element(ns + "claveProdServ")?.Value;
-                        estadoCuenta.LugarExpedicion = datosFiscales.Element(ns + "lugarExpedicion")?.Value;
+                        estadoCuenta.RegimenFiscal = datosFiscales.Element(ns + "regimenFiscal")?.Value ?? string.Empty;
+                        estadoCuenta.MetodoPago = datosFiscales.Element(ns + "metodoPago")?.Value ?? string.Empty;
+                        estadoCuenta.FormaPago = datosFiscales.Element(ns + "formaPago")?.Value ?? string.Empty;
+                        estadoCuenta.UsoCFDI = datosFiscales.Element(ns + "usoCFDI")?.Value ?? string.Empty;
+                        estadoCuenta.ClaveProdServ = datosFiscales.Element(ns + "claveProdServ")?.Value ?? string.Empty;
+                        estadoCuenta.LugarExpedicion = datosFiscales.Element(ns + "lugarExpedicion")?.Value ?? string.Empty;
                     }
                 }
-                
-                // Procesar Movimientos
+
                 var movimientosElement = raiz.Element(ns + "transacciones");
                 if (movimientosElement != null)
                 {
                     estadoCuenta.TotalTransacciones = ObtenerValorEntero(movimientosElement.Attribute("total"));
+                    var saldoAnterior = estadoCuenta.SaldoInicial ?? 0m;
 
                     foreach (var transElement in movimientosElement.Elements(ns + "transaccion"))
                     {
                         var movimiento = new MovimientoBancario
                         {
-                            // Asignar propiedades según los datos del XML y la definición de MovimientoBancario
-                            FechaMovimiento = DateTime.TryParse(transElement.Element(ns + "dia")?.Value, out var fechaMov) ? fechaMov : default,
-                            Descripcion = transElement.Element(ns + "descripcion")?.Value,
-                            Referencia = transElement.Element(ns + "referencia")?.Value,
-                            // Determinar si es cargo o abono
-                            MontoAbono = ObtenerValorDecimal(ns, transElement, "depositos"),
-                            MontoCargo = ObtenerValorDecimal(ns, transElement, "retiros"),
-                            SaldoResultante = ObtenerValorDecimal(ns, transElement, "saldo"),
-                            TipoMovimiento = tipoTransaccion(transElement),
-                            FechaRegistro = DateTime.Now // O asignar según corresponda
+                            FechaMovimiento = ConstruirFechaMovimiento(transElement.Element(ns + "dia")?.Value, estadoCuenta.FechaCorte),
+                            Descripcion = transElement.Element(ns + "descripcion")?.Value ?? string.Empty,
+                            Referencia = transElement.Element(ns + "referencia")?.Value ?? transElement.Attribute("id")?.Value,
+                            TipoMovimiento = DeterminarTipoTransaccion(transElement.Element(ns + "descripcion")?.Value),
+                            FechaRegistro = DateTime.Now
                         };
+
+                        CompletarMontosDesdeDescripcion(movimiento, saldoAnterior);
                         estadoCuenta.Movimientos.Add(movimiento);
-
-
-
-                        // Procesar metadatos si existen
-                        /*var metadatos = transElement.Element(ns + "metadatos");
-                        if (metadatos != null)
-                        {
-                            transaccion.BancoCodigo = metadatos.Element(ns + "banco_codigo")?.Value;
-                            transaccion.BancoNombre = metadatos.Element(ns + "banco_nombre")?.Value;
-                            transaccion.CuentaTransferencia = metadatos.Element(ns + "cuenta")?.Value;
-                            transaccion.RfcTransferencia = metadatos.Element(ns + "rfc")?.Value;
-                            transaccion.ClaveRastreo = metadatos.Element(ns + "cve_rastreo")?.Value;
-                            transaccion.Concepto = metadatos.Element(ns + "concepto")?.Value;
-                            transaccion.Hora = metadatos.Element(ns + "hora")?.Value;
-                            transaccion.Emisor = metadatos.Element(ns + "emisor")?.Value;
-                            transaccion.Destinatario = metadatos.Element(ns + "destinatario")?.Value;
-                        }
-                        */
-
-
+                        saldoAnterior = movimiento.SaldoResultante;
                     }
                 }
 
-                // Procesar resumen de comisiones
-                var resumenComisiones = raiz.Element(ns + "resumenComisiones");
-                if (resumenComisiones != null)
-                {
-                   // estadoCuenta.OtrasComisiones = ObtenerValorDecimal(resumenComisiones, "otrasComisiones");
-                    //estadoCuenta.IvaComisiones = ObtenerValorDecimal(resumenComisiones, "iva");
-                    //estadoCuenta.TotalComisionesCobradas = ObtenerValorDecimal(resumenComisiones, "total");
-                }
-
-                // Actualizar el estado de cuenta y la colección de Movimientos
                 EstadoCuentaBancario = estadoCuenta;
                 Movimientos.Clear();
-                /*foreach (var transaccion in estadoCuenta.Transacciones)
+                foreach (var movimiento in estadoCuenta.Movimientos.OrderBy(m => m.FechaMovimiento).ThenBy(m => m.Referencia))
                 {
-                    Movimientos.Add(transaccion);
-                }*/
+                    Movimientos.Add(movimiento);
+                }
             }
             catch (Exception ex)
             {
                 throw new Exception($"Error al parsear el XML: {ex.Message}", ex);
             }
-
         }
 
-        private decimal ObtenerValorDecimal(XNamespace ns,XElement elementoPadre, string nombreElemento)
+        private static DateTime? ParseFechaEstadoCuenta(string? valor)
+        {
+            if (string.IsNullOrWhiteSpace(valor))
+            {
+                return null;
+            }
+
+            var texto = valor.Trim().ToUpperInvariant();
+            var formats = new[] { "dd MMM yyyy", "d MMM yyyy", "dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss" };
+            var cultures = new[] { new CultureInfo("es-MX"), CultureInfo.InvariantCulture };
+
+            foreach (var culture in cultures)
+            {
+                if (DateTime.TryParseExact(texto, formats, culture, DateTimeStyles.AllowWhiteSpaces, out var fecha))
+                {
+                    return fecha;
+                }
+
+                if (DateTime.TryParse(texto, culture, DateTimeStyles.AllowWhiteSpaces, out fecha))
+                {
+                    return fecha;
+                }
+            }
+
+            return null;
+        }
+
+        private static DateTime ConstruirFechaMovimiento(string? diaTexto, DateTime fechaReferencia)
+        {
+            if (int.TryParse(diaTexto?.Trim(), out var dia) && fechaReferencia != default)
+            {
+                var ultimoDiaMes = DateTime.DaysInMonth(fechaReferencia.Year, fechaReferencia.Month);
+                if (dia >= 1 && dia <= ultimoDiaMes)
+                {
+                    return new DateTime(fechaReferencia.Year, fechaReferencia.Month, dia);
+                }
+            }
+
+            return fechaReferencia == default ? DateTime.Today : fechaReferencia;
+        }
+
+        private decimal ObtenerValorDecimal(XNamespace ns, XElement elementoPadre, string nombreElemento)
         {
             var valor = elementoPadre?.Element(ns + nombreElemento)?.Value;
-            if (string.IsNullOrEmpty(valor)) return 0;
+            if (string.IsNullOrEmpty(valor))
+            {
+                return 0;
+            }
 
-            // Usar cultura mexicana para decimales (punto como separador decimal)
-            if (decimal.TryParse(valor, NumberStyles.Any, new CultureInfo("es-MX"), out decimal resultado))
+            if (decimal.TryParse(valor, NumberStyles.Any, new CultureInfo("es-MX"), out var resultado))
+            {
                 return resultado;
+            }
 
-            // Intento alternativo con cultura invariante
             if (decimal.TryParse(valor, NumberStyles.Any, CultureInfo.InvariantCulture, out resultado))
+            {
                 return resultado;
-
-            return 0;
-        }
-        private int ObtenerValorEntero(XAttribute atributo)
-        {
-            if (atributo == null) return 0;
-
-            if (int.TryParse(atributo.Value, out int resultado))
-                return resultado;
+            }
 
             return 0;
         }
 
-        private string tipoTransaccion(XElement transaccion)
+        private static int ObtenerValorEntero(XAttribute? atributo)
         {
-            return "";
+            if (atributo == null)
+            {
+                return 0;
+            }
+
+            return int.TryParse(atributo.Value, out var resultado) ? resultado : 0;
+        }
+
+        private static string DeterminarTipoTransaccion(string? descripcion)
+        {
+            var texto = (descripcion ?? string.Empty).ToUpperInvariant();
+            if (texto.Contains("SPEI RECIBIDO") || texto.Contains("DEPOSITO") || texto.Contains("COMPENSACION"))
+            {
+                return "ABONO";
+            }
+
+            if (texto.Contains("ENVIO SPEI") || texto.Contains("I.V.A.") || texto.Contains("COMISION") || texto.Contains("PAGO"))
+            {
+                return "CARGO";
+            }
+
+            return "MOVIMIENTO";
+        }
+
+        private static void CompletarMontosDesdeDescripcion(MovimientoBancario movimiento, decimal saldoAnterior)
+        {
+            var valores = CurrencyRegex.Matches(movimiento.Descripcion ?? string.Empty)
+                .Select(match => ParseCurrencyValue(match.Groups[1].Value))
+                .ToList();
+
+            if (valores.Count == 0)
+            {
+                movimiento.MontoAbono = 0;
+                movimiento.MontoCargo = 0;
+                movimiento.SaldoResultante = saldoAnterior;
+                return;
+            }
+
+            movimiento.SaldoResultante = valores[^1];
+            var delta = movimiento.SaldoResultante - saldoAnterior;
+            var montoPrincipal = valores.Count >= 2 ? valores[^2] : Math.Abs(delta);
+            if (montoPrincipal == 0 && delta != 0)
+            {
+                montoPrincipal = Math.Abs(delta);
+            }
+
+            if (delta > 0)
+            {
+                movimiento.MontoAbono = montoPrincipal;
+                movimiento.MontoCargo = 0;
+                movimiento.TipoMovimiento = "ABONO";
+            }
+            else if (delta < 0)
+            {
+                movimiento.MontoCargo = montoPrincipal;
+                movimiento.MontoAbono = 0;
+                movimiento.TipoMovimiento = "CARGO";
+            }
+            else if (string.Equals(movimiento.TipoMovimiento, "ABONO", StringComparison.OrdinalIgnoreCase))
+            {
+                movimiento.MontoAbono = montoPrincipal;
+                movimiento.MontoCargo = 0;
+            }
+            else if (string.Equals(movimiento.TipoMovimiento, "CARGO", StringComparison.OrdinalIgnoreCase))
+            {
+                movimiento.MontoCargo = montoPrincipal;
+                movimiento.MontoAbono = 0;
+            }
+            else
+            {
+                movimiento.MontoAbono = 0;
+                movimiento.MontoCargo = 0;
+            }
+        }
+
+        private static decimal ParseCurrencyValue(string valor)
+        {
+            var limpio = valor.Replace(",", string.Empty).Trim();
+            return decimal.TryParse(limpio, NumberStyles.Any, CultureInfo.InvariantCulture, out var resultado)
+                ? resultado
+                : 0m;
+        }
+
+        private GuardarEstadoCuentaRequestDto CrearRequestDesdeEstadoActual()
+        {
+            if (EstadoCuentaBancario == null)
+            {
+                throw new InvalidOperationException("No hay un estado de cuenta cargado.");
+            }
+
+            return new GuardarEstadoCuentaRequestDto
+            {
+                NumeroCuenta = EstadoCuentaBancario.NumeroCuenta ?? string.Empty,
+                Clabe = EstadoCuentaBancario.Clabe ?? string.Empty,
+                TipoCuenta = EstadoCuentaBancario.TipoCuenta,
+                TipoMoneda = EstadoCuentaBancario.TipoMoneda,
+                FechaInicio = EstadoCuentaBancario.PeriodoInicio,
+                FechaFin = EstadoCuentaBancario.PeriodoFin,
+                FechaCorte = EstadoCuentaBancario.FechaCorte,
+                SaldoInicial = EstadoCuentaBancario.SaldoInicial ?? 0,
+                TotalCargos = EstadoCuentaBancario.TotalCargos ?? 0,
+                TotalAbonos = EstadoCuentaBancario.TotalAbonos ?? 0,
+                SaldoFinal = EstadoCuentaBancario.SaldoFinal ?? 0,
+                TotalComisiones = EstadoCuentaBancario.TotalComisiones ?? 0,
+                TotalISR = EstadoCuentaBancario.TotalISR ?? 0,
+                TotalIVA = EstadoCuentaBancario.TotalIVA ?? 0,
+                Movimientos = Movimientos.Select(m => new GuardarEstadoCuentaMovimientoDto
+                {
+                    Fecha = m.FechaMovimiento,
+                    Descripcion = m.Descripcion ?? string.Empty,
+                    Referencia = m.Referencia,
+                    Cargo = m.MontoCargo,
+                    Abono = m.MontoAbono,
+                    Saldo = m.SaldoResultante,
+                    TipoOperacion = m.TipoMovimiento
+                }).ToList()
+            };
         }
     }
-
-
-
 }

@@ -28,6 +28,10 @@
                     IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}">
                 
             </Button>
+            <Button x:Name="BtnGuardarEstadoCuenta"
+                    Content="Guardar en servidor"
+                    Click="BtnGuardarEstadoCuenta_Click"
+                    IsEnabled="{x:Bind ViewModel.CanSave, Mode=OneWay}" />
         </StackPanel>
 
         <!-- Indicador de carga -->
