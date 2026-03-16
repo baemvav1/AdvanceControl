@@ -21,9 +21,11 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
 
-            <!-- ══════════════════════════════════════════
-                 Hero: Bienvenida al usuario
-            ══════════════════════════════════════════ -->
+            <!--
+                ══════════════════════════════════════════
+                Hero: Bienvenida al usuario
+                ══════════════════════════════════════════
+            -->
             <Grid Grid.Row="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
@@ -31,39 +33,48 @@
                     <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Avatar con iniciales -->
+                <!--  Avatar con iniciales  -->
                 <Border
                     Grid.Column="0"
-                    Width="72" Height="72"
-                    CornerRadius="36"
-                    Background="{ThemeResource AccentFillColorDefaultBrush}">
+                    Width="72"
+                    Height="72"
+                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                    CornerRadius="36">
                     <TextBlock
-                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                        FontSize="26" FontWeight="SemiBold"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        FontSize="26"
+                        FontWeight="SemiBold"
                         Foreground="White"
                         Text="{x:Bind ViewModel.Iniciales, Mode=OneWay}" />
                 </Border>
 
-                <!-- Saludo y nombre -->
-                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="4">
+                <!--  Saludo y nombre  -->
+                <StackPanel
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Spacing="4">
                     <TextBlock
                         FontSize="13"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         Text="{x:Bind ViewModel.FechaHoy, Mode=OneWay}" />
                     <TextBlock
-                        FontSize="28" FontWeight="Bold"
+                        FontSize="28"
+                        FontWeight="Bold"
                         Foreground="{ThemeResource TextFillColorPrimaryBrush}">
                         <Run Text="{x:Bind ViewModel.Saludo, Mode=OneWay}" />
                         <Run Text=", " />
-                        <Run FontWeight="SemiBold"
-                             Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                             Text="{x:Bind ViewModel.NombreUsuario, Mode=OneWay}" />
+                        <Run
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Text="{x:Bind ViewModel.NombreUsuario, Mode=OneWay}" />
                         <Run Text="." />
                     </TextBlock>
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Border
-                            Padding="8,3" CornerRadius="12"
-                            Background="{ThemeResource AccentFillColorTertiaryBrush}">
+                            Padding="8,3"
+                            Background="{ThemeResource AccentFillColorTertiaryBrush}"
+                            CornerRadius="12">
                             <TextBlock
                                 FontSize="12"
                                 Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
@@ -73,23 +84,28 @@
                 </StackPanel>
             </Grid>
 
-            <!-- ══════════════════════════════════════════
-                 Separador
-            ══════════════════════════════════════════ -->
+            <!--
+                ══════════════════════════════════════════
+                Separador
+                ══════════════════════════════════════════
+            -->
             <Border
                 Grid.Row="1"
+                VerticalAlignment="Center"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="0,0,0,1"
-                VerticalAlignment="Center" />
+                BorderThickness="0,0,0,1" />
 
-            <!-- ══════════════════════════════════════════
-                 Sección: Métricas rápidas (placeholder)
-            ══════════════════════════════════════════ -->
+            <!--
+                ══════════════════════════════════════════
+                Sección: Métricas rápidas (placeholder)
+                ══════════════════════════════════════════
+            -->
             <StackPanel Grid.Row="2" Spacing="12">
                 <TextBlock
-                    FontSize="16" FontWeight="SemiBold"
+                    FontSize="16"
+                    FontWeight="SemiBold"
                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                    Text="Resumennnn" />
+                    Text="Resumen" />
 
                 <Grid>
                     <Grid.ColumnDefinitions>
@@ -102,151 +118,189 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <!-- Tarjeta: Operaciones -->
+                    <!--  Tarjeta: Operaciones  -->
                     <Border
-                        Grid.Column="0" Padding="20,16" CornerRadius="8"
+                        Grid.Column="0"
+                        Padding="20,16"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1"
+                        CornerRadius="8">
                         <StackPanel Spacing="8">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE9F9;" FontSize="18"
-                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <FontIcon
+                                    FontSize="18"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE9F9;" />
                                 <TextBlock
+                                    VerticalAlignment="Center"
                                     FontSize="13"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Operaciones" VerticalAlignment="Center" />
+                                    Text="Operaciones" />
                             </StackPanel>
                             <TextBlock
-                                FontSize="32" FontWeight="Bold"
+                                FontSize="32"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                 Text="—" />
                             <TextBlock
                                 FontSize="11"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 FontStyle="Italic"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 Text="Próximamente" />
                         </StackPanel>
                     </Border>
 
-                    <!-- Tarjeta: Mantenimientos -->
+                    <!--  Tarjeta: Mantenimientos  -->
                     <Border
-                        Grid.Column="2" Padding="20,16" CornerRadius="8"
+                        Grid.Column="2"
+                        Padding="20,16"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1"
+                        CornerRadius="8">
                         <StackPanel Spacing="8">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE90F;" FontSize="18"
-                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <FontIcon
+                                    FontSize="18"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE90F;" />
                                 <TextBlock
+                                    VerticalAlignment="Center"
                                     FontSize="13"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Mantenimientos" VerticalAlignment="Center" />
+                                    Text="Mantenimientos" />
                             </StackPanel>
                             <TextBlock
-                                FontSize="32" FontWeight="Bold"
+                                FontSize="32"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                 Text="—" />
                             <TextBlock
                                 FontSize="11"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 FontStyle="Italic"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 Text="Próximamente" />
                         </StackPanel>
                     </Border>
 
-                    <!-- Tarjeta: Clientes -->
+                    <!--  Tarjeta: Clientes  -->
                     <Border
-                        Grid.Column="4" Padding="20,16" CornerRadius="8"
+                        Grid.Column="4"
+                        Padding="20,16"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1"
+                        CornerRadius="8">
                         <StackPanel Spacing="8">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE716;" FontSize="18"
-                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <FontIcon
+                                    FontSize="18"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE716;" />
                                 <TextBlock
+                                    VerticalAlignment="Center"
                                     FontSize="13"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Clientes" VerticalAlignment="Center" />
+                                    Text="Clientes" />
                             </StackPanel>
                             <TextBlock
-                                FontSize="32" FontWeight="Bold"
+                                FontSize="32"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                 Text="—" />
                             <TextBlock
                                 FontSize="11"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 FontStyle="Italic"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 Text="Próximamente" />
                         </StackPanel>
                     </Border>
 
-                    <!-- Tarjeta: Equipos -->
+                    <!--  Tarjeta: Equipos  -->
                     <Border
-                        Grid.Column="6" Padding="20,16" CornerRadius="8"
+                        Grid.Column="6"
+                        Padding="20,16"
                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1">
+                        BorderThickness="1"
+                        CornerRadius="8">
                         <StackPanel Spacing="8">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE7F4;" FontSize="18"
-                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <FontIcon
+                                    FontSize="18"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE7F4;" />
                                 <TextBlock
+                                    VerticalAlignment="Center"
                                     FontSize="13"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Equipos" VerticalAlignment="Center" />
+                                    Text="Equipos" />
                             </StackPanel>
                             <TextBlock
-                                FontSize="32" FontWeight="Bold"
+                                FontSize="32"
+                                FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                 Text="—" />
                             <TextBlock
                                 FontSize="11"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 FontStyle="Italic"
+                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                 Text="Próximamente" />
                         </StackPanel>
                     </Border>
                 </Grid>
             </StackPanel>
 
-            <!-- ══════════════════════════════════════════
-                 Sección: Accesos rápidos
-            ══════════════════════════════════════════ -->
+            <!--
+                ══════════════════════════════════════════
+                Sección: Accesos rápidos
+                ══════════════════════════════════════════
+            -->
             <StackPanel Grid.Row="4" Spacing="12">
                 <TextBlock
-                    FontSize="16" FontWeight="SemiBold"
+                    FontSize="16"
+                    FontWeight="SemiBold"
                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                     Text="Accesos rápidos" />
 
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Button x:Name="IrOperaciones" Click="IrOperaciones_Click"
-                            Style="{StaticResource AccentButtonStyle}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                    <Button
+                        x:Name="IrOperaciones"
+                        Click="IrOperaciones_Click"
+                        IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
+                        Style="{StaticResource AccentButtonStyle}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE9F9;" FontSize="16" />
-                            <TextBlock Text="Operaciones" VerticalAlignment="Center" />
+                            <FontIcon FontSize="16" Glyph="&#xE9F9;" />
+                            <TextBlock VerticalAlignment="Center" Text="Operaciones" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="IrMantenimiento" Click="IrMantenimiento_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                    <Button
+                        x:Name="IrMantenimiento"
+                        Click="IrMantenimiento_Click"
+                        IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE90F;" FontSize="16" />
-                            <TextBlock Text="Mantenimiento" VerticalAlignment="Center" />
+                            <FontIcon FontSize="16" Glyph="&#xE90F;" />
+                            <TextBlock VerticalAlignment="Center" Text="Mantenimiento" />
                         </StackPanel>
                     </Button>
-                    <Button x:Name="IrClientes" Click="IrClientes_Click" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                    <Button
+                        x:Name="IrClientes"
+                        Click="IrClientes_Click"
+                        IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon Glyph="&#xE716;" FontSize="16" />
-                            <TextBlock Text="Clientes" VerticalAlignment="Center" />
+                            <FontIcon FontSize="16" Glyph="&#xE716;" />
+                            <TextBlock VerticalAlignment="Center" Text="Clientes" />
                         </StackPanel>
                     </Button>
                 </StackPanel>
             </StackPanel>
 
-            <!-- ══════════════════════════════════════════
-                 Sección: Área de tareas / actividad (placeholder)
-            ══════════════════════════════════════════ -->
+            <!--
+                ══════════════════════════════════════════
+                Sección: Área de tareas / actividad (placeholder)
+                ══════════════════════════════════════════
+            -->
             <Grid Grid.Row="6">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2*" />
@@ -254,12 +308,15 @@
                     <ColumnDefinition Width="1*" />
                 </Grid.ColumnDefinitions>
 
-                <!-- Panel: Actividad reciente -->
+                <!--  Panel: Actividad reciente  -->
                 <Border
-                    Grid.Column="0" Padding="20" CornerRadius="8"
+                    Grid.Column="0"
+                    MinHeight="220"
+                    Padding="20"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1" MinHeight="220">
+                    BorderThickness="1"
+                    CornerRadius="8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -267,53 +324,68 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- Header -->
+                        <!--  Header  -->
                         <Grid Grid.Row="0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE823;" FontSize="16"
-                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <FontIcon
+                                    FontSize="16"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE823;" />
                                 <TextBlock
-                                    FontSize="14" FontWeight="SemiBold"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                    Text="Actividad reciente" VerticalAlignment="Center" />
+                                    Text="Actividad reciente" />
                             </StackPanel>
-                            <Button Grid.Column="1"
-                                    x:Name="RefreshActividad" Click="RefreshActividad_Click"
-                                    Style="{StaticResource SubtleButtonStyle}"
-                                    Padding="6" ToolTipService.ToolTip="Actualizar" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
-                                <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                            <Button
+                                x:Name="RefreshActividad"
+                                Grid.Column="1"
+                                Padding="6"
+                                Click="RefreshActividad_Click"
+                                IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
+                                Style="{StaticResource SubtleButtonStyle}"
+                                ToolTipService.ToolTip="Actualizar">
+                                <FontIcon FontSize="14" Glyph="&#xE72C;" />
                             </Button>
                         </Grid>
 
-                        <!-- Lista de actividad -->
+                        <!--  Lista de actividad  -->
                         <Grid Grid.Row="2">
 
-                            <!-- Overlay de carga -->
-                            <ProgressRing IsActive="{x:Bind ViewModel.IsActividadLoading, Mode=OneWay}"
-                                          HorizontalAlignment="Center" VerticalAlignment="Center"
-                                          Width="32" Height="32"
-                                          Visibility="{x:Bind ViewModel.IsActividadLoading, Mode=OneWay}" />
+                            <!--  Overlay de carga  -->
+                            <ProgressRing
+                                Width="32"
+                                Height="32"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                IsActive="{x:Bind ViewModel.IsActividadLoading, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.IsActividadLoading, Mode=OneWay}" />
 
-                            <!-- Estado vacío -->
+                            <!--  Estado vacío  -->
                             <StackPanel
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 Spacing="8"
                                 Visibility="{x:Bind ViewModel.IsActividadEmpty, Mode=OneWay}">
-                                <FontIcon Glyph="&#xEA86;" FontSize="32"
-                                          Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                <TextBlock
-                                    FontSize="13" HorizontalAlignment="Center"
+                                <FontIcon
+                                    FontSize="32"
                                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                    Glyph="&#xEA86;" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="13"
                                     FontStyle="Italic"
+                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                     Text="Sin actividad reciente" />
                             </StackPanel>
 
-                            <!-- Lista real -->
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="320">
+                            <!--  Lista real  -->
+                            <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
                                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.ActividadReciente, Mode=OneWay}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Spacing="1" />
@@ -321,9 +393,10 @@
                                     <ItemsRepeater.ItemTemplate>
                                         <DataTemplate x:DataType="models:ActivityItem">
                                             <Border
-                                                Padding="10,8" CornerRadius="6"
+                                                Margin="0,0,0,2"
+                                                Padding="10,8"
                                                 Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                                Margin="0,0,0,2">
+                                                CornerRadius="6">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="Auto" />
@@ -332,32 +405,36 @@
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <!-- Icono del módulo -->
-                                                    <FontIcon Grid.Column="0"
-                                                              Glyph="{x:Bind IconoGlyph}"
-                                                              FontSize="14"
-                                                              VerticalAlignment="Center"
-                                                              Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                                    <!--  Icono del módulo  -->
+                                                    <FontIcon
+                                                        Grid.Column="0"
+                                                        VerticalAlignment="Center"
+                                                        FontSize="14"
+                                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                        Glyph="{x:Bind IconoGlyph}" />
 
-                                                    <!-- Contenido -->
-                                                    <StackPanel Grid.Column="2" Spacing="2" VerticalAlignment="Center">
+                                                    <!--  Contenido  -->
+                                                    <StackPanel
+                                                        Grid.Column="2"
+                                                        VerticalAlignment="Center"
+                                                        Spacing="2">
                                                         <TextBlock
                                                             FontSize="13"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Titulo}"
-                                                            TextWrapping="NoWrap"
-                                                            TextTrimming="CharacterEllipsis" />
+                                                            TextTrimming="CharacterEllipsis"
+                                                            TextWrapping="NoWrap" />
                                                         <TextBlock
                                                             FontSize="11"
                                                             Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                             Text="{x:Bind Origen}" />
                                                     </StackPanel>
 
-                                                    <!-- Fecha -->
+                                                    <!--  Fecha  -->
                                                     <TextBlock
                                                         Grid.Column="3"
-                                                        FontSize="11"
                                                         VerticalAlignment="Center"
+                                                        FontSize="11"
                                                         Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                         Text="{x:Bind HoraLabel}" />
                                                 </Grid>
@@ -370,12 +447,15 @@
                     </Grid>
                 </Border>
 
-                <!-- Panel: Operaciones pendientes -->
+                <!--  Panel: Operaciones pendientes  -->
                 <Border
-                    Grid.Column="2" Padding="20" CornerRadius="8"
+                    Grid.Column="2"
+                    MinHeight="220"
+                    Padding="20"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1" MinHeight="220">
+                    BorderThickness="1"
+                    CornerRadius="8">
                     <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -383,54 +463,67 @@
                             <RowDefinition Height="*" />
                         </Grid.RowDefinitions>
 
-                        <!-- Header -->
+                        <!--  Header  -->
                         <Grid Grid.Row="0">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon Glyph="&#xE762;" FontSize="16"
-                                          Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                                <FontIcon
+                                    FontSize="16"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Glyph="&#xE762;" />
                                 <TextBlock
-                                    FontSize="14" FontWeight="SemiBold"
+                                    VerticalAlignment="Center"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                    Text="Pendientes" VerticalAlignment="Center" />
+                                    Text="Pendientes" />
                             </StackPanel>
-                            <Button Grid.Column="1"
-                                    x:Name="RefreshTareas" Click="RefreshTareas_Click"
-                                    Style="{StaticResource SubtleButtonStyle}"
-                                    Padding="6" ToolTipService.ToolTip="Actualizar">
-                                <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                            <Button
+                                x:Name="RefreshTareas"
+                                Grid.Column="1"
+                                Padding="6"
+                                Click="RefreshTareas_Click"
+                                Style="{StaticResource SubtleButtonStyle}"
+                                ToolTipService.ToolTip="Actualizar">
+                                <FontIcon FontSize="14" Glyph="&#xE72C;" />
                             </Button>
                         </Grid>
 
-                        <!-- Contenido -->
+                        <!--  Contenido  -->
                         <Grid Grid.Row="2">
 
-                            <!-- Overlay carga -->
+                            <!--  Overlay carga  -->
                             <ProgressRing
+                                Width="32"
+                                Height="32"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 IsActive="{x:Bind ViewModel.IsTareasLoading, Mode=OneWay}"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Width="32" Height="32"
                                 Visibility="{x:Bind ViewModel.IsTareasLoading, Mode=OneWay}" />
 
-                            <!-- Estado vacío -->
+                            <!--  Estado vacío  -->
                             <StackPanel
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
                                 Spacing="8"
                                 Visibility="{x:Bind ViewModel.IsTareasEmpty, Mode=OneWay}">
-                                <FontIcon Glyph="&#xE930;" FontSize="32"
-                                          Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
-                                <TextBlock
-                                    FontSize="13" HorizontalAlignment="Center"
+                                <FontIcon
+                                    FontSize="32"
                                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                    Glyph="&#xE930;" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="13"
                                     FontStyle="Italic"
+                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                     Text="Sin operaciones pendientes" />
                             </StackPanel>
 
-                            <!-- Lista de operaciones -->
-                            <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="400">
+                            <!--  Lista de operaciones  -->
+                            <ScrollViewer MaxHeight="400" VerticalScrollBarVisibility="Auto">
                                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.OperacionesPendientes, Mode=OneWay}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Spacing="6" />
@@ -438,19 +531,19 @@
                                     <ItemsRepeater.ItemTemplate>
                                         <DataTemplate x:DataType="models:OperacionTodoItem">
                                             <Border
-                                                CornerRadius="6"
                                                 Background="{ThemeResource LayerFillColorDefaultBrush}"
                                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="1">
+                                                BorderThickness="1"
+                                                CornerRadius="6">
                                                 <StackPanel>
 
-                                                    <!-- Header colapsable -->
+                                                    <!--  Header colapsable  -->
                                                     <Button
-                                                        Tag="{x:Bind}"
-                                                        Click="ToggleTodo_Click"
+                                                        Padding="10,8"
                                                         HorizontalAlignment="Stretch"
+                                                        Click="ToggleTodo_Click"
                                                         Style="{StaticResource SubtleButtonStyle}"
-                                                        Padding="10,8">
+                                                        Tag="{x:Bind}">
                                                         <Grid HorizontalAlignment="Stretch">
                                                             <Grid.ColumnDefinitions>
                                                                 <ColumnDefinition Width="*" />
@@ -458,52 +551,53 @@
                                                                 <ColumnDefinition Width="Auto" />
                                                             </Grid.ColumnDefinitions>
 
-                                                            <!-- Texto -->
+                                                            <!--  Texto  -->
                                                             <StackPanel Grid.Column="0" Spacing="1">
                                                                 <StackPanel Orientation="Horizontal" Spacing="5">
                                                                     <TextBlock
-                                                                        FontSize="11" FontWeight="Bold"
+                                                                        FontSize="11"
+                                                                        FontWeight="Bold"
                                                                         Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
                                                                         Text="{x:Bind IdOperacion}" />
                                                                     <TextBlock
+                                                                        MaxWidth="110"
                                                                         FontSize="11"
                                                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                                         Text="{x:Bind RazonSocial}"
-                                                                        TextTrimming="CharacterEllipsis"
-                                                                        MaxWidth="110" />
+                                                                        TextTrimming="CharacterEllipsis" />
                                                                 </StackPanel>
                                                                 <TextBlock
+                                                                    MaxWidth="150"
                                                                     FontSize="12"
                                                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                     Text="{x:Bind Nota}"
-                                                                    TextTrimming="CharacterEllipsis"
-                                                                    MaxWidth="150" />
+                                                                    TextTrimming="CharacterEllipsis" />
                                                             </StackPanel>
 
-                                                            <!-- Progreso "3 / 8" -->
+                                                            <!--  Progreso "3 / 8"  -->
                                                             <TextBlock
                                                                 Grid.Column="1"
+                                                                Margin="8,0"
+                                                                VerticalAlignment="Center"
                                                                 FontSize="11"
                                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                                Text="{x:Bind Progreso, Mode=OneWay}"
-                                                                VerticalAlignment="Center"
-                                                                Margin="8,0" />
+                                                                Text="{x:Bind Progreso, Mode=OneWay}" />
 
-                                                            <!-- Chevron -->
+                                                            <!--  Chevron  -->
                                                             <FontIcon
                                                                 Grid.Column="2"
-                                                                Glyph="{x:Bind ExpandGlyph, Mode=OneWay}"
-                                                                FontSize="12"
                                                                 VerticalAlignment="Center"
-                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                                                FontSize="12"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Glyph="{x:Bind ExpandGlyph, Mode=OneWay}" />
                                                         </Grid>
                                                     </Button>
 
-                                                    <!-- Cuerpo: lista de pasos (visible al expandir) -->
+                                                    <!--  Cuerpo: lista de pasos (visible al expandir)  -->
                                                     <ItemsRepeater
+                                                        Margin="12,0,12,10"
                                                         ItemsSource="{x:Bind Pasos}"
-                                                        Visibility="{x:Bind Expand, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
-                                                        Margin="12,0,12,10">
+                                                        Visibility="{x:Bind Expand, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                                                         <ItemsRepeater.Layout>
                                                             <StackLayout Spacing="5" />
                                                         </ItemsRepeater.Layout>
@@ -511,15 +605,15 @@
                                                             <DataTemplate x:DataType="models:CheckPasoItem">
                                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                                     <FontIcon
-                                                                        Glyph="{x:Bind Glyph}"
+                                                                        VerticalAlignment="Center"
                                                                         FontSize="13"
-                                                                        VerticalAlignment="Center"
-                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}" />
+                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}"
+                                                                        Glyph="{x:Bind Glyph}" />
                                                                     <TextBlock
-                                                                        FontSize="12"
                                                                         VerticalAlignment="Center"
-                                                                        Text="{x:Bind Nombre}"
-                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}" />
+                                                                        FontSize="12"
+                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}"
+                                                                        Text="{x:Bind Nombre}" />
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </ItemsRepeater.ItemTemplate>
