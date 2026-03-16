@@ -22,8 +22,8 @@ using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Windows.Globalization.NumberFormatting;
-using Windows.Storage.Pickers;
+using global::Windows.Globalization.NumberFormatting;
+using global::Windows.Storage.Pickers;
 
 namespace Advance_Control.Views
 {
@@ -610,7 +610,7 @@ namespace Advance_Control.Views
         
         private async void CargoField_KeyDown(object sender, KeyRoutedEventArgs e)
         {
-            if (e.Key != Windows.System.VirtualKey.Enter)
+            if (e.Key != global::Windows.System.VirtualKey.Enter)
                 return;
 
             // Obtener el TextBox
@@ -878,8 +878,8 @@ namespace Advance_Control.Views
                     }
                     else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
                     {
-                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                        await Windows.System.Launcher.LaunchFileAsync(file);
+                        var file = await global::Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                        await global::Windows.System.Launcher.LaunchFileAsync(file);
                     }
                 }
                 else
@@ -1007,8 +1007,8 @@ namespace Advance_Control.Views
                     }
                     else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
                     {
-                        var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
-                        await Windows.System.Launcher.LaunchFileAsync(file);
+                        var file = await global::Windows.Storage.StorageFile.GetFileFromPathAsync(filePath);
+                        await global::Windows.System.Launcher.LaunchFileAsync(file);
                     }
                 }
                 else
@@ -1039,8 +1039,8 @@ namespace Advance_Control.Views
 
             try
             {
-                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
-                await Windows.System.Launcher.LaunchFileAsync(file);
+                var file = await global::Windows.Storage.StorageFile.GetFileFromPathAsync(path);
+                await global::Windows.System.Launcher.LaunchFileAsync(file);
             }
             catch
             {
@@ -1062,8 +1062,8 @@ namespace Advance_Control.Views
 
             try
             {
-                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
-                await Windows.System.Launcher.LaunchFileAsync(file);
+                var file = await global::Windows.Storage.StorageFile.GetFileFromPathAsync(path);
+                await global::Windows.System.Launcher.LaunchFileAsync(file);
             }
             catch
             {
@@ -1956,8 +1956,8 @@ namespace Advance_Control.Views
                     return;
                 }
 
-                var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(factura.Url);
-                await Windows.System.Launcher.LaunchFileAsync(file);
+                var file = await global::Windows.Storage.StorageFile.GetFileFromPathAsync(factura.Url);
+                await global::Windows.System.Launcher.LaunchFileAsync(file);
             }
             catch (Exception ex)
             {
@@ -2012,6 +2012,14 @@ namespace Advance_Control.Views
                 System.Diagnostics.Debug.WriteLine($"Error al reabrir operación: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarAsync("Error", "Ocurrió un error al reabrir la operación.");
             }
+        }
+
+        private void AbrirVisorButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
+                return;
+            var visor = new Views.Windows.OperacionVisorWindow(operacion);
+            visor.Activate();
         }
     }
 }

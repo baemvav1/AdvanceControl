@@ -277,6 +277,7 @@ namespace Advance_Control.Models
                 {
                     _cargosLoaded = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoCargosMessage));
                 }
             }
         }
@@ -296,9 +297,16 @@ namespace Advance_Control.Models
                 {
                     _isLoadingCargos = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoCargosMessage));
                 }
             }
         }
+
+        /// <summary>
+        /// True cuando los cargos terminaron de cargar y la lista está vacía.
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoCargosMessage => CargosLoaded && !IsLoadingCargos && Cargos.Count == 0;
 
         private bool _imagesLoaded = false;
 
@@ -331,6 +339,32 @@ namespace Advance_Control.Models
             set => _collectionChangedSubscribed = value;
         }
 
+        private bool _isLoadingCheck = false;
+
+        /// <summary>
+        /// Indica si el check de tareas se está cargando actualmente desde el servidor.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingCheck
+        {
+            get => _isLoadingCheck;
+            set
+            {
+                if (_isLoadingCheck != value)
+                {
+                    _isLoadingCheck = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoCheckMessage));
+                }
+            }
+        }
+
+        /// <summary>
+        /// True cuando no hay check cargado Y no está cargando — muestra "Sin tareas registradas".
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoCheckMessage => !TieneCheck && !IsLoadingCheck;
+
         private CheckOperacionDto? _checkOperacion;
 
         /// <summary>
@@ -347,6 +381,17 @@ namespace Advance_Control.Models
                     _checkOperacion = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(TieneCheck));
+                    OnPropertyChanged(nameof(ShowNoCheckMessage));
+                    OnPropertyChanged(nameof(CkCotizacionGenerada));
+                    OnPropertyChanged(nameof(CkCotizacionEnviada));
+                    OnPropertyChanged(nameof(CkReporteGenerado));
+                    OnPropertyChanged(nameof(CkReporteEnviado));
+                    OnPropertyChanged(nameof(CkPrefacturaCargada));
+                    OnPropertyChanged(nameof(CkHojaServicioCargada));
+                    OnPropertyChanged(nameof(CkOrdenCompraCargada));
+                    OnPropertyChanged(nameof(CkFacturaCargada));
+                    OnPropertyChanged(nameof(CkStepsCompletados));
+                    OnPropertyChanged(nameof(CkPasos));
                 }
             }
         }
@@ -354,6 +399,20 @@ namespace Advance_Control.Models
         /// <summary>True cuando el check ya fue cargado.</summary>
         [JsonIgnore]
         public bool TieneCheck => _checkOperacion != null;
+
+        // Propiedades proxy para exponer CheckOperacion sin cadenas nullable profundas en x:Bind
+        [JsonIgnore] public bool CkCotizacionGenerada  => _checkOperacion?.CotizacionGenerada  ?? false;
+        [JsonIgnore] public bool CkCotizacionEnviada   => _checkOperacion?.CotizacionEnviada   ?? false;
+        [JsonIgnore] public bool CkReporteGenerado     => _checkOperacion?.ReporteGenerado     ?? false;
+        [JsonIgnore] public bool CkReporteEnviado      => _checkOperacion?.ReporteEnviado      ?? false;
+        [JsonIgnore] public bool CkPrefacturaCargada   => _checkOperacion?.PrefacturaCargada   ?? false;
+        [JsonIgnore] public bool CkHojaServicioCargada => _checkOperacion?.HojaServicioCargada ?? false;
+        [JsonIgnore] public bool CkOrdenCompraCargada  => _checkOperacion?.OrdenCompraCargada  ?? false;
+        [JsonIgnore] public bool CkFacturaCargada      => _checkOperacion?.FacturaCargada      ?? false;
+        [JsonIgnore] public int  CkStepsCompletados    => _checkOperacion?.StepsCompletados    ?? 0;
+        [JsonIgnore] public System.Collections.Generic.IReadOnlyList<CheckPasoItem> CkPasos =>
+            (System.Collections.Generic.IReadOnlyList<CheckPasoItem>?)_checkOperacion?.Pasos
+            ?? new System.Collections.Generic.List<CheckPasoItem>();
 
         private bool _hasPrefactura = false;
 

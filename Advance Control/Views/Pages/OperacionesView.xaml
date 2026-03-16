@@ -349,22 +349,36 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <!--  Botón para expandir/colapsar  -->
-                                        <Button
+                                        <!--  Botones: Visor + Expandir/Colapsar  -->
+                                        <StackPanel
                                             Grid.Column="2"
-                                            Margin="0,0,8,0"
-                                            Padding="12,8"
-                                            VerticalAlignment="Center"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Click="ToggleExpandButton_Click"
-                                            IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
-                                            Tag="{x:Bind}"
-                                            ToolTipService.ToolTip="Expandir / Colapsar">
-                                            <TextBlock
-                                                FontSize="18"
-                                                Text="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
-                                        </Button>
+                                            Margin="0,0,4,0"
+                                            Orientation="Horizontal"
+                                            Spacing="2"
+                                            VerticalAlignment="Center">
+                                            <Button
+                                                Padding="10,8"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="AbrirVisorButton_Click"
+                                                IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Abrir visor de operación">
+                                                <FontIcon FontSize="16" Glyph="&#xE8A7;" />
+                                            </Button>
+                                            <Button
+                                                Padding="12,8"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="ToggleExpandButton_Click"
+                                                IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Expandir / Colapsar">
+                                                <TextBlock
+                                                    FontSize="18"
+                                                    Text="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
+                                            </Button>
+                                        </StackPanel>
                                     </Grid>
                                     <Grid
                                         x:Name="Body"
