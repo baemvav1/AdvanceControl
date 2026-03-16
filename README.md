@@ -2,7 +2,7 @@
 
 > **Versión del stack:** .NET 8 · WinUI 3 (Windows App SDK) · MVVM estricto  
 > **Plataforma:** Windows (x64 obligatorio — no AnyCPU)  
-> **API objetivo:** `https://localhost:7055`
+> **API objetivo por defecto:** `https://localhost:7055`
 
 ---
 
@@ -97,6 +97,25 @@ App.MainWindow!  // propiedad estática — usarla para XamlRoot y HWND
 ```
 
 `DevelopmentMode.Enabled = true` desactiva timeouts HTTP y de autenticación.
+
+### Override para instalaciones distribuidas
+
+El paquete instalado puede sobreescribir la URL del API sin recompilar usando alguno de estos mecanismos:
+
+1. Archivo local: `%LocalAppData%\Advance Control\appsettings.local.json`
+2. Variable de entorno: `ADVANCECONTROL_ExternalApi__BaseUrl`
+
+Ejemplo de `%LocalAppData%\Advance Control\appsettings.local.json`:
+
+```json
+{
+  "ExternalApi": {
+    "BaseUrl": "https://servidor-o-ip-local:7055/"
+  }
+}
+```
+
+El repositorio incluye un ejemplo en `Advance Control\appsettings.local.example.json`.
 
 ---
 
@@ -461,3 +480,48 @@ dotnet build -p:Platform=x64
 
 # Ejecutar en Visual Studio con perfil "Advance Control (Package)"
 ```
+
+## 18. Instalador autoactualizable del cliente
+
+El cliente queda preparado para distribuirse como `MSIX` con `App Installer`.
+
+### Flujo esperado
+
+1. Cada push a `main` dispara `.github/workflows/publish-client-installer.yml`
+2. El workflow compila, prueba y empaqueta el cliente en `x64`
+3. El workflow firma el `MSIX` con un certificado `.pfx`
+4. Se publica un release con dos artefactos estables:
+   - `AdvanceControl.appinstaller`
+   - `AdvanceControl-x64.msix`
+5. Las instalaciones hechas desde `AdvanceControl.appinstaller` revisan actualizaciones en cada lanzamiento
+
+### Secretos requeridos en GitHub
+
+| Secreto | Descripción |
+|---|---|
+| `WINDOWS_PFX_BASE64` | Certificado `.pfx` codificado en Base64 |
+| `WINDOWS_PFX_PASSWORD` | Contraseña del certificado |
+
+### Publicación
+
+El workflow publica usando la URL estable:
+
+`https://github.com/<owner>/<repo>/releases/latest/download/AdvanceControl.appinstaller`
+
+El archivo `.appinstaller` apunta a:
+
+`https://github.com/<owner>/<repo>/releases/latest/download/AdvanceControl-x64.msix`
+
+### Script de empaquetado local/CI
+
+Para generar el instalador manualmente en una máquina con Visual Studio Build Tools / MSBuild:
+
+```powershell
+.\build\Publish-ClientInstaller.ps1 `
+  -Version 1.0.0.1 `
+  -AppInstallerBaseUri "https://github.com/<owner>/<repo>/releases/latest/download" `
+  -CertificatePath "C:\ruta\certificado.pfx" `
+  -CertificatePassword "<password>"
+```
+
+Si solo quieres validar el empaquetado sin firma, puedes omitir `CertificatePath` y `CertificatePassword`; el `.msix` se generará, pero no será apto para distribución final.

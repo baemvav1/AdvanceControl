@@ -1,0 +1,113 @@
+name: Publicar instalador cliente
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "Advance Control/**"
+      - "build/**"
+      - ".github/workflows/publish-client-installer.yml"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish-client-installer:
+    runs-on: windows-latest
+
+    env:
+      SOLUTION_PATH: Advance Control.sln
+      PROJECT_PATH: Advance Control/Advance Control.csproj
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Configurar MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Calcular version del paquete
+        id: version
+        shell: pwsh
+        run: |
+          $baseDate = [datetime]'2024-01-01T00:00:00Z'
+          $daysSinceBase = [int]([datetime]::UtcNow - $baseDate).TotalDays
+          $revision = ([int]${{ github.run_number }} * 10) + [int]${{ github.run_attempt }}
+          if ($revision -gt 65535) {
+            $revision = $revision % 65535
+          }
+          $version = "1.0.$daysSinceBase.$revision"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version calculada: $version"
+
+      - name: Restaurar
+        run: dotnet restore "${{ env.SOLUTION_PATH }}"
+
+      - name: Compilar
+        run: dotnet build "${{ env.SOLUTION_PATH }}" -c Release -p:Platform=x64 --no-restore -nologo
+
+      - name: Probar
+        run: dotnet test "${{ env.SOLUTION_PATH }}" -c Release -p:Platform=x64 --no-build --verbosity minimal -nologo
+
+      - name: Materializar certificado de firma
+        id: cert
+        shell: pwsh
+        env:
+          WINDOWS_PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_PFX_BASE64)) {
+            throw 'Falta el secreto WINDOWS_PFX_BASE64.'
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_PFX_PASSWORD)) {
+            throw 'Falta el secreto WINDOWS_PFX_PASSWORD.'
+          }
+
+          $certPath = Join-Path $env:RUNNER_TEMP 'advance-control-signing.pfx'
+          [System.IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_PFX_BASE64))
+          "path=$certPath" >> $env:GITHUB_OUTPUT
+
+      - name: Publicar instalador MSIX
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+          APP_INSTALLER_BASE_URI: ${{ github.server_url }}/${{ github.repository }}/releases/latest/download
+          CERT_PATH: ${{ steps.cert.outputs.path }}
+          CERT_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          .\build\Publish-ClientInstaller.ps1 `
+            -ProjectPath "${{ env.PROJECT_PATH }}" `
+            -Configuration Release `
+            -Platform x64 `
+            -Version $env:PACKAGE_VERSION `
+            -AppInstallerBaseUri $env:APP_INSTALLER_BASE_URI `
+            -OutputDirectory ".\artifacts\installer" `
+            -CertificatePath $env:CERT_PATH `
+            -CertificatePassword $env:CERT_PASSWORD
+
+      - name: Publicar artefactos del workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: cliente-instalador-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/installer/AdvanceControl.appinstaller
+            artifacts/installer/AdvanceControl-x64.msix
+
+      - name: Crear release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: client-v${{ steps.version.outputs.version }}
+          name: Cliente v${{ steps.version.outputs.version }}
+          generate_release_notes: true
+          files: |
+            artifacts/installer/AdvanceControl.appinstaller
+            artifacts/installer/AdvanceControl-x64.msix

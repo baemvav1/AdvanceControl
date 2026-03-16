@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
 using System;
+using System.IO;
 using System.Net.Http;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.EndPointProvider;
@@ -39,6 +40,12 @@ namespace Advance_Control
     public partial class App : Application
     {
         public IHost Host { get; }
+        private static readonly string ExternalConfigurationDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Advance Control");
+        private static readonly string ExternalConfigurationFile = Path.Combine(
+            ExternalConfigurationDirectory,
+            "appsettings.local.json");
         
         // Almacena la referencia a la ventana principal para acceder a XamlRoot
         public static Window? MainWindow { get; private set; }
@@ -48,12 +55,11 @@ namespace Advance_Control
             this.InitializeComponent();
 
             Host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
-                // Asegúrate de que CreateDefaultBuilder cargue appsettings.json desde el output.
-                // En WinUI, el appsettings.json debe estar marcado como "Copy to Output Directory" = "Copy if newer".
                 .ConfigureAppConfiguration(cfg =>
                 {
-                    // Agregar appsettings.json por si no se cargó automáticamente
-                    cfg.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+                    cfg.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.json"), optional: true, reloadOnChange: true);
+                    cfg.AddJsonFile(ExternalConfigurationFile, optional: true, reloadOnChange: true);
+                    cfg.AddEnvironmentVariables(prefix: "ADVANCECONTROL_");
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -601,6 +607,10 @@ namespace Advance_Control
                 })
                 .Build();
         }
+
+        public static string GetExternalConfigurationDirectory() => ExternalConfigurationDirectory;
+
+        public static string GetExternalConfigurationFile() => ExternalConfigurationFile;
 
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
