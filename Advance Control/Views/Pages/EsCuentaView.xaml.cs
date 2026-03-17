@@ -17,6 +17,9 @@ using Advance_Control.Services.Activity;
 using Advance_Control.Services.EstadoCuenta;
 using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
+using Advance_Control.Models;
+using Advance_Control.Views.Details;
+using Advance_Control.Views.Windows;
 using WinRT.Interop;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,8 +40,15 @@ namespace Advance_Control.Views.Pages
         {
             InitializeComponent();
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(EsCuentaView));
-            ViewModel = new EsCuentaViewModel(AppServices.Get<IEstadoCuentaXmlService>());
+            ViewModel = AppServices.Get<EsCuentaViewModel>();
             _activityService = AppServices.Get<IActivityService>();
+            DataContext = ViewModel;
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            await ViewModel.CargarEstadosCuentaExistentesAsync();
         }
 
         private async void BtnCargarXml_Click(object sender, RoutedEventArgs e)
@@ -55,6 +65,25 @@ namespace Advance_Control.Views.Pages
             await ViewModel.GuardarEstadoCuentaAsync();
             if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
                 _activityService.Registrar("EsCuenta", "Estado de cuenta guardado");
+        }
+
+        private async void BtnActualizarListado_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.CargarEstadosCuentaExistentesAsync();
+        }
+
+        private void BtnLimpiarFiltrosEstados_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.LimpiarFiltrosEstados();
+        }
+
+        private void EstadosCuentaListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is EstadoCuentaResumenDto estadoCuenta)
+            {
+                var ventanaDetalle = new DetailEstadoCuentaWindow(estadoCuenta);
+                ventanaDetalle.Activate();
+            }
         }
     }
 }

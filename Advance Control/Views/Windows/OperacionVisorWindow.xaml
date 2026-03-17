@@ -547,7 +547,7 @@
                                                 <ItemsRepeater.ItemTemplate>
                                                     <DataTemplate x:DataType="models:CargoImageDto">
                                                         <Grid Width="90" Height="90" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="4">
-                                                            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
+                                                            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Source="{Binding Url}" Stretch="UniformToFill" />
                                                             <Button MinWidth="18" MinHeight="18" Margin="0,2,2,0" Padding="3" HorizontalAlignment="Right" VerticalAlignment="Top" Background="#CC000000" Click="DeleteCargoImageButton_Click" CornerRadius="9" Tag="{x:Bind}" ToolTipService.ToolTip="Eliminar imagen">
                                                                 <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                             </Button>

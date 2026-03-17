@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="Advance_Control.Views.Windows.DetailFacturaWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:Advance_Control.Models"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid x:Name="RootGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="48" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            Grid.Row="0"
+            Padding="16,0"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="0,0,0,1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" Spacing="12">
+                <SymbolIcon Symbol="Document" />
+                <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding ViewModel.Factura.FolioTitulo}" />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding ViewModel.Factura.EmisorNombre}" />
+            </StackPanel>
+
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontSize="14"
+                FontWeight="SemiBold"
+                Foreground="{ThemeResource SystemAccentColor}"
+                Text="{Binding ViewModel.Factura.TotalTexto}" />
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Padding="20" Spacing="16">
+                <ProgressRing
+                    Width="36"
+                    Height="36"
+                    IsActive="{Binding ViewModel.IsLoading}"
+                    Visibility="{Binding ViewModel.IsLoading}" />
+
+                <InfoBar
+                    IsClosable="True"
+                    IsOpen="{Binding ViewModel.ErrorMessage, Converter={StaticResource NullToBoolConverter}}"
+                    Message="{Binding ViewModel.ErrorMessage}"
+                    Severity="Error" />
+
+                <InfoBar
+                    IsClosable="True"
+                    IsOpen="{Binding ViewModel.SuccessMessage, Converter={StaticResource NullToBoolConverter}}"
+                    Message="{Binding ViewModel.SuccessMessage}"
+                    Severity="Success" />
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Visibility="{Binding ViewModel.Factura, Converter={StaticResource NullToVisibilityConverter}}">
+                    <Grid ColumnSpacing="20" RowSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="Folio / UUID:" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding ViewModel.Factura.UuidTexto}" TextWrapping="WrapWholeWords" />
+                        <TextBlock Grid.Row="0" Grid.Column="2" FontWeight="SemiBold" Text="Fecha:" />
+                        <TextBlock Grid.Row="0" Grid.Column="3" Text="{Binding ViewModel.Factura.FechaTexto}" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" FontWeight="SemiBold" Text="Emisor:" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding ViewModel.Factura.EmisorNombre}" TextWrapping="WrapWholeWords" />
+                        <TextBlock Grid.Row="1" Grid.Column="2" FontWeight="SemiBold" Text="Receptor:" />
+                        <TextBlock Grid.Row="1" Grid.Column="3" Text="{Binding ViewModel.Factura.ReceptorNombre}" TextWrapping="WrapWholeWords" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" FontWeight="SemiBold" Text="RFCs:" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ViewModel.Factura.RfcTexto}" TextWrapping="WrapWholeWords" />
+                        <TextBlock Grid.Row="2" Grid.Column="2" FontWeight="SemiBold" Text="Metodo / forma:" />
+                        <TextBlock Grid.Row="2" Grid.Column="3" Text="{Binding ViewModel.Factura.MetodoFormaPagoTexto}" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" FontWeight="SemiBold" Text="Totales:" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="3" Text="{Binding ViewModel.Factura.TotalesTexto}" TextWrapping="WrapWholeWords" />
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Visibility="{Binding ViewModel.Factura, Converter={StaticResource NullToVisibilityConverter}}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Cobranza / Abonos" />
+
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border
+                                Grid.Column="0"
+                                Padding="12"
+                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                                <StackPanel Spacing="4">
+                                    <TextBlock FontWeight="SemiBold" Text="Estado" />
+                                    <TextBlock Text="{Binding ViewModel.Factura.EstadoPagoTexto}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border
+                                Grid.Column="1"
+                                Padding="12"
+                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                                <StackPanel Spacing="4">
+                                    <TextBlock FontWeight="SemiBold" Text="Total abonado" />
+                                    <TextBlock Text="{Binding ViewModel.Factura.TotalAbonadoTexto}" />
+                                </StackPanel>
+                            </Border>
+
+                            <Border
+                                Grid.Column="2"
+                                Padding="12"
+                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                                <StackPanel Spacing="4">
+                                    <TextBlock FontWeight="SemiBold" Text="Saldo pendiente" />
+                                    <TextBlock Text="{Binding ViewModel.Factura.SaldoPendienteTexto}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{Binding ViewModel.Factura.FechaUltimoAbonoTexto}" />
+
+                        <Grid ColumnSpacing="10" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <DatePicker Grid.Row="0" Grid.Column="0" Header="Fecha de abono" Date="{Binding ViewModel.FechaAbono, Mode=TwoWay}" />
+                            <NumberBox Grid.Row="0" Grid.Column="1" Header="Monto del abono" Minimum="0" SmallChange="100" Value="{Binding ViewModel.MontoAbono, Mode=TwoWay}" />
+                            <Button Grid.Row="0" Grid.Column="2" VerticalAlignment="Bottom" Click="BtnUsarSaldoCompleto_Click" Content="Cubrir saldo" />
+
+                            <TextBox Grid.Row="1" Grid.Column="0" Header="Referencia (opcional)" Text="{Binding ViewModel.ReferenciaAbono, Mode=TwoWay}" />
+                            <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Header="Observaciones" Text="{Binding ViewModel.ObservacionesAbono, Mode=TwoWay}" />
+
+                            <Button
+                                Grid.Row="2"
+                                Grid.Column="2"
+                                HorizontalAlignment="Right"
+                                Click="BtnRegistrarAbono_Click"
+                                Content="Registrar abono"
+                                IsEnabled="{Binding ViewModel.CanRegistrarAbono}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Visibility="{Binding ViewModel.Factura, Converter={StaticResource NullToVisibilityConverter}}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="{Binding ViewModel.ResumenConceptos}" />
+                        <ListView ItemsSource="{Binding ViewModel.Conceptos}" SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:FacturaConceptoDto">
+                                    <Border
+                                        Margin="0,0,0,8"
+                                        Padding="12"
+                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding Descripcion}" TextWrapping="WrapWholeWords" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ClavesTexto}" />
+
+                                            <Grid ColumnSpacing="10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <Border
+                                                    Grid.Column="0"
+                                                    Padding="8"
+                                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock FontWeight="SemiBold" Text="Cantidad" />
+                                                        <TextBlock Text="{Binding CantidadTexto}" />
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border
+                                                    Grid.Column="1"
+                                                    Padding="8"
+                                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock FontWeight="SemiBold" Text="Valor unitario" />
+                                                        <TextBlock Text="{Binding ValorUnitarioTexto}" />
+                                                    </StackPanel>
+                                                </Border>
+
+                                                <Border
+                                                    Grid.Column="2"
+                                                    Padding="8"
+                                                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6">
+                                                    <StackPanel Spacing="4">
+                                                        <TextBlock FontWeight="SemiBold" Text="Importe" />
+                                                        <TextBlock Text="{Binding ImporteTexto}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+
+                                            <TextBlock FontWeight="SemiBold" Text="Traslados del concepto" />
+                                            <ListView ItemsSource="{Binding Traslados}" SelectionMode="None">
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:FacturaTrasladoDto">
+                                                        <Grid Margin="0,0,0,6" ColumnSpacing="10">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <TextBlock Grid.Column="0" Text="{Binding ImpuestoResumen}" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding BaseTexto}" />
+                                                            <TextBlock Grid.Column="2" Text="{Binding ImporteTexto}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Visibility="{Binding ViewModel.Factura, Converter={StaticResource NullToVisibilityConverter}}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="{Binding ViewModel.ResumenTraslados}" />
+                        <ListView ItemsSource="{Binding ViewModel.TrasladosGlobales}" SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:FacturaTrasladoDto">
+                                    <Grid Margin="0,0,0,8" ColumnSpacing="10">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock Grid.Column="0" Text="{Binding ImpuestoResumen}" />
+                                        <TextBlock Grid.Column="1" Text="{Binding BaseTexto}" />
+                                        <TextBlock Grid.Column="2" Text="{Binding ImporteTexto}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="2"
+                    CornerRadius="8"
+                    Visibility="{Binding ViewModel.Factura, Converter={StaticResource NullToVisibilityConverter}}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="{Binding ViewModel.ResumenAbonos}" />
+                        <ListView ItemsSource="{Binding ViewModel.Abonos}" SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:AbonoFacturaDto">
+                                    <Border
+                                        Margin="0,0,0,8"
+                                        Padding="12"
+                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6">
+                                        <StackPanel Spacing="6">
+                                            <Grid ColumnSpacing="10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock Grid.Column="0" FontWeight="SemiBold" Text="{Binding FechaAbonoTexto}" />
+                                                <TextBlock Grid.Column="1" Text="{Binding MontoAbonoTexto}" />
+                                                <TextBlock Grid.Column="2" Text="{Binding SaldoPosteriorTexto}" />
+                                            </Grid>
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding MovimientoTexto}" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ReferenciaTexto}" />
+                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ObservacionesTexto}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</Window>

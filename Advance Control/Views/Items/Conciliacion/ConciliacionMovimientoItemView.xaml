@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Advance_Control.Views.Items.Conciliacion.ConciliacionMovimientoItemView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="Root"
+    mc:Ignorable="d">
+
+    <Border
+        Margin="0,0,0,10"
+        Padding="12"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="8">
+        <StackPanel Spacing="10">
+            <Grid ColumnSpacing="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Movimiento.TipoTitulo, ElementName=Root}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding Movimiento.Descripcion, ElementName=Root}" TextWrapping="Wrap" />
+                </StackPanel>
+
+                <Border
+                    Grid.Column="1"
+                    Padding="10,4"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="12">
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{Binding Movimiento.PendienteTexto, ElementName=Root}" />
+                </Border>
+            </Grid>
+
+            <TextBlock
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{Binding Movimiento.ReferenciaTexto, ElementName=Root}" />
+
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+
+                <Border
+                    Grid.Column="0"
+                    Padding="8"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="Cargo" />
+                        <TextBlock Text="{Binding Movimiento.CargoTexto, ElementName=Root}" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Column="1"
+                    Padding="8"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="Abono" />
+                        <TextBlock Text="{Binding Movimiento.AbonoTexto, ElementName=Root}" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Column="2"
+                    Padding="8"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="Saldo" />
+                        <TextBlock Text="{Binding Movimiento.SaldoTexto, ElementName=Root}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <StackPanel Spacing="2">
+                <TextBlock FontWeight="SemiBold" Text="{Binding Movimiento.CuentaTitulo, ElementName=Root}" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding Movimiento.BancoTitularTexto, ElementName=Root}"
+                    TextWrapping="Wrap" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding Movimiento.PeriodoTexto, ElementName=Root}" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding Movimiento.FechaTexto, ElementName=Root}" />
+                <TextBlock
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding Movimiento.RelacionadosTexto, ElementName=Root}" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

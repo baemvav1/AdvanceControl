@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Advance_Control.Views.Pages.RPTFinancieroFacturacion"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:items="using:Advance_Control.Views.Items.RPTFacturasMovimientos"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    mc:Ignorable="d">
+
+    <Grid RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Border
+            Grid.Row="0"
+            Margin="5"
+            Padding="10"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="2"
+            CornerRadius="8">
+            <StackPanel Spacing="10">
+                <TextBlock FontSize="10" Text="Filtros" />
+
+                <WrapGrid HorizontalAlignment="Stretch" Orientation="Horizontal">
+                    <StackPanel Width="240" Margin="0,0,12,8" Spacing="4">
+                        <TextBlock Text="RFC Receptor" />
+                        <TextBox
+                            PlaceholderText="RFC..."
+                            Text="{x:Bind ViewModel.ReceptorRfcFiltro, Mode=TwoWay}" />
+                    </StackPanel>
+
+                    <StackPanel Width="240" Margin="0,0,12,8" Spacing="4">
+                        <TextBlock Text="Referencia" />
+                        <TextBox
+                            PlaceholderText="Referencia..."
+                            Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay}" />
+                    </StackPanel>
+
+                    <StackPanel Width="170" Margin="0,0,12,8" Spacing="4">
+                        <TextBlock Text="Fecha Inicio" />
+                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaInicioFiltro, Mode=TwoWay}" />
+                    </StackPanel>
+
+                    <StackPanel Width="170" Margin="0,0,12,8" Spacing="4">
+                        <TextBlock Text="Fecha Fin" />
+                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaFinFiltro, Mode=TwoWay}" />
+                    </StackPanel>
+
+                    <StackPanel Width="150" Margin="0,0,12,8" Spacing="4">
+                        <TextBlock Text="Estado" />
+                        <CheckBox
+                            Content="Solo finiquitadas"
+                            IsChecked="{x:Bind ViewModel.SoloFiniquitadas, Mode=TwoWay}" />
+                    </StackPanel>
+                </WrapGrid>
+
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Click="BtnBuscar_Click" Content="Consultar" />
+                    <Button Click="BtnLimpiar_Click" Content="Limpiar filtros" />
+                    <ProgressRing
+                        Width="24"
+                        Height="24"
+                        IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </StackPanel>
+
+                <InfoBar
+                    IsClosable="False"
+                    IsOpen="{x:Bind ViewModel.ErrorMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                    Severity="Error" />
+
+                <InfoBar
+                    IsClosable="False"
+                    IsOpen="{x:Bind ViewModel.SuccessMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.SuccessMessage, Mode=OneWay}"
+                    Severity="Success" />
+            </StackPanel>
+        </Border>
+
+        <Border
+            Grid.Row="1"
+            Margin="5,0,5,0"
+            Padding="10"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="2"
+            CornerRadius="8">
+            <StackPanel Spacing="10">
+                <StackPanel Orientation="Horizontal" Spacing="16">
+                    <TextBlock Text="RFC Receptor" />
+                    <TextBlock Text="Receptor Nombre" />
+                    <TextBlock Text="Numero de facturas por cliente" />
+                    <TextBlock Text="Numero Facturas Finiquitadas" />
+                    <TextBlock Text="Numero Facturas No finiquitadas" />
+                </StackPanel>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.CabeceraActivaTexto, Mode=OneWay}" TextWrapping="Wrap" />
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenCabecerasTexto, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
+                        <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalClientesTexto, Mode=OneWay}" />
+                        <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalFacturadoTexto, Mode=OneWay}" />
+                        <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalAbonadoTexto, Mode=OneWay}" />
+                    </StackPanel>
+                </Grid>
+
+                <ScrollViewer
+                    HorizontalScrollBarVisibility="Auto"
+                    HorizontalScrollMode="Enabled"
+                    VerticalScrollBarVisibility="Disabled"
+                    VerticalScrollMode="Disabled">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cabeceras, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Orientation="Horizontal" Spacing="10" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="models:ReporteFinancieroFacturacionCabeceraDto">
+                                <Button
+                                    Padding="0"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Click="CabeceraButton_Click"
+                                    Tag="{x:Bind}">
+                                    <items:ReporteFacturacionCabeceraItemView Cabecera="{x:Bind}" />
+                                </Button>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
+        <Border
+            Grid.Row="2"
+            Margin="5,0,5,5"
+            Padding="10"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="2"
+            CornerRadius="8">
+            <Grid RowSpacing="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <StackPanel Grid.Row="0" Spacing="2">
+                    <TextBlock FontWeight="SemiBold" Text="Facturas y movimientos" />
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenDetalleTexto, Mode=OneWay}" />
+                </StackPanel>
+
+                <ScrollViewer Grid.Row="1">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.DetallesVisibles, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Orientation="Vertical" Spacing="10" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="models:ReporteFinancieroFacturacionDetalleDto">
+                                <items:ReporteFacturacionDetalleItemView Detalle="{x:Bind}" />
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>

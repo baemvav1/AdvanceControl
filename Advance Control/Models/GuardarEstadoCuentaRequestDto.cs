@@ -6,6 +6,9 @@ namespace Advance_Control.Models
 {
     public class GuardarEstadoCuentaRequestDto
     {
+        [JsonPropertyName("versionXml")]
+        public string VersionXml { get; set; } = "2.0";
+
         [JsonPropertyName("numeroCuenta")]
         public string NumeroCuenta { get; set; } = string.Empty;
 
@@ -48,7 +51,70 @@ namespace Advance_Control.Models
         [JsonPropertyName("totalIVA")]
         public decimal TotalIVA { get; set; }
 
-        [JsonPropertyName("movimientos")]
-        public List<GuardarEstadoCuentaMovimientoDto> Movimientos { get; set; } = new();
+        [JsonPropertyName("totalTransaccionesIndividuales")]
+        public int TotalTransaccionesIndividuales { get; set; }
+
+        [JsonPropertyName("totalGrupos")]
+        public int TotalGrupos { get; set; }
+
+        [JsonPropertyName("nombreBanco")]
+        public string? NombreBanco { get; set; }
+
+        [JsonPropertyName("rfcBanco")]
+        public string? RfcBanco { get; set; }
+
+        [JsonPropertyName("nombreSucursal")]
+        public string? NombreSucursal { get; set; }
+
+        [JsonPropertyName("direccionSucursal")]
+        public string? DireccionSucursal { get; set; }
+
+        [JsonPropertyName("titular")]
+        public string? Titular { get; set; }
+
+        [JsonPropertyName("rfcTitular")]
+        public string? RfcTitular { get; set; }
+
+        [JsonPropertyName("numeroCliente")]
+        public string? NumeroCliente { get; set; }
+
+        [JsonPropertyName("direccionTitular")]
+        public string? DireccionTitular { get; set; }
+
+        [JsonPropertyName("folioFiscal")]
+        public string? FolioFiscal { get; set; }
+
+        [JsonPropertyName("certificadoEmisor")]
+        public string? CertificadoEmisor { get; set; }
+
+        [JsonPropertyName("fechaEmisionCert")]
+        public string? FechaEmisionCert { get; set; }
+
+        [JsonPropertyName("certificadoSat")]
+        public string? CertificadoSat { get; set; }
+
+        [JsonPropertyName("fechaCertificacionSat")]
+        public string? FechaCertificacionSat { get; set; }
+
+        [JsonPropertyName("regimenFiscal")]
+        public string? RegimenFiscal { get; set; }
+
+        [JsonPropertyName("metodoPago")]
+        public string? MetodoPago { get; set; }
+
+        [JsonPropertyName("formaPago")]
+        public string? FormaPago { get; set; }
+
+        [JsonPropertyName("usoCfdi")]
+        public string? UsoCfdi { get; set; }
+
+        [JsonPropertyName("claveProdServ")]
+        public string? ClaveProdServ { get; set; }
+
+        [JsonPropertyName("lugarExpedicion")]
+        public string? LugarExpedicion { get; set; }
+
+        [JsonPropertyName("grupos")]
+        public List<GuardarEstadoCuentaGrupoDto> Grupos { get; set; } = new();
     }
 }

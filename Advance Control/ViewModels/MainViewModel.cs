@@ -275,6 +275,9 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.UbicacionesView>("Ubicaciones");
             _navigationService.Configure<Views.Pages.AreasView>("Areas");
             _navigationService.Configure<Views.Pages.EsCuentaView>("EsCuenta");
+            _navigationService.Configure<Views.Pages.ConciliacionView>("Conciliacion");
+            _navigationService.Configure<Views.Pages.FacturasView>("Facturas");
+            _navigationService.Configure<Views.Pages.RPTFinancieroFacturacion>("RPTFinancieroFacturacion");
             _navigationService.Configure<Views.Pages.CorreoView>("Correo");
 
             // Subscribe to Frame navigation events
@@ -305,6 +308,9 @@ namespace Advance_Control.ViewModels
             { "Ubicaciones",   1 },
             { "Areas",         1 },
             { "EsCuenta",      1 },
+            { "Conciliacion",  1 },
+            { "Facturas",      1 },
+            { "RPTFinancieroFacturacion", 1 },
             { "Correo",        1 },
         };
 

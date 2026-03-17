@@ -151,6 +151,12 @@
                             <NavigationViewItem.MenuItems>
                                 <NavigationViewItem
                                     Content="Estado de Cuenta" Icon="Account" Tag="EsCuenta" />
+                                <NavigationViewItem
+                                    Content="Conciliación" Icon="Switch" Tag="Conciliacion" />
+                                <NavigationViewItem
+                                    Content="Facturas" Icon="Document" Tag="Facturas" />
+                                <NavigationViewItem
+                                    Content="RPT Facturación" Icon="Document" Tag="RPTFinancieroFacturacion" />
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 

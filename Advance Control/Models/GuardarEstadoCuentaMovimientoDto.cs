@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Advance_Control.Models
@@ -7,6 +8,12 @@ namespace Advance_Control.Models
     {
         [JsonPropertyName("fecha")]
         public DateTime Fecha { get; set; }
+
+        [JsonPropertyName("tipo")]
+        public string? Tipo { get; set; }
+
+        [JsonPropertyName("subtipo")]
+        public string? Subtipo { get; set; }
 
         [JsonPropertyName("descripcion")]
         public string Descripcion { get; set; } = string.Empty;
@@ -23,7 +30,10 @@ namespace Advance_Control.Models
         [JsonPropertyName("saldo")]
         public decimal Saldo { get; set; }
 
-        [JsonPropertyName("tipoOperacion")]
-        public string? TipoOperacion { get; set; }
+        [JsonPropertyName("conciliado")]
+        public bool Conciliado { get; set; }
+
+        [JsonPropertyName("metadatos")]
+        public Dictionary<string, string?> Metadatos { get; set; } = new();
     }
 }

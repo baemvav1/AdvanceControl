@@ -16,20 +16,25 @@
   <ItemGroup>
     <None Remove="Views\AcesoriaView.xaml" />
     <None Remove="Views\ClientesView.xaml" />
+    <None Remove="Views\Details\DetailEstadoCuentaView.xaml" />
     <None Remove="Views\Login\LoginView.xaml" />
     <None Remove="Views\MttoView.xaml" />
     <None Remove="Views\OperacionesView.xaml" />
     <None Remove="Views\Pages\AreasView.xaml" />
+    <None Remove="Views\Pages\ConciliacionView.xaml" />
     <None Remove="Views\Pages\ContactosView.xaml" />
     <None Remove="Views\Pages\CorreoView.xaml" />
     <None Remove="Views\Pages\EntidadesView.xaml" />
     <None Remove="Views\Pages\EquiposView.xaml" />
     <None Remove="Views\Pages\EsCuentaView.xaml" />
+    <None Remove="Views\Pages\FacturasView.xaml" />
     <None Remove="Views\Pages\ProveedoresView.xaml" />
     <None Remove="Views\Pages\RefaaccionView.xaml" />
+    <None Remove="Views\Pages\RPTFinancieroFacturacion.xaml" />
     <None Remove="Views\Pages\ServiciosView.xaml" />
     <None Remove="Views\Pages\UbicacionesView.xaml" />
     <None Remove="Views\Servicios.xaml" />
+    <None Remove="Views\Windows\DetalFacturaWindow.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -75,6 +80,26 @@
     <PackageReference Include="ScottPlot.WinUI" Version="5.0.53" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.10" />
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\RPTFinancieroFacturacion.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\ConciliacionView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Windows\DetalFacturaWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\FacturasView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\Pages\EsCuentaView.xaml">
@@ -153,6 +178,11 @@
   </ItemGroup>
   <ItemGroup>
     <Page Update="Views\Login\LoginView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Details\DetailEstadoCuentaView.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

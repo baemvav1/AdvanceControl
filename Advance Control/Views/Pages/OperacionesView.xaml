@@ -979,7 +979,7 @@
                                                                                         <Image
                                                                                             HorizontalAlignment="Center"
                                                                                             VerticalAlignment="Center"
-                                                                                            Source="{x:Bind Url, Mode=OneWay}"
+                                                                                            Source="{Binding Url}"
                                                                                             Stretch="UniformToFill" />
                                                                                         <!--  Delete button overlay  -->
                                                                                         <Button
@@ -1201,12 +1201,12 @@
                                                                             BorderThickness="0"
                                                                             Click="ViewOperacionImageButton_Click"
                                                                             IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
-                                                                            Tag="{x:Bind}"
+                                                                            Tag="{Binding}"
                                                                             ToolTipService.ToolTip="Ver imagen">
                                                                             <Image
                                                                                 HorizontalAlignment="Center"
                                                                                 VerticalAlignment="Center"
-                                                                                Source="{x:Bind Url, Mode=OneWay}"
+                                                                                Source="{Binding Url}"
                                                                                 Stretch="UniformToFill" />
                                                                         </Button>
                                                                         <!--  Delete button overlay  -->
@@ -1221,7 +1221,7 @@
                                                                             Click="DeleteOperacionImageButton_Click"
                                                                             CornerRadius="10"
                                                                             IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
-                                                                            Tag="{x:Bind}"
+                                                                            Tag="{Binding}"
                                                                             ToolTipService.ToolTip="Eliminar imagen">
                                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                         </Button>
@@ -1255,12 +1255,12 @@
                                                                             BorderThickness="0"
                                                                             Click="ViewOperacionImageButton_Click"
                                                                             IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
-                                                                            Tag="{x:Bind}"
+                                                                            Tag="{Binding}"
                                                                             ToolTipService.ToolTip="Ver imagen">
                                                                             <Image
                                                                                 HorizontalAlignment="Center"
                                                                                 VerticalAlignment="Center"
-                                                                                Source="{x:Bind Url, Mode=OneWay}"
+                                                                                Source="{Binding Url}"
                                                                                 Stretch="UniformToFill" />
                                                                         </Button>
                                                                         <!--  Delete button overlay  -->
@@ -1275,7 +1275,7 @@
                                                                             Click="DeleteOperacionImageButton_Click"
                                                                             CornerRadius="10"
                                                                             IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
-                                                                            Tag="{x:Bind}"
+                                                                            Tag="{Binding}"
                                                                             ToolTipService.ToolTip="Eliminar imagen">
                                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                         </Button>
@@ -1309,12 +1309,12 @@
                                                                             BorderThickness="0"
                                                                             Click="ViewOperacionImageButton_Click"
                                                                             IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
-                                                                            Tag="{x:Bind}"
+                                                                            Tag="{Binding}"
                                                                             ToolTipService.ToolTip="Ver imagen">
                                                                             <Image
                                                                                 HorizontalAlignment="Center"
                                                                                 VerticalAlignment="Center"
-                                                                                Source="{x:Bind Url, Mode=OneWay}"
+                                                                                Source="{Binding Url}"
                                                                                 Stretch="UniformToFill" />
                                                                         </Button>
                                                                         <!--  Delete button overlay  -->
@@ -1329,7 +1329,7 @@
                                                                             Click="DeleteOperacionImageButton_Click"
                                                                             CornerRadius="10"
                                                                             IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
-                                                                            Tag="{x:Bind}"
+                                                                            Tag="{Binding}"
                                                                             ToolTipService.ToolTip="Eliminar imagen">
                                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                         </Button>

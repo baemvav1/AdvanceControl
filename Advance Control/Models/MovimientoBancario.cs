@@ -1,8 +1,6 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 
 namespace Advance_Control.Models
 {
@@ -10,32 +8,34 @@ namespace Advance_Control.Models
     {
         public int IdMovimiento { get; set; }
         public int IdEstadoCuentaBancario { get; set; }
+        public string GrupoId { get; set; } = string.Empty;
+        public int? Dia { get; set; }
         public DateTime FechaMovimiento { get; set; }
-        public string Descripcion { get; set; }
-        public string Referencia { get; set; }
+        public string Descripcion { get; set; } = string.Empty;
+        public string? Referencia { get; set; }
         public decimal? MontoCargo { get; set; }
         public decimal? MontoAbono { get; set; }
         public decimal SaldoResultante { get; set; }
-        public string TipoMovimiento { get; set; }
+        public bool Conciliado { get; set; }
+        public string TipoMovimiento { get; set; } = string.Empty;
+        public string? SubtipoMovimiento { get; set; }
+        public string? TipoGrupo { get; set; }
+        public Dictionary<string, string?> Metadatos { get; set; } = new();
+        public List<MovimientoRelacionadoBancario> MovimientosRelacionados { get; set; } = new();
         public DateTime FechaRegistro { get; set; }
 
-        // Navegación
-        public virtual EstadoCuentaBancario EstadoCuentaBancario { get; set; }
-        public virtual ICollection<TransferenciaSPEI> TransferenciasSPEI { get; set; }
-        public virtual ICollection<ImpuestoMovimiento> Impuestos { get; set; }
-        public virtual ICollection<ComisionBancaria> Comisiones { get; set; }
-        public virtual ICollection<PagoServicioBancario> PagosServicios { get; set; }
-        public virtual ICollection<DepositoBancario> Depositos { get; set; }
-        public virtual ICollection<OperacionInternacional> OperacionesInternacionales { get; set; }
+        public string FechaTexto => FechaMovimiento == default ? string.Empty : FechaMovimiento.ToString("dd/MM/yyyy");
+        public string CargoTexto => !MontoCargo.HasValue || MontoCargo.Value == 0m ? "-" : MontoCargo.Value.ToString("C2", new CultureInfo("es-MX"));
+        public string AbonoTexto => !MontoAbono.HasValue || MontoAbono.Value == 0m ? "-" : MontoAbono.Value.ToString("C2", new CultureInfo("es-MX"));
+        public string SaldoTexto => SaldoResultante.ToString("C2", new CultureInfo("es-MX"));
+        public string TipoDetalle => string.IsNullOrWhiteSpace(SubtipoMovimiento)
+            ? (TipoMovimiento ?? TipoGrupo ?? string.Empty)
+            : $"{TipoMovimiento ?? TipoGrupo} · {SubtipoMovimiento}";
+        public string ConciliadoTexto => Conciliado ? "Conciliado" : "Pendiente";
+        public string RelacionadosTexto => MovimientosRelacionados.Count == 0 ? "Sin relacionados" : $"{MovimientosRelacionados.Count} relacionados";
 
         public MovimientoBancario()
         {
-            TransferenciasSPEI = new HashSet<TransferenciaSPEI>();
-            Impuestos = new HashSet<ImpuestoMovimiento>();
-            Comisiones = new HashSet<ComisionBancaria>();
-            PagosServicios = new HashSet<PagoServicioBancario>();
-            Depositos = new HashSet<DepositoBancario>();
-            OperacionesInternacionales = new HashSet<OperacionInternacional>();
             FechaRegistro = DateTime.Now;
         }
     }
