@@ -18,6 +18,7 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private string _filtroTexto = string.Empty;
         private double _filtroMonto = double.NaN;
+        private int _filtroConciliacionIndex;
         private bool _isFiltrosExpandidos = true;
 
         public DetailEstadoCuentaViewModel(IEstadoCuentaXmlService estadoCuentaService)
@@ -35,6 +36,7 @@ namespace Advance_Control.ViewModels
 
         public ObservableCollection<EstadoCuentaGrupoDetalleDto> GruposFiltrados { get; }
         public ObservableCollection<FiltroTipoMovimientoDto> FiltrosTipoMovimiento { get; }
+        public IReadOnlyList<string> OpcionesConciliacion { get; } = new[] { "Todos", "Conciliado", "No conciliado" };
 
         public bool IsLoading
         {
@@ -66,6 +68,18 @@ namespace Advance_Control.ViewModels
             set
             {
                 if (SetProperty(ref _filtroMonto, value))
+                {
+                    AplicarFiltros();
+                }
+            }
+        }
+
+        public int FiltroConciliacionIndex
+        {
+            get => _filtroConciliacionIndex;
+            set
+            {
+                if (SetProperty(ref _filtroConciliacionIndex, value))
                 {
                     AplicarFiltros();
                 }
@@ -128,8 +142,10 @@ namespace Advance_Control.ViewModels
         {
             _filtroTexto = string.Empty;
             _filtroMonto = double.NaN;
+            _filtroConciliacionIndex = 0;
             OnPropertyChanged(nameof(FiltroTexto));
             OnPropertyChanged(nameof(FiltroMonto));
+            OnPropertyChanged(nameof(FiltroConciliacionIndex));
 
             foreach (var filtro in FiltrosTipoMovimiento)
             {
@@ -190,6 +206,7 @@ namespace Advance_Control.ViewModels
                 .Where(grupo => clavesSeleccionadas.Contains(ObtenerClaveFiltro(grupo)))
                 .Where(grupo => CoincideTexto(texto, grupo))
                 .Where(grupo => CoincideMonto(monto, grupo))
+                .Where(CoincideConciliacion)
                 .OrderByDescending(grupo => grupo.Fecha)
                 .ThenByDescending(grupo => grupo.IdMovimiento)
                 .ToList();
@@ -245,6 +262,16 @@ namespace Advance_Control.ViewModels
             return valores.Any(valor => !string.IsNullOrWhiteSpace(valor) && valor.Contains(texto, StringComparison.OrdinalIgnoreCase));
         }
 
+        private bool CoincideConciliacion(EstadoCuentaGrupoDetalleDto grupo)
+        {
+            return FiltroConciliacionIndex switch
+            {
+                1 => grupo.Conciliado,
+                2 => !grupo.Conciliado,
+                _ => true
+            };
+        }
+
         private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T> origen)
         {
             destino.Clear();
@@ -294,9 +321,18 @@ namespace Advance_Control.ViewModels
             }
 
             var seleccionados = FiltrosTipoMovimiento.Count(filtro => filtro.IsSelected);
-            return seleccionados == FiltrosTipoMovimiento.Count
-                ? "Filtros activos: todos"
-                : $"Filtros activos: {seleccionados} de {FiltrosTipoMovimiento.Count}";
+            var resumenTipos = seleccionados == FiltrosTipoMovimiento.Count
+                ? "tipos: todos"
+                : $"tipos: {seleccionados} de {FiltrosTipoMovimiento.Count}";
+
+            var resumenConciliacion = FiltroConciliacionIndex switch
+            {
+                1 => "conciliación: conciliado",
+                2 => "conciliación: no conciliado",
+                _ => "conciliación: todos"
+            };
+
+            return $"Filtros activos: {resumenTipos} · {resumenConciliacion}";
         }
     }
 }

@@ -485,6 +485,7 @@ namespace Advance_Control
 
                     // Registrar QuoteService (PDF generation)
                     services.AddSingleton<IQuoteService, QuoteService>();
+                    services.AddSingleton<Services.Reportes.IReporteFinancieroFacturacionExportService, Services.Reportes.ReporteFinancieroFacturacionExportService>();
 
                     // Registrar GoogleMapsConfigService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IGoogleMapsConfigService, GoogleMapsConfigService>((sp, client) =>

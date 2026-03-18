@@ -12,7 +12,6 @@
     <Grid RowSpacing="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -27,42 +26,65 @@
             <StackPanel Spacing="10">
                 <TextBlock FontSize="10" Text="Filtros" />
 
-                <WrapGrid HorizontalAlignment="Stretch" Orientation="Horizontal">
-                    <StackPanel Width="240" Margin="0,0,12,8" Spacing="4">
+                <Grid ColumnSpacing="12" RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="240" />
+                        <ColumnDefinition Width="170" />
+                        <ColumnDefinition Width="170" />
+                        <ColumnDefinition Width="170" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="0"
+                        Spacing="4">
                         <TextBlock Text="RFC Receptor" />
-                        <TextBox
-                            PlaceholderText="RFC..."
-                            Text="{x:Bind ViewModel.ReceptorRfcFiltro, Mode=TwoWay}" />
+                        <TextBox PlaceholderText="RFC..." Text="{x:Bind ViewModel.ReceptorRfcFiltro, Mode=TwoWay}" />
                     </StackPanel>
 
-                    <StackPanel Width="240" Margin="0,0,12,8" Spacing="4">
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="1"
+                        Spacing="4">
                         <TextBlock Text="Referencia" />
-                        <TextBox
-                            PlaceholderText="Referencia..."
-                            Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay}" />
+                        <TextBox PlaceholderText="Referencia..." Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay}" />
                     </StackPanel>
 
-                    <StackPanel Width="170" Margin="0,0,12,8" Spacing="4">
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="2"
+                        Spacing="4">
                         <TextBlock Text="Fecha Inicio" />
                         <CalendarDatePicker Date="{x:Bind ViewModel.FechaInicioFiltro, Mode=TwoWay}" />
                     </StackPanel>
 
-                    <StackPanel Width="170" Margin="0,0,12,8" Spacing="4">
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="3"
+                        Spacing="4">
                         <TextBlock Text="Fecha Fin" />
                         <CalendarDatePicker Date="{x:Bind ViewModel.FechaFinFiltro, Mode=TwoWay}" />
                     </StackPanel>
 
-                    <StackPanel Width="150" Margin="0,0,12,8" Spacing="4">
+                    <StackPanel
+                        Grid.Row="0"
+                        Grid.Column="4"
+                        Spacing="4">
                         <TextBlock Text="Estado" />
-                        <CheckBox
-                            Content="Solo finiquitadas"
-                            IsChecked="{x:Bind ViewModel.SoloFiniquitadas, Mode=TwoWay}" />
+                        <CheckBox Content="Solo finiquitadas" IsChecked="{x:Bind ViewModel.SoloFiniquitadas, Mode=TwoWay}" />
+                        <CheckBox Content="No finiquitadas" IsChecked="{x:Bind ViewModel.NoFiniquitadas, Mode=TwoWay}" />
                     </StackPanel>
-                </WrapGrid>
+                </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Click="BtnBuscar_Click" Content="Consultar" />
                     <Button Click="BtnLimpiar_Click" Content="Limpiar filtros" />
+                    <Button Click="BtnGenerarReporte_Click" Content="Generar Reporte" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" />
                     <ProgressRing
                         Width="24"
                         Height="24"
@@ -81,72 +103,25 @@
                     IsOpen="{x:Bind ViewModel.SuccessMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
                     Message="{x:Bind ViewModel.SuccessMessage, Mode=OneWay}"
                     Severity="Success" />
+
+                <StackPanel
+                    Grid.Column="0"
+                    HorizontalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="5">
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenCabecerasTexto, Mode=OneWay}" />
+                    <TextBlock Text="Total Facturado:" />
+                    <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalFacturadoTexto, Mode=OneWay}" />
+                    <TextBlock Text="Total Finiquitado:" />
+                    <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalAbonadoTexto, Mode=OneWay}" />
+                </StackPanel>
             </StackPanel>
         </Border>
+
+
 
         <Border
             Grid.Row="1"
-            Margin="5,0,5,0"
-            Padding="10"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="2"
-            CornerRadius="8">
-            <StackPanel Spacing="10">
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                    <TextBlock Text="RFC Receptor" />
-                    <TextBlock Text="Receptor Nombre" />
-                    <TextBlock Text="Numero de facturas por cliente" />
-                    <TextBlock Text="Numero Facturas Finiquitadas" />
-                    <TextBlock Text="Numero Facturas No finiquitadas" />
-                </StackPanel>
-
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Spacing="2">
-                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.CabeceraActivaTexto, Mode=OneWay}" TextWrapping="Wrap" />
-                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenCabecerasTexto, Mode=OneWay}" />
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
-                        <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalClientesTexto, Mode=OneWay}" />
-                        <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalFacturadoTexto, Mode=OneWay}" />
-                        <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalAbonadoTexto, Mode=OneWay}" />
-                    </StackPanel>
-                </Grid>
-
-                <ScrollViewer
-                    HorizontalScrollBarVisibility="Auto"
-                    HorizontalScrollMode="Enabled"
-                    VerticalScrollBarVisibility="Disabled"
-                    VerticalScrollMode="Disabled">
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.Cabeceras, Mode=OneWay}">
-                        <ItemsRepeater.Layout>
-                            <StackLayout Orientation="Horizontal" Spacing="10" />
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="models:ReporteFinancieroFacturacionCabeceraDto">
-                                <Button
-                                    Padding="0"
-                                    Background="Transparent"
-                                    BorderThickness="0"
-                                    Click="CabeceraButton_Click"
-                                    Tag="{x:Bind}">
-                                    <items:ReporteFacturacionCabeceraItemView Cabecera="{x:Bind}" />
-                                </Button>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
-                </ScrollViewer>
-            </StackPanel>
-        </Border>
-
-        <Border
-            Grid.Row="2"
             Margin="5,0,5,5"
             Padding="10"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
@@ -165,13 +140,19 @@
                 </StackPanel>
 
                 <ScrollViewer Grid.Row="1">
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.DetallesVisibles, Mode=OneWay}">
+                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.ListadoItems, Mode=OneWay}">
                         <ItemsRepeater.Layout>
                             <StackLayout Orientation="Vertical" Spacing="10" />
                         </ItemsRepeater.Layout>
                         <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="models:ReporteFinancieroFacturacionDetalleDto">
-                                <items:ReporteFacturacionDetalleItemView Detalle="{x:Bind}" />
+                            <DataTemplate x:DataType="models:ReporteFinancieroFacturacionListadoItemDto">
+                                <Grid>
+                                    <items:ReporteFacturacionCabeceraItemView Cabecera="{Binding Cabecera}" Visibility="{Binding EsCabecera, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <items:ReporteFacturacionDetalleItemView
+                                        Margin="20,0,0,0"
+                                        Detalle="{Binding Detalle}"
+                                        Visibility="{Binding EsDetalle, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                </Grid>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

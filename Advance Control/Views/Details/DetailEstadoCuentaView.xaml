@@ -147,6 +147,7 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="2*" />
                                     <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="220" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
@@ -165,8 +166,14 @@
                                     SpinButtonPlacementMode="Compact"
                                     Value="{x:Bind ViewModel.FiltroMonto, Mode=TwoWay}" />
 
-                                <StackPanel
+                                <ComboBox
                                     Grid.Column="2"
+                                    Header="Conciliación"
+                                    ItemsSource="{x:Bind ViewModel.OpcionesConciliacion, Mode=OneWay}"
+                                    SelectedIndex="{x:Bind ViewModel.FiltroConciliacionIndex, Mode=TwoWay}" />
+
+                                <StackPanel
+                                    Grid.Column="3"
                                     VerticalAlignment="Bottom"
                                     Spacing="6">
                                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenFiltros, Mode=OneWay}" />

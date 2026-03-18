@@ -12,11 +12,10 @@ namespace Advance_Control.ViewModels
     public class RPTFinancieroFacturacionViewModel : ViewModelBase
     {
         private readonly IReporteFinancieroFacturacionService _reporteService;
+        private readonly IReporteFinancieroFacturacionExportService _exportService;
         private readonly List<ReporteFinancieroFacturacionCabeceraDto> _cabecerasBase = new();
         private readonly List<ReporteFinancieroFacturacionDetalleDto> _detallesBase = new();
-        private ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> _cabeceras = new();
-        private ObservableCollection<ReporteFinancieroFacturacionDetalleDto> _detallesVisibles = new();
-        private ReporteFinancieroFacturacionCabeceraDto? _cabeceraSeleccionada;
+        private ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> _listadoItems = new();
         private bool _isLoading;
         private string? _errorMessage;
         private string? _successMessage;
@@ -25,46 +24,24 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaInicioFiltro;
         private DateTimeOffset? _fechaFinFiltro;
         private bool _soloFiniquitadas;
+        private bool _noFiniquitadas;
 
-        public RPTFinancieroFacturacionViewModel(IReporteFinancieroFacturacionService reporteService)
+        public RPTFinancieroFacturacionViewModel(
+            IReporteFinancieroFacturacionService reporteService,
+            IReporteFinancieroFacturacionExportService exportService)
         {
             _reporteService = reporteService ?? throw new ArgumentNullException(nameof(reporteService));
+            _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
         }
 
-        public ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> Cabeceras
+        public ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> ListadoItems
         {
-            get => _cabeceras;
+            get => _listadoItems;
             private set
             {
-                if (SetProperty(ref _cabeceras, value))
+                if (SetProperty(ref _listadoItems, value))
                 {
                     NotificarResumenes();
-                }
-            }
-        }
-
-        public ObservableCollection<ReporteFinancieroFacturacionDetalleDto> DetallesVisibles
-        {
-            get => _detallesVisibles;
-            private set
-            {
-                if (SetProperty(ref _detallesVisibles, value))
-                {
-                    NotificarResumenes();
-                }
-            }
-        }
-
-        public ReporteFinancieroFacturacionCabeceraDto? CabeceraSeleccionada
-        {
-            get => _cabeceraSeleccionada;
-            private set
-            {
-                if (SetProperty(ref _cabeceraSeleccionada, value))
-                {
-                    OnPropertyChanged(nameof(TieneCabeceraSeleccionada));
-                    OnPropertyChanged(nameof(CabeceraActivaTexto));
-                    OnPropertyChanged(nameof(ResumenDetalleTexto));
                 }
             }
         }
@@ -72,7 +49,13 @@ namespace Advance_Control.ViewModels
         public bool IsLoading
         {
             get => _isLoading;
-            set => SetProperty(ref _isLoading, value);
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarReporte));
+                }
+            }
         }
 
         public string? ErrorMessage
@@ -114,18 +97,32 @@ namespace Advance_Control.ViewModels
         public bool SoloFiniquitadas
         {
             get => _soloFiniquitadas;
-            set => SetProperty(ref _soloFiniquitadas, value);
+            set
+            {
+                if (SetProperty(ref _soloFiniquitadas, value) && value && NoFiniquitadas)
+                {
+                    NoFiniquitadas = false;
+                }
+            }
         }
 
-        public bool TieneCabeceraSeleccionada => CabeceraSeleccionada != null;
-        public string TotalClientesTexto => $"{Cabeceras.Count} RFC(s)";
-        public string TotalFacturadoTexto => Cabeceras.Sum(item => item.TotalFacturado).ToString("C2", new CultureInfo("es-MX"));
-        public string TotalAbonadoTexto => DetallesVisibles.Sum(item => item.Abono ?? 0m).ToString("C2", new CultureInfo("es-MX"));
-        public string ResumenCabecerasTexto => $"{Cabeceras.Sum(item => item.NumeroFacturas)} factura(s) en {Cabeceras.Count} cliente(s)";
-        public string CabeceraActivaTexto => CabeceraSeleccionada == null
-            ? "Mostrando todas las facturas del reporte."
-            : $"Cliente seleccionado: {CabeceraSeleccionada.ReceptorNombreTexto} ({CabeceraSeleccionada.ReceptorRfcTexto})";
-        public string ResumenDetalleTexto => $"{DetallesVisibles.Count} detalle(s) visibles";
+        public bool NoFiniquitadas
+        {
+            get => _noFiniquitadas;
+            set
+            {
+                if (SetProperty(ref _noFiniquitadas, value) && value && SoloFiniquitadas)
+                {
+                    SoloFiniquitadas = false;
+                }
+            }
+        }
+
+        public string TotalFacturadoTexto => _cabecerasBase.Sum(item => item.TotalFacturado).ToString("C2", new CultureInfo("es-MX"));
+        public string TotalAbonadoTexto => _cabecerasBase.Sum(item => item.TotalAbonadoMovimientos).ToString("C2", new CultureInfo("es-MX"));
+        public string ResumenCabecerasTexto => $"{_cabecerasBase.Sum(item => item.NumeroFacturas)} factura(s) en {_cabecerasBase.Count} cliente(s)";
+        public string ResumenDetalleTexto => $"{_detallesBase.Count} detalle(s) visibles en el listado";
+        public bool CanGenerarReporte => !IsLoading && _detallesBase.Count > 0;
 
         public async Task CargarReporteAsync()
         {
@@ -144,7 +141,7 @@ namespace Advance_Control.ViewModels
 
                 var resultado = await _reporteService.ObtenerReporteAsync(
                     string.IsNullOrWhiteSpace(ReceptorRfcFiltro) ? null : ReceptorRfcFiltro.Trim().ToUpperInvariant(),
-                    SoloFiniquitadas ? true : null,
+                    ObtenerFiniquitoFiltro(),
                     string.IsNullOrWhiteSpace(ReferenciaFiltro) ? null : ReferenciaFiltro.Trim(),
                     FechaInicioFiltro,
                     FechaFinFiltro);
@@ -152,11 +149,9 @@ namespace Advance_Control.ViewModels
                 _cabecerasBase.Clear();
                 _cabecerasBase.AddRange(resultado.Cabeceras.OrderBy(item => item.ReceptorNombreTexto).ThenBy(item => item.ReceptorRfcTexto));
                 _detallesBase.Clear();
-                _detallesBase.AddRange(resultado.Detalles.OrderByDescending(item => item.FechaTimbrado).ThenBy(item => item.FolioTexto));
+                _detallesBase.AddRange(resultado.Detalles.OrderBy(item => item.ReceptorNombreTexto).ThenByDescending(item => item.FechaTimbrado).ThenBy(item => item.FolioTexto));
 
-                Cabeceras = new ObservableCollection<ReporteFinancieroFacturacionCabeceraDto>(_cabecerasBase);
-                CabeceraSeleccionada = Cabeceras.FirstOrDefault();
-                ActualizarDetallesVisibles();
+                ListadoItems = new ObservableCollection<ReporteFinancieroFacturacionListadoItemDto>(ConstruirListadoVertical());
 
                 SuccessMessage = _detallesBase.Count == 0
                     ? "No se encontraron registros con los filtros actuales."
@@ -165,9 +160,7 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error al cargar el reporte financiero de facturación: {ex.Message}";
-                Cabeceras = new ObservableCollection<ReporteFinancieroFacturacionCabeceraDto>();
-                DetallesVisibles = new ObservableCollection<ReporteFinancieroFacturacionDetalleDto>();
-                CabeceraSeleccionada = null;
+                ListadoItems = new ObservableCollection<ReporteFinancieroFacturacionListadoItemDto>();
             }
             finally
             {
@@ -182,34 +175,87 @@ namespace Advance_Control.ViewModels
             FechaInicioFiltro = null;
             FechaFinFiltro = null;
             SoloFiniquitadas = false;
+            NoFiniquitadas = false;
         }
 
-        public void SeleccionarCabecera(ReporteFinancieroFacturacionCabeceraDto? cabecera)
+        public async Task<string> GenerarReporteAsync()
         {
-            CabeceraSeleccionada = cabecera;
-            ActualizarDetallesVisibles();
-        }
-
-        private void ActualizarDetallesVisibles()
-        {
-            IEnumerable<ReporteFinancieroFacturacionDetalleDto> detalles = _detallesBase;
-
-            if (!string.IsNullOrWhiteSpace(CabeceraSeleccionada?.ReceptorRfc))
+            if (_detallesBase.Count == 0)
             {
-                detalles = detalles.Where(item => string.Equals(item.ReceptorRfc, CabeceraSeleccionada.ReceptorRfc, StringComparison.OrdinalIgnoreCase));
+                throw new InvalidOperationException("No hay registros visibles para generar el reporte.");
             }
 
-            DetallesVisibles = new ObservableCollection<ReporteFinancieroFacturacionDetalleDto>(detalles);
-            OnPropertyChanged(nameof(ResumenDetalleTexto));
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var rutaArchivo = await _exportService.GenerarReportePdfAsync(
+                    _cabecerasBase,
+                    _detallesBase,
+                    ReceptorRfcFiltro,
+                    ReferenciaFiltro,
+                    FechaInicioFiltro,
+                    FechaFinFiltro,
+                    ObtenerFiniquitoFiltro());
+
+                SuccessMessage = $"Reporte generado correctamente: {rutaArchivo}";
+                return rutaArchivo;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el reporte financiero de facturación: {ex.Message}";
+                SuccessMessage = null;
+                throw;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private IEnumerable<ReporteFinancieroFacturacionListadoItemDto> ConstruirListadoVertical()
+        {
+            foreach (var cabecera in _cabecerasBase)
+            {
+                yield return new ReporteFinancieroFacturacionListadoItemDto
+                {
+                    Cabecera = cabecera
+                };
+
+                foreach (var detalle in _detallesBase.Where(item => string.Equals(item.ReceptorRfc, cabecera.ReceptorRfc, StringComparison.OrdinalIgnoreCase)))
+                {
+                    yield return new ReporteFinancieroFacturacionListadoItemDto
+                    {
+                        Detalle = detalle
+                    };
+                }
+            }
         }
 
         private void NotificarResumenes()
         {
-            OnPropertyChanged(nameof(TotalClientesTexto));
             OnPropertyChanged(nameof(TotalFacturadoTexto));
             OnPropertyChanged(nameof(TotalAbonadoTexto));
             OnPropertyChanged(nameof(ResumenCabecerasTexto));
             OnPropertyChanged(nameof(ResumenDetalleTexto));
+            OnPropertyChanged(nameof(CanGenerarReporte));
+        }
+
+        private bool? ObtenerFiniquitoFiltro()
+        {
+            if (SoloFiniquitadas)
+            {
+                return true;
+            }
+
+            if (NoFiniquitadas)
+            {
+                return false;
+            }
+
+            return null;
         }
     }
 }

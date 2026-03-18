@@ -1,4 +1,3 @@
-using Advance_Control.Models;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Microsoft.UI.Xaml;
@@ -13,33 +12,55 @@ namespace Advance_Control.Views.Pages
 
         public RPTFinancieroFacturacion()
         {
-            ViewModel = AppServices.Get<RPTFinancieroFacturacionViewModel>();
             InitializeComponent();
+            ViewModel = AppServices.Get<RPTFinancieroFacturacionViewModel>();
             DataContext = ViewModel;
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await ViewModel.CargarReporteAsync();
+            await CargarReporteSeguroAsync();
         }
 
         private async void BtnBuscar_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.CargarReporteAsync();
+            await CargarReporteSeguroAsync();
         }
 
         private async void BtnLimpiar_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.LimpiarFiltros();
-            await ViewModel.CargarReporteAsync();
+            await CargarReporteSeguroAsync();
         }
 
-        private void CabeceraButton_Click(object sender, RoutedEventArgs e)
+        private async void BtnGenerarReporte_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is ReporteFinancieroFacturacionCabeceraDto cabecera)
+            try
             {
-                ViewModel.SeleccionarCabecera(cabecera);
+                var rutaArchivo = await ViewModel.GenerarReporteAsync();
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (System.Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudo generar el reporte financiero de facturación: {ex.Message}";
+                ViewModel.SuccessMessage = null;
+            }
+        }
+
+        private async System.Threading.Tasks.Task CargarReporteSeguroAsync()
+        {
+            try
+            {
+                await ViewModel.CargarReporteAsync();
+            }
+            catch (System.Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudo cargar el reporte financiero de facturación: {ex.Message}";
+                ViewModel.SuccessMessage = null;
             }
         }
     }

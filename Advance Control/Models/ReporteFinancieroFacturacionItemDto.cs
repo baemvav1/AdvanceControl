@@ -55,4 +55,13 @@ namespace Advance_Control.Models
         public List<ReporteFinancieroFacturacionCabeceraDto> Cabeceras { get; set; } = new();
         public List<ReporteFinancieroFacturacionDetalleDto> Detalles { get; set; } = new();
     }
+
+    public class ReporteFinancieroFacturacionListadoItemDto
+    {
+        public ReporteFinancieroFacturacionCabeceraDto? Cabecera { get; set; }
+        public ReporteFinancieroFacturacionDetalleDto? Detalle { get; set; }
+
+        public bool EsCabecera => Cabecera != null;
+        public bool EsDetalle => Detalle != null;
+    }
 }

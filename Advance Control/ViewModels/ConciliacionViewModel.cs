@@ -390,7 +390,10 @@ namespace Advance_Control.ViewModels
                 foreach (var facturaObjetivo in facturasObjetivo)
                 {
                     var totalFactura = ObtenerTotalFactura(facturaObjetivo);
-                    var movimientoObjetivo = BuscarMovimientoCoincidente(movimientosDisponibles, totalFactura, facturaObjetivo.Fecha);
+                    var movimientoObjetivo = BuscarMovimientoCoincidente(
+                        movimientosDisponibles,
+                        totalFactura,
+                        facturaObjetivo.Fecha);
                     if (movimientoObjetivo == null)
                     {
                         continue;
@@ -505,7 +508,10 @@ namespace Advance_Control.ViewModels
 
         private void PrecargarMovimientoCoincidente(decimal totalFactura, DateTime fechaFactura)
         {
-            MovimientoCargado = BuscarMovimientoCoincidente(MovimientosPendientes, totalFactura, fechaFactura);
+            MovimientoCargado = BuscarMovimientoCoincidente(
+                MovimientosPendientes,
+                totalFactura,
+                fechaFactura);
         }
 
         private async Task<(int FacturasConciliadas, int GruposConciliados, FacturaResumenDto? UltimaFacturaConciliada, ConciliacionMovimientoResumenDto? UltimoMovimientoConciliado)> EjecutarConciliacionCombinacionalAsync(
@@ -662,7 +668,10 @@ namespace Advance_Control.ViewModels
                 }
 
                 var fechaMasNueva = combinacionActual.Max(factura => factura.Fecha);
-                movimientoObjetivo = BuscarMovimientoCoincidente(movimientosDisponibles, montoObjetivo, fechaMasNueva);
+                movimientoObjetivo = BuscarMovimientoCoincidente(
+                    movimientosDisponibles,
+                    montoObjetivo,
+                    fechaMasNueva);
                 return movimientoObjetivo == null ? null : new List<FacturaResumenDto>(combinacionActual);
             }
 
@@ -699,7 +708,10 @@ namespace Advance_Control.ViewModels
             return null;
         }
 
-        private static ConciliacionMovimientoResumenDto? BuscarMovimientoCoincidente(System.Collections.Generic.IEnumerable<ConciliacionMovimientoResumenDto> movimientos, decimal totalFactura, DateTime fechaFactura)
+        private static ConciliacionMovimientoResumenDto? BuscarMovimientoCoincidente(
+            System.Collections.Generic.IEnumerable<ConciliacionMovimientoResumenDto> movimientos,
+            decimal totalFactura,
+            DateTime fechaFactura)
         {
             if (totalFactura <= 0)
             {
@@ -711,10 +723,16 @@ namespace Advance_Control.ViewModels
                     decimal.Round(movimiento.Abono, 2) > 0
                     &&
                     decimal.Round(movimiento.Abono, 2) == decimal.Round(totalFactura, 2)
-                    && movimiento.Fecha.Date >= fechaFactura.Date)
+                    && EsMismoMes(fechaFactura, movimiento.Fecha))
                 .OrderBy(movimiento => Math.Abs((movimiento.Fecha - fechaFactura).Ticks))
                 .ThenByDescending(movimiento => movimiento.Fecha)
                 .FirstOrDefault();
+        }
+
+        private static bool EsMismoMes(DateTime fechaFactura, DateTime fechaMovimiento)
+        {
+            return fechaFactura.Year == fechaMovimiento.Year
+                && fechaFactura.Month == fechaMovimiento.Month;
         }
 
         private static bool EsFacturaElegibleParaConciliacionUnoAUno(FacturaResumenDto factura)
