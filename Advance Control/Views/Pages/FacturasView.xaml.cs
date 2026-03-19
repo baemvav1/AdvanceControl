@@ -37,16 +37,7 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarArchivoXmlAsync(hwnd);
             if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
             {
-                _activityService.Registrar("Facturas", "XML de factura cargado");
-            }
-        }
-
-        private async void BtnGuardarFactura_Click(object sender, RoutedEventArgs e)
-        {
-            await ViewModel.GuardarFacturaAsync();
-            if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
-            {
-                _activityService.Registrar("Facturas", "Factura guardada");
+                _activityService.Registrar("Facturas", "XML de factura cargado y guardado");
             }
         }
 

@@ -212,13 +212,16 @@ namespace Advance_Control.Tests.Services
             await _service.MostrarNotificacionAsync(titulo);
 
             // Assert
-            _mockLogger.Verify(
-                x => x.LogInformationAsync(
-                    It.Is<string>(msg => msg.Contains(titulo)),
+             _mockLogger.Verify(
+                 x => x.LogInformationAsync(
+                     It.Is<string>(msg => msg.Contains(titulo)),
                     "NotificacionService",
-                    "MostrarNotificacionAsync"),
-                Times.Once);
-        }
+                    "MostrarNotificacionAsync",
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()),
+                 Times.Once);
+         }
 
         [Fact]
         public async Task MostrarNotificacionAsync_ConTiempoDeVida_CreaNotificacionConTiempoDeVida()

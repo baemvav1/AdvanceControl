@@ -58,7 +58,7 @@ namespace Advance_Control.Views.Pages
                 || e.PropertyName == nameof(ConciliacionViewModel.IsConciliacionAutomaticaEnProceso)
                 || e.PropertyName == nameof(ConciliacionViewModel.ConciliacionPanelHabilitado)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomatica)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaConvinacional))
+                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaAbonos))
             {
                 ActualizarEstadoConciliacionAutomatica();
             }
@@ -67,7 +67,7 @@ namespace Advance_Control.Views.Pages
         private void ActualizarEstadoConciliacionAutomatica()
         {
             BtnConciliacionAutomatica.IsEnabled = ViewModel.CanEjecutarConciliacionAutomatica;
-            BtnConciliacionAutomaticaConvinacional.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaConvinacional;
+            BtnConciliacionAutomaticaAbonos.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaAbonos;
             ConciliacionPanelGrid.IsHitTestVisible = ViewModel.ConciliacionPanelHabilitado;
             ConciliacionPanelGrid.Opacity = ViewModel.ConciliacionPanelHabilitado ? 1d : 0.55d;
             _conciliacionProgressRing.IsActive = ViewModel.IsConciliacionAutomaticaEnProceso;
@@ -222,9 +222,9 @@ namespace Advance_Control.Views.Pages
             await ViewModel.EjecutarConciliacionAutomaticaAsync();
         }
 
-        private async void BtnConciliacionAutomaticaConvinacional_Click(object sender, RoutedEventArgs e)
+        private async void BtnConciliacionAutomaticaAbonos_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.EjecutarConciliacionAutomaticaConvinacionalAsync();
+            await ViewModel.EjecutarConciliacionAutomaticaAbonosAsync();
         }
     }
 }

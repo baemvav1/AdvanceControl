@@ -482,6 +482,8 @@ namespace Advance_Control
 
                     // Registrar NotificacionService
                     services.AddSingleton<INotificacionService, NotificacionService>();
+                    services.AddSingleton<Services.Conciliacion.IConciliacionRulesProvider, Services.Conciliacion.ConciliacionRulesProvider>();
+                    services.AddSingleton<Services.Conciliacion.ConciliacionMatchingEngine>();
 
                     // Registrar QuoteService (PDF generation)
                     services.AddSingleton<IQuoteService, QuoteService>();

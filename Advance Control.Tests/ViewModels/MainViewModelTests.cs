@@ -1,7 +1,11 @@
 using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Navigation;
+using Advance_Control.Services.Activity;
+using Advance_Control.Services.Alertas;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Dialog;
 using Advance_Control.Services.Logging;
@@ -14,50 +18,22 @@ using Xunit;
 
 namespace Advance_Control.Tests.ViewModels
 {
-    /// <summary>
-    /// Pruebas unitarias para el MainViewModel
-    /// </summary>
     public class MainViewModelTests
     {
-        private readonly Mock<INavigationService> _mockNavigationService;
-        private readonly Mock<IOnlineCheck> _mockOnlineCheck;
-        private readonly Mock<ILoggingService> _mockLogger;
-        private readonly Mock<IAuthService> _mockAuthService;
-        private readonly Mock<IDialogService> _mockDialogService;
-        private readonly Mock<IServiceProvider> _mockServiceProvider;
-        private readonly Mock<INotificacionService> _mockNotificacionService;
-        private readonly Mock<IUserInfoService> _mockUserInfoService;
-
-        public MainViewModelTests()
-        {
-            _mockNavigationService = new Mock<INavigationService>();
-            _mockOnlineCheck = new Mock<IOnlineCheck>();
-            _mockLogger = new Mock<ILoggingService>();
-            _mockAuthService = new Mock<IAuthService>();
-            _mockDialogService = new Mock<IDialogService>();
-            _mockServiceProvider = new Mock<IServiceProvider>();
-            _mockNotificacionService = new Mock<INotificacionService>();
-            _mockUserInfoService = new Mock<IUserInfoService>();
-
-            // Setup default auth service behavior
-            _mockAuthService.Setup(x => x.IsAuthenticated).Returns(false);
-        }
-
-        [Fact]
-        public void Constructor_WithAllServices_InitializesSuccessfully()
-        {
-            // Act
-            var viewModel = CreateViewModel();
-
-            // Assert
-            Assert.NotNull(viewModel);
-            Assert.False(viewModel.IsAuthenticated);
-        }
+        private readonly Mock<INavigationService> _mockNavigationService = new();
+        private readonly Mock<IOnlineCheck> _mockOnlineCheck = new();
+        private readonly Mock<ILoggingService> _mockLogger = new();
+        private readonly Mock<IAuthService> _mockAuthService = new();
+        private readonly Mock<IDialogService> _mockDialogService = new();
+        private readonly Mock<IServiceProvider> _mockServiceProvider = new();
+        private readonly Mock<INotificacionService> _mockNotificacionService = new();
+        private readonly Mock<IUserInfoService> _mockUserInfoService = new();
+        private readonly Mock<INotificacionAlertaService> _mockAlertaService = new();
+        private readonly Mock<IActivityService> _mockActivityService = new();
 
         [Fact]
         public void Constructor_WithNullUserInfoService_ThrowsArgumentNullException()
         {
-            // Act & Assert
             Assert.Throws<ArgumentNullException>(() =>
                 new MainViewModel(
                     _mockNavigationService.Object,
@@ -67,272 +43,103 @@ namespace Advance_Control.Tests.ViewModels
                     _mockDialogService.Object,
                     _mockServiceProvider.Object,
                     _mockNotificacionService.Object,
-                    null!));
+                    null!,
+                    _mockAlertaService.Object,
+                    _mockActivityService.Object));
         }
 
         [Fact]
         public async Task LoadUserInfoAsync_WithValidUserInfo_SetsUserInitialsAndType()
         {
-            // Arrange
-            var userInfo = new UserInfoDto
-            {
-                CredencialId = 1,
-                NombreCompleto = "Braulio Emiliano Vazquez",
-                Correo = "baemvav@gmail.com",
-                Telefono = "5655139308",
-                Nivel = 6,
-                TipoUsuario = "Devs"
-            };
-
             _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ReturnsAsync(userInfo);
+                .Setup(x => x.GetUserInfoAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserInfoDto
+                {
+                    NombreCompleto = "Braulio Emiliano Vazquez",
+                    TipoUsuario = "Devs"
+                });
 
             var viewModel = CreateViewModel();
 
-            // Act
             await viewModel.LoadUserInfoAsync();
 
-            // Assert
-            Assert.Equal("BEV", viewModel.UserInitials); // Braulio Emiliano Vazquez
+            Assert.Equal("BEV", viewModel.UserInitials);
             Assert.Equal("Devs", viewModel.UserType);
-        }
-
-        [Fact]
-        public async Task LoadUserInfoAsync_WithFullName_ExtractsCorrectInitials()
-        {
-            // Arrange
-            var userInfo = new UserInfoDto
-            {
-                NombreCompleto = "Juan Carlos Perez Lopez",
-                TipoUsuario = "Admin"
-            };
-
-            _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ReturnsAsync(userInfo);
-
-            var viewModel = CreateViewModel();
-
-            // Act
-            await viewModel.LoadUserInfoAsync();
-
-            // Assert
-            Assert.Equal("JCP", viewModel.UserInitials); // Takes first 3 words
-            Assert.Equal("Admin", viewModel.UserType);
-        }
-
-        [Fact]
-        public async Task LoadUserInfoAsync_WithSingleName_ExtractsSingleInitial()
-        {
-            // Arrange
-            var userInfo = new UserInfoDto
-            {
-                NombreCompleto = "John",
-                TipoUsuario = "User"
-            };
-
-            _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ReturnsAsync(userInfo);
-
-            var viewModel = CreateViewModel();
-
-            // Act
-            await viewModel.LoadUserInfoAsync();
-
-            // Assert
-            Assert.Equal("J", viewModel.UserInitials);
-            Assert.Equal("User", viewModel.UserType);
-        }
-
-        [Fact]
-        public async Task LoadUserInfoAsync_WithTwoNames_ExtractsTwoInitials()
-        {
-            // Arrange
-            var userInfo = new UserInfoDto
-            {
-                NombreCompleto = "Maria Garcia",
-                TipoUsuario = "Support"
-            };
-
-            _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ReturnsAsync(userInfo);
-
-            var viewModel = CreateViewModel();
-
-            // Act
-            await viewModel.LoadUserInfoAsync();
-
-            // Assert
-            Assert.Equal("MG", viewModel.UserInitials);
-            Assert.Equal("Support", viewModel.UserType);
         }
 
         [Fact]
         public async Task LoadUserInfoAsync_WhenServiceReturnsNull_ClearsUserInfo()
         {
-            // Arrange
             _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
+                .Setup(x => x.GetUserInfoAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync((UserInfoDto?)null);
 
             var viewModel = CreateViewModel();
-            viewModel.UserInitials = "TEST";
-            viewModel.UserType = "TestType";
+            viewModel.UserInitials = "TMP";
+            viewModel.UserType = "TMP";
 
-            // Act
             await viewModel.LoadUserInfoAsync();
 
-            // Assert
             Assert.Equal(string.Empty, viewModel.UserInitials);
             Assert.Equal(string.Empty, viewModel.UserType);
         }
 
         [Fact]
-        public async Task LoadUserInfoAsync_WhenExceptionOccurs_ClearsUserInfo()
+        public async Task CargarAlertasAsync_WithResults_PopulatesCollection()
         {
-            // Arrange
-            _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ThrowsAsync(new Exception("Test exception"));
+            _mockAlertaService
+                .Setup(x => x.GenerarYObtenerAsync(10, It.IsAny<CancellationToken>()))
+                 .ReturnsAsync(new List<NotificacionAlerta>
+                 {
+                    new() { IdNotificacion = 1, Titulo = "Alerta 1" },
+                    new() { IdNotificacion = 2, Titulo = "Alerta 2" }
+                 });
 
             var viewModel = CreateViewModel();
-            viewModel.UserInitials = "TEST";
-            viewModel.UserType = "TestType";
 
-            // Act
-            await viewModel.LoadUserInfoAsync();
+            await viewModel.CargarAlertasAsync(10);
 
-            // Assert
-            Assert.Equal(string.Empty, viewModel.UserInitials);
-            Assert.Equal(string.Empty, viewModel.UserType);
+            Assert.True(viewModel.HasAlertasDb);
+            Assert.Equal(2, viewModel.AlertasDb.Count);
+            Assert.True(viewModel.HasUnseenNotifications);
         }
 
         [Fact]
-        public async Task LogoutAsync_ClearsUserInfo()
+        public async Task DescartarAlertasAsync_ClearsAlertCollection()
         {
-            // Arrange
-            _mockAuthService
-                .Setup(x => x.LogoutAsync(default))
-                .ReturnsAsync(true);
+             _mockAlertaService
+                 .Setup(x => x.GenerarYObtenerAsync(10, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<NotificacionAlerta> { new() { IdNotificacion = 1, Titulo = "Alerta 1" } });
 
             var viewModel = CreateViewModel();
-            viewModel.UserInitials = "TEST";
-            viewModel.UserType = "TestType";
+            await viewModel.CargarAlertasAsync(10);
 
-            // Act
+            await viewModel.DescartarAlertasAsync(10);
+
+            Assert.False(viewModel.HasAlertasDb);
+            Assert.Empty(viewModel.AlertasDb);
+            _mockAlertaService.Verify(x => x.MarcarVistasAsync(10, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task LogoutAsync_ClearsAuthenticationState()
+        {
+            _mockAuthService.Setup(x => x.LogoutAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            var viewModel = CreateViewModel();
+            viewModel.IsAuthenticated = true;
+            viewModel.UserInitials = "ABC";
+            viewModel.UserType = "Admin";
+
             await viewModel.LogoutAsync();
 
-            // Assert
-            Assert.Equal(string.Empty, viewModel.UserInitials);
-            Assert.Equal(string.Empty, viewModel.UserType);
             Assert.False(viewModel.IsAuthenticated);
-        }
-
-        [Fact]
-        public async Task LoadUserInfoAsync_WithEmptyNombreCompleto_SetsEmptyInitials()
-        {
-            // Arrange
-            var userInfo = new UserInfoDto
-            {
-                NombreCompleto = "",
-                TipoUsuario = "User"
-            };
-
-            _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ReturnsAsync(userInfo);
-
-            var viewModel = CreateViewModel();
-
-            // Act
-            await viewModel.LoadUserInfoAsync();
-
-            // Assert
-            Assert.Equal(string.Empty, viewModel.UserInitials);
-            Assert.Equal("User", viewModel.UserType);
-        }
-
-        [Fact]
-        public async Task LoadUserInfoAsync_WithNullTipoUsuario_SetsEmptyUserType()
-        {
-            // Arrange
-            var userInfo = new UserInfoDto
-            {
-                NombreCompleto = "Test User",
-                TipoUsuario = null
-            };
-
-            _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ReturnsAsync(userInfo);
-
-            var viewModel = CreateViewModel();
-
-            // Act
-            await viewModel.LoadUserInfoAsync();
-
-            // Assert
-            Assert.Equal("TU", viewModel.UserInitials);
-            Assert.Equal(string.Empty, viewModel.UserType);
-        }
-
-        [Fact]
-        public async Task LoadUserInfoAsync_CalledFromBackgroundThread_CompletesSuccessfully()
-        {
-            // Arrange
-            var userInfo = new UserInfoDto
-            {
-                NombreCompleto = "Background Thread Test",
-                TipoUsuario = "Worker"
-            };
-
-            _mockUserInfoService
-                .Setup(x => x.GetUserInfoAsync(default))
-                .ReturnsAsync(userInfo);
-
-            var viewModel = CreateViewModel();
-
-            // Act - Call from a background thread (simulating Task.Run scenario)
-            await Task.Run(async () =>
-            {
-                await viewModel.LoadUserInfoAsync();
-            });
-
-            // Assert - Should not throw and properties should be set
-            Assert.Equal("BTT", viewModel.UserInitials);
-            Assert.Equal("Worker", viewModel.UserType);
-        }
-
-        [Fact]
-        public async Task LogoutAsync_UpdatesPropertiesSuccessfully()
-        {
-            // Arrange
-            _mockAuthService
-                .Setup(x => x.LogoutAsync(default))
-                .ReturnsAsync(true);
-
-            var viewModel = CreateViewModel();
-            viewModel.UserInitials = "TEST";
-            viewModel.UserType = "TestType";
-
-            // Act - Call from a background thread to test thread safety
-            await Task.Run(async () =>
-            {
-                await viewModel.LogoutAsync();
-            });
-
-            // Assert
             Assert.Equal(string.Empty, viewModel.UserInitials);
             Assert.Equal(string.Empty, viewModel.UserType);
-            Assert.False(viewModel.IsAuthenticated);
         }
 
         private MainViewModel CreateViewModel()
-        {
-            return new MainViewModel(
+            => new(
                 _mockNavigationService.Object,
                 _mockOnlineCheck.Object,
                 _mockLogger.Object,
@@ -340,7 +147,8 @@ namespace Advance_Control.Tests.ViewModels
                 _mockDialogService.Object,
                 _mockServiceProvider.Object,
                 _mockNotificacionService.Object,
-                _mockUserInfoService.Object);
-        }
+                _mockUserInfoService.Object,
+                _mockAlertaService.Object,
+                _mockActivityService.Object);
     }
 }

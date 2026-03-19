@@ -272,9 +272,14 @@ namespace Advance_Control.ViewModels
             };
         }
 
-        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T> origen)
+        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T>? origen)
         {
             destino.Clear();
+            if (origen == null)
+            {
+                return;
+            }
+
             foreach (var item in origen)
             {
                 destino.Add(item);

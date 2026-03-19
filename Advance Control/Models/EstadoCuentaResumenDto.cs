@@ -30,6 +30,7 @@ namespace Advance_Control.Models
         public string? NumeroCliente { get; set; }
         public string? FolioFiscal { get; set; }
         public DateTime? FechaCarga { get; set; }
+        public string? ReferenciasBusqueda { get; set; }
 
         public string CuentaTitulo => string.IsNullOrWhiteSpace(TipoCuenta)
             ? NumeroCuenta

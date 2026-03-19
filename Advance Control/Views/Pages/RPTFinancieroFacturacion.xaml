@@ -44,7 +44,10 @@
                         Grid.Column="0"
                         Spacing="4">
                         <TextBlock Text="RFC Receptor" />
-                        <TextBox PlaceholderText="RFC..." Text="{x:Bind ViewModel.ReceptorRfcFiltro, Mode=TwoWay}" />
+                        <TextBox
+                            PlaceholderText="RFC..."
+                            Text="{x:Bind ViewModel.ReceptorRfcFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TextChanged="Filtro_TextChanged" />
                     </StackPanel>
 
                     <StackPanel
@@ -52,7 +55,10 @@
                         Grid.Column="1"
                         Spacing="4">
                         <TextBlock Text="Referencia" />
-                        <TextBox PlaceholderText="Referencia..." Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay}" />
+                        <TextBox
+                            PlaceholderText="Referencia..."
+                            Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TextChanged="Filtro_TextChanged" />
                     </StackPanel>
 
                     <StackPanel
@@ -60,7 +66,7 @@
                         Grid.Column="2"
                         Spacing="4">
                         <TextBlock Text="Fecha Inicio" />
-                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaInicioFiltro, Mode=TwoWay}" />
+                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaInicioFiltro, Mode=TwoWay}" DateChanged="FiltroFecha_DateChanged" />
                     </StackPanel>
 
                     <StackPanel
@@ -68,7 +74,7 @@
                         Grid.Column="3"
                         Spacing="4">
                         <TextBlock Text="Fecha Fin" />
-                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaFinFiltro, Mode=TwoWay}" />
+                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaFinFiltro, Mode=TwoWay}" DateChanged="FiltroFecha_DateChanged" />
                     </StackPanel>
 
                     <StackPanel
@@ -76,13 +82,12 @@
                         Grid.Column="4"
                         Spacing="4">
                         <TextBlock Text="Estado" />
-                        <CheckBox Content="Solo finiquitadas" IsChecked="{x:Bind ViewModel.SoloFiniquitadas, Mode=TwoWay}" />
-                        <CheckBox Content="No finiquitadas" IsChecked="{x:Bind ViewModel.NoFiniquitadas, Mode=TwoWay}" />
+                        <CheckBox Content="Solo finiquitadas" IsChecked="{x:Bind ViewModel.SoloFiniquitadas, Mode=TwoWay}" Checked="FiltroEstado_Changed" Unchecked="FiltroEstado_Changed" />
+                        <CheckBox Content="No finiquitadas" IsChecked="{x:Bind ViewModel.NoFiniquitadas, Mode=TwoWay}" Checked="FiltroEstado_Changed" Unchecked="FiltroEstado_Changed" />
                     </StackPanel>
                 </Grid>
 
                 <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Click="BtnBuscar_Click" Content="Consultar" />
                     <Button Click="BtnLimpiar_Click" Content="Limpiar filtros" />
                     <Button Click="BtnGenerarReporte_Click" Content="Generar Reporte" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" />
                     <ProgressRing
@@ -117,9 +122,6 @@
                 </StackPanel>
             </StackPanel>
         </Border>
-
-
-
         <Border
             Grid.Row="1"
             Margin="5,0,5,5"

@@ -11,15 +11,25 @@ using QuestPDF.Infrastructure;
 
 namespace Advance_Control.Services.Reportes
 {
+    /// <summary>
+    /// Servicio encargado de transformar el modelo del reporte financiero de facturación
+    /// en un archivo PDF usando QuestPDF.
+    /// </summary>
     public class ReporteFinancieroFacturacionExportService : IReporteFinancieroFacturacionExportService
     {
+        // Cultura fija para formatear fechas y montos en formato mexicano.
         private static readonly CultureInfo Cultura = new("es-MX");
 
         public ReporteFinancieroFacturacionExportService()
         {
+            // Se establece la licencia comunitaria de QuestPDF una sola vez.
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
+        /// <summary>
+        /// Genera el PDF del reporte financiero tomando las facturas ya visibles en pantalla,
+        /// junto con los filtros aplicados por el usuario.
+        /// </summary>
         public Task<string> GenerarReportePdfAsync(
             IReadOnlyList<ReporteFinancieroFacturacionCabeceraDto> cabeceras,
             IReadOnlyList<ReporteFinancieroFacturacionDetalleDto> detalles,
@@ -29,70 +39,86 @@ namespace Advance_Control.Services.Reportes
             DateTimeOffset? fechaFinFiltro,
             bool? finiquitoFiltro)
         {
+            // Validación defensiva: la colección de cabeceras es obligatoria.
             if (cabeceras == null)
             {
                 throw new ArgumentNullException(nameof(cabeceras));
             }
 
+            // Validación defensiva: la colección de detalles es obligatoria.
             if (detalles == null)
             {
                 throw new ArgumentNullException(nameof(detalles));
             }
 
+            // Si no hay detalles visibles, no tiene sentido construir el PDF.
             if (detalles.Count == 0)
             {
                 throw new InvalidOperationException("No hay registros visibles para generar el reporte.");
             }
 
+            // Se asegura la carpeta destino donde se guardarán los PDFs.
             var carpeta = ObtenerCarpetaReportes();
             Directory.CreateDirectory(carpeta);
 
+            // Se prepara toda la información derivada que usará el documento.
             var rutaArchivo = Path.Combine(carpeta, ConstruirNombreArchivo(receptorRfcFiltro));
             var resumenFiltros = ConstruirResumenFiltros(receptorRfcFiltro, referenciaFiltro, fechaInicioFiltro, fechaFinFiltro, finiquitoFiltro);
             var totalFacturado = cabeceras.Sum(item => item.TotalFacturado);
             var totalFiniquitado = cabeceras.Sum(item => item.TotalAbonadoMovimientos);
             var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "EstadoCuenta.png");
 
+            // Aquí se define toda la estructura visual del PDF.
             var documento = Document.Create(container =>
             {
                 container.Page(page =>
                 {
+                    // Configuración general de la página.
                     page.Size(PageSizes.Letter);
                     page.Margin(1.5f, Unit.Centimetre);
                     page.PageColor(Colors.White);
                     page.DefaultTextStyle(x => x.FontSize(10));
 
+                    // Encabezado del documento: imagen institucional, título y fecha de generación.
                     page.Header().ShowOnce().Column(column =>
                     {
+                        // Si existe la imagen configurada para este reporte, se usa como cabecera.
                         if (File.Exists(cabeceraPath))
                         {
                             column.Item().Image(cabeceraPath).FitWidth();
                         }
 
+                        // Título principal del PDF.
                         column.Item().Text("Reporte Financiero de Facturacion")
                             .FontSize(18)
                             .SemiBold()
                             .FontColor(Colors.Blue.Darken2);
 
+                        // Fecha y hora exactas de generación del archivo.
                         column.Item().Text($"Generado: {DateTime.Now.ToString("dd/MM/yyyy HH:mm", Cultura)}")
                             .FontSize(9)
                             .FontColor(Colors.Grey.Darken1);
                     });
 
+                    // Contenido central del reporte.
                     page.Content().Column(column =>
                     {
                         column.Spacing(8);
 
+                        // Cuadro con el resumen textual de los filtros aplicados.
                         column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Column(filtros =>
                         {
                             filtros.Spacing(2);
                             filtros.Item().Text("Filtros aplicados").SemiBold();
+
+                            // Cada filtro se imprime como una línea independiente para facilitar lectura.
                             foreach (var linea in resumenFiltros)
                             {
                                 filtros.Item().Text(linea);
                             }
                         });
 
+                        // Bloque de resumen global del reporte.
                         column.Item().Row(row =>
                         {
                             row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(resumen =>
@@ -104,29 +130,39 @@ namespace Advance_Control.Services.Reportes
                             });
                         });
 
+                        // Cada cabecera representa un cliente/receptor dentro del reporte.
                         foreach (var cabecera in cabeceras)
                         {
+                            // Se seleccionan únicamente las facturas que pertenecen al receptor actual.
                             var detallesCliente = detalles
                                 .Where(item => string.Equals(item.ReceptorRfc, cabecera.ReceptorRfc, StringComparison.OrdinalIgnoreCase))
                                 .ToList();
 
+                            // Tarjeta principal del cliente con sus facturas.
                             column.Item().Border(1).BorderColor(Colors.Blue.Lighten2).Padding(8).Column(cliente =>
                             {
                                 cliente.Spacing(6);
+
+                                // Nombre y RFC del cliente.
                                 cliente.Item().Text($"{cabecera.ReceptorNombreTexto} ({cabecera.ReceptorRfcTexto})")
                                     .SemiBold()
                                     .FontSize(12)
                                     .FontColor(Colors.Blue.Darken2);
 
+                                // Resumen de cantidades de facturas.
                                 cliente.Item().Text(cabecera.ResumenTexto);
+
+                                // Totales monetarios del cliente actual.
                                 cliente.Item().Text($"Facturado: {cabecera.TotalFacturadoTexto}   |   Finiquitado: {cabecera.TotalAbonadoMovimientosTexto}");
 
+                                // Se imprime una tarjeta por cada factura del cliente.
                                 foreach (var detalle in detallesCliente)
                                 {
                                     cliente.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(6).Column(detalleItem =>
                                     {
                                         detalleItem.Spacing(4);
 
+                                        // Primera fila de metadatos de la factura: folio, fecha y estado.
                                         detalleItem.Item().Table(tabla =>
                                         {
                                             tabla.ColumnsDefinition(columnas =>
@@ -156,6 +192,7 @@ namespace Advance_Control.Services.Reportes
                                             });
                                         });
 
+                                        // Segunda fila de información financiera de la factura.
                                         detalleItem.Item().Table(tabla =>
                                         {
                                             tabla.ColumnsDefinition(columnas =>
@@ -179,17 +216,63 @@ namespace Advance_Control.Services.Reportes
                                             });
                                             tabla.Cell().Element(EstiloCampoDetalle).Text(text =>
                                             {
-                                                text.Span("Referencia").SemiBold();
+                                                text.Span("Referencia(s)").SemiBold();
                                                 text.Span(": ");
                                                 text.Span(detalle.ReferenciaTexto);
                                             });
                                         });
+
+                                        // Si la factura tiene abonos relacionados, se listan debajo de ella.
+                                        if (detalle.Abonos.Count > 0)
+                                        {
+                                            detalleItem.Item().PaddingTop(2).Column(abonos =>
+                                            {
+                                                abonos.Spacing(4);
+
+                                                // Título del sublistado de abonos de la factura.
+                                                abonos.Item().Text(detalle.ResumenAbonosTitulo)
+                                                    .SemiBold()
+                                                    .FontSize(9);
+
+                                                // Cada abono se muestra en su propia tabla para aislar su contenido.
+                                                foreach (var abono in detalle.Abonos.OrderBy(item => item.FechaAbono).ThenBy(item => item.IdAbonoFactura))
+                                                {
+                                                    abonos.Item().Border(1).BorderColor(Colors.Grey.Lighten2).Padding(5).Table(tabla =>
+                                                    {
+                                                        // Se reservan anchos fijos para fecha, monto y saldo;
+                                                        // la referencia consume el espacio restante.
+                                                        tabla.ColumnsDefinition(columnas =>
+                                                        {
+                                                            columnas.ConstantColumn(120);
+                                                            columnas.ConstantColumn(120);
+                                                            columnas.ConstantColumn(125);
+                                                            columnas.ConstantColumn(120);
+                                                        });
+
+                                                        tabla.Header(header =>
+                                                        {
+                                                            header.Cell().Element(EstiloEtiquetaSubtablaAbono).Text("Fecha");
+                                                            header.Cell().Element(EstiloEtiquetaSubtablaAbono).Text("Monto");
+                                                            header.Cell().Element(EstiloEtiquetaSubtablaAbono).Text("Referencia");
+                                                            header.Cell().Element(EstiloEtiquetaSubtablaAbono).Text("Saldo");
+                                                        });
+
+                                                        // Fila de valores del abono actual.
+                                                        tabla.Cell().Element(EstiloValorSubtablaAbono).Text(abono.FechaAbonoTexto);
+                                                        tabla.Cell().Element(EstiloValorSubtablaAbono).Text(abono.MontoAbonoTexto);
+                                                        tabla.Cell().Element(EstiloValorSubtablaAbono).Text(abono.ReferenciaTexto);
+                                                        tabla.Cell().Element(EstiloValorSubtablaAbono).Text(abono.SaldoPosteriorTexto);
+                                                    });
+                                                }
+                                            });
+                                        }
                                     });
                                 }
                             });
                         }
                     });
 
+                    // Pie de página con numeración.
                     page.Footer().AlignRight().Text(text =>
                     {
                         text.Span("Pagina ");
@@ -200,22 +283,32 @@ namespace Advance_Control.Services.Reportes
                 });
             });
 
+            // Finalmente se genera el archivo físico en disco.
             documento.GeneratePdf(rutaArchivo);
             return Task.FromResult(rutaArchivo);
         }
 
+        /// <summary>
+        /// Devuelve la carpeta local donde se guardan los reportes PDF.
+        /// </summary>
         private static string ObtenerCarpetaReportes()
         {
             var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             return Path.Combine(documentos, "Advance Control", "ReportesFinancieros");
         }
 
+        /// <summary>
+        /// Devuelve la carpeta donde se almacenan las imágenes de cabecera.
+        /// </summary>
         private static string ObtenerCarpetaCabeceras()
         {
             var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             return Path.Combine(documentos, "Advance Control", "Cabeceras");
         }
 
+        /// <summary>
+        /// Construye el nombre final del PDF usando el RFC filtrado, o "General" si no hubo filtro.
+        /// </summary>
         private static string ConstruirNombreArchivo(string? receptorRfcFiltro)
         {
             var rfc = string.IsNullOrWhiteSpace(receptorRfcFiltro)
@@ -225,11 +318,17 @@ namespace Advance_Control.Services.Reportes
             return $"ReporteFinancieroFacturacion_{rfc}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
         }
 
+        /// <summary>
+        /// Quita caracteres no válidos para nombres de archivo.
+        /// </summary>
         private static string LimpiarNombreArchivo(string valor)
         {
             return string.Concat(valor.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
         }
 
+        /// <summary>
+        /// Convierte los filtros actuales en un listado de líneas legibles para imprimir en el PDF.
+        /// </summary>
         private static List<string> ConstruirResumenFiltros(
             string? receptorRfcFiltro,
             string? referenciaFiltro,
@@ -247,6 +346,9 @@ namespace Advance_Control.Services.Reportes
             };
         }
 
+        /// <summary>
+        /// Traduce el filtro nullable de finiquito a texto legible.
+        /// </summary>
         private static string ObtenerDescripcionFiniquito(bool? finiquitoFiltro)
         {
             if (finiquitoFiltro == true)
@@ -262,11 +364,38 @@ namespace Advance_Control.Services.Reportes
             return "Todas";
         }
 
+        /// <summary>
+        /// Estilo base de las celdas de detalle de factura.
+        /// </summary>
         private static IContainer EstiloCampoDetalle(IContainer container)
         {
             return container
                 .PaddingHorizontal(2)
                 .DefaultTextStyle(x => x.FontSize(9));
+        }
+
+        /// <summary>
+        /// Estilo para los encabezados de la subtabla de abonos.
+        /// </summary>
+        private static IContainer EstiloEtiquetaSubtablaAbono(IContainer container)
+        {
+            return container
+                .BorderBottom(1)
+                .BorderColor(Colors.Grey.Lighten1)
+                .PaddingVertical(2)
+                .PaddingHorizontal(2)
+                .DefaultTextStyle(x => x.FontSize(8).SemiBold());
+        }
+
+        /// <summary>
+        /// Estilo para las celdas de valores de la subtabla de abonos.
+        /// </summary>
+        private static IContainer EstiloValorSubtablaAbono(IContainer container)
+        {
+            return container
+                .PaddingVertical(3)
+                .PaddingHorizontal(2)
+                .DefaultTextStyle(x => x.FontSize(8));
         }
 
     }

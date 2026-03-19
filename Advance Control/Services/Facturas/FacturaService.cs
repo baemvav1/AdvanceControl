@@ -61,10 +61,16 @@ namespace Advance_Control.Services.Facturas
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<GuardarFacturaResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                return result ?? new GuardarFacturaResponseDto
+                if (result != null)
                 {
-                    Success = true,
-                    Message = "Factura guardada correctamente."
+                    return result;
+                }
+
+                await _logger.LogErrorAsync("La API devolvio una respuesta vacia al guardar la factura", null, "FacturaService", "GuardarFacturaAsync");
+                return new GuardarFacturaResponseDto
+                {
+                    Success = false,
+                    Message = "La API devolvio una respuesta vacia al guardar la factura."
                 };
             }
             catch (HttpRequestException ex)
@@ -154,10 +160,16 @@ namespace Advance_Control.Services.Facturas
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<RegistrarAbonoFacturaResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                return result ?? new RegistrarAbonoFacturaResponseDto
+                if (result != null)
                 {
-                    Success = true,
-                    Message = "Abono registrado correctamente."
+                    return result;
+                }
+
+                await _logger.LogErrorAsync("La API devolvio una respuesta vacia al registrar el abono", null, "FacturaService", "RegistrarAbonoAsync");
+                return new RegistrarAbonoFacturaResponseDto
+                {
+                    Success = false,
+                    Message = "La API devolvio una respuesta vacia al registrar el abono."
                 };
             }
             catch (HttpRequestException ex)

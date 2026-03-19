@@ -50,10 +50,20 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Spacing="4">
-                                <TextBlock FontWeight="SemiBold" Text="{Binding ResumenMovimientos}" />
-                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Solo se muestran movimientos pendientes de conciliacion." />
-                            </StackPanel>
+                            <Grid Grid.Row="0" ColumnSpacing="12" RowSpacing="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="260" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="4">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding ResumenMovimientos}" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Solo se muestran movimientos pendientes de conciliacion." />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Filtro directo" />
+                                    <TextBox PlaceholderText="Buscar por metadatos o monto..." Text="{x:Bind ViewModel.MovimientoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
 
                             <ScrollViewer Grid.Row="1">
                                 <muxc:ItemsRepeater ItemsSource="{Binding MovimientosPendientes}">
@@ -123,10 +133,20 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <StackPanel Grid.Row="0" Spacing="4">
-                                <TextBlock FontWeight="SemiBold" Text="{Binding ResumenFacturas}" />
-                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Solo se muestran facturas abiertas o con saldo pendiente." />
-                            </StackPanel>
+                            <Grid Grid.Row="0" ColumnSpacing="12" RowSpacing="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="240" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" Spacing="4">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding ResumenFacturas}" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Solo se muestran facturas abiertas o con saldo pendiente." />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4">
+                                    <TextBlock Text="Filtro directo" />
+                                    <TextBox PlaceholderText="Buscar folio..." Text="{x:Bind ViewModel.FacturaFolioBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                            </Grid>
 
                             <ScrollViewer Grid.Row="1">
                                 <muxc:ItemsRepeater ItemsSource="{Binding FacturasPendientes}">
@@ -194,10 +214,10 @@
                                 Click="BtnConciliacionAutomatica_Click"
                                 Content="Conciliacion Automatica" />
                             <Button
-                                x:Name="BtnConciliacionAutomaticaConvinacional"
+                                x:Name="BtnConciliacionAutomaticaAbonos"
                                 Margin="5,0,0,0"
-                                Click="BtnConciliacionAutomaticaConvinacional_Click"
-                                Content="Conciliacion Automatica Convinacional" />
+                                Click="BtnConciliacionAutomaticaAbonos_Click"
+                                Content="Conciliacion Automatica de Abonos" />
                         </StackPanel>
                     </Grid>
                     <Grid x:Name="ConciliacionPanelGrid" Grid.Row="1">

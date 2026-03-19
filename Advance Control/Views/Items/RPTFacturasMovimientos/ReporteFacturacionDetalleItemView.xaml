@@ -78,11 +78,42 @@
                     BorderThickness="1"
                     CornerRadius="6">
                     <StackPanel Spacing="4">
-                        <TextBlock FontWeight="SemiBold" Text="Referencia" />
+                        <TextBlock FontWeight="SemiBold" Text="Referencia(s)" />
                         <TextBlock Text="{Binding Detalle.ReferenciaTexto, ElementName=Root}" TextWrapping="Wrap" />
                     </StackPanel>
                 </Border>
             </Grid>
+
+            <StackPanel Spacing="6">
+                <TextBlock FontWeight="SemiBold" Text="{Binding Detalle.ResumenAbonosTitulo, ElementName=Root}" />
+
+                <ItemsControl ItemsSource="{Binding Detalle.Abonos, ElementName=Root}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border
+                                Padding="8"
+                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                                <Grid ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" Text="{Binding FechaAbonoTexto}" />
+                                    <TextBlock Grid.Column="1" Text="{Binding MontoAbonoTexto}" />
+                                    <TextBlock Grid.Column="2" Text="{Binding ReferenciaTexto}" TextWrapping="Wrap" />
+                                    <TextBlock Grid.Column="3" Text="{Binding SaldoPosteriorTexto}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
 
             <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>

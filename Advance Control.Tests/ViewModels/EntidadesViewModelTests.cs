@@ -286,7 +286,7 @@ namespace Advance_Control.Tests.ViewModels
 
             // Assert
             Assert.NotNull(viewModel.ErrorMessage);
-            Assert.Contains("Error al limpiar filtros", viewModel.ErrorMessage);
+            Assert.Contains("Error inesperado al cargar entidades", viewModel.ErrorMessage);
         }
 
         [Fact]

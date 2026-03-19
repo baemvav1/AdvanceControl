@@ -1,13 +1,21 @@
+using System;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Advance_Control.Views.Pages
 {
     public sealed partial class RPTFinancieroFacturacion : Page
     {
+        private const int LiveFilterDelayMs = 300;
+        private CancellationTokenSource? _filtrosLiveCts;
+        private bool _recargaLiveEnCurso;
+        private bool _recargaLivePendiente;
+
         public RPTFinancieroFacturacionViewModel ViewModel { get; }
 
         public RPTFinancieroFacturacion()
@@ -23,15 +31,25 @@ namespace Advance_Control.Views.Pages
             await CargarReporteSeguroAsync();
         }
 
-        private async void BtnBuscar_Click(object sender, RoutedEventArgs e)
+        private void Filtro_TextChanged(object sender, TextChangedEventArgs e)
         {
-            await CargarReporteSeguroAsync();
+            ProgramarRecargaLive();
+        }
+
+        private void FiltroFecha_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+        {
+            ProgramarRecargaLive();
+        }
+
+        private void FiltroEstado_Changed(object sender, RoutedEventArgs e)
+        {
+            ProgramarRecargaLive();
         }
 
         private async void BtnLimpiar_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.LimpiarFiltros();
-            await CargarReporteSeguroAsync();
+            ProgramarRecargaLive();
         }
 
         private async void BtnGenerarReporte_Click(object sender, RoutedEventArgs e)
@@ -51,7 +69,55 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        private async System.Threading.Tasks.Task CargarReporteSeguroAsync()
+        private void ProgramarRecargaLive()
+        {
+            _filtrosLiveCts?.Cancel();
+            _filtrosLiveCts?.Dispose();
+            _filtrosLiveCts = new CancellationTokenSource();
+
+            _ = EjecutarRecargaLiveAsync(_filtrosLiveCts.Token);
+        }
+
+        private async Task EjecutarRecargaLiveAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                await Task.Delay(LiveFilterDelayMs, cancellationToken);
+            }
+            catch (OperationCanceledException)
+            {
+                return;
+            }
+
+            await CargarReporteLiveSerializadoAsync();
+        }
+
+        private async Task CargarReporteLiveSerializadoAsync()
+        {
+            if (_recargaLiveEnCurso)
+            {
+                _recargaLivePendiente = true;
+                return;
+            }
+
+            _recargaLiveEnCurso = true;
+
+            try
+            {
+                do
+                {
+                    _recargaLivePendiente = false;
+                    await CargarReporteSeguroAsync();
+                }
+                while (_recargaLivePendiente);
+            }
+            finally
+            {
+                _recargaLiveEnCurso = false;
+            }
+        }
+
+        private async Task CargarReporteSeguroAsync()
         {
             try
             {

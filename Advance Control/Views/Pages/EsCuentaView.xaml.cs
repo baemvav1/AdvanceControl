@@ -33,6 +33,7 @@ namespace Advance_Control.Views.Pages
     /// </summary>
     public sealed partial class EsCuentaView : Page
     {
+        private static readonly List<Window> VentanasDetalleAbiertas = new();
         public EsCuentaViewModel ViewModel { get; }
         private readonly IActivityService _activityService;
 
@@ -57,14 +58,7 @@ namespace Advance_Control.Views.Pages
             var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
             await ViewModel.CargarArchivoXmlAsync(hwnd);
             if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
-                _activityService.Registrar("EsCuenta", "XML cargado");
-        }
-
-        private async void BtnGuardarEstadoCuenta_Click(object sender, RoutedEventArgs e)
-        {
-            await ViewModel.GuardarEstadoCuentaAsync();
-            if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
-                _activityService.Registrar("EsCuenta", "Estado de cuenta guardado");
+                _activityService.Registrar("EsCuenta", "XML cargado y guardado");
         }
 
         private async void BtnActualizarListado_Click(object sender, RoutedEventArgs e)
@@ -82,7 +76,18 @@ namespace Advance_Control.Views.Pages
             if (e.ClickedItem is EstadoCuentaResumenDto estadoCuenta)
             {
                 var ventanaDetalle = new DetailEstadoCuentaWindow(estadoCuenta);
+                ventanaDetalle.Closed += VentanaDetalle_Closed;
+                VentanasDetalleAbiertas.Add(ventanaDetalle);
                 ventanaDetalle.Activate();
+            }
+        }
+
+        private static void VentanaDetalle_Closed(object sender, WindowEventArgs args)
+        {
+            if (sender is Window ventana)
+            {
+                ventana.Closed -= VentanaDetalle_Closed;
+                VentanasDetalleAbiertas.Remove(ventana);
             }
         }
     }

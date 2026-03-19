@@ -224,7 +224,10 @@ namespace Advance_Control.ViewModels
                     HasAlertasDb = false;
                 });
             }
-            catch { /* silenciar */ }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync("No se pudieron descartar las alertas del sistema", "MainViewModel", "DescartarAlertasAsync");
+            }
         }
 
         public string UserInitials

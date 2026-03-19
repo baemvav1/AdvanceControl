@@ -26,6 +26,10 @@ namespace Advance_Control.ViewModels
         private string? _successMessage;
         private DateTimeOffset? _fechaFiltroDesde;
         private DateTimeOffset? _fechaFiltroHasta;
+        private string? _folioFiltro;
+        private string? _receptorFiltro;
+        private string? _metodoPagoFiltro;
+        private string? _totalFiltro;
 
         public FacturasViewModel(IFacturaService facturaService)
         {
@@ -113,6 +117,54 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public string? FolioFiltro
+        {
+            get => _folioFiltro;
+            set
+            {
+                if (SetProperty(ref _folioFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public string? ReceptorFiltro
+        {
+            get => _receptorFiltro;
+            set
+            {
+                if (SetProperty(ref _receptorFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public string? MetodoPagoFiltro
+        {
+            get => _metodoPagoFiltro;
+            set
+            {
+                if (SetProperty(ref _metodoPagoFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public string? TotalFiltro
+        {
+            get => _totalFiltro;
+            set
+            {
+                if (SetProperty(ref _totalFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
         public bool CanSave => _facturaActualRequest != null && ConceptosFactura.Count > 0 && !IsLoading;
         public string ResumenFacturasExistentes => $"{FacturasExistentes.Count} facturas mostradas";
 
@@ -137,8 +189,22 @@ namespace Advance_Control.ViewModels
                 {
                     var xmlContent = await FileIO.ReadTextAsync(file);
                     var request = ConstruirFacturaDesdeXml(xmlContent);
+                    var result = await ValidarYGuardarFacturaAsync(request);
                     AplicarFacturaActual(request);
-                    SuccessMessage = $"Archivo {file.Name} cargado exitosamente. Conceptos encontrados: {ConceptosFactura.Count}.";
+
+                    if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                            ? $"No se pudo guardar la factura {file.Name}."
+                            : $"{file.Name}: {result.Message}";
+                        SuccessMessage = null;
+                        return;
+                    }
+
+                    await ActualizarFacturasExistentesAsync();
+                    SuccessMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? $"Archivo {file.Name} cargado y guardado exitosamente."
+                        : $"{file.Name}: {result.Message}";
                 }
             }
             catch (Exception ex)
@@ -207,7 +273,7 @@ namespace Advance_Control.ViewModels
                             continue;
                         }
 
-                        var result = await _facturaService.GuardarFacturaAsync(request);
+                        var result = await ValidarYGuardarFacturaAsync(request);
                         ultimaFacturaValida = request;
 
                         if (result.Success)
@@ -281,7 +347,7 @@ namespace Advance_Control.ViewModels
                 SuccessMessage = null;
 
                 var result = await _facturaService.GuardarFacturaAsync(_facturaActualRequest);
-                if (!result.Success)
+                if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
                 {
                     ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
                         ? "No se pudo guardar la factura."
@@ -332,6 +398,10 @@ namespace Advance_Control.ViewModels
         {
             FechaFiltroDesde = null;
             FechaFiltroHasta = null;
+            FolioFiltro = null;
+            ReceptorFiltro = null;
+            MetodoPagoFiltro = null;
+            TotalFiltro = null;
             AplicarFiltrosFacturasExistentes();
         }
 
@@ -494,6 +564,15 @@ namespace Advance_Control.ViewModels
         {
             var fechaDesde = FechaFiltroDesde?.Date;
             var fechaHasta = FechaFiltroHasta?.Date;
+            var folioFiltro = FolioFiltro?.Trim();
+            var receptorFiltro = ReceptorFiltro?.Trim();
+            var metodoPagoFiltro = MetodoPagoFiltro?.Trim();
+            var totalFiltro = TotalFiltro?.Trim();
+            var totalBuscado = decimal.TryParse(totalFiltro, NumberStyles.Any, new CultureInfo("es-MX"), out var totalValor)
+                ? totalValor
+                : decimal.TryParse(totalFiltro, NumberStyles.Any, CultureInfo.InvariantCulture, out totalValor)
+                    ? totalValor
+                    : (decimal?)null;
 
             if (fechaDesde.HasValue && fechaHasta.HasValue && fechaDesde.Value > fechaHasta.Value)
             {
@@ -503,6 +582,17 @@ namespace Advance_Control.ViewModels
             var filtradas = _facturasExistentesBase
                 .Where(f => !fechaDesde.HasValue || f.Fecha.Date >= fechaDesde.Value.Date)
                 .Where(f => !fechaHasta.HasValue || f.Fecha.Date <= fechaHasta.Value.Date)
+                .Where(f => string.IsNullOrWhiteSpace(folioFiltro)
+                    || string.Equals(f.Folio?.Trim(), folioFiltro, StringComparison.OrdinalIgnoreCase))
+                .Where(f => string.IsNullOrWhiteSpace(receptorFiltro)
+                    || (!string.IsNullOrWhiteSpace(f.ReceptorNombre) && f.ReceptorNombre.Contains(receptorFiltro, StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrWhiteSpace(f.ReceptorRfc) && f.ReceptorRfc.Contains(receptorFiltro, StringComparison.OrdinalIgnoreCase)))
+                .Where(f => string.IsNullOrWhiteSpace(metodoPagoFiltro)
+                    || (!string.IsNullOrWhiteSpace(f.MetodoPago) && f.MetodoPago.Contains(metodoPagoFiltro, StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrWhiteSpace(f.FormaPago) && f.FormaPago.Contains(metodoPagoFiltro, StringComparison.OrdinalIgnoreCase)))
+                .Where(f => string.IsNullOrWhiteSpace(totalFiltro)
+                    || (totalBuscado.HasValue && f.Total == totalBuscado.Value)
+                    || f.TotalTexto.Contains(totalFiltro, StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(f => f.Fecha)
                 .ThenByDescending(f => f.IdFactura)
                 .ToList();
@@ -511,9 +601,38 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(ResumenFacturasExistentes));
         }
 
-        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T> origen)
+        private static void ValidarFacturaParaGuardado(GuardarFacturaRequestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Folio))
+            {
+                throw new InvalidOperationException("La factura debe incluir un folio para poder guardarse.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.EmisorRfc))
+            {
+                throw new InvalidOperationException("La factura debe incluir el RFC del emisor.");
+            }
+
+            if (request.Conceptos.Count == 0)
+            {
+                throw new InvalidOperationException("La factura no contiene conceptos.");
+            }
+        }
+
+        private async Task<GuardarFacturaResponseDto> ValidarYGuardarFacturaAsync(GuardarFacturaRequestDto request)
+        {
+            ValidarFacturaParaGuardado(request);
+            return await _facturaService.GuardarFacturaAsync(request);
+        }
+
+        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T>? origen)
         {
             destino.Clear();
+            if (origen == null)
+            {
+                return;
+            }
+
             foreach (var item in origen)
             {
                 destino.Add(item);

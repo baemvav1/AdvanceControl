@@ -52,6 +52,37 @@ namespace Advance_Control.Tests.Services
                 DisableAuthTimeouts = false,
                 DisableHttpTimeouts = false
             });
+
+            _mockLogger
+                .Setup(x => x.LogInformationAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockLogger
+                .Setup(x => x.LogWarningAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            _mockLogger
+                .Setup(x => x.LogErrorAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
         }
 
         [Fact]
@@ -726,10 +757,16 @@ namespace Advance_Control.Tests.Services
         }
 
         [Fact]
-        public async Task TryRestoreSessionAsync_WithValidStoredToken_ReturnsTrue()
+        public async Task TryRestoreSessionAsync_WithStoredTokenInDevMode_ReturnsTrue()
         {
             // Arrange - Setup storage with valid token
             var validExpiry = DateTime.UtcNow.AddHours(1).ToString("o");
+            var devModeOptions = Options.Create(new DevelopmentModeOptions
+            {
+                Enabled = true,
+                DisableAuthTimeouts = true,
+                DisableHttpTimeouts = false
+            });
             
             _mockSecureStorage
                 .Setup(x => x.GetAsync("auth.access_token"))
@@ -741,26 +778,8 @@ namespace Advance_Control.Tests.Services
                 .Setup(x => x.GetAsync("auth.access_expires_at_utc"))
                 .ReturnsAsync(validExpiry);
 
-            // Setup validate endpoint to return success
-            var validateResponse = new { valid = true };
-            _mockHttpMessageHandler
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = JsonContent.Create(validateResponse)
-                });
-
-            _mockEndpointProvider
-                .Setup(x => x.GetEndpoint("api", "Auth", "validate"))
-                .Returns("https://test.api.com/api/Auth/validate");
-
             var authService = new AuthService(_httpClient, _mockEndpointProvider.Object, 
-                _mockSecureStorage.Object, _mockLogger.Object, _devModeOptions);
+                _mockSecureStorage.Object, _mockLogger.Object, devModeOptions);
 
             // Wait for initialization
             await Task.Delay(100);

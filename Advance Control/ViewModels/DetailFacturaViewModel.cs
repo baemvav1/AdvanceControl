@@ -220,9 +220,14 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanRegistrarAbono));
         }
 
-        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, System.Collections.Generic.IReadOnlyCollection<T> origen)
+        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, System.Collections.Generic.IReadOnlyCollection<T>? origen)
         {
             destino.Clear();
+            if (origen == null)
+            {
+                return;
+            }
+
             foreach (var item in origen)
             {
                 destino.Add(item);

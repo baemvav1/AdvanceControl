@@ -61,10 +61,16 @@ namespace Advance_Control.Services.EstadoCuenta
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<GuardarEstadoCuentaResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                return result ?? new GuardarEstadoCuentaResponseDto
+                if (result != null)
                 {
-                    Success = true,
-                    Message = "Estado de cuenta guardado correctamente."
+                    return result;
+                }
+
+                await _logger.LogErrorAsync("La API devolvio una respuesta vacia al guardar el estado de cuenta", null, "EstadoCuentaXmlService", "GuardarEstadoCuentaAsync");
+                return new GuardarEstadoCuentaResponseDto
+                {
+                    Success = false,
+                    Message = "La API devolvio una respuesta vacia al guardar el estado de cuenta."
                 };
             }
             catch (HttpRequestException ex)
@@ -157,10 +163,16 @@ namespace Advance_Control.Services.EstadoCuenta
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<ConciliacionAutomaticaResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                return result ?? new ConciliacionAutomaticaResponseDto
+                if (result != null)
                 {
-                    Success = true,
-                    Message = "Conciliacion automatica completada."
+                    return result;
+                }
+
+                await _logger.LogErrorAsync("La API devolvio una respuesta vacia al ejecutar la conciliacion automatica", null, "EstadoCuentaXmlService", "ConciliarAutomaticamenteAsync");
+                return new ConciliacionAutomaticaResponseDto
+                {
+                    Success = false,
+                    Message = "La API devolvio una respuesta vacia al ejecutar la conciliacion automatica."
                 };
             }
             catch (HttpRequestException ex)

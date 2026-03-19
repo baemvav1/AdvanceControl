@@ -20,13 +20,9 @@
                        Style="{StaticResource TitleTextBlockStyle}"
                        VerticalAlignment="Center"/>
             <Button x:Name="BtnCargarXml"
-                    Content="Cargar Archivo XML"
-                    Click="BtnCargarXml_Click"
-                    IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"/>
-            <Button x:Name="BtnGuardarEstadoCuenta"
-                    Content="Guardar en servidor"
-                    Click="BtnGuardarEstadoCuenta_Click"
-                    IsEnabled="{x:Bind ViewModel.CanSave, Mode=OneWay}" />
+                     Content="Cargar Archivo XML"
+                     Click="BtnCargarXml_Click"
+                     IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"/>
             <Button x:Name="BtnActualizarListado"
                     Content="Actualizar listado"
                     Click="BtnActualizarListado_Click"
@@ -61,12 +57,7 @@
             </StackPanel>
         </Grid>
 
-        <Grid Grid.Row="2" ColumnSpacing="20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="380"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-
+        <Grid Grid.Row="2">
             <Border Grid.Column="0"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -98,24 +89,49 @@
                             CornerRadius="8"
                             Padding="12">
                         <StackPanel Spacing="12">
-                            <TextBlock Text="Filtros por fecha"
-                                       FontWeight="SemiBold"/>
-                            <Grid ColumnSpacing="8">
+                            <TextBlock Text="Filtros"
+                                        FontWeight="SemiBold"/>
+                            <Grid ColumnSpacing="8" RowSpacing="8">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="*"/>
                                     <ColumnDefinition Width="Auto"/>
                                 </Grid.ColumnDefinitions>
 
-                                <CalendarDatePicker Grid.Column="0"
+                                <TextBox Grid.Row="0"
+                                         Grid.Column="0"
+                                         PlaceholderText="Buscar por abono"
+                                         Text="{x:Bind ViewModel.AbonoFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBox Grid.Row="0"
+                                         Grid.Column="1"
+                                         PlaceholderText="Buscar por retiro"
+                                         Text="{x:Bind ViewModel.RetiroFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <TextBox Grid.Row="0"
+                                         Grid.Column="2"
+                                         PlaceholderText="Buscar por referencia"
+                                         Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                <CalendarDatePicker Grid.Row="1"
+                                                    Grid.Column="0"
                                                     Header="Desde"
                                                     Date="{x:Bind ViewModel.FechaFiltroDesde, Mode=TwoWay}"/>
 
-                                <CalendarDatePicker Grid.Column="1"
+                                <CalendarDatePicker Grid.Row="1"
+                                                    Grid.Column="1"
                                                     Header="Hasta"
                                                     Date="{x:Bind ViewModel.FechaFiltroHasta, Mode=TwoWay}"/>
 
-                                <Button Grid.Column="2"
+                                <Button Grid.Row="1"
+                                        Grid.Column="5"
                                         Content="Limpiar"
                                         VerticalAlignment="Bottom"
                                         Click="BtnLimpiarFiltrosEstados_Click"/>
@@ -163,135 +179,6 @@
                     </ListView>
                 </Grid>
             </Border>
-
-            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-                <StackPanel Spacing="20">
-                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="2"
-                            CornerRadius="8"
-                            Padding="16"
-                            Visibility="{x:Bind ViewModel.EstadoCuentaBancario, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
-                        <StackPanel Spacing="16">
-                            <TextBlock Text="Vista previa del XML cargado"
-                                       Style="{StaticResource SubtitleTextBlockStyle}"/>
-
-                            <Grid ColumnSpacing="20" RowSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-
-                                <TextBlock Grid.Row="0" Grid.Column="0" Text="Banco:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="0" Grid.Column="1" Text="{x:Bind ViewModel.EstadoCuentaBancario.NombreBanco, Mode=OneWay}" />
-                                <TextBlock Grid.Row="0" Grid.Column="2" Text="Sucursal:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="0" Grid.Column="3" Text="{x:Bind ViewModel.EstadoCuentaBancario.NombreSucursal, Mode=OneWay}" />
-
-                                <TextBlock Grid.Row="1" Grid.Column="0" Text="Titular:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.EstadoCuentaBancario.Titular, Mode=OneWay}" />
-                                <TextBlock Grid.Row="1" Grid.Column="2" Text="Número cuenta:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="1" Grid.Column="3" Text="{x:Bind ViewModel.EstadoCuentaBancario.NumeroCuenta, Mode=OneWay}" />
-
-                                <TextBlock Grid.Row="2" Grid.Column="0" Text="CLABE:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="2" Grid.Column="1" Text="{x:Bind ViewModel.EstadoCuentaBancario.Clabe, Mode=OneWay}" />
-                                <TextBlock Grid.Row="2" Grid.Column="2" Text="Período:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="2" Grid.Column="3" Text="{x:Bind ViewModel.EstadoCuentaBancario.Periodo, Mode=OneWay}" />
-
-                                <TextBlock Grid.Row="3" Grid.Column="0" Text="Fecha corte:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="3" Grid.Column="1" Text="{x:Bind ViewModel.EstadoCuentaBancario.FechaCorte, Mode=OneWay}" />
-                                <TextBlock Grid.Row="3" Grid.Column="2" Text="Versión XML:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="3" Grid.Column="3" Text="{x:Bind ViewModel.EstadoCuentaBancario.VersionXml, Mode=OneWay}" />
-
-                                <TextBlock Grid.Row="4" Grid.Column="0" Text="Saldo inicial:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="4" Grid.Column="1" Text="{x:Bind ViewModel.EstadoCuentaBancario.SaldoInicial, Mode=OneWay}" />
-                                <TextBlock Grid.Row="4" Grid.Column="2" Text="Saldo final:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="4" Grid.Column="3" Text="{x:Bind ViewModel.EstadoCuentaBancario.SaldoFinal, Mode=OneWay}" />
-
-                                <TextBlock Grid.Row="5" Grid.Column="0" Text="Grupos / individuales:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="5" Grid.Column="1" Text="{x:Bind ViewModel.EstadoCuentaBancario.TotalGrupos, Mode=OneWay}" />
-                                <TextBlock Grid.Row="5" Grid.Column="2" Text="Total transacciones:" FontWeight="SemiBold"/>
-                                <TextBlock Grid.Row="5" Grid.Column="3" Text="{x:Bind ViewModel.EstadoCuentaBancario.TotalTransacciones, Mode=OneWay}" />
-                            </Grid>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="2"
-                            CornerRadius="8"
-                            Padding="16"
-                            Visibility="{x:Bind ViewModel.EstadoCuentaBancario, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
-                        <StackPanel Spacing="12">
-                            <TextBlock Text="Grupos principales del XML cargado"
-                                       Style="{StaticResource SubtitleTextBlockStyle}"/>
-                            <ListView ItemsSource="{x:Bind ViewModel.Movimientos, Mode=OneWay}"
-                                      SelectionMode="None"
-                                      IsItemClickEnabled="False">
-                                <ListView.ItemTemplate>
-                                    <DataTemplate x:DataType="models:MovimientoBancario">
-                                        <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="6"
-                                                Padding="10"
-                                                Margin="0,0,0,8">
-                                            <Grid ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="110"/>
-                                                    <ColumnDefinition Width="*"/>
-                                                    <ColumnDefinition Width="110"/>
-                                                    <ColumnDefinition Width="110"/>
-                                                    <ColumnDefinition Width="110"/>
-                                                </Grid.ColumnDefinitions>
-
-                                                <StackPanel Grid.Column="0">
-                                                    <TextBlock Text="{x:Bind FechaTexto}" FontWeight="SemiBold"/>
-                                                    <TextBlock Text="{x:Bind GrupoId}"
-                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                               FontSize="12"/>
-                                                </StackPanel>
-                                                <StackPanel Grid.Column="1">
-                                                    <TextBlock Text="{x:Bind TipoDetalle}" FontWeight="SemiBold" TextWrapping="WrapWholeWords"/>
-                                                    <TextBlock Text="{x:Bind Descripcion}" TextWrapping="WrapWholeWords"/>
-                                                    <TextBlock Text="{x:Bind RelacionadosTexto}"
-                                                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                               FontSize="12"/>
-                                                </StackPanel>
-                                                <TextBlock Grid.Column="2" Text="{x:Bind AbonoTexto}" />
-                                                <TextBlock Grid.Column="3" Text="{x:Bind CargoTexto}" />
-                                                <TextBlock Grid.Column="4"
-                                                           Text="{x:Bind SaldoTexto}"
-                                                           HorizontalAlignment="Right"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ListView.ItemTemplate>
-                            </ListView>
-                        </StackPanel>
-                    </Border>
-
-                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="2"
-                            CornerRadius="8"
-                            Padding="16"
-                            Visibility="{x:Bind ViewModel.EstadoCuentaBancario, Mode=OneWay, Converter={StaticResource NullToVisibilityConverter}}">
-                        <TextBlock Text="Carga un XML para previsualizarlo y guardarlo. El detalle ahora sigue el esquema v2 con grupos, transacción principal y movimientos relacionados."
-                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   TextWrapping="WrapWholeWords"/>
-                    </Border>
-                </StackPanel>
-            </ScrollViewer>
         </Grid>
     </Grid>
 </Page>

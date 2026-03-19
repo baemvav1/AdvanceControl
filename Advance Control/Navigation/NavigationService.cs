@@ -37,7 +37,10 @@ namespace Advance_Control.Navigation
                     }
                 }
             }
-            catch { /* no crítico */ }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"NavigationService: error al actualizar la ruta actual: {ex}");
+            }
         }
 
         /// <summary>

@@ -27,6 +27,9 @@ namespace Advance_Control.ViewModels
         private string? _successMessage;
         private DateTimeOffset? _fechaFiltroDesde;
         private DateTimeOffset? _fechaFiltroHasta;
+        private string? _abonoFiltro;
+        private string? _retiroFiltro;
+        private string? _referenciaFiltro;
 
         public EsCuentaViewModel(IEstadoCuentaXmlService estadoCuentaXmlService)
         {
@@ -107,6 +110,42 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public string? AbonoFiltro
+        {
+            get => _abonoFiltro;
+            set
+            {
+                if (SetProperty(ref _abonoFiltro, value))
+                {
+                    AplicarFiltrosEstadosExistentes();
+                }
+            }
+        }
+
+        public string? RetiroFiltro
+        {
+            get => _retiroFiltro;
+            set
+            {
+                if (SetProperty(ref _retiroFiltro, value))
+                {
+                    AplicarFiltrosEstadosExistentes();
+                }
+            }
+        }
+
+        public string? ReferenciaFiltro
+        {
+            get => _referenciaFiltro;
+            set
+            {
+                if (SetProperty(ref _referenciaFiltro, value))
+                {
+                    AplicarFiltrosEstadosExistentes();
+                }
+            }
+        }
+
         public bool CanSave => EstadoCuentaBancario != null && !IsLoading;
 
         public string ResumenEstadosExistentes => $"{EstadosCuentaExistentes.Count} estados mostrados";
@@ -131,7 +170,27 @@ namespace Advance_Control.ViewModels
                 {
                     var xmlContent = await FileIO.ReadTextAsync(file);
                     ParsearEstadoCuentaXml(xmlContent);
-                    SuccessMessage = $"Archivo {file.Name} cargado exitosamente. Se encontraron {Movimientos.Count} grupos principales.";
+                    var request = CrearRequestDesdeEstadoActual();
+                    var result = await ValidarYGuardarEstadoActualAsync(request);
+
+                    if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                            ? $"No se pudo guardar el estado de cuenta {file.Name}."
+                            : $"{file.Name}: {result.Message}";
+                        SuccessMessage = null;
+                        return;
+                    }
+
+                    if (EstadoCuentaBancario != null)
+                    {
+                        EstadoCuentaBancario.IdEstadoCuentaBancario = result.IdEstadoCuenta;
+                    }
+
+                    await CargarEstadosCuentaExistentesAsync();
+                    SuccessMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? $"Archivo {file.Name} cargado y guardado exitosamente."
+                        : $"{file.Name}: {result.Message}";
                 }
             }
             catch (Exception ex)
@@ -158,8 +217,8 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = null;
                 SuccessMessage = null;
 
-                var result = await _estadoCuentaXmlService.GuardarEstadoCuentaAsync(CrearRequestDesdeEstadoActual());
-                if (!result.Success)
+                var result = await ValidarYGuardarEstadoActualAsync(CrearRequestDesdeEstadoActual());
+                if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
                 {
                     ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
                         ? "No se pudo guardar el estado de cuenta."
@@ -209,6 +268,9 @@ namespace Advance_Control.ViewModels
         {
             FechaFiltroDesde = null;
             FechaFiltroHasta = null;
+            AbonoFiltro = null;
+            RetiroFiltro = null;
+            ReferenciaFiltro = null;
             AplicarFiltrosEstadosExistentes();
         }
 
@@ -649,6 +711,19 @@ namespace Advance_Control.ViewModels
         {
             var fechaDesde = FechaFiltroDesde?.Date;
             var fechaHasta = FechaFiltroHasta?.Date;
+            var referenciaFiltro = ReferenciaFiltro?.Trim();
+            var abonoFiltro = AbonoFiltro?.Trim();
+            var retiroFiltro = RetiroFiltro?.Trim();
+            var abonoBuscado = decimal.TryParse(abonoFiltro, NumberStyles.Any, new CultureInfo("es-MX"), out var abonoValor)
+                ? abonoValor
+                : decimal.TryParse(abonoFiltro, NumberStyles.Any, CultureInfo.InvariantCulture, out abonoValor)
+                    ? abonoValor
+                    : (decimal?)null;
+            var retiroBuscado = decimal.TryParse(retiroFiltro, NumberStyles.Any, new CultureInfo("es-MX"), out var retiroValor)
+                ? retiroValor
+                : decimal.TryParse(retiroFiltro, NumberStyles.Any, CultureInfo.InvariantCulture, out retiroValor)
+                    ? retiroValor
+                    : (decimal?)null;
 
             if (fechaDesde.HasValue && fechaHasta.HasValue && fechaDesde.Value > fechaHasta.Value)
             {
@@ -658,6 +733,14 @@ namespace Advance_Control.ViewModels
             var filtrados = _estadosCuentaExistentesBase
                 .Where(estado => !fechaDesde.HasValue || estado.FechaCorte.Date >= fechaDesde.Value.Date)
                 .Where(estado => !fechaHasta.HasValue || estado.FechaCorte.Date <= fechaHasta.Value.Date)
+                .Where(estado => string.IsNullOrWhiteSpace(abonoFiltro)
+                    || (abonoBuscado.HasValue && estado.TotalAbonos == abonoBuscado.Value)
+                    || estado.TotalAbonosTexto.Contains(abonoFiltro, StringComparison.OrdinalIgnoreCase))
+                .Where(estado => string.IsNullOrWhiteSpace(retiroFiltro)
+                    || (retiroBuscado.HasValue && estado.TotalCargos == retiroBuscado.Value)
+                    || estado.TotalCargosTexto.Contains(retiroFiltro, StringComparison.OrdinalIgnoreCase))
+                .Where(estado => string.IsNullOrWhiteSpace(referenciaFiltro)
+                    || (!string.IsNullOrWhiteSpace(estado.ReferenciasBusqueda) && estado.ReferenciasBusqueda.Contains(referenciaFiltro, StringComparison.OrdinalIgnoreCase)))
                 .OrderByDescending(estado => estado.FechaCorte)
                 .ThenByDescending(estado => estado.IdEstadoCuenta)
                 .ToList();
@@ -669,6 +752,35 @@ namespace Advance_Control.ViewModels
             }
 
             OnPropertyChanged(nameof(ResumenEstadosExistentes));
+        }
+
+        private static void ValidarEstadoCuentaParaGuardado(GuardarEstadoCuentaRequestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.NumeroCuenta))
+            {
+                throw new InvalidOperationException("El estado de cuenta debe incluir número de cuenta.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Clabe))
+            {
+                throw new InvalidOperationException("El estado de cuenta debe incluir CLABE.");
+            }
+
+            if (request.FechaCorte == default)
+            {
+                throw new InvalidOperationException("El estado de cuenta debe incluir fecha de corte.");
+            }
+
+            if (request.Grupos.Count == 0)
+            {
+                throw new InvalidOperationException("El estado de cuenta debe incluir al menos un grupo de movimientos.");
+            }
+        }
+
+        private async Task<GuardarEstadoCuentaResponseDto> ValidarYGuardarEstadoActualAsync(GuardarEstadoCuentaRequestDto request)
+        {
+            ValidarEstadoCuentaParaGuardado(request);
+            return await _estadoCuentaXmlService.GuardarEstadoCuentaAsync(request);
         }
     }
 }
