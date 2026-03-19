@@ -38,13 +38,11 @@ namespace Advance_Control.Models
         public int NumeroAbonos { get; set; }
         public DateTime? FechaUltimoAbono { get; set; }
 
-        public string FolioTitulo => string.IsNullOrWhiteSpace(Folio)
-            ? $"Factura {Uuid ?? "sin folio"}"
-            : $"Factura {Folio}";
+        public string FolioTitulo => $"{Folio}";
 
         public string FechaTexto => Fecha == default ? string.Empty : Fecha.ToString("dd/MM/yyyy HH:mm");
         public string EmisorReceptorTexto => $"{EmisorNombre ?? "Sin emisor"} -> {ReceptorNombre ?? "Sin receptor"}";
-        public string RfcTexto => $"{EmisorRfc ?? "Sin RFC"} / {ReceptorRfc ?? "Sin RFC"}";
+        public string RfcTexto => $"{ReceptorRfc ?? "Sin RFC"}";
         public string TotalesTexto => $"Subtotal {SubTotalTexto} · IVA/Impuestos {TotalImpuestosTexto} · Total {TotalTexto}";
         public string MetodoFormaPagoTexto => $"{MetodoPago ?? "Sin metodo"} · {FormaPago ?? "Sin forma"}";
         public string UuidTexto => string.IsNullOrWhiteSpace(Uuid) ? "Sin UUID" : $"UUID: {Uuid}";

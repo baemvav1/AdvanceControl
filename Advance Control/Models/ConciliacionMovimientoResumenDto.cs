@@ -34,7 +34,7 @@ namespace Advance_Control.Models
         public string TipoTitulo => string.IsNullOrWhiteSpace(SubtipoOperacion)
             ? (TipoOperacion ?? "MOVIMIENTO")
             : $"{TipoOperacion ?? "MOVIMIENTO"} · {SubtipoOperacion}";
-        public string ReferenciaTexto => string.IsNullOrWhiteSpace(Referencia) ? "Sin referencia" : $"Ref: {Referencia}";
+        public string ReferenciaTexto => string.IsNullOrWhiteSpace(Referencia) ? "Sin referencia" : $"{Referencia}";
         public string CargoTexto => Cargo == 0m ? "-" : Cargo.ToString("C2", new CultureInfo("es-MX"));
         public string AbonoTexto => Abono == 0m ? "-" : Abono.ToString("C2", new CultureInfo("es-MX"));
         public string SaldoTexto => Saldo.ToString("C2", new CultureInfo("es-MX"));

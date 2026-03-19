@@ -9,7 +9,7 @@
     mc:Ignorable="d">
 
     <Border
-        Margin="0,0,0,10"
+        Margin="0,0,15,0"
         Padding="12"
         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -18,77 +18,92 @@
         <StackPanel Spacing="10">
             <Grid ColumnSpacing="10">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0" Spacing="2">
-                    <TextBlock FontWeight="SemiBold" Text="{Binding Factura.FolioTitulo, ElementName=Root}" TextWrapping="Wrap" />
-                    <TextBlock Text="{Binding Factura.EmisorReceptorTexto, ElementName=Root}" TextWrapping="Wrap" />
-                </StackPanel>
+                <Grid Grid.Column="0">
+                    <StackPanel HorizontalAlignment="Center" Orientation="Vertical">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Text="{Binding Factura.FolioTitulo, ElementName=Root}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{Binding Factura.FechaTexto, ElementName=Root}" />
 
-                <Border
-                    Grid.Column="1"
-                    Padding="10,4"
-                    Background="{ThemeResource LayerFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="12">
+                    </StackPanel>
+
+                </Grid>
+                <Grid Grid.Column="1">
                     <TextBlock
+                        HorizontalAlignment="Center"
+                        Text="{Binding Factura.EmisorReceptorTexto, ElementName=Root}"
+                        TextWrapping="Wrap" />
+                </Grid>
+                <Grid Grid.Column="2">
+                    <TextBlock
+                        HorizontalAlignment="Center"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{Binding Factura.EstadoPagoTexto, ElementName=Root}" />
-                </Border>
+                        Text="{Binding Factura.RfcTexto, ElementName=Root}" />
+                </Grid>
+
+
             </Grid>
 
-            <TextBlock
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="{Binding Factura.RfcTexto, ElementName=Root}" />
 
-            <Grid ColumnSpacing="8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+            <Border
+                Margin="10"
+                Padding="12"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
 
-                <Border
-                    Grid.Column="0"
-                    Padding="8"
-                    Background="{ThemeResource LayerFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6">
-                    <StackPanel Spacing="4">
-                        <TextBlock FontWeight="SemiBold" Text="Total" />
-                        <TextBlock Text="{Binding Factura.TotalTexto, ElementName=Root}" />
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+
+                    <StackPanel Grid.Column="0" Spacing="4">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Text="Total" />
+                        <TextBlock HorizontalAlignment="Center" Text="{Binding Factura.TotalTexto, ElementName=Root}" />
                     </StackPanel>
-                </Border>
 
-                <Border
-                    Grid.Column="1"
-                    Padding="8"
-                    Background="{ThemeResource LayerFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6">
-                    <StackPanel Spacing="4">
-                        <TextBlock FontWeight="SemiBold" Text="Saldo pendiente" />
-                        <TextBlock Text="{Binding Factura.SaldoPendienteTexto, ElementName=Root}" />
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Text="Metodo PAgo" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{Binding Factura.MetodoFormaPagoTexto, ElementName=Root}" />
+
                     </StackPanel>
-                </Border>
-            </Grid>
+                    <StackPanel Grid.Column="2" Spacing="4">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            FontWeight="SemiBold"
+                            Text="Saldo pendiente" />
+                        <TextBlock HorizontalAlignment="Center" Text="{Binding Factura.SaldoPendienteTexto, ElementName=Root}" />
+                    </StackPanel>
 
-            <StackPanel Spacing="2">
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="{Binding Factura.FechaTexto, ElementName=Root}" />
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="{Binding Factura.MetodoFormaPagoTexto, ElementName=Root}" />
-                <TextBlock
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="{Binding Factura.UuidTexto, ElementName=Root}"
-                    TextWrapping="Wrap" />
-            </StackPanel>
+
+                </Grid>
+            </Border>
+
+            <StackPanel Spacing="2" />
         </StackPanel>
     </Border>
 </UserControl>

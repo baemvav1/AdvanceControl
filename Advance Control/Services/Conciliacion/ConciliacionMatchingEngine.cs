@@ -34,7 +34,9 @@ namespace Advance_Control.Services.Conciliacion
         {
             return movimientos.Count > 0
                 && facturas
-                    .Where(factura => ObtenerMontoPendienteFactura(factura) > 0 && !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
+                    .Where(factura => TieneTotalConciliable(factura)
+                        && ObtenerMontoPendienteFactura(factura) > 0
+                        && !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
                     .GroupBy(factura => factura.ReceptorRfc!.Trim(), StringComparer.OrdinalIgnoreCase)
                     .Any(grupo => grupo.Count() >= _rules.Combinacional.MinimoFacturasPorGrupo);
         }
@@ -43,7 +45,7 @@ namespace Advance_Control.Services.Conciliacion
             IReadOnlyCollection<FacturaResumenDto> facturas,
             IReadOnlyCollection<ConciliacionMovimientoResumenDto> movimientos)
         {
-            return facturas.Any(factura => ObtenerMontoPendienteFactura(factura) > 0)
+            return facturas.Any(factura => TieneTotalConciliable(factura) && ObtenerMontoPendienteFactura(factura) > 0)
                 && movimientos.Count(movimiento => decimal.Round(movimiento.Abono, 2) > 0) >= _rules.Abonos.MinimoMovimientosPorCombinacion;
         }
 
@@ -84,6 +86,11 @@ namespace Advance_Control.Services.Conciliacion
 
         public decimal ObtenerMontoPendienteFactura(FacturaResumenDto factura)
         {
+            if (!TieneTotalConciliable(factura))
+            {
+                return 0m;
+            }
+
             var montoPendiente = factura.SaldoPendiente <= 0
                 ? 0m
                 : factura.SaldoPendiente;
@@ -344,6 +351,11 @@ namespace Advance_Control.Services.Conciliacion
 
             return fechaMovimiento.Year == fechaFactura.Year
                 && fechaMovimiento.Month >= fechaFactura.Month;
+        }
+
+        private bool TieneTotalConciliable(FacturaResumenDto factura)
+        {
+            return ObtenerTotalFactura(factura) > 0;
         }
     }
 }

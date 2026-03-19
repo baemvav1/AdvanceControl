@@ -25,7 +25,7 @@
         <Grid
             x:Name="Movimientos"
             Grid.Row="0"
-            Grid.Column="0">
+            Grid.Column="2">
             <Border
                 Margin="5"
                 Padding="5"
@@ -50,18 +50,26 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
-                            <Grid Grid.Row="0" ColumnSpacing="12" RowSpacing="4">
+                            <Grid
+                                Grid.Row="0"
+                                ColumnSpacing="12"
+                                RowSpacing="4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="260" />
+                                    <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="160" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" Spacing="4">
                                     <TextBlock FontWeight="SemiBold" Text="{Binding ResumenMovimientos}" />
                                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Solo se muestran movimientos pendientes de conciliacion." />
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Spacing="4">
-                                    <TextBlock Text="Filtro directo" />
-                                    <TextBox PlaceholderText="Buscar por metadatos o monto..." Text="{x:Bind ViewModel.MovimientoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Text="Metadato" />
+                                    <TextBox PlaceholderText="Buscar texto..." Text="{x:Bind ViewModel.MovimientoMetadatoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Spacing="4">
+                                    <TextBlock Text="Abono" />
+                                    <TextBox PlaceholderText="Ej. 1250" Text="{x:Bind ViewModel.MovimientoAbonoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </StackPanel>
                             </Grid>
 
@@ -107,7 +115,7 @@
         <Grid
             x:Name="Facturas"
             Grid.Row="0"
-            Grid.Column="2">
+            Grid.Column="0">
             <Border
                 Margin="5"
                 Padding="5"
@@ -133,7 +141,10 @@
                                 <RowDefinition Height="*" />
                             </Grid.RowDefinitions>
 
-                            <Grid Grid.Row="0" ColumnSpacing="12" RowSpacing="4">
+                            <Grid
+                                Grid.Row="0"
+                                ColumnSpacing="12"
+                                RowSpacing="4">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="240" />
@@ -204,10 +215,6 @@
                     </Grid.RowDefinitions>
                     <Grid x:Name="ConciliacionHeader" Grid.Row="0">
                         <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                FontSize="24"
-                                Text="Conciliacion" />
                             <Button
                                 x:Name="BtnConciliacionAutomatica"
                                 Margin="5,0,0,0"
@@ -218,6 +225,17 @@
                                 Margin="5,0,0,0"
                                 Click="BtnConciliacionAutomaticaAbonos_Click"
                                 Content="Conciliacion Automatica de Abonos" />
+                            <Button
+                                Grid.Column="1"
+                                Margin="0,0,4,0"
+                                Click="BtnAbonarMovimientoCargado_Click"
+                                Content="Abonar"
+                                IsEnabled="{Binding CanAbonarMovimiento}" />
+                            <Button
+                                Grid.Column="1"
+                                Margin="0,0,4,0"
+                                Click="BtnLimpiarMovimientoCargado_Click"
+                                Content="Limpiar" />
                         </StackPanel>
                     </Grid>
                     <Grid x:Name="ConciliacionPanelGrid" Grid.Row="1">
@@ -426,36 +444,8 @@
                             PointerReleased="FacturaAbonoResizeHandle_PointerReleased" />
 
                         <Grid x:Name="Abono" Grid.Column="2">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="40" />
-                                <RowDefinition Height="1*" />
-                            </Grid.RowDefinitions>
-                            <Grid Grid.Row="0">
-                                <Grid>
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock
-                                            Grid.Column="0"
-                                            VerticalAlignment="Center"
-                                            FontWeight="SemiBold"
-                                            Text="Movimiento seleccionado" />
-                                        <Button
-                                            Grid.Column="1"
-                                            Margin="0,0,4,0"
-                                            Click="BtnAbonarMovimientoCargado_Click"
-                                            Content="Abonar"
-                                            IsEnabled="{Binding CanAbonarMovimiento}" />
-                                        <Button
-                                            Grid.Column="1"
-                                            Margin="0,0,4,0"
-                                            Click="BtnLimpiarMovimientoCargado_Click"
-                                            Content="Limpiar" />
-                                    </StackPanel>
-
-                                </Grid>
-                            </Grid>
                             <Border
                                 x:Name="MovimientoCargado"
-                                Grid.Row="1"
                                 Margin="1"
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"

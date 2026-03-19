@@ -66,6 +66,53 @@ namespace Advance_Control.Tests.Services
         }
 
         [Fact]
+        public void ObtenerMontoPendienteFactura_WhenFacturaTieneTotalCero_ReturnsZero()
+        {
+            var factura = CrearFactura(total: 0m, saldoPendiente: 125m);
+
+            var resultado = _engine.ObtenerMontoPendienteFactura(factura);
+
+            Assert.Equal(0m, resultado);
+        }
+
+        [Fact]
+        public void CanRunAbonos_WhenOnlyZeroTotalInvoicesExist_ReturnsFalse()
+        {
+            var facturas = new List<FacturaResumenDto>
+            {
+                CrearFactura(idFactura: 1, total: 0m, saldoPendiente: 100m),
+                CrearFactura(idFactura: 2, total: 0m, saldoPendiente: 50m)
+            };
+            var movimientos = new List<ConciliacionMovimientoResumenDto>
+            {
+                CrearMovimiento(1, 100m, new DateTime(2026, 1, 10)),
+                CrearMovimiento(2, 50m, new DateTime(2026, 1, 11))
+            };
+
+            var resultado = _engine.CanRunAbonos(facturas, movimientos);
+
+            Assert.False(resultado);
+        }
+
+        [Fact]
+        public void CanRunCombinacional_WhenInvoicesHaveZeroTotal_ReturnsFalse()
+        {
+            var facturas = new List<FacturaResumenDto>
+            {
+                CrearFactura(idFactura: 1, total: 0m, saldoPendiente: 100m, receptorRfc: "XAXX010101000"),
+                CrearFactura(idFactura: 2, total: 0m, saldoPendiente: 50m, receptorRfc: "XAXX010101000")
+            };
+            var movimientos = new List<ConciliacionMovimientoResumenDto>
+            {
+                CrearMovimiento(10, 150m, new DateTime(2026, 1, 22))
+            };
+
+            var resultado = _engine.CanRunCombinacional(facturas, movimientos);
+
+            Assert.False(resultado);
+        }
+
+        [Fact]
         public void BuscarCombinacionFacturasCompatible_FindsExactGroupAndMatchingMovement()
         {
             var facturas = new List<FacturaResumenDto>

@@ -29,7 +29,8 @@ namespace Advance_Control.ViewModels
         private bool _isConciliacionAutomaticaEnProceso;
         private string? _errorMessage;
         private string? _successMessage;
-        private string? _movimientoBusquedaTexto;
+        private string? _movimientoMetadatoBusquedaTexto;
+        private string? _movimientoAbonoBusquedaTexto;
         private string? _facturaFolioBusquedaTexto;
 
         public ConciliacionViewModel(
@@ -116,12 +117,24 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _successMessage, value);
         }
 
-        public string? MovimientoBusquedaTexto
+        public string? MovimientoMetadatoBusquedaTexto
         {
-            get => _movimientoBusquedaTexto;
+            get => _movimientoMetadatoBusquedaTexto;
             set
             {
-                if (SetProperty(ref _movimientoBusquedaTexto, value))
+                if (SetProperty(ref _movimientoMetadatoBusquedaTexto, value))
+                {
+                    AplicarFiltrosVisibles();
+                }
+            }
+        }
+
+        public string? MovimientoAbonoBusquedaTexto
+        {
+            get => _movimientoAbonoBusquedaTexto;
+            set
+            {
+                if (SetProperty(ref _movimientoAbonoBusquedaTexto, value))
                 {
                     AplicarFiltrosVisibles();
                 }
@@ -277,11 +290,7 @@ namespace Advance_Control.ViewModels
                     .ThenBy(movimiento => movimiento.IdMovimiento)
                     .ToList();
 
-                var facturasPendientes = facturas
-                    .Where(factura => factura.Finiquito != true)
-                    .OrderBy(factura => factura.Fecha)
-                    .ThenBy(factura => factura.IdFactura)
-                    .ToList();
+                var facturasPendientes = FiltrarFacturasConciliables(facturas);
 
                 _movimientosPendientesBase.Clear();
                 _movimientosPendientesBase.AddRange(movimientosPendientes);
@@ -313,7 +322,7 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        public async Task CargarDetalleFacturaAsync(int idFactura)
+        public async Task CargarDetalleFacturaAsync(int idFactura, bool autocompletarFiltroAbono = true)
         {
             try
             {
@@ -333,6 +342,11 @@ namespace Advance_Control.ViewModels
                 ReemplazarColeccion(FacturaCargadaConceptos, detalle.Conceptos);
                 ReemplazarColeccion(FacturaCargadaAbonos, detalle.Abonos);
                 PrecargarMovimientoCoincidente(detalle.Factura);
+                MovimientoAbonoBusquedaTexto = autocompletarFiltroAbono
+                    ? _conciliacionMatchingEngine
+                        .ObtenerMontoPendienteFactura(detalle.Factura)
+                        .ToString("0.##", CultureInfo.InvariantCulture)
+                    : string.Empty;
                 OnPropertyChanged(nameof(ResumenFacturaCargadaConceptos));
                 OnPropertyChanged(nameof(ResumenFacturaCargadaAbonos));
             }
@@ -409,7 +423,7 @@ namespace Advance_Control.ViewModels
                 }
 
                 await CargarDatosAsync();
-                await CargarDetalleFacturaAsync(idFactura);
+                await CargarDetalleFacturaAsync(idFactura, autocompletarFiltroAbono: false);
                 await MostrarExitoConciliacionAsync(string.IsNullOrWhiteSpace(result.Message)
                     ? "Abono registrado correctamente."
                     : result.Message);
@@ -820,11 +834,7 @@ namespace Advance_Control.ViewModels
         private async Task RefrescarFacturasPendientesAsync()
         {
             var facturas = await _facturaService.ObtenerFacturasAsync();
-            var facturasPendientes = facturas
-                .Where(factura => factura.Finiquito != true)
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
-                .ToList();
+            var facturasPendientes = FiltrarFacturasConciliables(facturas);
 
             _facturasPendientesBase.Clear();
             _facturasPendientesBase.AddRange(facturasPendientes);
@@ -931,8 +941,9 @@ namespace Advance_Control.ViewModels
         {
             var movimientosFiltrados = _movimientosPendientesBase
                 .Where(CoincideMovimientoBusqueda)
-                .OrderBy(movimiento => movimiento.Fecha)
-                .ThenBy(movimiento => movimiento.IdMovimiento)
+                .OrderByDescending(movimiento => movimiento.Abono)
+                .ThenByDescending(movimiento => movimiento.Fecha)
+                .ThenByDescending(movimiento => movimiento.IdMovimiento)
                 .ToList();
 
             var facturasFiltradas = _facturasPendientesBase
@@ -949,7 +960,13 @@ namespace Advance_Control.ViewModels
 
         private bool CoincideMovimientoBusqueda(ConciliacionMovimientoResumenDto movimiento)
         {
-            var termino = MovimientoBusquedaTexto?.Trim();
+            return CoincideMovimientoMetadatoBusqueda(movimiento)
+                && CoincideMovimientoAbonoBusqueda(movimiento);
+        }
+
+        private bool CoincideMovimientoMetadatoBusqueda(ConciliacionMovimientoResumenDto movimiento)
+        {
+            var termino = MovimientoMetadatoBusquedaTexto?.Trim();
             if (string.IsNullOrWhiteSpace(termino))
             {
                 return true;
@@ -964,18 +981,24 @@ namespace Advance_Control.ViewModels
                 || ContieneTexto(movimiento.Banco, termino)
                 || ContieneTexto(movimiento.Titular, termino)
                 || ContieneTexto(movimiento.NumeroCuenta, termino)
-                || ContieneTexto(movimiento.ReferenciaTexto, termino)
-                || ContieneTexto(movimiento.AbonoTexto, termino)
-                || ContieneTexto(movimiento.CargoTexto, termino)
-                || ContieneTexto(movimiento.SaldoTexto, termino))
+                || ContieneTexto(movimiento.ReferenciaTexto, termino))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool CoincideMovimientoAbonoBusqueda(ConciliacionMovimientoResumenDto movimiento)
+        {
+            var termino = MovimientoAbonoBusquedaTexto?.Trim();
+            if (string.IsNullOrWhiteSpace(termino))
             {
                 return true;
             }
 
             return IntentarParsearMontoBusqueda(termino, out var montoBuscado)
-                && (CoincideMonto(movimiento.Abono, montoBuscado)
-                    || CoincideMonto(movimiento.Cargo, montoBuscado)
-                    || CoincideMonto(movimiento.Saldo, montoBuscado));
+                && decimal.Round(movimiento.Abono, 2) <= decimal.Round(montoBuscado, 2);
         }
 
         private bool CoincideFacturaBusqueda(FacturaResumenDto factura)
@@ -1022,6 +1045,16 @@ namespace Advance_Control.ViewModels
             }
 
             return $"{visibles} de {total} visibles";
+        }
+
+        private List<FacturaResumenDto> FiltrarFacturasConciliables(IEnumerable<FacturaResumenDto> facturas)
+        {
+            return facturas
+                .Where(factura => factura.Finiquito != true)
+                .Where(factura => _conciliacionMatchingEngine.ObtenerTotalFactura(factura) > 0)
+                .OrderBy(factura => factura.Fecha)
+                .ThenBy(factura => factura.IdFactura)
+                .ToList();
         }
     }
 }
