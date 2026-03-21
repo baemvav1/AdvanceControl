@@ -16,7 +16,7 @@ namespace Advance_Control.ViewModels
 {
     public class EsCuentaViewModel : ViewModelBase
     {
-        private static readonly Regex CurrencyRegex = new(@"\$\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.\d{2})|[0-9]+\.\d{2})", RegexOptions.Compiled);
+        private static readonly Regex CurrencyRegex = new(@"(?<signoInicial>-)?\$\s*(?<valor>[0-9]{1,3}(?:,[0-9]{3})*(?:\.\d{2})|[0-9]+\.\d{2})(?<signoFinal>\s*-)?", RegexOptions.Compiled);
         private readonly IEstadoCuentaXmlService _estadoCuentaXmlService;
         private readonly List<EstadoCuentaResumenDto> _estadosCuentaExistentesBase = new();
         private EstadoCuentaBancario? _estadoCuentaBancario;
@@ -279,8 +279,8 @@ namespace Advance_Control.ViewModels
             try
             {
                 var doc = XDocument.Parse(xmlContent);
-                var ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
                 var raiz = doc.Root ?? throw new InvalidDataException("El XML no contiene un nodo raiz valido.");
+                var ns = ObtenerNamespaceEstadoCuenta(raiz);
                 var estadoCuenta = new EstadoCuentaBancario
                 {
                     VersionXml = raiz.Attribute("version")?.Value ?? "2.0"
@@ -494,6 +494,14 @@ namespace Advance_Control.ViewModels
             return null;
         }
 
+        internal static XNamespace ObtenerNamespaceEstadoCuenta(XElement raiz)
+        {
+            var namespaceName = raiz.Name.Namespace;
+            return namespaceName != XNamespace.None
+                ? namespaceName
+                : raiz.GetDefaultNamespace();
+        }
+
         private static DateTime ConstruirFechaMovimiento(string? diaTexto, DateTime fechaReferencia)
         {
             if (int.TryParse(diaTexto?.Trim(), out var dia) && fechaReferencia != default)
@@ -570,56 +578,138 @@ namespace Advance_Control.ViewModels
 
         private static void CompletarMontos(MovimientoBancario movimiento, XElement? montos, decimal saldoAnterior)
         {
-            if (montos != null)
+            var montosExplicitos = LeerMontosExplicitos(montos);
+            if (montosExplicitos.HasValue)
             {
-                var ns = montos.GetDefaultNamespace();
-                var abono = ParseDecimal(montos.Element(ns + "depositos")?.Value) ?? 0m;
-                var cargo = ParseDecimal(montos.Element(ns + "retiros")?.Value) ?? 0m;
-                var saldo = ParseDecimal(montos.Element(ns + "saldo")?.Value);
-                if (abono != 0m || cargo != 0m || saldo.HasValue)
-                {
-                    movimiento.MontoAbono = abono == 0m ? null : abono;
-                    movimiento.MontoCargo = cargo == 0m ? null : cargo;
-                    movimiento.SaldoResultante = saldo ?? saldoAnterior + abono - cargo;
-                    return;
-                }
-            }
-
-            var valores = CurrencyRegex.Matches(movimiento.Descripcion ?? string.Empty)
-                .Select(match => ParseCurrencyValue(match.Groups[1].Value))
-                .ToList();
-
-            if (valores.Count == 0)
-            {
-                movimiento.MontoAbono = null;
-                movimiento.MontoCargo = null;
-                movimiento.SaldoResultante = saldoAnterior;
+                movimiento.MontoAbono = montosExplicitos.Value.Abono;
+                movimiento.MontoCargo = montosExplicitos.Value.Cargo;
+                movimiento.SaldoResultante = montosExplicitos.Value.Saldo ?? saldoAnterior
+                    + (montosExplicitos.Value.Abono ?? 0m)
+                    - (montosExplicitos.Value.Cargo ?? 0m);
                 return;
             }
 
-            movimiento.SaldoResultante = valores[^1];
-            var delta = movimiento.SaldoResultante - saldoAnterior;
+            var montosInferidos = InferirMontosDesdeDescripcion(
+                movimiento.TipoMovimiento,
+                movimiento.Descripcion,
+                saldoAnterior);
+
+            movimiento.MontoAbono = montosInferidos.MontoAbono;
+            movimiento.MontoCargo = montosInferidos.MontoCargo;
+            movimiento.SaldoResultante = montosInferidos.SaldoResultante;
+        }
+
+        internal static (decimal? MontoAbono, decimal? MontoCargo, decimal SaldoResultante) InferirMontosDesdeDescripcion(
+            string? tipoOperacion,
+            string? descripcion,
+            decimal saldoAnterior)
+        {
+            var valores = ExtraerValoresMonetarios(descripcion);
+            if (valores.Count == 0)
+            {
+                return (null, null, saldoAnterior);
+            }
+
+            var saldoInferido = valores[^1];
+            var delta = saldoInferido - saldoAnterior;
             var montoPrincipal = valores.Count >= 2 ? valores[^2] : Math.Abs(delta);
             if (montoPrincipal == 0m && delta != 0m)
             {
                 montoPrincipal = Math.Abs(delta);
             }
 
+            var direccionEsperada = ObtenerDireccionEsperada(tipoOperacion);
+            if (direccionEsperada == DireccionMovimiento.Abono
+                && (delta <= 0m || !CoincideDeltaConMonto(delta, montoPrincipal)))
+            {
+                saldoInferido = saldoAnterior + montoPrincipal;
+                delta = montoPrincipal;
+            }
+
+            if (direccionEsperada == DireccionMovimiento.Cargo
+                && (delta >= 0m || !CoincideDeltaConMonto(delta, montoPrincipal)))
+            {
+                saldoInferido = saldoAnterior - montoPrincipal;
+                delta = -montoPrincipal;
+            }
+
             if (delta > 0m)
             {
-                movimiento.MontoAbono = montoPrincipal;
-                movimiento.MontoCargo = null;
+                return (montoPrincipal, null, saldoInferido);
             }
-            else if (delta < 0m)
+
+            if (delta < 0m)
             {
-                movimiento.MontoCargo = montoPrincipal;
-                movimiento.MontoAbono = null;
+                return (null, montoPrincipal, saldoInferido);
             }
-            else
+
+            return (null, null, saldoInferido);
+        }
+
+        internal static (decimal? Abono, decimal? Cargo, decimal? Saldo)? LeerMontosExplicitos(XElement? montos)
+        {
+            if (montos == null)
             {
-                movimiento.MontoAbono = null;
-                movimiento.MontoCargo = null;
+                return null;
             }
+
+            var ns = montos.GetDefaultNamespace();
+            var abono = ParseDecimal(montos.Element(ns + "depositos")?.Value)
+                ?? ParseDecimal(montos.Element(ns + "deposito")?.Value);
+            var cargo = ParseDecimal(montos.Element(ns + "retiros")?.Value)
+                ?? ParseDecimal(montos.Element(ns + "retiro")?.Value);
+            var saldo = ParseDecimal(montos.Element(ns + "saldo")?.Value);
+
+            if (!abono.HasValue && !cargo.HasValue && !saldo.HasValue)
+            {
+                return null;
+            }
+
+            return (
+                abono.GetValueOrDefault() == 0m ? null : abono,
+                cargo.GetValueOrDefault() == 0m ? null : cargo,
+                saldo);
+        }
+
+        internal static IReadOnlyList<decimal> ExtraerValoresMonetarios(string? descripcion)
+        {
+            if (string.IsNullOrWhiteSpace(descripcion))
+            {
+                return Array.Empty<decimal>();
+            }
+
+            return CurrencyRegex.Matches(descripcion)
+                .Select(match =>
+                {
+                    var valor = ParseCurrencyValue(match.Groups["valor"].Value);
+                    var esNegativo = match.Groups["signoInicial"].Success
+                        || match.Groups["signoFinal"].Success;
+                    return esNegativo ? -valor : valor;
+                })
+                .ToList();
+        }
+
+        private static bool CoincideDeltaConMonto(decimal delta, decimal montoPrincipal)
+        {
+            return Math.Abs(Math.Abs(delta) - Math.Abs(montoPrincipal)) <= 0.01m;
+        }
+
+        private static DireccionMovimiento ObtenerDireccionEsperada(string? tipoOperacion)
+        {
+            if (string.IsNullOrWhiteSpace(tipoOperacion))
+            {
+                return DireccionMovimiento.Desconocida;
+            }
+
+            return tipoOperacion.Trim().ToUpperInvariant() switch
+            {
+                "SPEI_RECIBIDO" => DireccionMovimiento.Abono,
+                "DEPOSITO" => DireccionMovimiento.Abono,
+                "ENVIO_SPEI" => DireccionMovimiento.Cargo,
+                "COMPENSACION_SPEI" => DireccionMovimiento.Cargo,
+                "COMISION" => DireccionMovimiento.Cargo,
+                _ => DireccionMovimiento.Desconocida
+            };
         }
 
         private static decimal ParseCurrencyValue(string valor)
@@ -628,6 +718,13 @@ namespace Advance_Control.ViewModels
             return decimal.TryParse(limpio, NumberStyles.Any, CultureInfo.InvariantCulture, out var resultado)
                 ? resultado
                 : 0m;
+        }
+
+        private enum DireccionMovimiento
+        {
+            Desconocida = 0,
+            Abono = 1,
+            Cargo = 2
         }
 
         private GuardarEstadoCuentaRequestDto CrearRequestDesdeEstadoActual()

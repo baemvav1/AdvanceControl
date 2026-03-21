@@ -28,6 +28,7 @@ namespace Advance_Control.Rules
 
     public sealed class ConciliacionMetodoPagoRules
     {
+        public string MetodoPagoUnaExhibicion { get; init; } = "PUE";
         public string MetodoPagoDiferido { get; init; } = "PPD";
         public bool PermitirMesesPosterioresParaPagoDiferido { get; init; } = true;
     }

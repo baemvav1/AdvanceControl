@@ -1,0 +1,38 @@
+<ContentDialog
+    x:Class="Advance_Control.Views.Dialogs.NormalizarFacturaUsdDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Normalizar factura en dolares"
+    PrimaryButtonText="Normalizar"
+    CloseButtonText="Cancelar"
+    DefaultButton="Primary">
+
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">640</x:Double>
+    </ContentDialog.Resources>
+
+    <StackPanel Width="560" Spacing="12">
+        <TextBlock
+            x:Name="MensajePrincipalTextBlock"
+            TextWrapping="WrapWholeWords" />
+
+        <TextBlock
+            x:Name="ResumenFacturaTextBlock"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            TextWrapping="WrapWholeWords" />
+
+        <TextBlock Text="Tipo de cambio" />
+        <TextBox
+            x:Name="TipoCambioTextBox"
+            PlaceholderText="19.00" />
+
+        <InfoBar
+            x:Name="EstadoInfoBar"
+            IsClosable="False"
+            IsOpen="False"
+            Severity="Error" />
+    </StackPanel>
+</ContentDialog>

@@ -1,0 +1,382 @@
+<UserControl
+    x:Class="Advance_Control.Views.Dialogs.ConfirmacionConciliacionUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Advance_Control.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    MinWidth="820"
+    MinHeight="300"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:CurrencyConverter x:Key="CurrencyConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+    </UserControl.Resources>
+
+    <Grid Padding="4,0,4,0" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Encabezado y botón Aprobar Todo  -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Revisa las conciliaciones propuestas. Desmarca las que deseas rechazar."
+                TextWrapping="Wrap" />
+            <Button
+                x:Name="BtnAprobarTodo"
+                Grid.Column="1"
+                Click="BtnAprobarTodo_Click"
+                Content="Aprobar todo"
+                Style="{StaticResource AccentButtonStyle}" />
+        </Grid>
+
+        <!--  Lista de propuestas  -->
+        <ListView
+            x:Name="ListaPropuestas"
+            Grid.Row="1"
+            MaxHeight="420"
+            SelectionMode="None">
+
+            <ListView.Header>
+                <Grid>
+                    <Grid
+                        x:Name="HeaderGenerico"
+                        Padding="8,4"
+                        ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="100" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0" Text="" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Tipo" />
+                        <TextBlock
+                            Grid.Column="2"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Folio(s)" />
+                        <TextBlock
+                            Grid.Column="3"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Total factura" />
+                        <TextBlock
+                            Grid.Column="4"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Receptor" />
+                        <TextBlock
+                            Grid.Column="5"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Metadato movimiento" />
+                        <TextBlock
+                            Grid.Column="6"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Abono" />
+                    </Grid>
+
+                    <Border
+                        x:Name="HeaderAbonos"
+                        Visibility="Collapsed"
+                        Padding="12,8"
+                        Background="{ThemeResource LayerFillColorAltBrush}"
+                        CornerRadius="8">
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="120" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="" />
+                            <TextBlock
+                                Grid.Column="1"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="Factura objetivo y detalle de abonos" />
+                            <TextBlock
+                                Grid.Column="2"
+                                HorizontalAlignment="Right"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="Total aplicado" />
+                        </Grid>
+                    </Border>
+                </Grid>
+            </ListView.Header>
+
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                </Style>
+            </ListView.ItemContainerStyle>
+
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:ConciliacionMatchPropuestaDto">
+                    <Grid Padding="0,4,0,4">
+                        <Grid
+                            Padding="8,6"
+                            Background="Transparent"
+                            ColumnSpacing="8"
+                            Visibility="{x:Bind EsGenerica, Converter={StaticResource BoolToVisibility}}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="90" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="100" />
+                            </Grid.ColumnDefinitions>
+
+                            <CheckBox
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                IsChecked="{x:Bind Aprobado, Mode=TwoWay}"
+                                Unchecked="PropuestaCheckBox_Unchecked" />
+
+                            <Border
+                                Grid.Column="1"
+                                Padding="6,2"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                CornerRadius="4">
+                                <Border.Background>
+                                    <SolidColorBrush Opacity="0.15" Color="{ThemeResource SystemAccentColor}" />
+                                </Border.Background>
+                                <TextBlock
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Style="{StaticResource CaptionTextBlockStyle}"
+                                    Text="{x:Bind Tipo}" />
+                            </Border>
+
+                            <TextBlock
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind FoliosTexto}"
+                                TextTrimming="CharacterEllipsis">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="{x:Bind FoliosTexto}" />
+                                </ToolTipService.ToolTip>
+                            </TextBlock>
+
+                            <TextBlock
+                                Grid.Column="3"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind TotalFacturas, Converter={StaticResource CurrencyConverter}}" />
+
+                            <TextBlock
+                                Grid.Column="4"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind ReceptorNombre}"
+                                TextTrimming="CharacterEllipsis">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="{x:Bind ReceptorNombre}" />
+                                </ToolTipService.ToolTip>
+                            </TextBlock>
+
+                            <TextBlock
+                                x:Name="TxtMetadato"
+                                Grid.Column="5"
+                                VerticalAlignment="Center"
+                                MaxLines="1"
+                                Text="{x:Bind MetadatosAgregados}"
+                                TextTrimming="CharacterEllipsis">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="{x:Bind MetadatosAgregados}" />
+                                </ToolTipService.ToolTip>
+                            </TextBlock>
+
+                            <TextBlock
+                                Grid.Column="6"
+                                VerticalAlignment="Center"
+                                FontWeight="SemiBold"
+                                Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                Text="{x:Bind MontoAbonoTotal, Converter={StaticResource CurrencyConverter}}" />
+                        </Grid>
+
+                        <Border
+                            Padding="12"
+                            Margin="0,0,0,6"
+                            Background="{ThemeResource LayerFillColorAltBrush}"
+                            CornerRadius="10"
+                            Visibility="{x:Bind EsAbonos, Converter={StaticResource BoolToVisibility}}">
+                            <Grid ColumnSpacing="12">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="32" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="120" />
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox
+                                    Grid.Column="0"
+                                    VerticalAlignment="Top"
+                                    IsChecked="{x:Bind Aprobado, Mode=TwoWay}"
+                                    Unchecked="PropuestaCheckBox_Unchecked" />
+
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="10">
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Spacing="2">
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                Text="{x:Bind FacturaObjetivoFolio}" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind FacturaObjetivoFechaTexto}" />
+                                        </StackPanel>
+
+                                        <Border
+                                            Grid.Column="1"
+                                            Padding="8,4"
+                                            HorizontalAlignment="Right"
+                                            CornerRadius="999">
+                                            <Border.Background>
+                                                <SolidColorBrush Opacity="0.15" Color="{ThemeResource SystemAccentColor}" />
+                                            </Border.Background>
+                                            <TextBlock
+                                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind CantidadMovimientosTexto}" />
+                                        </Border>
+                                    </Grid>
+
+                                    <Grid ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="180" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="180" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Spacing="2">
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="Saldo pendiente" />
+                                            <TextBlock
+                                                FontWeight="SemiBold"
+                                                Text="{x:Bind FacturaObjetivoSaldoTexto}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="Cliente / metodo" />
+                                            <TextBlock Text="{x:Bind FacturaObjetivoReceptorTexto}" />
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="{x:Bind FacturaObjetivoMetodoPagoTexto}" />
+                                        </StackPanel>
+
+                                        <StackPanel Grid.Column="2" Spacing="2">
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="Estado actual" />
+                                            <TextBlock Text="{x:Bind FacturaObjetivoEstadoTexto}" />
+                                        </StackPanel>
+                                    </Grid>
+
+                                    <Border
+                                        Padding="10"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        CornerRadius="8">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Style="{StaticResource CaptionTextBlockStyle}"
+                                                Text="Abonos propuestos" />
+
+                                            <ItemsControl ItemsSource="{x:Bind MovimientosDetalleAbonos}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:ConciliacionAbonoMovimientoItemDto">
+                                                        <Grid Padding="0,6" ColumnSpacing="12">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="90" />
+                                                                <ColumnDefinition Width="110" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="100" />
+                                                                <ColumnDefinition Width="150" />
+                                                            </Grid.ColumnDefinitions>
+
+                                                            <TextBlock
+                                                                Grid.Column="0"
+                                                                Text="{x:Bind FechaTexto}" />
+                                                            <TextBlock
+                                                                Grid.Column="1"
+                                                                Text="{x:Bind GrupoId}"
+                                                                TextTrimming="CharacterEllipsis" />
+                                                            <TextBlock
+                                                                Grid.Column="2"
+                                                                Text="{x:Bind MetadatosTexto}"
+                                                                TextTrimming="CharacterEllipsis">
+                                                                <ToolTipService.ToolTip>
+                                                                    <ToolTip Content="{x:Bind MetadatosTexto}" />
+                                                                </ToolTipService.ToolTip>
+                                                            </TextBlock>
+                                                            <TextBlock
+                                                                Grid.Column="3"
+                                                                HorizontalAlignment="Right"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                                                Text="{x:Bind AbonoTexto}" />
+                                                            <Button
+                                                                Grid.Column="4"
+                                                                HorizontalAlignment="Right"
+                                                                Click="BtnDescartarMovimientoAbono_Click"
+                                                                Content="Descartar y reintentar" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+
+                                <TextBlock
+                                    Grid.Column="2"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                    Text="{x:Bind MontoAbonoTotal, Converter={StaticResource CurrencyConverter}}" />
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</UserControl>

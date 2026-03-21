@@ -50,6 +50,21 @@ namespace Advance_Control.Tests.Services
         }
 
         [Fact]
+        public void BuscarMovimientoCoincidente_WhenFacturaPueAndRuleDisabled_AcceptsPosteriorMonth()
+        {
+            var factura = CrearFactura(total: 150m, saldoPendiente: 150m, metodoPago: "PUE", fecha: new DateTime(2026, 1, 27));
+            var movimientos = new List<ConciliacionMovimientoResumenDto>
+            {
+                CrearMovimiento(1, 150m, new DateTime(2026, 2, 1))
+            };
+
+            var resultado = _engine.BuscarMovimientoCoincidente(movimientos, 150m, new[] { factura }, factura.Fecha, aplicarReglaPueMismoMes: false);
+
+            Assert.NotNull(resultado);
+            Assert.Equal(1, resultado!.IdMovimiento);
+        }
+
+        [Fact]
         public void ObtenerMovimientosCandidatosParaFactura_RespectsConfiguredLimit()
         {
             var factura = CrearFactura(total: 500m, saldoPendiente: 500m, metodoPago: "PPD", fecha: new DateTime(2026, 1, 15));
@@ -63,6 +78,22 @@ namespace Advance_Control.Tests.Services
             var resultado = _engine.ObtenerMovimientosCandidatosParaFactura(movimientos, factura, 500m);
 
             Assert.Equal(15, resultado.Count);
+        }
+
+        [Fact]
+        public void ObtenerMovimientosCandidatosParaFactura_WhenFacturaPueAndRuleDisabled_AllowsPosteriorMonth()
+        {
+            var factura = CrearFactura(total: 300m, saldoPendiente: 300m, metodoPago: "PUE", fecha: new DateTime(2026, 1, 15));
+            var movimientos = new List<ConciliacionMovimientoResumenDto>
+            {
+                CrearMovimiento(1, 100m, new DateTime(2026, 2, 1)),
+                CrearMovimiento(2, 100m, new DateTime(2025, 12, 31))
+            };
+
+            var resultado = _engine.ObtenerMovimientosCandidatosParaFactura(movimientos, factura, 300m, aplicarReglaPueMismoMes: false);
+
+            Assert.Single(resultado);
+            Assert.Equal(1, resultado[0].IdMovimiento);
         }
 
         [Fact]

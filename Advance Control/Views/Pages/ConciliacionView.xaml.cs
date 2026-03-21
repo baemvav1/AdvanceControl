@@ -4,9 +4,11 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
+using Advance_Control.Views.Windows;
 using Microsoft.UI.Xaml.Navigation;
 using Windows.Foundation;
 
@@ -58,7 +60,10 @@ namespace Advance_Control.Views.Pages
                 || e.PropertyName == nameof(ConciliacionViewModel.IsConciliacionAutomaticaEnProceso)
                 || e.PropertyName == nameof(ConciliacionViewModel.ConciliacionPanelHabilitado)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomatica)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaAbonos))
+                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaConvinacional)
+                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaAbonos)
+                || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerUltimaOperacionConciliacion)
+                || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerTodasOperacionesConciliacion))
             {
                 ActualizarEstadoConciliacionAutomatica();
             }
@@ -67,7 +72,10 @@ namespace Advance_Control.Views.Pages
         private void ActualizarEstadoConciliacionAutomatica()
         {
             BtnConciliacionAutomatica.IsEnabled = ViewModel.CanEjecutarConciliacionAutomatica;
+            BtnConciliacionAutomaticaConvinacional.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaConvinacional;
             BtnConciliacionAutomaticaAbonos.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaAbonos;
+            BtnDeshacerUltimo.IsEnabled = ViewModel.CanDeshacerUltimaOperacionConciliacion;
+            BtnDeshacerTodo.IsEnabled = ViewModel.CanDeshacerTodasOperacionesConciliacion;
             ConciliacionPanelGrid.IsHitTestVisible = ViewModel.ConciliacionPanelHabilitado;
             ConciliacionPanelGrid.Opacity = ViewModel.ConciliacionPanelHabilitado ? 1d : 0.55d;
             _conciliacionProgressRing.IsActive = ViewModel.IsConciliacionAutomaticaEnProceso;
@@ -219,12 +227,49 @@ namespace Advance_Control.Views.Pages
 
         private async void BtnConciliacionAutomatica_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.EjecutarConciliacionAutomaticaAsync();
+            await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.Automatica);
+        }
+
+        private void BtnLimpiarFiltrosMovimientos_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.LimpiarFiltrosMovimientos();
+        }
+
+        private void BtnLimpiarFiltrosFacturas_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.LimpiarFiltrosFacturas();
+        }
+
+        private async void BtnConciliacionAutomaticaConvinacional_Click(object sender, RoutedEventArgs e)
+        {
+            await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.Combinacional);
         }
 
         private async void BtnConciliacionAutomaticaAbonos_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.EjecutarConciliacionAutomaticaAbonosAsync();
+            await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.Abonos);
+        }
+
+        private async void BtnDeshacerUltimo_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.DeshacerUltimaOperacionConciliacionAsync();
+        }
+
+        private async void BtnDeshacerTodo_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.DeshacerTodasOperacionesConciliacionAsync();
+        }
+
+        private async Task AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo modo)
+        {
+            var ventana = new ConfirmacionConciliacionWindow(modo, ViewModel.AplicarReglaPueMismoMes);
+            ventana.Activate();
+
+            var aprobadas = await ventana.ResultTask;
+            if (aprobadas is { Count: > 0 })
+            {
+                await ViewModel.CargarDatosAsync();
+            }
         }
     }
 }

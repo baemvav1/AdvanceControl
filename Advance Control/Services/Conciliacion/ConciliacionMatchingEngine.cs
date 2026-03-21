@@ -101,7 +101,8 @@ namespace Advance_Control.Services.Conciliacion
             IEnumerable<ConciliacionMovimientoResumenDto> movimientos,
             decimal montoObjetivo,
             IReadOnlyCollection<FacturaResumenDto> facturas,
-            DateTime fechaReferencia)
+            DateTime fechaReferencia,
+            bool aplicarReglaPueMismoMes = true)
         {
             if (montoObjetivo <= 0 || facturas.Count == 0)
             {
@@ -112,7 +113,7 @@ namespace Advance_Control.Services.Conciliacion
                 .Where(movimiento =>
                     decimal.Round(movimiento.Abono, 2) > 0
                     && decimal.Round(movimiento.Abono, 2) == decimal.Round(montoObjetivo, 2)
-                    && facturas.All(factura => EsMovimientoCompatibleSegunMetodoPago(factura, movimiento.Fecha)))
+                    && facturas.All(factura => EsMovimientoCompatibleSegunMetodoPago(factura, movimiento.Fecha, aplicarReglaPueMismoMes)))
                 .OrderBy(movimiento => Math.Abs((movimiento.Fecha - fechaReferencia).Ticks))
                 .ThenByDescending(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
@@ -122,18 +123,22 @@ namespace Advance_Control.Services.Conciliacion
         public List<ConciliacionMovimientoResumenDto> ObtenerMovimientosCandidatosParaFactura(
             IReadOnlyList<ConciliacionMovimientoResumenDto> movimientosDisponibles,
             FacturaResumenDto facturaObjetivo,
-            decimal saldoFactura)
+            decimal saldoFactura,
+            bool aplicarReglaPueMismoMes = true,
+            bool limitarCandidatos = true)
         {
-            return movimientosDisponibles
+            var query = movimientosDisponibles
                 .Where(movimiento =>
                     decimal.Round(movimiento.Abono, 2) > 0
                     && decimal.Round(movimiento.Abono, 2) <= decimal.Round(saldoFactura, 2)
-                    && EsMovimientoCompatibleSegunMetodoPago(facturaObjetivo, movimiento.Fecha))
+                    && EsMovimientoCompatibleSegunMetodoPago(facturaObjetivo, movimiento.Fecha, aplicarReglaPueMismoMes))
                 .OrderBy(movimiento => Math.Abs((movimiento.Fecha - facturaObjetivo.Fecha).Ticks))
                 .ThenBy(movimiento => movimiento.Fecha)
-                .ThenBy(movimiento => movimiento.IdMovimiento)
-                .Take(_rules.Abonos.MaximoMovimientosCandidatos)
-                .ToList();
+                .ThenBy(movimiento => movimiento.IdMovimiento);
+
+            return limitarCandidatos
+                ? query.Take(_rules.Abonos.MaximoMovimientosCandidatos).ToList()
+                : query.ToList();
         }
 
         public List<ConciliacionMovimientoResumenDto>? BuscarCombinacionMovimientosParaFactura(
@@ -167,11 +172,27 @@ namespace Advance_Control.Services.Conciliacion
             IReadOnlyList<FacturaResumenDto> facturas,
             IReadOnlyList<ConciliacionMovimientoResumenDto> movimientosDisponibles,
             decimal maximoAbonoDisponible,
-            out ConciliacionMovimientoResumenDto? movimientoObjetivo)
+            out ConciliacionMovimientoResumenDto? movimientoObjetivo,
+            bool aplicarReglaPueMismoMes = true)
         {
             movimientoObjetivo = null;
-            var buffer = new List<FacturaResumenDto>();
 
+            // Fase 1: suma incremental desde la factura más antigua.
+            // Cubre el caso más común: un pago liquida la deuda más vieja más algunas consecutivas.
+            var combinacionSecuencial = BuscarCombinacionSecuencialDesdeAntigua(
+                facturas,
+                movimientosDisponibles,
+                maximoAbonoDisponible,
+                out movimientoObjetivo,
+                aplicarReglaPueMismoMes);
+
+            if (combinacionSecuencial != null)
+            {
+                return combinacionSecuencial;
+            }
+
+            // Fase 2: backtracking completo para combinaciones no consecutivas.
+            var buffer = new List<FacturaResumenDto>();
             for (var tamano = _rules.Combinacional.MinimoFacturasPorGrupo; tamano <= facturas.Count; tamano++)
             {
                 var combinacion = BuscarCombinacionFacturasCompatibleRecursiva(
@@ -182,11 +203,58 @@ namespace Advance_Control.Services.Conciliacion
                     0,
                     0m,
                     buffer,
-                    out movimientoObjetivo);
+                    out movimientoObjetivo,
+                    aplicarReglaPueMismoMes);
 
                 if (combinacion != null)
                 {
                     return combinacion;
+                }
+            }
+
+            return null;
+        }
+
+        // Fase 1: intenta [F1,F2], [F1,F2,F3], [F1,F2,F3,F4]... en orden creciente.
+        // Las facturas deben venir ordenadas por fecha ascendente.
+        private List<FacturaResumenDto>? BuscarCombinacionSecuencialDesdeAntigua(
+            IReadOnlyList<FacturaResumenDto> facturas,
+            IReadOnlyList<ConciliacionMovimientoResumenDto> movimientosDisponibles,
+            decimal maximoAbonoDisponible,
+            out ConciliacionMovimientoResumenDto? movimientoObjetivo,
+            bool aplicarReglaPueMismoMes)
+        {
+            movimientoObjetivo = null;
+            var sumaAcumulada = 0m;
+
+            for (var n = 0; n < facturas.Count; n++)
+            {
+                sumaAcumulada = decimal.Round(sumaAcumulada + ObtenerMontoPendienteFactura(facturas[n]), 2);
+
+                // No revisar movimientos hasta tener el mínimo de facturas requerido.
+                if (n + 1 < _rules.Combinacional.MinimoFacturasPorGrupo)
+                {
+                    continue;
+                }
+
+                if (sumaAcumulada <= 0 || sumaAcumulada > maximoAbonoDisponible)
+                {
+                    continue;
+                }
+
+                var candidatas = facturas.Take(n + 1).ToList();
+                var fechaMasNueva = candidatas.Max(f => f.Fecha);
+
+                movimientoObjetivo = BuscarMovimientoCoincidente(
+                    movimientosDisponibles,
+                    sumaAcumulada,
+                    candidatas,
+                    fechaMasNueva,
+                    aplicarReglaPueMismoMes);
+
+                if (movimientoObjetivo != null)
+                {
+                    return candidatas;
                 }
             }
 
@@ -270,7 +338,8 @@ namespace Advance_Control.Services.Conciliacion
             int indiceInicio,
             decimal sumaActual,
             List<FacturaResumenDto> combinacionActual,
-            out ConciliacionMovimientoResumenDto? movimientoObjetivo)
+            out ConciliacionMovimientoResumenDto? movimientoObjetivo,
+            bool aplicarReglaPueMismoMes)
         {
             movimientoObjetivo = null;
 
@@ -287,7 +356,8 @@ namespace Advance_Control.Services.Conciliacion
                     movimientosDisponibles,
                     montoObjetivo,
                     combinacionActual,
-                    fechaMasNueva);
+                    fechaMasNueva,
+                    aplicarReglaPueMismoMes);
                 return movimientoObjetivo == null ? null : new List<FacturaResumenDto>(combinacionActual);
             }
 
@@ -311,7 +381,8 @@ namespace Advance_Control.Services.Conciliacion
                     indice + 1,
                     nuevaSuma,
                     combinacionActual,
-                    out movimientoObjetivo);
+                    out movimientoObjetivo,
+                    aplicarReglaPueMismoMes);
 
                 if (combinacionEncontrada != null)
                 {
@@ -324,13 +395,20 @@ namespace Advance_Control.Services.Conciliacion
             return null;
         }
 
-        private bool EsMovimientoCompatibleSegunMetodoPago(FacturaResumenDto factura, DateTime fechaMovimiento)
+        private bool EsMovimientoCompatibleSegunMetodoPago(FacturaResumenDto factura, DateTime fechaMovimiento, bool aplicarReglaPueMismoMes)
         {
             var metodoPago = factura.MetodoPago?.Trim();
             if (_rules.MetodoPago.PermitirMesesPosterioresParaPagoDiferido
                 && string.Equals(metodoPago, _rules.MetodoPago.MetodoPagoDiferido, StringComparison.OrdinalIgnoreCase))
             {
                 return EsMismoMesOPosterior(factura.Fecha, fechaMovimiento);
+            }
+
+            if (string.Equals(metodoPago, _rules.MetodoPago.MetodoPagoUnaExhibicion, StringComparison.OrdinalIgnoreCase))
+            {
+                return aplicarReglaPueMismoMes
+                    ? EsMismoMes(factura.Fecha, fechaMovimiento)
+                    : EsMismoMesOPosterior(factura.Fecha, fechaMovimiento);
             }
 
             return EsMismoMes(factura.Fecha, fechaMovimiento);

@@ -19,6 +19,7 @@ namespace Advance_Control.ViewModels
         private string _filtroTexto = string.Empty;
         private double _filtroMonto = double.NaN;
         private int _filtroConciliacionIndex;
+        private string? _filtroMetadato;
         private bool _isFiltrosExpandidos = true;
 
         public DetailEstadoCuentaViewModel(IEstadoCuentaXmlService estadoCuentaService)
@@ -86,6 +87,18 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public string? FiltroMetadato
+        {
+            get => _filtroMetadato;
+            set
+            {
+                if (SetProperty(ref _filtroMetadato, value))
+                {
+                    AplicarFiltros();
+                }
+            }
+        }
+
         public string ResumenGrupos => $"Grupos ({GruposFiltrados.Count})";
         public string ResumenRelacionados => $"Movimientos relacionados ({GruposFiltrados.Sum(g => g.MovimientosRelacionados.Count)})";
         public string ResumenFiltros => ObtenerResumenFiltros();
@@ -143,9 +156,11 @@ namespace Advance_Control.ViewModels
             _filtroTexto = string.Empty;
             _filtroMonto = double.NaN;
             _filtroConciliacionIndex = 0;
+            _filtroMetadato = null;
             OnPropertyChanged(nameof(FiltroTexto));
             OnPropertyChanged(nameof(FiltroMonto));
             OnPropertyChanged(nameof(FiltroConciliacionIndex));
+            OnPropertyChanged(nameof(FiltroMetadato));
 
             foreach (var filtro in FiltrosTipoMovimiento)
             {
@@ -207,6 +222,7 @@ namespace Advance_Control.ViewModels
                 .Where(grupo => CoincideTexto(texto, grupo))
                 .Where(grupo => CoincideMonto(monto, grupo))
                 .Where(CoincideConciliacion)
+                .Where(CoincideMetadato)
                 .OrderByDescending(grupo => grupo.Fecha)
                 .ThenByDescending(grupo => grupo.IdMovimiento)
                 .ToList();
@@ -270,6 +286,18 @@ namespace Advance_Control.ViewModels
                 2 => !grupo.Conciliado,
                 _ => true
             };
+        }
+
+        private bool CoincideMetadato(EstadoCuentaGrupoDetalleDto grupo)
+        {
+            var termino = FiltroMetadato?.Trim();
+            if (string.IsNullOrWhiteSpace(termino))
+            {
+                return true;
+            }
+
+            return !string.IsNullOrWhiteSpace(grupo.MetadatosResumen)
+                && grupo.MetadatosResumen.Contains(termino, StringComparison.OrdinalIgnoreCase);
         }
 
         private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T>? origen)
@@ -337,7 +365,14 @@ namespace Advance_Control.ViewModels
                 _ => "conciliación: todos"
             };
 
-            return $"Filtros activos: {resumenTipos} · {resumenConciliacion}";
+            var resumenMetadato = string.IsNullOrWhiteSpace(FiltroMetadato)
+                ? null
+                : $"metadato: \"{FiltroMetadato.Trim()}\"";
+
+            var partes = new[] { resumenTipos, resumenConciliacion, resumenMetadato }
+                .Where(p => p != null);
+
+            return $"Filtros activos: {string.Join(" · ", partes)}";
         }
     }
 }

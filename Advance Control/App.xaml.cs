@@ -675,6 +675,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.EsCuentaViewModel>();
                     services.AddTransient<ViewModels.DetailEstadoCuentaViewModel>();
                     services.AddTransient<ViewModels.ConciliacionViewModel>();
+                    services.AddTransient<ViewModels.ConciliacionAutomaticaWindowViewModel>();
                     services.AddTransient<ViewModels.FacturasViewModel>();
                     services.AddTransient<ViewModels.DetailFacturaViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();

@@ -9,6 +9,7 @@ namespace Advance_Control.Models
         public decimal TotalAbonado { get; set; }
         public decimal SaldoPendiente { get; set; }
         public bool? Finiquito { get; set; }
+        public int OperacionesConciliacionPendientes { get; set; }
         public string? Message { get; set; }
     }
 }

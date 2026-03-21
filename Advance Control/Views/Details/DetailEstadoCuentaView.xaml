@@ -148,6 +148,7 @@
                                     <ColumnDefinition Width="2*" />
                                     <ColumnDefinition Width="220" />
                                     <ColumnDefinition Width="220" />
+                                    <ColumnDefinition Width="220" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
 
@@ -172,8 +173,14 @@
                                     ItemsSource="{x:Bind ViewModel.OpcionesConciliacion, Mode=OneWay}"
                                     SelectedIndex="{x:Bind ViewModel.FiltroConciliacionIndex, Mode=TwoWay}" />
 
-                                <StackPanel
+                                <TextBox
                                     Grid.Column="3"
+                                    Header="Metadato"
+                                    PlaceholderText="Buscar texto..."
+                                    Text="{x:Bind ViewModel.FiltroMetadato, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                <StackPanel
+                                    Grid.Column="4"
                                     VerticalAlignment="Bottom"
                                     Spacing="6">
                                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenFiltros, Mode=OneWay}" />

@@ -34,52 +34,146 @@
                 BorderThickness="2"
                 CornerRadius="8">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="40" />
-                        <RowDefinition Height="1*" />
-                    </Grid.RowDefinitions>
-                    <Grid x:Name="MovimientosHeader" Grid.Row="0">
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            FontSize="24"
-                            Text="Movimientos" />
-                    </Grid>
-                    <Grid Grid.Row="1">
+                    <Grid>
                         <Grid RowSpacing="8">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
-                                <RowDefinition Height="*" />
+                                <RowDefinition Height="1*" />
                             </Grid.RowDefinitions>
                             <Grid
                                 Grid.Row="0"
                                 ColumnSpacing="12"
                                 RowSpacing="4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="220" />
-                                    <ColumnDefinition Width="160" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="4">
-                                    <TextBlock FontWeight="SemiBold" Text="{Binding ResumenMovimientos}" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Solo se muestran movimientos pendientes de conciliacion." />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="4">
-                                    <TextBlock Text="Metadato" />
-                                    <TextBox PlaceholderText="Buscar texto..." Text="{x:Bind ViewModel.MovimientoMetadatoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
-                                <StackPanel Grid.Column="2" Spacing="4">
-                                    <TextBlock Text="Abono" />
-                                    <TextBox PlaceholderText="Ej. 1250" Text="{x:Bind ViewModel.MovimientoAbonoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*" />
+                                    <RowDefinition Height="35" />
+                                </Grid.RowDefinitions>
+                                <Grid Grid.Row="0" HorizontalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="165" />
+                                        <ColumnDefinition Width="140" />
+                                        <ColumnDefinition Width="285" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Movimientos" />
+                                                <Border
+                                                    Margin="0"
+                                                    Padding="5"
+                                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                    BorderThickness="2"
+                                                    CornerRadius="5">
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Text="{x:Bind ViewModel.ResumenMovimientos, Mode=OneWay}" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Border>
+
+                                    </Grid>
+                                    <Grid Grid.Column="1">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Metadatos" />
+                                                <TextBox
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    PlaceholderText="Buscar metadatos..."
+                                                    Text="{x:Bind ViewModel.MovimientoMetadatoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            </StackPanel>
+                                        </Border>
+
+                                    </Grid>
+                                    <Grid Grid.Column="2">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Abono" />
+                                                <TextBox
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    PlaceholderText="Buscar abono..."
+                                                    Text="{x:Bind ViewModel.MovimientoAbonoBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Grid.Column="3">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Rango Fechas" />
+                                                 <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <CalendarDatePicker
+                                                        Margin="5,0,0,0"
+                                                        PlaceholderText="Desde..."
+                                                        Date="{x:Bind ViewModel.MovimientoFechaInicio, Mode=TwoWay}" />
+                                                    <CalendarDatePicker
+                                                        PlaceholderText="Hasta..."
+                                                        Date="{x:Bind ViewModel.MovimientoFechaFin, Mode=TwoWay}" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+
+                                </Grid>
+                                <Grid Grid.Row="1">
+                                    <Button
+                                        Margin="10,0,16,0"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        Click="BtnLimpiarFiltrosMovimientos_Click"
+                                        Content="Limpiar" />
+                                </Grid>
                             </Grid>
 
                             <ScrollViewer Grid.Row="1">
-                                <muxc:ItemsRepeater ItemsSource="{Binding MovimientosPendientes}">
+                                <muxc:ItemsRepeater ItemsSource="{x:Bind ViewModel.MovimientosPendientes, Mode=OneWay}">
                                     <muxc:ItemsRepeater.Layout>
                                         <muxc:StackLayout Spacing="8" />
                                     </muxc:ItemsRepeater.Layout>
                                     <muxc:ItemsRepeater.ItemTemplate>
-                                        <DataTemplate>
+                                        <DataTemplate x:DataType="models:ConciliacionMovimientoResumenDto">
                                             <Button
                                                 Padding="0"
                                                 HorizontalAlignment="Stretch"
@@ -87,8 +181,8 @@
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Click="MovimientoPendienteButton_Click"
-                                                Tag="{Binding}">
-                                                <items:ConciliacionMovimientoItemView Movimiento="{Binding}" />
+                                                Tag="{x:Bind}">
+                                                <items:ConciliacionMovimientoItemView Movimiento="{x:Bind}" />
                                             </Button>
                                         </DataTemplate>
                                     </muxc:ItemsRepeater.ItemTemplate>
@@ -124,17 +218,8 @@
                 BorderThickness="2"
                 CornerRadius="8">
                 <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="40" />
-                        <RowDefinition Height="1*" />
-                    </Grid.RowDefinitions>
-                    <Grid Grid.Row="0">
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            FontSize="24"
-                            Text="Facturas" />
-                    </Grid>
-                    <Grid Grid.Row="1">
+
+                    <Grid>
                         <Grid RowSpacing="8">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
@@ -145,27 +230,158 @@
                                 Grid.Row="0"
                                 ColumnSpacing="12"
                                 RowSpacing="4">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="240" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" Spacing="4">
-                                    <TextBlock FontWeight="SemiBold" Text="{Binding ResumenFacturas}" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Solo se muestran facturas abiertas o con saldo pendiente." />
-                                </StackPanel>
-                                <StackPanel Grid.Column="1" Spacing="4">
-                                    <TextBlock Text="Filtro directo" />
-                                    <TextBox PlaceholderText="Buscar folio..." Text="{x:Bind ViewModel.FacturaFolioBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                                </StackPanel>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <Grid Grid.Row="0" HorizontalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="130" />
+                                        <ColumnDefinition Width="150" />
+                                        <ColumnDefinition Width="120" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid Grid.Column="0">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Facturas" />
+                                                <Border
+                                                    Margin="0"
+                                                    Padding="5"
+                                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                    BorderThickness="2"
+                                                    CornerRadius="5">
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Text="{x:Bind ViewModel.ResumenFacturas, Mode=OneWay}" />
+                                                </Border>
+
+
+                                            </StackPanel>
+                                        </Border>
+
+                                    </Grid>
+                                    <Grid Grid.Column="1">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Folio" />
+                                                <TextBox
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    PlaceholderText="Buscar folio..."
+                                                    Text="{x:Bind ViewModel.FacturaFolioBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            </StackPanel>
+                                        </Border>
+
+                                    </Grid>
+                                    <Grid Grid.Column="2">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Total" />
+                                                <TextBox
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    PlaceholderText="Buscar total..."
+                                                    Text="{x:Bind ViewModel.FacturaTotalBusqueda, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Grid.Column="3">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="Nombre" />
+                                                <TextBox
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    PlaceholderText="Buscar nombre..."
+                                                    Text="{x:Bind ViewModel.FacturaNombreBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                    <Grid Grid.Column="4">
+                                        <Border
+                                            Margin="5"
+                                            Padding="5"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="2"
+                                            CornerRadius="8">
+                                            <StackPanel Orientation="Vertical">
+                                                <TextBlock
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    Text="RFC" />
+                                                <TextBox
+                                                    Margin="0,0,0,5"
+                                                    HorizontalAlignment="Center"
+                                                    PlaceholderText="Buscar rfc..."
+                                                    Text="{x:Bind ViewModel.FacturaRfcBusquedaTexto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
+                                </Grid>
+                                <Grid Grid.Row="1">
+                                    <Button
+                                        Margin="0,0,16,0"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Stretch"
+                                        Click="BtnLimpiarFiltrosFacturas_Click"
+                                        Content="Limpiar" />
+                                </Grid>
+
                             </Grid>
 
                             <ScrollViewer Grid.Row="1">
-                                <muxc:ItemsRepeater ItemsSource="{Binding FacturasPendientes}">
+                                <muxc:ItemsRepeater ItemsSource="{x:Bind ViewModel.FacturasPendientes, Mode=OneWay}">
                                     <muxc:ItemsRepeater.Layout>
                                         <muxc:StackLayout Spacing="8" />
                                     </muxc:ItemsRepeater.Layout>
                                     <muxc:ItemsRepeater.ItemTemplate>
-                                        <DataTemplate>
+                                        <DataTemplate x:DataType="models:FacturaResumenDto">
                                             <Button
                                                 Padding="0"
                                                 HorizontalAlignment="Stretch"
@@ -173,8 +389,8 @@
                                                 Background="Transparent"
                                                 BorderThickness="0"
                                                 Click="FacturaPendienteButton_Click"
-                                                Tag="{Binding}">
-                                                <items:ConciliacionFacturaItemView Factura="{Binding}" />
+                                                Tag="{x:Bind}">
+                                                <items:ConciliacionFacturaItemView Factura="{x:Bind}" />
                                             </Button>
                                         </DataTemplate>
                                     </muxc:ItemsRepeater.ItemTemplate>
@@ -214,29 +430,89 @@
                         <RowDefinition Height="1*" />
                     </Grid.RowDefinitions>
                     <Grid x:Name="ConciliacionHeader" Grid.Row="0">
-                        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                            <Button
-                                x:Name="BtnConciliacionAutomatica"
-                                Margin="5,0,0,0"
-                                Click="BtnConciliacionAutomatica_Click"
-                                Content="Conciliacion Automatica" />
-                            <Button
-                                x:Name="BtnConciliacionAutomaticaAbonos"
-                                Margin="5,0,0,0"
-                                Click="BtnConciliacionAutomaticaAbonos_Click"
-                                Content="Conciliacion Automatica de Abonos" />
-                            <Button
-                                Grid.Column="1"
-                                Margin="0,0,4,0"
-                                Click="BtnAbonarMovimientoCargado_Click"
-                                Content="Abonar"
-                                IsEnabled="{Binding CanAbonarMovimiento}" />
-                            <Button
-                                Grid.Column="1"
-                                Margin="0,0,4,0"
-                                Click="BtnLimpiarMovimientoCargado_Click"
-                                Content="Limpiar" />
-                        </StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="1*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid Grid.Column="0">
+                                <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
+                                    <Button
+                                        x:Name="BtnConciliacionAutomatica"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnConciliacionAutomatica_Click"
+                                        Content="Conciliacion Automatica" />
+                                    <Button
+                                        x:Name="BtnConciliacionAutomaticaConvinacional"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnConciliacionAutomaticaConvinacional_Click"
+                                        Content="Separacion Automatica Combinacional" />
+                                    <Button
+                                        x:Name="BtnConciliacionAutomaticaAbonos"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnConciliacionAutomaticaAbonos_Click"
+                                        Content="Conciliacion Automatica de Abonos" />
+
+                                    <Border
+                                        Padding="0"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="2"
+                                        CornerRadius="8">
+                                        <StackPanel Width="168" Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="10,0,0,0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Text="PUE Mismo mes" />
+                                            <ToggleSwitch
+                                                Margin="10,0,0,0"
+                                                Padding="0"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                IsOn="{x:Bind ViewModel.AplicarReglaPueMismoMes, Mode=TwoWay}"
+                                                OffContent=""
+                                                OnContent="" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Button
+                                        Grid.Column="1"
+                                        Height="34"
+                                        Margin="0,0,4,0"
+                                        Background="Green"
+                                        Click="BtnAbonarMovimientoCargado_Click"
+                                        Content="Abonar"
+                                        Foreground="WhiteSmoke"
+                                        IsEnabled="{x:Bind ViewModel.CanAbonarMovimiento, Mode=OneWay}" />
+                                    <Button
+                                        Grid.Column="1"
+                                        Height="34"
+                                        Margin="0,0,4,0"
+                                        Background="Red"
+                                        Click="BtnLimpiarMovimientoCargado_Click"
+                                        Content="Limpiar"
+                                        Foreground="WhiteSmoke" />
+                                </StackPanel>
+                            </Grid>
+                            <Grid Grid.Column="1">
+                                <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
+                                    <Button
+                                        x:Name="BtnDeshacerUltimo"
+                                        Margin="5,0,0,0"
+                                        Click="BtnDeshacerUltimo_Click"
+                                        Content="Deshacer ultimo" />
+                                    <Button
+                                        x:Name="BtnDeshacerTodo"
+                                        Margin="5,0,0,0"
+                                        Click="BtnDeshacerTodo_Click"
+                                        Content="Deshacer todo" />
+                                </StackPanel>
+
+                            </Grid>
+                        </Grid>
                     </Grid>
                     <Grid x:Name="ConciliacionPanelGrid" Grid.Row="1">
                         <Grid.ColumnDefinitions>
@@ -256,7 +532,7 @@
                                 <StackPanel Padding="12" Spacing="12">
                                     <TextBlock
                                         FontWeight="SemiBold"
-                                        Text="{Binding MensajeFacturaCargada}"
+                                        Text="{x:Bind ViewModel.MensajeFacturaCargada, Mode=OneWay}"
                                         TextWrapping="Wrap" />
 
                                     <Grid ColumnSpacing="12" RowSpacing="8">
@@ -280,7 +556,7 @@
                                         <TextBlock
                                             Grid.Row="0"
                                             Grid.Column="1"
-                                            Text="{Binding FacturaCargadaUuidTexto}"
+                                            Text="{x:Bind ViewModel.FacturaCargadaUuidTexto, Mode=OneWay}"
                                             TextWrapping="Wrap" />
                                         <TextBlock
                                             Grid.Row="1"
@@ -290,7 +566,7 @@
                                         <TextBlock
                                             Grid.Row="1"
                                             Grid.Column="1"
-                                            Text="{Binding FacturaCargadaFechaTexto}" />
+                                            Text="{x:Bind ViewModel.FacturaCargadaFechaTexto, Mode=OneWay}" />
                                         <TextBlock
                                             Grid.Row="2"
                                             Grid.Column="0"
@@ -299,7 +575,7 @@
                                         <TextBlock
                                             Grid.Row="2"
                                             Grid.Column="1"
-                                            Text="{Binding FacturaCargadaEmisorTexto}"
+                                            Text="{x:Bind ViewModel.FacturaCargadaEmisorTexto, Mode=OneWay}"
                                             TextWrapping="Wrap" />
                                         <TextBlock
                                             Grid.Row="3"
@@ -309,7 +585,7 @@
                                         <TextBlock
                                             Grid.Row="3"
                                             Grid.Column="1"
-                                            Text="{Binding FacturaCargadaReceptorTexto}"
+                                            Text="{x:Bind ViewModel.FacturaCargadaReceptorTexto, Mode=OneWay}"
                                             TextWrapping="Wrap" />
                                         <TextBlock
                                             Grid.Row="4"
@@ -319,7 +595,7 @@
                                         <TextBlock
                                             Grid.Row="4"
                                             Grid.Column="1"
-                                            Text="{Binding FacturaCargadaRfcTexto}"
+                                            Text="{x:Bind ViewModel.FacturaCargadaRfcTexto, Mode=OneWay}"
                                             TextWrapping="Wrap" />
                                     </Grid>
 
@@ -339,7 +615,7 @@
                                             CornerRadius="6">
                                             <StackPanel Spacing="4">
                                                 <TextBlock FontWeight="SemiBold" Text="Estado" />
-                                                <TextBlock Text="{Binding FacturaCargadaEstadoPagoTexto}" />
+                                                <TextBlock Text="{x:Bind ViewModel.FacturaCargadaEstadoPagoTexto, Mode=OneWay}" />
                                             </StackPanel>
                                         </Border>
 
@@ -352,7 +628,7 @@
                                             CornerRadius="6">
                                             <StackPanel Spacing="4">
                                                 <TextBlock FontWeight="SemiBold" Text="Abonado" />
-                                                <TextBlock Text="{Binding FacturaCargadaTotalAbonadoTexto}" />
+                                                <TextBlock Text="{x:Bind ViewModel.FacturaCargadaTotalAbonadoTexto, Mode=OneWay}" />
                                             </StackPanel>
                                         </Border>
 
@@ -365,26 +641,26 @@
                                             CornerRadius="6">
                                             <StackPanel Spacing="4">
                                                 <TextBlock FontWeight="SemiBold" Text="Saldo pendiente" />
-                                                <TextBlock Text="{Binding FacturaCargadaSaldoPendienteTexto}" />
+                                                <TextBlock Text="{x:Bind ViewModel.FacturaCargadaSaldoPendienteTexto, Mode=OneWay}" />
                                             </StackPanel>
                                         </Border>
                                     </Grid>
 
                                     <TextBlock
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{Binding FacturaCargadaMetodoFormaTexto}"
+                                        Text="{x:Bind ViewModel.FacturaCargadaMetodoFormaTexto, Mode=OneWay}"
                                         TextWrapping="Wrap" />
 
                                     <TextBlock
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{Binding FacturaCargadaTotalesTexto}"
+                                        Text="{x:Bind ViewModel.FacturaCargadaTotalesTexto, Mode=OneWay}"
                                         TextWrapping="Wrap" />
 
                                     <StackPanel Spacing="8">
-                                        <TextBlock FontWeight="SemiBold" Text="{Binding ResumenFacturaCargadaConceptos}" />
-                                        <ListView ItemsSource="{Binding FacturaCargadaConceptos}" SelectionMode="None">
+                                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.ResumenFacturaCargadaConceptos, Mode=OneWay}" />
+                                        <ListView ItemsSource="{x:Bind ViewModel.FacturaCargadaConceptos, Mode=OneWay}" SelectionMode="None">
                                             <ListView.ItemTemplate>
-                                                <DataTemplate>
+                                                <DataTemplate x:DataType="models:FacturaConceptoDto">
                                                     <Border
                                                         Margin="0,0,0,6"
                                                         Padding="8"
@@ -395,10 +671,10 @@
                                                         <StackPanel Spacing="4">
                                                             <TextBlock
                                                                 FontWeight="SemiBold"
-                                                                Text="{Binding Descripcion}"
+                                                                Text="{x:Bind Descripcion}"
                                                                 TextWrapping="Wrap" />
-                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ClavesTexto}" />
-                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ImporteTexto}" />
+                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ClavesTexto}" />
+                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ImporteTexto}" />
                                                         </StackPanel>
                                                     </Border>
                                                 </DataTemplate>
@@ -407,10 +683,10 @@
                                     </StackPanel>
 
                                     <StackPanel Spacing="8">
-                                        <TextBlock FontWeight="SemiBold" Text="{Binding ResumenFacturaCargadaAbonos}" />
-                                        <ListView ItemsSource="{Binding FacturaCargadaAbonos}" SelectionMode="None">
+                                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.ResumenFacturaCargadaAbonos, Mode=OneWay}" />
+                                        <ListView ItemsSource="{x:Bind ViewModel.FacturaCargadaAbonos, Mode=OneWay}" SelectionMode="None">
                                             <ListView.ItemTemplate>
-                                                <DataTemplate>
+                                                <DataTemplate x:DataType="models:AbonoFacturaDto">
                                                     <Border
                                                         Margin="0,0,0,6"
                                                         Padding="8"
@@ -419,10 +695,10 @@
                                                         BorderThickness="1"
                                                         CornerRadius="6">
                                                         <StackPanel Spacing="4">
-                                                            <TextBlock FontWeight="SemiBold" Text="{Binding MontoAbonoTexto}" />
-                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding FechaAbonoTexto}" />
-                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding MovimientoTexto}" />
-                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ReferenciaTexto}" />
+                                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind MontoAbonoTexto}" />
+                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind FechaAbonoTexto}" />
+                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind MovimientoTexto}" />
+                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ReferenciaTexto}" />
                                                         </StackPanel>
                                                     </Border>
                                                 </DataTemplate>
@@ -455,7 +731,7 @@
                                     <StackPanel Padding="12" Spacing="12">
                                         <TextBlock
                                             FontWeight="SemiBold"
-                                            Text="{Binding MensajeMovimientoCargado}"
+                                            Text="{x:Bind ViewModel.MensajeMovimientoCargado, Mode=OneWay}"
                                             TextWrapping="Wrap" />
 
                                         <Grid ColumnSpacing="12" RowSpacing="8">
@@ -479,7 +755,7 @@
                                             <TextBlock
                                                 Grid.Row="0"
                                                 Grid.Column="1"
-                                                Text="{Binding MovimientoCargadoCuentaTexto}"
+                                                Text="{x:Bind ViewModel.MovimientoCargadoCuentaTexto, Mode=OneWay}"
                                                 TextWrapping="Wrap" />
                                             <TextBlock
                                                 Grid.Row="1"
@@ -489,7 +765,7 @@
                                             <TextBlock
                                                 Grid.Row="1"
                                                 Grid.Column="1"
-                                                Text="{Binding MovimientoCargadoBancoTexto}"
+                                                Text="{x:Bind ViewModel.MovimientoCargadoBancoTexto, Mode=OneWay}"
                                                 TextWrapping="Wrap" />
                                             <TextBlock
                                                 Grid.Row="2"
@@ -499,7 +775,7 @@
                                             <TextBlock
                                                 Grid.Row="2"
                                                 Grid.Column="1"
-                                                Text="{Binding MovimientoCargadoPeriodoTexto}" />
+                                                Text="{x:Bind ViewModel.MovimientoCargadoPeriodoTexto, Mode=OneWay}" />
                                             <TextBlock
                                                 Grid.Row="3"
                                                 Grid.Column="0"
@@ -508,7 +784,7 @@
                                             <TextBlock
                                                 Grid.Row="3"
                                                 Grid.Column="1"
-                                                Text="{Binding MovimientoCargadoFechaTexto}" />
+                                                Text="{x:Bind ViewModel.MovimientoCargadoFechaTexto, Mode=OneWay}" />
                                             <TextBlock
                                                 Grid.Row="4"
                                                 Grid.Column="0"
@@ -517,7 +793,7 @@
                                             <TextBlock
                                                 Grid.Row="4"
                                                 Grid.Column="1"
-                                                Text="{Binding MovimientoCargadoReferenciaTexto}"
+                                                Text="{x:Bind ViewModel.MovimientoCargadoReferenciaTexto, Mode=OneWay}"
                                                 TextWrapping="Wrap" />
                                         </Grid>
 
@@ -537,7 +813,7 @@
                                                 CornerRadius="6">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock FontWeight="SemiBold" Text="Cargo" />
-                                                    <TextBlock Text="{Binding MovimientoCargadoCargoTexto}" />
+                                                    <TextBlock Text="{x:Bind ViewModel.MovimientoCargadoCargoTexto, Mode=OneWay}" />
                                                 </StackPanel>
                                             </Border>
 
@@ -550,7 +826,7 @@
                                                 CornerRadius="6">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock FontWeight="SemiBold" Text="Abono" />
-                                                    <TextBlock Text="{Binding MovimientoCargadoAbonoTexto}" />
+                                                    <TextBlock Text="{x:Bind ViewModel.MovimientoCargadoAbonoTexto, Mode=OneWay}" />
                                                 </StackPanel>
                                             </Border>
 
@@ -563,14 +839,14 @@
                                                 CornerRadius="6">
                                                 <StackPanel Spacing="4">
                                                     <TextBlock FontWeight="SemiBold" Text="Saldo" />
-                                                    <TextBlock Text="{Binding MovimientoCargadoSaldoTexto}" />
+                                                    <TextBlock Text="{x:Bind ViewModel.MovimientoCargadoSaldoTexto, Mode=OneWay}" />
                                                 </StackPanel>
                                             </Border>
                                         </Grid>
 
                                         <TextBlock
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            Text="{Binding MovimientoCargadoRelacionadosTexto}"
+                                            Text="{x:Bind ViewModel.MovimientoCargadoRelacionadosTexto, Mode=OneWay}"
                                             TextWrapping="Wrap" />
 
                                         <Border
@@ -583,7 +859,7 @@
                                                 <TextBlock FontWeight="SemiBold" Text="Metadatos" />
                                                 <TextBlock
                                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Text="{Binding MovimientoCargadoMetadatosTexto}"
+                                                    Text="{x:Bind ViewModel.MovimientoCargadoMetadatosTexto, Mode=OneWay}"
                                                     TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>

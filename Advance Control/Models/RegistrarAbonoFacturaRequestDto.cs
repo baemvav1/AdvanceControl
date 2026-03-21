@@ -10,5 +10,7 @@ namespace Advance_Control.Models
         public decimal MontoAbono { get; set; }
         public string? Referencia { get; set; }
         public string? Observaciones { get; set; }
+        public bool RegistrarEnBitacoraConciliacion { get; set; }
+        public string? TipoOperacionBitacoraConciliacion { get; set; }
     }
 }

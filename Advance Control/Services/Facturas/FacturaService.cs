@@ -183,5 +183,75 @@ namespace Advance_Control.Services.Facturas
                 throw;
             }
         }
+
+        public Task<BitacoraConciliacionResponseDto> InicializarBitacoraConciliacionAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "conciliacion", "inicializar-bitacora");
+            return PostBitacoraConciliacionAsync(url, "InicializarBitacoraConciliacionAsync", "inicializar la bitacora de conciliacion", cancellationToken);
+        }
+
+        public Task<BitacoraConciliacionResponseDto> DeshacerUltimaOperacionConciliacionAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "conciliacion", "deshacer-ultimo");
+            return PostBitacoraConciliacionAsync(url, "DeshacerUltimaOperacionConciliacionAsync", "deshacer la ultima operacion de conciliacion", cancellationToken);
+        }
+
+        public Task<BitacoraConciliacionResponseDto> DeshacerTodasOperacionesConciliacionAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "conciliacion", "deshacer-todo");
+            return PostBitacoraConciliacionAsync(url, "DeshacerTodasOperacionesConciliacionAsync", "deshacer todas las operaciones de conciliacion", cancellationToken);
+        }
+
+        private async Task<BitacoraConciliacionResponseDto> PostBitacoraConciliacionAsync(
+            string url,
+            string metodo,
+            string descripcionOperacion,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Ejecutando POST sin cuerpo en: {url}", "FacturaService", metodo);
+                var response = await _http.PostAsync(url, content: null, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al {descripcionOperacion}. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        metodo);
+
+                    return ConstruirRespuestaError(errorContent);
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<BitacoraConciliacionResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                if (result != null)
+                {
+                    return result;
+                }
+
+                await _logger.LogErrorAsync($"La API devolvio una respuesta vacia al {descripcionOperacion}", null, "FacturaService", metodo);
+                return ConstruirRespuestaError($"La API devolvio una respuesta vacia al {descripcionOperacion}.");
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync($"Error de red al {descripcionOperacion}", ex, "FacturaService", metodo);
+                throw new InvalidOperationException($"Error de comunicacion con el servidor al {descripcionOperacion}.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync($"Error inesperado al {descripcionOperacion}", ex, "FacturaService", metodo);
+                throw;
+            }
+        }
+
+        private static BitacoraConciliacionResponseDto ConstruirRespuestaError(string mensaje)
+        {
+            return new BitacoraConciliacionResponseDto
+            {
+                Success = false,
+                Message = mensaje
+            };
+        }
     }
 }

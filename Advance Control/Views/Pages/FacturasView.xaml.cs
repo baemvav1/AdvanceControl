@@ -34,7 +34,7 @@ namespace Advance_Control.Views.Pages
         private async void BtnCargarFacturaXml_Click(object sender, RoutedEventArgs e)
         {
             var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-            await ViewModel.CargarArchivoXmlAsync(hwnd);
+            await ViewModel.CargarArchivoXmlAsync(hwnd, XamlRoot);
             if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
             {
                 _activityService.Registrar("Facturas", "XML de factura cargado y guardado");
@@ -44,7 +44,7 @@ namespace Advance_Control.Views.Pages
         private async void BtnCargarMultiplesFacturas_Click(object sender, RoutedEventArgs e)
         {
             var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
-            await ViewModel.CargarYGuardarMultiplesFacturasAsync(hwnd);
+            await ViewModel.CargarYGuardarMultiplesFacturasAsync(hwnd, XamlRoot);
             if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
             {
                 _activityService.Registrar("Facturas", "Carga masiva de facturas ejecutada");

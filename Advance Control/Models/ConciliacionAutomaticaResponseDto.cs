@@ -16,6 +16,7 @@ namespace Advance_Control.Models
         public decimal MontoAplicado { get; set; }
         public List<int> IdFacturas { get; set; } = new();
         public List<int> IdAbonosFactura { get; set; } = new();
+        public int OperacionesConciliacionPendientes { get; set; }
         public string? Message { get; set; }
     }
 }
