@@ -1,0 +1,38 @@
+﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
+using Microsoft.Extensions.DependencyInjection;
+using Advance_Control.ViewModels;
+using Advance_Control.Services.Logging;
+using Advance_Control.Utilities;
+
+namespace Advance_Control.Views.Pages
+{
+    /// <summary>
+    /// Página para visualizar y gestionar servicios de asesoría
+    /// </summary>
+    public sealed partial class AsesoriaPage : Page
+    {
+        public AcesoriaViewModel ViewModel { get; }
+
+        public AsesoriaPage()
+        {
+            // Resolver el ViewModel desde DI
+            ViewModel = ((App)Application.Current).Host.Services.GetRequiredService<AcesoriaViewModel>();
+            
+            this.InitializeComponent();
+            ButtonClickLogger.Attach(this, ((App)Application.Current).Host.Services.GetRequiredService<ILoggingService>(), nameof(AsesoriaPage));
+            
+            // Establecer el DataContext para los bindings
+            this.DataContext = ViewModel;
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            
+            // Inicializar la vista cuando se navega a esta página
+            await ViewModel.InitializeAsync();
+        }
+    }
+}

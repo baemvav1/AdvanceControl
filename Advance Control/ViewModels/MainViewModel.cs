@@ -265,23 +265,23 @@ namespace Advance_Control.ViewModels
 
             // Configure routes for each page
             _navigationService.Configure<Views.Pages.DashboardPage>("Inicio");
-            _navigationService.Configure<Views.OperacionesView>("Operaciones");
-            _navigationService.Configure<Views.AcesoriaView>("Asesoria");
-            _navigationService.Configure<Views.MttoView>("Mantenimiento");
-            _navigationService.Configure<Views.ClientesView>("Clientes");
-            _navigationService.Configure<Views.Pages.EntidadesView>("Entidades");
-            _navigationService.Configure<Views.Pages.ContactosView>("Contactos");
-            _navigationService.Configure<Views.EquiposView>("Equipos");
-            _navigationService.Configure<Views.RefaaccionView>("Refacciones");
-            _navigationService.Configure<Views.ProveedoresView>("Proveedores");
-            _navigationService.Configure<Views.Pages.ServiciosView>("Servicios");
-            _navigationService.Configure<Views.Pages.UbicacionesView>("Ubicaciones");
-            _navigationService.Configure<Views.Pages.AreasView>("Areas");
-            _navigationService.Configure<Views.Pages.EsCuentaView>("EsCuenta");
-            _navigationService.Configure<Views.Pages.ConciliacionView>("Conciliacion");
-            _navigationService.Configure<Views.Pages.FacturasView>("Facturas");
-            _navigationService.Configure<Views.Pages.RPTFinancieroFacturacion>("RPTFinancieroFacturacion");
-            _navigationService.Configure<Views.Pages.CorreoView>("Correo");
+            _navigationService.Configure<Views.Pages.OperacionesPage>("Operaciones");
+            _navigationService.Configure<Views.Pages.AsesoriaPage>("Asesoria");
+            _navigationService.Configure<Views.Pages.MantenimientoPage>("Mantenimiento");
+            _navigationService.Configure<Views.Pages.ClientesPage>("Clientes");
+            _navigationService.Configure<Views.Pages.EntidadesPage>("Entidades");
+            _navigationService.Configure<Views.Pages.ContactosPage>("Contactos");
+            _navigationService.Configure<Views.Pages.EquiposPage>("Equipos");
+            _navigationService.Configure<Views.Pages.RefaccionPage>("Refacciones");
+            _navigationService.Configure<Views.Pages.ProveedoresPage>("Proveedores");
+            _navigationService.Configure<Views.Pages.ServiciosPage>("Servicios");
+            _navigationService.Configure<Views.Pages.UbicacionesPage>("Ubicaciones");
+            _navigationService.Configure<Views.Pages.AreasPage>("Areas");
+            _navigationService.Configure<Views.Pages.EstadoCuentaPage>("EstadoCuenta");
+            _navigationService.Configure<Views.Pages.ConciliacionPage>("Conciliacion");
+            _navigationService.Configure<Views.Pages.FacturasPage>("Facturas");
+            _navigationService.Configure<Views.Pages.ReporteFinancieroFacturacionPage>("ReporteFinancieroFacturacion");
+            _navigationService.Configure<Views.Pages.CorreoPage>("Correo");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
@@ -310,10 +310,10 @@ namespace Advance_Control.ViewModels
             { "Servicios",     1 },
             { "Ubicaciones",   1 },
             { "Areas",         1 },
-            { "EsCuenta",      1 },
+            { "EstadoCuenta",  1 },
             { "Conciliacion",  1 },
             { "Facturas",      1 },
-            { "RPTFinancieroFacturacion", 1 },
+            { "ReporteFinancieroFacturacion", 1 },
             { "Correo",        1 },
         };
 

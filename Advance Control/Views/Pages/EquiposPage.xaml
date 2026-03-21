@@ -1,0 +1,453 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Advance_Control.Views.Pages.EquiposPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Advance_Control.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:local="using:Advance_Control.Views" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <converters:LevelToBackgroundConverter x:Key="LevelToBackgroundConverter" />
+        <converters:LevelToForegroundConverter x:Key="LevelToForegroundConverter" />
+        <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
+        <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+    </Page.Resources>
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Header  -->
+        <StackPanel
+            Grid.Row="0" Margin="0,0,0,24" Spacing="8">
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <TextBlock
+                    FontSize="32" FontWeight="Bold" Text="Equipos" />
+                <Button
+                    x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo equipo" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <SymbolIcon Symbol="Add" />
+                        <TextBlock VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <TextBlock
+                FontSize="16"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Gestión de equipos del sistema" />
+        </StackPanel>
+
+        <!--  Filtros  -->
+        <StackPanel
+            Grid.Row="1" Margin="0,0,0,16" Spacing="12">
+            <TextBlock
+                FontSize="16" FontWeight="SemiBold" Text="Filtros de búsqueda" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Marca"
+                    PlaceholderText="Marca del equipo"
+                    Text="{x:Bind ViewModel.MarcaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Año de Creación"
+                    InputScope="Number" PlaceholderText="Año de creación"
+                    Text="{x:Bind ViewModel.CreadoFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="Identificador"
+                    PlaceholderText="Identificador del equipo"
+                    Text="{x:Bind ViewModel.IdentificadorFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="Paradas"
+                    InputScope="Number" PlaceholderText="Número de paradas"
+                    Text="{x:Bind ViewModel.ParadasFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Kilogramos"
+                    InputScope="Number" PlaceholderText="Capacidad en kg"
+                    Text="{x:Bind ViewModel.KilogramosFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="1" Grid.Column="2" Margin="0,0,8,8" Header="Personas"
+                    InputScope="Number" PlaceholderText="Capacidad de personas"
+                    Text="{x:Bind ViewModel.PersonasFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="2" Grid.Column="0" Margin="0,0,8,8" Header="Descripción"
+                    PlaceholderText="Búsqueda en descripción"
+                    Text="{x:Bind ViewModel.DescripcionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <StackPanel
+                    Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
+                    <Button
+                        Click="SearchButton_Click" Content="Buscar"
+                        Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                    <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!--  Lista de equipos  -->
+        <Grid Grid.Row="2">
+            <!--  Loading indicator  -->
+            <ProgressRing
+                Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+
+            <!--  ItemsRepeater con ScrollViewer  -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Equipos, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="0" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:EquipoDto">
+                            <Grid Margin="0,5,20,5">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid
+                                        x:Name="Head" Grid.Row="0" MinHeight="90" Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="0,0,0,1"
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
+                                        Tag="{x:Bind}"
+                                        Tapped="HeadGrid_Tapped">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!--  Información principal del equipo  -->
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock
+                                                FontSize="16" FontWeight="SemiBold"
+                                                Text="{x:Bind Marca}" />
+                                            <TextBlock
+                                                FontSize="14"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind Identificador}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Año: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Creado}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Paradas: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Paradas}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Kg: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Kilogramos}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Personas: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Personas}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!--  Botón para expandir/colapsar  -->
+                                        <Button
+                                            Grid.Column="1" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                                            Click="ToggleExpandButton_Click"
+                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
+                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                                    </Grid>
+                                    <Grid
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
+                                        Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                        <Pivot>
+                                            <!-- Información del Equipo -->
+                                            <PivotItem Header="Información">
+                                                <Grid Padding="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+
+                                                    <StackPanel
+                                                        Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Equipo:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind IdEquipo}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Marca:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Marca}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Año de Creación:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Creado}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Identificador:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Identificador}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Número de Paradas:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Paradas}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="2" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Capacidad en Kilogramos:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Kilogramos}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="3" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Capacidad de Personas:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Personas}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="3" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Estatus:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Estatus}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </PivotItem>
+
+                                            <!-- Descripción -->
+                                            <PivotItem Header="Descripción">
+                                                <StackPanel Padding="8">
+                                                    <TextBlock
+                                                        FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                        Text="{x:Bind Descripcion}"
+                                                        TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </PivotItem>
+
+                                            <!-- Clientes Relacionados -->
+                                            <PivotItem Header="Clientes">
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <TextBlock
+                                                            FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Clientes Relacionados" />
+                                                        <Button
+                                                            x:Name="NuevaRelacion" VerticalAlignment="Center" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="0"
+                                                            Click="NuevaRelacion_Click" ToolTipService.ToolTip="Crear nueva relacion" Foreground="DarkGray"
+                                                            Tag="{x:Bind}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!--  Loading indicator for relaciones  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingRelaciones, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingRelaciones, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Lista de relaciones  -->
+                                                    <ItemsRepeater ItemsSource="{x:Bind Relaciones, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="4" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionClienteDto">
+                                                                <Border
+                                                                    Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                    BorderThickness="1" CornerRadius="4">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                                            <TextBlock
+                                                                                FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                                Text="{x:Bind RazonSocial}" />
+                                                                            <TextBlock
+                                                                                FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                Text="{x:Bind NombreComercial}" />
+                                                                            <TextBlock
+                                                                                FontSize="11" FontStyle="Italic" Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                                Text="{x:Bind Nota}"
+                                                                                TextWrapping="Wrap"
+                                                                                Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        </StackPanel>
+                                                                        <TextBlock
+                                                                            Grid.Column="1" Margin="0,0,8,0" VerticalAlignment="Center" FontSize="11"
+                                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                                            <Run Text="ID: " />
+                                                                            <Run Text="{x:Bind IdCliente}" />
+                                                                        </TextBlock>
+                                                                        <StackPanel
+                                                                            Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                                                            <Button
+                                                                                AutomationProperties.Name="Editar relación" Background="Transparent" BorderThickness="0" Click="EditRelacionButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Editar nota" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Edit" />
+                                                                            </Button>
+                                                                            <Button
+                                                                                AutomationProperties.Name="Eliminar relación" Background="Transparent" BorderThickness="0" Click="DeleteRelacionButton_Click"
+                                                                                Tag="{x:Bind}"
+                                                                                ToolTipService.ToolTip="Eliminar relación" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </StackPanel>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+
+                                                    <!--  Mensaje cuando no hay relaciones  -->
+                                                    <TextBlock
+                                                        FontSize="12" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="No hay clientes relacionados"
+                                                        Visibility="{x:Bind ShowNoRelacionesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </PivotItem>
+                                            
+                                            <PivotItem Header="Ubicacion">
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <TextBlock
+                                                        FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Ubicación del Equipo" />
+
+                                                    <!--  Loading indicator for ubicacion  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingUbicacion, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingUbicacion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Mensaje cuando no hay ubicación  -->
+                                                    <StackPanel
+                                                        Spacing="8"
+                                                        Visibility="{x:Bind ShowNoUbicacionMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        <TextBlock
+                                                            FontSize="12" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Sin ubicación" />
+                                                        <Button
+                                                            x:Name="AgregarUbicacionButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="AgregarUbicacionButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Tag="{x:Bind}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <SymbolIcon Symbol="MapPin" />
+                                                                <TextBlock Text="Agregar Ubicación" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                     <!--  Mostrar ubicación cuando existe  -->
+                                                    <StackPanel
+                                                        Spacing="8"
+                                                        Visibility="{x:Bind HasUbicacion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        
+                                                        <!--  Mostrar detalles de ubicación solo cuando no está cargando y tiene datos  -->
+                                                        <Border
+                                                            Padding="12" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                            BorderThickness="1" CornerRadius="4"
+                                                            Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}">
+                                                            <StackPanel Spacing="4">
+                                                                <TextBlock
+                                                                    FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                    Text="{x:Bind Ubicacion.Nombre, Mode=OneWay}" />
+                                                                <TextBlock
+                                                                    FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                    Text="{x:Bind Ubicacion.Descripcion, Mode=OneWay}" />
+                                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}">
+                                                                    <Run Text="Lat: " />
+                                                                    <Run Text="{x:Bind Ubicacion.Latitud, Mode=OneWay}" />
+                                                                    <Run Text=", Lng: " />
+                                                                    <Run Text="{x:Bind Ubicacion.Longitud, Mode=OneWay}" />
+                                                                </TextBlock>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <Button
+                                                            x:Name="EditarUbicacionButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="EditarUbicacionButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <SymbolIcon Symbol="Edit" />
+                                                                <TextBlock Text="Editar Ubicación" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            x:Name="VerEnMapaButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                            Click="VerEnMapaButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Ubicacion, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                <SymbolIcon Symbol="Map" />
+                                                                <TextBlock Text="Ver en Mapa" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </PivotItem>
+                                        </Pivot>
+                                    </Grid>
+                                </StackPanel>
+
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

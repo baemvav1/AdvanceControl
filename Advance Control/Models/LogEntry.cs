@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Advance_Control.Models
 {
@@ -38,7 +38,7 @@ namespace Advance_Control.Models
 
         /// <summary>
         /// Nombre de la vista/página donde se originó el log.
-        /// Ej: "OperacionesView", "MttoView", "ClientesView"
+        /// Ej: "OperacionesPage", "MantenimientoPage", "ClientesPage"
         /// </summary>
         public string? Page { get; set; }
     }

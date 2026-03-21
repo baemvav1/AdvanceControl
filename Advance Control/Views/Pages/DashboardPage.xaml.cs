@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
@@ -58,3 +58,4 @@ namespace Advance_Control.Views.Pages
             => _navigationService.Navigate("Clientes");
     }
 }
+

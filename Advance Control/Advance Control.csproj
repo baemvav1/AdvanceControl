@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
@@ -15,25 +15,26 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Views\AcesoriaView.xaml" />
-    <None Remove="Views\ClientesView.xaml" />
+    <None Remove="Views\Pages\AsesoriaPage.xaml" />
+    <None Remove="Views\Pages\ClientesPage.xaml" />
     <None Remove="Views\Details\DetailEstadoCuentaView.xaml" />
     <None Remove="Views\Login\LoginView.xaml" />
-    <None Remove="Views\MttoView.xaml" />
-    <None Remove="Views\OperacionesView.xaml" />
-    <None Remove="Views\Pages\AreasView.xaml" />
-    <None Remove="Views\Pages\ConciliacionView.xaml" />
-    <None Remove="Views\Pages\ContactosView.xaml" />
-    <None Remove="Views\Pages\CorreoView.xaml" />
-    <None Remove="Views\Pages\EntidadesView.xaml" />
-    <None Remove="Views\Pages\EquiposView.xaml" />
-    <None Remove="Views\Pages\EsCuentaView.xaml" />
-    <None Remove="Views\Pages\FacturasView.xaml" />
-    <None Remove="Views\Pages\ProveedoresView.xaml" />
-    <None Remove="Views\Pages\RefaaccionView.xaml" />
-    <None Remove="Views\Pages\RPTFinancieroFacturacion.xaml" />
-    <None Remove="Views\Pages\ServiciosView.xaml" />
-    <None Remove="Views\Pages\UbicacionesView.xaml" />
+    <None Remove="Views\Pages\MantenimientoPage.xaml" />
+    <None Remove="Views\Pages\OperacionesPage.xaml" />
+    <None Remove="Views\Pages\AreasPage.xaml" />
+    <None Remove="Views\Pages\ConciliacionPage.xaml" />
+    <None Remove="Views\Pages\ContactosPage.xaml" />
+    <None Remove="Views\Pages\CorreoPage.xaml" />
+    <None Remove="Views\Pages\DashboardPage.xaml" />
+    <None Remove="Views\Pages\EntidadesPage.xaml" />
+    <None Remove="Views\Pages\EquiposPage.xaml" />
+    <None Remove="Views\Pages\EstadoCuentaPage.xaml" />
+    <None Remove="Views\Pages\FacturasPage.xaml" />
+    <None Remove="Views\Pages\ProveedoresPage.xaml" />
+    <None Remove="Views\Pages\RefaccionPage.xaml" />
+    <None Remove="Views\Pages\ReporteFinancieroFacturacionPage.xaml" />
+    <None Remove="Views\Pages\ServiciosPage.xaml" />
+    <None Remove="Views\Pages\UbicacionesPage.xaml" />
     <None Remove="Views\Servicios.xaml" />
     <None Remove="Views\Windows\DetalFacturaWindow.xaml" />
   </ItemGroup>
@@ -83,12 +84,17 @@
     <PackageReference Include="System.Text.Json" Version="9.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\RPTFinancieroFacturacion.xaml">
+    <Page Update="Views\Pages\DashboardPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\ConciliacionView.xaml">
+    <Page Update="Views\Pages\ReporteFinancieroFacturacionPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Update="Views\Pages\ConciliacionPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -98,42 +104,42 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\FacturasView.xaml">
+    <Page Update="Views\Pages\FacturasPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\EsCuentaView.xaml">
+    <Page Update="Views\Pages\EstadoCuentaPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\CorreoView.xaml">
+    <Page Update="Views\Pages\CorreoPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\EntidadesView.xaml">
+    <Page Update="Views\Pages\EntidadesPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\ContactosView.xaml">
+    <Page Update="Views\Pages\ContactosPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\AreasView.xaml">
+    <Page Update="Views\Pages\AreasPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\UbicacionesView.xaml">
+    <Page Update="Views\Pages\UbicacionesPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\ServiciosView.xaml">
+    <Page Update="Views\Pages\ServiciosPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
@@ -143,37 +149,37 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\ProveedoresView.xaml">
+    <Page Update="Views\Pages\ProveedoresPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\RefaaccionView.xaml">
+    <Page Update="Views\Pages\RefaccionPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\EquiposView.xaml">
+    <Page Update="Views\Pages\EquiposPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\AcesoriaView.xaml">
+    <Page Update="Views\Pages\AsesoriaPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\OperacionesView.xaml">
+    <Page Update="Views\Pages\OperacionesPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\MttoView.xaml">
+    <Page Update="Views\Pages\MantenimientoPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\ClientesView.xaml">
+    <Page Update="Views\Pages\ClientesPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

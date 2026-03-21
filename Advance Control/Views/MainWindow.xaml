@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Window
     x:Class="Advance_Control.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Advance_Control" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" Title="Advance Control" mc:Ignorable="d">
@@ -150,13 +150,13 @@
                             </NavigationViewItem.Icon>
                             <NavigationViewItem.MenuItems>
                                 <NavigationViewItem
-                                    Content="Estado de Cuenta" Icon="Account" Tag="EsCuenta" />
+                                    Content="Estado de Cuenta" Icon="Account" Tag="EstadoCuenta" />
                                 <NavigationViewItem
                                     Content="Conciliación" Icon="Switch" Tag="Conciliacion" />
                                 <NavigationViewItem
                                     Content="Facturas" Icon="Document" Tag="Facturas" />
                                 <NavigationViewItem
-                                    Content="RPT Facturación" Icon="Document" Tag="RPTFinancieroFacturacion" />
+                                    Content="Reporte Facturación" Icon="Document" Tag="ReporteFinancieroFacturacion" />
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
