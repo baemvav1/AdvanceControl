@@ -2,12 +2,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
-using Advance_Control.Models;
 using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
-using Advance_Control.Views.Dialogs;
-using System;
 
 namespace Advance_Control.Views.Pages
 {
@@ -16,7 +13,13 @@ namespace Advance_Control.Views.Pages
     /// </summary>
     public sealed partial class LevantamientoView : Page
     {
+        private const bool ShowHotspotButtons = true;
+
         public LevantamientoViewModel ViewModel { get; }
+
+        public Visibility HotspotButtonVisibility => ShowHotspotButtons
+            ? Visibility.Visible
+            : Visibility.Collapsed;
 
         public LevantamientoView()
         {
@@ -34,30 +37,18 @@ namespace Advance_Control.Views.Pages
             await ViewModel.InitializeAsync();
         }
 
-        private async void HotspotButton_Click(object sender, RoutedEventArgs e)
+        private void HotspotButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is not Button { Tag: string hotspotKey })
+            var hotspotKey = (sender as FrameworkElement)?.Tag?.ToString();
+
+            if (true)
             {
-                return;
             }
-
-            var hotspot = ViewModel.TryGetHotspot(hotspotKey);
-            if (hotspot is null)
-            {
-                return;
-            }
-
-            ViewModel.SelectHotspot(hotspot);
-
-            var dialog = new LevantamientoFallaDialog(hotspot.Titulo, hotspot.DescripcionFalla, XamlRoot);
-            var result = await dialog.ShowAsync();
-            if (result != ContentDialogResult.Primary)
-            {
-                return;
-            }
-
-            ViewModel.RegisterFailure(hotspot, dialog.DescripcionCapturada);
         }
 
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }
