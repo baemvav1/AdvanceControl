@@ -5,7 +5,146 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    x:Name="RootPage"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-    <Grid />
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1.55*" />
+            <ColumnDefinition Width="1.1*" />
+        </Grid.ColumnDefinitions>
+
+        <StackPanel
+            Grid.Row="0"
+            Grid.ColumnSpan="2"
+            Margin="0,0,0,20"
+            Spacing="6">
+            <TextBlock FontSize="30" FontWeight="Bold" Text="Levantamiento" />
+            <TextBlock
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Version piloto: selecciona el componente desde la lista, captura la falla y revisa el JSON generado." />
+        </StackPanel>
+
+        <Grid
+            Grid.Row="1"
+            Grid.Column="0"
+            Margin="0,0,20,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Border
+                Grid.Row="0"
+                Margin="0,0,0,16"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <StackPanel Spacing="10">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="Referencia visual" />
+                    <Image
+                        MaxHeight="420"
+                        Source="{x:Bind ViewModel.HotspotImageSource, Mode=OneWay}"
+                        Stretch="Uniform" />
+                </StackPanel>
+            </Border>
+
+            <Border
+                Grid.Row="1"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <StackPanel Spacing="10">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="Componentes" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Selecciona un componente para capturar o actualizar la falla." />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.SalaDeMaquinasHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="SalaDeMaquinas" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.MaquinaDeTraccionHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="MaquinaDeTraccion" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.LimitadorDeVelocidadHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="LimitadorDeVelocidad" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.CabinaHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="Cabina" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.ContrapesoHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="Contrapeso" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.ParacaidasHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="Paracaidas" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.PuertaCabinaOperacionHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="PuertaCabinaOperacion" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.BotoneraCabinaHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="BotoneraCabina" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.PuertaDePisoHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="PuertaDePiso" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.EnclavamientoYContactosHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="EnclavamientoYContactos" />
+                    <Button Click="HotspotButton_Click" Content="{x:Bind ViewModel.CadenaDeCompensacionHotspot.Titulo, Mode=OneWay}" HorizontalAlignment="Stretch" Tag="CadenaDeCompensacion" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <StackPanel
+            Grid.Row="1"
+            Grid.Column="1"
+            Spacing="16">
+            <Border
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <StackPanel Spacing="8">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="Componente seleccionado" />
+                    <TextBlock FontSize="16" FontWeight="Medium" Text="{x:Bind ViewModel.SelectedHotspotTitle, Mode=OneWay}" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.SelectedHotspotSection, Mode=OneWay}" />
+                    <TextBlock Text="Descripcion registrada" />
+                    <TextBox
+                        AcceptsReturn="True"
+                        Height="120"
+                        IsReadOnly="True"
+                        Text="{x:Bind ViewModel.SelectedHotspotDescription, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <StackPanel Spacing="10">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="Fallas capturadas" />
+                    <TextBlock
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.ResumenCapturas, Mode=OneWay}" />
+                    <TextBox
+                        AcceptsReturn="True"
+                        Height="200"
+                        IsReadOnly="True"
+                        Text="{x:Bind ViewModel.ResumenFallasDetalle, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="12">
+                <StackPanel Spacing="10">
+                    <TextBlock FontSize="20" FontWeight="SemiBold" Text="JSON base del levantamiento" />
+                    <TextBox
+                        AcceptsReturn="True"
+                        Height="280"
+                        IsReadOnly="True"
+                        Text="{x:Bind ViewModel.JsonLevantamiento, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Grid>
 </Page>
