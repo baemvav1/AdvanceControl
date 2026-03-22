@@ -159,6 +159,16 @@ namespace Advance_Control.Navigation
         }
 
         public string GetCurrentTag() => _currentTag;
+
+        public Type? GetPageType(string tag)
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+                return null;
+
+            return _routes.TryGetValue(tag, out var entry)
+                ? entry.PageType
+                : null;
+        }
     }
 
     /* -----------------------------

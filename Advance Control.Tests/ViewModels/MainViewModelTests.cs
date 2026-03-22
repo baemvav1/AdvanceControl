@@ -11,6 +11,7 @@ using Advance_Control.Services.Dialog;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.OnlineCheck;
+using Advance_Control.Services.PermisosUi;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.ViewModels;
 using Moq;
@@ -30,6 +31,7 @@ namespace Advance_Control.Tests.ViewModels
         private readonly Mock<IUserInfoService> _mockUserInfoService = new();
         private readonly Mock<INotificacionAlertaService> _mockAlertaService = new();
         private readonly Mock<IActivityService> _mockActivityService = new();
+        private readonly Mock<IPermisoUiRuntimeService> _mockPermisoUiRuntimeService = new();
 
         [Fact]
         public void Constructor_WithNullUserInfoService_ThrowsArgumentNullException()
@@ -45,7 +47,8 @@ namespace Advance_Control.Tests.ViewModels
                     _mockNotificacionService.Object,
                     null!,
                     _mockAlertaService.Object,
-                    _mockActivityService.Object));
+                    _mockActivityService.Object,
+                    _mockPermisoUiRuntimeService.Object));
         }
 
         [Fact]
@@ -138,6 +141,46 @@ namespace Advance_Control.Tests.ViewModels
             Assert.Equal(string.Empty, viewModel.UserType);
         }
 
+        [Fact]
+        public void ShouldDisplayNavigationTag_WhenNotAuthenticated_HidesProtectedModules()
+        {
+            var viewModel = CreateViewModel();
+
+            Assert.True(viewModel.ShouldDisplayNavigationTag("Inicio"));
+            Assert.False(viewModel.ShouldDisplayNavigationTag("Operaciones"));
+        }
+
+        [Fact]
+        public void ShouldDisplayNavigationTag_WhenRuntimeDeniesModule_ReturnsFalse()
+        {
+            _mockNavigationService
+                .Setup(x => x.GetPageType("Operaciones"))
+                .Returns(typeof(Advance_Control.Views.Pages.OperacionesPage));
+            _mockPermisoUiRuntimeService
+                .SetupGet(x => x.IsInitialized)
+                .Returns(true);
+            _mockPermisoUiRuntimeService
+                .Setup(x => x.BuildModuleKey(It.IsAny<Type>()))
+                .Returns("modulo-operaciones");
+
+            PermisoModuloDto? modulo = new()
+            {
+                ClaveModulo = "modulo-operaciones"
+            };
+
+            _mockPermisoUiRuntimeService
+                .Setup(x => x.TryGetModulo("modulo-operaciones", out modulo))
+                .Returns(true);
+            _mockPermisoUiRuntimeService
+                .Setup(x => x.CanAccessModule("modulo-operaciones"))
+                .Returns(false);
+
+            var viewModel = CreateViewModel();
+            viewModel.IsAuthenticated = true;
+
+            Assert.False(viewModel.ShouldDisplayNavigationTag("Operaciones"));
+        }
+
         private MainViewModel CreateViewModel()
             => new(
                 _mockNavigationService.Object,
@@ -149,6 +192,7 @@ namespace Advance_Control.Tests.ViewModels
                 _mockNotificacionService.Object,
                 _mockUserInfoService.Object,
                 _mockAlertaService.Object,
-                _mockActivityService.Object);
+                _mockActivityService.Object,
+                _mockPermisoUiRuntimeService.Object);
     }
 }

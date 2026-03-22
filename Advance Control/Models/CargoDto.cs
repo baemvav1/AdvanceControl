@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
+using Microsoft.UI.Xaml;
 
 namespace Advance_Control.Models
 {
@@ -110,6 +111,7 @@ namespace Advance_Control.Models
                 {
                     _monto = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(MontoFormateado));
                 }
             }
         }
@@ -175,6 +177,9 @@ namespace Advance_Control.Models
         /// <summary>Indica si el detalle tiene más de una línea (refacciones con formato marca/serie/descripcion)</summary>
         [JsonIgnore]
         public bool TieneSubdetalle => !string.IsNullOrEmpty(GetDetalleLinea(1));
+
+        [JsonIgnore]
+        public Visibility SubdetalleVisibility => TieneSubdetalle ? Visibility.Visible : Visibility.Collapsed;
 
 
         /// <summary>
@@ -244,6 +249,7 @@ namespace Advance_Control.Models
                 {
                     _unitario = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(UnitarioFormateado));
                     RecalculateMonto();
                 }
             }
@@ -263,9 +269,17 @@ namespace Advance_Control.Models
                 {
                     _isEditing = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(ReadVisibility));
+                    OnPropertyChanged(nameof(EditVisibility));
                 }
             }
         }
+
+        [JsonIgnore]
+        public Visibility ReadVisibility => IsEditing ? Visibility.Collapsed : Visibility.Visible;
+
+        [JsonIgnore]
+        public Visibility EditVisibility => IsEditing ? Visibility.Visible : Visibility.Collapsed;
 
         private ObservableCollection<CargoImageDto> _images = new ObservableCollection<CargoImageDto>();
         /// <summary>
@@ -282,6 +296,7 @@ namespace Advance_Control.Models
                     _images = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(HasImages));
+                    OnPropertyChanged(nameof(GalleryVisibility));
                 }
             }
         }
@@ -343,6 +358,7 @@ namespace Advance_Control.Models
                     _isGalleryExpanded = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(ShouldShowGallery));
+                    OnPropertyChanged(nameof(GalleryVisibility));
                 }
             }
         }
@@ -371,6 +387,15 @@ namespace Advance_Control.Models
         [JsonIgnore]
         public bool ShouldShowGallery => HasImages && IsGalleryExpanded;
 
+        [JsonIgnore]
+        public Visibility GalleryVisibility => ShouldShowGallery ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public string UnitarioFormateado => (Unitario ?? 0d).ToString("C2");
+
+        [JsonIgnore]
+        public string MontoFormateado => (Monto ?? 0d).ToString("C2");
+
         /// <summary>
         /// Notifica que la colección de imágenes ha cambiado
         /// </summary>
@@ -379,6 +404,7 @@ namespace Advance_Control.Models
             OnPropertyChanged(nameof(Images));
             OnPropertyChanged(nameof(HasImages));
             OnPropertyChanged(nameof(ShouldShowGallery));
+            OnPropertyChanged(nameof(GalleryVisibility));
         }
 
         /// <summary>
@@ -390,6 +416,8 @@ namespace Advance_Control.Models
             {
                 Monto = _cantidad.Value * _unitario.Value;
             }
+
+            OnPropertyChanged(nameof(MontoFormateado));
         }
     }
 }

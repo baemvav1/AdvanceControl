@@ -1,19 +1,19 @@
 using System;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Advance_Control.Models;
+using Advance_Control.Services.CorreoUsuario;
 using Advance_Control.Services.Email;
-using Advance_Control.Services.Security;
+using Advance_Control.Services.Session;
 using CommunityToolkit.Mvvm.Input;
 
 namespace Advance_Control.ViewModels;
 
 public class CorreoViewModel : ViewModelBase
 {
-    private const string ClaveUsuario = "email_smtp_user";
-    private const string ClavePassword = "email_smtp_password";
-
-    private readonly ISecureStorage _storage;
+    private readonly ICorreoUsuarioService _correoUsuarioService;
     private readonly IEmailService _emailService;
+    private readonly IUserSessionService _userSessionService;
 
     private string _email = string.Empty;
     private string _password = string.Empty;
@@ -22,10 +22,11 @@ public class CorreoViewModel : ViewModelBase
     private bool _credencialesGuardadas;
     private string _firmaPath = string.Empty;
 
-    public CorreoViewModel(ISecureStorage storage, IEmailService emailService)
+    public CorreoViewModel(ICorreoUsuarioService correoUsuarioService, IEmailService emailService, IUserSessionService userSessionService)
     {
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+        _correoUsuarioService = correoUsuarioService ?? throw new ArgumentNullException(nameof(correoUsuarioService));
         _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+        _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
 
         GuardarCommand = new AsyncRelayCommand(GuardarAsync);
         VerificarConexionCommand = new AsyncRelayCommand(VerificarConexionAsync, PuedeVerificar);
@@ -121,17 +122,16 @@ public class CorreoViewModel : ViewModelBase
 
     public async Task LoadAsync()
     {
-        var usuario = await _storage.GetAsync(ClaveUsuario);
-        var pass = await _storage.GetAsync(ClavePassword);
+        var configuracion = await _correoUsuarioService.GetCorreoActualAsync();
 
-        Email = usuario ?? string.Empty;
-        Password = pass ?? string.Empty;
+        Email = configuracion?.Email ?? string.Empty;
+        Password = configuracion?.Password ?? string.Empty;
 
-        CredencialesGuardadas = !string.IsNullOrWhiteSpace(usuario) && !string.IsNullOrWhiteSpace(pass);
+        CredencialesGuardadas = !string.IsNullOrWhiteSpace(Email) && !string.IsNullOrWhiteSpace(Password);
 
         Estado = CredencialesGuardadas
-            ? "Credenciales cargadas desde almacenamiento seguro."
-            : "No hay credenciales configuradas.";
+            ? "Credenciales de correo cargadas para el usuario actual."
+            : "El usuario actual no tiene credenciales de correo configuradas.";
 
         // Cargar firma si existe
         if (!string.IsNullOrWhiteSpace(Email))
@@ -150,11 +150,31 @@ public class CorreoViewModel : ViewModelBase
             return;
         }
 
-        await _storage.SetAsync(ClaveUsuario, Email.Trim());
-        await _storage.SetAsync(ClavePassword, Password);
+        if (!_userSessionService.IsLoaded)
+            await _userSessionService.LoadAsync();
+
+        if (_userSessionService.CredencialId <= 0)
+        {
+            Estado = "No fue posible determinar el usuario actual.";
+            return;
+        }
+
+        var result = await _correoUsuarioService.SaveCorreoUsuarioAsync(
+            _userSessionService.CredencialId,
+            new CorreoUsuarioEditDto
+            {
+                Email = Email.Trim(),
+                Password = Password
+            });
+
+        if (!result.Success)
+        {
+            Estado = result.Message;
+            return;
+        }
 
         CredencialesGuardadas = true;
-        Estado = "Credenciales guardadas correctamente.";
+        Estado = "Credenciales guardadas correctamente para el usuario actual.";
 
         // Actualizar ruta de firma según el email guardado
         FirmaPath = FirmaCorreoHelper.GetFirmaPath(Email.Trim());
@@ -162,15 +182,12 @@ public class CorreoViewModel : ViewModelBase
 
     private async Task VerificarConexionAsync()
     {
-        // Guardar antes de verificar para que el servicio lea las credenciales actuales
-        await GuardarAsync();
-
         EsVerificando = true;
         Estado = "Verificando conexión con el servidor...";
 
         try
         {
-            var resultado = await _emailService.VerifyConnectionAsync();
+            var resultado = await _emailService.VerifyConnectionAsync(Email.Trim(), Password);
             Estado = resultado;
         }
         finally

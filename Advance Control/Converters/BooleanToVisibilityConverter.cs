@@ -29,7 +29,7 @@ namespace Advance_Control.Converters
             {
                 return visibility == Visibility.Visible;
             }
-            return null;
+            return false;
         }
     }
 }

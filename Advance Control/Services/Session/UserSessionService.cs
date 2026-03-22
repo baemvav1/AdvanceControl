@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Services.AccessControl;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.PermisosUi;
 using Advance_Control.Services.UserInfo;
 
 namespace Advance_Control.Services.Session
@@ -16,6 +17,7 @@ namespace Advance_Control.Services.Session
     {
         private readonly IUserInfoService _userInfoService;
         private readonly ILoggingService _logger;
+        private readonly IPermisoUiRuntimeService _permisoUiRuntimeService;
 
         public int CredencialId { get; private set; }
         public int IdProveedor { get; private set; }
@@ -26,10 +28,11 @@ namespace Advance_Control.Services.Session
         public string? TipoUsuario { get; private set; }
         public bool IsLoaded { get; private set; }
 
-        public UserSessionService(IUserInfoService userInfoService, ILoggingService logger)
+        public UserSessionService(IUserInfoService userInfoService, ILoggingService logger, IPermisoUiRuntimeService permisoUiRuntimeService)
         {
             _userInfoService = userInfoService ?? throw new ArgumentNullException(nameof(userInfoService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _permisoUiRuntimeService = permisoUiRuntimeService ?? throw new ArgumentNullException(nameof(permisoUiRuntimeService));
         }
 
         /// <summary>
@@ -52,10 +55,18 @@ namespace Advance_Control.Services.Session
                     Telefono = userInfo.Telefono;
                     Nivel = userInfo.Nivel;
                     TipoUsuario = userInfo.TipoUsuario;
+                    AccessControlService.Current.SetNivel(Nivel);
                     IsLoaded = true;
-                    // Forzar nivel 1 al iniciar sesión (nivel máximo).
-                    // En el futuro se usará Nivel real del usuario.
-                    AccessControlService.Current.SetNivel(1);
+
+                    try
+                    {
+                        await _permisoUiRuntimeService.InitializeAsync(Nivel, cancellationToken: cancellationToken);
+                    }
+                    catch (Exception permissionEx)
+                    {
+                        await _logger.LogErrorAsync("Error al inicializar permisos UI durante la carga de sesión", permissionEx, "UserSessionService", "LoadAsync");
+                    }
+
                     await _logger.LogInformationAsync(
                         $"Sesión de usuario cargada: CredencialId={CredencialId}, IdProveedor={IdProveedor}",
                         "UserSessionService", "LoadAsync");
@@ -86,6 +97,7 @@ namespace Advance_Control.Services.Session
             Nivel = 0;
             TipoUsuario = null;
             IsLoaded = false;
+            _permisoUiRuntimeService.Reset();
         }
     }
 }

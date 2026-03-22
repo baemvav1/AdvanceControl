@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
+using Microsoft.UI.Xaml.Media;
+
 namespace Advance_Control.Models
 {
     /// <summary>
@@ -57,12 +59,54 @@ namespace Advance_Control.Models
     /// <summary>
     /// Paso individual de una operación en el ToDo del Dashboard.
     /// </summary>
-    public class CheckPasoItem
+    public class CheckPasoItem : INotifyPropertyChanged
     {
-        public string Nombre { get; set; } = string.Empty;
-        public bool Completado { get; set; }
+        private static readonly Brush CompletedBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 0x22, 0xC5, 0x5E));
+        private static readonly Brush PendingBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 0x80, 0x80, 0x80));
+        private string _nombre = string.Empty;
+        private bool _completado;
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public string Nombre
+        {
+            get => _nombre;
+            set => SetProperty(ref _nombre, value);
+        }
+
+        public bool Completado
+        {
+            get => _completado;
+            set
+            {
+                if (SetProperty(ref _completado, value))
+                {
+                    OnPropertyChanged(nameof(Glyph));
+                    OnPropertyChanged(nameof(EstadoBrush));
+                }
+            }
+        }
 
         /// <summary>Glifo de estado: ✓ verde / ○ gris</summary>
         public string Glyph => Completado ? "\uE73E" : "\uEA3A"; // Accept / CircleRing
+ 
+        public Brush EstadoBrush => Completado ? CompletedBrush : PendingBrush;
+
+        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return false;
+            }
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 }

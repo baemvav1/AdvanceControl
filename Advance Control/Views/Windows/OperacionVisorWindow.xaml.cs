@@ -9,9 +9,11 @@ using Advance_Control.Services.Session;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Dialogs;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -32,6 +34,10 @@ namespace Advance_Control.Views.Windows
     /// </summary>
     public sealed partial class OperacionVisorWindow : Microsoft.UI.Xaml.Window
     {
+        private static readonly Brush CheckCompletedBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 0x22, 0xC5, 0x5E));
+        private static readonly Brush CheckPendingBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 0x6B, 0x72, 0x80));
+        private static readonly Brush ChecklistPendingBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(255, 0x80, 0x80, 0x80));
+
         private readonly OperacionesViewModel _viewModel;
         private readonly INotificacionService _notificacionService;
         private readonly ICargoService _cargoService;
@@ -70,7 +76,6 @@ namespace Advance_Control.Views.Windows
             CurrencyFormatter = fmt;
 
             this.InitializeComponent();
-            RootGrid.DataContext = this;  // Permite {Binding} resolver propiedades del Window
 
             _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             Title = $"Visor – {operacion.Identificador}";
@@ -147,7 +152,7 @@ namespace Advance_Control.Views.Windows
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al cargar cargos: {ex.GetType().Name} – {ex.Message}");
+                LogDebugError(nameof(LoadCargosAsync), ex);
                 await MostrarErrorAsync("Error al cargar cargos", "No se pudieron cargar los cargos. Intente nuevamente.");
             }
             finally
@@ -179,7 +184,7 @@ namespace Advance_Control.Views.Windows
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error actualizando indicadores: {ex.GetType().Name} – {ex.Message}");
+                LogDebugError(nameof(RefreshImageIndicatorsAsync), ex);
             }
         }
 
@@ -194,6 +199,29 @@ namespace Advance_Control.Views.Windows
 
         private Task MostrarErrorAsync(string titulo, string mensaje) =>
             _notificacionService.MostrarAsync(titulo, mensaje);
+
+        private static void LogDebugError(string contexto, Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"OperacionVisorWindow::{contexto}: {ex.GetType().Name} - {ex.Message}");
+        }
+
+        public Visibility ToBoolVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+
+        public Visibility ToInverseBoolVisibility(bool value) => value ? Visibility.Collapsed : Visibility.Visible;
+
+        public Visibility ToTextVisibility(string? value) => string.IsNullOrWhiteSpace(value) ? Visibility.Collapsed : Visibility.Visible;
+
+        public string FormatDecimalCurrency(decimal value) => value.ToString("C2");
+
+        public string FormatNullableDecimalCurrency(decimal? value) => (value ?? 0m).ToString("C2");
+
+        public string FormatDoubleCurrency(double value) => value.ToString("C2");
+
+        public string FormatNullableDoubleCurrency(double? value) => (value ?? 0d).ToString("C2");
+
+        public Brush ToCheckBrush(bool completed) => completed ? CheckCompletedBrush : CheckPendingBrush;
+
+        public Brush ToChecklistBrush(bool completed) => completed ? CheckCompletedBrush : ChecklistPendingBrush;
 
         // ─────────────────────────────────────────────────────────────────────
         //  Operación
@@ -231,7 +259,7 @@ namespace Advance_Control.Views.Windows
                     else    await MostrarErrorAsync("Error", "No se pudo actualizar el monto.");
                 }
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al editar la operación."); }
+            catch (Exception ex) { LogDebugError(nameof(EditOperacionButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al editar la operación."); }
         }
 
         private async void DeleteOperacionButton_Click(object sender, RoutedEventArgs e)
@@ -273,7 +301,7 @@ namespace Advance_Control.Views.Windows
                 if (ok) { _activityService.Registrar("Operaciones", "Operación reabierta"); Operacion.FechaFinal = null; await _notificacionService.MostrarAsync("Operación reabierta", "La operación fue reabierta correctamente."); }
                 else    await MostrarErrorAsync("Error", "No se pudo reabrir la operación.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al reabrir la operación."); }
+            catch (Exception ex) { LogDebugError(nameof(ReabrirOperacionButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al reabrir la operación."); }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -309,7 +337,7 @@ namespace Advance_Control.Views.Windows
                     }
                     else await MostrarErrorAsync("Error", "No se pudo crear el cargo.");
                 }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al crear el cargo."); }
+                catch (Exception ex) { LogDebugError(nameof(AddCargoButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al crear el cargo."); }
             }
         }
 
@@ -344,7 +372,7 @@ namespace Advance_Control.Views.Windows
                 }
                 else await MostrarErrorAsync("Error", "No se pudo actualizar el cargo.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al actualizar el cargo."); }
+            catch (Exception ex) { LogDebugError(nameof(CargoField_KeyDown), ex); await MostrarErrorAsync("Error", "Ocurrió un error al actualizar el cargo."); }
         }
 
         private void CargoCheckBox_Checked(object sender, RoutedEventArgs e)
@@ -382,8 +410,8 @@ namespace Advance_Control.Views.Windows
                 if (result != null) { cargo.Images.Add(result); cargo.NotifyImagesChanged(); await _notificacionService.MostrarAsync("Imagen cargada", $"Imagen {result.FileName} guardada correctamente."); }
                 else await MostrarErrorAsync("Error", "No se pudo guardar la imagen.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la imagen."); }
-            finally { GetSelectedCargos().FirstOrDefault()?.Let(c => c.IsLoadingImages = false); }
+            catch (Exception ex) { LogDebugError(nameof(UploadSelectedCargoImageButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la imagen."); }
+            finally { cargo.IsLoadingImages = false; }
         }
 
         private async void EditSelectedCargoButton_Click(object sender, RoutedEventArgs e)
@@ -405,7 +433,7 @@ namespace Advance_Control.Views.Windows
             foreach (var c in sel)
             {
                 try { if (await _cargoService.DeleteCargoAsync(c.IdCargo)) { Operacion.Cargos.Remove(c); ok++; } else err++; }
-                catch { err++; }
+                catch (Exception ex) { LogDebugError(nameof(DeleteSelectedCargosButton_Click), ex); err++; }
             }
             if (ok > 0) { await ActualizarMontoEnServidorAsync(); await _notificacionService.MostrarAsync("Eliminados", $"{ok} cargo(s) eliminado(s)."); }
             if (err > 0) await MostrarErrorAsync("Error parcial", $"{err} cargo(s) no pudieron eliminarse.");
@@ -425,7 +453,7 @@ namespace Advance_Control.Views.Windows
                 var dialog = new ContentDialog { Title = "Detalles de la Refacción", Content = new Dialogs.RefaccionesViewerUserControl(updated.IdRelacionCargo.Value), CloseButtonText = "Cerrar", XamlRoot = _xamlRoot };
                 await dialog.ShowAsync();
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "No se pudo cargar la refacción."); }
+            catch (Exception ex) { LogDebugError(nameof(ViewSelectedRefaccionButton_Click), ex); await MostrarErrorAsync("Error", "No se pudo cargar la refacción."); }
         }
 
         private async void ExpandSelectedGalleryButton_Click(object sender, RoutedEventArgs e)
@@ -444,7 +472,7 @@ namespace Advance_Control.Views.Windows
         private async Task LoadImagesForCargoSafeAsync(CargoDto cargo)
         {
             try { await LoadImagesForCargoAsync(cargo); }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error imágenes cargo {cargo.IdCargo}: {ex.Message}"); }
+            catch (Exception ex) { LogDebugError($"{nameof(LoadImagesForCargoSafeAsync)}[{cargo.IdCargo}]", ex); }
         }
 
         private async Task LoadImagesForCargoAsync(CargoDto cargo)
@@ -459,7 +487,7 @@ namespace Advance_Control.Views.Windows
                 cargo.NotifyImagesChanged();
                 cargo.ImagesLoaded = true;
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error imágenes cargo {cargo.IdCargo}: {ex.Message}"); }
+            catch (Exception ex) { LogDebugError($"{nameof(LoadImagesForCargoAsync)}[{cargo.IdCargo}]", ex); }
             finally { cargo.IsLoadingImages = false; }
         }
 
@@ -481,7 +509,7 @@ namespace Advance_Control.Views.Windows
                 }
                 else await MostrarErrorAsync("Error", "No se pudo eliminar la imagen.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al eliminar la imagen."); }
+            catch (Exception ex) { LogDebugError(nameof(DeleteCargoImageButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al eliminar la imagen."); }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -517,7 +545,7 @@ namespace Advance_Control.Views.Windows
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex) { LogDebugError("ContactosCotizacion", ex); }
                 }
 
                 var filePath = await _viewModel.GenerateQuoteAsync(Operacion, dirigidoA);
@@ -545,7 +573,7 @@ namespace Advance_Control.Views.Windows
                 }
                 else await MostrarErrorAsync("Error", "No se pudo generar la cotización.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al generar la cotización."); }
+            catch (Exception ex) { LogDebugError(nameof(GenerarCotizacionButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al generar la cotización."); }
         }
 
         private async void GenerarReporteButton_Click(object sender, RoutedEventArgs e)
@@ -577,7 +605,7 @@ namespace Advance_Control.Views.Windows
                             }
                         }
                     }
-                    catch { }
+                    catch (Exception ex) { LogDebugError("ContactosReporte", ex); }
                 }
 
                 var filePath = await _viewModel.GenerateReporteAsync(Operacion, dirigidoA);
@@ -609,7 +637,7 @@ namespace Advance_Control.Views.Windows
                     await MostrarErrorAsync("Error al generar reporte", msg);
                 }
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al generar el reporte."); }
+            catch (Exception ex) { LogDebugError(nameof(GenerarReporteButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al generar el reporte."); }
         }
 
         private async void AbrirCotizacionPdfButton_Click(object sender, RoutedEventArgs e)
@@ -617,7 +645,7 @@ namespace Advance_Control.Views.Windows
             var path = Operacion.CotizacionPdfPath;
             if (string.IsNullOrEmpty(path)) return;
             try { var file = await WinStorage.StorageFile.GetFileFromPathAsync(path); await WinSystem.Launcher.LaunchFileAsync(file); }
-            catch { Operacion.CotizacionPdfPath = null; }
+            catch (Exception ex) { LogDebugError(nameof(AbrirCotizacionPdfButton_Click), ex); Operacion.CotizacionPdfPath = null; }
         }
 
         private async void AbrirReportePdfButton_Click(object sender, RoutedEventArgs e)
@@ -625,7 +653,7 @@ namespace Advance_Control.Views.Windows
             var path = Operacion.ReportePdfPath;
             if (string.IsNullOrEmpty(path)) return;
             try { var file = await WinStorage.StorageFile.GetFileFromPathAsync(path); await WinSystem.Launcher.LaunchFileAsync(file); }
-            catch { Operacion.ReportePdfPath = null; }
+            catch (Exception ex) { LogDebugError(nameof(AbrirReportePdfButton_Click), ex); Operacion.ReportePdfPath = null; }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -664,7 +692,7 @@ namespace Advance_Control.Views.Windows
                 }
                 else await MostrarErrorAsync("Error", $"No se pudo guardar la {imageType.ToLower()}.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", $"Ocurrió un error al cargar la {imageType.ToLower()}."); }
+            catch (Exception ex) { LogDebugError($"{nameof(UploadOperacionImageAsync)}[{imageType}]", ex); await MostrarErrorAsync("Error", $"Ocurrió un error al cargar la {imageType.ToLower()}."); }
         }
 
         private async void UploadPrefacturaButton_Click(object sender, RoutedEventArgs e)   => await UploadOperacionImageAsync("Prefactura");
@@ -697,7 +725,7 @@ namespace Advance_Control.Views.Windows
                 }
                 else await MostrarErrorAsync("Error", "No se pudo guardar la factura.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la factura."); }
+            catch (Exception ex) { LogDebugError(nameof(UploadFacturaButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la factura."); }
         }
 
         private async void VerFacturaButton_Click(object sender, RoutedEventArgs e)
@@ -710,7 +738,7 @@ namespace Advance_Control.Views.Windows
                 var file = await WinStorage.StorageFile.GetFileFromPathAsync(factura.Url);
                 await WinSystem.Launcher.LaunchFileAsync(file);
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "No se pudo abrir la factura."); }
+            catch (Exception ex) { LogDebugError(nameof(VerFacturaButton_Click), ex); await MostrarErrorAsync("Error", "No se pudo abrir la factura."); }
         }
 
         private async void ViewOperacionImageButton_Click(object sender, RoutedEventArgs e)
@@ -735,13 +763,8 @@ namespace Advance_Control.Views.Windows
                 }
                 else await MostrarErrorAsync("Error", "No se pudo eliminar la imagen.");
             }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine(ex.Message); await MostrarErrorAsync("Error", "Ocurrió un error al eliminar la imagen."); }
+            catch (Exception ex) { LogDebugError(nameof(DeleteOperacionImageButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al eliminar la imagen."); }
         }
     }
 
-    /// <summary>Extensión helper para el patrón let/also.</summary>
-    internal static class ObjectExtensions
-    {
-        public static T Let<T>(this T obj, System.Action<T> action) { action(obj); return obj; }
-    }
 }

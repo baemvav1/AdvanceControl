@@ -13,10 +13,16 @@
             <!-- Título -->
             <TextBlock Text="Configuración de Correo"
                        Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock Text="Ingresa las credenciales de tu cuenta de correo de Hostinger. Se guardan de forma segura en este equipo."
-                       Style="{StaticResource BodyTextBlockStyle}"
-                       TextWrapping="Wrap"
-                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock Text="Ingresa las credenciales de tu cuenta de correo de Hostinger. Ahora se guardan por usuario en el servidor y esta pantalla edita la configuración del usuario actual."
+                        Style="{StaticResource BodyTextBlockStyle}"
+                        TextWrapping="Wrap"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+            <InfoBar IsOpen="True"
+                     Severity="Informational"
+                     IsClosable="False"
+                     Title="Configuración por usuario"
+                     Message="La firma sigue siendo local por equipo, pero las credenciales SMTP ya son por usuario." />
 
             <!-- Correo electrónico -->
             <StackPanel Spacing="6">

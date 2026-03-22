@@ -20,6 +20,8 @@ using Advance_Control.Services.AccessControl;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Services.Alertas;
 using Advance_Control.Services.Activity;
+using Advance_Control.Services.PermisosUi;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.ViewModels
 {
@@ -35,8 +37,10 @@ namespace Advance_Control.ViewModels
         private readonly IUserInfoService _userInfoService;
         private readonly INotificacionAlertaService _alertaService;
         private readonly IActivityService _activityService;
+        private readonly IPermisoUiRuntimeService _permisoUiRuntimeService;
         private NotificacionService? _notifServiceReference;
         private bool _disposed;
+        private Frame? _contentFrame;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
@@ -60,7 +64,8 @@ namespace Advance_Control.ViewModels
             INotificacionService notificacionService,
             IUserInfoService userInfoService,
             INotificacionAlertaService alertaService,
-            IActivityService activityService)
+            IActivityService activityService,
+            IPermisoUiRuntimeService permisoUiRuntimeService)
         {
             _navigationService   = navigationService   ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck         = onlineCheck         ?? throw new ArgumentNullException(nameof(onlineCheck));
@@ -72,6 +77,7 @@ namespace Advance_Control.ViewModels
             _userInfoService     = userInfoService     ?? throw new ArgumentNullException(nameof(userInfoService));
             _alertaService       = alertaService       ?? throw new ArgumentNullException(nameof(alertaService));
             _activityService     = activityService     ?? throw new ArgumentNullException(nameof(activityService));
+            _permisoUiRuntimeService = permisoUiRuntimeService ?? throw new ArgumentNullException(nameof(permisoUiRuntimeService));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
@@ -260,6 +266,7 @@ namespace Advance_Control.ViewModels
             if (contentFrame == null)
                 throw new ArgumentNullException(nameof(contentFrame));
 
+            _contentFrame = contentFrame;
             // Initialize the navigation service with the Frame
             _navigationService.Initialize(contentFrame);
 
@@ -268,6 +275,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.OperacionesPage>("Operaciones");
             _navigationService.Configure<Views.Pages.AsesoriaPage>("Asesoria");
             _navigationService.Configure<Views.Pages.MantenimientoPage>("Mantenimiento");
+            _navigationService.Configure<Views.Pages.LevantamientoView>("Levantamiento");
             _navigationService.Configure<Views.Pages.ClientesPage>("Clientes");
             _navigationService.Configure<Views.Pages.EntidadesPage>("Entidades");
             _navigationService.Configure<Views.Pages.ContactosPage>("Contactos");
@@ -282,6 +290,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.FacturasPage>("Facturas");
             _navigationService.Configure<Views.Pages.ReporteFinancieroFacturacionPage>("ReporteFinancieroFacturacion");
             _navigationService.Configure<Views.Pages.CorreoPage>("Correo");
+            _navigationService.Configure<Views.Pages.AdministracionPage>("Administracion");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
@@ -297,10 +306,11 @@ namespace Advance_Control.ViewModels
         // Actualizar aquí cuando se quiera restringir páginas a niveles específicos.
         private static readonly Dictionary<string, int> _pageAccessLevels = new()
         {
-            { "Inicio",        1 },
+            { "Inicio",        8 },
             { "Operaciones",   1 },
             { "Asesoria",      1 },
             { "Mantenimiento", 1 },
+            { "Levantamiento", 1 },
             { "Clientes",      1 },
             { "Entidades",     1 },
             { "Contactos",     1 },
@@ -315,23 +325,102 @@ namespace Advance_Control.ViewModels
             { "Facturas",      1 },
             { "ReporteFinancieroFacturacion", 1 },
             { "Correo",        1 },
+            { "Administracion", 1 },
         };
 
 
-        public void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
+        public async void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.InvokedItemContainer is NavigationViewItem item)
             {
                 var tag = item.Tag?.ToString();
                 if (!string.IsNullOrEmpty(tag))
                 {
-                    if (_pageAccessLevels.TryGetValue(tag, out var required)
+                    if (string.Equals(tag, "Inicio", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await NavigateToInicioAsync(forceReload: false);
+                        return;
+                    }
+
+                    if (!IsAuthenticated)
+                    {
+                        await MostrarAccesoDenegadoAsync();
+                        return;
+                    }
+
+                    var pageType = _navigationService.GetPageType(tag);
+
+                    if (pageType != null && !_permisoUiRuntimeService.IsInitialized)
+                    {
+                        var nivelActual = AccessControlService.Current.NivelUsuario;
+                        if (nivelActual > 0)
+                        {
+                            await _permisoUiRuntimeService.InitializeAsync(nivelActual);
+                        }
+                    }
+
+                    var moduleKey = pageType != null
+                        ? _permisoUiRuntimeService.BuildModuleKey(pageType)
+                        : null;
+                    var hasUiPermissionRule = pageType != null
+                        && moduleKey != null
+                        && _permisoUiRuntimeService.TryGetModulo(moduleKey, out _);
+
+                    if (hasUiPermissionRule
+                        && moduleKey != null
+                        && !_permisoUiRuntimeService.CanAccessModule(moduleKey))
+                    {
+                        await MostrarAccesoDenegadoAsync();
+                        return;
+                    }
+
+                    if (!hasUiPermissionRule
+                        && _pageAccessLevels.TryGetValue(tag, out var required)
                         && !AccessControlService.Current.CanAccess(required))
                     {
-                        return; // Sin acceso: ignorar navegación
+                        await MostrarAccesoDenegadoAsync();
+                        return;
                     }
                     _navigationService.Navigate(tag);
                 }
+            }
+        }
+
+        public bool ShouldDisplayNavigationTag(string? tag)
+        {
+            if (string.IsNullOrWhiteSpace(tag))
+                return false;
+
+            if (string.Equals(tag, "Inicio", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (!IsAuthenticated)
+                return false;
+
+            var pageType = _navigationService.GetPageType(tag);
+            if (pageType != null && _permisoUiRuntimeService.IsInitialized)
+            {
+                var moduleKey = _permisoUiRuntimeService.BuildModuleKey(pageType);
+                if (_permisoUiRuntimeService.TryGetModulo(moduleKey, out _))
+                    return _permisoUiRuntimeService.CanAccessModule(moduleKey);
+            }
+
+            return !_pageAccessLevels.TryGetValue(tag, out var required)
+                || AccessControlService.Current.CanAccess(required);
+        }
+
+        private async Task MostrarAccesoDenegadoAsync()
+        {
+            const string mensaje = "No tienes acceso a este modulo";
+
+            try
+            {
+                await DialogHelper.MostrarInfoAsync(GetXamlRoot(), "Acceso denegado", mensaje);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync($"No fue posible mostrar el diálogo de acceso denegado: {ex.Message}", "MainViewModel", nameof(MostrarAccesoDenegadoAsync));
+                await _notificacionService.MostrarAsync("Acceso denegado", mensaje);
             }
         }
 
@@ -347,6 +436,21 @@ namespace Advance_Control.ViewModels
         {
             // Update back button state when navigation occurs
             UpdateBackButtonState();
+
+            if (_contentFrame?.Content is Page page)
+            {
+                page.Loaded -= ApplyPermissionsWhenPageLoaded;
+                page.Loaded += ApplyPermissionsWhenPageLoaded;
+            }
+        }
+
+        private void ApplyPermissionsWhenPageLoaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        {
+            if (sender is Page page)
+            {
+                page.Loaded -= ApplyPermissionsWhenPageLoaded;
+                PermisoUiVisualBinder.ApplyToPage(page, _permisoUiRuntimeService);
+            }
         }
 
         private void UpdateBackButtonState()
@@ -360,15 +464,11 @@ namespace Advance_Control.ViewModels
             {
                 // Logout revoca el refresh token en el servidor y limpia tokens locales
                 await _authService.LogoutAsync();
-                
-                // Update properties on UI thread to avoid cross-thread exceptions
-                await UpdateUIPropertiesAsync(() =>
-                {
-                    IsAuthenticated = false;
-                    UserInitials = string.Empty;
-                    UserType = string.Empty;
-                });
-                
+
+                var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+                sessionService?.Clear();
+
+                await HandleLogoutStateAsync();
                 await _logger.LogInformationAsync("Usuario cerró sesión", "MainViewModel", "LogoutAsync");
             }
             catch (Exception ex)
@@ -409,14 +509,7 @@ namespace Advance_Control.ViewModels
 
                 if (credentialsLoginSuccessful)
                 {
-                    // Login con credenciales guardadas exitoso - actualizar estado de autenticación
-                    await UpdateUIPropertiesAsync(() =>
-                    {
-                        IsAuthenticated = true;
-                    });
-
-                    // Cargar información del usuario
-                    await LoadUserInfoAsync();
+                    await HandleLoginSuccessAsync();
 
                     await _logger.LogInformationAsync("Inicio de sesión automático exitoso con credenciales guardadas", "MainViewModel", "TryAutoLoginAsync");
                     return true;
@@ -427,14 +520,7 @@ namespace Advance_Control.ViewModels
 
                 if (sessionRestored)
                 {
-                    // Sesión restaurada exitosamente - actualizar estado de autenticación
-                    await UpdateUIPropertiesAsync(() =>
-                    {
-                        IsAuthenticated = true;
-                    });
-
-                    // Cargar información del usuario
-                    await LoadUserInfoAsync();
+                    await HandleLoginSuccessAsync();
 
                     await _logger.LogInformationAsync("Inicio de sesión automático exitoso con tokens", "MainViewModel", "TryAutoLoginAsync");
                     return true;
@@ -513,47 +599,13 @@ namespace Advance_Control.ViewModels
                 {
                     if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
                     {
-                        // Actualizar el estado de autenticación en MainViewModel
-                        IsAuthenticated = true;
-                        
-                        // Cargar información del usuario de forma asíncrona sin bloquear
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                await LoadUserInfoAsync();
-                            }
-                            catch (Exception ex)
-                            {
-                                // Log error but don't propagate to avoid crashing the app
-                                await _logger.LogErrorAsync("Error al cargar información del usuario después del login", ex, "MainViewModel", "ShowLoginDialogAsync");
-                            }
-                        });
+                        _ = HandleLoginSuccessAsync();
                     }
                     
                     // Manejar cuando el usuario cierra sesión desde el diálogo
                     if (e.PropertyName == nameof(LoginViewModel.IsAuthenticated) && !loginViewModel.IsAuthenticated)
                     {
-                        // Actualizar el estado de autenticación en MainViewModel
-                        IsAuthenticated = false;
-                        
-                        // Limpiar información del usuario de forma asíncrona
-                        _ = Task.Run(async () =>
-                        {
-                            try
-                            {
-                                await UpdateUIPropertiesAsync(() =>
-                                {
-                                    UserInitials = string.Empty;
-                                    UserType = string.Empty;
-                                });
-                            }
-                            catch (Exception ex)
-                            {
-                                // Log error but don't propagate to avoid crashing the app
-                                await _logger.LogErrorAsync("Error al limpiar información del usuario después del logout", ex, "MainViewModel", "ShowLoginDialogAsync");
-                            }
-                        });
+                        _ = HandleLogoutStateAsync();
                     }
                 };
                 loginViewModel.PropertyChanged += loginPropertyChangedHandler;
@@ -663,6 +715,92 @@ namespace Advance_Control.ViewModels
                     UserInitials = string.Empty;
                     UserType = string.Empty;
                 });
+            }
+        }
+
+        private async Task HandleLoginSuccessAsync()
+        {
+            try
+            {
+                await EnsureSessionContextAsync();
+
+                await UpdateUIPropertiesAsync(() =>
+                {
+                    IsAuthenticated = true;
+                });
+
+                await LoadUserInfoAsync();
+                await NavigateToInicioAsync(forceReload: true);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al aplicar el estado posterior al login", ex, "MainViewModel", nameof(HandleLoginSuccessAsync));
+            }
+        }
+
+        private async Task EnsureSessionContextAsync()
+        {
+            var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+            if (sessionService == null)
+            {
+                return;
+            }
+
+            if (!sessionService.IsLoaded)
+            {
+                await sessionService.LoadAsync();
+            }
+
+            if (sessionService.IsLoaded
+                && sessionService.Nivel > 0
+                && !_permisoUiRuntimeService.IsInitialized)
+            {
+                await _permisoUiRuntimeService.InitializeAsync(sessionService.Nivel);
+            }
+        }
+
+        private async Task HandleLogoutStateAsync()
+        {
+            try
+            {
+                await UpdateUIPropertiesAsync(() =>
+                {
+                    IsAuthenticated = false;
+                    UserInitials = string.Empty;
+                    UserType = string.Empty;
+                    _alertasDb.Clear();
+                    HasAlertasDb = false;
+                    HasUnseenNotifications = false;
+                });
+
+                await NavigateToInicioAsync(forceReload: true);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al aplicar el estado seguro posterior al logout", ex, "MainViewModel", nameof(HandleLogoutStateAsync));
+            }
+        }
+
+        private async Task NavigateToInicioAsync(bool forceReload)
+        {
+            var navigationParameter = forceReload ? $"refresh:{Guid.NewGuid():N}" : null;
+            var navigated = false;
+
+            await UpdateUIPropertiesAsync(() =>
+            {
+                navigated = _navigationService.Navigate("Inicio", navigationParameter);
+
+                if (_contentFrame != null)
+                {
+                    _contentFrame.BackStack.Clear();
+                }
+
+                UpdateBackButtonState();
+            });
+
+            if (!navigated && forceReload && _contentFrame?.Content is Views.Pages.DashboardPage dashboardPage)
+            {
+                await dashboardPage.ViewModel.LoadAsync();
             }
         }
 

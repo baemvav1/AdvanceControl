@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Name="RootControl"
+    x:Class="Advance_Control.Views.Items.Administracion.PermisoModuloItemView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:Advance_Control.Models"
+    xmlns:adminItems="using:Advance_Control.Views.Items.Administracion">
+
+    <Border
+        Margin="0,0,0,12"
+        Padding="12"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="8">
+        <Expander>
+            <Expander.Header>
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Text="{x:Bind Permiso.NombreModulo, Mode=OneWay}" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind Permiso.ClaveModulo, Mode=OneWay}"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind BuildModuleMetadata(Permiso), Mode=OneWay}"
+                            TextWrapping="WrapWholeWords" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind BuildNivelText(Permiso), Mode=OneWay}" />
+                    </StackPanel>
+
+                    <Button
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Click="CambiarNivelButton_Click"
+                        Content="Cambiar nivel" />
+                </Grid>
+            </Expander.Header>
+
+            <StackPanel Margin="0,12,0,0">
+                <ItemsControl ItemsSource="{x:Bind Permiso.Acciones, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:PermisoAccionModuloDto">
+                            <adminItems:PermisoAccionItemView
+                                NivelEditRequested="PermisoAccionItemView_NivelEditRequested"
+                                PermisoAccion="{x:Bind}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </Expander>
+    </Border>
+</UserControl>

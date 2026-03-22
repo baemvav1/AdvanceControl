@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Advance_Control.Views.Viewers.ViewerImagenes"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Padding="16" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button
+                    Click="ZoomOutButton_Click"
+                    ToolTipService.ToolTip="Reducir zoom">
+                    <SymbolIcon Symbol="Remove" />
+                </Button>
+                <Button
+                    Click="ZoomResetButton_Click"
+                    ToolTipService.ToolTip="Restablecer zoom">
+                    <TextBlock Text="100%" />
+                </Button>
+                <Button
+                    Click="ZoomInButton_Click"
+                    ToolTipService.ToolTip="Aumentar zoom">
+                    <SymbolIcon Symbol="Add" />
+                </Button>
+                <Button
+                    Click="FitButton_Click"
+                    ToolTipService.ToolTip="Ajustar al área visible">
+                    <FontIcon Glyph="&#xE799;" />
+                </Button>
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                Spacing="4">
+                <TextBlock
+                    x:Name="ImagePathTextBlock"
+                    TextTrimming="CharacterEllipsis" />
+                <TextBlock
+                    x:Name="ZoomLevelTextBlock"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="100%" />
+            </StackPanel>
+        </Grid>
+
+        <Border
+            Grid.Row="1"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Padding="8">
+            <Grid>
+                <ScrollViewer
+                    x:Name="ImageScrollViewer"
+                    HorizontalScrollBarVisibility="Auto"
+                    HorizontalSnapPointsType="None"
+                    MaxZoomFactor="12"
+                    MinZoomFactor="0.1"
+                    VerticalScrollBarVisibility="Auto"
+                    VerticalSnapPointsType="None"
+                    ZoomMode="Enabled">
+                    <Image
+                        x:Name="ViewerImage"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Stretch="Uniform" />
+                </ScrollViewer>
+
+                <TextBlock
+                    x:Name="StatusTextBlock"
+                    Margin="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Selecciona una imagen para visualizarla."
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+            </Grid>
+        </Border>
+
+        <TextBlock
+            Grid.Row="2"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Usa Ctrl + rueda del mouse o los botones para acercar y alejar." />
+    </Grid>
+</UserControl>

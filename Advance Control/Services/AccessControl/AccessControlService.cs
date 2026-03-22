@@ -1,9 +1,9 @@
 namespace Advance_Control.Services.AccessControl
 {
     /// <summary>
-    /// Singleton que gestiona el nivel de acceso del usuario activo.
-    /// NivelUsuario=1 por defecto (acceso máximo). Forzado en 1 al iniciar sesión hasta
-    /// que se integre la selección real de niveles desde la tabla Nivel.
+    /// Singleton que gestiona el nivel de acceso efectivo de la app.
+    /// Cuando no hay sesión cargada, la app se mantiene en nivel 8 para bloquear
+    /// navegación sensible desde la UI.
     /// </summary>
     public class AccessControlService : IAccessControlService
     {
@@ -12,7 +12,7 @@ namespace Advance_Control.Services.AccessControl
         /// </summary>
         public static IAccessControlService Current { get; private set; } = new AccessControlService();
 
-        public int NivelUsuario { get; private set; } = 1;
+        public int NivelUsuario { get; private set; } = 8;
 
         public AccessControlService()
         {
@@ -21,7 +21,7 @@ namespace Advance_Control.Services.AccessControl
 
         public void SetNivel(int nivel)
         {
-            NivelUsuario = nivel > 0 ? nivel : 1;
+            NivelUsuario = nivel > 0 ? nivel : 8;
         }
 
         /// <inheritdoc/>

@@ -17,15 +17,15 @@
             <converters:BooleanToSystemColorBrushConverter x:Key="BoolToColorBrushConverter" />
         </Grid.Resources>
         <Grid.RowDefinitions>
-            <RowDefinition Height="48" />
+            <RowDefinition Height="56" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!-- Barra de título -->
         <Grid
             Grid.Row="0"
-            Padding="16,0"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            Padding="20,0"
+            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
             BorderThickness="0,0,0,1">
             <Grid.ColumnDefinitions>
@@ -50,7 +50,7 @@
                     BorderBrush="#2DA44E"
                     BorderThickness="1"
                     CornerRadius="10"
-                    Visibility="{Binding Operacion.IsEditable, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    Visibility="{x:Bind ToBoolVisibility(Operacion.IsEditable), Mode=OneWay}">
                     <TextBlock FontSize="11" Foreground="#2DA44E" Text="● Abierta" />
                 </Border>
                 <Border
@@ -60,17 +60,22 @@
                     BorderBrush="#808080"
                     BorderThickness="1"
                     CornerRadius="10"
-                    Visibility="{Binding Operacion.IsFinalized, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    Visibility="{x:Bind ToBoolVisibility(Operacion.IsFinalized), Mode=OneWay}">
                     <TextBlock FontSize="11" Foreground="#808080" Text="✓ Finalizada" />
                 </Border>
             </StackPanel>
-            <TextBlock
+            <Border
                 Grid.Column="1"
+                Padding="10,4"
                 VerticalAlignment="Center"
-                FontSize="14"
-                FontWeight="SemiBold"
-                Foreground="{ThemeResource SystemAccentColor}"
-                Text="{Binding Operacion.Monto, Converter={StaticResource CurrencyConverter}}" />
+                Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                CornerRadius="12">
+                <TextBlock
+                    FontSize="14"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource SystemAccentColor}"
+                    Text="{x:Bind FormatDecimalCurrency(Operacion.Monto), Mode=OneWay}" />
+            </Border>
         </Grid>
 
         <!-- Contenido en 3 paneles -->
@@ -122,38 +127,38 @@
                             <TextBlock Grid.Row="4" Grid.Column="0" Margin="0,2,8,2" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Final:" />
                             <TextBlock Grid.Row="4" Grid.Column="1" Margin="0,2" FontSize="12" Text="{x:Bind Operacion.StatusText, Mode=OneWay}" />
                             <TextBlock Grid.Row="5" Grid.Column="0" Margin="0,2,8,2" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Monto:" />
-                            <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,2" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource SystemAccentColor}" Text="{Binding Operacion.Monto, Converter={StaticResource CurrencyConverter}}" />
-                            <TextBlock Grid.Row="6" Grid.Column="0" Margin="0,4,8,2" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Nota:" Visibility="{Binding Operacion.Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-                            <TextBlock Grid.Row="6" Grid.Column="1" Margin="0,4,0,2" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="{x:Bind Operacion.Nota, Mode=OneWay}" TextWrapping="Wrap" Visibility="{Binding Operacion.Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                            <TextBlock Grid.Row="5" Grid.Column="1" Margin="0,2" FontSize="12" FontWeight="SemiBold" Foreground="{ThemeResource SystemAccentColor}" Text="{x:Bind FormatDecimalCurrency(Operacion.Monto), Mode=OneWay}" />
+                            <TextBlock Grid.Row="6" Grid.Column="0" Margin="0,4,8,2" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Nota:" Visibility="{x:Bind ToTextVisibility(Operacion.Nota), Mode=OneWay}" />
+                            <TextBlock Grid.Row="6" Grid.Column="1" Margin="0,4,0,2" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="{x:Bind Operacion.Nota, Mode=OneWay}" TextWrapping="Wrap" Visibility="{x:Bind ToTextVisibility(Operacion.Nota), Mode=OneWay}" />
                         </Grid>
                         <!-- Indicadores de progreso del check -->
                         <StackPanel
                             Margin="0,4,0,0"
                             Orientation="Horizontal"
                             Spacing="4"
-                            Visibility="{Binding Operacion.TieneCheck, Converter={StaticResource BooleanToVisibilityConverter}}">
-                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding Operacion.CkCotizacionGenerada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            Visibility="{x:Bind ToBoolVisibility(Operacion.TieneCheck), Mode=OneWay}">
+                            <Border Width="10" Height="10" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkCotizacionGenerada), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Cotización generada" /></ToolTipService.ToolTip>
                             </Border>
-                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding Operacion.CkCotizacionEnviada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            <Border Width="10" Height="10" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkCotizacionEnviada), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Cotización enviada" /></ToolTipService.ToolTip>
                             </Border>
-                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding Operacion.CkReporteGenerado, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            <Border Width="10" Height="10" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkReporteGenerado), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Reporte generado" /></ToolTipService.ToolTip>
                             </Border>
-                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding Operacion.CkReporteEnviado, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            <Border Width="10" Height="10" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkReporteEnviado), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Reporte enviado" /></ToolTipService.ToolTip>
                             </Border>
-                            <Border Width="10" Height="10" Margin="4,0,0,0" CornerRadius="5" Background="{Binding Operacion.CkPrefacturaCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            <Border Width="10" Height="10" Margin="4,0,0,0" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkPrefacturaCargada), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Prefactura cargada" /></ToolTipService.ToolTip>
                             </Border>
-                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding Operacion.CkHojaServicioCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            <Border Width="10" Height="10" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkHojaServicioCargada), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Hoja servicio" /></ToolTipService.ToolTip>
                             </Border>
-                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding Operacion.CkOrdenCompraCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            <Border Width="10" Height="10" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkOrdenCompraCargada), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Orden de compra" /></ToolTipService.ToolTip>
                             </Border>
-                            <Border Width="10" Height="10" CornerRadius="5" Background="{Binding Operacion.CkFacturaCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280'}">
+                            <Border Width="10" Height="10" CornerRadius="5" Background="{x:Bind ToCheckBrush(Operacion.CkFacturaCargada), Mode=OneWay}">
                                 <ToolTipService.ToolTip><ToolTip Content="Factura cargada" /></ToolTipService.ToolTip>
                             </Border>
                         </StackPanel>
@@ -187,7 +192,7 @@
                                             Padding="8"
                                             Click="AbrirCotizacionPdfButton_Click"
                                             ToolTipService.ToolTip="Abrir cotización PDF"
-                                            Visibility="{Binding Operacion.CotizacionPdfPath, Converter={StaticResource NullToVisibilityConverter}}">
+                                            Visibility="{x:Bind ToTextVisibility(Operacion.CotizacionPdfPath), Mode=OneWay}">
                                             <FontIcon FontSize="14" Glyph="&#xEA90;" />
                                         </Button>
                                     </StackPanel>
@@ -205,7 +210,7 @@
                                             Padding="8"
                                             Click="AbrirReportePdfButton_Click"
                                             ToolTipService.ToolTip="Abrir reporte PDF"
-                                            Visibility="{Binding Operacion.ReportePdfPath, Converter={StaticResource NullToVisibilityConverter}}">
+                                            Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}">
                                             <FontIcon FontSize="14" Glyph="&#xEA90;" />
                                         </Button>
                                     </StackPanel>
@@ -227,10 +232,10 @@
                                     FontSize="12"
                                     FontWeight="SemiBold"
                                     Text="Reabrir"
-                                    Visibility="{Binding Operacion.IsFinalized, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                    Visibility="{x:Bind ToBoolVisibility(Operacion.IsFinalized), Mode=OneWay}" />
                                 <Button
                                     Click="ReabrirOperacionButton_Click"
-                                    Visibility="{Binding Operacion.IsFinalized, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{x:Bind ToBoolVisibility(Operacion.IsFinalized), Mode=OneWay}">
                                     <StackPanel Orientation="Horizontal" Spacing="4">
                                         <SymbolIcon Symbol="Refresh" />
                                         <TextBlock Text="Reabrir Operación" />
@@ -307,7 +312,7 @@
                                     Background="{ThemeResource SystemAccentColor}"
                                     Click="VerFacturaButton_Click"
                                     ToolTipService.ToolTip="Abrir factura PDF"
-                                    Visibility="{Binding Operacion.HasFactura, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasFactura), Mode=OneWay}">
                                     <StackPanel Orientation="Horizontal" Spacing="4">
                                         <SymbolIcon Symbol="OpenFile" />
                                         <TextBlock Text="Ver Factura" />
@@ -315,10 +320,10 @@
                                 </Button>
 
                                 <!-- Hojas de servicio -->
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Hojas de servicio:" Visibility="{Binding Operacion.HasHojaServicio, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Hojas de servicio:" Visibility="{x:Bind ToBoolVisibility(Operacion.HasHojaServicio), Mode=OneWay}" />
                                 <ItemsRepeater
                                     ItemsSource="{x:Bind Operacion.ImagenesHojaServicio, Mode=OneWay}"
-                                    Visibility="{Binding Operacion.HasHojaServicio, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasHojaServicio), Mode=OneWay}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Orientation="Horizontal" Spacing="6" />
                                     </ItemsRepeater.Layout>
@@ -337,10 +342,10 @@
                                 </ItemsRepeater>
 
                                 <!-- Prefacturas -->
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Prefacturas:" Visibility="{Binding Operacion.HasPrefactura, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Prefacturas:" Visibility="{x:Bind ToBoolVisibility(Operacion.HasPrefactura), Mode=OneWay}" />
                                 <ItemsRepeater
                                     ItemsSource="{x:Bind Operacion.ImagenesPrefactura, Mode=OneWay}"
-                                    Visibility="{Binding Operacion.HasPrefactura, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasPrefactura), Mode=OneWay}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Orientation="Horizontal" Spacing="6" />
                                     </ItemsRepeater.Layout>
@@ -359,10 +364,10 @@
                                 </ItemsRepeater>
 
                                 <!-- Órdenes de compra -->
-                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Órdenes de compra:" Visibility="{Binding Operacion.HasOrdenCompra, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Órdenes de compra:" Visibility="{x:Bind ToBoolVisibility(Operacion.HasOrdenCompra), Mode=OneWay}" />
                                 <ItemsRepeater
                                     ItemsSource="{x:Bind Operacion.ImagenesOrdenCompra, Mode=OneWay}"
-                                    Visibility="{Binding Operacion.HasOrdenCompra, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasOrdenCompra), Mode=OneWay}">
                                     <ItemsRepeater.Layout>
                                         <StackLayout Orientation="Horizontal" Spacing="6" />
                                     </ItemsRepeater.Layout>
@@ -446,7 +451,7 @@
                             Margin="0,24"
                             HorizontalAlignment="Center"
                             Spacing="8"
-                            Visibility="{Binding Operacion.IsLoadingCargos, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            Visibility="{x:Bind ToBoolVisibility(Operacion.IsLoadingCargos), Mode=OneWay}">
                             <ProgressRing IsActive="True" Width="28" Height="28" HorizontalAlignment="Center" />
                             <TextBlock
                                 FontSize="12"
@@ -460,7 +465,7 @@
                             Margin="0,24"
                             HorizontalAlignment="Center"
                             Spacing="6"
-                            Visibility="{Binding Operacion.ShowNoCargosMessage, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            Visibility="{x:Bind ToBoolVisibility(Operacion.ShowNoCargosMessage), Mode=OneWay}">
                             <FontIcon FontSize="24" Glyph="&#xE8F4;" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
                             <TextBlock
                                 FontSize="12"
@@ -497,24 +502,24 @@
 
                                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
                                                 <TextBlock FontSize="12" FontWeight="SemiBold" Text="{x:Bind DetalleLinea1, Mode=OneWay}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind DetalleLinea1, Mode=OneWay}" />
-                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind DetalleLinea2, Mode=OneWay}" TextTrimming="CharacterEllipsis" Visibility="{Binding TieneSubdetalle, Converter={StaticResource BooleanToVisibilityConverter}}" />
-                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind DetalleLinea3, Mode=OneWay}" TextTrimming="CharacterEllipsis" Visibility="{Binding TieneSubdetalle, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind DetalleLinea2, Mode=OneWay}" TextTrimming="CharacterEllipsis" Visibility="{x:Bind SubdetalleVisibility, Mode=OneWay}" />
+                                                <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind DetalleLinea3, Mode=OneWay}" TextTrimming="CharacterEllipsis" Visibility="{x:Bind SubdetalleVisibility, Mode=OneWay}" />
                                             </StackPanel>
 
                                             <!-- Cantidad -->
-                                            <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="12" Text="{x:Bind Cantidad, Mode=OneWay}" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
-                                            <TextBox Grid.Column="2" MinHeight="28" Margin="0,0,4,0" Padding="4,2" VerticalAlignment="Center" FontSize="12" KeyDown="CargoField_KeyDown" Tag="{x:Bind}" Text="{x:Bind Cantidad, Mode=TwoWay}" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="12" Text="{x:Bind Cantidad, Mode=OneWay}" Visibility="{x:Bind ReadVisibility, Mode=OneWay}" />
+                                            <TextBox Grid.Column="2" MinHeight="28" Margin="0,0,4,0" Padding="4,2" VerticalAlignment="Center" FontSize="12" KeyDown="CargoField_KeyDown" Tag="{x:Bind}" Text="{x:Bind Cantidad, Mode=TwoWay}" Visibility="{x:Bind EditVisibility, Mode=OneWay}" />
 
                                             <!-- Unitario -->
-                                            <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="12" Text="{Binding Unitario, Converter={StaticResource CurrencyConverter}}" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
-                                            <TextBox Grid.Column="3" MinHeight="28" Margin="0,0,4,0" Padding="4,2" VerticalAlignment="Center" FontSize="12" KeyDown="CargoField_KeyDown" Tag="{x:Bind}" Text="{x:Bind Unitario, Mode=TwoWay}" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <TextBlock Grid.Column="3" VerticalAlignment="Center" FontSize="12" Text="{x:Bind UnitarioFormateado, Mode=OneWay}" Visibility="{x:Bind ReadVisibility, Mode=OneWay}" />
+                                            <TextBox Grid.Column="3" MinHeight="28" Margin="0,0,4,0" Padding="4,2" VerticalAlignment="Center" FontSize="12" KeyDown="CargoField_KeyDown" Tag="{x:Bind}" Text="{x:Bind Unitario, Mode=TwoWay}" Visibility="{x:Bind EditVisibility, Mode=OneWay}" />
 
                                             <!-- Monto -->
-                                            <TextBlock Grid.Column="4" VerticalAlignment="Center" FontSize="12" Text="{Binding Monto, Converter={StaticResource CurrencyConverter}}" />
+                                            <TextBlock Grid.Column="4" VerticalAlignment="Center" FontSize="12" Text="{x:Bind MontoFormateado, Mode=OneWay}" />
 
                                             <!-- Nota -->
-                                            <TextBlock Grid.Column="5" VerticalAlignment="Center" FontSize="12" Text="{x:Bind Nota, Mode=OneWay}" TextTrimming="CharacterEllipsis" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert}" />
-                                            <TextBox Grid.Column="5" MinHeight="28" Margin="0,0,4,0" Padding="4,2" VerticalAlignment="Center" FontSize="12" KeyDown="CargoField_KeyDown" Tag="{x:Bind}" Text="{x:Bind Nota, Mode=TwoWay}" Visibility="{Binding IsEditing, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                            <TextBlock Grid.Column="5" VerticalAlignment="Center" FontSize="12" Text="{x:Bind Nota, Mode=OneWay}" TextTrimming="CharacterEllipsis" Visibility="{x:Bind ReadVisibility, Mode=OneWay}" />
+                                            <TextBox Grid.Column="5" MinHeight="28" Margin="0,0,4,0" Padding="4,2" VerticalAlignment="Center" FontSize="12" KeyDown="CargoField_KeyDown" Tag="{x:Bind}" Text="{x:Bind Nota, Mode=TwoWay}" Visibility="{x:Bind EditVisibility, Mode=OneWay}" />
 
                                             <!-- Proveedor -->
                                             <TextBlock Grid.Column="6" VerticalAlignment="Center" FontSize="12" Text="{x:Bind Proveedor, Mode=OneWay}" TextTrimming="CharacterEllipsis" />
@@ -534,7 +539,7 @@
                                         <Grid
                                             Padding="8,4"
                                             Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                            Visibility="{Binding ShouldShowGallery, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            Visibility="{x:Bind GalleryVisibility, Mode=OneWay}">
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
                                                 <RowDefinition Height="Auto" />
@@ -547,7 +552,7 @@
                                                 <ItemsRepeater.ItemTemplate>
                                                     <DataTemplate x:DataType="models:CargoImageDto">
                                                         <Grid Width="90" Height="90" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="4">
-                                                            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Source="{Binding Url}" Stretch="UniformToFill" />
+                                                            <Image HorizontalAlignment="Center" VerticalAlignment="Center" Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
                                                             <Button MinWidth="18" MinHeight="18" Margin="0,2,2,0" Padding="3" HorizontalAlignment="Right" VerticalAlignment="Top" Background="#CC000000" Click="DeleteCargoImageButton_Click" CornerRadius="9" Tag="{x:Bind}" ToolTipService.ToolTip="Eliminar imagen">
                                                                 <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                             </Button>
@@ -564,46 +569,48 @@
                 </ScrollViewer>
 
                 <!-- Barra de acciones para cargos seleccionados -->
-                <StackPanel
+                <Border
                     Grid.Row="3"
                     Margin="0,8,0,0"
                     Padding="8"
                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                    CornerRadius="4"
-                    Orientation="Horizontal"
-                    Spacing="6">
-                    <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="Selección:" />
-                    <Button Click="UploadSelectedCargoImageButton_Click" ToolTipService.ToolTip="Cargar imagen al cargo seleccionado">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <SymbolIcon Symbol="Camera" />
-                            <TextBlock Text="Imagen" />
+                    CornerRadius="8">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto" HorizontalScrollMode="Enabled" VerticalScrollMode="Disabled" ZoomMode="Disabled">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Margin="0,0,4,0" VerticalAlignment="Center" FontSize="12" FontWeight="SemiBold" Text="Selección:" />
+                            <Button Click="UploadSelectedCargoImageButton_Click" ToolTipService.ToolTip="Cargar imagen al cargo seleccionado">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <SymbolIcon Symbol="Camera" />
+                                    <TextBlock Text="Imagen" />
+                                </StackPanel>
+                            </Button>
+                            <Button Click="EditSelectedCargoButton_Click" ToolTipService.ToolTip="Editar cargo seleccionado">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <SymbolIcon Symbol="Edit" />
+                                    <TextBlock Text="Editar" />
+                                </StackPanel>
+                            </Button>
+                            <Button Click="DeleteSelectedCargosButton_Click" ToolTipService.ToolTip="Eliminar cargos seleccionados">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <SymbolIcon Symbol="Delete" />
+                                    <TextBlock Text="Eliminar" />
+                                </StackPanel>
+                            </Button>
+                            <Button Click="ViewSelectedRefaccionButton_Click" ToolTipService.ToolTip="Ver refacción seleccionada">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <SymbolIcon Symbol="View" />
+                                    <TextBlock Text="Refacción" />
+                                </StackPanel>
+                            </Button>
+                            <Button Click="ExpandSelectedGalleryButton_Click" ToolTipService.ToolTip="Ver imágenes del cargo seleccionado">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <SymbolIcon Symbol="Pictures" />
+                                    <TextBlock Text="Imágenes" />
+                                </StackPanel>
+                            </Button>
                         </StackPanel>
-                    </Button>
-                    <Button Click="EditSelectedCargoButton_Click" ToolTipService.ToolTip="Editar cargo seleccionado">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <SymbolIcon Symbol="Edit" />
-                            <TextBlock Text="Editar" />
-                        </StackPanel>
-                    </Button>
-                    <Button Click="DeleteSelectedCargosButton_Click" ToolTipService.ToolTip="Eliminar cargos seleccionados">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <SymbolIcon Symbol="Delete" />
-                            <TextBlock Text="Eliminar" />
-                        </StackPanel>
-                    </Button>
-                    <Button Click="ViewSelectedRefaccionButton_Click" ToolTipService.ToolTip="Ver refacción seleccionada">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <SymbolIcon Symbol="View" />
-                            <TextBlock Text="Refacción" />
-                        </StackPanel>
-                    </Button>
-                    <Button Click="ExpandSelectedGalleryButton_Click" ToolTipService.ToolTip="Ver imágenes del cargo seleccionado">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <SymbolIcon Symbol="Pictures" />
-                            <TextBlock Text="Imágenes" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
+                    </ScrollViewer>
+                </Border>
 
                 <!-- Total -->
                 <Border
@@ -620,7 +627,7 @@
                             FontSize="15"
                             FontWeight="SemiBold"
                             Foreground="{ThemeResource SystemAccentColor}"
-                            Text="{Binding Operacion.TotalMonto, Converter={StaticResource CurrencyConverter}}" />
+                            Text="{x:Bind FormatDoubleCurrency(Operacion.TotalMonto), Mode=OneWay}" />
                     </StackPanel>
                 </Border>
             </Grid>
@@ -640,7 +647,7 @@
                     Grid.Row="1"
                     Margin="0,0,0,16"
                     Spacing="6"
-                    Visibility="{Binding Operacion.TieneCheck, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    Visibility="{x:Bind ToBoolVisibility(Operacion.TieneCheck), Mode=OneWay}">
                     <ProgressBar Maximum="8" Value="{x:Bind Operacion.CkStepsCompletados, Mode=OneWay}" />
                     <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
                         <Run FontWeight="SemiBold" Text="{x:Bind Operacion.CkStepsCompletados, Mode=OneWay}" />
@@ -652,7 +659,7 @@
                 <ItemsRepeater
                     Grid.Row="2"
                     ItemsSource="{x:Bind Operacion.CkPasos, Mode=OneWay}"
-                    Visibility="{Binding Operacion.TieneCheck, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    Visibility="{x:Bind ToBoolVisibility(Operacion.TieneCheck), Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="12" />
                     </ItemsRepeater.Layout>
@@ -662,13 +669,13 @@
                                 <FontIcon
                                     VerticalAlignment="Center"
                                     FontSize="14"
-                                    Foreground="{Binding Completado, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#808080'}"
-                                    Glyph="{x:Bind Glyph}" />
+                                    Foreground="{x:Bind EstadoBrush, Mode=OneWay}"
+                                    Glyph="{x:Bind Glyph, Mode=OneWay}" />
                                 <TextBlock
                                     VerticalAlignment="Center"
                                     FontSize="13"
-                                    Foreground="{Binding Completado, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#808080'}"
-                                    Text="{x:Bind Nombre}" />
+                                    Foreground="{x:Bind EstadoBrush, Mode=OneWay}"
+                                    Text="{x:Bind Nombre, Mode=OneWay}" />
                             </StackPanel>
                         </DataTemplate>
                     </ItemsRepeater.ItemTemplate>
@@ -680,7 +687,7 @@
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Spacing="8"
-                    Visibility="{Binding Operacion.IsLoadingCheck, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    Visibility="{x:Bind ToBoolVisibility(Operacion.IsLoadingCheck), Mode=OneWay}">
                     <ProgressRing IsActive="True" Width="28" Height="28" HorizontalAlignment="Center" />
                     <TextBlock
                         FontSize="12"
@@ -696,7 +703,7 @@
                     FontStyle="Italic"
                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                     Text="Sin tareas registradas"
-                    Visibility="{Binding Operacion.ShowNoCheckMessage, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    Visibility="{x:Bind ToBoolVisibility(Operacion.ShowNoCheckMessage), Mode=OneWay}" />
             </Grid>
         </Grid>
     </Grid>

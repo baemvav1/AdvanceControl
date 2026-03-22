@@ -1,34 +1,30 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Advance_Control.Services.Dialog;
-using Advance_Control.Views.Dialogs;
+using Advance_Control.Views.Windows;
 
 namespace Advance_Control.Services.ImageViewer
 {
-    /// <summary>
-    /// Implementación del servicio de visualización de imágenes.
-    /// Muestra un diálogo reutilizable con la imagen seleccionada y soporte de zoom.
-    /// </summary>
     public class ImageViewerService : IImageViewerService
     {
-        private readonly IDialogService _dialogService;
+        private readonly List<ImageViewerWindow> _openWindows = new();
 
-        public ImageViewerService(IDialogService dialogService)
+        public ImageViewerService()
         {
-            _dialogService = dialogService ?? throw new ArgumentNullException(nameof(dialogService));
         }
 
-        /// <inheritdoc />
         public async Task ShowImageAsync(string imageUrl, string? title = null)
         {
-            if (string.IsNullOrEmpty(imageUrl))
-                return;
+            if (string.IsNullOrWhiteSpace(imageUrl))
+            {
+                throw new ArgumentException("La ruta de la imagen es obligatoria.", nameof(imageUrl));
+            }
 
-            await _dialogService.ShowDialogAsync<ImageViewerUserControl>(
-                configureControl: control => control.SetImageSource(imageUrl),
-                title: title,
-                closeButtonText: "Cerrar"
-            );
+            var window = new ImageViewerWindow(imageUrl, title);
+            window.Closed += (_, _) => _openWindows.Remove(window);
+            _openWindows.Add(window);
+            window.Activate();
+            await Task.CompletedTask;
         }
     }
 }

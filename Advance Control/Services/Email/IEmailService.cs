@@ -15,6 +15,11 @@ public interface IEmailService
     Task<string> VerifyConnectionAsync();
 
     /// <summary>
+    /// Verifica explícitamente un correo y contraseña sin depender de la configuración persistida.
+    /// </summary>
+    Task<string> VerifyConnectionAsync(string email, string password);
+
+    /// <summary>
     /// Envía un correo electrónico usando las credenciales configuradas.
     /// </summary>
     /// <param name="mensaje">Mensaje a enviar (Para, Asunto y al menos un cuerpo son obligatorios).</param>

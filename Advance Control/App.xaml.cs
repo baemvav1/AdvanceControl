@@ -36,6 +36,10 @@ using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Entidades;
 using Advance_Control.Services.ImageViewer;
+using Advance_Control.Services.CorreoUsuario;
+using Advance_Control.Services.TipoUsuario;
+using Advance_Control.Services.PermisosUi;
+using Advance_Control.Services.UsuariosAdmin;
 
 namespace Advance_Control
 {
@@ -664,6 +668,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.OperacionesViewModel>();
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
                     services.AddTransient<ViewModels.MttoViewModel>();
+                    services.AddTransient<ViewModels.LevantamientoViewModel>();
                     services.AddTransient<ViewModels.NuevoEquipoViewModel>();
                     services.AddTransient<ViewModels.RefaccionesViewModel>();
                     services.AddTransient<ViewModels.ServiciosViewModel>();
@@ -676,9 +681,22 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.DetailEstadoCuentaViewModel>();
                     services.AddTransient<ViewModels.ConciliacionViewModel>();
                     services.AddTransient<ViewModels.ConciliacionAutomaticaWindowViewModel>();
+                    services.AddTransient<ViewModels.UsuariosAdminViewModel>();
                     services.AddTransient<ViewModels.FacturasViewModel>();
                     services.AddTransient<ViewModels.DetailFacturaViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();
+
+                    services.AddHttpClient<ICorreoUsuarioService, CorreoUsuarioService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     services.AddSingleton<Services.Email.IEmailService, Services.Email.EmailService>();
                     services.AddTransient<ViewModels.CorreoViewModel>();
@@ -694,6 +712,46 @@ namespace Advance_Control
 
                     // Registrar NivelService con autenticación
                     services.AddHttpClient<Services.Nivel.INivelService, Services.Nivel.NivelService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    services.AddHttpClient<ITipoUsuarioService, TipoUsuarioService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    services.AddHttpClient<IPermisoUiService, PermisoUiService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    services.AddSingleton<IPermisoUiScanner, PermisoUiScanner>();
+                    services.AddSingleton<IPermisoUiRuntimeService, PermisoUiRuntimeService>();
+
+                    // Registrar UsuarioAdminService con autenticación
+                    services.AddHttpClient<IUsuarioAdminService, UsuarioAdminService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))

@@ -8,7 +8,7 @@ using MailKit.Net.Imap;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
-using Advance_Control.Services.Security;
+using Advance_Control.Services.CorreoUsuario;
 
 namespace Advance_Control.Services.Email;
 
@@ -16,7 +16,7 @@ namespace Advance_Control.Services.Email;
 /// Implementación del servicio de correo usando Hostinger:
 /// - SMTP: smtp.hostinger.com:587 (STARTTLS)
 /// - IMAP: imap.hostinger.com:993 (SSL)
-/// Las credenciales se leen de ISecureStorage (Windows PasswordVault).
+/// Las credenciales se leen desde la configuración de correo del usuario en la API.
 /// </summary>
 public class EmailService : IEmailService
 {
@@ -26,14 +26,11 @@ public class EmailService : IEmailService
     private const string ImapHost = "imap.hostinger.com";
     private const int ImapPort = 993;
 
-    private const string ClaveUsuario = "email_smtp_user";
-    private const string ClavePassword = "email_smtp_password";
+    private readonly ICorreoUsuarioService _correoUsuarioService;
 
-    private readonly ISecureStorage _storage;
-
-    public EmailService(ISecureStorage storage)
+    public EmailService(ICorreoUsuarioService correoUsuarioService)
     {
-        _storage = storage ?? throw new ArgumentNullException(nameof(storage));
+        _correoUsuarioService = correoUsuarioService ?? throw new ArgumentNullException(nameof(correoUsuarioService));
     }
 
     // -------------------------------------------------------------------------
@@ -42,13 +39,16 @@ public class EmailService : IEmailService
 
     private async Task<(string usuario, string password)> ObtenerCredencialesAsync()
     {
-        var usuario = await _storage.GetAsync(ClaveUsuario);
-        var password = await _storage.GetAsync(ClavePassword);
+        var configuracion = await _correoUsuarioService.GetCorreoActualAsync();
 
-        if (string.IsNullOrWhiteSpace(usuario) || string.IsNullOrWhiteSpace(password))
-            throw new InvalidOperationException("No hay credenciales de correo configuradas. Ingresa usuario y contraseña en la página de configuración.");
+        if (configuracion == null
+            || string.IsNullOrWhiteSpace(configuracion.Email)
+            || string.IsNullOrWhiteSpace(configuracion.Password))
+        {
+            throw new InvalidOperationException("No hay credenciales de correo configuradas para el usuario actual.");
+        }
 
-        return (usuario, password);
+        return (configuracion.Email, configuracion.Password);
     }
 
     // -------------------------------------------------------------------------
@@ -60,17 +60,35 @@ public class EmailService : IEmailService
         try
         {
             var (usuario, password) = await ObtenerCredencialesAsync();
-
-            using var client = new SmtpClient();
-            await client.ConnectAsync(SmtpHost, SmtpPort, SecureSocketOptions.StartTls);
-            await client.AuthenticateAsync(usuario, password);
-            await client.DisconnectAsync(true);
-
-            return "Conexión exitosa. Las credenciales son válidas.";
+            return await VerifyConnectionAsync(usuario, password);
         }
         catch (InvalidOperationException ex)
         {
             return ex.Message;
+        }
+        catch (MailKit.Security.AuthenticationException)
+        {
+            return "Error de autenticación: usuario o contraseña incorrectos.";
+        }
+        catch (Exception ex)
+        {
+            return $"No se pudo conectar al servidor: {ex.Message}";
+        }
+    }
+
+    public async Task<string> VerifyConnectionAsync(string email, string password)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                return "El correo y la contraseña son obligatorios.";
+
+            using var client = new SmtpClient();
+            await client.ConnectAsync(SmtpHost, SmtpPort, SecureSocketOptions.StartTls);
+            await client.AuthenticateAsync(email, password);
+            await client.DisconnectAsync(true);
+
+            return "Conexión exitosa. Las credenciales son válidas.";
         }
         catch (MailKit.Security.AuthenticationException)
         {

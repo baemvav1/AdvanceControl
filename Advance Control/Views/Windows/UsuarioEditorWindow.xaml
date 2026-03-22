@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="Advance_Control.Views.Windows.UsuarioEditorWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    mc:Ignorable="d">
+
+    <Grid x:Name="RootGrid" Padding="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="4">
+            <TextBlock x:Name="TitleTextBlock" FontSize="24" FontWeight="SemiBold" Text="Usuario" />
+            <TextBlock
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Edita el login, el estado del usuario y sus asignaciones operativas en una sola ventana." />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="16">
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="Acceso" />
+
+                        <Grid ColumnSpacing="12" RowSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBox
+                                x:Name="UsuarioTextBox"
+                                Grid.Row="0"
+                                Grid.Column="0"
+                                Header="Login"
+                                PlaceholderText="Usuario de acceso" />
+
+                            <PasswordBox
+                                x:Name="PasswordBox"
+                                Grid.Row="0"
+                                Grid.Column="1"
+                                Header="Contraseña"
+                                PlaceholderText="Contraseña" />
+
+                            <ComboBox
+                                x:Name="NivelComboBox"
+                                Grid.Row="0"
+                                Grid.Column="2"
+                                Header="Nivel / tipo de usuario"
+                                PlaceholderText="Selecciona un tipo de usuario">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="models:TipoUsuarioDto">
+                                        <StackPanel Spacing="2">
+                                            <TextBlock>
+                                                <Run Text="{x:Bind IdTipoUsuario}" />
+                                                <Run Text=" · " />
+                                                <Run Text="{x:Bind TipoUsuario}" />
+                                            </TextBlock>
+                                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind Nota}" TextWrapping="WrapWholeWords" />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+
+                            <CheckBox
+                                x:Name="EstaActivaCheckBox"
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Content="Credencial activa"
+                                IsChecked="True" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock FontSize="18" FontWeight="SemiBold" Text="Contacto vinculado" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Selecciona un contacto por nombre. Solo se muestran contactos libres o ya asignados al usuario actual." />
+                            </StackPanel>
+
+                            <Button
+                                Grid.Column="1"
+                                Margin="0,0,8,0"
+                                VerticalAlignment="Center"
+                                Click="RecargarContactosButton_Click"
+                                Content="Recargar contactos" />
+
+                            <Button
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Click="QuitarContactoButton_Click"
+                                Content="Quitar vínculo" />
+                        </Grid>
+
+                        <ComboBox
+                            x:Name="ContactoComboBox"
+                            Header="Contacto"
+                            PlaceholderText="Selecciona un contacto"
+                            SelectionChanged="ContactoComboBox_SelectionChanged">
+                            <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ContactoDto">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{x:Bind NombreCompleto}" />
+                                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="{x:Bind Correo}" />
+                                                    <Run Text=" · " />
+                                                    <Run Text="Credencial actual: " />
+                                                    <Run Text="{x:Bind CredencialId}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="Datos del contacto y asignaciones" />
+
+                        <Grid ColumnSpacing="12" RowSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBox x:Name="NombreTextBox" Grid.Row="0" Grid.Column="0" Header="Nombre" />
+                            <TextBox x:Name="ApellidoTextBox" Grid.Row="0" Grid.Column="1" Header="Apellido" />
+
+                            <TextBox x:Name="CorreoTextBox" Grid.Row="1" Grid.Column="0" Header="Correo" />
+                            <TextBox x:Name="TelefonoTextBox" Grid.Row="1" Grid.Column="1" Header="Teléfono" />
+
+                            <TextBox x:Name="DepartamentoTextBox" Grid.Row="2" Grid.Column="0" Header="Departamento" />
+                            <TextBox x:Name="CargoTextBox" Grid.Row="2" Grid.Column="1" Header="Cargo" />
+
+                            <StackPanel Grid.Row="3" Grid.Column="0" Spacing="8">
+                                <ComboBox
+                                    x:Name="ProveedorComboBox"
+                                    Header="Proveedor"
+                                    PlaceholderText="Selecciona un proveedor"
+                                    SelectionChanged="ProveedorComboBox_SelectionChanged">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ProveedorDto">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{x:Bind NombreComercial}" />
+                                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="{x:Bind RazonSocial}" />
+                                                    <Run Text=" · ID: " />
+                                                    <Run Text="{x:Bind IdProveedor}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Click="RecargarProveedoresButton_Click" Content="Recargar proveedores" />
+                                    <Button Click="QuitarProveedorButton_Click" Content="Quitar proveedor" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="3" Grid.Column="1" Spacing="8">
+                                <ComboBox
+                                    x:Name="ClienteComboBox"
+                                    Header="Cliente"
+                                    PlaceholderText="Selecciona un cliente"
+                                    SelectionChanged="ClienteComboBox_SelectionChanged">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="models:CustomerDto">
+                                            <StackPanel Spacing="2">
+                                                <TextBlock Text="{x:Bind NombreComercial}" />
+                                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="{x:Bind RazonSocial}" />
+                                                    <Run Text=" · ID: " />
+                                                    <Run Text="{x:Bind IdCliente}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Click="RecargarClientesButton_Click" Content="Recargar clientes" />
+                                    <Button Click="QuitarClienteButton_Click" Content="Quitar cliente" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <TextBox x:Name="TratamientoTextBox" Grid.Row="4" Grid.Column="0" Header="Tratamiento" />
+                            <TextBox x:Name="CodigoInternoTextBox" Grid.Row="4" Grid.Column="1" Header="Código interno" />
+                        </Grid>
+
+                        <TextBox
+                            x:Name="NotasTextBox"
+                            Header="Notas"
+                            AcceptsReturn="True"
+                            MinHeight="100"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <StackPanel Spacing="12">
+                        <TextBlock FontSize="18" FontWeight="SemiBold" Text="Correo del usuario" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Esta configuración SMTP será propia del usuario. La firma visual sigue siendo local por equipo." />
+
+                        <Grid ColumnSpacing="12" RowSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <TextBox
+                                x:Name="CorreoUsuarioTextBox"
+                                Grid.Column="0"
+                                Header="Correo SMTP"
+                                PlaceholderText="usuario@dominio.com" />
+
+                            <PasswordBox
+                                x:Name="CorreoPasswordBox"
+                                Grid.Column="1"
+                                Header="Contraseña SMTP"
+                                PlaceholderText="Contraseña del correo" />
+                        </Grid>
+
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Click="VerificarCorreoButton_Click" Content="Verificar conexión" />
+                            <Button Click="QuitarCorreoButton_Click" Content="Quitar configuración" />
+                        </StackPanel>
+
+                        <InfoBar
+                            x:Name="CorreoInfoBar"
+                            IsClosable="False"
+                            IsOpen="False"
+                            Severity="Informational" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel
+            Grid.Row="2"
+            Margin="0,16,0,0"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            Spacing="8">
+            <Button Click="CancelarButton_Click" Content="Cancelar" />
+            <Button
+                Click="GuardarButton_Click"
+                Content="Guardar"
+                Style="{StaticResource AccentButtonStyle}" />
+        </StackPanel>
+    </Grid>
+</Window>

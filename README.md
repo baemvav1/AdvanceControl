@@ -265,7 +265,7 @@ public class ViewModelBase : INotifyPropertyChanged
 | `SeleccionarServicioUserControl` | Picker de servicio |
 | `SeleccionarRefaccionUserControl` | Picker de refacción |
 | `SeleccionarUbicacionUserControl` | Picker de ubicación |
-| `ImageViewerUserControl` | Visor de imágenes en ventana flotante |
+| `ViewerImagenes` | Visor reutilizable de imágenes con zoom/pan hospedado en ventana independiente |
 | `RefaccionesViewerUserControl` | Lista de refacciones de un equipo |
 
 ---

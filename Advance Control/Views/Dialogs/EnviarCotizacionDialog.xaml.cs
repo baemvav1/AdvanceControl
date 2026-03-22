@@ -5,8 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 using Advance_Control.Models;
+using Advance_Control.Services.CorreoUsuario;
 using Advance_Control.Services.Email;
-using Advance_Control.Services.Security;
 using Advance_Control.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,7 +21,7 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
 {
     private readonly string _pdfPath;
     private readonly IEmailService _emailService;
-    private readonly ISecureStorage _secureStorage;
+    private readonly ICorreoUsuarioService _correoUsuarioService;
     private readonly List<CheckBox> _ccCheckboxes = [];
 
     /// <summary>
@@ -45,7 +45,7 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
     {
         _pdfPath = pdfPath ?? throw new ArgumentNullException(nameof(pdfPath));
         _emailService = AppServices.Get<IEmailService>();
-        _secureStorage = AppServices.Get<ISecureStorage>();
+        _correoUsuarioService = AppServices.Get<ICorreoUsuarioService>();
 
         this.InitializeComponent();
         this.XamlRoot = xamlRoot;
@@ -132,7 +132,8 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
             var textoPlano = MensajeTextBox.Text;
 
             // Obtener firma si existe (se adjunta vía CID para máxima compatibilidad)
-            var emailUsuario = await _secureStorage.GetAsync("email_smtp_user");
+            var configuracionCorreo = await _correoUsuarioService.GetCorreoActualAsync();
+            var emailUsuario = configuracionCorreo?.Email;
             var firmaPath = string.Empty;
             if (!string.IsNullOrWhiteSpace(emailUsuario))
                 firmaPath = FirmaCorreoHelper.GetFirmaPath(emailUsuario);
