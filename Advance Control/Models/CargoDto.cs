@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
 using Microsoft.UI.Xaml;
@@ -391,10 +392,15 @@ namespace Advance_Control.Models
         public Visibility GalleryVisibility => ShouldShowGallery ? Visibility.Visible : Visibility.Collapsed;
 
         [JsonIgnore]
-        public string UnitarioFormateado => (Unitario ?? 0d).ToString("C2");
+        public Visibility HasImagesVisibility => HasImages ? Visibility.Visible : Visibility.Collapsed;
+
+        private static readonly CultureInfo MxCulture = new("es-MX");
 
         [JsonIgnore]
-        public string MontoFormateado => (Monto ?? 0d).ToString("C2");
+        public string UnitarioFormateado => (Unitario ?? 0d).ToString("C2", MxCulture);
+
+        [JsonIgnore]
+        public string MontoFormateado => (Monto ?? 0d).ToString("C2", MxCulture);
 
         /// <summary>
         /// Notifica que la colección de imágenes ha cambiado
@@ -403,6 +409,7 @@ namespace Advance_Control.Models
         {
             OnPropertyChanged(nameof(Images));
             OnPropertyChanged(nameof(HasImages));
+            OnPropertyChanged(nameof(HasImagesVisibility));
             OnPropertyChanged(nameof(ShouldShowGallery));
             OnPropertyChanged(nameof(GalleryVisibility));
         }

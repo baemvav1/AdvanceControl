@@ -17,6 +17,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -83,7 +84,14 @@ namespace Advance_Control.Views.Windows
             RootGrid.Loaded += async (_, _) =>
             {
                 _xamlRoot = RootGrid.XamlRoot;
-                await CargarDatosInicialesAsync();
+                try
+                {
+                    await CargarDatosInicialesAsync();
+                }
+                catch (Exception ex)
+                {
+                    LogDebugError(nameof(CargarDatosInicialesAsync), ex);
+                }
             };
         }
 
@@ -211,13 +219,15 @@ namespace Advance_Control.Views.Windows
 
         public Visibility ToTextVisibility(string? value) => string.IsNullOrWhiteSpace(value) ? Visibility.Collapsed : Visibility.Visible;
 
-        public string FormatDecimalCurrency(decimal value) => value.ToString("C2");
+        private static readonly CultureInfo MxCulture = new("es-MX");
 
-        public string FormatNullableDecimalCurrency(decimal? value) => (value ?? 0m).ToString("C2");
+        public string FormatDecimalCurrency(decimal value) => value.ToString("C2", MxCulture);
 
-        public string FormatDoubleCurrency(double value) => value.ToString("C2");
+        public string FormatNullableDecimalCurrency(decimal? value) => (value ?? 0m).ToString("C2", MxCulture);
 
-        public string FormatNullableDoubleCurrency(double? value) => (value ?? 0d).ToString("C2");
+        public string FormatDoubleCurrency(double value) => value.ToString("C2", MxCulture);
+
+        public string FormatNullableDoubleCurrency(double? value) => (value ?? 0d).ToString("C2", MxCulture);
 
         public Brush ToCheckBrush(bool completed) => completed ? CheckCompletedBrush : CheckPendingBrush;
 
@@ -226,61 +236,6 @@ namespace Advance_Control.Views.Windows
         // ─────────────────────────────────────────────────────────────────────
         //  Operación
         // ─────────────────────────────────────────────────────────────────────
-
-        private async void EditOperacionButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!Operacion.IdOperacion.HasValue) return;
-            try
-            {
-                var montoBox = new NumberBox
-                {
-                    Value = (double)Operacion.Monto,
-                    PlaceholderText = "Monto de la operación",
-                    Minimum = 0,
-                    SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
-                    Margin = new Thickness(0, 0, 0, 8)
-                };
-                var dialog = new ContentDialog
-                {
-                    Title = "Editar Operación",
-                    Content = new StackPanel { Spacing = 8, Children = { new TextBlock { Text = "Monto:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold }, montoBox } },
-                    PrimaryButtonText = "Guardar",
-                    CloseButtonText = "Cancelar",
-                    DefaultButton = ContentDialogButton.Primary,
-                    XamlRoot = _xamlRoot
-                };
-                var result = await dialog.ShowAsync();
-                if (result == ContentDialogResult.Primary)
-                {
-                    if (double.IsNaN(montoBox.Value)) { await MostrarErrorAsync("Validación", "El monto es obligatorio."); return; }
-                    var monto = Math.Round(Convert.ToDecimal(montoBox.Value), 2);
-                    var ok = await _viewModel.UpdateOperacionAsync(Operacion.IdOperacion.Value, monto: monto);
-                    if (ok) { Operacion.Monto = monto; await _notificacionService.MostrarAsync("Operación actualizada", $"Monto actualizado a {monto:C2}"); }
-                    else    await MostrarErrorAsync("Error", "No se pudo actualizar el monto.");
-                }
-            }
-            catch (Exception ex) { LogDebugError(nameof(EditOperacionButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al editar la operación."); }
-        }
-
-        private async void DeleteOperacionButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!Operacion.IdOperacion.HasValue) return;
-            var dialog = new ContentDialog
-            {
-                Title = "Confirmar eliminación",
-                Content = $"¿Está seguro de que desea eliminar la operación del equipo {Operacion.Identificador}?",
-                PrimaryButtonText = "Eliminar",
-                CloseButtonText = "Cancelar",
-                DefaultButton = ContentDialogButton.Close,
-                XamlRoot = _xamlRoot
-            };
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
-            {
-                var ok = await _viewModel.DeleteOperacionAsync(Operacion.IdOperacion.Value);
-                if (ok) { await _notificacionService.MostrarAsync("Operación eliminada", "La operación se eliminó correctamente."); this.Close(); }
-                else    await MostrarErrorAsync("Error", "No se pudo eliminar la operación.");
-            }
-        }
 
         private async void ReabrirOperacionButton_Click(object sender, RoutedEventArgs e)
         {
@@ -745,6 +700,12 @@ namespace Advance_Control.Views.Windows
         {
             if (sender is FrameworkElement el && el.Tag is OperacionImageDto img && !string.IsNullOrEmpty(img.Url))
                 await _imageViewerService.ShowImageAsync(img.Url, img.Tipo);
+        }
+
+        private async void ViewCargoImageButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement el && el.Tag is CargoImageDto img && !string.IsNullOrEmpty(img.Url))
+                await _imageViewerService.ShowImageAsync(img.Url, "Cargo");
         }
 
         private async void DeleteOperacionImageButton_Click(object sender, RoutedEventArgs e)

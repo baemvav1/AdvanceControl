@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
     x:Name="RootPage"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
@@ -17,340 +18,524 @@
             <Setter Property="Foreground" Value="Transparent" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
             <Setter Property="VerticalContentAlignment" Value="Center" />
-            <Setter Property="Visibility" Value="{x:Bind HotspotButtonVisibility, Mode=OneWay}" />
+            <Setter Property="Visibility" Value="Visible" />
         </Style>
     </Page.Resources>
 
-    <Grid Padding="24">
-        <Viewbox
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Stretch="Uniform"
-            StretchDirection="DownOnly">
-            <Canvas Width="{x:Bind ViewModel.ImageWidth, Mode=OneWay}" Height="{x:Bind ViewModel.ImageHeight, Mode=OneWay}">
-                <Image
-                    Width="{x:Bind ViewModel.ImageWidth, Mode=OneWay}"
-                    Height="{x:Bind ViewModel.ImageHeight, Mode=OneWay}"
-                    Source="{x:Bind ViewModel.HotspotImageSource, Mode=OneWay}"
-                    Stretch="Fill" />
-                <Button
-                    Canvas.Left="160"
-                    Canvas.Top="73"
-                    Width="136"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="SalaMaquinas" />
-                <Button
-                    Canvas.Left="11"
-                    Canvas.Top="125"
-                    Width="87"
-                    Height="47"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="ArmarioManiobra" />
-                <Button
-                    Canvas.Left="177"
-                    Canvas.Top="100"
-                    Width="144"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="MaquinaTraccion" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="112"
-                    Width="93"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="LimitadorVelocidadVistaGeneral" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="247"
-                    Width="84"
-                    Height="47"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="CablesSuspension" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="413"
-                    Width="46"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="GuiasVistaGeneral" />
-                <Button
-                    Canvas.Left="43"
-                    Canvas.Top="755"
-                    Width="52"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="HuecoVistaGeneral" />
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="600" />
+        </Grid.ColumnDefinitions>
 
-                <Button
-                    Canvas.Left="188"
-                    Canvas.Top="573"
-                    Width="55"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="Cabina" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="480"
-                    Width="100"
-                    Height="63"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="ParacaidasVistaGeneral" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="596"
-                    Width="85"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="Contrapeso" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="678"
-                    Width="70"
-                    Height="43"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="CableLimitadorVistaGeneral" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="750"
-                    Width="76"
-                    Height="43"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="TensorLimitadorVistaGeneral" />
-                <Button
-                    Canvas.Left="365"
-                    Canvas.Top="838"
-                    Width="115"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="Amortiguadores" />
-                <Button
-                    Canvas.Left="505"
-                    Canvas.Top="98"
-                    Width="73"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="OperadorPuerta" />
-                <Button
-                    Canvas.Left="505"
-                    Canvas.Top="145"
-                    Width="73"
-                    Height="81"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="PuertaCabina" />
-                <Button
-                    Canvas.Left="488"
-                    Canvas.Top="230"
-                    Width="87"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="BarreraFotoelectrica" />
-                <Button
-                    Canvas.Left="520"
-                    Canvas.Top="310"
-                    Width="56"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="Umbral" />
-                <Button
-                    Canvas.Left="778"
-                    Canvas.Top="138"
-                    Width="70"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="Indicador" />
-                <Button
-                    Canvas.Left="778"
-                    Canvas.Top="212"
-                    Width="71"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="BotoneraCabina" />
-                <Button
-                    Canvas.Left="1053"
-                    Canvas.Top="91"
-                    Width="91"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="LimitadorVelocidadVistaLateral" />
-                <Button
-                    Canvas.Left="1053"
-                    Canvas.Top="142"
-                    Width="70"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="CableLimitadorVistaLateral" />
-                <Button
-                    Canvas.Left="1053"
-                    Canvas.Top="195"
-                    Width="98"
-                    Height="65"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="ParacaidasVistaLateral" />
-                <Button
-                    Canvas.Left="1053"
-                    Canvas.Top="265"
-                    Width="40"
-                    Height="25"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="GuiaVistaLateral" />
-                <Button
-                    Canvas.Left="1053"
-                    Canvas.Top="308"
-                    Width="78"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="TensorLimitadorVistaLateral" />
-                <Button
-                    Canvas.Left="627"
-                    Canvas.Top="417"
-                    Width="107"
-                    Height="45"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="EnclavamientoPuerta" />
-                <Button
-                    Canvas.Left="646"
-                    Canvas.Top="522"
-                    Width="106"
-                    Height="84"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="PuertaPiso" />
-                <Button
-                    Canvas.Left="944"
-                    Canvas.Top="455"
-                    Width="95"
-                    Height="66"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="ContactosSeguridad" />
-                <Button
-                    Canvas.Left="944"
-                    Canvas.Top="531"
-                    Width="84"
-                    Height="60"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="BotoneraPiso" />
-                <Button
-                    Canvas.Left="943"
-                    Canvas.Top="592"
-                    Width="104"
-                    Height="68"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="DesbloqueoEmergencia" />
-                <Button
-                    Canvas.Left="646"
-                    Canvas.Top="717"
-                    Width="113"
-                    Height="64"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="PuntoAnclajeCabina" />
-                <Button
-                    Canvas.Left="661"
-                    Canvas.Top="783"
-                    Width="92"
-                    Height="62"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="CadenaCompensacion" />
-                <Button
-                    Canvas.Left="807"
-                    Canvas.Top="777"
-                    Width="92"
-                    Height="78"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="ZonaBucleInferior" />
-                <Button
-                    Canvas.Left="945"
-                    Canvas.Top="718"
-                    Width="126"
-                    Height="66"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="PuntoAnclajeContrapeso" />
-                <Button
-                    Canvas.Left="946"
-                    Canvas.Top="794"
-                    Width="97"
-                    Height="62"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="GuiaCadena" />
-                <Button
-                    Canvas.Left="952"
-                    Canvas.Top="850"
-                    Width="124"
-                    Height="35"
-                    Click="HotspotButton_Click"
-                    CornerRadius="5"
-                    Style="{StaticResource HotspotButtonStyle}"
-                    Tag="ProteccionCanal" />
-            </Canvas>
-        </Viewbox>
+        <Grid Grid.Column="1" Padding="0,22,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="70" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <StackPanel
+                Grid.Row="0"
+                Margin="0,0,10,0"
+                Spacing="4">
+                <TextBlock FontWeight="SemiBold" Text="Equipo" />
+                <AutoSuggestBox
+                    x:Name="EquipoAutoSuggestBox"
+                    GotFocus="EquipoAutoSuggestBox_GotFocus"
+                    PlaceholderText="Buscar equipo por identificador, marca..."
+                    QueryIcon="Find"
+                    SuggestionChosen="EquipoAutoSuggestBox_SuggestionChosen"
+                    TextChanged="EquipoAutoSuggestBox_TextChanged" />
+                <ProgressRing
+                    Width="20"
+                    Height="20"
+                    HorizontalAlignment="Left"
+                    IsActive="{Binding IsLoadingEquipos}"
+                    Visibility="{Binding IsLoadingEquipos, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            </StackPanel>
+
+            <Grid Grid.Row="1">
+                <StackPanel Margin="0,0,10,0">
+                    <TextBlock Margin="0,0,0,10" Text="Introduccion Levantamiento" />
+                    <TextBox
+                        x:Name="ImputIntroduccion"
+                        MaxHeight="200"
+                        AcceptsReturn="True"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+
+            </Grid>
+
+            <ScrollViewer Grid.Row="2">
+                <StackPanel Spacing="12">
+                    <TreeView ItemsSource="{x:Bind ViewModel.CapturedTreeItems, Mode=OneWay}">
+                        <TreeView.ItemTemplate>
+                            <DataTemplate x:DataType="models:LevantamientoTreeItemModel">
+                                <TreeViewItem IsExpanded="True" ItemsSource="{x:Bind Hijos}">
+                                    <StackPanel Spacing="4">
+                                        <!--  Fila principal: texto + botones  -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock FontWeight="SemiBold" Text="{x:Bind Etiqueta}" />
+                                                <TextBlock
+                                                    Opacity="0.78"
+                                                    Text="{x:Bind DescripcionFalla}"
+                                                    TextWrapping="Wrap"
+                                                    Visibility="{x:Bind TieneFalla, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                            </StackPanel>
+                                            <!--  Boton cargar imagen (solo nodos con falla)  -->
+                                            <Button
+                                                Padding="4"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="CargarImagenNodo_Click"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Cargar imagen"
+                                                Visibility="{x:Bind TieneFalla, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <SymbolIcon Symbol="Camera" />
+                                            </Button>
+                                            <!--  Boton eliminar nodo  -->
+                                            <Button
+                                                Padding="4"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="EliminarCaptura_Click"
+                                                Tag="{x:Bind Clave}"
+                                                ToolTipService.ToolTip="Eliminar captura"
+                                                Visibility="{x:Bind TieneFalla, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                                            </Button>
+                                        </StackPanel>
+                                        <!--  Galeria de miniaturas (solo si tiene imagenes)  -->
+                                        <ItemsRepeater ItemsSource="{x:Bind Imagenes, Mode=OneWay}">
+                                            <ItemsRepeater.Layout>
+                                                <StackLayout Orientation="Horizontal" Spacing="6" />
+                                            </ItemsRepeater.Layout>
+                                            <ItemsRepeater.ItemTemplate>
+                                                <DataTemplate x:DataType="models:LevantamientoImageItem">
+                                                    <Grid
+                                                        Width="80"
+                                                        Height="80"
+                                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                        CornerRadius="4">
+                                                        <!--  Miniatura clickeable  -->
+                                                        <Button
+                                                            Padding="0"
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="VerImagenNodo_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="{x:Bind Title}">
+                                                            <Image
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Source="{x:Bind FilePath, Mode=OneWay}"
+                                                                Stretch="UniformToFill" />
+                                                        </Button>
+                                                        <!--  Boton eliminar imagen overlay  -->
+                                                        <Button
+                                                            MinWidth="20"
+                                                            MinHeight="20"
+                                                            Margin="0,2,2,0"
+                                                            Padding="4"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Top"
+                                                            Background="#CC000000"
+                                                            Click="EliminarImagenNodo_Click"
+                                                            CornerRadius="10"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                            <SymbolIcon Foreground="White" Symbol="Cancel" />
+                                                        </Button>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsRepeater.ItemTemplate>
+                                        </ItemsRepeater>
+                                    </StackPanel>
+                                </TreeViewItem>
+                            </DataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </StackPanel>
+            </ScrollViewer>
+
+            <Grid Grid.Row="3">
+                <StackPanel Margin="0,0,10,10">
+                    <TextBlock Margin="0,0,0,10" Text="Conclusion Levantamiento" />
+                    <TextBox
+                        x:Name="ImputConclusion"
+                        MaxHeight="200"
+                        AcceptsReturn="True"
+                        ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+
+
+            </Grid>
+
+            <Grid Grid.Row="4" Margin="0,0,10,30">
+                <StackPanel
+                    HorizontalAlignment="Right"
+                    Orientation="Horizontal"
+                    Spacing="5">
+                    <Button
+                        x:Name="GuardarLevantamientoButton"
+                        Click="GuardarLevantamiento_Click"
+                        Content="Guardar levantamiento" />
+                    <Button
+                        x:Name="GenerarReporteButton"
+                        Click="GenerarReporte_Click"
+                        Content="Generar Reporte" />
+                </StackPanel>
+            </Grid>
+        </Grid>
+
+
+
+        <ScrollViewer
+            Grid.Column="0"
+            Padding="15"
+            HorizontalScrollBarVisibility="Visible"
+            HorizontalScrollMode="Enabled">
+            <Viewbox
+                Width="820"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Stretch="Uniform"
+                StretchDirection="DownOnly">
+                <Canvas Width="{Binding ImageWidth}" Height="{Binding ImageHeight}">
+                    <Image
+                        Width="{Binding ImageWidth}"
+                        Height="{Binding ImageHeight}"
+                        Source="{Binding HotspotImageSource}"
+                        Stretch="Fill" />
+                    <Button
+                        Canvas.Left="160"
+                        Canvas.Top="73"
+                        Width="136"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="SalaMaquinas" />
+                    <Button
+                        Canvas.Left="11"
+                        Canvas.Top="125"
+                        Width="87"
+                        Height="47"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="ArmarioManiobra" />
+                    <Button
+                        Canvas.Left="177"
+                        Canvas.Top="100"
+                        Width="144"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="MaquinaTraccion" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="112"
+                        Width="93"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="LimitadorVelocidadVistaGeneral" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="247"
+                        Width="84"
+                        Height="47"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="CablesSuspension" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="413"
+                        Width="46"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="GuiasVistaGeneral" />
+                    <Button
+                        Canvas.Left="43"
+                        Canvas.Top="755"
+                        Width="52"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="HuecoVistaGeneral" />
+                    <Button
+                        Canvas.Left="188"
+                        Canvas.Top="573"
+                        Width="55"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="Cabina" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="480"
+                        Width="100"
+                        Height="63"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="ParacaidasVistaGeneral" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="596"
+                        Width="85"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="Contrapeso" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="678"
+                        Width="70"
+                        Height="43"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="CableLimitadorVistaGeneral" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="750"
+                        Width="76"
+                        Height="43"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="TensorLimitadorVistaGeneral" />
+                    <Button
+                        Canvas.Left="365"
+                        Canvas.Top="838"
+                        Width="115"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="Amortiguadores" />
+                    <Button
+                        Canvas.Left="505"
+                        Canvas.Top="98"
+                        Width="73"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="OperadorPuerta" />
+                    <Button
+                        Canvas.Left="505"
+                        Canvas.Top="145"
+                        Width="73"
+                        Height="81"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="PuertaCabina" />
+                    <Button
+                        Canvas.Left="488"
+                        Canvas.Top="230"
+                        Width="87"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="BarreraFotoelectrica" />
+                    <Button
+                        Canvas.Left="520"
+                        Canvas.Top="310"
+                        Width="56"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="Umbral" />
+                    <Button
+                        Canvas.Left="778"
+                        Canvas.Top="138"
+                        Width="70"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="Indicador" />
+                    <Button
+                        Canvas.Left="778"
+                        Canvas.Top="212"
+                        Width="71"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="BotoneraCabina" />
+                    <Button
+                        Canvas.Left="1053"
+                        Canvas.Top="91"
+                        Width="91"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="LimitadorVelocidadVistaLateral" />
+                    <Button
+                        Canvas.Left="1053"
+                        Canvas.Top="142"
+                        Width="70"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="CableLimitadorVistaLateral" />
+                    <Button
+                        Canvas.Left="1053"
+                        Canvas.Top="195"
+                        Width="98"
+                        Height="65"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="ParacaidasVistaLateral" />
+                    <Button
+                        Canvas.Left="1053"
+                        Canvas.Top="265"
+                        Width="40"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="GuiaVistaLateral" />
+                    <Button
+                        Canvas.Left="1053"
+                        Canvas.Top="308"
+                        Width="78"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="TensorLimitadorVistaLateral" />
+                    <Button
+                        Canvas.Left="627"
+                        Canvas.Top="417"
+                        Width="107"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="EnclavamientoPuerta" />
+                    <Button
+                        Canvas.Left="612"
+                        Canvas.Top="497"
+                        Width="121"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="PuertaPiso" />
+                    <Button
+                        Canvas.Left="948"
+                        Canvas.Top="440"
+                        Width="95"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="ContactosSeguridad" />
+                    <Button
+                        Canvas.Left="948"
+                        Canvas.Top="510"
+                        Width="68"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="BotoneraPiso" />
+                    <Button
+                        Canvas.Left="948"
+                        Canvas.Top="570"
+                        Width="106"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="DesbloqueoEmergencia" />
+                    <Button
+                        Canvas.Left="615"
+                        Canvas.Top="710"
+                        Width="118"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="PuntoAnclajeCabina" />
+                    <Button
+                        Canvas.Left="627"
+                        Canvas.Top="798"
+                        Width="105"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="CadenaCompensacion" />
+                    <Button
+                        Canvas.Left="803"
+                        Canvas.Top="787"
+                        Width="63"
+                        Height="62"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="ZonaBucleInferior" />
+                    <Button
+                        Canvas.Left="948"
+                        Canvas.Top="710"
+                        Width="118"
+                        Height="45"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="PuntoAnclajeContrapeso" />
+                    <Button
+                        Canvas.Left="948"
+                        Canvas.Top="798"
+                        Width="109"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="GuiaCadena" />
+                    <Button
+                        Canvas.Left="948"
+                        Canvas.Top="864"
+                        Width="126"
+                        Height="25"
+                        Click="HotspotButton_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource HotspotButtonStyle}"
+                        Tag="ProteccionCanal" />
+                </Canvas>
+            </Viewbox>
+        </ScrollViewer>
     </Grid>
 </Page>
-

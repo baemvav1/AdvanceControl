@@ -21,12 +21,12 @@
                 Spacing="8">
                 <TextBox
                     x:Name="MarcaTextBox"
-                    PlaceholderText="Buscar por marca..."
-                    TextChanged="SearchTextBox_TextChanged" />
+                    KeyDown="SearchTextBox_KeyDown"
+                    PlaceholderText="Buscar por marca... (Enter para buscar)" />
                 <TextBox
                     x:Name="SerieTextBox"
-                    PlaceholderText="Buscar por serie..."
-                    TextChanged="SearchTextBox_TextChanged" />
+                    KeyDown="SearchTextBox_KeyDown"
+                    PlaceholderText="Buscar por serie... (Enter para buscar)" />
             </StackPanel>
 
             <StackPanel

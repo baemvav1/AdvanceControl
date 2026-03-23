@@ -30,6 +30,7 @@ using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Cargos;
 using Advance_Control.Services.Servicios;
 using Advance_Control.Services.Quotes;
+using Advance_Control.Services.Reportes;
 using Advance_Control.Services.GoogleMaps;
 using Advance_Control.Services.Areas;
 using Advance_Control.Services.Ubicaciones;
@@ -653,6 +654,12 @@ namespace Advance_Control
                     // Registrar LocalCargoImageService para almacenamiento local de imágenes de cargos
                     services.AddSingleton<ICargoImageService, LocalCargoImageService>();
 
+                    // Registrar servicio local de imágenes para levantamiento
+                    services.AddSingleton<ILevantamientoImageService, LocalLevantamientoImageService>();
+
+                    // Registrar servicio de reporte PDF para levantamiento
+                    services.AddSingleton<ILevantamientoReportService, LevantamientoReportService>();
+
                     // Registrar LocalOperacionImageService para almacenamiento local de imágenes de operaciones (Prefacturas y Órdenes de Compra)
                     services.AddSingleton<IOperacionImageService, LocalOperacionImageService>();
 
@@ -669,6 +676,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
                     services.AddTransient<ViewModels.MttoViewModel>();
                     services.AddTransient<ViewModels.LevantamientoViewModel>();
+                    services.AddTransient<ViewModels.LevantamientosViewModel>();
                     services.AddTransient<ViewModels.NuevoEquipoViewModel>();
                     services.AddTransient<ViewModels.RefaccionesViewModel>();
                     services.AddTransient<ViewModels.ServiciosViewModel>();
@@ -703,6 +711,15 @@ namespace Advance_Control
 
                     // Registrar ActivityService para el dashboard
                     services.AddHttpClient<Services.Activity.IActivityService, Services.Activity.ActivityService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar LevantamientoApiService con autenticación
+                    services.AddHttpClient<Services.Levantamiento.ILevantamientoApiService, Services.Levantamiento.LevantamientoApiService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))

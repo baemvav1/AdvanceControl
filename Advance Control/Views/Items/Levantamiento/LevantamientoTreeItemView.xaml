@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<UserControl
+    x:Name="RootControl"
+    x:Class="Advance_Control.Views.Items.Levantamiento.LevantamientoTreeItemView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:models="using:Advance_Control.Models"
+    xmlns:levItems="using:Advance_Control.Views.Items.Levantamiento">
+
+    <Border
+        Margin="0,0,0,6"
+        Padding="10"
+        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="8">
+        <StackPanel Spacing="8">
+            <TextBlock
+                FontWeight="SemiBold"
+                Text="{x:Bind Item.Etiqueta, Mode=OneWay}"
+                TextWrapping="Wrap" />
+
+            <TextBlock
+                Visibility="{x:Bind GetLeafVisibility(Item), Mode=OneWay}"
+                Text="{x:Bind GetDescriptionText(Item), Mode=OneWay}"
+                TextWrapping="Wrap" />
+
+            <TextBlock
+                Visibility="{x:Bind GetLeafVisibility(Item), Mode=OneWay}"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{x:Bind Item.ResumenImagenes, Mode=OneWay}" />
+
+            <StackPanel
+                HorizontalAlignment="Left"
+                Orientation="Horizontal"
+                Spacing="8"
+                Visibility="{x:Bind GetLeafVisibility(Item), Mode=OneWay}">
+                <Button Click="UploadImageButton_Click" Content="Cargar imagen" />
+                <Button Click="DeleteButton_Click" Content="Eliminar" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

@@ -6,10 +6,10 @@ namespace Advance_Control.Models
     public sealed class LevantamientoReporteDto
     {
         [JsonPropertyName("tipo")]
-        public string Tipo { get; init; } = "ElevadorDeTraccion";
+        public string Tipo { get; set; } = "ElevadorDeTraccion";
 
         [JsonPropertyName("etiqueta")]
-        public string Etiqueta { get; init; } = "Levantamiento de elevador de traccion";
+        public string Etiqueta { get; set; } = "Levantamiento de elevador de traccion";
 
         [JsonPropertyName("secciones")]
         public List<LevantamientoNodoDto> Secciones { get; init; } = new();
@@ -28,6 +28,9 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("tieneFalla")]
         public bool TieneFalla { get; set; }
+
+        [JsonPropertyName("imagenes")]
+        public List<string> Imagenes { get; init; } = new();
 
         [JsonPropertyName("hijos")]
         public List<LevantamientoNodoDto> Hijos { get; init; } = new();

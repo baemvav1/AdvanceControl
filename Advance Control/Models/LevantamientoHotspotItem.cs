@@ -16,6 +16,7 @@ namespace Advance_Control.Models
 
         private bool _isSelected;
         private string? _descripcionFalla;
+        private readonly List<string> _imagenes = new();
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -64,6 +65,16 @@ namespace Advance_Control.Models
             ? DescripcionFalla!
             : "Sin falla capturada.";
 
+        public IReadOnlyList<string> Imagenes => _imagenes;
+
+        public bool TieneImagenes => _imagenes.Count > 0;
+
+        public int CantidadImagenes => _imagenes.Count;
+
+        public string ResumenImagenes => TieneImagenes
+            ? $"{CantidadImagenes} imagen(es) asociada(s)."
+            : "Sin imagenes asociadas.";
+
         public Brush OverlayBrush => TieneFalla
             ? FailureOverlayBrush
             : IsSelected
@@ -93,6 +104,38 @@ namespace Advance_Control.Models
         private void OnPropertyChanged([CallerMemberName] string? propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void AddImage(string imagePath)
+        {
+            if (string.IsNullOrWhiteSpace(imagePath))
+            {
+                throw new System.ArgumentException("La ruta de la imagen no puede ser vacia.", nameof(imagePath));
+            }
+
+            _imagenes.Add(imagePath);
+            NotifyImageStateChanged();
+        }
+
+        public IReadOnlyList<string> ClearImages()
+        {
+            if (_imagenes.Count == 0)
+            {
+                return System.Array.Empty<string>();
+            }
+
+            var removedImages = new List<string>(_imagenes);
+            _imagenes.Clear();
+            NotifyImageStateChanged();
+            return removedImages;
+        }
+
+        private void NotifyImageStateChanged()
+        {
+            OnPropertyChanged(nameof(Imagenes));
+            OnPropertyChanged(nameof(TieneImagenes));
+            OnPropertyChanged(nameof(CantidadImagenes));
+            OnPropertyChanged(nameof(ResumenImagenes));
         }
     }
 }

@@ -22,6 +22,7 @@ namespace Advance_Control.Views.Dialogs
         private List<RefaccionDto> _allRefacciones = new();
         private List<ProveedorPorRefaccionDto> _proveedores = new();
         private bool _isDataLoaded = false;
+        private bool _isLoadingRefacciones = false;
         private bool _hasProveedores = false;
         private bool _isLoadingProveedores = false;
         private int? _idProveedor;
@@ -40,12 +41,7 @@ namespace Advance_Control.Views.Dialogs
 
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // Solo cargar una vez
-            if (!_isDataLoaded)
-            {
-                await LoadRefaccionesAsync();
-                _isDataLoaded = true;
-            }
+            // No cargar refacciones automaticamente; se cargan al buscar con Enter
         }
 
         /// <summary>
@@ -111,10 +107,26 @@ namespace Advance_Control.Views.Dialogs
         }
 
         /// <summary>
-        /// Maneja el cambio de texto en los cuadros de búsqueda
+        /// Maneja la tecla Enter en los cuadros de busqueda para ejecutar la busqueda.
         /// </summary>
-        private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        private async void SearchTextBox_KeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
         {
+            if (e.Key != global::Windows.System.VirtualKey.Enter)
+                return;
+
+            // Evitar búsquedas concurrentes
+            if (_isLoadingRefacciones)
+                return;
+
+            // Cargar refacciones la primera vez que se busca
+            if (!_isDataLoaded)
+            {
+                _isLoadingRefacciones = true;
+                await LoadRefaccionesAsync();
+                _isDataLoaded = true;
+                _isLoadingRefacciones = false;
+            }
+
             var marcaSearch = MarcaTextBox.Text?.Trim().ToLowerInvariant() ?? string.Empty;
             var serieSearch = SerieTextBox.Text?.Trim().ToLowerInvariant() ?? string.Empty;
 
@@ -124,7 +136,6 @@ namespace Advance_Control.Views.Dialogs
             }
             else
             {
-                // Filtrar refacciones localmente
                 var filtered = _allRefacciones.Where(rf =>
                 {
                     bool matchesMarca = string.IsNullOrWhiteSpace(marcaSearch) || 

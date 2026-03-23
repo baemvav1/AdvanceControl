@@ -96,7 +96,7 @@
                                 <NavigationViewItem
                                     Content="Mantenimiento" Icon="Repair" Tag="Mantenimiento" />
                                 <NavigationViewItem
-                                    Content="Levantamiento" Icon="Edit" Tag="Levantamiento" />
+                                    Content="Levantamientos" Icon="Edit" Tag="Levantamientos" />
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
