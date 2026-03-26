@@ -44,7 +44,7 @@
             Spacing="8">
             <Button
                 Click="ZoomOutButton_Click"
-                ToolTipService.ToolTip="Reducir zoom" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                ToolTipService.ToolTip="Reducir zoom">
                 <SymbolIcon Symbol="Remove" />
             </Button>
             <TextBlock
@@ -54,12 +54,12 @@
                 Text="100%" />
             <Button
                 Click="ZoomInButton_Click"
-                ToolTipService.ToolTip="Ampliar zoom" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                ToolTipService.ToolTip="Ampliar zoom">
                 <SymbolIcon Symbol="Add" />
             </Button>
             <Button
                 Click="ZoomResetButton_Click"
-                ToolTipService.ToolTip="Restablecer zoom" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                ToolTipService.ToolTip="Restablecer zoom">
                 <TextBlock Text="100%" />
             </Button>
         </StackPanel>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="Advance_Control.Views.Pages.ContactosPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -39,7 +39,7 @@
                     Background="Transparent"
                     BorderThickness="0"
                     Click="NuevoButton_Click"
-                    ToolTipService.ToolTip="Crear nuevo contacto" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                    ToolTipService.ToolTip="Crear nuevo contacto">
                     <SymbolIcon Symbol="Add" />
                 </Button>
             </StackPanel>
@@ -121,8 +121,8 @@
                     <Button
                         Click="SearchButton_Click"
                         Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
-                    <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                        Style="{StaticResource AccentButtonStyle}"/>
+                    <Button Click="ClearButton_Click" Content="Limpiar"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
@@ -193,7 +193,7 @@
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                                            Tag="{x:Bind}"/>
                                     </Grid>
                                     <Grid
                                         x:Name="Body"
@@ -418,8 +418,7 @@
                                                             Click="AgregarArea_Click"
                                                             ToolTipService.ToolTip="Asignar área"
                                                             Foreground="DarkGray"
-                                                            Tag="{x:Bind}"
-                                                            IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                            Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Add" />
                                                             </StackPanel>
@@ -477,8 +476,7 @@
                                                                             Background="Transparent" BorderThickness="0"
                                                                             Click="EliminarAreaAsignada_Click"
                                                                             Tag="{x:Bind}"
-                                                                            ToolTipService.ToolTip="Quitar área"
-                                                                            IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                                            ToolTipService.ToolTip="Quitar área">
                                                                             <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
                                                                         </Button>
                                                                     </Grid>

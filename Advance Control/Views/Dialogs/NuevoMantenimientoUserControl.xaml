@@ -84,7 +84,7 @@
                         Background="Transparent"
                         BorderThickness="0"
                         Click="ClearEquipoSelection_Click"
-                        ToolTipService.ToolTip="Limpiar selección"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                        ToolTipService.ToolTip="Limpiar selección"/>
                 </Grid>
             </Border>
         </StackPanel>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="Advance_Control.Views.Pages.MantenimientoPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -39,7 +39,7 @@
                     VerticalAlignment="Center"
                     Click="NuevoButton_Click"
                     Style="{StaticResource AccentButtonStyle}"
-                    ToolTipService.ToolTip="Crear nuevo mantenimiento" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                    ToolTipService.ToolTip="Crear nuevo mantenimiento">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <SymbolIcon Symbol="Add" />
                         <TextBlock VerticalAlignment="Center" Text="Nuevo" />
@@ -84,8 +84,8 @@
                     <Button
                         Click="SearchButton_Click"
                         Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
-                    <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                        Style="{StaticResource AccentButtonStyle}"/>
+                    <Button Click="ClearButton_Click" Content="Limpiar"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
@@ -144,7 +144,7 @@
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                            Tag="{x:Bind}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                                            Tag="{x:Bind}"/>
                                     </Grid>
                                     <Grid
                                         x:Name="Body"
@@ -268,7 +268,7 @@
                                                         AutomationProperties.Name="Atender mantenimiento"
                                                         Click="AtenderMantenimientoButton_Click"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Atender mantenimiento" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                        ToolTipService.ToolTip="Atender mantenimiento">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="Accept" />
                                                             <TextBlock Text="Atender" />
@@ -278,7 +278,7 @@
                                                         AutomationProperties.Name="Atender como contacto"
                                                         Click="AtenderComoButton_Click"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Atender mantenimiento como contacto" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                        ToolTipService.ToolTip="Atender mantenimiento como contacto">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="ContactInfo" />
                                                             <TextBlock Text="Atender Como..." />
@@ -288,7 +288,7 @@
                                                         AutomationProperties.Name="Eliminar mantenimiento"
                                                         Click="DeleteMantenimientoButton_Click"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Eliminar mantenimiento" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                        ToolTipService.ToolTip="Eliminar mantenimiento">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="Delete" />
                                                             <TextBlock Text="Eliminar" />
@@ -323,7 +323,7 @@
                     Text="No se encontraron mantenimientos con los filtros actuales." />
                 <Button IsHitTestVisible="True"
                     HorizontalAlignment="Center" Click="ClearButton_Click"
-                    Content="Limpiar filtros"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                    Content="Limpiar filtros"/>
             </StackPanel>
 
             <!--  Loading overlay  -->

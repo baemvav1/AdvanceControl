@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <UserControl
     x:Class="Advance_Control.Views.Dialogs.NuevoEquipoUserControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -154,7 +154,7 @@
             <Button
                 x:Name="CancelButton"
                 Click="CancelButton_Click"
-                Content="Cancelar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                Content="Cancelar"/>
         </StackPanel>
     </Grid>
 </UserControl>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="Advance_Control.Views.Pages.ProveedoresPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:local="using:Advance_Control.Views" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -27,7 +27,7 @@
                     FontSize="32" FontWeight="Bold" Text="Proveedores" />
                 <Button
                     x:Name="Nuevo" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
-                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo proveedor" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                    Click="NuevoButton_Click" ToolTipService.ToolTip="Crear nuevo proveedor">
                     <StackPanel Orientation="Horizontal" Spacing="4">
                         <SymbolIcon Symbol="Add" />
                         <TextBlock VerticalAlignment="Center" />
@@ -82,8 +82,8 @@
                     VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
                     <Button
                         Click="SearchButton_Click" Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
-                    <Button Click="ClearButton_Click" Content="Limpiar"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                        Style="{StaticResource AccentButtonStyle}"/>
+                    <Button Click="ClearButton_Click" Content="Limpiar"/>
                 </StackPanel>
             </Grid>
         </StackPanel>
@@ -143,7 +143,7 @@
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Tag="{x:Bind}"
-                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"/>
                                     </Grid>
                                     <Grid
                                         Grid.Row="1" 
@@ -190,7 +190,7 @@
                                                         <Button
                                                             x:Name="NuevaRelacionRefaccion" VerticalAlignment="Center" Background="WhiteSmoke" BorderThickness="0"
                                                             Click="NuevaRelacionRefaccion_Click" ToolTipService.ToolTip="Crear nueva relacion con refacción" Foreground="DarkGray"
-                                                            Tag="{x:Bind}" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                            Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Nueva Refaccion" VerticalAlignment="Center" />
                                                             </StackPanel>
@@ -249,13 +249,13 @@
                                                                             <Button
                                                                                 AutomationProperties.Name="Editar relación refacción" Background="Transparent" BorderThickness="0" Click="EditRelacionRefaccionButton_Click"
                                                                                 Tag="{x:Bind}"
-                                                                                ToolTipService.ToolTip="Editar precio/nota" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                                                ToolTipService.ToolTip="Editar precio/nota">
                                                                                 <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Edit" />
                                                                             </Button>
                                                                             <Button
                                                                                 AutomationProperties.Name="Eliminar relación refacción" Background="Transparent" BorderThickness="0" Click="DeleteRelacionRefaccionButton_Click"
                                                                                 Tag="{x:Bind}"
-                                                                                ToolTipService.ToolTip="Eliminar relación" IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                                                ToolTipService.ToolTip="Eliminar relación">
                                                                                 <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
                                                                             </Button>
                                                                         </StackPanel>
@@ -279,11 +279,11 @@
                                                     <Button
                                                         Click="EditProveedorButton_Click" Content="Editar"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Editar proveedor"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                                                        ToolTipService.ToolTip="Editar proveedor"/>
                                                     <Button
                                                         Click="DeleteProveedorButton_Click" Content="Eliminar"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Eliminar proveedor"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                                                        ToolTipService.ToolTip="Eliminar proveedor"/>
                                                 </StackPanel>
                                             </PivotItem>
                                         </Pivot>

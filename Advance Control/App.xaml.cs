@@ -764,6 +764,15 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar DashboardService para conteos del dashboard
+                    services.AddHttpClient<Services.Dashboard.IDashboardService, Services.Dashboard.DashboardService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar LevantamientoApiService con autenticación
                     services.AddHttpClient<Services.Levantamiento.ILevantamientoApiService, Services.Levantamiento.LevantamientoApiService>((sp, client) =>
                     {

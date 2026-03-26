@@ -304,34 +304,6 @@ namespace Advance_Control.ViewModels
             UpdateBackButtonState();
         }
 
-        // Niveles de acceso requeridos por página (1 = máximo acceso).
-        // Actualizar aquí cuando se quiera restringir páginas a niveles específicos.
-        private static readonly Dictionary<string, int> _pageAccessLevels = new()
-        {
-            { "Inicio",        8 },
-            { "Operaciones",   1 },
-            { "Asesoria",      1 },
-            { "Mantenimiento", 1 },
-            { "Levantamiento", 1 },
-            { "Clientes",      1 },
-            { "Entidades",     1 },
-            { "Contactos",     1 },
-            { "Equipos",       1 },
-            { "Refacciones",   1 },
-            { "Proveedores",   1 },
-            { "Servicios",     1 },
-            { "Ubicaciones",   1 },
-            { "Areas",         1 },
-            { "EstadoCuenta",  1 },
-            { "Conciliacion",  1 },
-            { "Facturas",      1 },
-            { "ReporteFinancieroFacturacion", 1 },
-            { "Correo",        1 },
-            { "Administracion", 1 },
-            { "DevOps", 1 },
-        };
-
-
         public async void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
             if (args.InvokedItemContainer is NavigationViewItem item)
@@ -369,6 +341,9 @@ namespace Advance_Control.ViewModels
                         && moduleKey != null
                         && _permisoUiRuntimeService.TryGetModulo(moduleKey, out _);
 
+                    // Permisos controlados exclusivamente desde la base de datos.
+                    // Si el módulo no existe en el catálogo DB, se permite el acceso
+                    // (se sincronizará en la siguiente inicialización).
                     if (hasUiPermissionRule
                         && moduleKey != null
                         && !_permisoUiRuntimeService.CanAccessModule(moduleKey))
@@ -377,13 +352,6 @@ namespace Advance_Control.ViewModels
                         return;
                     }
 
-                    if (!hasUiPermissionRule
-                        && _pageAccessLevels.TryGetValue(tag, out var required)
-                        && !AccessControlService.Current.CanAccess(required))
-                    {
-                        await MostrarAccesoDenegadoAsync();
-                        return;
-                    }
                     _navigationService.Navigate(tag);
                 }
             }
@@ -408,8 +376,9 @@ namespace Advance_Control.ViewModels
                     return _permisoUiRuntimeService.CanAccessModule(moduleKey);
             }
 
-            return !_pageAccessLevels.TryGetValue(tag, out var required)
-                || AccessControlService.Current.CanAccess(required);
+            // Si el catálogo de permisos aún no se cargó o el módulo no existe en DB,
+            // se permite el acceso; la restricción real vendrá del catálogo DB una vez sincronizado.
+            return true;
         }
 
         private async Task MostrarAccesoDenegadoAsync()

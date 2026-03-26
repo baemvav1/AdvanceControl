@@ -100,7 +100,8 @@
                 Sección: Métricas rápidas (placeholder)
                 ══════════════════════════════════════════
             -->
-            <StackPanel Grid.Row="2" Spacing="12">
+            <StackPanel Grid.Row="2" Spacing="12"
+                        Visibility="{x:Bind ViewModel.ShowCards, Mode=OneWay}">
                 <TextBlock
                     FontSize="16"
                     FontWeight="SemiBold"
@@ -142,12 +143,9 @@
                                 FontSize="32"
                                 FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="—" />
-                            <TextBlock
-                                FontSize="11"
-                                FontStyle="Italic"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                Text="Próximamente" />
+                                Text="{x:Bind ViewModel.TotalOperaciones, Mode=OneWay}" />
+                            <ProgressBar IsIndeterminate="True"
+                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
                         </StackPanel>
                     </Border>
 
@@ -175,12 +173,9 @@
                                 FontSize="32"
                                 FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="—" />
-                            <TextBlock
-                                FontSize="11"
-                                FontStyle="Italic"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                Text="Próximamente" />
+                                Text="{x:Bind ViewModel.TotalMantenimientos, Mode=OneWay}" />
+                            <ProgressBar IsIndeterminate="True"
+                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
                         </StackPanel>
                     </Border>
 
@@ -208,12 +203,9 @@
                                 FontSize="32"
                                 FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="—" />
-                            <TextBlock
-                                FontSize="11"
-                                FontStyle="Italic"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                Text="Próximamente" />
+                                Text="{x:Bind ViewModel.TotalClientes, Mode=OneWay}" />
+                            <ProgressBar IsIndeterminate="True"
+                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
                         </StackPanel>
                     </Border>
 
@@ -241,12 +233,9 @@
                                 FontSize="32"
                                 FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="—" />
-                            <TextBlock
-                                FontSize="11"
-                                FontStyle="Italic"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                Text="Próximamente" />
+                                Text="{x:Bind ViewModel.TotalEquipos, Mode=OneWay}" />
+                            <ProgressBar IsIndeterminate="True"
+                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -268,7 +257,6 @@
                     <Button
                         x:Name="IrOperaciones"
                         Click="IrOperaciones_Click"
-                        IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
                         Style="{StaticResource AccentButtonStyle}">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon FontSize="16" Glyph="&#xE9F9;" />
@@ -277,8 +265,7 @@
                     </Button>
                     <Button
                         x:Name="IrMantenimiento"
-                        Click="IrMantenimiento_Click"
-                        IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                        Click="IrMantenimiento_Click">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon FontSize="16" Glyph="&#xE90F;" />
                             <TextBlock VerticalAlignment="Center" Text="Mantenimiento" />
@@ -286,8 +273,7 @@
                     </Button>
                     <Button
                         x:Name="IrClientes"
-                        Click="IrClientes_Click"
-                        IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                        Click="IrClientes_Click">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon FontSize="16" Glyph="&#xE716;" />
                             <TextBlock VerticalAlignment="Center" Text="Clientes" />
@@ -347,7 +333,6 @@
                                 Grid.Column="1"
                                 Padding="6"
                                 Click="RefreshActividad_Click"
-                                IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"
                                 Style="{StaticResource SubtleButtonStyle}"
                                 ToolTipService.ToolTip="Actualizar">
                                 <FontIcon FontSize="14" Glyph="&#xE72C;" />

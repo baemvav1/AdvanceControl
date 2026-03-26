@@ -112,7 +112,7 @@
                     Margin="0,0,0,8"
                     HorizontalAlignment="Stretch"
                     Click="ProveedoresButton_Click"
-                    Content="Proveedores"  IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}"/>
+                    Content="Proveedores"/>
                 <Border
                     x:Name="ProveedoresGrid"
                     MinHeight="100"

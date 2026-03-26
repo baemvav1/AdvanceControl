@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.CheckOperacion;
+using Advance_Control.Services.Dashboard;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Session;
@@ -23,6 +24,7 @@ namespace Advance_Control.ViewModels
         private readonly IActivityService _activityService;
         private readonly IOperacionService _operacionService;
         private readonly ICheckOperacionService _checkService;
+        private readonly IDashboardService _dashboardService;
 
         private string _saludo = "Bienvenido";
         private string _nombreUsuario = string.Empty;
@@ -34,19 +36,27 @@ namespace Advance_Control.ViewModels
         private bool _isActividadEmpty = true;
         private bool _isTareasLoading;
         private bool _isTareasEmpty = true;
+        private int _totalOperaciones;
+        private int _totalMantenimientos;
+        private int _totalClientes;
+        private int _totalEquipos;
+        private bool _showCards;
+        private bool _isConteosLoading;
 
         public DashboardViewModel(
             IUserSessionService userSessionService,
             ILoggingService logger,
             IActivityService activityService,
             IOperacionService operacionService,
-            ICheckOperacionService checkService)
+            ICheckOperacionService checkService,
+            IDashboardService dashboardService)
         {
             _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             _logger             = logger             ?? throw new ArgumentNullException(nameof(logger));
             _activityService    = activityService    ?? throw new ArgumentNullException(nameof(activityService));
             _operacionService   = operacionService   ?? throw new ArgumentNullException(nameof(operacionService));
             _checkService       = checkService       ?? throw new ArgumentNullException(nameof(checkService));
+            _dashboardService   = dashboardService   ?? throw new ArgumentNullException(nameof(dashboardService));
             ActividadReciente = new ObservableCollection<ActivityItem>();
             OperacionesPendientes = new ObservableCollection<OperacionTodoItem>();
         }
@@ -119,6 +129,48 @@ namespace Advance_Control.ViewModels
         public ObservableCollection<ActivityItem> ActividadReciente { get; }
         public ObservableCollection<OperacionTodoItem> OperacionesPendientes { get; }
 
+        // ════════════════════════ CONTEOS DASHBOARD ════════════════════════
+
+        public int TotalOperaciones
+        {
+            get => _totalOperaciones;
+            set => SetProperty(ref _totalOperaciones, value);
+        }
+
+        public int TotalMantenimientos
+        {
+            get => _totalMantenimientos;
+            set => SetProperty(ref _totalMantenimientos, value);
+        }
+
+        public int TotalClientes
+        {
+            get => _totalClientes;
+            set => SetProperty(ref _totalClientes, value);
+        }
+
+        public int TotalEquipos
+        {
+            get => _totalEquipos;
+            set => SetProperty(ref _totalEquipos, value);
+        }
+
+        /// <summary>
+        /// Controla la visibilidad de los cards de conteo.
+        /// Nivel > 8 no puede ver los cards.
+        /// </summary>
+        public bool ShowCards
+        {
+            get => _showCards;
+            set => SetProperty(ref _showCards, value);
+        }
+
+        public bool IsConteosLoading
+        {
+            get => _isConteosLoading;
+            set => SetProperty(ref _isConteosLoading, value);
+        }
+
         public async Task LoadAsync(CancellationToken cancellationToken = default)
         {
             try
@@ -148,8 +200,43 @@ namespace Advance_Control.ViewModels
 
             // Cargar secciones de forma independiente
             await Task.WhenAll(
+                LoadConteosAsync(cancellationToken),
                 LoadActividadAsync(cancellationToken),
                 LoadOperacionesPendientesAsync(cancellationToken));
+        }
+
+        public async Task LoadConteosAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                IsConteosLoading = true;
+
+                if (!_userSessionService.IsLoaded)
+                    await _userSessionService.LoadAsync(cancellationToken);
+
+                var nivel = _userSessionService.Nivel;
+                ShowCards = nivel > 0 && nivel <= 8;
+
+                if (!ShowCards) return;
+
+                var conteos = await _dashboardService.GetConteosAsync(cancellationToken);
+                if (conteos != null)
+                {
+                    TotalOperaciones = conteos.TotalOperaciones;
+                    TotalMantenimientos = conteos.TotalMantenimientos;
+                    TotalClientes = conteos.TotalClientes;
+                    TotalEquipos = conteos.TotalEquipos;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al cargar conteos del dashboard", ex,
+                    "DashboardViewModel", "LoadConteosAsync", "Sistema", "DashboardPage");
+            }
+            finally
+            {
+                IsConteosLoading = false;
+            }
         }
 
         public async Task LoadActividadAsync(CancellationToken cancellationToken = default)
