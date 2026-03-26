@@ -189,8 +189,18 @@ namespace Advance_Control.ViewModels
         {
             try
             {
+                PermisosErrorMessage = null;
                 var scanner = AppServices.Get<IPermisoUiScanner>();
                 var modulos = await scanner.ScanAsync(cancellationToken);
+
+                if (modulos.Count == 0)
+                {
+                    PermisosErrorMessage = "El escáner no encontró módulos. Verifique que la aplicación se ejecuta desde el directorio del proyecto.";
+                    await _logger.LogWarningAsync("SyncPermisosAsync: el escáner retornó 0 módulos.", "UsuariosAdminViewModel", "SyncPermisosAsync");
+                    await LoadPermisosAsync(cancellationToken);
+                    return;
+                }
+
                 await _permisoUiService.SyncCatalogoAsync(new PermisoUiSyncRequestDto { Modulos = modulos }, cancellationToken);
                 await LoadPermisosAsync(cancellationToken);
             }

@@ -44,6 +44,11 @@ namespace Advance_Control.Services.PermisosUi
                         {
                             Modulos = scannedModules
                         }, cancellationToken).ConfigureAwait(false);
+                        await _logger.LogInformationAsync($"Sincronización automática completada: {scannedModules.Count} módulos procesados.", "PermisoUiRuntimeService", "InitializeAsync");
+                    }
+                    else
+                    {
+                        await _logger.LogWarningAsync("El escáner no encontró módulos. La raíz del proyecto no fue localizada o no contiene archivos XAML.", "PermisoUiRuntimeService", "InitializeAsync");
                     }
                 }
                 catch (Exception ex)

@@ -29,6 +29,8 @@ namespace Advance_Control.Services.PermisosUi
                 return new List<PermisoModuloSyncDto>();
             }
 
+            await _logger.LogInformationAsync($"Raíz del proyecto resuelta: {projectRoot}", "PermisoUiScanner", "ScanAsync");
+
             var modules = new List<PermisoModuloSyncDto>();
             var targets = new[]
             {
@@ -61,6 +63,7 @@ namespace Advance_Control.Services.PermisosUi
                 }
             }
 
+            await _logger.LogInformationAsync($"Escaneo completado: {modules.Count} módulos encontrados.", "PermisoUiScanner", "ScanAsync");
             return modules;
         }
 
@@ -129,22 +132,33 @@ namespace Advance_Control.Services.PermisosUi
 
         private static string? ResolveProjectRoot()
         {
-            var candidates = new[]
-            {
-                AppContext.BaseDirectory,
-                Environment.CurrentDirectory
-            }
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
+            var candidates = new List<string>();
 
-            foreach (var candidate in candidates)
+            if (!string.IsNullOrWhiteSpace(AppContext.BaseDirectory))
+                candidates.Add(AppContext.BaseDirectory);
+
+            if (!string.IsNullOrWhiteSpace(Environment.CurrentDirectory))
+                candidates.Add(Environment.CurrentDirectory);
+
+            if (!string.IsNullOrWhiteSpace(AppDomain.CurrentDomain.BaseDirectory))
+                candidates.Add(AppDomain.CurrentDomain.BaseDirectory);
+
+            var assemblyLocation = typeof(PermisoUiScanner).Assembly.Location;
+            if (!string.IsNullOrWhiteSpace(assemblyLocation))
+                candidates.Add(Path.GetDirectoryName(assemblyLocation)!);
+
+            foreach (var candidate in candidates.Distinct(StringComparer.OrdinalIgnoreCase))
             {
                 var current = new DirectoryInfo(candidate);
                 while (current != null)
                 {
                     var projectFile = Path.Combine(current.FullName, "Advance Control.csproj");
                     if (File.Exists(projectFile))
-                        return current.FullName;
+                    {
+                        var viewsFolder = Path.Combine(current.FullName, "Views", "Pages");
+                        if (Directory.Exists(viewsFolder))
+                            return current.FullName;
+                    }
 
                     current = current.Parent;
                 }
