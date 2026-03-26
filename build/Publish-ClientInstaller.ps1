@@ -126,7 +126,7 @@ try {
     $appInstallerContent = @"
 <?xml version="1.0" encoding="utf-8"?>
 <AppInstaller
-    xmlns="http://schemas.microsoft.com/appx/appinstaller/2021"
+    xmlns="http://schemas.microsoft.com/appx/appinstaller/2017/2"
     Version="$Version"
     Uri="$appInstallerUri">
     <MainPackage
@@ -136,7 +136,7 @@ try {
         ProcessorArchitecture="$Platform"
         Uri="$packageUri" />
     <UpdateSettings>
-        <OnLaunch HoursBetweenUpdateChecks="0" ShowPrompt="true" UpdateBlocksActivation="false" />
+        <OnLaunch HoursBetweenUpdateChecks="0" />
     </UpdateSettings>
 </AppInstaller>
 "@
