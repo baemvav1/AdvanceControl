@@ -9,8 +9,8 @@ using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using Advance_Control.Services.UserInfo;
-using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Activity;
+using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Views.Dialogs;
 using Advance_Control.Models;
 
@@ -24,8 +24,8 @@ namespace Advance_Control.Views.Pages
         public MttoViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
-        private readonly IContactoService _contactoService;
         private readonly IActivityService _activityService;
+        private readonly IMantenimientoService _mantenimientoService;
 
         public MantenimientoPage()
         {
@@ -38,11 +38,11 @@ namespace Advance_Control.Views.Pages
             // Resolver el servicio de información de usuario desde DI
             _userInfoService = AppServices.Get<IUserInfoService>();
 
-            // Resolver el servicio de contactos desde DI
-            _contactoService = AppServices.Get<IContactoService>();
-
             // Resolver el servicio de actividades desde DI
             _activityService = AppServices.Get<IActivityService>();
+
+            // Resolver el servicio de mantenimiento desde DI
+            _mantenimientoService = AppServices.Get<IMantenimientoService>();
 
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(MantenimientoPage));
@@ -263,23 +263,30 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                // Obtener todos los contactos disponibles
-                var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto());
-
-                if (contactos == null || contactos.Count == 0)
+                // Obtener técnicos disponibles filtrados por área del equipo
+                var identificador = mantenimiento.Identificador;
+                if (string.IsNullOrWhiteSpace(identificador))
                 {
-                    await _notificacionService.MostrarAsync("Sin contactos", "No hay contactos disponibles para atender el mantenimiento.");
+                    await _notificacionService.MostrarAsync("Error", "El mantenimiento no tiene un equipo asociado.");
                     return;
                 }
 
-                // Crear ListView para seleccionar contacto
-                var contactoListView = new ListView
+                var tecnicos = await _mantenimientoService.GetTecnicosDisponiblesAsync(identificador);
+
+                if (tecnicos == null || tecnicos.Count == 0)
+                {
+                    await _notificacionService.MostrarAsync("Sin técnicos", "No hay técnicos disponibles para atender este mantenimiento en el área del equipo.");
+                    return;
+                }
+
+                // Crear ListView para seleccionar técnico
+                var tecnicoListView = new ListView
                 {
                     SelectionMode = ListViewSelectionMode.Single,
                     MaxHeight = 400
                 };
 
-                foreach (var contacto in contactos)
+                foreach (var tecnico in tecnicos)
                 {
                     var itemContent = new StackPanel
                     {
@@ -288,28 +295,28 @@ namespace Advance_Control.Views.Pages
                         {
                             new TextBlock
                             {
-                                Text = contacto.NombreCompleto,
+                                Text = tecnico.NombreCompleto,
                                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
                             },
                             new TextBlock
                             {
-                                Text = contacto.Cargo ?? "Sin cargo",
+                                Text = $"{tecnico.TipoUsuario} — {tecnico.Cargo ?? "Sin cargo"}",
                                 FontSize = 12,
                                 Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray)
                             },
                             new TextBlock
                             {
-                                Text = !string.IsNullOrWhiteSpace(contacto.Correo) ? contacto.Correo :
-                                       !string.IsNullOrWhiteSpace(contacto.Telefono) ? contacto.Telefono : "",
+                                Text = !string.IsNullOrWhiteSpace(tecnico.Correo) ? tecnico.Correo :
+                                       !string.IsNullOrWhiteSpace(tecnico.Telefono) ? tecnico.Telefono : "",
                                 FontSize = 11,
                                 Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.DimGray),
-                                Visibility = (!string.IsNullOrWhiteSpace(contacto.Correo) || !string.IsNullOrWhiteSpace(contacto.Telefono))
+                                Visibility = (!string.IsNullOrWhiteSpace(tecnico.Correo) || !string.IsNullOrWhiteSpace(tecnico.Telefono))
                                     ? Visibility.Visible : Visibility.Collapsed
                             }
                         }
                     };
 
-                    contactoListView.Items.Add(new ListViewItem { Content = itemContent, Tag = contacto });
+                    tecnicoListView.Items.Add(new ListViewItem { Content = itemContent, Tag = tecnico });
                 }
 
                 var dialogContent = new StackPanel
@@ -319,17 +326,17 @@ namespace Advance_Control.Views.Pages
                     {
                         new TextBlock
                         {
-                            Text = $"Seleccione un contacto para atender el mantenimiento #{mantenimiento.IdMantenimiento}:",
+                            Text = $"Seleccione un técnico para atender el mantenimiento #{mantenimiento.IdMantenimiento}:",
                             TextWrapping = TextWrapping.Wrap,
                             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
                         },
-                        contactoListView
+                        tecnicoListView
                     }
                 };
 
                 var dialog = new ContentDialog
                 {
-                    Title = "Atender Como Contacto",
+                    Title = "Atender Como Técnico",
                     Content = dialogContent,
                     PrimaryButtonText = "Atender",
                     CloseButtonText = "Cancelar",
@@ -339,15 +346,14 @@ namespace Advance_Control.Views.Pages
 
                 var result = await dialog.ShowAsync();
 
-                if (result == ContentDialogResult.Primary && contactoListView.SelectedItem is ListViewItem selectedItem 
-                    && selectedItem.Tag is ContactoDto selectedContacto)
+                if (result == ContentDialogResult.Primary && tecnicoListView.SelectedItem is ListViewItem selectedItem 
+                    && selectedItem.Tag is TecnicoDisponibleDto selectedTecnico)
                 {
-                    // Atender el mantenimiento con el contacto seleccionado
                     var tipoMantenimiento = mantenimiento.TipoMantenimiento ?? "sin tipo especificado";
                     var confirmDialog = new ContentDialog
                     {
                         Title = "Confirmar atención",
-                        Content = $"¿Está seguro de que desea marcar como atendido el mantenimiento #{mantenimiento.IdMantenimiento} ({tipoMantenimiento}) por el contacto \"{selectedContacto.NombreCompleto}\"?",
+                        Content = $"¿Está seguro de que desea marcar como atendido el mantenimiento #{mantenimiento.IdMantenimiento} ({tipoMantenimiento}) por \"{selectedTecnico.NombreCompleto}\"?",
                         PrimaryButtonText = "Atender",
                         CloseButtonText = "Cancelar",
                         DefaultButton = ContentDialogButton.Primary,
@@ -358,15 +364,16 @@ namespace Advance_Control.Views.Pages
 
                     if (confirmResult == ContentDialogResult.Primary)
                     {
+                        // Usar CredencialId del técnico (no ContactoId) — id_atendio referencia credenciales(id)
                         var success = await ViewModel.UpdateAtendidoAsync(
                             mantenimiento.IdMantenimiento.Value,
-                            Convert.ToInt32(selectedContacto.ContactoId) // Conversión segura de long a int
+                            (int)selectedTecnico.CredencialId
                         );
 
                         if (success)
                         {
-                            _activityService.Registrar("Mantenimiento", "Atendido como tipo");
-                            await _notificacionService.MostrarAsync("Mantenimiento atendido", $"El mantenimiento se ha marcado como atendido por {selectedContacto.NombreCompleto}.");
+                            _activityService.Registrar("Mantenimiento", "Atendido como técnico");
+                            await _notificacionService.MostrarAsync("Mantenimiento atendido", $"El mantenimiento se ha marcado como atendido por {selectedTecnico.NombreCompleto}.");
                         }
                         else
                         {
@@ -377,7 +384,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al atender mantenimiento como contacto: {ex.GetType().Name} - {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Error al atender mantenimiento como técnico: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.");
             }
         }

@@ -45,5 +45,14 @@ namespace Advance_Control.Services.Mantenimiento
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<bool> UpdateAtendidoAsync(int idMantenimiento, int idAtendio, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene los técnicos disponibles para atender un mantenimiento,
+        /// filtrados por el área del equipo asociado
+        /// </summary>
+        /// <param name="identificador">Identificador del equipo</param>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Lista de técnicos disponibles (nivel TecSup o Tecnico)</returns>
+        Task<List<TecnicoDisponibleDto>> GetTecnicosDisponiblesAsync(string identificador, CancellationToken cancellationToken = default);
     }
 }

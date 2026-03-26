@@ -222,5 +222,55 @@ namespace Advance_Control.Services.Mantenimiento
                 throw;
             }
         }
+
+        /// <summary>
+        /// Obtiene los técnicos disponibles para atender un mantenimiento,
+        /// filtrados por el área del equipo asociado.
+        /// </summary>
+        public async Task<List<TecnicoDisponibleDto>> GetTecnicosDisponiblesAsync(string identificador, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var baseUrl = _endpoints.GetEndpoint("api", "Mantenimiento");
+                var url = $"{baseUrl}/tecnicos?identificador={Uri.EscapeDataString(identificador)}";
+
+                await _logger.LogInformationAsync(
+                    $"Obteniendo técnicos disponibles para equipo {identificador} en: {url}",
+                    "MantenimientoService",
+                    "GetTecnicosDisponiblesAsync");
+
+                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al obtener técnicos disponibles. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "MantenimientoService",
+                        "GetTecnicosDisponiblesAsync");
+                    return new List<TecnicoDisponibleDto>();
+                }
+
+                var tecnicos = await response.Content.ReadFromJsonAsync<List<TecnicoDisponibleDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                await _logger.LogInformationAsync(
+                    $"Se obtuvieron {tecnicos?.Count ?? 0} técnicos disponibles para equipo {identificador}",
+                    "MantenimientoService",
+                    "GetTecnicosDisponiblesAsync");
+
+                return tecnicos ?? new List<TecnicoDisponibleDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al obtener técnicos disponibles", ex, "MantenimientoService", "GetTecnicosDisponiblesAsync");
+                return new List<TecnicoDisponibleDto>();
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al obtener técnicos disponibles", ex, "MantenimientoService", "GetTecnicosDisponiblesAsync");
+                return new List<TecnicoDisponibleDto>();
+            }
+        }
     }
 }
