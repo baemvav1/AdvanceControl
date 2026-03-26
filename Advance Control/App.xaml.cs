@@ -753,6 +753,7 @@ namespace Advance_Control
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     services.AddSingleton<Services.Email.IEmailService, Services.Email.EmailService>();
+                    services.AddSingleton<Services.Theme.IThemeService, Services.Theme.ThemeService>();
                     services.AddTransient<ViewModels.CorreoViewModel>();
 
                     // Registrar ActivityService para el dashboard

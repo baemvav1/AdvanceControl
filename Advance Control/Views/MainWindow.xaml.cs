@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Session;
+using Advance_Control.Services.Theme;
 
 namespace Advance_Control
 {
@@ -12,14 +13,19 @@ namespace Advance_Control
     {
         private readonly MainViewModel _viewModel;
         private readonly IUserSessionService _sessionService;
+        private readonly IThemeService _themeService;
         private bool _autoLoginAttempted;
 
         // Constructor adapted for DI to inject MainViewModel
-        public MainWindow(MainViewModel viewModel, IUserSessionService sessionService)
+        public MainWindow(MainViewModel viewModel, IUserSessionService sessionService, IThemeService themeService)
         {
             this.InitializeComponent();
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             _sessionService = sessionService ?? throw new ArgumentNullException(nameof(sessionService));
+            _themeService = themeService ?? throw new ArgumentNullException(nameof(themeService));
+
+            // Aplicar tema guardado antes de mostrar contenido
+            _themeService.Initialize(RootGrid);
 
             // Set the DataContext to the ViewModel on the root Grid
             // Note: Window class in WinUI 3 doesn't have a DataContext property

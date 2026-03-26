@@ -293,6 +293,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.CorreoPage>("Correo");
             _navigationService.Configure<Views.Pages.AdministracionPage>("Administracion");
             _navigationService.Configure<Views.Pages.DevOpsPage>("DevOps");
+            _navigationService.Configure<Views.Pages.SettingsPage>("Settings");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
@@ -306,6 +307,13 @@ namespace Advance_Control.ViewModels
 
         public async void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
+            // El engranaje de Settings no tiene InvokedItemContainer; se detecta con IsSettingsInvoked
+            if (args.IsSettingsInvoked)
+            {
+                _navigationService.Navigate("Settings");
+                return;
+            }
+
             if (args.InvokedItemContainer is NavigationViewItem item)
             {
                 var tag = item.Tag?.ToString();
