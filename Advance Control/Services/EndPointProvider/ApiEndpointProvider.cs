@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Advance_Control.Settings;
+using Microsoft.Extensions.Options;
 using System;
 using System.Linq;
 
@@ -8,17 +9,27 @@ namespace Advance_Control.Services.EndPointProvider
     {
         private readonly ExternalApiOptions _options;
         private readonly string _baseUrlNormalized;
+        private readonly bool _isProductionMode;
 
-        public ApiEndpointProvider(IOptions<ExternalApiOptions> options)
+        public ApiEndpointProvider(IOptions<ExternalApiOptions> options, IOptions<DevelopmentModeOptions> devModeOptions)
         {
             _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-            if (string.IsNullOrWhiteSpace(_options.BaseUrl))
-                throw new ArgumentException("ExternalApi:BaseUrl must be configured in appsettings.json");
+            var devMode = devModeOptions?.Value ?? new DevelopmentModeOptions();
+
+            // Producción = DevelopmentMode.Enabled es false (valor por defecto)
+            _isProductionMode = !devMode.Enabled;
+
+            // Seleccionar la URL según el modo
+            string selectedUrl;
+            if (_isProductionMode && !string.IsNullOrWhiteSpace(_options.ProductionUrl))
+                selectedUrl = _options.ProductionUrl;
+            else if (!string.IsNullOrWhiteSpace(_options.BaseUrl))
+                selectedUrl = _options.BaseUrl;
+            else
+                throw new ArgumentException("ExternalApi:BaseUrl o ExternalApi:ProductionUrl debe estar configurado en appsettings.json");
 
             // Normalize base URL (remove trailing slash)
-            _baseUrlNormalized = _options.BaseUrl.Trim();
-            if (_baseUrlNormalized.EndsWith("/"))
-                _baseUrlNormalized = _baseUrlNormalized.TrimEnd('/');
+            _baseUrlNormalized = selectedUrl.Trim().TrimEnd('/');
         }
 
         public string GetApiBaseUrl() => _baseUrlNormalized;

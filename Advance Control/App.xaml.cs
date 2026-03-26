@@ -73,7 +73,8 @@ namespace Advance_Control
             {
                 ["ExternalApi"] = new JsonObject
                 {
-                    ["BaseUrl"] = GetDefaultApiBaseUrl()
+                    ["BaseUrl"] = GetDefaultApiBaseUrl(),
+                    ["ProductionUrl"] = GetDefaultApiProductionUrl()
                 }
             };
 
@@ -104,6 +105,30 @@ namespace Advance_Control
             }
 
             return "https://localhost:7055/";
+        }
+
+        private static string GetDefaultApiProductionUrl()
+        {
+            if (!File.Exists(PackagedConfigurationFile))
+            {
+                return "http://187.124.243.107:5030/";
+            }
+
+            using var stream = File.OpenRead(PackagedConfigurationFile);
+            using var document = JsonDocument.Parse(stream);
+
+            if (document.RootElement.TryGetProperty("ExternalApi", out var externalApiSection)
+                && externalApiSection.TryGetProperty("ProductionUrl", out var urlElement)
+                && urlElement.ValueKind == JsonValueKind.String)
+            {
+                var configuredUrl = urlElement.GetString();
+                if (!string.IsNullOrWhiteSpace(configuredUrl))
+                {
+                    return configuredUrl.Trim();
+                }
+            }
+
+            return "http://187.124.243.107:5030/";
         }
 
         public App()
