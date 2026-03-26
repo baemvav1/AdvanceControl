@@ -164,7 +164,7 @@ namespace Advance_Control
                         }
                         else
                         {
-                            client.Timeout = TimeSpan.FromSeconds(5);
+                            client.Timeout = TimeSpan.FromSeconds(15);
                         }
                     });
 
@@ -195,7 +195,7 @@ namespace Advance_Control
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
                             ? System.Threading.Timeout.InfiniteTimeSpan
-                            : TimeSpan.FromSeconds(5);
+                            : TimeSpan.FromSeconds(15);
                     });
 
                     // Singleton: una sola instancia para toda la vida de la app.
