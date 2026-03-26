@@ -129,7 +129,7 @@ namespace Advance_Control.Services.Entidades
                 await _logger.LogInformationAsync($"Creando entidad en: {url}", "EntidadService", "CreateEntidadAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -201,7 +201,7 @@ namespace Advance_Control.Services.Entidades
                 await _logger.LogInformationAsync($"Actualizando entidad en: {url}", "EntidadService", "UpdateEntidadAsync");
 
                 // Realizar la petición PUT
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -243,7 +243,7 @@ namespace Advance_Control.Services.Entidades
                 await _logger.LogInformationAsync($"Eliminando entidad en: {url}", "EntidadService", "DeleteEntidadAsync");
 
                 // Realizar la petición DELETE
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)

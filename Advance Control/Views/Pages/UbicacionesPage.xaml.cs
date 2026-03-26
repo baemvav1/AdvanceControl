@@ -186,7 +186,7 @@ namespace Advance_Control.Views.Pages
                 {
                     var messageType = typeElement.GetString();
 
-                    if (messageType == "markerMoved")
+                    if (messageType == "markerMoved" || messageType == "placeSelected")
                     {
                         // Extract coordinates
                         if (jsonDoc.TryGetValue("lat", out var latElement) && 
@@ -247,46 +247,56 @@ namespace Advance_Control.Views.Pages
                                     }
                                 }
 
-                                // Update search box with the formatted address for visual validation
-                                // This provides the user with immediate feedback about the selected location
-                                var searchBoxUpdated = false;
-                                if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
+                                // Extraer nombre del Place si es placeSelected
+                                string? placeName = null;
+                                if (messageType == "placeSelected" && 
+                                    jsonDoc.TryGetValue("placeName", out var placeNameElement) &&
+                                    placeNameElement.ValueKind == JsonValueKind.String)
                                 {
-                                    var addressToDisplay = _currentDireccionCompleta;
-                                    var enqueued = this.DispatcherQueue.TryEnqueue(() =>
-                                    {
-                                        try
-                                        {
-                                            if (MapSearchBox != null)
-                                            {
-                                                MapSearchBox.Text = addressToDisplay;
-                                            }
-                                        }
-                                        catch (Exception ex)
-                                        {
-                                            // Fire-and-forget logging to avoid blocking the UI thread
-                                            // We don't await here since this is a UI thread callback
-                                            _ = _loggingService.LogErrorAsync("Error al actualizar campo de búsqueda", ex, "UbicacionesPage", "CoreWebView2_WebMessageReceived");
-                                        }
-                                    });
-                                    
-                                    searchBoxUpdated = enqueued;
-                                    
-                                    if (!enqueued)
-                                    {
-                                        await _loggingService.LogWarningAsync("No se pudo encolar la actualización del campo de búsqueda", "UbicacionesPage", "CoreWebView2_WebMessageReceived");
-                                    }
+                                    placeName = placeNameElement.GetString();
                                 }
 
-                                var logMessage = $"Ubicación actualizada: Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}";
-                                if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
+                                // Actualizar campos del formulario en el hilo de UI
+                                var addressToDisplay = _currentDireccionCompleta;
+                                var placeNameToDisplay = placeName;
+                                var enqueued = this.DispatcherQueue.TryEnqueue(() =>
                                 {
-                                    logMessage += $", Dirección={_currentDireccionCompleta}";
-                                    if (searchBoxUpdated)
+                                    try
                                     {
-                                        logMessage += ". Campo de búsqueda actualizado con la dirección";
+                                        // Siempre actualizar el buscador con la dirección
+                                        if (MapSearchBox != null && !string.IsNullOrWhiteSpace(addressToDisplay))
+                                        {
+                                            MapSearchBox.Text = addressToDisplay;
+                                        }
+
+                                        // Auto-llenar Descripción con la dirección completa
+                                        if (DescripcionTextBox != null && !string.IsNullOrWhiteSpace(addressToDisplay))
+                                        {
+                                            DescripcionTextBox.Text = addressToDisplay;
+                                        }
+
+                                        // Si es un Place, auto-llenar Nombre con el nombre del lugar
+                                        if (NombreTextBox != null && !string.IsNullOrWhiteSpace(placeNameToDisplay))
+                                        {
+                                            NombreTextBox.Text = placeNameToDisplay;
+                                        }
                                     }
+                                    catch (Exception ex)
+                                    {
+                                        _ = _loggingService.LogErrorAsync("Error al actualizar campos del formulario", ex, "UbicacionesPage", "CoreWebView2_WebMessageReceived");
+                                    }
+                                });
+                                
+                                if (!enqueued)
+                                {
+                                    await _loggingService.LogWarningAsync("No se pudo encolar la actualización de los campos del formulario", "UbicacionesPage", "CoreWebView2_WebMessageReceived");
                                 }
+
+                                var logMessage = $"Ubicación actualizada ({messageType}): Lat={lat}, Lng={lng}, Ciudad={_currentCiudad}, Estado={_currentEstado}, País={_currentPais}";
+                                if (!string.IsNullOrWhiteSpace(_currentDireccionCompleta))
+                                    logMessage += $", Dirección={_currentDireccionCompleta}";
+                                if (!string.IsNullOrWhiteSpace(placeName))
+                                    logMessage += $", Place={placeName}";
                                 
                                 await _loggingService.LogInformationAsync(
                                     logMessage, 
@@ -426,18 +436,34 @@ namespace Advance_Control.Views.Pages
             height: 100%;
             width: 100%;
         }}
+        @keyframes marker-drop {{
+            0% {{ transform: translateY(-200px); opacity: 0; }}
+            60% {{ transform: translateY(10px); opacity: 1; }}
+            80% {{ transform: translateY(-5px); }}
+            100% {{ transform: translateY(0); }}
+        }}
+        @keyframes marker-bounce {{
+            0%, 100% {{ transform: translateY(0); }}
+            25% {{ transform: translateY(-20px); }}
+            50% {{ transform: translateY(0); }}
+            75% {{ transform: translateY(-10px); }}
+        }}
+        .marker-drop {{ animation: marker-drop 0.5s ease-out; }}
+        .marker-bounce {{ animation: marker-bounce 0.6s ease-in-out infinite; }}
     </style>
 </head>
 <body>
     <div id='map'></div>
     
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places'></script>
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places,marker'></script>
     <script>
-        // Constants
-        const SEARCH_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
-        const EDIT_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/red-dot.png';
-        const SELECTED_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/green-dot.png';
-        const MARKER_ICON_SIZE = 40;
+        // Pin colors for different marker types
+        const PIN_COLORS = {{
+            search:   {{ background: '#4285F4', border: '#1a73e8', glyph: '#FFFFFF' }},
+            edit:     {{ background: '#EA4335', border: '#d93025', glyph: '#FFFFFF' }},
+            selected: {{ background: '#34A853', border: '#0d652d', glyph: '#FFFFFF' }},
+            default:  {{ background: '#FF6B6B', border: '#CC5555', glyph: '#FFFFFF' }}
+        }};
 
         let map;
         let ubicaciones = {ubicacionesJson};
@@ -460,12 +486,51 @@ namespace Advance_Control.Views.Pages
             return div.innerHTML;
         }}
 
+        // Crea un PinElement con colores personalizados
+        function createPinContent(colorKey) {{
+            const colors = PIN_COLORS[colorKey] || PIN_COLORS.default;
+            const pin = new google.maps.marker.PinElement({{
+                background: colors.background,
+                borderColor: colors.border,
+                glyphColor: colors.glyph
+            }});
+            return pin.element;
+        }}
+
+        // Crea un elemento DOM con imagen para iconos personalizados
+        function createIconContent(iconUrl) {{
+            const img = document.createElement('img');
+            img.src = iconUrl;
+            img.style.width = '40px';
+            img.style.height = '40px';
+            return img;
+        }}
+
+        // Aplica animación CSS al content de un marker
+        function animateMarker(marker, animClass) {{
+            if (marker && marker.content) {{
+                marker.content.classList.add(animClass);
+                // Remover clase después de la animación para poder re-aplicar
+                if (animClass === 'marker-drop') {{
+                    setTimeout(() => marker.content.classList.remove(animClass), 500);
+                }}
+            }}
+        }}
+
+        // Remueve un AdvancedMarkerElement del mapa
+        function removeMarker(marker) {{
+            if (marker) {{
+                marker.map = null;
+            }}
+        }}
+
         function initMap() {{
-            // Crear el mapa
+            // Crear el mapa con Map ID para AdvancedMarkerElement
             map = new google.maps.Map(document.getElementById('map'), {{
                 center: {{ lat: {lat}, lng: {lng} }},
                 zoom: {zoom},
-                mapTypeId: 'roadmap'
+                mapTypeId: 'roadmap',
+                mapId: '3457a32dcb6331583ad98107'
             }});
 
             // Crear InfoWindow global
@@ -477,9 +542,16 @@ namespace Advance_Control.Views.Pages
             // Renderizar las ubicaciones (markers)
             renderUbicaciones();
 
-            // Add map click listener for placing marker when form is visible
+            // Click listener: detectar click normal o click sobre un Place/POI
             map.addListener('click', (event) => {{
-                if (isFormVisible) {{
+                if (!isFormVisible) return;
+
+                if (event.placeId) {{
+                    // Click sobre un negocio/lugar (POI) — obtener nombre del Place
+                    event.stop(); // Evitar que se abra el infoWindow default de Google
+                    handlePlaceClick(event.placeId, event.latLng);
+                }} else {{
+                    // Click normal en el mapa — colocar pin sin nombre
                     placeMarker(event.latLng);
                 }}
             }});
@@ -503,7 +575,7 @@ namespace Advance_Control.Views.Pages
                     
                     // Remove previous search marker if exists
                     if (searchMarker) {{
-                        searchMarker.setMap(null);
+                        removeMarker(searchMarker);
                     }}
 
                     // Center map on the found location
@@ -512,16 +584,18 @@ namespace Advance_Control.Views.Pages
                         map.setZoom(15);
 
                         // Add a marker for the search result
-                        searchMarker = new google.maps.Marker({{
+                        searchMarker = new google.maps.marker.AdvancedMarkerElement({{
                             position: place.geometry.location,
                             map: map,
                             title: place.name,
-                            icon: {{
-                                url: SEARCH_MARKER_ICON,
-                                scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
-                            }},
-                            animation: google.maps.Animation.DROP
+                            content: createPinContent('search')
                         }});
+                        animateMarker(searchMarker, 'marker-drop');
+
+                        // Auto-colocar el pin de edición en la ubicación del Place encontrado
+                        if (isFormVisible) {{
+                            placeMarkerFromPlace(place);
+                        }}
 
                         // Show info window with search result
                         const safeName = escapeHtml(place.name || 'Ubicación encontrada');
@@ -537,7 +611,7 @@ namespace Advance_Control.Views.Pages
                         `;
                         
                         infoWindow.setContent(content);
-                        infoWindow.open(map, searchMarker);
+                        infoWindow.open({{ anchor: searchMarker, map: map }});
                     }}
                 }} else {{
                     // Show error to user via InfoWindow
@@ -571,31 +645,118 @@ namespace Advance_Control.Views.Pages
             }});
         }}
 
+        // Maneja click sobre un Place/POI del mapa — consulta detalles y coloca pin
+        function handlePlaceClick(placeId, latLng) {{
+            const service = new google.maps.places.PlacesService(map);
+            service.getDetails({{
+                placeId: placeId,
+                fields: ['name', 'geometry', 'formatted_address']
+            }}, (place, status) => {{
+                if (status === google.maps.places.PlacesServiceStatus.OK && place) {{
+                    const location = place.geometry ? place.geometry.location : latLng;
+                    
+                    // Construir un objeto compatible con placeMarkerFromPlace
+                    const placeData = {{
+                        name: place.name,
+                        formatted_address: place.formatted_address,
+                        geometry: {{ location: location }}
+                    }};
+                    placeMarkerFromPlace(placeData);
+                }} else {{
+                    // Si falla Place Details, colocar pin normal
+                    placeMarker(latLng);
+                }}
+            }});
+        }}
+
         function placeMarker(location) {{
             // Remove existing edit marker
             if (editMarker) {{
-                editMarker.setMap(null);
+                removeMarker(editMarker);
             }}
 
             // Create new marker
-            editMarker = new google.maps.Marker({{
+            editMarker = new google.maps.marker.AdvancedMarkerElement({{
                 position: location,
                 map: map,
-                draggable: true,
-                icon: {{
-                    url: EDIT_MARKER_ICON,
-                    scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
-                }},
+                gmpDraggable: true,
                 title: 'Nueva ubicación',
-                animation: google.maps.Animation.DROP
+                content: createPinContent('edit')
             }});
+            animateMarker(editMarker, 'marker-drop');
 
             // Update form with coordinates
             updateFormWithLocation(location);
 
             // Add drag end listener
-            editMarker.addListener('dragend', (event) => {{
-                updateFormWithLocation(event.latLng);
+            editMarker.addEventListener('gmp-dragend', () => {{
+                const pos = editMarker.position;
+                updateFormWithLocation(new google.maps.LatLng(pos.lat, pos.lng));
+            }});
+        }}
+
+        // Coloca el pin de edición desde un resultado de Google Places (incluye nombre del Place)
+        function placeMarkerFromPlace(place) {{
+            if (!place.geometry || !place.geometry.location) return;
+
+            const location = place.geometry.location;
+
+            // Remove existing edit marker
+            if (editMarker) {{
+                removeMarker(editMarker);
+            }}
+
+            // Create new draggable marker
+            editMarker = new google.maps.marker.AdvancedMarkerElement({{
+                position: location,
+                map: map,
+                gmpDraggable: true,
+                title: place.name || 'Nueva ubicación',
+                content: createPinContent('edit')
+            }});
+            animateMarker(editMarker, 'marker-drop');
+
+            // Enviar datos del Place a C# (incluye nombre)
+            const lat = location.lat();
+            const lng = location.lng();
+
+            geocoder.geocode({{ location: location }}, (results, status) => {{
+                let addressData = {{}};
+                
+                if (status === 'OK' && results && results[0]) {{
+                    addressData.formatted = results[0].formatted_address;
+                    addressData.place_id = results[0].place_id;
+                    
+                    results[0].address_components.forEach(component => {{
+                        if (component.types.includes('locality')) {{
+                            addressData.city = component.long_name;
+                        }}
+                        if (component.types.includes('administrative_area_level_1')) {{
+                            addressData.state = component.long_name;
+                        }}
+                        if (component.types.includes('country')) {{
+                            addressData.country = component.long_name;
+                        }}
+                    }});
+                }}
+
+                const message = JSON.stringify({{
+                    type: 'placeSelected',
+                    lat: lat,
+                    lng: lng,
+                    placeName: place.name || '',
+                    address: addressData
+                }});
+
+                if (window.chrome && window.chrome.webview) {{
+                    window.chrome.webview.postMessage(message);
+                }}
+            }});
+
+            // Add drag end listener (al arrastrar pierde el nombre del place)
+            editMarker.addEventListener('gmp-dragend', () => {{
+                const pos = editMarker.position;
+                updateFormWithLocation(new google.maps.LatLng(pos.lat, pos.lng));
             }});
         }}
 
@@ -644,7 +805,7 @@ namespace Advance_Control.Views.Pages
             
             // Remove marker if form is hidden
             if (!visible && editMarker) {{
-                editMarker.setMap(null);
+                removeMarker(editMarker);
                 editMarker = null;
             }}
         }}
@@ -659,7 +820,7 @@ namespace Advance_Control.Views.Pages
 
         function renderUbicaciones() {{
             // Limpiar markers existentes
-            markers.forEach(marker => marker.setMap(null));
+            markers.forEach(marker => removeMarker(marker));
             markers = [];
 
             // Renderizar cada ubicación como marker
@@ -669,21 +830,25 @@ namespace Advance_Control.Views.Pages
                         return;
                     }}
 
-                    const marker = new google.maps.Marker({{
+                    const content = ubicacion.icono 
+                        ? createIconContent(ubicacion.icono) 
+                        : createPinContent('default');
+
+                    const marker = new google.maps.marker.AdvancedMarkerElement({{
                         position: {{ 
                             lat: parseFloat(ubicacion.latitud), 
                             lng: parseFloat(ubicacion.longitud) 
                         }},
                         map: map,
                         title: ubicacion.nombre,
-                        icon: ubicacion.icono || undefined
+                        content: content
                     }});
 
                     markers.push(marker);
 
                     // Agregar listener para click con InfoWindow
-                    marker.addListener('click', () => {{
-                        showUbicacionInfo(ubicacion, marker.getPosition());
+                    marker.addEventListener('gmp-click', () => {{
+                        showUbicacionInfo(ubicacion, marker.position);
                     }});
                 }} catch (error) {{
                     console.error('Error al renderizar ubicación', ubicacion.nombre, error);
@@ -730,26 +895,23 @@ namespace Advance_Control.Views.Pages
 
             // Remove previous selected location marker if exists
             if (selectedLocationMarker) {{
-                selectedLocationMarker.setMap(null);
+                removeMarker(selectedLocationMarker);
             }}
 
             // Create a new marker for the selected location with distinctive green color
-            selectedLocationMarker = new google.maps.Marker({{
+            selectedLocationMarker = new google.maps.marker.AdvancedMarkerElement({{
                 position: position,
                 map: map,
                 title: ubicacion.nombre,
-                icon: {{
-                    url: SELECTED_MARKER_ICON,
-                    scaledSize: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE)
-                }},
-                animation: google.maps.Animation.BOUNCE,
-                zIndex: 9999 // Ensure it's on top
+                content: createPinContent('selected'),
+                zIndex: 9999
             }});
+            animateMarker(selectedLocationMarker, 'marker-bounce');
 
-            // Stop bouncing after 2 seconds, storing the timeout reference
+            // Stop bouncing after 2 seconds
             selectedMarkerTimeout = setTimeout(() => {{
-                if (selectedLocationMarker) {{
-                    selectedLocationMarker.setAnimation(null);
+                if (selectedLocationMarker && selectedLocationMarker.content) {{
+                    selectedLocationMarker.content.classList.remove('marker-bounce');
                 }}
                 selectedMarkerTimeout = null;
             }}, 2000);
@@ -1011,7 +1173,7 @@ namespace Advance_Control.Views.Pages
                     ClearForm();
                     await NotifyMapFormVisibility(false);
                     await LoadMapAsync();
-                    await ShowMessageDialogAsync("Éxito", _isEditMode ? "Ubicación actualizada correctamente" : "Ubicación creada correctamente");
+                    await ShowMessageDialogAsync("Éxito", wasEditMode ? "Ubicación actualizada correctamente" : "Ubicación creada correctamente");
                 }
                 else
                 {

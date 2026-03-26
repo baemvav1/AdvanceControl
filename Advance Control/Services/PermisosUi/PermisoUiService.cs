@@ -52,7 +52,7 @@ namespace Advance_Control.Services.PermisosUi
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "PermisosUi")}/sincronizar";
-                var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -75,7 +75,7 @@ namespace Advance_Control.Services.PermisosUi
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "PermisosUi")}/modulos/nivel";
-                var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -97,7 +97,7 @@ namespace Advance_Control.Services.PermisosUi
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "PermisosUi")}/acciones/nivel";
-                var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var content = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);

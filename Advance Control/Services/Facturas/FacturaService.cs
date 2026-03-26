@@ -43,7 +43,7 @@ namespace Advance_Control.Services.Facturas
             {
                 await _logger.LogInformationAsync($"Guardando factura en: {url}", "FacturaService", "GuardarFacturaAsync");
 
-                var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -142,7 +142,7 @@ namespace Advance_Control.Services.Facturas
             try
             {
                 await _logger.LogInformationAsync($"Registrando abono de factura en: {url}", "FacturaService", "RegistrarAbonoAsync");
-                var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -211,7 +211,7 @@ namespace Advance_Control.Services.Facturas
             try
             {
                 await _logger.LogInformationAsync($"Ejecutando POST sin cuerpo en: {url}", "FacturaService", metodo);
-                var response = await _http.PostAsync(url, content: null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, content: null, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);

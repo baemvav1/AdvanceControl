@@ -36,7 +36,7 @@ namespace Advance_Control.Services.GoogleMaps
                 var url = _endpoints.GetEndpoint("api", "GoogleMapsConfig", "api-key");
                 await _logger.LogInformationAsync($"Obteniendo API key de Google Maps desde: {url}", "GoogleMapsConfigService", "GetApiKeyAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -82,7 +82,7 @@ namespace Advance_Control.Services.GoogleMaps
                 var url = _endpoints.GetEndpoint("api", "GoogleMapsConfig");
                 await _logger.LogInformationAsync($"Obteniendo configuración de Google Maps desde: {url}", "GoogleMapsConfigService", "GetConfigAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

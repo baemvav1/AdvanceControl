@@ -173,7 +173,7 @@ namespace Advance_Control.Services.Cargos
 
                 await _logger.LogInformationAsync($"Creando cargo en: {url}", "CargoService", "CreateCargoAsync");
 
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -267,7 +267,7 @@ namespace Advance_Control.Services.Cargos
 
                 await _logger.LogInformationAsync($"Actualizando cargo {query.IdCargo} en: {url}", "CargoService", "UpdateCargoAsync");
 
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -307,7 +307,7 @@ namespace Advance_Control.Services.Cargos
 
                 await _logger.LogInformationAsync($"Eliminando cargo {idCargo} en: {url}", "CargoService", "DeleteCargoAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

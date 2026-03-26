@@ -103,7 +103,7 @@ namespace Advance_Control.Services.Mantenimiento
 
                 await _logger.LogInformationAsync($"Eliminando mantenimiento {idMantenimiento} en: {url}", "MantenimientoService", "DeleteMantenimientoAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -153,7 +153,7 @@ namespace Advance_Control.Services.Mantenimiento
                 await _logger.LogInformationAsync($"Creando mantenimiento en: {url}", "MantenimientoService", "CreateMantenimientoAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

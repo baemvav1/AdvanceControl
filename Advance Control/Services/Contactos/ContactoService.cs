@@ -123,7 +123,7 @@ namespace Advance_Control.Services.Contactos
                 await _logger.LogInformationAsync($"Creando contacto en: {url}", "ContactoService", "CreateContactoAsync");
 
                 // Realizar la petición POST (sin body, los parámetros van en la URL)
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -187,7 +187,7 @@ namespace Advance_Control.Services.Contactos
                 await _logger.LogInformationAsync($"Actualizando contacto en: {url}", "ContactoService", "UpdateContactoAsync");
 
                 // Realizar la petición PUT (sin body, los parámetros van en la URL)
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -232,7 +232,7 @@ namespace Advance_Control.Services.Contactos
                 await _logger.LogInformationAsync($"Eliminando contacto en: {url}", "ContactoService", "DeleteContactoAsync");
 
                 // Realizar la petición DELETE
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)

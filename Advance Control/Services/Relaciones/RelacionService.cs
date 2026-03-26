@@ -105,7 +105,7 @@ namespace Advance_Control.Services.Relaciones
                 await _logger.LogInformationAsync($"Eliminando relación desde: {url}", "RelacionService", "DeleteRelacionAsync");
 
                 // Realizar la petición DELETE
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -166,7 +166,7 @@ namespace Advance_Control.Services.Relaciones
                 await _logger.LogInformationAsync($"Actualizando nota de relación: {url}", "RelacionService", "UpdateNotaAsync");
 
                 // Realizar la petición PUT
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -227,7 +227,7 @@ namespace Advance_Control.Services.Relaciones
                 await _logger.LogInformationAsync($"Creando relación: {url}", "RelacionService", "CreateRelacionAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa a nivel HTTP
                 if (!response.IsSuccessStatusCode)

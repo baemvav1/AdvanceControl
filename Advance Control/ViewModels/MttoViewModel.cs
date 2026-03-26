@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +10,7 @@ using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Session;
 using Advance_Control.Services.Activity;
+using Advance_Control.Services.RelacionUsuarioArea;
 
 namespace Advance_Control.ViewModels
 {
@@ -21,18 +24,20 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly IUserSessionService _userSession;
         private readonly IActivityService _activityService;
+        private readonly IRelacionUsuarioAreaService _relacionAreaService;
         private ObservableCollection<MantenimientoDto> _mantenimientos;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _identificadorFilter;
         private int _idClienteFilter;
 
-        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService)
+        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService, IRelacionUsuarioAreaService relacionAreaService)
         {
             _mantenimientoService = mantenimientoService ?? throw new ArgumentNullException(nameof(mantenimientoService));
             _logger               = logger               ?? throw new ArgumentNullException(nameof(logger));
             _userSession          = userSession          ?? throw new ArgumentNullException(nameof(userSession));
             _activityService      = activityService      ?? throw new ArgumentNullException(nameof(activityService));
+            _relacionAreaService  = relacionAreaService   ?? throw new ArgumentNullException(nameof(relacionAreaService));
             _mantenimientos = new ObservableCollection<MantenimientoDto>();
         }
 
@@ -118,14 +123,17 @@ namespace Advance_Control.ViewModels
 
                 var mantenimientos = await _mantenimientoService.GetMantenimientosAsync(query, cancellationToken);
 
+                // Filtrado por área según tipo de usuario
+                var filtrados = await FiltrarPorAreaAsync(mantenimientos, cancellationToken);
+
                 Mantenimientos.Clear();
-                foreach (var mantenimiento in mantenimientos)
+                foreach (var mantenimiento in filtrados)
                 {
                     Mantenimientos.Add(mantenimiento);
                 }
                 OnPropertyChanged(nameof(IsEmpty));
 
-                await _logger.LogInformationAsync($"Se cargaron {mantenimientos.Count} mantenimientos exitosamente", "MttoViewModel", "LoadMantenimientosAsync");
+                await _logger.LogInformationAsync($"Se cargaron {filtrados.Count} mantenimientos exitosamente (de {mantenimientos.Count} totales)", "MttoViewModel", "LoadMantenimientosAsync");
             }
             catch (OperationCanceledException)
             {
@@ -146,6 +154,31 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// Filtra registros según las áreas asignadas al usuario.
+        /// Niveles superiores (Devs, Director, Admin, etc.) ven todo.
+        /// TecSup/Tecnico solo ven equipos en sus áreas asignadas.
+        /// Niveles inferiores no ven nada.
+        /// </summary>
+        private async Task<List<MantenimientoDto>> FiltrarPorAreaAsync(List<MantenimientoDto> items, CancellationToken ct)
+        {
+            if (!_userSession.IsLoaded) return items;
+
+            var tipo = _userSession.TipoUsuario;
+            if (tipo is "Devs" or "Director" or "Admin" or "Cont" or "AuxAdm" or "AuxCont")
+                return items;
+
+            if (tipo is "TecSup" or "Tecnico")
+            {
+                var permitidos = await _relacionAreaService.GetEquiposEnAreasAsync(_userSession.CredencialId, ct);
+                var set = new HashSet<string>(permitidos, StringComparer.OrdinalIgnoreCase);
+                return items.Where(m => !string.IsNullOrEmpty(m.Identificador) && set.Contains(m.Identificador)).ToList();
+            }
+
+            // Niveles inferiores: no ven mantenimientos
+            return new List<MantenimientoDto>();
         }
 
         /// <summary>

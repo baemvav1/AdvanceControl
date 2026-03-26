@@ -203,7 +203,7 @@ namespace Advance_Control.Services.Levantamiento
             try
             {
                 var url = _endpoints.GetEndpoint("api", "Levantamiento") + $"/{idLevantamiento}";
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
                 return response.IsSuccessStatusCode;
             }
             catch (Exception ex)

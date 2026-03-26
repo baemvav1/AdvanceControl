@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Net.Http;
@@ -14,6 +15,8 @@ using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.CheckOperacion;
+using Advance_Control.Services.Session;
+using Advance_Control.Services.RelacionUsuarioArea;
 
 namespace Advance_Control.ViewModels
 {
@@ -37,6 +40,8 @@ namespace Advance_Control.ViewModels
         private readonly IClienteService _clienteService;
         private readonly IActivityService _activityService;
         private readonly ICheckOperacionService _checkService;
+        private readonly IUserSessionService _userSession;
+        private readonly IRelacionUsuarioAreaService _relacionAreaService;
         private ObservableCollection<OperacionDto> _operaciones;
         private bool _isLoading;
         private string? _errorMessage;
@@ -50,7 +55,7 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaInicialFilter;
         private DateTimeOffset? _fechaFinalFilter;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IUserSessionService userSession, IRelacionUsuarioAreaService relacionAreaService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
             _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
@@ -61,6 +66,8 @@ namespace Advance_Control.ViewModels
             _entidadService    = entidadService    ?? throw new ArgumentNullException(nameof(entidadService));
             _activityService   = activityService   ?? throw new ArgumentNullException(nameof(activityService));
             _checkService      = checkService      ?? throw new ArgumentNullException(nameof(checkService));
+            _userSession       = userSession       ?? throw new ArgumentNullException(nameof(userSession));
+            _relacionAreaService = relacionAreaService ?? throw new ArgumentNullException(nameof(relacionAreaService));
             _operaciones = new ObservableCollection<OperacionDto>();
         }
 
@@ -221,14 +228,17 @@ namespace Advance_Control.ViewModels
 
                 var operaciones = await _operacionService.GetOperacionesAsync(query, cancellationToken);
 
+                // Filtrado por área según tipo de usuario
+                var filtrados = await FiltrarPorAreaAsync(operaciones, cancellationToken);
+
                 Operaciones.Clear();
-                foreach (var operacion in operaciones)
+                foreach (var operacion in filtrados)
                 {
                     Operaciones.Add(operacion);
                 }
                 OnPropertyChanged(nameof(IsEmpty));
 
-                await _logger.LogInformationAsync($"Se cargaron {operaciones.Count} operaciones exitosamente", "OperacionesViewModel", "LoadOperacionesAsync");
+                await _logger.LogInformationAsync($"Se cargaron {filtrados.Count} operaciones exitosamente (de {operaciones.Count} totales)", "OperacionesViewModel", "LoadOperacionesAsync");
             }
             catch (OperationCanceledException)
             {
@@ -249,6 +259,29 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// Filtra registros según las áreas asignadas al usuario.
+        /// Niveles superiores ven todo. TecSup/Tecnico solo ven equipos en sus áreas.
+        /// Niveles inferiores no ven nada.
+        /// </summary>
+        private async Task<List<OperacionDto>> FiltrarPorAreaAsync(List<OperacionDto> items, CancellationToken ct)
+        {
+            if (!_userSession.IsLoaded) return items;
+
+            var tipo = _userSession.TipoUsuario;
+            if (tipo is "Devs" or "Director" or "Admin" or "Cont" or "AuxAdm" or "AuxCont")
+                return items;
+
+            if (tipo is "TecSup" or "Tecnico")
+            {
+                var permitidos = await _relacionAreaService.GetEquiposEnAreasAsync(_userSession.CredencialId, ct);
+                var set = new HashSet<string>(permitidos, StringComparer.OrdinalIgnoreCase);
+                return items.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
+            }
+
+            return new List<OperacionDto>();
         }
 
         /// <summary>

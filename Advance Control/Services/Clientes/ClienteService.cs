@@ -171,7 +171,7 @@ namespace Advance_Control.Services.Clientes
                 await _logger.LogInformationAsync($"Creando cliente en: {url}", "ClienteService", "CreateClienteAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -232,7 +232,7 @@ namespace Advance_Control.Services.Clientes
                 await _logger.LogInformationAsync($"Actualizando cliente en: {url}", "ClienteService", "UpdateClienteAsync");
 
                 // Realizar la petición PUT
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -275,7 +275,7 @@ namespace Advance_Control.Services.Clientes
                 var url = $"{_endpoints.GetEndpoint("api", "Clientes")}/{idCliente}";
 
                 // Realizar la petición DELETE
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)

@@ -140,7 +140,7 @@ namespace Advance_Control.Services.Refacciones
 
                 await _logger.LogInformationAsync($"Eliminando refacción {id} en: {url}", "RefaccionService", "DeleteRefaccionAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -188,7 +188,7 @@ namespace Advance_Control.Services.Refacciones
 
                 await _logger.LogInformationAsync($"Actualizando refacción {id} en: {url}", "RefaccionService", "UpdateRefaccionAsync");
 
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -238,7 +238,7 @@ namespace Advance_Control.Services.Refacciones
                 await _logger.LogInformationAsync($"Creando refacción en: {url}", "RefaccionService", "CreateRefaccionAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

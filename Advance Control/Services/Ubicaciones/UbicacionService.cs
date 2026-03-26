@@ -39,7 +39,7 @@ namespace Advance_Control.Services.Ubicaciones
 
                 await _logger.LogInformationAsync($"Obteniendo ubicaciones desde: {url}", "UbicacionService", "GetUbicacionesAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -87,7 +87,7 @@ namespace Advance_Control.Services.Ubicaciones
 
                 await _logger.LogInformationAsync($"Obteniendo ubicación con ID {id} desde: {url}", "UbicacionService", "GetUbicacionByIdAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
@@ -141,7 +141,7 @@ namespace Advance_Control.Services.Ubicaciones
 
                 await _logger.LogInformationAsync($"Buscando ubicación con nombre '{nombre}' desde: {url}", "UbicacionService", "GetUbicacionByNombreAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
                 {
@@ -214,7 +214,7 @@ namespace Advance_Control.Services.Ubicaciones
                 var json = JsonSerializer.Serialize(ubicacion);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _http.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
 
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
@@ -305,7 +305,7 @@ namespace Advance_Control.Services.Ubicaciones
                 var json = JsonSerializer.Serialize(ubicacionToUpdate);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-                var response = await _http.PutAsync(url, content, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, content, cancellationToken).ConfigureAwait(false);
 
                 var responseContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
 
@@ -361,7 +361,7 @@ namespace Advance_Control.Services.Ubicaciones
 
                 await _logger.LogInformationAsync($"Eliminando ubicación con ID {id} en: {url}", "UbicacionService", "DeleteUbicacionAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

@@ -116,7 +116,7 @@ namespace Advance_Control.Services.Equipos
 
                 await _logger.LogInformationAsync($"Eliminando equipo {id} en: {url}", "EquipoService", "DeleteEquipoAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -184,7 +184,7 @@ namespace Advance_Control.Services.Equipos
 
                 await _logger.LogInformationAsync($"Actualizando equipo {id} en: {url}", "EquipoService", "UpdateEquipoAsync");
 
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -255,7 +255,7 @@ namespace Advance_Control.Services.Equipos
                 await _logger.LogInformationAsync($"Creando equipo en: {url}", "EquipoService", "CreateEquipoAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

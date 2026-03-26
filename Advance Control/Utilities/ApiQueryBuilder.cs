@@ -86,6 +86,12 @@ namespace Advance_Control.Utilities
             return this;
         }
 
+        public ApiQueryBuilder AddRequired(string key, long value)
+        {
+            _params.Add($"{key}={value}");
+            return this;
+        }
+
         // ── Booleanos ─────────────────────────────────────────────────────────
         public ApiQueryBuilder Add(string key, bool? value)
         {

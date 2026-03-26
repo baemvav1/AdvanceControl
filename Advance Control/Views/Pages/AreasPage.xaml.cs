@@ -1064,7 +1064,12 @@ namespace Advance_Control.Views.Pages
                             };
                             await successDialog.ShowAsync();
 
-                            await LoadMapAsync();
+                            // Solo recargar el mapa si el área eliminada estaba seleccionada
+                            if (ViewModel.SelectedArea?.IdArea == areaId)
+                            {
+                                ViewModel.SelectedArea = null;
+                                await LoadMapAsync();
+                            }
                         }
                         else
                         {

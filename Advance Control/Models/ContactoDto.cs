@@ -1,4 +1,5 @@
 using System;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -12,6 +13,9 @@ namespace Advance_Control.Models
     public class ContactoDto : INotifyPropertyChanged
     {
         private bool _expand;
+        private ObservableCollection<RelacionUsuarioAreaDto> _areasAsignadas = new();
+        private bool _areasLoaded;
+        private bool _isLoadingAreas;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -139,5 +143,75 @@ namespace Advance_Control.Models
         public string NombreCompleto =>
             string.Join(" ", new[] { Tratamiento, Nombre, Apellido }
                 .Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        /// <summary>
+        /// Áreas asignadas al contacto (lazy-load)
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<RelacionUsuarioAreaDto> AreasAsignadas
+        {
+            get => _areasAsignadas;
+            set
+            {
+                if (_areasAsignadas != value)
+                {
+                    _areasAsignadas = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoAreasMessage));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si las áreas ya fueron cargadas
+        /// </summary>
+        [JsonIgnore]
+        public bool AreasLoaded
+        {
+            get => _areasLoaded;
+            set
+            {
+                if (_areasLoaded != value)
+                {
+                    _areasLoaded = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoAreasMessage));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se están cargando las áreas
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingAreas
+        {
+            get => _isLoadingAreas;
+            set
+            {
+                if (_isLoadingAreas != value)
+                {
+                    _isLoadingAreas = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si se debe mostrar el mensaje de "sin áreas asignadas"
+        /// </summary>
+        [JsonIgnore]
+        public bool ShowNoAreasMessage => AreasLoaded && AreasAsignadas.Count == 0;
+
+        /// <summary>
+        /// Indica si el contacto tiene credencial (necesario para asignar áreas)
+        /// </summary>
+        [JsonIgnore]
+        public bool TieneCredencial => CredencialId.HasValue && CredencialId.Value > 0;
+
+        public void NotifyNoAreasMessageChanged()
+        {
+            OnPropertyChanged(nameof(ShowNoAreasMessage));
+        }
     }
 }

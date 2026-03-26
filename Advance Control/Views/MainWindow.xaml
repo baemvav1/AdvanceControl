@@ -184,6 +184,20 @@
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
+                        <!-- Grupo: DevOps -->
+                        <NavigationViewItem Content="DevOps" IsExpanded="True">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE70F;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem Content="Herramientas" Tag="DevOps">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE713;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
                     </NavigationView.MenuItems>
                     <Frame x:Name="contentFrame" />
                 </NavigationView>

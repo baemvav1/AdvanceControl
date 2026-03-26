@@ -1,0 +1,173 @@
+<Page
+    x:Class="Advance_Control.Views.Pages.DevOpsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Encabezado -->
+        <StackPanel Grid.Row="0" Margin="0,0,0,16">
+            <TextBlock Text="Herramientas DevOps" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock Text="Limpieza de datos por módulo para entregar sistema limpio al usuario final."
+                       Style="{StaticResource BodyTextBlockStyle}" Opacity="0.7" Margin="0,4,0,0" />
+        </StackPanel>
+
+        <!-- Barra de estado -->
+        <Grid Grid.Row="1" Margin="0,0,0,16">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ProgressRing IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+                              Width="20" Height="20" />
+                <TextBlock Text="{x:Bind ViewModel.StatusMessage, Mode=OneWay}"
+                           VerticalAlignment="Center"
+                           Style="{StaticResource CaptionTextBlockStyle}" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Botones de limpieza -->
+        <StackPanel Grid.Row="2" Spacing="8" Margin="0,0,0,24">
+            <TextBlock Text="Operaciones de limpieza" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!-- Fila 1 -->
+                <Button x:Name="BtnFinanciero" Grid.Row="0" Grid.Column="0"
+                        HorizontalAlignment="Stretch" Margin="0,0,4,4" Padding="16,12"
+                        Click="OnLimpiarFinancieroClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE7BF;" FontSize="16" />
+                        <TextBlock Text="Borrado Financiero" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnOperaciones" Grid.Row="0" Grid.Column="1"
+                        HorizontalAlignment="Stretch" Margin="4,0,4,4" Padding="16,12"
+                        Click="OnLimpiarOperacionesClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE821;" FontSize="16" />
+                        <TextBlock Text="Borrado Operaciones" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnMantenimiento" Grid.Row="0" Grid.Column="2"
+                        HorizontalAlignment="Stretch" Margin="4,0,0,4" Padding="16,12"
+                        Click="OnLimpiarMantenimientoClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE90F;" FontSize="16" />
+                        <TextBlock Text="Borrado Mantenimiento" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Fila 2 -->
+                <Button x:Name="BtnLevantamientos" Grid.Row="1" Grid.Column="0"
+                        HorizontalAlignment="Stretch" Margin="0,4,4,0" Padding="16,12"
+                        Click="OnLimpiarLevantamientosClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE70B;" FontSize="16" />
+                        <TextBlock Text="Borrado Levantamientos" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnServicios" Grid.Row="1" Grid.Column="1"
+                        HorizontalAlignment="Stretch" Margin="4,4,4,0" Padding="16,12"
+                        Click="OnLimpiarServiciosClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE90F;" FontSize="16" />
+                        <TextBlock Text="Borrado Servicios" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnLogs" Grid.Row="1" Grid.Column="2"
+                        HorizontalAlignment="Stretch" Margin="4,4,0,0" Padding="16,12"
+                        Click="OnLimpiarLogsClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE7BA;" FontSize="16" />
+                        <TextBlock Text="Borrado Logs" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- Botón de estadísticas -->
+            <Button x:Name="BtnEstadisticas" Margin="0,8,0,0" Padding="16,12"
+                    Style="{StaticResource AccentButtonStyle}"
+                    Click="OnCargarEstadisticasClick">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE9D9;" FontSize="16" />
+                    <TextBlock Text="Ver Estadísticas de BD" />
+                </StackPanel>
+            </Button>
+        </StackPanel>
+
+        <!-- Tabla de estadísticas / resultados -->
+        <Grid Grid.Row="3">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Estadísticas -->
+            <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                <TextBlock Text="Estadísticas de BD" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+                <ListView ItemsSource="{x:Bind ViewModel.Estadisticas, Mode=OneWay}"
+                          SelectionMode="None" IsItemClickEnabled="False">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="4,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Tabla}"
+                                           Style="{StaticResource BodyTextBlockStyle}" />
+                                <TextBlock Grid.Column="1" Text="{Binding TotalRegistros}"
+                                           Style="{StaticResource BodyTextBlockStyle}"
+                                           FontWeight="Bold" HorizontalAlignment="Right" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </StackPanel>
+
+            <!-- Últimos resultados de limpieza -->
+            <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                <TextBlock Text="Último resultado" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
+                <ListView ItemsSource="{x:Bind ViewModel.UltimosResultados, Mode=OneWay}"
+                          SelectionMode="None" IsItemClickEnabled="False">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Padding="4,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Tabla}"
+                                           Style="{StaticResource BodyTextBlockStyle}" />
+                                <TextBlock Grid.Column="1" Text="{Binding RegistrosEliminados}"
+                                           Style="{StaticResource BodyTextBlockStyle}"
+                                           FontWeight="Bold" Foreground="Red" HorizontalAlignment="Right" />
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Page>

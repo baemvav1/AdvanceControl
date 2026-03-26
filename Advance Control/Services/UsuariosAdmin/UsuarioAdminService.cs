@@ -81,7 +81,7 @@ namespace Advance_Control.Services.UsuariosAdmin
             try
             {
                 var url = _endpoints.GetEndpoint("api", "UsuariosAdmin");
-                var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 return await ReadOperationResponseAsync(response, cancellationToken, "CreateUsuarioAsync").ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -96,7 +96,7 @@ namespace Advance_Control.Services.UsuariosAdmin
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "UsuariosAdmin")}/{credencialId}";
-                var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 return await ReadOperationResponseAsync(response, cancellationToken, "UpdateUsuarioAsync").ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -111,7 +111,7 @@ namespace Advance_Control.Services.UsuariosAdmin
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "UsuariosAdmin")}/{credencialId}";
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
                 return await ReadOperationResponseAsync(response, cancellationToken, "DeleteUsuarioAsync").ConfigureAwait(false);
             }
             catch (Exception ex)

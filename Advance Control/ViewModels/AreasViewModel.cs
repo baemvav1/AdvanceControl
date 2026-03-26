@@ -177,7 +177,7 @@ namespace Advance_Control.ViewModels
             {
                 await _logger.LogInformationAsync("Cargando áreas", "AreasViewModel", "LoadAreasAsync");
 
-                var areas = await _areasService.GetAreasAsync(cancellationToken: cancellationToken);
+                var areas = await _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
 
                 Areas.Clear();
                 foreach (var area in areas)

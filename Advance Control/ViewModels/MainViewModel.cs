@@ -292,6 +292,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.ReporteFinancieroFacturacionPage>("ReporteFinancieroFacturacion");
             _navigationService.Configure<Views.Pages.CorreoPage>("Correo");
             _navigationService.Configure<Views.Pages.AdministracionPage>("Administracion");
+            _navigationService.Configure<Views.Pages.DevOpsPage>("DevOps");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;
@@ -327,6 +328,7 @@ namespace Advance_Control.ViewModels
             { "ReporteFinancieroFacturacion", 1 },
             { "Correo",        1 },
             { "Administracion", 1 },
+            { "DevOps", 1 },
         };
 
 

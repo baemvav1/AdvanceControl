@@ -43,7 +43,7 @@ namespace Advance_Control.Services.EstadoCuenta
             {
                 await _logger.LogInformationAsync($"Guardando estado de cuenta en: {url}", "EstadoCuentaXmlService", "GuardarEstadoCuentaAsync");
 
-                var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -145,7 +145,7 @@ namespace Advance_Control.Services.EstadoCuenta
             {
                 await _logger.LogInformationAsync($"Ejecutando conciliacion automatica en: {url}", "EstadoCuentaXmlService", "ConciliarAutomaticamenteAsync");
 
-                var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);

@@ -44,7 +44,7 @@ namespace Advance_Control.Services.Proveedores
 
                 await _logger.LogInformationAsync($"Creando proveedor en: {url}", "ProveedorService", "CreateProveedorAsync");
 
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -87,7 +87,7 @@ namespace Advance_Control.Services.Proveedores
 
                 await _logger.LogInformationAsync($"Actualizando proveedor {id} en: {url}", "ProveedorService", "UpdateProveedorAsync");
 
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -123,7 +123,7 @@ namespace Advance_Control.Services.Proveedores
 
                 await _logger.LogInformationAsync($"Eliminando proveedor {id} en: {url}", "ProveedorService", "DeleteProveedorAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

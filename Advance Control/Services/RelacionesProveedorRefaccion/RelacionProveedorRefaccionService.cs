@@ -99,7 +99,7 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 await _logger.LogInformationAsync($"Eliminando relación proveedor-refacción desde: {url}", "RelacionProveedorRefaccionService", "DeleteRelacionAsync");
 
                 // Realizar la petición DELETE
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -154,7 +154,7 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 await _logger.LogInformationAsync($"Actualizando nota de relación proveedor-refacción: {url}", "RelacionProveedorRefaccionService", "UpdateNotaAsync");
 
                 // Realizar la petición PUT
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -211,7 +211,7 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 await _logger.LogInformationAsync($"Actualizando precio de relación proveedor-refacción: {url}", "RelacionProveedorRefaccionService", "UpdatePrecioAsync");
 
                 // Realizar la petición PUT
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -276,7 +276,7 @@ namespace Advance_Control.Services.RelacionesProveedorRefaccion
                 await _logger.LogInformationAsync($"Creando relación proveedor-refacción: {url}", "RelacionProveedorRefaccionService", "CreateRelacionAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa a nivel HTTP
                 if (!response.IsSuccessStatusCode)

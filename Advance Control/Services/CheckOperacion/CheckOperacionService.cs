@@ -50,7 +50,7 @@ namespace Advance_Control.Services.CheckOperacion
                     Encoding.UTF8,
                     "application/json");
 
-                var response = await _http.PutAsync(url, content);
+                using var response = await _http.PutAsync(url, content);
                 return response.IsSuccessStatusCode;
             }
             catch

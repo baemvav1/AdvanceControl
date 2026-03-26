@@ -35,7 +35,7 @@ namespace Advance_Control.Services.CorreoUsuario
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "CorreoUsuario")}/{credencialId}";
-                var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
                 return await ReadOperationResponseAsync(response, cancellationToken, "SaveCorreoUsuarioAsync").ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -50,7 +50,7 @@ namespace Advance_Control.Services.CorreoUsuario
             try
             {
                 var url = $"{_endpoints.GetEndpoint("api", "CorreoUsuario")}/{credencialId}";
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
                 return await ReadOperationResponseAsync(response, cancellationToken, "DeleteCorreoUsuarioAsync").ConfigureAwait(false);
             }
             catch (Exception ex)

@@ -347,6 +347,26 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar RelacionUsuarioAreaService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<Services.RelacionUsuarioArea.IRelacionUsuarioAreaService, Services.RelacionUsuarioArea.RelacionUsuarioAreaService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar MantenimientoService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IMantenimientoService, MantenimientoService>((sp, client) =>
                     {
@@ -718,6 +738,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.FacturasViewModel>();
                     services.AddTransient<ViewModels.DetailFacturaViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();
+                    services.AddTransient<ViewModels.DevOpsViewModel>();
 
                     services.AddHttpClient<ICorreoUsuarioService, CorreoUsuarioService>((sp, client) =>
                     {
@@ -807,6 +828,19 @@ namespace Advance_Control
 
                     // Singleton de control de acceso por nivel
                     services.AddSingleton<Services.AccessControl.IAccessControlService, Services.AccessControl.AccessControlService>();
+
+                    // Registrar DevOpsService con autenticación
+                    services.AddHttpClient<Services.DevOps.IDevOpsService, Services.DevOps.DevOpsService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(60);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar NotificacionAlertaService (alertas inteligentes persistentes en BD)
                     services.AddHttpClient<Services.Alertas.INotificacionAlertaService, Services.Alertas.NotificacionAlertaService>((sp, client) =>

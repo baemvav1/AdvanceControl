@@ -99,7 +99,7 @@ namespace Advance_Control.Services.RelacionesRefaccionEquipo
                 await _logger.LogInformationAsync($"Eliminando relación refacción-equipo desde: {url}", "RelacionRefaccionEquipoService", "DeleteRelacionAsync");
 
                 // Realizar la petición DELETE
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -154,7 +154,7 @@ namespace Advance_Control.Services.RelacionesRefaccionEquipo
                 await _logger.LogInformationAsync($"Actualizando nota de relación refacción-equipo: {url}", "RelacionRefaccionEquipoService", "UpdateNotaAsync");
 
                 // Realizar la petición PUT
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
@@ -215,7 +215,7 @@ namespace Advance_Control.Services.RelacionesRefaccionEquipo
                 await _logger.LogInformationAsync($"Creando relación refacción-equipo: {url}", "RelacionRefaccionEquipoService", "CreateRelacionAsync");
 
                 // Realizar la petición POST
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 // Verificar si la respuesta fue exitosa a nivel HTTP
                 if (!response.IsSuccessStatusCode)

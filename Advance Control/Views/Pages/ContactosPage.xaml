@@ -401,6 +401,100 @@
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>
+
+                                            <!--  Áreas Asignadas (solo si tiene credencial)  -->
+                                            <PivotItem Header="Áreas"
+                                                Visibility="{x:Bind TieneCredencial, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="5">
+                                                        <TextBlock
+                                                            FontSize="14" FontWeight="SemiBold"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="Áreas Asignadas" />
+                                                        <Button
+                                                            VerticalAlignment="Center"
+                                                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                            BorderThickness="0"
+                                                            Click="AgregarArea_Click"
+                                                            ToolTipService.ToolTip="Asignar área"
+                                                            Foreground="DarkGray"
+                                                            Tag="{x:Bind}"
+                                                            IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <!--  Loading indicator  -->
+                                                    <ProgressRing
+                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingAreas, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingAreas, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Lista de áreas asignadas  -->
+                                                    <ItemsRepeater ItemsSource="{x:Bind AreasAsignadas, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="4" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:RelacionUsuarioAreaDto">
+                                                                <Border
+                                                                    Padding="12"
+                                                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                    BorderThickness="1" CornerRadius="4">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <!--  Indicador de color del área  -->
+                                                                        <Border
+                                                                            Grid.Column="0"
+                                                                            Width="4" Height="28"
+                                                                            VerticalAlignment="Center"
+                                                                            Margin="0,0,10,0"
+                                                                            CornerRadius="2"
+                                                                            Background="{x:Bind ColorMapa}" />
+                                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                                            <TextBlock
+                                                                                FontSize="13" FontWeight="SemiBold"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                                Text="{x:Bind NombreArea}" />
+                                                                            <TextBlock
+                                                                                FontSize="11" FontStyle="Italic"
+                                                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                                Text="{x:Bind Nota}"
+                                                                                TextWrapping="Wrap"
+                                                                                Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
+                                                                        </StackPanel>
+                                                                        <Button
+                                                                            Grid.Column="2"
+                                                                            VerticalAlignment="Center"
+                                                                            AutomationProperties.Name="Eliminar área asignada"
+                                                                            Background="Transparent" BorderThickness="0"
+                                                                            Click="EliminarAreaAsignada_Click"
+                                                                            Tag="{x:Bind}"
+                                                                            ToolTipService.ToolTip="Quitar área"
+                                                                            IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterParameter=1}">
+                                                                            <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
+                                                                        </Button>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+
+                                                    <!--  Mensaje cuando no hay áreas  -->
+                                                    <TextBlock
+                                                        FontSize="12" FontStyle="Italic"
+                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                        Text="No hay áreas asignadas"
+                                                        Visibility="{x:Bind ShowNoAreasMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </PivotItem>
                                         </Pivot>
                                     </Grid>
                                 </StackPanel>

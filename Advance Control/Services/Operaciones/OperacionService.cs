@@ -119,7 +119,7 @@ namespace Advance_Control.Services.Operaciones
 
                 await _logger.LogInformationAsync($"Eliminando operación {idOperacion} en: {url}", "OperacionService", "DeleteOperacionAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -166,7 +166,7 @@ namespace Advance_Control.Services.Operaciones
 
                 await _logger.LogInformationAsync($"Actualizando operación {idOperacion}", "OperacionService", "UpdateOperacionAsync");
 
-                var response = await _http.PutAsJsonAsync(url, body, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsJsonAsync(url, body, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -203,7 +203,7 @@ namespace Advance_Control.Services.Operaciones
 
                 await _logger.LogInformationAsync($"Reabriendo operación {idOperacion} en: {url}", "OperacionService", "ReopenOperacionAsync");
 
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {

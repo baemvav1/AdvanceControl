@@ -50,7 +50,7 @@ namespace Advance_Control.Services.Areas
 
                 await _logger.LogInformationAsync($"Obteniendo áreas desde: {url}", "AreasService", "GetAreasAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -99,7 +99,7 @@ namespace Advance_Control.Services.Areas
 
                 await _logger.LogInformationAsync($"Obteniendo áreas para Google Maps desde: {url}", "AreasService", "GetAreasForGoogleMapsAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -151,7 +151,7 @@ namespace Advance_Control.Services.Areas
 
                 await _logger.LogInformationAsync($"Validando punto ({latitud}, {longitud}) en áreas", "AreasService", "ValidatePointAsync");
 
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -210,7 +210,7 @@ namespace Advance_Control.Services.Areas
                 await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasService", "CreateAreaAsync");
                 await LogDataFlowInfoAsync(area, 0, "CreateAreaAsync");
 
-                var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -276,7 +276,7 @@ namespace Advance_Control.Services.Areas
                 await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
                 await LogDataFlowInfoAsync(area, 0, "UpdateAreaAsync");
 
-                var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -332,7 +332,7 @@ namespace Advance_Control.Services.Areas
 
                 await _logger.LogInformationAsync($"Eliminando área ID: {idArea}", "AreasService", "DeleteAreaAsync");
 
-                var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
