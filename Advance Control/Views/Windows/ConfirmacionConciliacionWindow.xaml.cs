@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -93,10 +94,26 @@ namespace Advance_Control.Views.Windows
             if (_viewModel != null && _modo.HasValue)
             {
                 BtnConfirmar.IsEnabled = false;
-                var aplicadas = await _viewModel.AplicarPropuestasAprobadasAsync(_modo.Value, aprobadas);
-                if (!aplicadas)
+                try
+                {
+                    var aplicadas = await _viewModel.AplicarPropuestasAprobadasAsync(_modo.Value, aprobadas);
+                    if (!aplicadas)
+                    {
+                        BtnConfirmar.IsEnabled = true;
+                        return;
+                    }
+                }
+                catch (System.Exception ex)
                 {
                     BtnConfirmar.IsEnabled = true;
+                    var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                    {
+                        Title = "Error al aplicar conciliacion",
+                        Content = ex.Message,
+                        CloseButtonText = "Aceptar",
+                        XamlRoot = Content.XamlRoot
+                    };
+                    await dialog.ShowAsync();
                     return;
                 }
             }
