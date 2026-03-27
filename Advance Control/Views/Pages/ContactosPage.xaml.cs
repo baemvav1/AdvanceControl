@@ -107,12 +107,6 @@ namespace Advance_Control.Views.Pages
                 Margin = new Thickness(0, 0, 0, 8)
             };
 
-            var codigoInternoTextBox = new TextBox
-            {
-                PlaceholderText = "Código interno",
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
             var notasTextBox = new TextBox
             {
                 PlaceholderText = "Notas adicionales (opcional)",
@@ -166,8 +160,6 @@ namespace Advance_Control.Views.Pages
                         departamentoTextBox,
                         new TextBlock { Text = "Cargo:" },
                         cargoTextBox,
-                        new TextBlock { Text = "Código Interno:" },
-                        codigoInternoTextBox,
                         new TextBlock { Text = "ID Cliente:" },
                         idClienteNumberBox,
                         new TextBlock { Text = "ID Proveedor:" },
@@ -223,7 +215,6 @@ namespace Advance_Control.Views.Pages
                         telefono: string.IsNullOrWhiteSpace(telefonoTextBox.Text) ? null : telefonoTextBox.Text.Trim(),
                         departamento: string.IsNullOrWhiteSpace(departamentoTextBox.Text) ? null : departamentoTextBox.Text.Trim(),
                         cargo: string.IsNullOrWhiteSpace(cargoTextBox.Text) ? null : cargoTextBox.Text.Trim(),
-                        codigoInterno: string.IsNullOrWhiteSpace(codigoInternoTextBox.Text) ? null : codigoInternoTextBox.Text.Trim(),
                         notas: string.IsNullOrWhiteSpace(notasTextBox.Text) ? null : notasTextBox.Text.Trim(),
                         idCliente: idCliente,
                         idProveedor: idProveedor,
@@ -422,6 +413,229 @@ namespace Advance_Control.Views.Pages
             {
                 await _loggingService.LogErrorAsync("Error al asignar área", ex, "ContactosPage", "AgregarArea_Click");
                 await _notificacionService.MostrarAsync("Error", "Ocurrió un error al asignar el área.");
+            }
+        }
+
+        private async void EditarContacto_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.ContactoDto contacto)
+                return;
+
+            var nombreTextBox = new TextBox
+            {
+                PlaceholderText = "Nombre del contacto (requerido)",
+                Text = contacto.Nombre ?? "",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var apellidoTextBox = new TextBox
+            {
+                PlaceholderText = "Apellido del contacto",
+                Text = contacto.Apellido ?? "",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var tratamientoTextBox = new TextBox
+            {
+                PlaceholderText = "Tratamiento (ej. Ing., Lic., Dr.)",
+                Text = contacto.Tratamiento ?? "",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var correoTextBox = new TextBox
+            {
+                PlaceholderText = "Correo electrónico",
+                Text = contacto.Correo ?? "",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var telefonoTextBox = new TextBox
+            {
+                PlaceholderText = "Teléfono",
+                Text = contacto.Telefono ?? "",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var departamentoTextBox = new TextBox
+            {
+                PlaceholderText = "Departamento",
+                Text = contacto.Departamento ?? "",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var cargoTextBox = new TextBox
+            {
+                PlaceholderText = "Cargo",
+                Text = contacto.Cargo ?? "",
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var notasTextBox = new TextBox
+            {
+                PlaceholderText = "Notas adicionales (opcional)",
+                Text = contacto.Notas ?? "",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 80,
+                MaxHeight = 150,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var idClienteNumberBox = new NumberBox
+            {
+                PlaceholderText = "ID del cliente asociado",
+                Value = contacto.IdCliente.HasValue ? contacto.IdCliente.Value : double.NaN,
+                Minimum = 0,
+                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var idProveedorNumberBox = new NumberBox
+            {
+                PlaceholderText = "ID del proveedor asociado",
+                Value = contacto.IdProveedor.HasValue ? contacto.IdProveedor.Value : double.NaN,
+                Minimum = 0,
+                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Inline,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var activoCheckBox = new CheckBox
+            {
+                Content = "Activo",
+                IsChecked = contacto.Activo ?? true
+            };
+
+            var dialogContent = new ScrollViewer
+            {
+                Content = new StackPanel
+                {
+                    Spacing = 8,
+                    Children =
+                    {
+                        new TextBlock { Text = "Nombre:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
+                        nombreTextBox,
+                        new TextBlock { Text = "Apellido:" },
+                        apellidoTextBox,
+                        new TextBlock { Text = "Tratamiento:" },
+                        tratamientoTextBox,
+                        new TextBlock { Text = "Correo electrónico:" },
+                        correoTextBox,
+                        new TextBlock { Text = "Teléfono:" },
+                        telefonoTextBox,
+                        new TextBlock { Text = "Departamento:" },
+                        departamentoTextBox,
+                        new TextBlock { Text = "Cargo:" },
+                        cargoTextBox,
+                        new TextBlock { Text = "ID Cliente:" },
+                        idClienteNumberBox,
+                        new TextBlock { Text = "ID Proveedor:" },
+                        idProveedorNumberBox,
+                        new TextBlock { Text = "Notas:" },
+                        notasTextBox,
+                        activoCheckBox
+                    }
+                },
+                MaxHeight = 500
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Editar Contacto #{contacto.ContactoId}",
+                Content = dialogContent,
+                PrimaryButtonText = "Guardar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                if (string.IsNullOrWhiteSpace(nombreTextBox.Text))
+                {
+                    await _notificacionService.MostrarAsync("Validación", "El nombre es obligatorio");
+                    return;
+                }
+
+                try
+                {
+                    int? idCliente = null;
+                    if (!double.IsNaN(idClienteNumberBox.Value))
+                        idCliente = Convert.ToInt32(Math.Round(idClienteNumberBox.Value));
+
+                    int? idProveedor = null;
+                    if (!double.IsNaN(idProveedorNumberBox.Value))
+                        idProveedor = Convert.ToInt32(Math.Round(idProveedorNumberBox.Value));
+
+                    var success = await ViewModel.UpdateContactoAsync(
+                        contactoId: contacto.ContactoId,
+                        nombre: nombreTextBox.Text.Trim(),
+                        apellido: string.IsNullOrWhiteSpace(apellidoTextBox.Text) ? null : apellidoTextBox.Text.Trim(),
+                        correo: string.IsNullOrWhiteSpace(correoTextBox.Text) ? null : correoTextBox.Text.Trim(),
+                        telefono: string.IsNullOrWhiteSpace(telefonoTextBox.Text) ? null : telefonoTextBox.Text.Trim(),
+                        departamento: string.IsNullOrWhiteSpace(departamentoTextBox.Text) ? null : departamentoTextBox.Text.Trim(),
+                        cargo: string.IsNullOrWhiteSpace(cargoTextBox.Text) ? null : cargoTextBox.Text.Trim(),
+                        notas: string.IsNullOrWhiteSpace(notasTextBox.Text) ? null : notasTextBox.Text.Trim(),
+                        idCliente: idCliente,
+                        idProveedor: idProveedor,
+                        activo: activoCheckBox.IsChecked ?? true,
+                        tratamiento: string.IsNullOrWhiteSpace(tratamientoTextBox.Text) ? null : tratamientoTextBox.Text.Trim()
+                    );
+
+                    if (success)
+                    {
+                        await _notificacionService.MostrarAsync("Contacto actualizado", $"Contacto \"{nombreTextBox.Text.Trim()}\" actualizado correctamente");
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarAsync("Error", "No se pudo actualizar el contacto. Verifique los datos e intente nuevamente.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _loggingService.LogErrorAsync("Error al editar contacto desde la UI", ex, "ContactosPage", "EditarContacto_Click");
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al actualizar el contacto.");
+                }
+            }
+        }
+
+        private async void EliminarContacto_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.ContactoDto contacto)
+                return;
+
+            var confirmDialog = new ContentDialog
+            {
+                Title = "Confirmar eliminación",
+                Content = $"¿Desea eliminar el contacto \"{contacto.NombreCompleto}\" (ID: {contacto.ContactoId})?",
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await confirmDialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                try
+                {
+                    var success = await ViewModel.DeleteContactoAsync(contacto.ContactoId);
+                    if (success)
+                    {
+                        await _notificacionService.MostrarAsync("Contacto eliminado", $"Contacto \"{contacto.NombreCompleto}\" eliminado correctamente.");
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar el contacto.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _loggingService.LogErrorAsync("Error al eliminar contacto desde la UI", ex, "ContactosPage", "EliminarContacto_Click");
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar el contacto.");
+                }
             }
         }
 

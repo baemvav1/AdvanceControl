@@ -185,15 +185,35 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <!--  Botón para expandir/colapsar  -->
-                                        <Button
+                                        <!--  Botones de acción  -->
+                                        <StackPanel
                                             Grid.Column="1"
                                             VerticalAlignment="Center"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Click="ToggleExpandButton_Click"
-                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                            Tag="{x:Bind}"/>
+                                            Orientation="Horizontal"
+                                            Spacing="2">
+                                            <Button
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="EditarContacto_Click"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Editar contacto">
+                                                <SymbolIcon Symbol="Edit" />
+                                            </Button>
+                                            <Button
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="EliminarContacto_Click"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Eliminar contacto">
+                                                <SymbolIcon Symbol="Delete" />
+                                            </Button>
+                                            <Button
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="ToggleExpandButton_Click"
+                                                Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
+                                                Tag="{x:Bind}"/>
+                                        </StackPanel>
                                     </Grid>
                                     <Grid
                                         x:Name="Body"
@@ -211,7 +231,6 @@
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
                                                     <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
@@ -263,21 +282,7 @@
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="2"
-                                                        Grid.Column="0"
-                                                        Margin="0,4,8,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Código Interno:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind CodigoInterno}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="2"
+                                                        Grid.Row="1"
                                                         Grid.Column="1"
                                                         Margin="0,4,0,0">
                                                         <TextBlock
@@ -291,7 +296,7 @@
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="3"
+                                                        Grid.Row="2"
                                                         Grid.Column="0"
                                                         Margin="0,4,8,0">
                                                         <TextBlock
@@ -305,7 +310,7 @@
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="3"
+                                                        Grid.Row="2"
                                                         Grid.Column="1"
                                                         Margin="0,4,0,0">
                                                         <TextBlock
