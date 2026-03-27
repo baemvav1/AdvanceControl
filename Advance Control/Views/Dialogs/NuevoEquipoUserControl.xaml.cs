@@ -1,7 +1,10 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.ViewModels;
+using Advance_Control.Services.Equipos;
+using Advance_Control.Utilities;
 using System;
+using System.Threading.Tasks;
 
 namespace Advance_Control.Views.Dialogs
 {
@@ -25,11 +28,11 @@ namespace Advance_Control.Views.Dialogs
         /// </summary>
         public bool SaveSuccessful { get; private set; }
 
+        private readonly EquiposViewModel _equiposViewModel;
+
         /// <summary>
         /// Constructor que recibe el ViewModel por inyección de dependencias
         /// </summary>
-        /// <param name="viewModel">ViewModel de nuevo equipo</param>
-        /// <exception cref="ArgumentNullException">Si viewModel es null</exception>
         public NuevoEquipoUserControl(NuevoEquipoViewModel viewModel)
         {
             if (viewModel == null)
@@ -39,6 +42,7 @@ namespace Advance_Control.Views.Dialogs
             }
 
             ViewModel = viewModel;
+            _equiposViewModel = AppServices.Get<EquiposViewModel>();
             
             this.InitializeComponent();
             
@@ -46,13 +50,42 @@ namespace Advance_Control.Views.Dialogs
             this.DataContext = ViewModel;
         }
 
-        private void SaveButton_Click(object sender, RoutedEventArgs e)
+        private async void SaveButton_Click(object sender, RoutedEventArgs e)
         {
             // Validar el formulario
-            if (ViewModel.ValidateForm())
+            if (!ViewModel.ValidateForm())
+                return;
+
+            try
             {
-                SaveSuccessful = true;
-                CloseDialogAction?.Invoke();
+                // Llamar al API directamente desde el diálogo
+                var success = await _equiposViewModel.CreateEquipoAsync(
+                    ViewModel.Marca,
+                    ViewModel.Creado!.Value,
+                    ViewModel.Paradas,
+                    ViewModel.Kilogramos,
+                    ViewModel.Personas,
+                    string.IsNullOrWhiteSpace(ViewModel.Descripcion) ? null : ViewModel.Descripcion,
+                    string.IsNullOrWhiteSpace(ViewModel.Identificador) ? "" : ViewModel.Identificador,
+                    ViewModel.Estatus,
+                    ViewModel.IdUbicacion
+                );
+
+                if (success)
+                {
+                    SaveSuccessful = true;
+                    CloseDialogAction?.Invoke();
+                }
+                else
+                {
+                    // Mostrar error sin cerrar el diálogo
+                    ViewModel.ErrorMessage = _equiposViewModel.ErrorMessage 
+                        ?? "No se pudo crear el equipo. El identificador puede ya existir.";
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewModel.ErrorMessage = $"Error al crear el equipo: {ex.Message}";
             }
         }
 

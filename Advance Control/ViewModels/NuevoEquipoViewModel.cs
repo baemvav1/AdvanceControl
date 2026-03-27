@@ -210,8 +210,7 @@ namespace Advance_Control.ViewModels
         /// Indica si se puede guardar (validación básica)
         /// </summary>
         public bool CanSave => !string.IsNullOrWhiteSpace(Marca) && 
-                               Creado.HasValue && 
-                               !string.IsNullOrWhiteSpace(Identificador);
+                               Creado.HasValue;
 
         /// <summary>
         /// Valida los datos del formulario
@@ -239,13 +238,7 @@ namespace Advance_Control.ViewModels
                 return false;
             }
 
-            if (string.IsNullOrWhiteSpace(Identificador))
-            {
-                ErrorMessage = "El identificador es obligatorio.";
-                return false;
-            }
-
-            if (Identificador.Length > 50)
+            if (!string.IsNullOrWhiteSpace(Identificador) && Identificador.Length > 50)
             {
                 ErrorMessage = "El identificador no puede tener más de 50 caracteres.";
                 return false;

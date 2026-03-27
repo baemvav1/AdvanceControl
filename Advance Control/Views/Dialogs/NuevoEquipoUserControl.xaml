@@ -105,13 +105,13 @@
             Grid.Row="10"
             Margin="4"
             FontWeight="SemiBold"
-            Text="Identificador: *" />
+            Text="Identificador:" />
         <TextBox
             x:Name="IdentificadorTextBox"
             Grid.Row="11"
             Width="300"
             Margin="4,4,4,12"
-            PlaceholderText="Identificador único del equipo"
+            PlaceholderText="Dejar vacío para auto-generar (0001, 0002...)"
             Text="{x:Bind ViewModel.Identificador, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
         <TextBlock

@@ -127,22 +127,6 @@ namespace Advance_Control.Views.Pages
             };
 
             await dialog.ShowAsync();
-
-            // Si se guardó exitosamente, crear el equipo en el servidor
-            if (nuevoEquipoView.SaveSuccessful && nuevoEquipoViewModel.Creado.HasValue)
-            {
-                await ViewModel.CreateEquipoAsync(
-                    nuevoEquipoViewModel.Marca,
-                    nuevoEquipoViewModel.Creado.Value,
-                    nuevoEquipoViewModel.Paradas,
-                    nuevoEquipoViewModel.Kilogramos,
-                    nuevoEquipoViewModel.Personas,
-                    string.IsNullOrWhiteSpace(nuevoEquipoViewModel.Descripcion) ? null : nuevoEquipoViewModel.Descripcion,
-                    nuevoEquipoViewModel.Identificador,
-                    nuevoEquipoViewModel.Estatus,
-                    nuevoEquipoViewModel.IdUbicacion
-                );
-            }
         }
 
         private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
