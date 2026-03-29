@@ -42,6 +42,7 @@ namespace Advance_Control.Views.Pages
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
         private readonly IActivityService _activityService;
+        private readonly Services.Areas.IAreasService _areasService;
         private bool _isEditMode = false;
         private int? _editingUbicacionId = null;
         private bool _isFormVisible = false;
@@ -74,6 +75,9 @@ namespace Advance_Control.Views.Pages
 
             // Resolver el servicio de actividades desde DI
             _activityService = AppServices.Get<IActivityService>();
+
+            // Resolver el servicio de áreas para validación
+            _areasService = AppServices.Get<Services.Areas.IAreasService>();
 
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(UbicacionesPage));
@@ -142,6 +146,13 @@ namespace Advance_Control.Views.Pages
                 
                 await MapWebView.EnsureCoreWebView2Async();
                 MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+
+                // Virtual host para servir GeoJSON localmente sin peticiones de red
+                var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
+                if (Directory.Exists(geoFolder))
+                    MapWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                        "geo-assets", geoFolder,
+                        Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
                 
                 _isWebView2Initialized = true;
                 
@@ -374,13 +385,24 @@ namespace Advance_Control.Views.Pages
                 // Serializar las ubicaciones como JSON
                 var ubicacionesJson = JsonSerializer.Serialize(ViewModel.Ubicaciones);
 
+                // Leer GeoJSON de estados embebido en el cliente
+                var estadosGeoJson = "null";
+                try
+                {
+                    var geoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "geo", "estados.json");
+                    if (File.Exists(geoPath))
+                        estadosGeoJson = File.ReadAllText(geoPath);
+                }
+                catch { /* Si no existe el archivo, la capa simplemente no estará disponible */ }
+
                 // Crear el HTML con Google Maps
                 var html = GenerateMapHtml(
                     ViewModel.MapsConfig.ApiKey,
                     lat,
                     lng,
                     ViewModel.MapsConfig.DefaultZoom,
-                    ubicacionesJson);
+                    ubicacionesJson,
+                    estadosGeoJson);
 
                 // Cargar el HTML en el WebView2
                 MapWebView.NavigateToString(html);
@@ -415,7 +437,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Genera el HTML para el mapa de Google Maps
         /// </summary>
-        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string ubicacionesJson)
+        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string ubicacionesJson, string estadosGeoJson = "null")
         {
             return $@"
 <!DOCTYPE html>
@@ -450,6 +472,27 @@ namespace Advance_Control.Views.Pages
         }}
         .marker-drop {{ animation: marker-drop 0.5s ease-out; }}
         .marker-bounce {{ animation: marker-bounce 0.6s ease-in-out infinite; }}
+        .geo-toggle-btn {{
+            background: #fff;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            color: #444;
+            cursor: pointer;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            height: 32px;
+            padding: 0 10px;
+            margin: 4px 2px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }}
+        .geo-toggle-btn:hover {{ background: #f5f5f5; }}
+        .geo-toggle-btn.active {{
+            background: #e8f0fe;
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }}
     </style>
 </head>
 <body>
@@ -468,6 +511,74 @@ namespace Advance_Control.Views.Pages
         let map;
         let ubicaciones = {ubicacionesJson};
         let markers = [];
+
+        // --- Capa geográfica: Estados ---
+        const ESTADOS_DATA = {estadosGeoJson};
+        let estadosLayer = null;
+        let estadosVisible = false;
+
+        function toggleEstados() {{
+            if (!ESTADOS_DATA) return;
+            if (!estadosLayer) {{
+                estadosLayer = new google.maps.Data();
+                estadosLayer.addGeoJson(ESTADOS_DATA);
+                estadosLayer.setStyle({{
+                    strokeColor: '#1A73E8',
+                    strokeWeight: 1.5,
+                    strokeOpacity: 0.8,
+                    fillColor: '#1A73E8',
+                    fillOpacity: 0.05
+                }});
+            }}
+            estadosVisible = !estadosVisible;
+            estadosLayer.setMap(estadosVisible ? map : null);
+            const btn = document.getElementById('btn-estados');
+            if (btn) btn.className = 'geo-toggle-btn' + (estadosVisible ? ' active' : '');
+        }}
+
+        // --- Capa geográfica: Municipios (carga bajo demanda desde disco local) ---
+        let municipiosLayer = null;
+        let municipiosVisible = false;
+        let municipiosLoading = false;
+
+        function toggleMunicipios() {{
+            if (municipiosLoading) return;
+            if (!municipiosLayer) {{
+                municipiosLoading = true;
+                const btn = document.getElementById('btn-municipios');
+                if (btn) btn.textContent = '⏳ Cargando...';
+                fetch('https://geo-assets/municipios.json')
+                    .then(r => r.json())
+                    .then(data => {{
+                        municipiosLayer = new google.maps.Data();
+                        municipiosLayer.addGeoJson(data);
+                        municipiosLayer.setStyle({{
+                            strokeColor: '#000000',
+                            strokeWeight: 1,
+                            strokeOpacity: 1.0,
+                            fillColor: '#000000',
+                            fillOpacity: 0.03
+                        }});
+                        municipiosLayer.setMap(map);
+                        municipiosVisible = true;
+                        municipiosLoading = false;
+                        if (btn) {{
+                            btn.textContent = '🗺 Municipios';
+                            btn.className = 'geo-toggle-btn active';
+                        }}
+                    }})
+                    .catch(() => {{
+                        municipiosLoading = false;
+                        const btn = document.getElementById('btn-municipios');
+                        if (btn) btn.textContent = '🗺 Municipios';
+                    }});
+            }} else {{
+                municipiosVisible = !municipiosVisible;
+                municipiosLayer.setMap(municipiosVisible ? map : null);
+                const btn = document.getElementById('btn-municipios');
+                if (btn) btn.className = 'geo-toggle-btn' + (municipiosVisible ? ' active' : '');
+            }}
+        }}
         let infoWindow;
         let editMarker = null;
         let geocoder = null;
@@ -541,6 +652,31 @@ namespace Advance_Control.Views.Pages
 
             // Renderizar las ubicaciones (markers)
             renderUbicaciones();
+
+            // Botones toggle de capas geográficas
+            if (ESTADOS_DATA) {{
+                const geoControls = document.createElement('div');
+                geoControls.style.margin = '8px';
+                geoControls.style.display = 'flex';
+                geoControls.style.flexDirection = 'column';
+                geoControls.style.gap = '4px';
+
+                const btnEstados = document.createElement('button');
+                btnEstados.id = 'btn-estados';
+                btnEstados.className = 'geo-toggle-btn';
+                btnEstados.textContent = '🗺 Estados';
+                btnEstados.onclick = toggleEstados;
+                geoControls.appendChild(btnEstados);
+
+                const btnMunicipios = document.createElement('button');
+                btnMunicipios.id = 'btn-municipios';
+                btnMunicipios.className = 'geo-toggle-btn';
+                btnMunicipios.textContent = '🗺 Municipios';
+                btnMunicipios.onclick = toggleMunicipios;
+                geoControls.appendChild(btnMunicipios);
+
+                map.controls[google.maps.ControlPosition.TOP_RIGHT].push(geoControls);
+            }}
 
             // Click listener: detectar click normal o click sobre un Place/POI
             map.addListener('click', (event) => {{
@@ -962,25 +1098,24 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
-        /// Maneja el clic en el botón de búsqueda del mapa
+        /// Maneja la tecla Enter en el campo de búsqueda del mapa
         /// </summary>
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        private async void MapSearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            if (e.Key != global::Windows.System.VirtualKey.Enter) return;
+            e.Handled = true;
+
             try
             {
                 var searchQuery = MapSearchBox.Text?.Trim();
                 
                 if (string.IsNullOrWhiteSpace(searchQuery))
-                {
-                    await ShowMessageDialogAsync("Búsqueda", "Por favor ingrese una ubicación para buscar");
                     return;
-                }
 
-                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "UbicacionesPage", "SearchButton_Click");
+                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "UbicacionesPage", "MapSearchBox_KeyDown");
 
                 if (MapWebView?.CoreWebView2 != null)
                 {
-                    // Use proper JavaScript encoding to prevent XSS attacks
                     var encodedQuery = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(searchQuery);
                     var script = $"searchLocation('{encodedQuery}');";
                     await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
@@ -988,7 +1123,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "UbicacionesPage", "SearchButton_Click");
+                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "UbicacionesPage", "MapSearchBox_KeyDown");
                 await ShowMessageDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
             }
         }
@@ -1152,6 +1287,28 @@ namespace Advance_Control.Views.Pages
                     PlaceId = _currentPlaceId,
                     Activo = true
                 };
+
+                // Validar que las coordenadas caigan dentro de un área definida
+                try
+                {
+                    var areas = await _areasService.ValidatePointAsync(_currentLatitud.Value, _currentLongitud.Value);
+                    if (areas == null || !areas.Any(a => a.DentroDelArea))
+                    {
+                        await ShowMessageDialogAsync("Ubicación sin área",
+                            "La ubicación seleccionada no se encuentra dentro de ningún área definida. " +
+                            "Primero debe crear un área que cubra esta zona en la página de Áreas.");
+                        return;
+                    }
+                }
+                catch (Exception areaEx)
+                {
+                    await _loggingService.LogWarningAsync(
+                        $"No se pudo validar área para coordenadas ({_currentLatitud}, {_currentLongitud}): {areaEx.Message}",
+                        "UbicacionesPage", "SaveButton_Click");
+                    await ShowMessageDialogAsync("Advertencia",
+                        "No se pudo verificar si la ubicación pertenece a un área. Verifique su conexión e intente de nuevo.");
+                    return;
+                }
 
                 ApiResponse response;
                 if (_isEditMode && _editingUbicacionId.HasValue)

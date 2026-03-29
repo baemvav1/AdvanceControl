@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Activity;
@@ -8,6 +9,7 @@ using Advance_Control.Utilities;
 using Advance_Control.Models;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Linq;
@@ -35,6 +37,7 @@ namespace Advance_Control.Views.Pages
         private bool _isEditMode = false;
         private int? _editingAreaId = null;
         private bool _isFormVisible = false;
+        private string? _pendingGeoNombre = null; // nombre del estado/municipio para pre-llenar el formulario
         
         // Store polygon/shape data from Google Maps Drawing Manager
         private string? _currentShapeType = null;
@@ -129,9 +132,16 @@ namespace Advance_Control.Views.Pages
                 
                 await MapWebView.EnsureCoreWebView2Async();
                 MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
-                
+
+                // Virtual host para servir GeoJSON localmente sin peticiones de red
+                var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
+                if (Directory.Exists(geoFolder))
+                    MapWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                        "geo-assets", geoFolder,
+                        Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+
                 _isWebView2Initialized = true;
-                
+
                 await _loggingService.LogInformationAsync("CoreWebView2 and message handler initialized successfully", "AreasPage", "EnsureWebView2InitializedAsync");
             }
             catch (Exception ex)
@@ -211,6 +221,26 @@ namespace Advance_Control.Views.Pages
                             _currentShapeBounds = boundsElement.GetRawText();
                         }
 
+                        // Pre-llenar nombre cuando viene de "Crear desde estado/municipio"
+                        if (jsonDoc.TryGetValue("estadoNombre", out var estadoNombreElement))
+                        {
+                            var geoNombre = estadoNombreElement.GetString();
+                            if (!string.IsNullOrWhiteSpace(geoNombre))
+                            {
+                                _pendingGeoNombre = geoNombre;
+                                // Abrir el formulario automáticamente, igual que si el usuario hiciera click en "Agregar"
+                                _isEditMode = false;
+                                _editingAreaId = null;
+                                FormTitle.Text = "Nueva Área";
+                                NombreTextBox.Text = geoNombre;
+                                DescripcionTextBox.Text = string.Empty;
+                                ColorComboBox.SelectedIndex = 0;
+                                ActivoCheckBox.IsChecked = true;
+                                AreaForm.Visibility = Visibility.Visible;
+                                _isFormVisible = true;
+                            }
+                        }
+
                         await _loggingService.LogInformationAsync(
                             $"Shape {messageType}: Type={_currentShapeType}, " +
                             $"Path={(string.IsNullOrEmpty(_currentShapePath) ? "EMPTY" : "SET")}, " +
@@ -219,6 +249,15 @@ namespace Advance_Control.Views.Pages
                             $"Bounds={(string.IsNullOrEmpty(_currentShapeBounds) ? "EMPTY" : "SET")}",
                             "AreasPage",
                             "CoreWebView2_WebMessageReceived");
+                    }
+                    else if (messageType == "geoClickError")
+                    {
+                        if (jsonDoc.TryGetValue("message", out var errMsgElement))
+                        {
+                            await _loggingService.LogErrorAsync(
+                                $"Error JS en click de capa geo: {errMsgElement.GetString()}",
+                                null!, "AreasPage", "CoreWebView2_WebMessageReceived");
+                        }
                     }
                 }
             }
@@ -249,7 +288,18 @@ namespace Advance_Control.Views.Pages
                 var zoom = ViewModel.MapsConfig.DefaultZoom;
 
                 var areasJson = PrepareAreasJson();
-                var html = GenerateAreasMapHtml(ViewModel.MapsConfig.ApiKey, centerLat, centerLng, zoom, areasJson);
+
+                // Leer GeoJSON de estados embebido en el cliente
+                var estadosGeoJson = "null";
+                try
+                {
+                    var geoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "geo", "estados.json");
+                    if (File.Exists(geoPath))
+                        estadosGeoJson = File.ReadAllText(geoPath);
+                }
+                catch { /* Si no existe el archivo, la capa simplemente no estará disponible */ }
+
+                var html = GenerateAreasMapHtml(ViewModel.MapsConfig.ApiKey, centerLat, centerLng, zoom, areasJson, estadosGeoJson);
 
                 MapWebView.NavigateToString(html);
                 ViewModel.IsMapInitialized = true;
@@ -345,7 +395,7 @@ namespace Advance_Control.Views.Pages
             return null;
         }
 
-        private string GenerateAreasMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string areasJson)
+        private string GenerateAreasMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string areasJson, string estadosGeoJson = "null")
         {
             return $@"
 <!DOCTYPE html>
@@ -369,6 +419,27 @@ namespace Advance_Control.Views.Pages
             height: 100%;
             width: 100%;
         }}
+        .geo-toggle-btn {{
+            background: #fff;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            color: #444;
+            cursor: pointer;
+            font-family: Roboto, Arial, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            height: 32px;
+            padding: 0 10px;
+            margin: 4px 2px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+            transition: background 0.15s, border-color 0.15s, color 0.15s;
+        }}
+        .geo-toggle-btn:hover {{ background: #f5f5f5; }}
+        .geo-toggle-btn.active {{
+            background: #e8f0fe;
+            border-color: #1a73e8;
+            color: #1a73e8;
+        }}
     </style>
 </head>
 <body>
@@ -386,6 +457,231 @@ namespace Advance_Control.Views.Pages
         let existingShapes = [];
         let searchMarker = null;
         let infoWindow;
+
+        // --- Capa geográfica: Estados ---
+        const ESTADOS_DATA = {estadosGeoJson};
+        let estadosLayer = null;
+        let estadosVisible = false;
+        let estadosClickMode = false; // modo: crear area desde estado
+
+        // Ramer-Douglas-Peucker: reduce puntos manteniendo la forma
+        function rdpSimplify(points, tolerance) {{
+            if (points.length <= 2) return points;
+            let maxDist = 0, maxIdx = 0;
+            const end = points.length - 1;
+            for (let i = 1; i < end; i++) {{
+                const d = rdpPerpendicularDist(points[i], points[0], points[end]);
+                if (d > maxDist) {{ maxDist = d; maxIdx = i; }}
+            }}
+            if (maxDist > tolerance) {{
+                const left  = rdpSimplify(points.slice(0, maxIdx + 1), tolerance);
+                const right = rdpSimplify(points.slice(maxIdx), tolerance);
+                return left.slice(0, -1).concat(right);
+            }}
+            return [points[0], points[end]];
+        }}
+        function rdpPerpendicularDist(p, a, b) {{
+            const dx = b.lat - a.lat, dy = b.lng - a.lng;
+            if (dx === 0 && dy === 0) return Math.hypot(p.lat - a.lat, p.lng - a.lng);
+            const t = ((p.lat - a.lat) * dx + (p.lng - a.lng) * dy) / (dx * dx + dy * dy);
+            return Math.hypot(p.lat - (a.lat + t * dx), p.lng - (a.lng + t * dy));
+        }}
+        function roundCoord(n) {{ return Math.round(n * 100000) / 100000; }}
+
+        function extractGeoJsonPolygonPath(geometry) {{
+            // Data.LinearRing no tiene .forEach() — necesita .getArray().forEach()
+            const type = geometry.getType();
+            const raw = [];
+            try {{
+                if (type === 'Polygon') {{
+                    geometry.getAt(0).getArray().forEach(latlng => raw.push({{ lat: latlng.lat(), lng: latlng.lng() }}));
+                }} else if (type === 'MultiPolygon') {{
+                    // Usa el anillo exterior del polígono más grande
+                    let bestLen = 0, bestRing = null;
+                    geometry.getArray().forEach(poly => {{
+                        const ring = poly.getAt(0);
+                        if (ring.getLength() > bestLen) {{ bestLen = ring.getLength(); bestRing = ring; }}
+                    }});
+                    if (bestRing) bestRing.getArray().forEach(latlng => raw.push({{ lat: latlng.lat(), lng: latlng.lng() }}));
+                }}
+            }} catch(e) {{
+                window.chrome.webview.postMessage({{ type: 'geoClickError', message: e.message }});
+                return [];
+            }}
+            // Simplificar con Douglas-Peucker (0.0001° ≈ 11 m) y redondear a 5 decimales
+            const simplified = rdpSimplify(raw, 0.0001);
+            return simplified.map(p => ({{ lat: roundCoord(p.lat), lng: roundCoord(p.lng) }}));
+        }}
+
+        function toggleEstadosClickMode() {{
+            estadosClickMode = !estadosClickMode;
+            const btn = document.getElementById('btn-estados-crear');
+            if (btn) {{
+                btn.className = 'geo-toggle-btn' + (estadosClickMode ? ' active' : '');
+                btn.textContent = estadosClickMode ? '✅ Clic en estado...' : '⬡ Crear desde estado';
+            }}
+            // Mostrar capa de estados automáticamente al activar el modo
+            if (estadosClickMode && !estadosVisible) toggleEstados();
+        }}
+
+        function toggleEstados() {{
+            if (!ESTADOS_DATA) return;
+            if (!estadosLayer) {{
+                estadosLayer = new google.maps.Data();
+                estadosLayer.addGeoJson(ESTADOS_DATA);
+                estadosLayer.setStyle({{
+                    strokeColor: '#1A73E8',
+                    strokeWeight: 1.5,
+                    strokeOpacity: 0.8,
+                    fillColor: '#1A73E8',
+                    fillOpacity: 0.05
+                }});
+                // Click en estado → crear área con su polígono
+                estadosLayer.addListener('click', function(event) {{
+                    if (!estadosClickMode) return;
+                    const feature = event.feature;
+                    const nombre = feature.getProperty('NOMBRE') || feature.getProperty('nombre') ||
+                                   feature.getProperty('NOM_ENT') || feature.getProperty('name') || 'Estado';
+                    const geometry = feature.getGeometry();
+                    const path = extractGeoJsonPolygonPath(geometry);
+                    if (path.length < 3) return;
+
+                    // Eliminar shape anterior si existe
+                    if (currentShape) {{ currentShape.setMap(null); currentShape = null; }}
+
+                    // Crear polígono con el mismo estilo que el drawing manager
+                    currentShape = new google.maps.Polygon({{
+                        paths: path,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 1,
+                        strokeWeight: 2,
+                        fillColor: '#FF0000',
+                        fillOpacity: 0.35,
+                        editable: true,
+                        draggable: false,
+                        map: map
+                    }});
+
+                    // Desactivar modo click y notificar a C#
+                    estadosClickMode = false;
+                    const btn = document.getElementById('btn-estados-crear');
+                    if (btn) {{ btn.className = 'geo-toggle-btn'; btn.textContent = '⬡ Crear desde estado'; }}
+                    drawingManager.setDrawingMode(null);
+                    addShapeEditListeners('polygon', currentShape);
+
+                    const shapeData = extractShapeData('polygon', currentShape);
+                    window.chrome.webview.postMessage({{
+                        type: 'shapeDrawn',
+                        shapeType: 'polygon',
+                        estadoNombre: nombre,
+                        ...shapeData
+                    }});
+                }});
+            }}
+            estadosVisible = !estadosVisible;
+            estadosLayer.setMap(estadosVisible ? map : null);
+            const btn = document.getElementById('btn-estados');
+            if (btn) btn.className = 'geo-toggle-btn' + (estadosVisible ? ' active' : '');
+        }}
+
+        // --- Capa geográfica: Municipios (carga bajo demanda desde disco local) ---
+        let municipiosLayer = null;
+        let municipiosVisible = false;
+        let municipiosLoading = false;
+        let municipiosClickMode = false; // modo: crear area desde municipio
+
+        function toggleMunicipiosClickMode() {{
+            municipiosClickMode = !municipiosClickMode;
+            const btn = document.getElementById('btn-municipios-crear');
+            if (btn) {{
+                btn.className = 'geo-toggle-btn' + (municipiosClickMode ? ' active' : '');
+                btn.textContent = municipiosClickMode ? '✅ Clic en municipio...' : '⬡ Crear desde municipio';
+            }}
+            // Cargar y mostrar municipios automáticamente al activar el modo
+            if (municipiosClickMode && !municipiosVisible) toggleMunicipios();
+        }}
+
+        function attachMunicipiosClickListener() {{
+            municipiosLayer.addListener('click', function(event) {{
+                if (!municipiosClickMode) return;
+                const feature = event.feature;
+                const nombre = feature.getProperty('NOMGEO') || feature.getProperty('NOM_MUN') ||
+                               feature.getProperty('nombre') || feature.getProperty('name') || 'Municipio';
+                const estado = feature.getProperty('NOM_ENT') || feature.getProperty('estado') || '';
+                const nombreCompleto = estado ? (nombre + ', ' + estado) : nombre;
+                const geometry = feature.getGeometry();
+                const path = extractGeoJsonPolygonPath(geometry);
+                if (path.length < 3) return;
+
+                if (currentShape) {{ currentShape.setMap(null); currentShape = null; }}
+
+                currentShape = new google.maps.Polygon({{
+                    paths: path,
+                    strokeColor: '#FF0000',
+                    strokeOpacity: 1,
+                    strokeWeight: 2,
+                    fillColor: '#FF0000',
+                    fillOpacity: 0.35,
+                    editable: true,
+                    draggable: false,
+                    map: map
+                }});
+
+                municipiosClickMode = false;
+                const btn = document.getElementById('btn-municipios-crear');
+                if (btn) {{ btn.className = 'geo-toggle-btn'; btn.textContent = '⬡ Crear desde municipio'; }}
+                drawingManager.setDrawingMode(null);
+                addShapeEditListeners('polygon', currentShape);
+
+                const shapeData = extractShapeData('polygon', currentShape);
+                window.chrome.webview.postMessage({{
+                    type: 'shapeDrawn',
+                    shapeType: 'polygon',
+                    estadoNombre: nombreCompleto,
+                    ...shapeData
+                }});
+            }});
+        }}
+
+        function toggleMunicipios() {{
+            if (municipiosLoading) return;
+            if (!municipiosLayer) {{
+                municipiosLoading = true;
+                const btn = document.getElementById('btn-municipios');
+                if (btn) btn.textContent = '⏳ Cargando...';
+                fetch('https://geo-assets/municipios.json')
+                    .then(r => r.json())
+                    .then(data => {{
+                        municipiosLayer = new google.maps.Data();
+                        municipiosLayer.addGeoJson(data);
+                        municipiosLayer.setStyle({{
+                            strokeColor: '#000000',
+                            strokeWeight: 1,
+                            strokeOpacity: 1.0,
+                            fillColor: '#000000',
+                            fillOpacity: 0.03
+                        }});
+                        attachMunicipiosClickListener();
+                        municipiosLayer.setMap(map);
+                        municipiosVisible = true;
+                        municipiosLoading = false;
+                        if (btn) {{
+                            btn.textContent = '🗺 Municipios';
+                            btn.className = 'geo-toggle-btn active';
+                        }}
+                    }})
+                    .catch(() => {{
+                        municipiosLoading = false;
+                        const btn = document.getElementById('btn-municipios');
+                        if (btn) btn.textContent = '🗺 Municipios';
+                    }});
+            }} else {{
+                municipiosVisible = !municipiosVisible;
+                municipiosLayer.setMap(municipiosVisible ? map : null);
+                const btn = document.getElementById('btn-municipios');
+                if (btn) btn.className = 'geo-toggle-btn' + (municipiosVisible ? ' active' : '');
+            }}
+        }}
 
         function escapeHtml(text) {{
             if (!text) return '';
@@ -463,6 +759,45 @@ namespace Advance_Control.Views.Pages
             }});
 
             loadExistingAreas({areasJson});
+
+            // Botones toggle de capas geográficas
+            if (ESTADOS_DATA) {{
+                const geoControls = document.createElement('div');
+                geoControls.style.margin = '8px';
+                geoControls.style.display = 'flex';
+                geoControls.style.flexDirection = 'column';
+                geoControls.style.gap = '4px';
+
+                const btnEstados = document.createElement('button');
+                btnEstados.id = 'btn-estados';
+                btnEstados.className = 'geo-toggle-btn';
+                btnEstados.textContent = '🗺 Estados';
+                btnEstados.onclick = toggleEstados;
+                geoControls.appendChild(btnEstados);
+
+                const btnEstadosCrear = document.createElement('button');
+                btnEstadosCrear.id = 'btn-estados-crear';
+                btnEstadosCrear.className = 'geo-toggle-btn';
+                btnEstadosCrear.textContent = '⬡ Crear desde estado';
+                btnEstadosCrear.onclick = toggleEstadosClickMode;
+                geoControls.appendChild(btnEstadosCrear);
+
+                const btnMunicipios = document.createElement('button');
+                btnMunicipios.id = 'btn-municipios';
+                btnMunicipios.className = 'geo-toggle-btn';
+                btnMunicipios.textContent = '🗺 Municipios';
+                btnMunicipios.onclick = toggleMunicipios;
+                geoControls.appendChild(btnMunicipios);
+
+                const btnMunicipiosCrear = document.createElement('button');
+                btnMunicipiosCrear.id = 'btn-municipios-crear';
+                btnMunicipiosCrear.className = 'geo-toggle-btn';
+                btnMunicipiosCrear.textContent = '⬡ Crear desde municipio';
+                btnMunicipiosCrear.onclick = toggleMunicipiosClickMode;
+                geoControls.appendChild(btnMunicipiosCrear);
+
+                map.controls[google.maps.ControlPosition.TOP_RIGHT].push(geoControls);
+            }}
         }}
 
         function extractShapeData(type, shape) {{
@@ -905,7 +1240,9 @@ namespace Advance_Control.Views.Pages
             _editingAreaId = null;
             FormTitle.Text = "Nueva Área";
             
-            NombreTextBox.Text = string.Empty;
+            // Si hay un nombre de geo-click pendiente, usarlo; si no, limpiar
+            NombreTextBox.Text = _pendingGeoNombre ?? string.Empty;
+            _pendingGeoNombre = null;
             DescripcionTextBox.Text = string.Empty;
             ColorComboBox.SelectedIndex = 0;
             ActivoCheckBox.IsChecked = true;
@@ -1289,6 +1626,7 @@ namespace Advance_Control.Views.Pages
             _currentShapeCenter = null;
             _currentShapeRadius = null;
             _currentShapeBounds = null;
+            _pendingGeoNombre = null;
 
             AreasList.SelectedItem = null;
         }
@@ -1306,40 +1644,32 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
-        /// Maneja el clic en el botón de búsqueda del mapa
+        /// Maneja la tecla Enter en el campo de búsqueda del mapa
         /// </summary>
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        private async void MapSearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            if (e.Key != global::Windows.System.VirtualKey.Enter) return;
+            e.Handled = true;
+
             try
             {
                 var searchQuery = MapSearchBox.Text?.Trim();
 
                 if (string.IsNullOrWhiteSpace(searchQuery))
-                {
-                    await ShowUserErrorDialogAsync("Búsqueda", "Por favor ingrese una ubicación para buscar");
                     return;
-                }
 
-                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "AreasPage", "SearchButton_Click");
-                await ShowDebugDialogAsync("Búsqueda Iniciada", $"Query: {searchQuery}");
+                await _loggingService.LogInformationAsync($"Buscando ubicación: {searchQuery}", "AreasPage", "MapSearchBox_KeyDown");
 
                 if (MapWebView?.CoreWebView2 != null)
                 {
-                    // Use proper JavaScript encoding to prevent XSS attacks
                     var encodedQuery = System.Text.Encodings.Web.JavaScriptEncoder.Default.Encode(searchQuery);
                     var script = $"searchLocation('{encodedQuery}');";
                     await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
                 }
-                else
-                {
-                    await ShowDebugDialogAsync("Error de WebView", "MapWebView o CoreWebView2 es null");
-                    await ShowUserErrorDialogAsync("Error", "El mapa no está listo. Por favor espere a que cargue.");
-                }
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "AreasPage", "SearchButton_Click");
-                await ShowDebugDialogAsync("Excepción en Búsqueda", $"Error: {ex.Message}\nStack: {ex.StackTrace}");
+                await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "AreasPage", "MapSearchBox_KeyDown");
                 await ShowUserErrorDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
             }
         }

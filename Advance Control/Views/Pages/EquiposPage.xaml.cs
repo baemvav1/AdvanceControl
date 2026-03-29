@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading.Tasks;
 using global::Windows.Foundation;
 using global::Windows.Foundation.Collections;
 using Microsoft.UI.Xaml;
@@ -469,6 +470,56 @@ namespace Advance_Control.Views.Pages
                 return;
 
             await MostrarDialogoSeleccionUbicacionAsync(equipo, "Ubicación asignada");
+        }
+
+        private async void CrearUbicacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
+                return;
+
+            try
+            {
+                var ubicacionWindow = new Views.Windows.UbicacionWindow();
+                ubicacionWindow.Activate();
+
+                // Esperar a que se cierre la ventana
+                var tcs = new TaskCompletionSource<bool>();
+                ubicacionWindow.Closed += (_, _) => tcs.TrySetResult(true);
+                await tcs.Task;
+
+                if (ubicacionWindow.UbicacionCreada != null)
+                {
+                    var creada = ubicacionWindow.UbicacionCreada;
+
+                    // Asignar la ubicación al equipo
+                    var updateData = new Models.EquipoQueryDto
+                    {
+                        IdUbicacion = creada.IdUbicacion
+                    };
+
+                    var success = await ViewModel.UpdateEquipoAsync(equipo.IdEquipo, updateData);
+
+                    if (success)
+                    {
+                        _activityService.Registrar("Equipos", "Ubicación creada y asignada");
+                        equipo.IdUbicacion = creada.IdUbicacion;
+                        equipo.Ubicacion = creada;
+                        await _notificacionService.MostrarAsync("Ubicación asignada",
+                            $"Ubicación \"{creada.Nombre}\" creada y asignada correctamente");
+                    }
+                    else
+                    {
+                        await _notificacionService.MostrarAsync("Error",
+                            "La ubicación se creó pero no se pudo asignar al equipo.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error en CrearUbicacionButton_Click: {ex.Message}");
+                await _notificacionService.MostrarAsync("Error",
+                    "Ocurrió un error al crear la ubicación.");
+            }
         }
 
         private async void EditarUbicacionButton_Click(object sender, RoutedEventArgs e)

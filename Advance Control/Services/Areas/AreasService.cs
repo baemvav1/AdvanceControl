@@ -204,13 +204,15 @@ namespace Advance_Control.Services.Areas
 
                 var url = _endpoints.GetEndpoint("api", "Areas");
 
-                // Build query parameters to match the API controller's [FromQuery] parameters
+                // Build query parameters (sin metadataJSON — va en el body para evitar URI Too Long)
                 url = BuildAreaQueryParams(area, url, isCreate: true);
 
                 await _logger.LogInformationAsync($"Creando área: {area.Nombre}", "AreasService", "CreateAreaAsync");
                 await LogDataFlowInfoAsync(area, 0, "CreateAreaAsync");
 
-                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+                // Enviar metadataJSON en el body JSON para no superar el límite de URI
+                var body = new { metadataJSON = area.MetadataJSON, coordenadas = (string?)null };
+                using var response = await _http.PostAsJsonAsync(url, body, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -270,13 +272,15 @@ namespace Advance_Control.Services.Areas
 
                 var url = _endpoints.GetEndpoint("api", "Areas", idArea.ToString());
 
-                // Build query parameters to match the API controller's [FromQuery] parameters
+                // Build query parameters (sin metadataJSON — va en el body para evitar URI Too Long)
                 url = BuildAreaQueryParams(area, url, isCreate: false);
 
                 await _logger.LogInformationAsync($"Actualizando área ID: {idArea}", "AreasService", "UpdateAreaAsync");
                 await LogDataFlowInfoAsync(area, 0, "UpdateAreaAsync");
 
-                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+                // Enviar metadataJSON en el body JSON para no superar el límite de URI
+                var body = new { metadataJSON = area.MetadataJSON, coordenadas = (string?)null };
+                using var response = await _http.PutAsJsonAsync(url, body, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -406,7 +410,7 @@ namespace Advance_Control.Services.Areas
                 .Add("etiquetaMostrar", area.EtiquetaMostrar)
                 .Add("etiquetaTexto", area.EtiquetaTexto)
                 .Add("nivelZoom", area.NivelZoom)
-                .Add("metadataJSON", area.MetadataJSON)
+                // metadataJSON va en el body (PostAsJsonAsync/PutAsJsonAsync) — no en la URI
                 .Add(isCreate ? "usuarioCreacion" : "usuarioModificacion",
                      isCreate ? area.UsuarioCreacion : area.UsuarioModificacion)
                 .Build(baseUrl);

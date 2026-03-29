@@ -299,8 +299,18 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                // Obtener áreas disponibles
+                // Asegurar que las áreas asignadas estén cargadas
+                if (!contacto.AreasLoaded)
+                    await LoadAreasForContactoAsync(contacto);
+
+                // Obtener todas las áreas activas del sistema
                 var todasLasAreas = await _areasService.GetAreasAsync(activo: true);
+
+                if (todasLasAreas.Count == 0)
+                {
+                    await _notificacionService.MostrarAsync("Sin áreas", "No se encontraron áreas activas en el sistema. Cree áreas primero desde la página de Áreas.");
+                    return;
+                }
 
                 // Filtrar las que ya están asignadas
                 var idsAsignados = contacto.AreasAsignadas.Select(a => a.IdArea).ToHashSet();
@@ -308,7 +318,7 @@ namespace Advance_Control.Views.Pages
 
                 if (areasDisponibles.Count == 0)
                 {
-                    await _notificacionService.MostrarAsync("Sin áreas disponibles", "Todas las áreas activas ya están asignadas a este contacto.");
+                    await _notificacionService.MostrarAsync("Sin áreas disponibles", $"Las {todasLasAreas.Count} áreas activas ya están asignadas a este contacto.");
                     return;
                 }
 

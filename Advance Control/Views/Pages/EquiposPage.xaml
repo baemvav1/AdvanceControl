@@ -379,15 +379,26 @@
                                                         Visibility="{x:Bind ShowNoUbicacionMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                                         <TextBlock
                                                             FontSize="12" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Sin ubicación" />
-                                                        <Button
-                                                            x:Name="AgregarUbicacionButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
-                                                            Click="AgregarUbicacionButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Tag="{x:Bind}">
-                                                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                                                <SymbolIcon Symbol="MapPin" />
-                                                                <TextBlock Text="Agregar Ubicación" />
-                                                            </StackPanel>
-                                                        </Button>
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <Button
+                                                                x:Name="AgregarUbicacionButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                                Click="AgregarUbicacionButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                Tag="{x:Bind}">
+                                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                    <SymbolIcon Symbol="MapPin" />
+                                                                    <TextBlock Text="Agregar Ubicación" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                            <Button
+                                                                x:Name="CrearUbicacionButton" Background="{ThemeResource LayerFillColorDefaultBrush}" BorderThickness="1" BorderBrush="DarkGray"
+                                                                Click="CrearUbicacionButton_Click" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                Tag="{x:Bind}">
+                                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                    <SymbolIcon Symbol="Add" />
+                                                                    <TextBlock Text="Crear Ubicación" />
+                                                                </StackPanel>
+                                                            </Button>
+                                                        </StackPanel>
                                                     </StackPanel>
 
                                                      <!--  Mostrar ubicación cuando existe  -->
