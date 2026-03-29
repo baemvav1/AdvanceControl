@@ -111,5 +111,6 @@ namespace Advance_Control.Models
         /// Usuario que modificó el registro
         /// </summary>
         public string? UsuarioModificacion { get; set; }
+        public int? IdArea { get; set; }
     }
 }

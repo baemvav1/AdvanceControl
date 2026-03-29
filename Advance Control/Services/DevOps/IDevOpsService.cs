@@ -27,6 +27,9 @@ namespace Advance_Control.Services.DevOps
         /// <summary>Limpia logs y actividades</summary>
         Task<List<DevOpsWipeResult>> LimpiarLogsAsync(CancellationToken ct = default);
 
+        /// <summary>Limpia areas, coordenadas, marcadores, ubicaciones y relaciones usuario-area</summary>
+        Task<List<DevOpsWipeResult>> LimpiarUbicacionesAsync(CancellationToken ct = default);
+
         /// <summary>Obtiene estadísticas de la base de datos</summary>
         Task<List<DevOpsStatsResult>> ObtenerEstadisticasAsync(CancellationToken ct = default);
     }

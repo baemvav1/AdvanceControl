@@ -525,6 +525,15 @@ namespace Advance_Control.Views.Pages
             {
                 var selectedUbicacion = seleccionarUbicacionControl.SelectedUbicacion;
 
+                // Validar que la ubicación pertenece a un área definida
+                if (selectedUbicacion.IdArea == null)
+                {
+                    await _notificacionService.MostrarAsync(
+                        "Ubicación sin área",
+                        "La ubicación seleccionada no pertenece a ningún área definida. Por favor seleccione una ubicación dentro de un área.");
+                    return;
+                }
+
                 try
                 {
                     // Actualizar el equipo con el ID de ubicación seleccionado

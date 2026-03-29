@@ -46,6 +46,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Fila 1 -->
@@ -101,6 +102,16 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon Glyph="&#xE7BA;" FontSize="16" />
                         <TextBlock Text="Borrado Logs" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Fila 3 -->
+                <Button x:Name="BtnUbicaciones" Grid.Row="2" Grid.Column="0"
+                        HorizontalAlignment="Stretch" Margin="0,4,4,0" Padding="16,12"
+                        Click="OnLimpiarUbicacionesClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE707;" FontSize="16" />
+                        <TextBlock Text="Borrado Ubicaciones" />
                     </StackPanel>
                 </Button>
             </Grid>

@@ -96,6 +96,7 @@ namespace Advance_Control.ViewModels
                     "levantamientos" => await _devOpsService.LimpiarLevantamientosAsync(),
                     "servicios" => await _devOpsService.LimpiarServiciosAsync(),
                     "logs" => await _devOpsService.LimpiarLogsAsync(),
+                    "ubicaciones" => await _devOpsService.LimpiarUbicacionesAsync(),
                     _ => throw new ArgumentException($"Módulo desconocido: {modulo}")
                 };
 

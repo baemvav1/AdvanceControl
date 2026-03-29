@@ -43,6 +43,9 @@ namespace Advance_Control.Services.DevOps
         public async Task<List<DevOpsWipeResult>> LimpiarLogsAsync(CancellationToken ct = default)
             => await EjecutarLimpiezaAsync("limpiar/logs", ct);
 
+        public async Task<List<DevOpsWipeResult>> LimpiarUbicacionesAsync(CancellationToken ct = default)
+            => await EjecutarLimpiezaAsync("limpiar/ubicaciones", ct);
+
         public async Task<List<DevOpsStatsResult>> ObtenerEstadisticasAsync(CancellationToken ct = default)
         {
             try

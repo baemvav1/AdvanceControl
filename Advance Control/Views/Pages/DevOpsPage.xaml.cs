@@ -84,6 +84,17 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void OnLimpiarUbicacionesClick(object sender, RoutedEventArgs e)
+        {
+            if (await ConfirmarLimpieza("Ubicaciones y Areas",
+                "Se eliminarán TODAS las areas, coordenadas, marcadores, ubicaciones y relaciones usuario-area.\n\n" +
+                "Los equipos perderán su ubicacion asignada.\n\n" +
+                "Esta acción NO se puede deshacer."))
+            {
+                await ViewModel.EjecutarLimpiezaAsync("ubicaciones");
+            }
+        }
+
         private async void OnCargarEstadisticasClick(object sender, RoutedEventArgs e)
         {
             await ViewModel.CargarEstadisticasAsync();
