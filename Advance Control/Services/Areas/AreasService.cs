@@ -375,6 +375,40 @@ namespace Advance_Control.Services.Areas
         }
 
         /// <summary>
+        /// Obtiene identificadores de equipos cuya ubicacion pertenece al area indicada
+        /// </summary>
+        public async Task<List<string>> GetIdentificadoresEnAreaAsync(int idArea, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "Areas", "equipos-en-area");
+                url = new ApiQueryBuilder()
+                    .AddRequired("idArea", idArea)
+                    .Build(url);
+
+                await _logger.LogInformationAsync($"Obteniendo equipos en area {idArea}", "AreasService", "GetIdentificadoresEnAreaAsync");
+
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al obtener equipos en area. Status: {response.StatusCode}",
+                        null, "AreasService", "GetIdentificadoresEnAreaAsync");
+                    return new List<string>();
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<List<string>>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                return result ?? new List<string>();
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al obtener equipos en area", ex, "AreasService", "GetIdentificadoresEnAreaAsync");
+                return new List<string>();
+            }
+        }
+
+        /// <summary>
         /// Logs data flow information for create/update operations
         /// </summary>
         private async Task LogDataFlowInfoAsync(AreaDto area, int queryParamsCount, string methodName)

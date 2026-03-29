@@ -58,5 +58,10 @@ namespace Advance_Control.Services.Areas
         Task<ApiResponse> DeleteAreaAsync(
             int idArea,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene identificadores de equipos cuya ubicacion pertenece al area indicada
+        /// </summary>
+        Task<List<string>> GetIdentificadoresEnAreaAsync(int idArea, CancellationToken cancellationToken = default);
     }
 }

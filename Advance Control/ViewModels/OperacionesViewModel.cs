@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Areas;
 using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Ubicaciones;
@@ -42,7 +43,9 @@ namespace Advance_Control.ViewModels
         private readonly ICheckOperacionService _checkService;
         private readonly IUserSessionService _userSession;
         private readonly IRelacionUsuarioAreaService _relacionAreaService;
+        private readonly IAreasService _areasService;
         private ObservableCollection<OperacionDto> _operaciones;
+        private ObservableCollection<AreaDto> _areas;
         private bool _isLoading;
         private string? _errorMessage;
         private int _idTipoFilter;
@@ -54,8 +57,9 @@ namespace Advance_Control.ViewModels
         private string? _selectedEquipoText;
         private DateTimeOffset? _fechaInicialFilter;
         private DateTimeOffset? _fechaFinalFilter;
+        private AreaDto? _selectedAreaFilter;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IUserSessionService userSession, IRelacionUsuarioAreaService relacionAreaService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IUserSessionService userSession, IRelacionUsuarioAreaService relacionAreaService, IAreasService areasService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
             _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
@@ -68,7 +72,9 @@ namespace Advance_Control.ViewModels
             _checkService      = checkService      ?? throw new ArgumentNullException(nameof(checkService));
             _userSession       = userSession       ?? throw new ArgumentNullException(nameof(userSession));
             _relacionAreaService = relacionAreaService ?? throw new ArgumentNullException(nameof(relacionAreaService));
+            _areasService      = areasService      ?? throw new ArgumentNullException(nameof(areasService));
             _operaciones = new ObservableCollection<OperacionDto>();
+            _areas       = new ObservableCollection<AreaDto>();
         }
 
         public ObservableCollection<OperacionDto> Operaciones
@@ -79,6 +85,18 @@ namespace Advance_Control.ViewModels
                 if (SetProperty(ref _operaciones, value))
                     OnPropertyChanged(nameof(IsEmpty));
             }
+        }
+
+        public ObservableCollection<AreaDto> Areas
+        {
+            get => _areas;
+            set => SetProperty(ref _areas, value);
+        }
+
+        public AreaDto? SelectedAreaFilter
+        {
+            get => _selectedAreaFilter;
+            set => SetProperty(ref _selectedAreaFilter, value);
         }
 
         /// <summary>
@@ -193,6 +211,10 @@ namespace Advance_Control.ViewModels
             try
             {
                 await _logger.LogInformationAsync("Vista de Operaciones inicializada", "OperacionesViewModel", "InitializeAsync");
+                var areas = await _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
+                Areas.Clear();
+                foreach (var a in areas)
+                    Areas.Add(a);
             }
             catch (Exception ex)
             {
@@ -230,6 +252,14 @@ namespace Advance_Control.ViewModels
 
                 // Filtrado por área según tipo de usuario
                 var filtrados = await FiltrarPorAreaAsync(operaciones, cancellationToken);
+
+                // Filtro manual de área seleccionado por el usuario
+                if (SelectedAreaFilter != null)
+                {
+                    var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
+                    var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                    filtrados = filtrados.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
+                }
 
                 Operaciones.Clear();
                 foreach (var operacion in filtrados)
@@ -300,6 +330,7 @@ namespace Advance_Control.ViewModels
                 SelectedEquipoText = null;
                 FechaInicialFilter = null;
                 FechaFinalFilter = null;
+                SelectedAreaFilter = null;
                 ErrorMessage = null;
                 await LoadOperacionesAsync(cancellationToken);
             }

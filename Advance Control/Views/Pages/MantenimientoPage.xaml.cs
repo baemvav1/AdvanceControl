@@ -55,6 +55,7 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
             
+            await ViewModel.InitializeAsync();
             // Cargar los mantenimientos cuando se navega a esta página
             await ViewModel.LoadMantenimientosAsync();
         }

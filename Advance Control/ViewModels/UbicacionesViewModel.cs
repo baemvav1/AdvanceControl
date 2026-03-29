@@ -25,7 +25,9 @@ namespace Advance_Control.ViewModels
         private GoogleMapsConfigDto? _mapsConfig;
         private ObservableCollection<GoogleMapsAreaDto> _areas;
         private ObservableCollection<UbicacionDto> _ubicaciones;
+        private ObservableCollection<UbicacionDto> _ubicacionesFiltradas;
         private UbicacionDto? _selectedUbicacion;
+        private GoogleMapsAreaDto? _selectedAreaFilter;
         private bool _isLoading;
         private string? _errorMessage;
         private bool _isMapInitialized;
@@ -42,6 +44,7 @@ namespace Advance_Control.ViewModels
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _areas = new ObservableCollection<GoogleMapsAreaDto>();
             _ubicaciones = new ObservableCollection<UbicacionDto>();
+            _ubicacionesFiltradas = new ObservableCollection<UbicacionDto>();
         }
 
         /// <summary>
@@ -69,6 +72,28 @@ namespace Advance_Control.ViewModels
         {
             get => _ubicaciones;
             set => SetProperty(ref _ubicaciones, value);
+        }
+
+        /// <summary>
+        /// Colección de ubicaciones filtradas por área
+        /// </summary>
+        public ObservableCollection<UbicacionDto> UbicacionesFiltradas
+        {
+            get => _ubicacionesFiltradas;
+            set => SetProperty(ref _ubicacionesFiltradas, value);
+        }
+
+        /// <summary>
+        /// Área seleccionada para filtrar la lista de ubicaciones
+        /// </summary>
+        public GoogleMapsAreaDto? SelectedAreaFilter
+        {
+            get => _selectedAreaFilter;
+            set
+            {
+                if (SetProperty(ref _selectedAreaFilter, value))
+                    AplicarFiltroArea();
+            }
         }
 
         /// <summary>
@@ -285,6 +310,8 @@ namespace Advance_Control.ViewModels
                     Ubicaciones.Add(ubicacion);
                 }
 
+                AplicarFiltroArea();
+
                 await _logger.LogInformationAsync($"Se cargaron {ubicaciones.Count} ubicaciones", "UbicacionesViewModel", "LoadUbicacionesAsync");
             }
             catch (Exception ex)
@@ -292,6 +319,20 @@ namespace Advance_Control.ViewModels
                 await _logger.LogErrorAsync("Error al cargar ubicaciones", ex, "UbicacionesViewModel", "LoadUbicacionesAsync");
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Aplica el filtro de área sobre la colección de ubicaciones
+        /// </summary>
+        private void AplicarFiltroArea()
+        {
+            UbicacionesFiltradas.Clear();
+            var filtradas = _selectedAreaFilter is null
+                ? _ubicaciones
+                : (IEnumerable<UbicacionDto>)_ubicaciones.Where(u => u.IdArea == _selectedAreaFilter.IdArea);
+
+            foreach (var u in filtradas)
+                UbicacionesFiltradas.Add(u);
         }
 
         /// <summary>

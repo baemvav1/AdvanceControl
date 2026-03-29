@@ -186,6 +186,19 @@
                             DateFormat="{}{dayofweek.abbreviated} {day.integer}/{month.integer}/{year.full}"
                             PlaceholderText="Seleccionar..." />
                     </StackPanel>
+
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        Margin="0,0,8,8">
+                        <TextBlock Margin="0,0,0,4" Text="Área" />
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            ItemsSource="{x:Bind ViewModel.Areas, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.SelectedAreaFilter, Mode=TwoWay}"
+                            DisplayMemberPath="Nombre"
+                            PlaceholderText="Todas las áreas" />
+                    </StackPanel>
                 </Grid>
             </StackPanel>
         </Grid>

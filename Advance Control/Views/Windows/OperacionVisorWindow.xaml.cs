@@ -508,7 +508,7 @@ namespace Advance_Control.Views.Windows
                 {
                     _activityService.Registrar("Operaciones", "Cotización generada");
                     Operacion.CotizacionPdfPath = filePath;
-                    await _viewModel.UpdateCheckAsync(Operacion, "cotizacionGenerada");
+                    await _viewModel.UpdateCheckAsync(Operacion, "cotizacion_generada");
                     var visor = new CotizacionVisorDialog(filePath, contactoParaCorreo, contactosCliente, Operacion.RazonSocial ?? string.Empty, _xamlRoot!);
                     visor.NotificarResultado(await visor.ShowAsync());
                     if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
@@ -516,7 +516,7 @@ namespace Advance_Control.Views.Windows
                         var email = new EnviarCotizacionDialog(filePath, contactoParaCorreo, contactosCliente, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, idOperacion: Operacion.IdOperacion);
                         if (await email.ShowAsync() == ContentDialogResult.Primary)
                         {
-                            await _viewModel.UpdateCheckAsync(Operacion, "cotizacionEnviada");
+                            await _viewModel.UpdateCheckAsync(Operacion, "cotizacion_enviada");
                             await _notificacionService.MostrarAsync("Correo enviado", "La cotización fue enviada correctamente.");
                         }
                     }
@@ -568,7 +568,7 @@ namespace Advance_Control.Views.Windows
                 {
                     _activityService.Registrar("Operaciones", "Reporte generado");
                     Operacion.ReportePdfPath = filePath;
-                    await _viewModel.UpdateCheckAsync(Operacion, "reporteGenerado");
+                    await _viewModel.UpdateCheckAsync(Operacion, "reporte_generado");
                     var visor = new CotizacionVisorDialog(filePath, contactoReporte, contactosReporte, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Reporte");
                     visor.NotificarResultado(await visor.ShowAsync());
                     if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
@@ -576,7 +576,7 @@ namespace Advance_Control.Views.Windows
                         var email = new EnviarCotizacionDialog(filePath, contactoReporte, contactosReporte, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Reporte", idOperacion: Operacion.IdOperacion);
                         if (await email.ShowAsync() == ContentDialogResult.Primary)
                         {
-                            await _viewModel.UpdateCheckAsync(Operacion, "reporteEnviado");
+                            await _viewModel.UpdateCheckAsync(Operacion, "reporte_enviado");
                             await _notificacionService.MostrarAsync("Correo enviado", "El reporte fue enviado correctamente.");
                         }
                     }
@@ -641,7 +641,7 @@ namespace Advance_Control.Views.Windows
                     Operacion.ImagesLoaded = false;
                     await RefreshImageIndicatorsAsync();
                     _activityService.Registrar("Operaciones", $"{imageType} cargada");
-                    var campo = imageType switch { "Prefactura" => "prefacturaCargada", "HojaServicio" => "hojaServicioCargada", "OrdenCompra" => "ordenCompraCargada", _ => null };
+                    var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
                     if (campo != null) await _viewModel.UpdateCheckAsync(Operacion, campo);
                     await _notificacionService.MostrarAsync($"{imageType} cargada", $"{result.FileName} guardada correctamente.");
                 }
@@ -671,7 +671,7 @@ namespace Advance_Control.Views.Windows
                 if (result != null)
                 {
                     _activityService.Registrar("Operaciones", "Factura cargada");
-                    await _viewModel.UpdateCheckAsync(Operacion, "facturaCargada");
+                    await _viewModel.UpdateCheckAsync(Operacion, "factura_cargada");
                     var fechaFinal = DateTime.Today;
                     if (await _viewModel.UpdateOperacionAsync(Operacion.IdOperacion.Value, fechaFinal: fechaFinal))
                         Operacion.FechaFinal = fechaFinal;

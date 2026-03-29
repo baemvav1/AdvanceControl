@@ -68,6 +68,7 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
             
+            await ViewModel.InitializeAsync();
             // Cargar los equipos cuando se navega a esta página
             await ViewModel.LoadEquiposAsync();
         }

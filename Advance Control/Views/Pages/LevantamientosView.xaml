@@ -23,30 +23,53 @@
                 Text="Gestion de levantamientos de equipos" />
         </StackPanel>
 
-        <!--  Toolbar  -->
-        <StackPanel
-            Grid.Row="1"
-            Margin="0,16,0,12"
-            Orientation="Horizontal"
-            Spacing="8">
-            <Button
-                x:Name="NuevoLevantamientoButton"
-                Click="NuevoLevantamiento_Click"
-                Style="{ThemeResource AccentButtonStyle}">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                    <FontIcon FontSize="14" Glyph="&#xE710;" />
-                    <TextBlock Text="Nuevo levantamiento" />
-                </StackPanel>
-            </Button>
-            <Button
-                x:Name="RefrescarButton"
-                Click="Refrescar_Click">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                    <FontIcon FontSize="14" Glyph="&#xE72C;" />
-                    <TextBlock Text="Refrescar" />
-                </StackPanel>
-            </Button>
-        </StackPanel>
+        <!--  Toolbar + Filtro Área  -->
+        <Grid Grid.Row="1" Margin="0,16,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel
+                Grid.Column="0"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button
+                    x:Name="NuevoLevantamientoButton"
+                    Click="NuevoLevantamiento_Click"
+                    Style="{ThemeResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="14" Glyph="&#xE710;" />
+                        <TextBlock Text="Nuevo levantamiento" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    x:Name="RefrescarButton"
+                    Click="Refrescar_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="14" Glyph="&#xE72C;" />
+                        <TextBlock Text="Refrescar" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+
+            <StackPanel
+                Grid.Column="2"
+                MinWidth="200"
+                VerticalAlignment="Center">
+                <TextBlock
+                    Margin="0,0,0,4"
+                    FontSize="12"
+                    Text="Filtrar por área" />
+                <ComboBox
+                    HorizontalAlignment="Stretch"
+                    ItemsSource="{x:Bind ViewModel.Areas, Mode=OneWay}"
+                    SelectedItem="{x:Bind ViewModel.SelectedAreaFilter, Mode=TwoWay}"
+                    DisplayMemberPath="Nombre"
+                    PlaceholderText="Todas las áreas" />
+            </StackPanel>
+        </Grid>
 
         <!--  Loading  -->
         <ProgressRing

@@ -1,19 +1,29 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Areas;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Ubicaciones;
 
 namespace Advance_Control.ViewModels
 {
     public class EquiposViewModel : ViewModelBase
     {
         private readonly IEquipoService _equipoService;
+        private readonly IUbicacionService _ubicacionService;
+        private readonly IAreasService _areasService;
         private readonly ILoggingService _logger;
         private ObservableCollection<EquipoDto> _equipos;
+        private ObservableCollection<UbicacionDto> _ubicaciones;
+        private ObservableCollection<AreaDto> _areas;
+        private UbicacionDto? _selectedUbicacionFilter;
+        private AreaDto? _selectedAreaFilter;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _marcaFilter;
@@ -24,17 +34,45 @@ namespace Advance_Control.ViewModels
         private string? _descripcionFilter;
         private string? _identificadorFilter;
 
-        public EquiposViewModel(IEquipoService equipoService, ILoggingService logger)
+        public EquiposViewModel(IEquipoService equipoService, IUbicacionService ubicacionService, IAreasService areasService, ILoggingService logger)
         {
-            _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _equipos = new ObservableCollection<EquipoDto>();
+            _equipoService    = equipoService    ?? throw new ArgumentNullException(nameof(equipoService));
+            _ubicacionService = ubicacionService ?? throw new ArgumentNullException(nameof(ubicacionService));
+            _areasService     = areasService     ?? throw new ArgumentNullException(nameof(areasService));
+            _logger           = logger           ?? throw new ArgumentNullException(nameof(logger));
+            _equipos     = new ObservableCollection<EquipoDto>();
+            _ubicaciones = new ObservableCollection<UbicacionDto>();
+            _areas       = new ObservableCollection<AreaDto>();
         }
 
         public ObservableCollection<EquipoDto> Equipos
         {
             get => _equipos;
             set => SetProperty(ref _equipos, value);
+        }
+
+        public ObservableCollection<UbicacionDto> Ubicaciones
+        {
+            get => _ubicaciones;
+            set => SetProperty(ref _ubicaciones, value);
+        }
+
+        public ObservableCollection<AreaDto> Areas
+        {
+            get => _areas;
+            set => SetProperty(ref _areas, value);
+        }
+
+        public UbicacionDto? SelectedUbicacionFilter
+        {
+            get => _selectedUbicacionFilter;
+            set => SetProperty(ref _selectedUbicacionFilter, value);
+        }
+
+        public AreaDto? SelectedAreaFilter
+        {
+            get => _selectedAreaFilter;
+            set => SetProperty(ref _selectedAreaFilter, value);
         }
 
         public bool IsLoading
@@ -167,6 +205,29 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Carga ubicaciones y áreas para los filtros ComboBox
+        /// </summary>
+        public async Task InitializeAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var ubicaciones = await _ubicacionService.GetUbicacionesAsync(cancellationToken);
+                Ubicaciones.Clear();
+                foreach (var u in ubicaciones)
+                    Ubicaciones.Add(u);
+
+                var areas = await _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
+                Areas.Clear();
+                foreach (var a in areas)
+                    Areas.Add(a);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al inicializar filtros de equipos", ex, "EquiposViewModel", "InitializeAsync");
+            }
+        }
+
+        /// <summary>
         /// Carga los equipos desde el servicio con los filtros aplicados
         /// </summary>
         public async Task LoadEquiposAsync(CancellationToken cancellationToken = default)
@@ -188,13 +249,27 @@ namespace Advance_Control.ViewModels
                     Kilogramos = KilogramosFilter,
                     Personas = PersonasFilter,
                     Descripcion = DescripcionFilter,
-                    Identificador = IdentificadorFilter
+                    Identificador = IdentificadorFilter,
+                    IdUbicacion = SelectedUbicacionFilter?.IdUbicacion
                 };
 
                 var equipos = await _equipoService.GetEquiposAsync(query, cancellationToken);
 
+                // Filtro de área client-side
+                List<EquipoDto> filtrados;
+                if (SelectedAreaFilter != null)
+                {
+                    var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
+                    var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                    filtrados = equipos.Where(e => string.IsNullOrEmpty(e.Identificador) || set.Contains(e.Identificador)).ToList();
+                }
+                else
+                {
+                    filtrados = equipos;
+                }
+
                 Equipos.Clear();
-                foreach (var equipo in equipos)
+                foreach (var equipo in filtrados)
                 {
                     Equipos.Add(equipo);
                 }
@@ -236,6 +311,8 @@ namespace Advance_Control.ViewModels
                 PersonasFilterText = null;
                 DescripcionFilter = null;
                 IdentificadorFilter = null;
+                SelectedUbicacionFilter = null;
+                SelectedAreaFilter = null;
                 ErrorMessage = null;
                 await LoadEquiposAsync(cancellationToken);
             }

@@ -28,6 +28,7 @@ namespace Advance_Control.Views.Pages
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            await ViewModel.InitializeAsync();
             await ViewModel.LoadLevantamientosAsync();
         }
 

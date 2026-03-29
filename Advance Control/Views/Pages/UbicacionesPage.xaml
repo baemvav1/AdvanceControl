@@ -92,8 +92,19 @@
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
 
+                    <!--  Filtro por área  -->
+                    <StackPanel Grid.Row="0" Margin="0,0,0,8" Spacing="4">
+                        <TextBlock FontSize="12" Text="Filtrar por área" />
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            DisplayMemberPath="Nombre"
+                            ItemsSource="{x:Bind ViewModel.Areas, Mode=OneWay}"
+                            PlaceholderText="Todas las áreas"
+                            SelectedItem="{x:Bind ViewModel.SelectedAreaFilter, Mode=TwoWay}" />
+                    </StackPanel>
+
                     <!--  Location List Header  -->
-                    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+                    <StackPanel Grid.Row="0" Margin="0,52,0,12">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <TextBlock
                                 FontSize="20"
@@ -125,7 +136,7 @@
                     <ScrollViewer Grid.Row="1">
                         <ListView
                             x:Name="UbicacionesList"
-                            ItemsSource="{x:Bind ViewModel.Ubicaciones, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.UbicacionesFiltradas, Mode=OneWay}"
                             SelectedItem="{x:Bind ViewModel.SelectedUbicacion, Mode=TwoWay}"
                             SelectionChanged="UbicacionesList_SelectionChanged">
                             <ListView.ItemTemplate>

@@ -56,6 +56,7 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
             
+            await ViewModel.InitializeAsync();
             await ViewModel.LoadOperacionesAsync();
             await PreloadCargosAsync();
         }

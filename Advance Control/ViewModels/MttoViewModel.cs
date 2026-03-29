@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Areas;
 using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Session;
@@ -25,20 +26,25 @@ namespace Advance_Control.ViewModels
         private readonly IUserSessionService _userSession;
         private readonly IActivityService _activityService;
         private readonly IRelacionUsuarioAreaService _relacionAreaService;
+        private readonly IAreasService _areasService;
         private ObservableCollection<MantenimientoDto> _mantenimientos;
+        private ObservableCollection<AreaDto> _areas;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _identificadorFilter;
         private int _idClienteFilter;
+        private AreaDto? _selectedAreaFilter;
 
-        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService, IRelacionUsuarioAreaService relacionAreaService)
+        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService, IRelacionUsuarioAreaService relacionAreaService, IAreasService areasService)
         {
             _mantenimientoService = mantenimientoService ?? throw new ArgumentNullException(nameof(mantenimientoService));
             _logger               = logger               ?? throw new ArgumentNullException(nameof(logger));
             _userSession          = userSession          ?? throw new ArgumentNullException(nameof(userSession));
             _activityService      = activityService      ?? throw new ArgumentNullException(nameof(activityService));
             _relacionAreaService  = relacionAreaService   ?? throw new ArgumentNullException(nameof(relacionAreaService));
+            _areasService         = areasService         ?? throw new ArgumentNullException(nameof(areasService));
             _mantenimientos = new ObservableCollection<MantenimientoDto>();
+            _areas          = new ObservableCollection<AreaDto>();
         }
 
         public ObservableCollection<MantenimientoDto> Mantenimientos
@@ -49,6 +55,18 @@ namespace Advance_Control.ViewModels
                 if (SetProperty(ref _mantenimientos, value))
                     OnPropertyChanged(nameof(IsEmpty));
             }
+        }
+
+        public ObservableCollection<AreaDto> Areas
+        {
+            get => _areas;
+            set => SetProperty(ref _areas, value);
+        }
+
+        public AreaDto? SelectedAreaFilter
+        {
+            get => _selectedAreaFilter;
+            set => SetProperty(ref _selectedAreaFilter, value);
         }
 
         /// <summary>
@@ -102,6 +120,24 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Carga las áreas disponibles para el filtro ComboBox
+        /// </summary>
+        public async Task InitializeAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var areas = await _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
+                Areas.Clear();
+                foreach (var a in areas)
+                    Areas.Add(a);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al inicializar filtros de mantenimiento", ex, "MttoViewModel", "InitializeAsync");
+            }
+        }
+
+        /// <summary>
         /// Carga los mantenimientos desde el servicio con los filtros aplicados
         /// </summary>
         public async Task LoadMantenimientosAsync(CancellationToken cancellationToken = default)
@@ -125,6 +161,14 @@ namespace Advance_Control.ViewModels
 
                 // Filtrado por área según tipo de usuario
                 var filtrados = await FiltrarPorAreaAsync(mantenimientos, cancellationToken);
+
+                // Filtro manual de área seleccionado por el usuario
+                if (SelectedAreaFilter != null)
+                {
+                    var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
+                    var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                    filtrados = filtrados.Where(m => !string.IsNullOrEmpty(m.Identificador) && set.Contains(m.Identificador)).ToList();
+                }
 
                 Mantenimientos.Clear();
                 foreach (var mantenimiento in filtrados)
@@ -190,6 +234,7 @@ namespace Advance_Control.ViewModels
             {
                 IdentificadorFilter = null;
                 IdClienteFilter = 0;
+                SelectedAreaFilter = null;
                 ErrorMessage = null;
                 await LoadMantenimientosAsync(cancellationToken);
             }
