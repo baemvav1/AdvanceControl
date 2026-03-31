@@ -1,0 +1,106 @@
+<ContentDialog
+    x:Class="Advance_Control.Views.Dialogs.ConfigurarFirmasDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Configurar firmas del documento"
+    PrimaryButtonText="Continuar"
+    CloseButtonText="Cancelar"
+    DefaultButton="Primary">
+
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">620</x:Double>
+    </ContentDialog.Resources>
+
+    <StackPanel Width="560" Spacing="16">
+
+        <TextBlock
+            TextWrapping="WrapWholeWords"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Selecciona las imágenes de firma para incluirlas en el PDF. Puedes continuar sin firmas si lo deseas." />
+
+        <!-- Firma de Dirección -->
+        <Border
+            Padding="12"
+            CornerRadius="8"
+            BorderThickness="1"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <StackPanel Spacing="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock Text="Firma de Dirección" FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="EstadoFirmaDireccionTextBlock"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        x:Name="CargarFirmaDireccionButton"
+                        Content="Cargar imagen"
+                        Click="CargarFirmaDireccion_Click"
+                        VerticalAlignment="Center" />
+                </Grid>
+                <Image
+                    x:Name="PreviewFirmaDireccionImage"
+                    MaxHeight="90"
+                    Stretch="Uniform"
+                    HorizontalAlignment="Left"
+                    Visibility="Collapsed" />
+            </StackPanel>
+        </Border>
+
+        <!-- Firma del Operador (solo si hay idAtiende) -->
+        <Border
+            x:Name="FirmaOperadorSection"
+            Padding="12"
+            CornerRadius="8"
+            BorderThickness="1"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <StackPanel Spacing="10">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock
+                            x:Name="TituloFirmaOperadorTextBlock"
+                            FontWeight="SemiBold" />
+                        <TextBlock
+                            x:Name="EstadoFirmaOperadorTextBlock"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        x:Name="CargarFirmaOperadorButton"
+                        Content="Cargar imagen"
+                        Click="CargarFirmaOperador_Click"
+                        VerticalAlignment="Center" />
+                </Grid>
+                <Image
+                    x:Name="PreviewFirmaOperadorImage"
+                    MaxHeight="90"
+                    Stretch="Uniform"
+                    HorizontalAlignment="Left"
+                    Visibility="Collapsed" />
+            </StackPanel>
+        </Border>
+
+        <InfoBar
+            x:Name="ErrorInfoBar"
+            IsClosable="False"
+            IsOpen="False"
+            Severity="Error" />
+
+    </StackPanel>
+</ContentDialog>

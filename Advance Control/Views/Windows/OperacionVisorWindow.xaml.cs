@@ -1,3 +1,4 @@
+using Advance_Control.Services.Quotes;
 using Advance_Control.Models;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.Cargos;
@@ -48,6 +49,7 @@ namespace Advance_Control.Views.Windows
         private readonly IImageViewerService _imageViewerService;
         private readonly IActivityService _activityService;
         private readonly IContactoService _contactoService;
+        private readonly IFirmaService _firmaService;
 
         private XamlRoot? _xamlRoot;
         private IntPtr _hwnd;
@@ -71,6 +73,7 @@ namespace Advance_Control.Views.Windows
             _imageViewerService   = AppServices.Get<IImageViewerService>();
             _activityService      = AppServices.Get<IActivityService>();
             _contactoService      = AppServices.Get<IContactoService>();
+            _firmaService         = AppServices.Get<IFirmaService>();
 
             var fmt = new CurrencyFormatter("MXN");
             fmt.FractionDigits = 2;
@@ -472,6 +475,32 @@ namespace Advance_Control.Views.Windows
         //  PDFs
         // ─────────────────────────────────────────────────────────────────────
 
+        /// <summary>
+        /// Verifica si existen las firmas necesarias para el PDF.
+        /// Si alguna falta, abre el ConfigurarFirmasDialog para que el usuario las cargue.
+        /// Devuelve true si se debe continuar con la generación, false si el usuario canceló.
+        /// </summary>
+        private async Task<bool> VerificarFirmasAntesDePdfAsync()
+        {
+            int? idAtiende = Operacion.IdAtiende;
+            bool faltaDireccion = !_firmaService.ExisteFirmaDireccion();
+            bool faltaOperador  = idAtiende.HasValue && !_firmaService.ExisteFirmaOperador(idAtiende.Value);
+
+            if (!faltaDireccion && !faltaOperador)
+                return true;
+
+            var dialog = new ConfigurarFirmasDialog(
+                idAtiende,
+                Operacion.Atiende ?? string.Empty,
+                _firmaService,
+                _xamlRoot!,
+                _hwnd);
+
+            var resultado = await dialog.ShowAsync();
+            return resultado == ContentDialogResult.Primary;
+        }
+
+
         private async void GenerarCotizacionButton_Click(object sender, RoutedEventArgs e)
         {
             if (!Operacion.IdOperacion.HasValue) return;
@@ -503,6 +532,9 @@ namespace Advance_Control.Views.Windows
                     }
                     catch (Exception ex) { LogDebugError("ContactosCotizacion", ex); }
                 }
+
+                // Verificar firmas antes de generar el PDF
+                if (!await VerificarFirmasAntesDePdfAsync()) return;
 
                 var filePath = await _viewModel.GenerateQuoteAsync(Operacion, dirigidoA);
                 if (!string.IsNullOrEmpty(filePath))
@@ -563,6 +595,9 @@ namespace Advance_Control.Views.Windows
                     }
                     catch (Exception ex) { LogDebugError("ContactosReporte", ex); }
                 }
+
+                // Verificar firmas antes de generar el PDF
+                if (!await VerificarFirmasAntesDePdfAsync()) return;
 
                 var filePath = await _viewModel.GenerateReporteAsync(Operacion, dirigidoA);
                 if (!string.IsNullOrEmpty(filePath))

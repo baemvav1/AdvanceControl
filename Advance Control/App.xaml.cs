@@ -535,7 +535,8 @@ namespace Advance_Control
                     services.AddSingleton<Services.Conciliacion.IConciliacionRulesProvider, Services.Conciliacion.ConciliacionRulesProvider>();
                     services.AddSingleton<Services.Conciliacion.ConciliacionMatchingEngine>();
 
-                    // Registrar QuoteService (PDF generation)
+                    // Registrar FirmaService y QuoteService (PDF generation)
+                    services.AddSingleton<IFirmaService, FirmaService>();
                     services.AddSingleton<IQuoteService, QuoteService>();
                     services.AddSingleton<Services.Reportes.IReporteFinancieroFacturacionExportService, Services.Reportes.ReporteFinancieroFacturacionExportService>();
 

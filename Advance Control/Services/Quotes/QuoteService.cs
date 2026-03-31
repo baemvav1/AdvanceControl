@@ -27,12 +27,14 @@ namespace Advance_Control.Services.Quotes
         private readonly ILoggingService _logger;
         private readonly IOperacionImageService _operacionImageService;
         private readonly INotificacionService _notificacionService;
+        private readonly IFirmaService _firmaService;
 
-        public QuoteService(ILoggingService logger, IOperacionImageService operacionImageService, INotificacionService notificacionService)
+        public QuoteService(ILoggingService logger, IOperacionImageService operacionImageService, INotificacionService notificacionService, IFirmaService firmaService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _operacionImageService = operacionImageService ?? throw new ArgumentNullException(nameof(operacionImageService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
+            _firmaService = firmaService ?? throw new ArgumentNullException(nameof(firmaService));
 
             // Configure QuestPDF license
             QuestPDF.Settings.License = LicenseType.Community;
@@ -41,11 +43,7 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Obtiene la ruta de la carpeta de firmas
         /// </summary>
-        private string GetFirmasFolder()
-        {
-            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(documentsPath, "Advance Control", "Firmas");
-        }
+        private string GetFirmasFolder() => _firmaService.GetFirmasFolder();
 
         /// <summary>
         /// Obtiene la ruta de la carpeta de cabeceras
@@ -97,25 +95,10 @@ namespace Advance_Control.Services.Quotes
         }
 
         /// <summary>
-        /// Busca la firma del operador por su idAtiende en la carpeta de Firmas.
-        /// Los archivos tienen formato {id}_{nombre}.png
+        /// Busca la firma del operador por su idAtiende usando IFirmaService.
         /// </summary>
-        private string? FindFirmaOperador(string firmasFolder, int idAtiende)
-        {
-            if (!Directory.Exists(firmasFolder))
-                return null;
-
-            foreach (var file in Directory.EnumerateFiles(firmasFolder, "*.png"))
-            {
-                var fileName = Path.GetFileNameWithoutExtension(file);
-                var parts = fileName.Split('_');
-                if (parts.Length >= 2 && int.TryParse(parts[0], out int fileId) && fileId == idAtiende)
-                {
-                    return file;
-                }
-            }
-            return null;
-        }
+        private string? FindFirmaOperador(string _, int idAtiende)
+            => _firmaService.GetFirmaOperadorPath(idAtiende);
 
         /// <summary>
         /// Agrega la sección de firmas al final del contenido del PDF.
