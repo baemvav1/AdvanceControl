@@ -286,7 +286,12 @@ namespace Advance_Control.ViewModels
 
                 if (_userSessionService.CredencialId <= 0) return;
 
-                var query = new OperacionQueryDto { IdAtiende = _userSessionService.CredencialId };
+                // Admin/supervisor (nivel <= 6) ven pendientes de todos.
+                // Técnicos y otros roles solo ven los asignados a ellos.
+                var nivel = _userSessionService.Nivel;
+                var idAtiendeFilter = nivel > 0 && nivel <= 6 ? 0 : _userSessionService.CredencialId;
+
+                var query = new OperacionQueryDto { IdAtiende = idAtiendeFilter };
                 var operaciones = await _operacionService.GetOperacionesAsync(query, cancellationToken);
 
                 foreach (var op in operaciones)
