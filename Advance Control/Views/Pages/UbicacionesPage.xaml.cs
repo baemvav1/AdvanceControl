@@ -18,6 +18,7 @@ using Advance_Control.ViewModels;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
+using Advance_Control.Services.Notificacion;
 using Advance_Control.Models;
 using System.Globalization;
 using System.Threading;
@@ -42,6 +43,7 @@ namespace Advance_Control.Views.Pages
         public UbicacionesViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
         private readonly IActivityService _activityService;
+        private readonly INotificacionService _notificacionService;
         private readonly Services.Areas.IAreasService _areasService;
         private bool _isEditMode = false;
         private int? _editingUbicacionId = null;
@@ -75,6 +77,9 @@ namespace Advance_Control.Views.Pages
 
             // Resolver el servicio de actividades desde DI
             _activityService = AppServices.Get<IActivityService>();
+
+            // Resolver el servicio de notificaciones
+            _notificacionService = AppServices.Get<INotificacionService>();
 
             // Resolver el servicio de áreas para validación
             _areasService = AppServices.Get<Services.Areas.IAreasService>();
@@ -1124,7 +1129,7 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "UbicacionesPage", "MapSearchBox_KeyDown");
-                await ShowMessageDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al buscar la ubicación");
             }
         }
 
@@ -1237,17 +1242,17 @@ namespace Advance_Control.Views.Pages
                         {
                             _activityService.Registrar("Ubicaciones", "Ubicación eliminada");
                             await LoadMapAsync();
-                            await ShowMessageDialogAsync("Éxito", "Ubicación eliminada correctamente");
+                            await _notificacionService.MostrarAsync("Éxito", "Ubicación eliminada correctamente");
                         }
                         else
                         {
-                            await ShowMessageDialogAsync("Error", response.Message ?? "Error al eliminar la ubicación");
+                            await _notificacionService.MostrarAsync("Error", response.Message ?? "Error al eliminar la ubicación");
                         }
                     }
                     catch (Exception ex)
                     {
                         await _loggingService.LogErrorAsync("Error al eliminar ubicación", ex, "UbicacionesPage", "DeleteButton_Click");
-                        await ShowMessageDialogAsync("Error", "Ocurrió un error al eliminar la ubicación");
+                        await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la ubicación");
                     }
                 }
             }
@@ -1263,14 +1268,14 @@ namespace Advance_Control.Views.Pages
                 // Validar campos requeridos
                 if (string.IsNullOrWhiteSpace(NombreTextBox.Text))
                 {
-                    await ShowMessageDialogAsync("Validación", "El nombre es requerido");
+                    await _notificacionService.MostrarAsync("Validación", "El nombre es requerido");
                     return;
                 }
 
                 // Validate that coordinates were set from the map
                 if (!_currentLatitud.HasValue || !_currentLongitud.HasValue)
                 {
-                    await ShowMessageDialogAsync("Validación", "Por favor, haz clic en el mapa para seleccionar una ubicación");
+                    await _notificacionService.MostrarAsync("Validación", "Por favor, haz clic en el mapa para seleccionar una ubicación");
                     return;
                 }
 
@@ -1294,7 +1299,7 @@ namespace Advance_Control.Views.Pages
                     var areas = await _areasService.ValidatePointAsync(_currentLatitud.Value, _currentLongitud.Value);
                     if (areas == null || !areas.Any(a => a.DentroDelArea))
                     {
-                        await ShowMessageDialogAsync("Ubicación sin área",
+                        await _notificacionService.MostrarAsync("Ubicación sin área",
                             "La ubicación seleccionada no se encuentra dentro de ningún área definida. " +
                             "Primero debe crear un área que cubra esta zona en la página de Áreas.");
                         return;
@@ -1305,7 +1310,7 @@ namespace Advance_Control.Views.Pages
                     await _loggingService.LogWarningAsync(
                         $"No se pudo validar área para coordenadas ({_currentLatitud}, {_currentLongitud}): {areaEx.Message}",
                         "UbicacionesPage", "SaveButton_Click");
-                    await ShowMessageDialogAsync("Advertencia",
+                    await _notificacionService.MostrarAsync("Advertencia",
                         "No se pudo verificar si la ubicación pertenece a un área. Verifique su conexión e intente de nuevo.");
                     return;
                 }
@@ -1330,17 +1335,17 @@ namespace Advance_Control.Views.Pages
                     ClearForm();
                     await NotifyMapFormVisibility(false);
                     await LoadMapAsync();
-                    await ShowMessageDialogAsync("Éxito", wasEditMode ? "Ubicación actualizada correctamente" : "Ubicación creada correctamente");
+                    await _notificacionService.MostrarAsync("Éxito", wasEditMode ? "Ubicación actualizada correctamente" : "Ubicación creada correctamente");
                 }
                 else
                 {
-                    await ShowMessageDialogAsync("Error", response.Message ?? "Error al guardar la ubicación");
+                    await _notificacionService.MostrarAsync("Error", response.Message ?? "Error al guardar la ubicación");
                 }
             }
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al guardar ubicación", ex, "UbicacionesPage", "SaveButton_Click");
-                await ShowMessageDialogAsync("Error", "Ocurrió un error al guardar la ubicación");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al guardar la ubicación");
             }
         }
 
@@ -1470,21 +1475,7 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        /// <summary>
-        /// Muestra un diálogo de mensaje
-        /// </summary>
-        private async System.Threading.Tasks.Task ShowMessageDialogAsync(string title, string message)
-        {
-            var dialog = new ContentDialog
-            {
-                Title = title,
-                Content = message,
-                CloseButtonText = "OK",
-                XamlRoot = this.XamlRoot
-            };
 
-            await dialog.ShowAsync();
-        }
 
         /// <summary>
         /// Selecciona una ubicación por su ID y centra el mapa en ella

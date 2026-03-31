@@ -54,6 +54,7 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
                 ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(),
+                ConciliacionAutomaticaModo.RfcAutomatica => await CrearPropuestasRfcAutomaticasAsync(),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -236,6 +237,81 @@ namespace Advance_Control.ViewModels
             return propuestas;
         }
 
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasRfcAutomaticasAsync()
+        {
+            var movimientosConRfc = _movimientosPendientesBase
+                .Where(m => !string.IsNullOrWhiteSpace(m.RfcEmisor) && decimal.Round(m.Abono, 2) > 0)
+                .OrderBy(m => m.Fecha)
+                .ThenBy(m => m.IdMovimiento)
+                .ToList();
+
+            if (movimientosConRfc.Count == 0)
+            {
+                await MostrarErrorConciliacionAsync("No hay movimientos pendientes con RFC emisor definido.");
+                return Array.Empty<ConciliacionMatchPropuestaDto>();
+            }
+
+            var facturasObjetivo = _facturasPendientesBase
+                .Where(f => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(f) > 0
+                    && !string.IsNullOrWhiteSpace(f.ReceptorRfc))
+                .OrderBy(f => f.Fecha)
+                .ThenBy(f => f.IdFactura)
+                .ToList();
+
+            if (facturasObjetivo.Count == 0)
+            {
+                await MostrarErrorConciliacionAsync("No hay facturas con saldo pendiente y RFC receptor definido.");
+                return Array.Empty<ConciliacionMatchPropuestaDto>();
+            }
+
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+            var movimientosUsados = new HashSet<int>();
+            var facturasUsadas = new HashSet<int>();
+
+            foreach (var movimiento in movimientosConRfc)
+            {
+                if (movimientosUsados.Contains(movimiento.IdMovimiento))
+                {
+                    continue;
+                }
+
+                var rfcMovimiento = movimiento.RfcEmisor!.Trim();
+                var montoAbono = decimal.Round(movimiento.Abono, 2);
+
+                var facturaCoincidente = facturasObjetivo
+                    .Where(f => !facturasUsadas.Contains(f.IdFactura)
+                        && string.Equals(f.ReceptorRfc?.Trim(), rfcMovimiento, StringComparison.OrdinalIgnoreCase)
+                        && decimal.Round(_conciliacionMatchingEngine.ObtenerMontoPendienteFactura(f), 2) == montoAbono)
+                    .OrderBy(f => Math.Abs((f.Fecha - movimiento.Fecha).Ticks))
+                    .ThenBy(f => f.Fecha)
+                    .ThenBy(f => f.IdFactura)
+                    .FirstOrDefault();
+
+                if (facturaCoincidente == null)
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = "RFC Automatica",
+                    Facturas = new List<FacturaResumenDto> { facturaCoincidente },
+                    Movimiento = movimiento,
+                    Observaciones = $"Conciliacion RFC automatica: RFC {rfcMovimiento}, movimiento {movimiento.GrupoId}."
+                });
+
+                movimientosUsados.Add(movimiento.IdMovimiento);
+                facturasUsadas.Add(facturaCoincidente.IdFactura);
+            }
+
+            if (propuestas.Count == 0)
+            {
+                await MostrarErrorConciliacionAsync("No se encontraron coincidencias por RFC, monto y fecha entre movimientos y facturas.");
+            }
+
+            return propuestas;
+        }
+
         private async Task CargarDatosBaseAsync()
         {
             await InicializarBitacoraConciliacionSiEsNecesarioAsync();
@@ -284,6 +360,10 @@ namespace Advance_Control.ViewModels
                         Abono = grupo.Abono,
                         Saldo = grupo.Saldo,
                         RelacionadosCount = grupo.MovimientosRelacionados.Count,
+                        RfcEmisor = grupo.RfcEmisor
+                            ?? grupo.MovimientosRelacionados
+                            .Select(r => r.Rfc)
+                            .FirstOrDefault(rfc => !string.IsNullOrWhiteSpace(rfc)),
                         PeriodoTexto = detalle.EstadoCuenta.PeriodoTexto,
                         MetadatosTexto = grupo.MetadatosTexto
                     }))
@@ -591,6 +671,15 @@ namespace Advance_Control.ViewModels
                     await MostrarResultadoFinalConciliacionAsync(
                         "Conciliacion automatica de abonos",
                         new[] { $"{facturasConciliadas} factura(s) conciliada(s) con {movimientosAplicados} movimiento(s)" });
+                    break;
+                }
+
+                case ConciliacionAutomaticaModo.RfcAutomatica:
+                {
+                    var totalConciliadas = aprobadas.Count;
+                    await MostrarResultadoFinalConciliacionAsync(
+                        "Conciliacion RFC automatica",
+                        new[] { $"{totalConciliadas} factura(s) conciliada(s) por coincidencia de RFC y monto" });
                     break;
                 }
             }

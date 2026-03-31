@@ -4,6 +4,7 @@ namespace Advance_Control.Models
     {
         Automatica = 0,
         Combinacional = 1,
-        Abonos = 2
+        Abonos = 2,
+        RfcAutomatica = 3
     }
 }

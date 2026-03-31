@@ -1,10 +1,12 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Navigation;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Notificacion;
 using Advance_Control.Utilities;
 using Advance_Control.Models;
 using System;
@@ -24,8 +26,8 @@ namespace Advance_Control.Views.Pages
     public sealed partial class AreasPage : Page
     {
         // Default coordinates for Mexico City if configuration is not available
-        private const string DEFAULT_LATITUDE = "19.4326";
-        private const string DEFAULT_LONGITUDE = "-99.1332";
+        private const string DEFAULT_LATITUDE = "22.1497";
+        private const string DEFAULT_LONGITUDE = "-100.975";
         private const int DEFAULT_ZOOM = 12;
         
         // Fallback radius in meters for areas without geometry data
@@ -33,6 +35,7 @@ namespace Advance_Control.Views.Pages
         
         public AreasViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
+        private readonly INotificacionService _notificacionService;
         private readonly IActivityService _activityService;
         private bool _isEditMode = false;
         private int? _editingAreaId = null;
@@ -54,17 +57,11 @@ namespace Advance_Control.Views.Pages
         // Flag to prevent multiple simultaneous map centering operations (0 = not centering, 1 = centering)
         private int _isCenteringMapInt = 0;
         
-        /// <summary>
-        /// Debug flag to enable/disable detailed dialog messages for developers.
-        /// Set to true to show detailed debugging dialogs with technical information.
-        /// Set to false for production to show only user-friendly messages.
-        /// </summary>
-        private const bool ENABLE_DEBUG_DIALOGS = false;
-
         public AreasPage()
         {
             ViewModel = AppServices.Get<AreasViewModel>();
             _loggingService = AppServices.Get<ILoggingService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             _activityService = AppServices.Get<IActivityService>();
 
             this.InitializeComponent();
@@ -160,13 +157,30 @@ namespace Advance_Control.Views.Pages
             try
             {
                 await EnsureWebView2InitializedAsync();
-                await ViewModel.InitializeAsync();
-                await LoadMapAsync();
-                await _loggingService.LogInformationAsync("Página de Áreas cargada", "AreasPage", "AreasView_Loaded");
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al cargar página de Áreas", ex, "AreasPage", "AreasView_Loaded");
+                await _loggingService.LogErrorAsync("Error al configurar WebView2 en Loaded event", ex, "AreasPage", "AreasView_Loaded");
+            }
+        }
+
+        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+
+            try
+            {
+                await _loggingService.LogInformationAsync("Navegando a página de Áreas", "AreasPage", "OnNavigatedTo");
+
+                await EnsureWebView2InitializedAsync();
+
+                await ViewModel.InitializeAsync();
+
+                await LoadMapAsync();
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al navegar a Áreas", ex, "AreasPage", "OnNavigatedTo");
             }
         }
 
@@ -183,7 +197,18 @@ namespace Advance_Control.Views.Pages
                 {
                     var messageType = typeElement.GetString();
 
-                    if (messageType == "shapeDrawn" || messageType == "shapeEdited")
+                    if (messageType == "debug")
+                    {
+                        var debugMsg = jsonDoc.TryGetValue("message", out var dbgEl) ? dbgEl.GetString() : "unknown";
+                        await _loggingService.LogInformationAsync($"[JS DEBUG] {debugMsg}", "AreasPage", "CoreWebView2_WebMessageReceived");
+                    }
+                    else if (messageType == "jsError")
+                    {
+                        var errorMsg = jsonDoc.TryGetValue("message", out var errEl) ? errEl.GetString() : "unknown";
+                        var errorStack = jsonDoc.TryGetValue("stack", out var stackEl) ? stackEl.GetString() : "";
+                        await _loggingService.LogErrorAsync($"[JS ERROR] {errorMsg}\nStack: {errorStack}", null!, "AreasPage", "CoreWebView2_WebMessageReceived");
+                    }
+                    else if (messageType == "shapeDrawn" || messageType == "shapeEdited")
                     {
                         if (jsonDoc.TryGetValue("shapeType", out var shapeTypeElement))
                         {
@@ -271,15 +296,17 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                await EnsureWebView2InitializedAsync();
-
                 if (ViewModel.MapsConfig == null)
                 {
                     await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible", "AreasPage", "LoadMapAsync");
                     return;
                 }
 
-                await _loggingService.LogInformationAsync("Cargando mapa de Google Maps", "AreasPage", "LoadMapAsync");
+                await _loggingService.LogInformationAsync($"Cargando mapa. ApiKey={ViewModel.MapsConfig.ApiKey?.Substring(0, Math.Min(10, ViewModel.MapsConfig.ApiKey?.Length ?? 0))}..., Center={ViewModel.MapsConfig.DefaultCenter}, Zoom={ViewModel.MapsConfig.DefaultZoom}", "AreasPage", "LoadMapAsync");
+
+                // Asegurar que CoreWebView2 esté inicializado antes de usar NavigateToString
+                await MapWebView.EnsureCoreWebView2Async();
+                await _loggingService.LogInformationAsync("CoreWebView2 listo", "AreasPage", "LoadMapAsync");
 
                 // Parsear el centro del mapa
                 var centerParts = ViewModel.MapsConfig.DefaultCenter?.Split(',') ?? Array.Empty<string>();
@@ -288,23 +315,18 @@ namespace Advance_Control.Views.Pages
                 var zoom = ViewModel.MapsConfig.DefaultZoom;
 
                 var areasJson = PrepareAreasJson();
+                await _loggingService.LogInformationAsync($"AreasJSON generado: {areasJson.Length} chars, Areas count: {ViewModel.Areas.Count}", "AreasPage", "LoadMapAsync");
 
-                // Leer GeoJSON de estados embebido en el cliente
-                var estadosGeoJson = "null";
-                try
-                {
-                    var geoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "geo", "estados.json");
-                    if (File.Exists(geoPath))
-                        estadosGeoJson = File.ReadAllText(geoPath);
-                }
-                catch { /* Si no existe el archivo, la capa simplemente no estará disponible */ }
+                // GeoJSON de estados se carga bajo demanda via fetch desde virtual host geo-assets
+                // para evitar exceder el límite de ~2MB de NavigateToString
 
-                var html = GenerateAreasMapHtml(ViewModel.MapsConfig.ApiKey, centerLat, centerLng, zoom, areasJson, estadosGeoJson);
+                var html = GenerateAreasMapHtml(ViewModel.MapsConfig.ApiKey, centerLat, centerLng, zoom, areasJson);
+                await _loggingService.LogInformationAsync($"HTML generado: {html.Length} chars ({html.Length / 1024} KB)", "AreasPage", "LoadMapAsync");
 
                 MapWebView.NavigateToString(html);
                 ViewModel.IsMapInitialized = true;
 
-                await _loggingService.LogInformationAsync("Mapa de áreas cargado exitosamente", "AreasPage", "LoadMapAsync");
+                await _loggingService.LogInformationAsync("NavigateToString ejecutado, IsMapInitialized=true", "AreasPage", "LoadMapAsync");
             }
             catch (Exception ex)
             {
@@ -395,7 +417,7 @@ namespace Advance_Control.Views.Pages
             return null;
         }
 
-        private string GenerateAreasMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string areasJson, string estadosGeoJson = "null")
+        private string GenerateAreasMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string areasJson)
         {
             return $@"
 <!DOCTYPE html>
@@ -445,8 +467,27 @@ namespace Advance_Control.Views.Pages
 <body>
     <div id='map'></div>
     
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=drawing,geometry,places&callback=initMap' async defer></script>
     <script>
+        window._gmapsLoadError = false;
+    </script>
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=drawing,geometry,places'
+            onerror='window._gmapsLoadError=true;'></script>
+    <script>
+        // Capturar errores globales de JavaScript
+        window.onerror = function(message, source, lineno, colno, error) {{
+            const errMsg = 'JS ERROR: ' + message + ' at line ' + lineno + ':' + colno;
+            console.error(errMsg);
+            try {{
+                window.chrome.webview.postMessage({{
+                    type: 'jsError',
+                    message: errMsg,
+                    source: source || '',
+                    stack: error ? error.stack : ''
+                }});
+            }} catch(e) {{}}
+            return false;
+        }};
+
         const SEARCH_MARKER_ICON = 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png';
         const MARKER_ICON_SIZE = 40;
         const FALLBACK_CIRCLE_RADIUS = 100; // Radius in meters for fallback circle when area has no geometry
@@ -458,10 +499,11 @@ namespace Advance_Control.Views.Pages
         let searchMarker = null;
         let infoWindow;
 
-        // --- Capa geográfica: Estados ---
-        const ESTADOS_DATA = {estadosGeoJson};
+        // --- Capa geográfica: Estados (carga bajo demanda desde disco local) ---
+        let estadosData = null;
         let estadosLayer = null;
         let estadosVisible = false;
+        let estadosLoading = false;
         let estadosClickMode = false; // modo: crear area desde estado
 
         // Ramer-Douglas-Peucker: reduce puntos manteniendo la forma
@@ -525,63 +567,81 @@ namespace Advance_Control.Views.Pages
         }}
 
         function toggleEstados() {{
-            if (!ESTADOS_DATA) return;
+            if (estadosLoading) return;
             if (!estadosLayer) {{
-                estadosLayer = new google.maps.Data();
-                estadosLayer.addGeoJson(ESTADOS_DATA);
-                estadosLayer.setStyle({{
-                    strokeColor: '#1A73E8',
-                    strokeWeight: 1.5,
-                    strokeOpacity: 0.8,
-                    fillColor: '#1A73E8',
-                    fillOpacity: 0.05
-                }});
-                // Click en estado → crear área con su polígono
-                estadosLayer.addListener('click', function(event) {{
-                    if (!estadosClickMode) return;
-                    const feature = event.feature;
-                    const nombre = feature.getProperty('NOMBRE') || feature.getProperty('nombre') ||
-                                   feature.getProperty('NOM_ENT') || feature.getProperty('name') || 'Estado';
-                    const geometry = feature.getGeometry();
-                    const path = extractGeoJsonPolygonPath(geometry);
-                    if (path.length < 3) return;
+                estadosLoading = true;
+                const btn = document.getElementById('btn-estados');
+                if (btn) btn.textContent = '⏳ Cargando...';
+                fetch('https://geo-assets/estados.json')
+                    .then(r => r.json())
+                    .then(data => {{
+                        estadosData = data;
+                        estadosLayer = new google.maps.Data();
+                        estadosLayer.addGeoJson(estadosData);
+                        estadosLayer.setStyle({{
+                            strokeColor: '#1A73E8',
+                            strokeWeight: 1.5,
+                            strokeOpacity: 0.8,
+                            fillColor: '#1A73E8',
+                            fillOpacity: 0.05
+                        }});
+                        // Click en estado → crear área con su polígono
+                        estadosLayer.addListener('click', function(event) {{
+                            if (!estadosClickMode) return;
+                            const feature = event.feature;
+                            const nombre = feature.getProperty('NOMBRE') || feature.getProperty('nombre') ||
+                                           feature.getProperty('NOM_ENT') || feature.getProperty('name') || 'Estado';
+                            const geometry = feature.getGeometry();
+                            const path = extractGeoJsonPolygonPath(geometry);
+                            if (path.length < 3) return;
 
-                    // Eliminar shape anterior si existe
-                    if (currentShape) {{ currentShape.setMap(null); currentShape = null; }}
+                            if (currentShape) {{ currentShape.setMap(null); currentShape = null; }}
 
-                    // Crear polígono con el mismo estilo que el drawing manager
-                    currentShape = new google.maps.Polygon({{
-                        paths: path,
-                        strokeColor: '#FF0000',
-                        strokeOpacity: 1,
-                        strokeWeight: 2,
-                        fillColor: '#FF0000',
-                        fillOpacity: 0.35,
-                        editable: true,
-                        draggable: false,
-                        map: map
+                            currentShape = new google.maps.Polygon({{
+                                paths: path,
+                                strokeColor: '#FF0000',
+                                strokeOpacity: 1,
+                                strokeWeight: 2,
+                                fillColor: '#FF0000',
+                                fillOpacity: 0.35,
+                                editable: true,
+                                draggable: false,
+                                map: map
+                            }});
+
+                            estadosClickMode = false;
+                            const btn2 = document.getElementById('btn-estados-crear');
+                            if (btn2) {{ btn2.className = 'geo-toggle-btn'; btn2.textContent = '⬡ Crear desde estado'; }}
+                            drawingManager.setDrawingMode(null);
+                            addShapeEditListeners('polygon', currentShape);
+
+                            const shapeData = extractShapeData('polygon', currentShape);
+                            window.chrome.webview.postMessage({{
+                                type: 'shapeDrawn',
+                                shapeType: 'polygon',
+                                estadoNombre: nombre,
+                                ...shapeData
+                            }});
+                        }});
+                        estadosLayer.setMap(map);
+                        estadosVisible = true;
+                        estadosLoading = false;
+                        if (btn) {{
+                            btn.textContent = '🗺 Estados';
+                            btn.className = 'geo-toggle-btn active';
+                        }}
+                    }})
+                    .catch(() => {{
+                        estadosLoading = false;
+                        const btn = document.getElementById('btn-estados');
+                        if (btn) btn.textContent = '🗺 Estados';
                     }});
-
-                    // Desactivar modo click y notificar a C#
-                    estadosClickMode = false;
-                    const btn = document.getElementById('btn-estados-crear');
-                    if (btn) {{ btn.className = 'geo-toggle-btn'; btn.textContent = '⬡ Crear desde estado'; }}
-                    drawingManager.setDrawingMode(null);
-                    addShapeEditListeners('polygon', currentShape);
-
-                    const shapeData = extractShapeData('polygon', currentShape);
-                    window.chrome.webview.postMessage({{
-                        type: 'shapeDrawn',
-                        shapeType: 'polygon',
-                        estadoNombre: nombre,
-                        ...shapeData
-                    }});
-                }});
+            }} else {{
+                estadosVisible = !estadosVisible;
+                estadosLayer.setMap(estadosVisible ? map : null);
+                const btn = document.getElementById('btn-estados');
+                if (btn) btn.className = 'geo-toggle-btn' + (estadosVisible ? ' active' : '');
             }}
-            estadosVisible = !estadosVisible;
-            estadosLayer.setMap(estadosVisible ? map : null);
-            const btn = document.getElementById('btn-estados');
-            if (btn) btn.className = 'geo-toggle-btn' + (estadosVisible ? ' active' : '');
         }}
 
         // --- Capa geográfica: Municipios (carga bajo demanda desde disco local) ---
@@ -691,77 +751,85 @@ namespace Advance_Control.Views.Pages
         }}
 
         function initMap() {{
+          try {{
+            if (window._gmapsLoadError || typeof google === 'undefined' || !google.maps) {{
+                document.getElementById('map').innerHTML = '<h2 style=""color:red;padding:20px"">Error: Google Maps API no cargó</h2>';
+                return;
+            }}
+
             map = new google.maps.Map(document.getElementById('map'), {{
                 center: {{ lat: {centerLat}, lng: {centerLng} }},
-                zoom: {zoom},
+                zoom: {5},
                 mapTypeId: 'roadmap'
             }});
 
             infoWindow = new google.maps.InfoWindow();
 
-            drawingManager = new google.maps.drawing.DrawingManager({{
-                drawingMode: null,
-                drawingControl: true,
-                drawingControlOptions: {{
-                    position: google.maps.ControlPosition.TOP_CENTER,
-                    drawingModes: [
-                        google.maps.drawing.OverlayType.POLYGON,
-                        google.maps.drawing.OverlayType.CIRCLE,
-                        google.maps.drawing.OverlayType.RECTANGLE
-                    ]
-                }},
-                polygonOptions: {{
-                    fillColor: '#FF0000',
-                    fillOpacity: 0.35,
-                    strokeWeight: 2,
-                    strokeColor: '#FF0000',
-                    editable: true,
-                    draggable: true
-                }},
-                circleOptions: {{
-                    fillColor: '#FF0000',
-                    fillOpacity: 0.35,
-                    strokeWeight: 2,
-                    strokeColor: '#FF0000',
-                    editable: true,
-                    draggable: true
-                }},
-                rectangleOptions: {{
-                    fillColor: '#FF0000',
-                    fillOpacity: 0.35,
-                    strokeWeight: 2,
-                    strokeColor: '#FF0000',
-                    editable: true,
-                    draggable: true
-                }}
-            }});
-
-            drawingManager.setMap(map);
-
-            google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {{
-                if (currentShape) {{
-                    currentShape.setMap(null);
-                }}
-
-                currentShape = event.overlay;
-                
-                drawingManager.setDrawingMode(null);
-
-                const shapeData = extractShapeData(event.type, event.overlay);
-                
-                window.chrome.webview.postMessage({{
-                    type: 'shapeDrawn',
-                    shapeType: event.type,
-                    ...shapeData
+            if (google.maps.drawing && google.maps.drawing.DrawingManager) {{
+                drawingManager = new google.maps.drawing.DrawingManager({{
+                    drawingMode: null,
+                    drawingControl: true,
+                    drawingControlOptions: {{
+                        position: google.maps.ControlPosition.TOP_CENTER,
+                        drawingModes: [
+                            google.maps.drawing.OverlayType.POLYGON,
+                            google.maps.drawing.OverlayType.CIRCLE,
+                            google.maps.drawing.OverlayType.RECTANGLE
+                        ]
+                    }},
+                    polygonOptions: {{
+                        fillColor: '#FF0000',
+                        fillOpacity: 0.35,
+                        strokeWeight: 2,
+                        strokeColor: '#FF0000',
+                        editable: true,
+                        draggable: true
+                    }},
+                    circleOptions: {{
+                        fillColor: '#FF0000',
+                        fillOpacity: 0.35,
+                        strokeWeight: 2,
+                        strokeColor: '#FF0000',
+                        editable: true,
+                        draggable: true
+                    }},
+                    rectangleOptions: {{
+                        fillColor: '#FF0000',
+                        fillOpacity: 0.35,
+                        strokeWeight: 2,
+                        strokeColor: '#FF0000',
+                        editable: true,
+                        draggable: true
+                    }}
                 }});
 
-                addShapeEditListeners(event.type, event.overlay);
-            }});
+                drawingManager.setMap(map);
+
+                google.maps.event.addListener(drawingManager, 'overlaycomplete', function(event) {{
+                    if (currentShape) {{
+                        currentShape.setMap(null);
+                    }}
+
+                    currentShape = event.overlay;
+                    
+                    drawingManager.setDrawingMode(null);
+
+                    const shapeData = extractShapeData(event.type, event.overlay);
+                    
+                    window.chrome.webview.postMessage({{
+                        type: 'shapeDrawn',
+                        shapeType: event.type,
+                        ...shapeData
+                    }});
+
+                    addShapeEditListeners(event.type, event.overlay);
+                }});
+            }}
 
             loadExistingAreas({areasJson});
 
-            // Botones toggle de capas geográficas
-            if (ESTADOS_DATA) {{
+            // Botones toggle de capas geográficas (siempre visibles, cargan bajo demanda)
+            {{
                 const geoControls = document.createElement('div');
                 geoControls.style.margin = '8px';
                 geoControls.style.display = 'flex';
@@ -798,6 +866,16 @@ namespace Advance_Control.Views.Pages
 
                 map.controls[google.maps.ControlPosition.TOP_RIGHT].push(geoControls);
             }}
+
+            window.chrome.webview.postMessage({{ type: 'debug', message: 'initMap COMPLETE' }});
+          }} catch(e) {{
+            document.getElementById('map').innerHTML = '<h2 style=""color:red;padding:20px"">initMap Error: ' + e.message + '</h2>';
+            window.chrome.webview.postMessage({{
+                type: 'jsError',
+                message: 'initMap error: ' + e.message,
+                stack: e.stack || ''
+            }});
+          }}
         }}
 
         function extractShapeData(type, shape) {{
@@ -916,21 +994,22 @@ namespace Advance_Control.Views.Pages
 
             areasData.forEach(area => {{
                 let shape;
+                const areaType = (area.type || '').toLowerCase();
 
-                if (area.type === 'Polygon' && area.path) {{
+                if (areaType === 'polygon' && area.path) {{
                     shape = new google.maps.Polygon({{
                         paths: area.path,
                         ...area.options
                     }});
                 }} 
-                else if (area.type === 'Circle' && area.center && area.radius) {{
+                else if (areaType === 'circle' && area.center && area.radius) {{
                     shape = new google.maps.Circle({{
                         center: area.center,
                         radius: area.radius,
                         ...area.options
                     }});
                 }}
-                else if (area.type === 'Rectangle' && area.path) {{
+                else if (areaType === 'rectangle' && area.path) {{
                     const bounds = new google.maps.LatLngBounds();
                     area.path.forEach(point => bounds.extend(point));
                     shape = new google.maps.Rectangle({{
@@ -968,7 +1047,7 @@ namespace Advance_Control.Views.Pages
 
                     if (place.geometry && place.geometry.location) {{
                         map.setCenter(place.geometry.location);
-                        map.setZoom(15);
+                        map.setZoom({zoom});
 
                         searchMarker = new google.maps.Marker({{
                             position: place.geometry.location,
@@ -1196,6 +1275,9 @@ namespace Advance_Control.Views.Pages
         window.searchLocation = searchLocation;
         window.highlightArea = highlightArea;
         window.drawSelectedArea = drawSelectedArea;
+
+        // Inicializar el mapa cuando la página esté completamente cargada
+        window.onload = initMap;
     </script>
 </body>
 </html>";
@@ -1261,26 +1343,20 @@ namespace Advance_Control.Views.Pages
             // Prevent multiple simultaneous map centering operations using Interlocked for thread safety
             if (Interlocked.CompareExchange(ref _isCenteringMapInt, 1, 0) != 0)
                 return;
-
+            GoogleMapsConfigDto googleMapsConfig = new GoogleMapsConfigDto();
             try
             {
                 // When an area is selected from the list, visualize it on the map
                 if (ViewModel.SelectedArea != null)
                 {
-                    await ShowDebugDialogAsync("Área Seleccionada", 
-                        $"ID: {ViewModel.SelectedArea.IdArea}\n" +
-                        $"Nombre: {ViewModel.SelectedArea.Nombre}\n" +
-                        $"Tipo: {ViewModel.SelectedArea.TipoGeometria}\n" +
-                        $"Centro: ({ViewModel.SelectedArea.CentroLatitud}, {ViewModel.SelectedArea.CentroLongitud})");
-
                     // Center the map on the selected area and highlight it
-                    await CenterMapOnAreaAsync(ViewModel.SelectedArea);
+                    await CenterMapOnAreaAsync(ViewModel.SelectedArea,googleMapsConfig.DefaultZoom);
                 }
             }
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al mostrar área en el mapa", ex, "AreasPage", "AreasList_SelectionChanged");
-                await ShowUserErrorDialogAsync("Error", "Ocurrió un error al mostrar el área en el mapa.");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al mostrar el área en el mapa.");
             }
             finally
             {
@@ -1392,14 +1468,7 @@ namespace Advance_Control.Views.Pages
                         if (deleteResult.Success)
                         {
                             _activityService.Registrar("Areas", "Área eliminada");
-                            var successDialog = new ContentDialog
-                            {
-                                Title = "Éxito",
-                                Content = "Área eliminada correctamente.",
-                                CloseButtonText = "OK",
-                                XamlRoot = this.XamlRoot
-                            };
-                            await successDialog.ShowAsync();
+                            await _notificacionService.MostrarAsync("Éxito", "Área eliminada correctamente.");
 
                             // Solo recargar el mapa si el área eliminada estaba seleccionada
                             if (ViewModel.SelectedArea?.IdArea == areaId)
@@ -1410,14 +1479,7 @@ namespace Advance_Control.Views.Pages
                         }
                         else
                         {
-                            var errorDialog = new ContentDialog
-                            {
-                                Title = "Error",
-                                Content = deleteResult.Message ?? "Error al eliminar el área.",
-                                CloseButtonText = "OK",
-                                XamlRoot = this.XamlRoot
-                            };
-                            await errorDialog.ShowAsync();
+                            await _notificacionService.MostrarAsync("Error", deleteResult.Message ?? "Error al eliminar el área.");
                         }
                     }
                 }
@@ -1436,14 +1498,7 @@ namespace Advance_Control.Views.Pages
             
             if (string.IsNullOrWhiteSpace(NombreTextBox.Text))
             {
-                var dialog = new ContentDialog
-                {
-                    Title = "Validación",
-                    Content = "El nombre del área es requerido.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-                await dialog.ShowAsync();
+                await _notificacionService.MostrarAsync("Validación", "El nombre del área es requerido.");
                 return;
             }
 
@@ -1455,14 +1510,7 @@ namespace Advance_Control.Views.Pages
                     "AreasPage",
                     "SaveButton_Click");
                 
-                var dialog = new ContentDialog
-                {
-                    Title = "Validación",
-                    Content = "Debe dibujar un área en el mapa antes de guardar.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-                await dialog.ShowAsync();
+                await _notificacionService.MostrarAsync("Validación", "Debe dibujar un área en el mapa antes de guardar.");
                 return;
             }
 
@@ -1481,14 +1529,7 @@ namespace Advance_Control.Views.Pages
 
                 if (!hasValidShapeData)
                 {
-                    var dialog = new ContentDialog
-                    {
-                        Title = "Validación",
-                        Content = "Debe dibujar un área en el mapa antes de guardar.",
-                        CloseButtonText = "OK",
-                        XamlRoot = this.XamlRoot
-                    };
-                    await dialog.ShowAsync();
+                    await _notificacionService.MostrarAsync("Validación", "Debe dibujar un área en el mapa antes de guardar.");
                     return;
                 }
             }
@@ -1586,14 +1627,7 @@ namespace Advance_Control.Views.Pages
 
             if (result.Success)
             {
-                var successDialog = new ContentDialog
-                {
-                    Title = "Éxito",
-                    Content = _isEditMode ? "Área actualizada correctamente." : "Área creada correctamente.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-                await successDialog.ShowAsync();
+                await _notificacionService.MostrarAsync("Éxito", _isEditMode ? "Área actualizada correctamente." : "Área creada correctamente.");
 
                 _activityService.Registrar("Areas", _isEditMode ? "Área modificada" : "Área creada");
                 CancelButton_Click(sender, e);
@@ -1603,14 +1637,7 @@ namespace Advance_Control.Views.Pages
             }
             else
             {
-                var errorDialog = new ContentDialog
-                {
-                    Title = "Error",
-                    Content = result.Message ?? "Error al guardar el área.",
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-                await errorDialog.ShowAsync();
+                await _notificacionService.MostrarAsync("Error", result.Message ?? "Error al guardar el área.");
             }
         }
 
@@ -1670,20 +1697,20 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al buscar ubicación", ex, "AreasPage", "MapSearchBox_KeyDown");
-                await ShowUserErrorDialogAsync("Error", "Ocurrió un error al buscar la ubicación");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al buscar la ubicación");
             }
         }
 
         /// <summary>
         /// Centra el mapa en un área seleccionada y la dibuja si no existe
         /// </summary>
-        private async Task CenterMapOnAreaAsync(AreaDto area)
+        private async Task CenterMapOnAreaAsync(AreaDto area,int zoom)
         {
             try
             {
                 if (MapWebView?.CoreWebView2 == null)
                 {
-                    await ShowDebugDialogAsync("Error CenterMapOnArea", "MapWebView o CoreWebView2 es null");
+                    await _loggingService.LogWarningAsync("MapWebView o CoreWebView2 es null", "AreasPage", "CenterMapOnAreaAsync");
                     return;
                 }
 
@@ -1693,9 +1720,6 @@ namespace Advance_Control.Views.Pages
                     var latStr = area.CentroLatitud.Value.ToString("F6", CultureInfo.InvariantCulture);
                     var lngStr = area.CentroLongitud.Value.ToString("F6", CultureInfo.InvariantCulture);
 
-                    await ShowDebugDialogAsync("Centrando Mapa", 
-                        $"Área: {area.Nombre}\nLat: {latStr}\nLng: {lngStr}");
-
                     // Prepare area data JSON for drawing on the map
                     var areaDataJson = PrepareAreaDataJsonForDrawing(area);
 
@@ -1703,7 +1727,7 @@ namespace Advance_Control.Views.Pages
                         (function() {{
                             var position = {{ lat: {latStr}, lng: {lngStr} }};
                             map.setCenter(position);
-                            map.setZoom(16);
+                            map.setZoom({zoom});
                             drawSelectedArea({areaDataJson});
                         }})();
                     ";
@@ -1716,16 +1740,12 @@ namespace Advance_Control.Views.Pages
                 }
                 else
                 {
-                    await ShowDebugDialogAsync("Sin Coordenadas", 
-                        $"El área '{area.Nombre}' no tiene coordenadas de centro definidas.");
-                    await ShowUserErrorDialogAsync("Información", 
-                        "El área seleccionada no tiene coordenadas de centro. No se puede centrar en el mapa.");
+                    await _notificacionService.MostrarAsync("Información", "El área seleccionada no tiene coordenadas de centro. No se puede centrar en el mapa.");
                 }
             }
             catch (Exception ex)
             {
                 await _loggingService.LogErrorAsync("Error al centrar el mapa en el área", ex, "AreasPage", "CenterMapOnAreaAsync");
-                await ShowDebugDialogAsync("Excepción CenterMapOnArea", $"Error: {ex.Message}\nStack: {ex.StackTrace}");
             }
         }
 
@@ -1767,61 +1787,6 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        /// <summary>
-        /// Muestra un diálogo de mensaje para el usuario final.
-        /// Siempre se muestra independientemente del flag de debug.
-        /// </summary>
-        private async Task ShowUserErrorDialogAsync(string title, string message)
-        {
-            try
-            {
-                var dialog = new ContentDialog
-                {
-                    Title = title,
-                    Content = message,
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-
-                await dialog.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                await _loggingService.LogErrorAsync("Error al mostrar diálogo de usuario", ex, "AreasPage", "ShowUserErrorDialogAsync");
-            }
-        }
-
-        /// <summary>
-        /// Muestra un diálogo de depuración con información técnica detallada.
-        /// Solo se muestra si ENABLE_DEBUG_DIALOGS es true.
-        /// Útil para verificar el funcionamiento durante el desarrollo.
-        /// </summary>
-        private async Task ShowDebugDialogAsync(string title, string message)
-        {
-            if (!ENABLE_DEBUG_DIALOGS)
-            {
-                // Solo registrar en el log si los diálogos de debug están desactivados
-                await _loggingService.LogInformationAsync($"[DEBUG] {title}: {message}", "AreasPage", "ShowDebugDialogAsync");
-                return;
-            }
-
-            try
-            {
-                var dialog = new ContentDialog
-                {
-                    Title = $"[DEBUG] {title}",
-                    Content = message,
-                    CloseButtonText = "OK",
-                    XamlRoot = this.XamlRoot
-                };
-
-                await dialog.ShowAsync();
-            }
-            catch (Exception ex)
-            {
-                await _loggingService.LogErrorAsync("Error al mostrar diálogo de debug", ex, "AreasPage", "ShowDebugDialogAsync");
-            }
-        }
     }
 }
 

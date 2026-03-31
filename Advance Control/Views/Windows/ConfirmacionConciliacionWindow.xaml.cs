@@ -231,6 +231,7 @@ namespace Advance_Control.Views.Windows
                 ConciliacionAutomaticaModo.Automatica => "Conciliacion automatica",
                 ConciliacionAutomaticaModo.Combinacional => "Conciliacion automatica convinacional",
                 ConciliacionAutomaticaModo.Abonos => "Conciliacion automatica de abonos",
+                ConciliacionAutomaticaModo.RfcAutomatica => "Conciliacion RFC automatica",
                 _ => "Confirmar conciliaciones propuestas"
             };
         }

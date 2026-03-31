@@ -288,7 +288,7 @@ namespace Advance_Control.Services.Quotes
                                         col.Item().AlignRight().PaddingLeft(20).Text(text =>
                                         {
                                             text.Span("Tipo: ").Bold();
-                                            text.Span(GetTipoOperacion(operacion.IdTipo));
+                                            text.Span((operacion.TipoMantenimiento ?? "N/A"));
                                         });
                                     });
                                 });
@@ -432,16 +432,6 @@ namespace Advance_Control.Services.Quotes
                 await _logger.LogErrorAsync("Error al generar cotización PDF", ex, "QuoteService", "GenerateQuotePdfAsync");
                 throw;
             }
-        }
-
-        private string GetTipoOperacion(int? idTipo)
-        {
-            return idTipo switch
-            {
-                1 => "Correctivo",
-                2 => "Preventivo",
-                _ => "N/A"
-            };
         }
 
         /// <summary>
@@ -593,7 +583,7 @@ namespace Advance_Control.Services.Quotes
                                         col.Item().AlignRight().PaddingLeft(20).Text(text =>
                                         {
                                             text.Span("Tipo: ").Bold();
-                                            text.Span(GetTipoOperacion(operacion.IdTipo));
+                                            text.Span((operacion.TipoMantenimiento ?? "N/A"));
                                         });
                                     });
                                 });

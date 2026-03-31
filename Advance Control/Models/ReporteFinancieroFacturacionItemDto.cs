@@ -82,6 +82,8 @@ namespace Advance_Control.Models
     {
         public List<ReporteFinancieroFacturacionCabeceraDto> Cabeceras { get; set; } = new();
         public List<ReporteFinancieroFacturacionDetalleDto> Detalles { get; set; } = new();
+        public int MovimientosNoConciliadosCount { get; set; }
+        public decimal MovimientosNoConciliadosTotal { get; set; }
     }
 
     public class ReporteFinancieroFacturacionListadoItemDto

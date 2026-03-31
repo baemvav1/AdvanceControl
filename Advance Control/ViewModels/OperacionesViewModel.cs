@@ -264,6 +264,7 @@ namespace Advance_Control.ViewModels
                 Operaciones.Clear();
                 foreach (var operacion in filtrados)
                 {
+                    operacion.BuildCheckFromInlineFields();
                     Operaciones.Add(operacion);
                 }
                 OnPropertyChanged(nameof(IsEmpty));

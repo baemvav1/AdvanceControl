@@ -98,8 +98,6 @@ namespace Advance_Control.Views.Pages
                     await LoadCargosForOperacionAsync(operacion);
                     if (!operacion.ImagesLoaded)
                         await RefreshImageIndicatorsAsync(operacion);
-                    if (!operacion.TieneCheck)
-                        await ViewModel.LoadCheckAsync(operacion);
                     ViewModel.RefreshPdfPaths(operacion);
                 }
             }

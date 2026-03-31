@@ -26,10 +26,7 @@
             <ComboBox
                 x:Name="TipoMantenimientoComboBox"
                 HorizontalAlignment="Stretch"
-                PlaceholderText="Seleccione el tipo de mantenimiento">
-                <ComboBoxItem Content="Correctivo" Tag="1" />
-                <ComboBoxItem Content="Preventivo" Tag="2" />
-            </ComboBox>
+                PlaceholderText="Seleccione el tipo de mantenimiento" />
         </StackPanel>
 
         <!-- Equipo (Searchable dropdown) -->

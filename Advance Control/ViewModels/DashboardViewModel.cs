@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Activity;
-using Advance_Control.Services.CheckOperacion;
 using Advance_Control.Services.Dashboard;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Operaciones;
@@ -23,7 +22,6 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly IActivityService _activityService;
         private readonly IOperacionService _operacionService;
-        private readonly ICheckOperacionService _checkService;
         private readonly IDashboardService _dashboardService;
 
         private string _saludo = "Bienvenido";
@@ -48,14 +46,12 @@ namespace Advance_Control.ViewModels
             ILoggingService logger,
             IActivityService activityService,
             IOperacionService operacionService,
-            ICheckOperacionService checkService,
             IDashboardService dashboardService)
         {
             _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             _logger             = logger             ?? throw new ArgumentNullException(nameof(logger));
             _activityService    = activityService    ?? throw new ArgumentNullException(nameof(activityService));
             _operacionService   = operacionService   ?? throw new ArgumentNullException(nameof(operacionService));
-            _checkService       = checkService       ?? throw new ArgumentNullException(nameof(checkService));
             _dashboardService   = dashboardService   ?? throw new ArgumentNullException(nameof(dashboardService));
             ActividadReciente = new ObservableCollection<ActivityItem>();
             OperacionesPendientes = new ObservableCollection<OperacionTodoItem>();
@@ -298,7 +294,9 @@ namespace Advance_Control.ViewModels
                     var idOp = op.IdOperacion ?? 0;
                     if (idOp == 0) continue;
 
-                    var check = await _checkService.GetAsync(idOp);
+                    // Construir check desde los campos inline del API
+                    op.BuildCheckFromInlineFields();
+                    var check = op.CheckOperacion;
                     if (check == null || check.Completo) continue;
 
                     var item = new OperacionTodoItem

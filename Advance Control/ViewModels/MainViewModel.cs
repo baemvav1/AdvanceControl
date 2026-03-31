@@ -45,7 +45,7 @@ namespace Advance_Control.ViewModels
         private string _title = "Advance Control";
         private bool _isAuthenticated;
         private bool _isBackEnabled;
-        private bool _isNotificacionesVisible = true;
+        private bool _isNotificacionesVisible = false;
         private ObservableCollection<NotificacionDto> _notificaciones;
         private ObservableCollection<NotificacionAlerta> _alertasDb = new();
         private bool _hasAlertasDb;
@@ -311,6 +311,7 @@ namespace Advance_Control.ViewModels
             if (args.IsSettingsInvoked)
             {
                 _navigationService.Navigate("Settings");
+                Title = "Advance Control : Configuración";
                 return;
             }
 
@@ -361,6 +362,7 @@ namespace Advance_Control.ViewModels
                     }
 
                     _navigationService.Navigate(tag);
+                    Title = $"Advance Control : {item.Content}";
                 }
             }
         }
@@ -776,6 +778,7 @@ namespace Advance_Control.ViewModels
                 }
 
                 UpdateBackButtonState();
+                Title = "Advance Control : Inicio";
             });
 
             if (!navigated && forceReload && _contentFrame?.Content is Views.Pages.DashboardPage dashboardPage)

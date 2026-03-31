@@ -33,6 +33,12 @@ namespace Advance_Control.Models
         public int? IdTipo { get; set; }
 
         /// <summary>
+        /// Nombre del tipo de mantenimiento (ej. "Correctivo", "Preventivo")
+        /// </summary>
+        [JsonPropertyName("tipoMantenimiento")]
+        public string? TipoMantenimiento { get; set; }
+
+        /// <summary>
         /// ID del cliente asociado a la operación
         /// </summary>
         [JsonPropertyName("idCliente")]
@@ -99,6 +105,7 @@ namespace Advance_Control.Models
                     OnPropertyChanged(nameof(IsEditable));
                     OnPropertyChanged(nameof(StatusText));
                 }
+
             }
         }
 
@@ -121,6 +128,12 @@ namespace Advance_Control.Models
         public string FechaInicioCorta => FechaInicio?.ToString("dd/MM/yy") ?? "—";
 
         /// <summary>
+        /// Fecha de final formateada de forma corta para mostrar en el header (dd/MM/yy)
+        /// </summary>
+        [JsonIgnore]
+        public string FechaFinCorta => FechaFinal?.ToString("dd/MM/yy") ?? "—";
+
+        /// <summary>
         /// Texto descriptivo del estado de la operación
         /// </summary>
         [JsonIgnore]
@@ -131,6 +144,50 @@ namespace Advance_Control.Models
         /// </summary>
         [JsonPropertyName("finalizado")]
         public bool Finalizado { get; set; }
+
+        // Campos del check integrados desde el endpoint de operaciones (LEFT JOIN)
+        [JsonPropertyName("ckCotizacionGenerada")]
+        public bool CkCotizacionGeneradaApi { get; set; }
+
+        [JsonPropertyName("ckCotizacionEnviada")]
+        public bool CkCotizacionEnviadaApi { get; set; }
+
+        [JsonPropertyName("ckReporteGenerado")]
+        public bool CkReporteGeneradoApi { get; set; }
+
+        [JsonPropertyName("ckReporteEnviado")]
+        public bool CkReporteEnviadoApi { get; set; }
+
+        [JsonPropertyName("ckPrefacturaCargada")]
+        public bool CkPrefacturaCargadaApi { get; set; }
+
+        [JsonPropertyName("ckHojaServicioCargada")]
+        public bool CkHojaServicioCargadaApi { get; set; }
+
+        [JsonPropertyName("ckOrdenCompraCargada")]
+        public bool CkOrdenCompraCargadaApi { get; set; }
+
+        [JsonPropertyName("ckFacturaCargada")]
+        public bool CkFacturaCargadaApi { get; set; }
+
+        /// <summary>
+        /// Construye y asigna el CheckOperacion a partir de los campos inline recibidos del API.
+        /// </summary>
+        public void BuildCheckFromInlineFields()
+        {
+            CheckOperacion = new CheckOperacionDto
+            {
+                IdOperacion = IdOperacion ?? 0,
+                CotizacionGenerada = CkCotizacionGeneradaApi,
+                CotizacionEnviada = CkCotizacionEnviadaApi,
+                ReporteGenerado = CkReporteGeneradoApi,
+                ReporteEnviado = CkReporteEnviadoApi,
+                PrefacturaCargada = CkPrefacturaCargadaApi,
+                HojaServicioCargada = CkHojaServicioCargadaApi,
+                OrdenCompraCargada = CkOrdenCompraCargadaApi,
+                FacturaCargada = CkFacturaCargadaApi
+            };
+        }
 
         private string? _cotizacionPdfPath;
 

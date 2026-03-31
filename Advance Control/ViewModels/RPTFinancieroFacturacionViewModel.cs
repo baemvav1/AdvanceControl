@@ -25,6 +25,9 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaFinFiltro;
         private bool _soloFiniquitadas;
         private bool _noFiniquitadas;
+        private int _movimientosNcCount;
+        private decimal _movimientosNcTotal;
+        private bool _mostrarMovimientosNoConciliados = true;
 
         public RPTFinancieroFacturacionViewModel(
             IReporteFinancieroFacturacionService reporteService,
@@ -122,7 +125,25 @@ namespace Advance_Control.ViewModels
         public string TotalAbonadoTexto => _cabecerasBase.Sum(item => item.TotalAbonadoMovimientos).ToString("C2", new CultureInfo("es-MX"));
         public string ResumenCabecerasTexto => $"{_cabecerasBase.Sum(item => item.NumeroFacturas)} factura(s) en {_cabecerasBase.Count} cliente(s)";
         public string ResumenDetalleTexto => $"{_detallesBase.Count} detalle(s) visibles en el listado";
+        public string TotalMovimientosNoConciliadosTexto => _movimientosNcTotal.ToString("C2", new CultureInfo("es-MX"));
+        public string NumMovimientosNoConciliadosTexto => $"{_movimientosNcCount} movimiento(s) sin conciliar";
+        public string TotalRestanteTexto
+        {
+            get
+            {
+                var totalFacturado = _cabecerasBase.Sum(item => item.TotalFacturado);
+                var totalFiniquitado = _cabecerasBase.Sum(item => item.TotalAbonadoMovimientos);
+                var restante = totalFacturado - totalFiniquitado - _movimientosNcTotal;
+                return restante.ToString("C2", new CultureInfo("es-MX"));
+            }
+        }
         public bool CanGenerarReporte => !IsLoading && _detallesBase.Count > 0;
+
+        public bool MostrarMovimientosNoConciliados
+        {
+            get => _mostrarMovimientosNoConciliados;
+            set => SetProperty(ref _mostrarMovimientosNoConciliados, value);
+        }
 
         public async Task CargarReporteAsync()
         {
@@ -150,6 +171,9 @@ namespace Advance_Control.ViewModels
                 _cabecerasBase.AddRange(resultado.Cabeceras.OrderBy(item => item.ReceptorNombreTexto).ThenBy(item => item.ReceptorRfcTexto));
                 _detallesBase.Clear();
                 _detallesBase.AddRange(resultado.Detalles.OrderBy(item => item.ReceptorNombreTexto).ThenByDescending(item => item.FechaTimbrado).ThenBy(item => item.FolioTexto));
+
+                _movimientosNcCount = resultado.MovimientosNoConciliadosCount;
+                _movimientosNcTotal = resultado.MovimientosNoConciliadosTotal;
 
                 ListadoItems = new ObservableCollection<ReporteFinancieroFacturacionListadoItemDto>(ConstruirListadoVertical());
 
@@ -198,7 +222,10 @@ namespace Advance_Control.ViewModels
                     ReferenciaFiltro,
                     FechaInicioFiltro,
                     FechaFinFiltro,
-                    ObtenerFiniquitoFiltro());
+                    ObtenerFiniquitoFiltro(),
+                    _movimientosNcCount,
+                    _movimientosNcTotal,
+                    _mostrarMovimientosNoConciliados);
 
                 SuccessMessage = $"Reporte generado correctamente: {rutaArchivo}";
                 return rutaArchivo;
@@ -238,6 +265,9 @@ namespace Advance_Control.ViewModels
         {
             OnPropertyChanged(nameof(TotalFacturadoTexto));
             OnPropertyChanged(nameof(TotalAbonadoTexto));
+            OnPropertyChanged(nameof(TotalMovimientosNoConciliadosTexto));
+            OnPropertyChanged(nameof(NumMovimientosNoConciliadosTexto));
+            OnPropertyChanged(nameof(TotalRestanteTexto));
             OnPropertyChanged(nameof(ResumenCabecerasTexto));
             OnPropertyChanged(nameof(ResumenDetalleTexto));
             OnPropertyChanged(nameof(CanGenerarReporte));

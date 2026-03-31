@@ -143,14 +143,12 @@
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
                                                     Text="Rango Fechas" />
-                                                 <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
                                                     <CalendarDatePicker
                                                         Margin="5,0,0,0"
-                                                        PlaceholderText="Desde..."
-                                                        Date="{x:Bind ViewModel.MovimientoFechaInicio, Mode=TwoWay}" />
-                                                    <CalendarDatePicker
-                                                        PlaceholderText="Hasta..."
-                                                        Date="{x:Bind ViewModel.MovimientoFechaFin, Mode=TwoWay}" />
+                                                        Date="{x:Bind ViewModel.MovimientoFechaInicio, Mode=TwoWay}"
+                                                        PlaceholderText="Desde..." />
+                                                    <CalendarDatePicker Date="{x:Bind ViewModel.MovimientoFechaFin, Mode=TwoWay}" PlaceholderText="Hasta..." />
                                                 </StackPanel>
                                             </StackPanel>
                                         </Border>
@@ -438,23 +436,30 @@
                             <Grid Grid.Column="0">
                                 <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
                                     <Button
+                                        x:Name="BtnConciliacionRfcAutomatica"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnConciliacionRfcAutomatica_Click"
+                                        Content="Conciliacion RFC" />
+                                    <Button
                                         x:Name="BtnConciliacionAutomatica"
                                         Height="34"
                                         Margin="5,0,0,0"
                                         Click="BtnConciliacionAutomatica_Click"
-                                        Content="Conciliacion Automatica" />
+                                        Content="Conciliacion" />
                                     <Button
                                         x:Name="BtnConciliacionAutomaticaConvinacional"
                                         Height="34"
                                         Margin="5,0,0,0"
                                         Click="BtnConciliacionAutomaticaConvinacional_Click"
-                                        Content="Separacion Automatica Combinacional" />
+                                        Content="Conbinacion" />
                                     <Button
                                         x:Name="BtnConciliacionAutomaticaAbonos"
                                         Height="34"
                                         Margin="5,0,0,0"
                                         Click="BtnConciliacionAutomaticaAbonos_Click"
-                                        Content="Conciliacion Automatica de Abonos" />
+                                        Content="Conciliacion de Abonos" />
+
 
                                     <Border
                                         Padding="0"

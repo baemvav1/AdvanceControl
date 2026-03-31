@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Models;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Relaciones;
+using Advance_Control.Services.TipoMantenimiento;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Advance_Control.Views.Dialogs
@@ -19,7 +20,9 @@ namespace Advance_Control.Views.Dialogs
     {
         private readonly IEquipoService _equipoService;
         private readonly IRelacionService _relacionService;
+        private readonly ITipoMantenimientoService _tipoMantenimientoService;
         private List<EquipoDto> _allEquipos = new();
+        private List<TipoMantenimientoDto> _tiposMantenimiento = new();
         private EquipoDto? _selectedEquipo;
         private RelacionClienteDto? _selectedCliente;
 
@@ -30,25 +33,27 @@ namespace Advance_Control.Views.Dialogs
             // Resolve services from DI
             _equipoService = ((App)Application.Current).Host.Services.GetRequiredService<IEquipoService>();
             _relacionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionService>();
+            _tipoMantenimientoService = ((App)Application.Current).Host.Services.GetRequiredService<ITipoMantenimientoService>();
 
-            // Load equipment when control is loaded
-            this.Loaded += async (s, e) => await LoadEquiposAsync();
+            // Load equipment and tipos when control is loaded
+            this.Loaded += async (s, e) =>
+            {
+                await Task.WhenAll(LoadEquiposAsync(), LoadTiposMantenimientoAsync());
+            };
         }
 
         #region Public Properties
 
         /// <summary>
-        /// Gets the selected maintenance type ID (1: Correctivo, 2: Preventivo)
+        /// Gets the selected maintenance type ID from the dynamically loaded combobox
         /// </summary>
         public int? IdTipoMantenimiento
         {
             get
             {
-                if (TipoMantenimientoComboBox.SelectedItem is ComboBoxItem selectedItem &&
-                    selectedItem.Tag is string tagValue &&
-                    int.TryParse(tagValue, out int result))
+                if (TipoMantenimientoComboBox.SelectedItem is TipoMantenimientoDto selectedTipo)
                 {
-                    return result;
+                    return selectedTipo.Id;
                 }
                 return null;
             }
@@ -76,6 +81,29 @@ namespace Advance_Control.Views.Dialogs
             IdTipoMantenimiento.HasValue &&
             IdEquipo.HasValue &&
             IdCliente.HasValue;
+
+        #endregion
+
+        #region Tipos Mantenimiento Loading
+
+        /// <summary>
+        /// Carga los tipos de mantenimiento desde la API
+        /// </summary>
+        private async Task LoadTiposMantenimientoAsync()
+        {
+            try
+            {
+                _tiposMantenimiento = await _tipoMantenimientoService.GetTiposMantenimientoAsync();
+                TipoMantenimientoComboBox.ItemsSource = _tiposMantenimiento;
+
+                if (_tiposMantenimiento.Count > 0)
+                    TipoMantenimientoComboBox.SelectedIndex = 0;
+            }
+            catch (Exception)
+            {
+                // Si falla la carga, el combobox queda vacío
+            }
+        }
 
         #endregion
 

@@ -789,7 +789,8 @@ namespace Advance_Control.ViewModels
                         Abono = movimiento.MontoAbono,
                         Saldo = movimiento.SaldoResultante,
                         Conciliado = movimiento.Conciliado,
-                        Metadatos = movimiento.Metadatos
+                        Metadatos = movimiento.Metadatos,
+                        RfcEmisor = movimiento.Metadatos.GetValueOrDefault("rfc_emisor")
                     },
                     MovimientosRelacionados = movimiento.MovimientosRelacionados.Select(relacionado => new GuardarEstadoCuentaMovimientoRelacionadoDto
                     {

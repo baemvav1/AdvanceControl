@@ -367,6 +367,7 @@ namespace Advance_Control.Views.Windows
             }
             catch (Exception ex) { LogDebugError(nameof(UploadSelectedCargoImageButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la imagen."); }
             finally { cargo.IsLoadingImages = false; }
+            ExpandSelectedGalleryButton_Click(sender, e);
         }
 
         private async void EditSelectedCargoButton_Click(object sender, RoutedEventArgs e)

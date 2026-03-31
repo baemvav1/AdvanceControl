@@ -90,6 +90,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Click="BtnLimpiar_Click" Content="Limpiar filtros" />
                     <Button Click="BtnGenerarReporte_Click" Content="Generar Reporte" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" />
+                    <CheckBox Content="Mostrar mov. no conciliados" IsChecked="{x:Bind ViewModel.MostrarMovimientosNoConciliados, Mode=TwoWay}" />
                     <ProgressRing
                         Width="24"
                         Height="24"
@@ -119,6 +120,28 @@
                     <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalFacturadoTexto, Mode=OneWay}" />
                     <TextBlock Text="Total Finiquitado:" />
                     <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalAbonadoTexto, Mode=OneWay}" />
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="5"
+                        Visibility="{x:Bind ViewModel.MostrarMovimientosNoConciliados, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <TextBlock
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                            Text="Movimientos no conciliados:" />
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                            Text="{x:Bind ViewModel.TotalMovimientosNoConciliadosTexto, Mode=OneWay}" />
+                        <TextBlock
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind ViewModel.NumMovimientosNoConciliadosTexto, Mode=OneWay}" />
+                        <TextBlock
+                            Margin="8,0,0,0"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Restante:" />
+                        <TextBlock
+                            FontWeight="SemiBold"
+                            Text="{x:Bind ViewModel.TotalRestanteTexto, Mode=OneWay}" />
+                    </StackPanel>
                 </StackPanel>
             </StackPanel>
         </Border>

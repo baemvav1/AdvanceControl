@@ -14,6 +14,9 @@ namespace Advance_Control.Services.Reportes
             string? referenciaFiltro,
             DateTimeOffset? fechaInicioFiltro,
             DateTimeOffset? fechaFinFiltro,
-            bool? finiquitoFiltro);
+            bool? finiquitoFiltro,
+            int movimientosNcCount,
+            decimal movimientosNcTotal,
+            bool mostrarMovimientosNc = true);
     }
 }

@@ -22,6 +22,7 @@ namespace Advance_Control.Models
         public decimal Abono { get; set; }
         public decimal Saldo { get; set; }
         public int RelacionadosCount { get; set; }
+        public string? RfcEmisor { get; set; }
         public string PeriodoTexto { get; set; } = string.Empty;
         public string MetadatosTexto { get; set; } = "Sin metadatos adicionales.";
 

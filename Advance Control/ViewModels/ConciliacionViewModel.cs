@@ -110,6 +110,7 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+                    OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
                     OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
                     OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
                 }
@@ -138,6 +139,7 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+                    OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
                 }
             }
         }
@@ -288,6 +290,7 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+                    OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
                     OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
                     OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
                     OnPropertyChanged(nameof(OpacidadIndicadorConciliacion));
@@ -325,6 +328,10 @@ namespace Advance_Control.ViewModels
         public bool CanEjecutarConciliacionAutomaticaAbonos => !IsLoading
             && !IsConciliacionAutomaticaEnProceso
             && _conciliacionMatchingEngine.CanRunAbonos(_facturasPendientesBase, _movimientosPendientesBase);
+        public bool CanEjecutarConciliacionRfcAutomatica => !IsLoading
+            && !IsConciliacionAutomaticaEnProceso
+            && _movimientosPendientesBase.Count > 0
+            && _facturasPendientesBase.Count > 0;
         public bool CanDeshacerUltimaOperacionConciliacion => !IsLoading
             && !IsConciliacionAutomaticaEnProceso
             && OperacionesConciliacionPendientes > 0;
@@ -389,6 +396,10 @@ namespace Advance_Control.ViewModels
                             Abono = grupo.Abono,
                             Saldo = grupo.Saldo,
                             RelacionadosCount = grupo.MovimientosRelacionados.Count,
+                            RfcEmisor = grupo.RfcEmisor
+                                ?? grupo.MovimientosRelacionados
+                                .Select(r => r.Rfc)
+                                .FirstOrDefault(rfc => !string.IsNullOrWhiteSpace(rfc)),
                             PeriodoTexto = detalle.EstadoCuenta.PeriodoTexto,
                             MetadatosTexto = grupo.MetadatosTexto
                         }))
@@ -417,6 +428,7 @@ namespace Advance_Control.ViewModels
                 OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                 OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                 OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+                OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
             }
             catch (Exception ex)
             {
@@ -513,11 +525,8 @@ namespace Advance_Control.ViewModels
                 return;
             }
 
-            if (MovimientoCargado.Abono > FacturaCargada.SaldoPendiente)
-            {
-                await MostrarErrorConciliacionAsync("El abono del movimiento excede el saldo pendiente de la factura cargada.");
-                return;
-            }
+            var abonoExcedeFactura = MovimientoCargado.Abono > FacturaCargada.SaldoPendiente;
+            var montoAbono = abonoExcedeFactura ? FacturaCargada.SaldoPendiente : MovimientoCargado.Abono;
 
             try
             {
@@ -531,7 +540,7 @@ namespace Advance_Control.ViewModels
                     IdFactura = idFactura,
                     IdMovimiento = MovimientoCargado.IdMovimiento,
                     FechaAbono = MovimientoCargado.Fecha,
-                    MontoAbono = MovimientoCargado.Abono,
+                    MontoAbono = montoAbono,
                     Referencia = MovimientoCargado.Referencia,
                     Observaciones = $"Abono generado desde conciliacion con movimiento {MovimientoCargado.GrupoId}.",
                     RegistrarEnBitacoraConciliacion = true,
@@ -549,9 +558,11 @@ namespace Advance_Control.ViewModels
                 OperacionesConciliacionPendientes = result.OperacionesConciliacionPendientes;
                 await CargarDatosAsync();
                 await CargarDetalleFacturaAsync(idFactura, autocompletarFiltroAbono: false);
-                await MostrarExitoConciliacionAsync(string.IsNullOrWhiteSpace(result.Message)
-                    ? "Abono registrado correctamente."
-                    : result.Message);
+
+                var mensaje = abonoExcedeFactura
+                    ? $"Factura pagada correctamente. El movimiento no fue conciliado porque tiene saldo restante disponible para otras facturas."
+                    : (string.IsNullOrWhiteSpace(result.Message) ? "Abono registrado correctamente." : result.Message);
+                await MostrarExitoConciliacionAsync(mensaje);
             }
             catch (Exception ex)
             {
@@ -1208,6 +1219,7 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+            OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
         }
 
         private void LimpiarFacturaCargada()
@@ -1236,6 +1248,7 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+            OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
         }
 
         private void NotificarCambioMovimientoCargado()
@@ -1255,6 +1268,7 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+            OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
         }
 
         private async Task MostrarErrorConciliacionAsync(string mensaje)

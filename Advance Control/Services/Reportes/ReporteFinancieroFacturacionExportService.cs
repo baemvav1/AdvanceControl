@@ -37,7 +37,10 @@ namespace Advance_Control.Services.Reportes
             string? referenciaFiltro,
             DateTimeOffset? fechaInicioFiltro,
             DateTimeOffset? fechaFinFiltro,
-            bool? finiquitoFiltro)
+            bool? finiquitoFiltro,
+            int movimientosNcCount,
+            decimal movimientosNcTotal,
+            bool mostrarMovimientosNc = true)
         {
             // Validación defensiva: la colección de cabeceras es obligatoria.
             if (cabeceras == null)
@@ -66,6 +69,7 @@ namespace Advance_Control.Services.Reportes
             var resumenFiltros = ConstruirResumenFiltros(receptorRfcFiltro, referenciaFiltro, fechaInicioFiltro, fechaFinFiltro, finiquitoFiltro);
             var totalFacturado = cabeceras.Sum(item => item.TotalFacturado);
             var totalFiniquitado = cabeceras.Sum(item => item.TotalAbonadoMovimientos);
+            var totalRestante = totalFacturado - totalFiniquitado - movimientosNcTotal;
             var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "EstadoCuenta.png");
 
             // Aquí se define toda la estructura visual del PDF.
@@ -127,6 +131,19 @@ namespace Advance_Control.Services.Reportes
                                 resumen.Item().Text($"{cabeceras.Sum(item => item.NumeroFacturas)} factura(s) en {cabeceras.Count} cliente(s)");
                                 resumen.Item().Text($"Total facturado: {totalFacturado.ToString("C2", Cultura)}");
                                 resumen.Item().Text($"Total finiquitado: {totalFiniquitado.ToString("C2", Cultura)}");
+                                if (mostrarMovimientosNc)
+                                {
+                                    resumen.Item().Text(text =>
+                                    {
+                                        text.Span("Movimientos no conciliados: ").Bold();
+                                        text.Span($"{movimientosNcTotal.ToString("C2", Cultura)} ({movimientosNcCount} movimiento(s))");
+                                    });
+                                    resumen.Item().Text(text =>
+                                    {
+                                        text.Span("Restante: ").Bold();
+                                        text.Span(totalRestante.ToString("C2", Cultura));
+                                    });
+                                }
                             });
                         });
 

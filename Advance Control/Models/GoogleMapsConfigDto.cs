@@ -18,6 +18,6 @@ namespace Advance_Control.Models
         /// <summary>
         /// Nivel de zoom predeterminado
         /// </summary>
-        public int DefaultZoom { get; set; } = 15;
+        public int DefaultZoom { get; set; } = 10;
     }
 }

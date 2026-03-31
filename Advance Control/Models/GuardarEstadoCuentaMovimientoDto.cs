@@ -35,5 +35,8 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("metadatos")]
         public Dictionary<string, string?> Metadatos { get; set; } = new();
+
+        [JsonPropertyName("rfc_emisor")]
+        public string? RfcEmisor { get; set; }
     }
 }

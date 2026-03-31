@@ -21,6 +21,7 @@ namespace Advance_Control.Models
         public decimal Saldo { get; set; }
         public bool Conciliado { get; set; }
         public Dictionary<string, string?> Metadatos { get; set; } = new();
+        public string? RfcEmisor { get; set; }
         public List<EstadoCuentaMovimientoRelacionadoDetalleDto> MovimientosRelacionados { get; set; } = new();
 
         public string FechaTexto => Fecha == default ? string.Empty : Fecha.ToString("dd/MM/yyyy");

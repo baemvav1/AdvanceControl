@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:Advance_Control.Views"
+    xmlns:local="using:Advance_Control.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
@@ -24,30 +24,15 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
         <!--  Header  -->
-        <StackPanel
-            Grid.Row="0"
-            Margin="0,0,0,24"
-            Spacing="8">
-            <StackPanel Orientation="Horizontal" Spacing="5">
-                <TextBlock
-                    FontSize="32"
-                    FontWeight="Bold"
-                    Text="Operaciones" />
-            </StackPanel>
-            <TextBlock
-                FontSize="16"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Gestión de operaciones del sistema" />
-        </StackPanel>
+
 
         <!--  Cinta de botones  -->
         <StackPanel
-            Grid.Row="1"
+            Grid.Row="0"
             Margin="0,0,0,8"
             Orientation="Horizontal"
             Spacing="8">
@@ -55,16 +40,18 @@
                 x:Name="ToggleFiltrosButton"
                 Click="ToggleFiltros_Click"
                 Content="Filtros" />
-            <Button
+            <!--
+                Button
                 x:Name="ReporteGeneralButton"
                 Click="ReporteGeneral_Click"
-                Content="Reporte General" />
+                Content="Reporte General" /
+            -->
         </StackPanel>
 
         <!--  Filtros  -->
         <Grid
             x:Name="Filtros"
-            Grid.Row="2"
+            Grid.Row="1"
             Visibility="Collapsed">
             <StackPanel Margin="0,0,0,16" Spacing="12">
                 <TextBlock
@@ -87,7 +74,7 @@
                     <StackPanel
                         Grid.Row="0"
                         Grid.Column="0"
-                        Margin="0,0,8,8">
+                        Margin="0,0,8,0">
                         <TextBlock Margin="0,0,0,4" Text="ID Tipo" />
                         <ComboBox
                             x:Name="IdTipoComboBox"
@@ -102,7 +89,7 @@
                     <StackPanel
                         Grid.Row="0"
                         Grid.Column="1"
-                        Margin="0,0,8,8">
+                        Margin="0,0,8,0">
                         <TextBlock Margin="0,0,0,4" Text="Cliente" />
                         <Button
                             x:Name="SelectClienteButton"
@@ -126,45 +113,34 @@
                     </StackPanel>
 
                     <!--  Second row of filters  -->
-                    <TextBox
+                    <!--
+                        TextBox
                         Grid.Row="1"
                         Grid.Column="0"
                         Margin="0,0,8,8"
                         Header="ID Atiende"
                         PlaceholderText="Buscar por ID atiende"
-                        Text="{x:Bind ViewModel.IdAtiendeFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                    <TextBox
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        Margin="0,0,8,8"
-                        Header="Nota"
-                        PlaceholderText="Buscar por nota"
-                        Text="{x:Bind ViewModel.NotaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        Text="{x:Bind ViewModel.IdAtiendeFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" /
+                    -->
 
                     <StackPanel
                         Grid.Row="1"
-                        Grid.Column="2"
-                        HorizontalAlignment="Right"
-                        VerticalAlignment="Bottom"
-                        Orientation="Horizontal"
-                        Spacing="8">
-                        <Button
-                            x:Name="SearchOperacionesButton"
-                            Click="SearchButton_Click"
-                            Content="Buscar"
-                            Style="{StaticResource AccentButtonStyle}" />
-                        <Button
-                            x:Name="ClearOperacionesButton"
-                            Click="ClearButton_Click"
-                            Content="Limpiar" />
+                        Grid.Column="0"
+                        Margin="0,0,0,8">
+                        <TextBlock Margin="0,0,0,4" Text="Nota" />
+                        <TextBox
+                            Margin="0,0,8,0"
+                            PlaceholderText="Buscar por nota"
+                            Text="{x:Bind ViewModel.NotaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
                     </StackPanel>
+
 
                     <!--  Third row: rango de fechas  -->
                     <StackPanel
-                        Grid.Row="2"
-                        Grid.Column="0"
-                        Margin="0,0,8,8">
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0,0,8,0">
                         <TextBlock Margin="0,0,0,4" Text="Fecha inicio (desde)" />
                         <CalendarDatePicker
                             x:Name="FechaInicialPicker"
@@ -175,9 +151,9 @@
                     </StackPanel>
 
                     <StackPanel
-                        Grid.Row="2"
-                        Grid.Column="1"
-                        Margin="0,0,8,8">
+                        Grid.Row="1"
+                        Grid.Column="2"
+                        Margin="0,0,0,0">
                         <TextBlock Margin="0,0,0,4" Text="Fecha cierre (hasta)" />
                         <CalendarDatePicker
                             x:Name="FechaFinalPicker"
@@ -189,38 +165,55 @@
 
                     <StackPanel
                         Grid.Row="2"
-                        Grid.Column="2"
-                        Margin="0,0,8,8">
+                        Grid.Column="0"
+                        Margin="0,0,8,0">
                         <TextBlock Margin="0,0,0,4" Text="Área" />
                         <ComboBox
                             HorizontalAlignment="Stretch"
-                            ItemsSource="{x:Bind ViewModel.Areas, Mode=OneWay}"
-                            SelectedItem="{x:Bind ViewModel.SelectedAreaFilter, Mode=TwoWay}"
                             DisplayMemberPath="Nombre"
-                            PlaceholderText="Todas las áreas" />
+                            ItemsSource="{x:Bind ViewModel.Areas, Mode=OneWay}"
+                            PlaceholderText="Todas las áreas"
+                            SelectedItem="{x:Bind ViewModel.SelectedAreaFilter, Mode=TwoWay}" />
                     </StackPanel>
+
+                    <StackPanel
+                        Grid.Row="2"
+                        Grid.Column="2"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="SearchOperacionesButton"
+                            Click="SearchButton_Click"
+                            Content="Buscar"
+                            Style="{StaticResource AccentButtonStyle}" />
+                        <Button
+                            x:Name="ClearOperacionesButton"
+                            Click="ClearButton_Click"
+                            Content="Limpiar"
+                            Style="{StaticResource ButtonRevealStyle}" />
+                    </StackPanel>
+
                 </Grid>
             </StackPanel>
         </Grid>
 
         <!--  Lista de operaciones  -->
-        <Grid Grid.Row="3">
+        <Grid Grid.Row="2">
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Operaciones, Mode=OneWay}">
                     <ItemsRepeater.Layout>
-                        <StackLayout Spacing="8" />
+                        <StackLayout Spacing="3" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
                         <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:OperacionDto">
-                            <Grid Margin="0,5,20,5">
+                            <Grid Margin="5">
                                 <StackPanel Orientation="Vertical">
                                     <Grid
                                         x:Name="Head"
-                                        Grid.Row="0"
-                                        MinHeight="90"
-                                        Padding="0"
-                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        Background="{ThemeResource ControlElevationBorderBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="0,0,0,1"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
@@ -229,7 +222,7 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="5" />
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="50" />
                                         </Grid.ColumnDefinitions>
 
                                         <!--  Barra de estado (indicador visual izquierdo)  -->
@@ -238,419 +231,143 @@
                                             Background="{x:Bind IsEditable, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='MediumSeaGreen|DimGray', Mode=OneWay}"
                                             CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,0,0,0|8,0,0,8', Mode=OneWay}" />
 
-                                        <!--  Información principal de la operación  -->
-                                        <StackPanel
-                                            Grid.Column="1"
-                                            Padding="14,12,8,12"
-                                            Spacing="6">
-
-                                            <!--  Fila 1: Identificador + Monto + Badge de estado  -->
-                                            <Grid>
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="Auto" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock
-                                                    Grid.Column="0"
-                                                    FontSize="16"
-                                                    FontWeight="SemiBold"
-                                                    Text="{x:Bind Identificador}" />
-                                                <StackPanel
-                                                    Grid.Column="1"
-                                                    Orientation="Horizontal"
-                                                    Spacing="8"
-                                                    VerticalAlignment="Center">
-                                                    <TextBlock
-                                                        FontSize="14"
-                                                        FontWeight="SemiBold"
-                                                        Foreground="{ThemeResource SystemAccentColor}"
-                                                        Text="{x:Bind TotalMonto, Converter={StaticResource CurrencyConverter}, Mode=OneWay}" />
-                                                    <Border
-                                                        Padding="6,2"
-                                                        Background="#152DA44E"
-                                                        BorderBrush="#2DA44E"
-                                                        BorderThickness="1"
-                                                        CornerRadius="10"
-                                                        Visibility="{x:Bind IsEditable, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                                        <TextBlock
-                                                            FontSize="11"
-                                                            Foreground="#2DA44E"
-                                                            Text="● Abierta" />
-                                                    </Border>
-                                                    <!--  Badge Finalizada  -->
-                                                    <Border
-                                                        Padding="6,2"
-                                                        Background="#15808080"
-                                                        BorderBrush="#808080"
-                                                        BorderThickness="1"
-                                                        CornerRadius="10"
-                                                        Visibility="{x:Bind IsFinalized, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                                        <TextBlock
-                                                            FontSize="11"
-                                                            Foreground="#808080"
-                                                            Text="✓ Finalizada" />
-                                                    </Border>
-                                                </StackPanel>
-                                            </Grid>
-
-                                            <!--  Fila 2: Cliente + Atiende + Fecha inicio  -->
-                                            <StackPanel Orientation="Horizontal" Spacing="20">
-                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                                                    <Run Text="Cliente: " />
-                                                    <Run FontWeight="SemiBold" Text="{x:Bind RazonSocial}" />
-                                                </TextBlock>
-                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                                                    <Run Text="Atiende: " />
-                                                    <Run FontWeight="SemiBold" Text="{x:Bind Atiende}" />
-                                                </TextBlock>
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Text="{x:Bind FechaInicioCorta}" />
-                                            </StackPanel>
-
-                                            <!--  Fila 3: Nota (solo si existe)  -->
-                                            <TextBlock
-                                                FontSize="12"
-                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                Text="{x:Bind Nota}"
-                                                TextTrimming="CharacterEllipsis"
-                                                Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}" />
-
-                                            <!--  Fila 4: Indicadores checkOperacion (cuando estén cargados)  -->
-                                            <StackPanel
-                                                Orientation="Horizontal"
-                                                Spacing="4"
-                                                Visibility="{x:Bind TieneCheck, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                                <Border Width="10" Height="10" CornerRadius="5"
-                                                    Background="{x:Bind CheckOperacion.CotizacionGenerada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Cotización generada" /></ToolTipService.ToolTip>
-                                                </Border>
-                                                <Border Width="10" Height="10" CornerRadius="5"
-                                                    Background="{x:Bind CheckOperacion.CotizacionEnviada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Cotización enviada" /></ToolTipService.ToolTip>
-                                                </Border>
-                                                <Border Width="10" Height="10" CornerRadius="5"
-                                                    Background="{x:Bind CheckOperacion.ReporteGenerado, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Reporte generado" /></ToolTipService.ToolTip>
-                                                </Border>
-                                                <Border Width="10" Height="10" CornerRadius="5"
-                                                    Background="{x:Bind CheckOperacion.ReporteEnviado, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Reporte enviado" /></ToolTipService.ToolTip>
-                                                </Border>
-                                                <Border Width="10" Height="10" CornerRadius="5" Margin="6,0,0,0"
-                                                    Background="{x:Bind CheckOperacion.PrefacturaCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Prefactura cargada" /></ToolTipService.ToolTip>
-                                                </Border>
-                                                <Border Width="10" Height="10" CornerRadius="5"
-                                                    Background="{x:Bind CheckOperacion.HojaServicioCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Hoja de servicio cargada" /></ToolTipService.ToolTip>
-                                                </Border>
-                                                <Border Width="10" Height="10" CornerRadius="5"
-                                                    Background="{x:Bind CheckOperacion.OrdenCompraCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Orden de compra cargada" /></ToolTipService.ToolTip>
-                                                </Border>
-                                                <Border Width="10" Height="10" CornerRadius="5"
-                                                    Background="{x:Bind CheckOperacion.FacturaCargada, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='#22C55E|#6B7280', Mode=OneWay}">
-                                                    <ToolTipService.ToolTip><ToolTip Content="Factura cargada" /></ToolTipService.ToolTip>
-                                                </Border>
-                                            </StackPanel>
-                                        </StackPanel>
-
-                                        <!--  Botones: Visor + Expandir/Colapsar  -->
-                                        <StackPanel
-                                            Grid.Column="2"
-                                            Margin="0,0,4,0"
-                                            Orientation="Horizontal"
-                                            Spacing="2"
-                                            VerticalAlignment="Center">
-                                            <Button
-                                                x:Name="AbrirVisorOperacionButton"
-                                                Padding="10,8"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Click="AbrirVisorButton_Click"
-                                                Tag="{x:Bind}"
-                                                ToolTipService.ToolTip="Abrir visor de operación">
-                                                <FontIcon FontSize="16" Glyph="&#xE8A7;" />
-                                            </Button>
-                                            <Button
-                                                x:Name="ExpandirOperacionButton"
-                                                Padding="12,8"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Click="ToggleExpandButton_Click"
-                                                Tag="{x:Bind}"
-                                                ToolTipService.ToolTip="Expandir / Colapsar">
-                                                <TextBlock
-                                                    FontSize="18"
-                                                    Text="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}" />
-                                            </Button>
-                                        </StackPanel>
-                                    </Grid>
-                                    <Grid
-                                        x:Name="Body"
-                                        Grid.Row="1"
-                                        Padding="8"
-                                        Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
-                                        Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                        <Pivot>
-                                            <!--  Información de la Operación  -->
-                                            <PivotItem Header="Información">
-                                                <Grid Padding="8">
+                                        <Grid Grid.Column="1">
+                                            <StackPanel Margin="10,10,0,10" Orientation="Vertical">
+                                                <Grid>
                                                     <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="Auto" />
-                                                    </Grid.RowDefinitions>
 
-                                                    <StackPanel
-                                                        Grid.Row="0"
-                                                        Grid.Column="0"
-                                                        Margin="0,4,0,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="ID Tipo:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind IdTipo}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="0"
-                                                        Grid.Column="1"
-                                                        Margin="0,4,8,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Monto:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind TotalMonto, Converter={StaticResource CurrencyConverter}, Mode=OneWay}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="1"
-                                                        Grid.Column="0"
-                                                        Margin="0,4,0,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Razón Social:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind RazonSocial}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="1"
-                                                        Grid.Column="1"
-                                                        Margin="0,4,8,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Fecha Inicio:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind FechaInicio}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="2"
-                                                        Grid.Column="0"
-                                                        Margin="0,4,0,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Identificador Equipo:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind Identificador}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="2"
-                                                        Grid.Column="1"
-                                                        Margin="0,4,8,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Fecha Final:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind FechaFinal}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="3"
-                                                        Grid.Column="0"
-                                                        Margin="0,4,0,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Atiende:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind Atiende}" />
-                                                    </StackPanel>
-
-                                                    <StackPanel
-                                                        Grid.Row="3"
-                                                        Grid.Column="1"
-                                                        Margin="0,4,8,0">
-                                                        <TextBlock
-                                                            FontSize="12"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Finalizado:" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind Finalizado}" />
-                                                    </StackPanel>
-
-                                                    <!--  Indicadores de imágenes  -->
-                                                    <StackPanel
-                                                        Grid.Row="4"
-                                                        Grid.Column="0"
-                                                        Grid.ColumnSpan="2"
-                                                        Margin="0,8,0,0"
-                                                        Orientation="Horizontal"
-                                                        Spacing="8">
-                                                        <Border
-                                                            Padding="6,3"
-                                                            Background="#1A6B3A"
-                                                            CornerRadius="4"
-                                                            Visibility="{x:Bind HasPrefactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                    <Grid Grid.Column="0">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
                                                             <TextBlock
-                                                                FontSize="11"
-                                                                Foreground="#4EC48A"
-                                                                Text="📄 Prefactura" />
-                                                        </Border>
-                                                        <Border
-                                                            Padding="6,3"
-                                                            Background="#1A3F6B"
-                                                            CornerRadius="4"
-                                                            Visibility="{x:Bind HasHojaServicio, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                                            <TextBlock
-                                                                FontSize="11"
-                                                                Foreground="#4E9CC4"
-                                                                Text="📋 Hoja Servicio" />
-                                                        </Border>
-                                                        <Border
-                                                            Padding="6,3"
-                                                            Background="#5C3A1A"
-                                                            CornerRadius="4"
-                                                            Visibility="{x:Bind HasOrdenCompra, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                                            <TextBlock
-                                                                FontSize="11"
-                                                                Foreground="#C49A4E"
-                                                                Text="🛒 Orden Compra" />
-                                                        </Border>
-                                                        <Border
-                                                            Padding="6,3"
-                                                            Background="#3A1A5C"
-                                                            CornerRadius="4"
-                                                            Visibility="{x:Bind HasFactura, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                                            <TextBlock
-                                                                FontSize="11"
-                                                                Foreground="#A04EC4"
-                                                                Text="🧾 Factura" />
-                                                        </Border>
-                                                    </StackPanel>
+                                                                Grid.Column="0"
+                                                                FontWeight="SemiBold"
+                                                                Text="{x:Bind Identificador}" />
+                                                            <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource AccentFillColorDefaultBrush}">
+                                                                <Run Text="Monto" />
+                                                                <Run Text="{x:Bind TotalMonto, Converter={StaticResource CurrencyConverter}, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <Grid Grid.Column="1" HorizontalAlignment="Left">
+                                                        <StackPanel
+                                                            Margin="5,0,5,0"
+                                                            Orientation="Horizontal"
+                                                            Spacing="8">
+
+                                                            <StackPanel
+                                                                Margin="0,0,0,5"
+                                                                HorizontalAlignment="Right"
+                                                                Orientation="Horizontal"
+                                                                Spacing="8">
+                                                                <Border
+                                                                    Padding="6,3"
+                                                                    Background="#1A6B3A"
+                                                                    CornerRadius="4"
+                                                                    Visibility="{x:Bind CkPrefacturaCargada, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                                    <TextBlock
+                                                                        FontSize="11"
+                                                                        Foreground="#4EC48A"
+                                                                        Text="📄 Prefactura" />
+                                                                </Border>
+                                                                <Border
+                                                                    Padding="6,3"
+                                                                    Background="#1A3F6B"
+                                                                    CornerRadius="4"
+                                                                    Visibility="{x:Bind CkHojaServicioCargada, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                                    <TextBlock
+                                                                        FontSize="11"
+                                                                        Foreground="#4E9CC4"
+                                                                        Text="📋 Hoja Servicio" />
+                                                                </Border>
+                                                                <Border
+                                                                    Padding="6,3"
+                                                                    Background="#5C3A1A"
+                                                                    CornerRadius="4"
+                                                                    Visibility="{x:Bind CkOrdenCompraCargada, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                                    <TextBlock
+                                                                        FontSize="11"
+                                                                        Foreground="#C49A4E"
+                                                                        Text="🛒 Orden Compra" />
+                                                                </Border>
+                                                                <Border
+                                                                    Padding="6,3"
+                                                                    Background="#3A1A5C"
+                                                                    CornerRadius="4"
+                                                                    Visibility="{x:Bind CkFacturaCargada, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                                    <TextBlock
+                                                                        FontSize="11"
+                                                                        Foreground="#A04EC4"
+                                                                        Text="🧾 Factura" />
+                                                                </Border>
+
+                                                            </StackPanel>
+                                                        </StackPanel>
+                                                    </Grid>
+
+
                                                 </Grid>
-                                            </PivotItem>
-
-                                            <!--  Nota  -->
-                                            <PivotItem Header="Nota">
-                                                <StackPanel Padding="8">
-                                                    <TextBlock
-                                                        FontSize="13"
-                                                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                        Text="{x:Bind Nota}"
-                                                        TextWrapping="Wrap"
-                                                        Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-                                                </StackPanel>
-                                            </PivotItem>
-
-                                            <!--  Tareas: checklist de pasos de la operación  -->
-                                            <PivotItem Header="Tareas">
-                                                <Grid Padding="8,12,8,8">
-                                                    <Grid.RowDefinitions>
-                                                        <RowDefinition Height="Auto" />
-                                                        <RowDefinition Height="8" />
-                                                        <RowDefinition Height="Auto" />
-                                                    </Grid.RowDefinitions>
-
-                                                    <!-- Resumen de progreso -->
+                                                <StackPanel Orientation="Horizontal" Spacing="20">
+                                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                        <Run Text="Cliente: " />
+                                                        <Run FontWeight="SemiBold" Text="{x:Bind RazonSocial}" />
+                                                    </TextBlock>
+                                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                        <Run Text="Atiende: " />
+                                                        <Run FontWeight="SemiBold" Text="{x:Bind Atiende}" />
+                                                    </TextBlock>
+                                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                        <Run Text="Fecha Inicio" />
+                                                        <Run Text="{x:Bind FechaInicioCorta}" />
+                                                    </TextBlock>
+                                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="{x:Bind Finalizado, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        <Run Text="Fecha Fin" />
+                                                        <Run Text="{x:Bind FechaFinCorta}" />
+                                                    </TextBlock>
                                                     <StackPanel
                                                         Grid.Row="0"
                                                         Orientation="Horizontal"
                                                         Spacing="8"
                                                         Visibility="{x:Bind TieneCheck, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                                         <TextBlock
-                                                            FontSize="13" FontWeight="SemiBold"
+                                                            FontWeight="SemiBold"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind CheckOperacion.StepsCompletados, Mode=OneWay}" />
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="/ 8 pasos completados"
-                                                            VerticalAlignment="Center" />
+                                                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="/ 8 pasos completados" />
                                                     </StackPanel>
 
-                                                    <!-- Sin datos cargados aún -->
+                                                </StackPanel>
+                                                <StackPanel Orientation="Horizontal">
                                                     <TextBlock
-                                                        Grid.Row="0"
-                                                        FontSize="12" FontStyle="Italic"
                                                         Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                        Text="Expande la operación para cargar tareas"
-                                                        Visibility="{x:Bind TieneCheck, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter='invert', Mode=OneWay}" />
+                                                        Text="Nota"
+                                                        Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}" />
+                                                    <TextBlock
+                                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                        Text="{x:Bind Nota}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        Visibility="{x:Bind Nota, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}" />
+                                                </StackPanel>
 
-                                                    <!-- Lista de pasos -->
-                                                    <ItemsRepeater
-                                                        Grid.Row="2"
-                                                        ItemsSource="{x:Bind CheckOperacion.Pasos, Mode=OneWay}"
-                                                        Visibility="{x:Bind TieneCheck, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                                                        <ItemsRepeater.Layout>
-                                                            <StackLayout Spacing="8" />
-                                                        </ItemsRepeater.Layout>
-                                                        <ItemsRepeater.ItemTemplate>
-                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:CheckPasoItem">
-                                                                <StackPanel Orientation="Horizontal" Spacing="10">
-                                                                    <FontIcon
-                                                                        Glyph="{x:Bind Glyph}"
-                                                                        FontSize="14"
-                                                                        VerticalAlignment="Center"
-                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}" />
-                                                                    <TextBlock
-                                                                        FontSize="13"
-                                                                        VerticalAlignment="Center"
-                                                                        Text="{x:Bind Nombre}"
-                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}" />
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </ItemsRepeater.ItemTemplate>
-                                                    </ItemsRepeater>
-                                                </Grid>
-                                            </PivotItem>
+                                            </StackPanel>
+                                        </Grid>
+                                        <Button
+                                            x:Name="AbrirVisorOperacionButton"
+                                            Grid.Column="2"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Click="AbrirVisorButton_Click"
+                                            Tag="{x:Bind}"
+                                            ToolTipService.ToolTip="Abrir visor de operación">
+                                            <FontIcon Glyph="&#xE8A7;" />
+                                        </Button>
 
-                                        </Pivot>
+
+
                                     </Grid>
+
                                 </StackPanel>
 
                             </Grid>
