@@ -41,5 +41,7 @@ namespace Advance_Control.Models
         public string SaldoTexto => Saldo.ToString("C2", new CultureInfo("es-MX"));
         public string RelacionadosTexto => RelacionadosCount == 0 ? "Sin relacionados" : $"{RelacionadosCount} relacionados";
         public string PendienteTexto => "Pendiente de conciliacion";
+        public decimal MontoRestante { get; set; }
+        public string MontoRestanteTexto => MontoRestante == 0m ? "-" : MontoRestante.ToString("C2", new CultureInfo("es-MX"));
     }
 }

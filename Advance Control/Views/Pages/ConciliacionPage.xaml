@@ -807,6 +807,7 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
 
                                             <Border
@@ -837,6 +838,19 @@
 
                                             <Border
                                                 Grid.Column="2"
+                                                Padding="8"
+                                                Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1"
+                                                CornerRadius="6">
+                                                <StackPanel Spacing="4">
+                                                    <TextBlock FontWeight="SemiBold" Text="Disponible" />
+                                                    <TextBlock Text="{x:Bind ViewModel.MovimientoCargadoMontoRestanteTexto, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <Border
+                                                Grid.Column="3"
                                                 Padding="8"
                                                 Background="{ThemeResource LayerFillColorDefaultBrush}"
                                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"

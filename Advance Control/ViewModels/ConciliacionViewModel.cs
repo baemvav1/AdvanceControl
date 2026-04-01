@@ -276,6 +276,7 @@ namespace Advance_Control.ViewModels
         public string MovimientoCargadoReferenciaTexto => MovimientoCargado?.ReferenciaTexto ?? string.Empty;
         public string MovimientoCargadoCargoTexto => MovimientoCargado?.CargoTexto ?? "-";
         public string MovimientoCargadoAbonoTexto => MovimientoCargado?.AbonoTexto ?? "-";
+        public string MovimientoCargadoMontoRestanteTexto => MovimientoCargado?.MontoRestanteTexto ?? "-";
         public string MovimientoCargadoSaldoTexto => MovimientoCargado?.SaldoTexto ?? "$0.00";
         public string MovimientoCargadoRelacionadosTexto => MovimientoCargado?.RelacionadosTexto ?? "Sin relacionados";
         public string MovimientoCargadoMetadatosTexto => MovimientoCargado?.MetadatosTexto ?? "Sin metadatos adicionales.";
@@ -316,9 +317,8 @@ namespace Advance_Control.ViewModels
         public bool CanAbonarMovimiento => !IsLoading
             && FacturaCargada != null
             && MovimientoCargado != null
-            && MovimientoCargado.Abono > 0
-            && FacturaCargada.SaldoPendiente > 0
-            && MovimientoCargado.Abono <= FacturaCargada.SaldoPendiente;
+            && MovimientoCargado.MontoRestante > 0
+            && FacturaCargada.SaldoPendiente > 0;
         public bool CanEjecutarConciliacionAutomatica => !IsLoading
             && !IsConciliacionAutomaticaEnProceso
             && _conciliacionMatchingEngine.CanRunUnoAUno(_facturasPendientesBase, _movimientosPendientesBase);
@@ -377,7 +377,7 @@ namespace Advance_Control.ViewModels
 
                 var movimientosPendientes = detallesValidos
                     .SelectMany(detalle => detalle.Grupos
-                        .Where(grupo => !grupo.Conciliado && grupo.Abono > 0)
+                        .Where(grupo => !grupo.Conciliado && grupo.MontoRestante > 0)
                         .Select(grupo => new ConciliacionMovimientoResumenDto
                         {
                             IdEstadoCuenta = detalle.EstadoCuenta!.IdEstadoCuenta,
@@ -395,6 +395,7 @@ namespace Advance_Control.ViewModels
                             Cargo = grupo.Cargo,
                             Abono = grupo.Abono,
                             Saldo = grupo.Saldo,
+                            MontoRestante = grupo.MontoRestante,
                             RelacionadosCount = grupo.MovimientosRelacionados.Count,
                             RfcEmisor = grupo.RfcEmisor
                                 ?? grupo.MovimientosRelacionados
@@ -519,14 +520,14 @@ namespace Advance_Control.ViewModels
                 return;
             }
 
-            if (MovimientoCargado.Abono <= 0)
+            if (MovimientoCargado.MontoRestante <= 0)
             {
                 await MostrarErrorConciliacionAsync("El movimiento seleccionado no tiene un abono valido.");
                 return;
             }
 
-            var abonoExcedeFactura = MovimientoCargado.Abono > FacturaCargada.SaldoPendiente;
-            var montoAbono = abonoExcedeFactura ? FacturaCargada.SaldoPendiente : MovimientoCargado.Abono;
+            var abonoExcedeFactura = MovimientoCargado.MontoRestante > FacturaCargada.SaldoPendiente;
+            var montoAbono = abonoExcedeFactura ? FacturaCargada.SaldoPendiente : MovimientoCargado.MontoRestante;
 
             try
             {
@@ -1261,6 +1262,7 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(MovimientoCargadoReferenciaTexto));
             OnPropertyChanged(nameof(MovimientoCargadoCargoTexto));
             OnPropertyChanged(nameof(MovimientoCargadoAbonoTexto));
+            OnPropertyChanged(nameof(MovimientoCargadoMontoRestanteTexto));
             OnPropertyChanged(nameof(MovimientoCargadoSaldoTexto));
             OnPropertyChanged(nameof(MovimientoCargadoRelacionadosTexto));
             OnPropertyChanged(nameof(MovimientoCargadoMetadatosTexto));
