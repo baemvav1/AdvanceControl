@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$AppInstallerUrl = 'https://github.com/baemvav1/AdvanceControl/releases/latest/download/AdvanceControl.appinstaller'
+    [string]$AppInstallerUrl = 'https://github.com/baemvav1/AdvanceControl/releases/download/client-latest/AdvanceControl.appinstaller'
 )
 
 Set-StrictMode -Version Latest

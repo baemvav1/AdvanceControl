@@ -80,7 +80,8 @@ jobs:
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ steps.version.outputs.version }}
-          APP_INSTALLER_BASE_URI: ${{ github.server_url }}/${{ github.repository }}/releases/latest/download
+          # URI estable sin redirect — AppInstaller no sigue HTTP 302 de GitHub correctamente
+          APP_INSTALLER_BASE_URI: ${{ github.server_url }}/${{ github.repository }}/releases/download/client-latest
           CERT_PATH: ${{ steps.cert.outputs.path }}
           CERT_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
         run: |
@@ -102,12 +103,34 @@ jobs:
             artifacts/installer/AdvanceControl.appinstaller
             artifacts/installer/AdvanceControl-x64.msix
 
-      - name: Crear release
+      # Release 'client-latest': tag estable que AppInstaller usa para la URL de auto-actualización.
+      # Se recrea en cada build para que la URL no cambie nunca (sin redirects).
+      - name: Actualizar release de auto-actualización (client-latest)
+        shell: pwsh
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          # Eliminar release y tag anterior si existen
+          gh release delete client-latest --yes 2>$null
+          git tag -f client-latest
+          git push -f origin client-latest
+          # Crear nuevo release con los archivos del instalador
+          gh release create client-latest `
+            --title "Ultima version del cliente" `
+            --notes "Version actual: v$env:PACKAGE_VERSION``n``nInstala usando este release para recibir auto-actualizaciones." `
+            --latest `
+            "artifacts\installer\AdvanceControl.appinstaller" `
+            "artifacts\installer\AdvanceControl-x64.msix"
+
+      # Release versionado: historial de versiones (no es el que usa AppInstaller)
+      - name: Crear release versionado (historial)
         uses: softprops/action-gh-release@v2
         with:
           tag_name: client-v${{ steps.version.outputs.version }}
           name: Cliente v${{ steps.version.outputs.version }}
           generate_release_notes: true
+          make_latest: false
           files: |
             artifacts/installer/AdvanceControl.appinstaller
             artifacts/installer/AdvanceControl-x64.msix
