@@ -676,15 +676,48 @@ namespace Advance_Control.Views.Windows
             if (!Operacion.IdOperacion.HasValue) return;
             try
             {
+                // Preguntar al usuario el tipo de archivo
+                var tipoDialog = new ContentDialog
+                {
+                    Title = "Tipo de archivo",
+                    Content = "¿Qué tipo de archivo desea cargar?",
+                    PrimaryButtonText = "Imagen",
+                    SecondaryButtonText = "PDF",
+                    CloseButtonText = "Cancelar",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = _xamlRoot
+                };
+                var tipoResult = await tipoDialog.ShowAsync();
+                if (tipoResult == ContentDialogResult.None) return;
+
+                bool esPdf = tipoResult == ContentDialogResult.Secondary;
+
                 var picker = new FileOpenPicker();
                 WinRT.Interop.InitializeWithWindow.Initialize(picker, _hwnd);
                 picker.ViewMode = PickerViewMode.Thumbnail;
-                picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
-                picker.FileTypeFilter.Add(".jpg"); picker.FileTypeFilter.Add(".jpeg"); picker.FileTypeFilter.Add(".png"); picker.FileTypeFilter.Add(".bmp");
+                if (esPdf)
+                {
+                    picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+                    picker.FileTypeFilter.Add(".pdf");
+                }
+                else
+                {
+                    picker.SuggestedStartLocation = PickerLocationId.PicturesLibrary;
+                    picker.FileTypeFilter.Add(".jpg");
+                    picker.FileTypeFilter.Add(".jpeg");
+                    picker.FileTypeFilter.Add(".png");
+                    picker.FileTypeFilter.Add(".bmp");
+                    picker.FileTypeFilter.Add(".webp");
+                }
+
                 var file = await picker.PickSingleFileAsync();
                 if (file == null) return;
+
                 using var stream = await file.OpenStreamForReadAsync();
-                var contentType = ImageContentTypeHelper.GetContentTypeFromExtension(file.FileType);
+                var contentType = esPdf
+                    ? "application/pdf"
+                    : ImageContentTypeHelper.GetContentTypeFromExtension(file.FileType);
+
                 OperacionImageDto? result = imageType switch
                 {
                     "Prefactura"   => await _operacionImageService.UploadPrefacturaAsync(Operacion.IdOperacion.Value, stream, contentType),
@@ -754,8 +787,21 @@ namespace Advance_Control.Views.Windows
 
         private async void ViewOperacionImageButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is FrameworkElement el && el.Tag is OperacionImageDto img && !string.IsNullOrEmpty(img.Url))
-                await _imageViewerService.ShowImageAsync(img.Url, img.Tipo);
+            if (sender is not FrameworkElement el || el.Tag is not OperacionImageDto img || string.IsNullOrEmpty(img.Url))
+                return;
+            try
+            {
+                if (img.IsPdf)
+                {
+                    var file = await WinStorage.StorageFile.GetFileFromPathAsync(img.Url);
+                    await WinSystem.Launcher.LaunchFileAsync(file);
+                }
+                else
+                {
+                    await _imageViewerService.ShowImageAsync(img.Url, img.Tipo);
+                }
+            }
+            catch (Exception ex) { LogDebugError(nameof(ViewOperacionImageButton_Click), ex); await MostrarErrorAsync("Error", "No se pudo abrir el archivo."); }
         }
 
         private async void ViewCargoImageButton_Click(object sender, RoutedEventArgs e)

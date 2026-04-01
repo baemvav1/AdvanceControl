@@ -97,8 +97,20 @@ namespace Advance_Control.Models
                 {
                     _tipo = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsPdf));
+                    OnPropertyChanged(nameof(IsImage));
                 }
             }
         }
+
+        /// <summary>
+        /// Indica si el archivo es un PDF (basado en la extensión del nombre de archivo).
+        /// </summary>
+        public bool IsPdf => FileName?.EndsWith(".pdf", System.StringComparison.OrdinalIgnoreCase) == true;
+
+        /// <summary>
+        /// Indica si el archivo es una imagen (no PDF).
+        /// </summary>
+        public bool IsImage => !IsPdf;
     }
 }

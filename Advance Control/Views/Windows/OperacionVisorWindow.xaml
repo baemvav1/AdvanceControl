@@ -808,8 +808,8 @@
                                 </Button>
                             </StackPanel>
                         </Grid>
-                        <Grid Grid.Row="1">
-                            <StackPanel Orientation="Vertical">
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                            <StackPanel Margin="10,8,10,12" Orientation="Vertical" Spacing="8">
                                 <Border
                                     Padding="12"
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
@@ -896,6 +896,17 @@
                                                 <TextBlock Text="Ver Factura" />
                                             </StackPanel>
                                         </Button>
+                                        <Button
+                                            HorizontalAlignment="Stretch"
+                                            Click="ReabrirOperacionButton_Click"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            ToolTipService.ToolTip="Reabrir operación finalizada"
+                                            Visibility="{x:Bind ToInverseBoolVisibility(Operacion.IsEditable), Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                <FontIcon FontSize="14" Glyph="&#xE72C;" />
+                                                <TextBlock Text="Reabrir Operación" />
+                                            </StackPanel>
+                                        </Button>
                                     </StackPanel>
                                 </Border>
 
@@ -916,13 +927,14 @@
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
                                             </ItemsRepeater.Layout>
-                                            <ItemsRepeater.ItemTemplate>
+                                             <ItemsRepeater.ItemTemplate>
                                                 <DataTemplate x:DataType="models:OperacionImageDto">
                                                     <Grid
-                                                        Width="80"
-                                                        Height="80"
+                                                        Width="88"
+                                                        Height="88"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="6">
+                                                        <!--  Miniatura imagen  -->
                                                         <Button
                                                             Padding="0"
                                                             HorizontalAlignment="Stretch"
@@ -932,9 +944,38 @@
                                                             Click="ViewOperacionImageButton_Click"
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Ver imagen">
+                                                            ToolTipService.ToolTip="Ver imagen"
+                                                            Visibility="{x:Bind IsImage, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
                                                         </Button>
+                                                        <!--  Miniatura PDF  -->
+                                                        <Button
+                                                            Padding="4"
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="ViewOperacionImageButton_Click"
+                                                            CornerRadius="6"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Abrir PDF"
+                                                            Visibility="{x:Bind IsPdf, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                                <FontIcon
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="32"
+                                                                    Foreground="#E05252"
+                                                                    Glyph="&#xEA90;" />
+                                                                <TextBlock
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="9"
+                                                                    MaxLines="2"
+                                                                    Text="{x:Bind FileName, Mode=OneWay}"
+                                                                    TextTrimming="CharacterEllipsis"
+                                                                    TextWrapping="WrapWholeWords" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <!--  Eliminar  -->
                                                         <Button
                                                             MinWidth="18"
                                                             MinHeight="18"
@@ -946,7 +987,7 @@
                                                             Click="DeleteOperacionImageButton_Click"
                                                             CornerRadius="9"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                            ToolTipService.ToolTip="Eliminar archivo">
                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                         </Button>
                                                     </Grid>
@@ -976,8 +1017,8 @@
                                             <ItemsRepeater.ItemTemplate>
                                                 <DataTemplate x:DataType="models:OperacionImageDto">
                                                     <Grid
-                                                        Width="80"
-                                                        Height="80"
+                                                        Width="88"
+                                                        Height="88"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="6">
                                                         <Button
@@ -989,8 +1030,35 @@
                                                             Click="ViewOperacionImageButton_Click"
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Ver imagen">
+                                                            ToolTipService.ToolTip="Ver imagen"
+                                                            Visibility="{x:Bind IsImage, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
+                                                        </Button>
+                                                        <Button
+                                                            Padding="4"
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="ViewOperacionImageButton_Click"
+                                                            CornerRadius="6"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Abrir PDF"
+                                                            Visibility="{x:Bind IsPdf, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                                <FontIcon
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="32"
+                                                                    Foreground="#E05252"
+                                                                    Glyph="&#xEA90;" />
+                                                                <TextBlock
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="9"
+                                                                    MaxLines="2"
+                                                                    Text="{x:Bind FileName, Mode=OneWay}"
+                                                                    TextTrimming="CharacterEllipsis"
+                                                                    TextWrapping="WrapWholeWords" />
+                                                            </StackPanel>
                                                         </Button>
                                                         <Button
                                                             MinWidth="18"
@@ -1003,7 +1071,7 @@
                                                             Click="DeleteOperacionImageButton_Click"
                                                             CornerRadius="9"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                            ToolTipService.ToolTip="Eliminar archivo">
                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                         </Button>
                                                     </Grid>
@@ -1033,8 +1101,8 @@
                                             <ItemsRepeater.ItemTemplate>
                                                 <DataTemplate x:DataType="models:OperacionImageDto">
                                                     <Grid
-                                                        Width="80"
-                                                        Height="80"
+                                                        Width="88"
+                                                        Height="88"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="6">
                                                         <Button
@@ -1046,8 +1114,35 @@
                                                             Click="ViewOperacionImageButton_Click"
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Ver imagen">
+                                                            ToolTipService.ToolTip="Ver imagen"
+                                                            Visibility="{x:Bind IsImage, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
+                                                        </Button>
+                                                        <Button
+                                                            Padding="4"
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="ViewOperacionImageButton_Click"
+                                                            CornerRadius="6"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Abrir PDF"
+                                                            Visibility="{x:Bind IsPdf, Mode=OneTime, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                                <FontIcon
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="32"
+                                                                    Foreground="#E05252"
+                                                                    Glyph="&#xEA90;" />
+                                                                <TextBlock
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="9"
+                                                                    MaxLines="2"
+                                                                    Text="{x:Bind FileName, Mode=OneWay}"
+                                                                    TextTrimming="CharacterEllipsis"
+                                                                    TextWrapping="WrapWholeWords" />
+                                                            </StackPanel>
                                                         </Button>
                                                         <Button
                                                             MinWidth="18"
@@ -1060,7 +1155,7 @@
                                                             Click="DeleteOperacionImageButton_Click"
                                                             CornerRadius="9"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar imagen">
+                                                            ToolTipService.ToolTip="Eliminar archivo">
                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                         </Button>
                                                     </Grid>
@@ -1070,7 +1165,7 @@
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
-                        </Grid>
+                        </ScrollViewer>
 
                     </Grid>
 
