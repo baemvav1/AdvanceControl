@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:Advance_Control.Views"
+    xmlns:local="using:Advance_Control.Views.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
@@ -17,94 +17,37 @@
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     </Page.Resources>
 
-    <Grid Padding="24">
+    <Grid Margin="10,5,0,0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="48" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!--  Header  -->
-        <StackPanel
-            Grid.Row="0"
-            Margin="0,0,0,24"
-            Spacing="8">
-            <StackPanel Orientation="Horizontal" Spacing="5">
-                <TextBlock
-                    FontSize="32"
-                    FontWeight="Bold"
-                    Text="Mantenimiento" />
-                <Button
-                    x:Name="Nuevo"
+        <Grid Grid.Row="0">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <AutoSuggestBox
+                    x:Name="EquipoASB"
+                    MinWidth="200"
+                    Margin="0,0,0,0"
                     VerticalAlignment="Center"
-                    Click="NuevoButton_Click"
-                    Style="{StaticResource AccentButtonStyle}"
-                    ToolTipService.ToolTip="Crear nuevo mantenimiento">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <SymbolIcon Symbol="Add" />
-                        <TextBlock VerticalAlignment="Center" Text="Nuevo" />
-                    </StackPanel>
-                </Button>
+                    ItemsSource="{x:Bind ViewModel.EquipoSugerencias, Mode=OneWay}"
+                    PlaceholderText="Buscar equipo..."
+                    QuerySubmitted="EquipoASB_QuerySubmitted"
+                    TextChanged="EquipoASB_TextChanged" />
+                <AutoSuggestBox
+                    x:Name="AreaASB"
+                    MinWidth="200"
+                    VerticalAlignment="Center"
+                    DisplayMemberPath="Nombre"
+                    ItemsSource="{x:Bind ViewModel.AreaSugerencias, Mode=OneWay}"
+                    PlaceholderText="Filtrar área..."
+                    QuerySubmitted="AreaASB_QuerySubmitted"
+                    TextChanged="AreaASB_TextChanged" />
             </StackPanel>
-            <TextBlock
-                FontSize="16"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Gestión de mantenimientos del sistema" />
-        </StackPanel>
-
-        <!--  Filtros  -->
-        <StackPanel
-            Grid.Row="1"
-            Margin="0,0,0,16"
-            Spacing="12">
-            <TextBlock
-                FontSize="16"
-                FontWeight="SemiBold"
-                Text="Filtros de búsqueda" />
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
-
-                <TextBox
-                    Grid.Column="0"
-                    Margin="0,0,8,8"
-                    Header="Identificador de Equipo"
-                    PlaceholderText="Identificador del equipo"
-                    Text="{x:Bind ViewModel.IdentificadorFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-                <StackPanel
-                    Grid.Column="1"
-                    Margin="0,0,8,0"
-                    VerticalAlignment="Bottom">
-                    <TextBlock Margin="0,0,0,4" Text="Área" />
-                    <ComboBox
-                        HorizontalAlignment="Stretch"
-                        ItemsSource="{x:Bind ViewModel.Areas, Mode=OneWay}"
-                        SelectedItem="{x:Bind ViewModel.SelectedAreaFilter, Mode=TwoWay}"
-                        DisplayMemberPath="Nombre"
-                        PlaceholderText="Todas las áreas" />
-                </StackPanel>
-
-                <StackPanel
-                    Grid.Column="2"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    Orientation="Horizontal"
-                    Spacing="8">
-                    <Button
-                        Click="SearchButton_Click"
-                        Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}"/>
-                    <Button Click="ClearButton_Click" Content="Limpiar"/>
-                </StackPanel>
-            </Grid>
-        </StackPanel>
+        </Grid>
 
         <!--  Lista de mantenimientos  -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="1">
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsRepeater ItemsSource="{x:Bind ViewModel.Mantenimientos, Mode=OneWay}">
@@ -120,7 +63,7 @@
                                         Grid.Row="0"
                                         MinHeight="90"
                                         Padding="16"
-                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        Background="{ThemeResource ControlElevationBorderBrush}"
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="0,0,0,1"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
@@ -157,7 +100,7 @@
                                             BorderThickness="0"
                                             Click="ToggleExpandButton_Click"
                                             Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                            Tag="{x:Bind}"/>
+                                            Tag="{x:Bind}" />
                                     </Grid>
                                     <Grid
                                         x:Name="Body"
@@ -263,8 +206,8 @@
                                                         <TextBlock
                                                             FontSize="13"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind Descripcion}" 
-                                                            Visibility="{x:Bind Descripcion, Converter={StaticResource NullToVisibilityConverter}}"/>
+                                                            Text="{x:Bind Descripcion}"
+                                                            Visibility="{x:Bind Descripcion, Converter={StaticResource NullToVisibilityConverter}}" />
                                                     </StackPanel>
 
                                                 </Grid>
@@ -321,30 +264,41 @@
 
             <!--  Estado vacío  -->
             <StackPanel
-                HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
                 IsHitTestVisible="False"
+                Spacing="12"
                 Visibility="{x:Bind ViewModel.IsEmpty, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
-                <FontIcon Glyph="&#xE90F;" FontSize="48"
-                          Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                <FontIcon
+                    FontSize="48"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Glyph="&#xE90F;" />
                 <TextBlock
-                    FontSize="16" FontWeight="SemiBold" HorizontalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="SemiBold"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     Text="Sin mantenimientos" />
                 <TextBlock
-                    FontSize="13" HorizontalAlignment="Center"
+                    HorizontalAlignment="Center"
+                    FontSize="13"
                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                     Text="No se encontraron mantenimientos con los filtros actuales." />
-                <Button IsHitTestVisible="True"
-                    HorizontalAlignment="Center" Click="ClearButton_Click"
-                    Content="Limpiar filtros"/>
+                <Button
+                    HorizontalAlignment="Center"
+                    Click="ClearButton_Click"
+                    Content="Limpiar filtros"
+                    IsHitTestVisible="True" />
             </StackPanel>
 
             <!--  Loading overlay  -->
-            <Grid
-                Visibility="{x:Bind ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+            <Grid Visibility="{x:Bind ViewModel.IsLoading, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                 <Rectangle Fill="{ThemeResource ApplicationPageBackgroundThemeBrush}" Opacity="0.7" />
                 <ProgressRing
-                    Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Width="50"
+                    Height="50"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
                     IsActive="True" />
             </Grid>
         </Grid>

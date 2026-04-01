@@ -7,6 +7,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Areas;
+using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Mantenimiento;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Session;
@@ -22,6 +23,7 @@ namespace Advance_Control.ViewModels
     public class MttoViewModel : ViewModelBase
     {
         private readonly IMantenimientoService _mantenimientoService;
+        private readonly IEquipoService _equipoService;
         private readonly ILoggingService _logger;
         private readonly IUserSessionService _userSession;
         private readonly IActivityService _activityService;
@@ -29,22 +31,28 @@ namespace Advance_Control.ViewModels
         private readonly IAreasService _areasService;
         private ObservableCollection<MantenimientoDto> _mantenimientos;
         private ObservableCollection<AreaDto> _areas;
+        private ObservableCollection<string> _equipoSugerencias;
+        private ObservableCollection<AreaDto> _areaSugerencias;
+        private List<string> _todosLosIdentificadores = new();
         private bool _isLoading;
         private string? _errorMessage;
         private string? _identificadorFilter;
         private int _idClienteFilter;
         private AreaDto? _selectedAreaFilter;
 
-        public MttoViewModel(IMantenimientoService mantenimientoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService, IRelacionUsuarioAreaService relacionAreaService, IAreasService areasService)
+        public MttoViewModel(IMantenimientoService mantenimientoService, IEquipoService equipoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService, IRelacionUsuarioAreaService relacionAreaService, IAreasService areasService)
         {
             _mantenimientoService = mantenimientoService ?? throw new ArgumentNullException(nameof(mantenimientoService));
+            _equipoService        = equipoService        ?? throw new ArgumentNullException(nameof(equipoService));
             _logger               = logger               ?? throw new ArgumentNullException(nameof(logger));
             _userSession          = userSession          ?? throw new ArgumentNullException(nameof(userSession));
             _activityService      = activityService      ?? throw new ArgumentNullException(nameof(activityService));
             _relacionAreaService  = relacionAreaService   ?? throw new ArgumentNullException(nameof(relacionAreaService));
             _areasService         = areasService         ?? throw new ArgumentNullException(nameof(areasService));
-            _mantenimientos = new ObservableCollection<MantenimientoDto>();
-            _areas          = new ObservableCollection<AreaDto>();
+            _mantenimientos      = new ObservableCollection<MantenimientoDto>();
+            _areas               = new ObservableCollection<AreaDto>();
+            _equipoSugerencias   = new ObservableCollection<string>();
+            _areaSugerencias     = new ObservableCollection<AreaDto>();
         }
 
         public ObservableCollection<MantenimientoDto> Mantenimientos
@@ -61,6 +69,18 @@ namespace Advance_Control.ViewModels
         {
             get => _areas;
             set => SetProperty(ref _areas, value);
+        }
+
+        public ObservableCollection<string> EquipoSugerencias
+        {
+            get => _equipoSugerencias;
+            set => SetProperty(ref _equipoSugerencias, value);
+        }
+
+        public ObservableCollection<AreaDto> AreaSugerencias
+        {
+            get => _areaSugerencias;
+            set => SetProperty(ref _areaSugerencias, value);
         }
 
         public AreaDto? SelectedAreaFilter
@@ -120,7 +140,7 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Carga las áreas disponibles para el filtro ComboBox
+        /// Carga las áreas e identificadores de equipos para los filtros AutoSuggestBox
         /// </summary>
         public async Task InitializeAsync(CancellationToken cancellationToken = default)
         {
@@ -130,11 +150,54 @@ namespace Advance_Control.ViewModels
                 Areas.Clear();
                 foreach (var a in areas)
                     Areas.Add(a);
+
+                var equipos = await _equipoService.GetEquiposAsync(null, cancellationToken);
+                _todosLosIdentificadores = equipos
+                    .Select(e => e.Identificador)
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(id => id)
+                    .ToList()!;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al inicializar filtros de mantenimiento", ex, "MttoViewModel", "InitializeAsync");
             }
+        }
+
+        /// <summary>Filtra las sugerencias del ASB de equipo según el texto ingresado</summary>
+        public void ActualizarSugerenciasEquipo(string texto)
+        {
+            _equipoSugerencias.Clear();
+            if (string.IsNullOrWhiteSpace(texto)) return;
+            foreach (var id in _todosLosIdentificadores
+                .Where(id => id.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                .Take(10))
+                _equipoSugerencias.Add(id);
+        }
+
+        /// <summary>Filtra las sugerencias del ASB de área según el texto ingresado</summary>
+        public void ActualizarSugerenciasArea(string texto)
+        {
+            _areaSugerencias.Clear();
+            foreach (var a in Areas
+                .Where(a => string.IsNullOrWhiteSpace(texto) || a.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                .Take(10))
+                _areaSugerencias.Add(a);
+        }
+
+        /// <summary>Aplica el filtro de equipo y recarga la lista</summary>
+        public async Task AplicarFiltroEquipo(string? identificador)
+        {
+            IdentificadorFilter = string.IsNullOrWhiteSpace(identificador) ? null : identificador;
+            await LoadMantenimientosAsync();
+        }
+
+        /// <summary>Aplica el filtro de área y recarga la lista</summary>
+        public async Task AplicarFiltroArea(AreaDto? area)
+        {
+            SelectedAreaFilter = area;
+            await LoadMantenimientosAsync();
         }
 
         /// <summary>

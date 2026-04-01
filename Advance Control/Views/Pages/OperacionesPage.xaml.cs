@@ -9,6 +9,7 @@ using Advance_Control.Views.Dialogs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Specialized;
@@ -69,6 +70,9 @@ namespace Advance_Control.Views.Pages
 
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
         {
+            ClienteASB.Text = string.Empty;
+            EquipoASB.Text = string.Empty;
+            AreaASB.Text = string.Empty;
             await ViewModel.ClearFiltersAsync();
             await PreloadCargosAsync();
         }
@@ -80,9 +84,82 @@ namespace Advance_Control.Views.Pages
                 : Visibility.Visible;
         }
 
-        private void ReporteGeneral_Click(object sender, RoutedEventArgs e)
+        // --- Handlers AutoSuggestBox Cliente ---
+        private void ClienteASB_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
-            // Funcionalidad pendiente de implementar
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+                ViewModel.ActualizarSugerenciasCliente(sender.Text);
+        }
+
+        private async void ClienteASB_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var texto = args.ChosenSuggestion as string ?? args.QueryText;
+            ViewModel.AplicarFiltroCliente(texto);
+            await ViewModel.LoadOperacionesAsync();
+            await PreloadCargosAsync();
+        }
+
+        // --- Handlers AutoSuggestBox Equipo ---
+        private void EquipoASB_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+                ViewModel.ActualizarSugerenciasEquipo(sender.Text);
+        }
+
+        private async void EquipoASB_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var texto = args.ChosenSuggestion as string ?? args.QueryText;
+            ViewModel.AplicarFiltroEquipo(texto);
+            await ViewModel.LoadOperacionesAsync();
+            await PreloadCargosAsync();
+        }
+
+        // --- Handlers AutoSuggestBox Área ---
+        private void AreaASB_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+                ViewModel.ActualizarSugerenciasArea(sender.Text);
+        }
+
+        private async void AreaASB_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            AreaDto? area = null;
+            if (args.ChosenSuggestion is AreaDto chosen)
+                area = chosen;
+            else if (!string.IsNullOrWhiteSpace(args.QueryText))
+                area = ViewModel.Areas.FirstOrDefault(a => a.Nombre.Equals(args.QueryText, StringComparison.OrdinalIgnoreCase));
+            ViewModel.AplicarFiltroArea(area);
+            await ViewModel.LoadOperacionesAsync();
+            await PreloadCargosAsync();
+        }
+
+        // --- Handlers filtros que disparan carga inmediata ---
+        private async void IdTipoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ViewModel == null) return;
+            await ViewModel.LoadOperacionesAsync();
+            await PreloadCargosAsync();
+        }
+
+        private async void FechaInicialPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+        {
+            if (ViewModel == null) return;
+            await ViewModel.LoadOperacionesAsync();
+            await PreloadCargosAsync();
+        }
+
+        private async void FechaFinalPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+        {
+            if (ViewModel == null) return;
+            await ViewModel.LoadOperacionesAsync();
+            await PreloadCargosAsync();
+        }
+
+        private async void NotaTextBox_EnterInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
+            await ViewModel.LoadOperacionesAsync();
+            await PreloadCargosAsync();
         }
 
         private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
@@ -184,64 +261,6 @@ namespace Advance_Control.Views.Pages
             finally
             {
                 operacion.IsLoadingCargos = false;
-            }
-        }
-
-        private async void SelectClienteButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Crear el UserControl para seleccionar cliente
-            var seleccionarClienteControl = new SeleccionarClienteUserControl();
-
-            // Crear el diálogo
-            var dialog = new ContentDialog
-            {
-                Title = "Seleccionar Cliente",
-                Content = seleccionarClienteControl,
-                PrimaryButtonText = "Aceptar",
-                CloseButtonText = "Cancelar",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-
-            if (result == ContentDialogResult.Primary && seleccionarClienteControl.HasSelection)
-            {
-                var selectedCliente = seleccionarClienteControl.SelectedCliente;
-                if (selectedCliente != null)
-                {
-                    ViewModel.IdClienteFilter = selectedCliente.IdCliente;
-                    ViewModel.SelectedClienteText = $"{selectedCliente.RazonSocial} (ID: {selectedCliente.IdCliente})";
-                }
-            }
-        }
-
-        private async void SelectEquipoButton_Click(object sender, RoutedEventArgs e)
-        {
-            // Crear el UserControl para seleccionar equipo
-            var seleccionarEquipoControl = new SeleccionarEquipoUserControl();
-
-            // Crear el diálogo
-            var dialog = new ContentDialog
-            {
-                Title = "Seleccionar Equipo",
-                Content = seleccionarEquipoControl,
-                PrimaryButtonText = "Aceptar",
-                CloseButtonText = "Cancelar",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-
-            if (result == ContentDialogResult.Primary && seleccionarEquipoControl.HasSelection)
-            {
-                var selectedEquipo = seleccionarEquipoControl.SelectedEquipo;
-                if (selectedEquipo != null)
-                {
-                    ViewModel.IdEquipoFilter = selectedEquipo.IdEquipo;
-                    ViewModel.SelectedEquipoText = $"{selectedEquipo.Marca} - {selectedEquipo.Identificador} (ID: {selectedEquipo.IdEquipo})";
-                }
             }
         }
 

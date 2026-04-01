@@ -79,7 +79,8 @@
                         <ComboBox
                             x:Name="IdTipoComboBox"
                             HorizontalAlignment="Stretch"
-                            SelectedIndex="{x:Bind ViewModel.IdTipoFilter, Mode=TwoWay}">
+                            SelectedIndex="{x:Bind ViewModel.IdTipoFilter, Mode=TwoWay}"
+                            SelectionChanged="IdTipoComboBox_SelectionChanged">
                             <ComboBoxItem Content="0 : Todos" />
                             <ComboBoxItem Content="1 : Correctivo" />
                             <ComboBoxItem Content="2 : Preventivo" />
@@ -90,26 +91,26 @@
                         Grid.Row="0"
                         Grid.Column="1"
                         Margin="0,0,8,0">
-                        <TextBlock Margin="0,0,0,4" Text="Cliente" />
-                        <Button
-                            x:Name="SelectClienteButton"
-                            HorizontalAlignment="Stretch"
-                            Click="SelectClienteButton_Click">
-                            <TextBlock Text="{x:Bind ViewModel.SelectedClienteText, Mode=OneWay, FallbackValue='Seleccionar cliente...'}" />
-                        </Button>
+                        <AutoSuggestBox
+                            x:Name="ClienteASB"
+                            Header="Cliente"
+                            ItemsSource="{x:Bind ViewModel.ClienteSugerencias, Mode=OneWay}"
+                            PlaceholderText="Buscar cliente..."
+                            QuerySubmitted="ClienteASB_QuerySubmitted"
+                            TextChanged="ClienteASB_TextChanged" />
                     </StackPanel>
 
                     <StackPanel
                         Grid.Row="0"
                         Grid.Column="2"
                         Margin="0,0,0,8">
-                        <TextBlock Margin="0,0,0,4" Text="Equipo" />
-                        <Button
-                            x:Name="SelectEquipoButton"
-                            HorizontalAlignment="Stretch"
-                            Click="SelectEquipoButton_Click">
-                            <TextBlock Text="{x:Bind ViewModel.SelectedEquipoText, Mode=OneWay, FallbackValue='Seleccionar equipo...'}" />
-                        </Button>
+                        <AutoSuggestBox
+                            x:Name="EquipoASB"
+                            Header="Equipo"
+                            ItemsSource="{x:Bind ViewModel.EquipoSugerencias, Mode=OneWay}"
+                            PlaceholderText="Buscar equipo..."
+                            QuerySubmitted="EquipoASB_QuerySubmitted"
+                            TextChanged="EquipoASB_TextChanged" />
                     </StackPanel>
 
                     <!--  Second row of filters  -->
@@ -129,10 +130,14 @@
                         Margin="0,0,0,8">
                         <TextBlock Margin="0,0,0,4" Text="Nota" />
                         <TextBox
+                            x:Name="NotaTextBox"
                             Margin="0,0,8,0"
                             PlaceholderText="Buscar por nota"
-                            Text="{x:Bind ViewModel.NotaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
+                            Text="{x:Bind ViewModel.NotaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Enter" Invoked="NotaTextBox_EnterInvoked" />
+                            </TextBox.KeyboardAccelerators>
+                        </TextBox>
                     </StackPanel>
 
 
@@ -146,6 +151,7 @@
                             x:Name="FechaInicialPicker"
                             HorizontalAlignment="Stretch"
                             Date="{x:Bind ViewModel.FechaInicialFilter, Mode=TwoWay}"
+                            DateChanged="FechaInicialPicker_DateChanged"
                             DateFormat="{}{dayofweek.abbreviated} {day.integer}/{month.integer}/{year.full}"
                             PlaceholderText="Seleccionar..." />
                     </StackPanel>
@@ -159,6 +165,7 @@
                             x:Name="FechaFinalPicker"
                             HorizontalAlignment="Stretch"
                             Date="{x:Bind ViewModel.FechaFinalFilter, Mode=TwoWay}"
+                            DateChanged="FechaFinalPicker_DateChanged"
                             DateFormat="{}{dayofweek.abbreviated} {day.integer}/{month.integer}/{year.full}"
                             PlaceholderText="Seleccionar..." />
                     </StackPanel>
@@ -167,13 +174,14 @@
                         Grid.Row="2"
                         Grid.Column="0"
                         Margin="0,0,8,0">
-                        <TextBlock Margin="0,0,0,4" Text="Área" />
-                        <ComboBox
-                            HorizontalAlignment="Stretch"
+                        <AutoSuggestBox
+                            x:Name="AreaASB"
+                            Header="Área"
                             DisplayMemberPath="Nombre"
-                            ItemsSource="{x:Bind ViewModel.Areas, Mode=OneWay}"
-                            PlaceholderText="Todas las áreas"
-                            SelectedItem="{x:Bind ViewModel.SelectedAreaFilter, Mode=TwoWay}" />
+                            ItemsSource="{x:Bind ViewModel.AreaSugerencias, Mode=OneWay}"
+                            PlaceholderText="Todas las áreas..."
+                            QuerySubmitted="AreaASB_QuerySubmitted"
+                            TextChanged="AreaASB_TextChanged" />
                     </StackPanel>
 
                     <StackPanel
@@ -183,11 +191,6 @@
                         VerticalAlignment="Center"
                         Orientation="Horizontal"
                         Spacing="8">
-                        <Button
-                            x:Name="SearchOperacionesButton"
-                            Click="SearchButton_Click"
-                            Content="Buscar"
-                            Style="{StaticResource AccentButtonStyle}" />
                         <Button
                             x:Name="ClearOperacionesButton"
                             Click="ClearButton_Click"

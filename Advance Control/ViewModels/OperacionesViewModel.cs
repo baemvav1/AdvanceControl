@@ -46,6 +46,11 @@ namespace Advance_Control.ViewModels
         private readonly IAreasService _areasService;
         private ObservableCollection<OperacionDto> _operaciones;
         private ObservableCollection<AreaDto> _areas;
+        private ObservableCollection<string> _clienteSugerencias;
+        private ObservableCollection<string> _equipoSugerencias;
+        private ObservableCollection<AreaDto> _areaSugerencias;
+        private List<(int Id, string Texto)> _todosLosClientes = new();
+        private List<(int Id, string Identificador)> _todosLosEquipos = new();
         private bool _isLoading;
         private string? _errorMessage;
         private int _idTipoFilter;
@@ -73,8 +78,11 @@ namespace Advance_Control.ViewModels
             _userSession       = userSession       ?? throw new ArgumentNullException(nameof(userSession));
             _relacionAreaService = relacionAreaService ?? throw new ArgumentNullException(nameof(relacionAreaService));
             _areasService      = areasService      ?? throw new ArgumentNullException(nameof(areasService));
-            _operaciones = new ObservableCollection<OperacionDto>();
-            _areas       = new ObservableCollection<AreaDto>();
+            _operaciones         = new ObservableCollection<OperacionDto>();
+            _areas               = new ObservableCollection<AreaDto>();
+            _clienteSugerencias  = new ObservableCollection<string>();
+            _equipoSugerencias   = new ObservableCollection<string>();
+            _areaSugerencias     = new ObservableCollection<AreaDto>();
         }
 
         public ObservableCollection<OperacionDto> Operaciones
@@ -91,6 +99,24 @@ namespace Advance_Control.ViewModels
         {
             get => _areas;
             set => SetProperty(ref _areas, value);
+        }
+
+        public ObservableCollection<string> ClienteSugerencias
+        {
+            get => _clienteSugerencias;
+            set => SetProperty(ref _clienteSugerencias, value);
+        }
+
+        public ObservableCollection<string> EquipoSugerencias
+        {
+            get => _equipoSugerencias;
+            set => SetProperty(ref _equipoSugerencias, value);
+        }
+
+        public ObservableCollection<AreaDto> AreaSugerencias
+        {
+            get => _areaSugerencias;
+            set => SetProperty(ref _areaSugerencias, value);
         }
 
         public AreaDto? SelectedAreaFilter
@@ -215,6 +241,20 @@ namespace Advance_Control.ViewModels
                 Areas.Clear();
                 foreach (var a in areas)
                     Areas.Add(a);
+
+                var clientes = await _clienteService.GetClientesAsync(null, cancellationToken);
+                _todosLosClientes = clientes
+                    .Select(c => (c.IdCliente, Texto: c.RazonSocial ?? c.NombreComercial ?? ""))
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Texto))
+                    .ToList();
+
+                var equipos = await _equipoService.GetEquiposAsync(null, cancellationToken);
+                _todosLosEquipos = equipos
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Identificador))
+                    .Select(e => (Id: e.IdEquipo, Identificador: e.Identificador!))
+                    .DistinctBy(e => e.Identificador, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(e => e.Identificador)
+                    .ToList();
             }
             catch (Exception ex)
             {
@@ -222,6 +262,59 @@ namespace Advance_Control.ViewModels
                 await _logger.LogErrorAsync("Error al inicializar OperacionesViewModel", ex, "OperacionesViewModel", "InitializeAsync");
             }
         }
+
+        /// <summary>Filtra las sugerencias del ASB de cliente según el texto ingresado</summary>
+        public void ActualizarSugerenciasCliente(string texto)
+        {
+            _clienteSugerencias.Clear();
+            if (string.IsNullOrWhiteSpace(texto)) return;
+            foreach (var c in _todosLosClientes
+                .Where(c => c.Texto.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                .Take(10))
+                _clienteSugerencias.Add(c.Texto);
+        }
+
+        /// <summary>Filtra las sugerencias del ASB de equipo según el texto ingresado</summary>
+        public void ActualizarSugerenciasEquipo(string texto)
+        {
+            _equipoSugerencias.Clear();
+            if (string.IsNullOrWhiteSpace(texto)) return;
+            foreach (var e in _todosLosEquipos
+                .Where(e => e.Identificador.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                .Take(10))
+                _equipoSugerencias.Add(e.Identificador);
+        }
+
+        /// <summary>Filtra las sugerencias del ASB de área según el texto ingresado</summary>
+        public void ActualizarSugerenciasArea(string texto)
+        {
+            _areaSugerencias.Clear();
+            foreach (var a in Areas
+                .Where(a => string.IsNullOrWhiteSpace(texto) || a.Nombre.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                .Take(10))
+                _areaSugerencias.Add(a);
+        }
+
+        /// <summary>Resuelve el texto a un IdCliente y aplica el filtro</summary>
+        public void AplicarFiltroCliente(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto)) { IdClienteFilter = 0; SelectedClienteText = null; return; }
+            var match = _todosLosClientes.FirstOrDefault(c => c.Texto.Equals(texto, StringComparison.OrdinalIgnoreCase));
+            IdClienteFilter = match.Id;
+            SelectedClienteText = match.Id > 0 ? match.Texto : null;
+        }
+
+        /// <summary>Resuelve el identificador a un IdEquipo y aplica el filtro</summary>
+        public void AplicarFiltroEquipo(string? identificador)
+        {
+            if (string.IsNullOrWhiteSpace(identificador)) { IdEquipoFilter = 0; SelectedEquipoText = null; return; }
+            var match = _todosLosEquipos.FirstOrDefault(e => e.Identificador.Equals(identificador, StringComparison.OrdinalIgnoreCase));
+            IdEquipoFilter = match.Id;
+            SelectedEquipoText = match.Id > 0 ? match.Identificador : null;
+        }
+
+        /// <summary>Aplica el filtro de área</summary>
+        public void AplicarFiltroArea(AreaDto? area) => SelectedAreaFilter = area;
 
         /// <summary>
         /// Carga las operaciones desde el servicio con los filtros aplicados
@@ -332,6 +425,9 @@ namespace Advance_Control.ViewModels
                 FechaInicialFilter = null;
                 FechaFinalFilter = null;
                 SelectedAreaFilter = null;
+                _clienteSugerencias.Clear();
+                _equipoSugerencias.Clear();
+                _areaSugerencias.Clear();
                 ErrorMessage = null;
                 await LoadOperacionesAsync(cancellationToken);
             }

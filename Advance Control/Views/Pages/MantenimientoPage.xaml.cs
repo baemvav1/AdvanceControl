@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -67,9 +68,38 @@ namespace Advance_Control.Views.Pages
 
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
         {
+            EquipoASB.Text = string.Empty;
+            AreaASB.Text = string.Empty;
             await ViewModel.ClearFiltersAsync();
         }
 
+        private void EquipoASB_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+                ViewModel.ActualizarSugerenciasEquipo(sender.Text);
+        }
+
+        private async void EquipoASB_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            var texto = args.ChosenSuggestion as string ?? args.QueryText;
+            await ViewModel.AplicarFiltroEquipo(texto);
+        }
+
+        private void AreaASB_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
+                ViewModel.ActualizarSugerenciasArea(sender.Text);
+        }
+
+        private async void AreaASB_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+        {
+            AreaDto? area = null;
+            if (args.ChosenSuggestion is AreaDto chosen)
+                area = chosen;
+            else if (!string.IsNullOrWhiteSpace(args.QueryText))
+                area = ViewModel.Areas.FirstOrDefault(a => a.Nombre.Equals(args.QueryText, StringComparison.OrdinalIgnoreCase));
+            await ViewModel.AplicarFiltroArea(area);
+        }
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
         {
             // Crear el UserControl para el nuevo mantenimiento
