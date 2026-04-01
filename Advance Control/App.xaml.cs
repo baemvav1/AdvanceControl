@@ -536,7 +536,25 @@ namespace Advance_Control
                     services.AddSingleton<Services.Conciliacion.ConciliacionMatchingEngine>();
 
                     // Registrar FirmaService y QuoteService (PDF generation)
-                    services.AddSingleton<IFirmaService, FirmaService>();
+                    // Registrar cliente HTTP nombrado para RemoteFirmaService (Singleton con IHttpClientFactory)
+                    services.AddHttpClient("RemoteFirmas", (sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(60);
+                    }).AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    services.AddSingleton<IFirmaService>(sp =>
+                    {
+                        var factory = sp.GetRequiredService<IHttpClientFactory>();
+                        var http = factory.CreateClient("RemoteFirmas");
+                        var logger = sp.GetRequiredService<ILoggingService>();
+                        return new Services.Quotes.RemoteFirmaService(http, logger);
+                    });
                     services.AddSingleton<IQuoteService, QuoteService>();
                     services.AddSingleton<Services.Reportes.IReporteFinancieroFacturacionExportService, Services.Reportes.ReporteFinancieroFacturacionExportService>();
 
@@ -698,16 +716,67 @@ namespace Advance_Control
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar LocalCargoImageService para almacenamiento local de imágenes de cargos
-                    services.AddSingleton<ICargoImageService, LocalCargoImageService>();
+                    services.AddHttpClient("RemoteCargos", (sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(120);
+                    }).AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
-                    // Registrar servicio local de imágenes para levantamiento
-                    services.AddSingleton<ILevantamientoImageService, LocalLevantamientoImageService>();
+                    services.AddSingleton<ICargoImageService>(sp =>
+                    {
+                        var factory = sp.GetRequiredService<IHttpClientFactory>();
+                        var http = factory.CreateClient("RemoteCargos");
+                        var logger = sp.GetRequiredService<ILoggingService>();
+                        return new Services.LocalStorage.RemoteCargoImageService(http, logger);
+                    });
+
+                    // Registrar servicio de imágenes para levantamiento
+                    services.AddHttpClient("RemoteLevantamientos", (sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(120);
+                    }).AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    services.AddSingleton<ILevantamientoImageService>(sp =>
+                    {
+                        var factory = sp.GetRequiredService<IHttpClientFactory>();
+                        var http = factory.CreateClient("RemoteLevantamientos");
+                        var logger = sp.GetRequiredService<ILoggingService>();
+                        return new Services.LocalStorage.RemoteLevantamientoImageService(http, logger);
+                    });
 
                     // Registrar servicio de reporte PDF para levantamiento
                     services.AddSingleton<ILevantamientoReportService, LevantamientoReportService>();
 
                     // Registrar LocalOperacionImageService para almacenamiento local de imágenes de operaciones (Prefacturas y Órdenes de Compra)
-                    services.AddSingleton<IOperacionImageService, LocalOperacionImageService>();
+                    services.AddHttpClient("RemoteOperaciones", (sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(120);
+                    }).AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    services.AddSingleton<IOperacionImageService>(sp =>
+                    {
+                        var factory = sp.GetRequiredService<IHttpClientFactory>();
+                        var http = factory.CreateClient("RemoteOperaciones");
+                        var logger = sp.GetRequiredService<ILoggingService>();
+                        return new Services.LocalStorage.RemoteOperacionImageService(http, logger);
+                    });
 
                     // Registrar ImageViewerService para el visor de imágenes reutilizable
                     services.AddSingleton<IImageViewerService, ImageViewerService>();

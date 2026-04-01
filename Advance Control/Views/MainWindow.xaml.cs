@@ -43,7 +43,7 @@ namespace Advance_Control
             RootGrid.Loaded += RootGrid_Loaded;
             UpdateNavigationVisibility();
         }
-
+        
         private async void RootGrid_Loaded(object sender, RoutedEventArgs e)
         {
             // Only attempt auto-login once
@@ -65,10 +65,10 @@ namespace Advance_Control
         private void ToggleNotificaciones_Click(object sender, RoutedEventArgs e)
         {
             _viewModel.IsNotificacionesVisible = !_viewModel.IsNotificacionesVisible;
-            
+
             // Ajustar el ancho de la columna según la visibilidad
-            NotificacionesColumn.Width = _viewModel.IsNotificacionesVisible 
-                ? new GridLength(2, GridUnitType.Star) 
+            NotificacionesColumn.Width = _viewModel.IsNotificacionesVisible
+                ? new GridLength(2, GridUnitType.Star)
                 : new GridLength(0);
         }
 

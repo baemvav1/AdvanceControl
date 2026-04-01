@@ -148,7 +148,8 @@
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
                             Content="Clientes"
-                            IsExpanded="True">
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE716;" />
                             </NavigationViewItem.Icon>
@@ -175,7 +176,8 @@
                             Background="{ThemeResource ControlElevationBorderBrush}"
                             Content="Catálogos"
                             Icon="Library"
-                            IsExpanded="True">
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
 
                             <NavigationViewItem.MenuItems>
                                 <NavigationViewItem
@@ -202,7 +204,8 @@
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
                             Content="Ubicaciones"
-                            IsExpanded="True">
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE913;" />
                             </NavigationViewItem.Icon>
@@ -222,7 +225,8 @@
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
                             Content="Financiero"
-                            IsExpanded="True">
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE825;" />
                             </NavigationViewItem.Icon>
@@ -253,7 +257,8 @@
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
                             Content="Correo"
-                            IsExpanded="True">
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE715;" />
                             </NavigationViewItem.Icon>
@@ -269,7 +274,8 @@
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
                             Content="Administración"
-                            IsExpanded="True">
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE7EF;" />
                             </NavigationViewItem.Icon>
@@ -291,6 +297,7 @@
                                 <NavigationViewItem
                                     Content="Herramientas"
                                     Icon="Repair"
+                                    SelectsOnInvoked="False"
                                     Tag="DevOps" />
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
