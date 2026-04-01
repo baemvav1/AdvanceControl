@@ -1,7 +1,12 @@
 <# :
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~f0" %*
-exit /b %ERRORLEVEL%
+set "SELF=%~f0"
+set "TEMP_PS1=%TEMP%\AC-Installer-%RANDOM%.ps1"
+copy /y "%SELF%" "%TEMP_PS1%" >nul
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%TEMP_PS1%" "%SELF%"
+set "EC=%ERRORLEVEL%"
+del "%TEMP_PS1%" >nul 2>nul
+exit /b %EC%
 #>
 #Requires -Version 5.1
 <#
@@ -13,10 +18,14 @@ exit /b %ERRORLEVEL%
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Ruta del .cmd original (pasada como argumento por la cabecera CMD)
+$ScriptOrigin = if ($args.Count -gt 0 -and $args[0] -and (Test-Path $args[0])) { $args[0] } else { $PSCommandPath }
+$ScriptDir = Split-Path $ScriptOrigin -Parent
+
 $CerBase64 = 'MIIC8DCCAdigAwIBAgIQFRb52xv+nodF2iHmvRpbIjANBgkqhkiG9w0BAQsFADAQMQ4wDAYDVQQDDAViYWVtdjAeFw0yNjA0MDExNDUyMjdaFw0zMTA0MDExNTAyMjZaMBAxDjAMBgNVBAMMBWJhZW12MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4KlSJCxqj7IT1v1N4ROhjVF04vvo4rqKFeJz86xiaZ00RzA5kFntwP3nxxdO1o1OZsWQLhQLMzHbzw2V1h1fEqncs4wexSdGWg8d8Pd2N2X8OZls6/3+uVgvMhgtPCihqVGwQyVYd3STf+nIssA6VB/xlzJVS2SBni/qEm+k/HbM+rqbEeWMVc8hqoD4p9GSoqob6D3lacwRLp1ejurp7ChQSidVzRTytWh6inMkDFSQgpopsB8RcUVxT6TBgH95oExcFiHyApdqEdgho8je6nxWVdLXjamb0jxMdOTH3x1b6TCgJP3hdjtfs803fs09jH8AtK04QM0Mkx0XbxbOyQIDAQABo0YwRDAOBgNVHQ8BAf8EBAMCB4AwEwYDVR0lBAwwCgYIKwYBBQUHAwMwHQYDVR0OBBYEFHCBUmuF0iG30mLv1FNLHI0xPrdhMA0GCSqGSIb3DQEBCwUAA4IBAQB9e6/cCqK5p+y7ZwNUnT6LSOdKBnQj55pa+zVyDqo8j27lKXR1wTVkqvo08b21/eLc2VT+oXtzYh76uXWgZeSQ0b1dZhisKIfMaLMw9RuY1gVbhbTMF3B4YiAVG6Eddw2XQtuM3kYdwdU3fzALJoGq61FR5dyg40d1YvGgZlQmyAqfTiUzgEvezpx7CeWZJp9saW4/n/RjqEhawwCs4w2T9XaiB32HQb/3cPdc84cjRmcQ6dvcRDYx1+F+t0OnyfcmSmHRjDbIvco3jZtyOwnM6Xk9J8zNIQAuwInaeI5NVLQm0x6GENbckqqIMsdNYKpWEd7WVI3BuqgaUWJaXFVR'
 
-# Log en la misma carpeta del script para diagnostico
-$logPath = Join-Path (Split-Path $PSCommandPath -Parent) 'instalar.log'
+# Log en la misma carpeta del .cmd original para diagnostico
+$logPath = Join-Path $ScriptDir 'instalar.log'
 function Log([string]$msg) {
     $line = "[$(Get-Date -Format 'HH:mm:ss')] $msg"
     Add-Content -Path $logPath -Value $line -Encoding UTF8
@@ -27,16 +36,19 @@ Log "=== Inicio instalacion Advance Control ==="
 Log "Usuario   : $env:USERNAME"
 Log "Equipo    : $env:COMPUTERNAME"
 Log "PSVersion : $($PSVersionTable.PSVersion)"
-Log "Script    : $PSCommandPath"
+Log "Script    : $ScriptOrigin"
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 Log "Es admin  : $isAdmin"
 
 if (-not $isAdmin) {
     Log "Solicitando elevacion UAC..."
+    $tempPs1 = Join-Path $env:TEMP ('AC-Installer-Admin-' + (Get-Random) + '.ps1')
+    Copy-Item $ScriptOrigin $tempPs1 -Force
     Start-Process -FilePath 'powershell.exe' `
-        -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+        -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$tempPs1`" `"$ScriptOrigin`"" `
         -Verb RunAs -Wait
+    Remove-Item $tempPs1 -Force -ErrorAction SilentlyContinue
     exit
 }
 

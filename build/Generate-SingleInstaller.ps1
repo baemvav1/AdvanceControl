@@ -29,14 +29,20 @@ $ErrorActionPreference = 'Stop'
 $cerBytes  = [System.IO.File]::ReadAllBytes($CertificatePath)
 $cerBase64 = [Convert]::ToBase64String($cerBytes)
 
-# Cabecera CMD: al ejecutarse con doble clic, CMD llama a PowerShell pasándole el mismo archivo.
-# PowerShell ignora el bloque <# : ... #> como comentario de bloque.
-# Se escribe con @'...'@ (literal, sin expansión) para evitar problemas de escaping.
+# Cabecera CMD: al ejecutarse con doble clic, CMD copia el .cmd a un .ps1 temporal
+# y se lo pasa a PowerShell con -File. Esto es necesario porque Windows PowerShell 5.1
+# RECHAZA archivos que no sean .ps1 con -File (exit code -196608).
+# Se pasa la ruta original del .cmd como argumento para que el script PS sepa dónde escribir el log.
 $cmdHeader = @'
 <# :
 @echo off
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~f0" %*
-exit /b %ERRORLEVEL%
+set "SELF=%~f0"
+set "TEMP_PS1=%TEMP%\AC-Installer-%RANDOM%.ps1"
+copy /y "%SELF%" "%TEMP_PS1%" >nul
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%TEMP_PS1%" "%SELF%"
+set "EC=%ERRORLEVEL%"
+del "%TEMP_PS1%" >nul 2>nul
+exit /b %EC%
 #>
 '@
 
@@ -54,10 +60,14 @@ $psBody = @'
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+# Ruta del .cmd original (pasada como argumento por la cabecera CMD)
+$ScriptOrigin = if ($args.Count -gt 0 -and $args[0] -and (Test-Path $args[0])) { $args[0] } else { $PSCommandPath }
+$ScriptDir = Split-Path $ScriptOrigin -Parent
+
 $CerBase64 = '{{CERT_BASE64}}'
 
-# Log en la misma carpeta del script para diagnostico
-$logPath = Join-Path (Split-Path $PSCommandPath -Parent) 'instalar.log'
+# Log en la misma carpeta del .cmd original para diagnostico
+$logPath = Join-Path $ScriptDir 'instalar.log'
 function Log([string]$msg) {
     $line = "[$(Get-Date -Format 'HH:mm:ss')] $msg"
     Add-Content -Path $logPath -Value $line -Encoding UTF8
@@ -68,16 +78,19 @@ Log "=== Inicio instalacion Advance Control ==="
 Log "Usuario   : $env:USERNAME"
 Log "Equipo    : $env:COMPUTERNAME"
 Log "PSVersion : $($PSVersionTable.PSVersion)"
-Log "Script    : $PSCommandPath"
+Log "Script    : $ScriptOrigin"
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 Log "Es admin  : $isAdmin"
 
 if (-not $isAdmin) {
     Log "Solicitando elevacion UAC..."
+    $tempPs1 = Join-Path $env:TEMP ('AC-Installer-Admin-' + (Get-Random) + '.ps1')
+    Copy-Item $ScriptOrigin $tempPs1 -Force
     Start-Process -FilePath 'powershell.exe' `
-        -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
+        -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$tempPs1`" `"$ScriptOrigin`"" `
         -Verb RunAs -Wait
+    Remove-Item $tempPs1 -Force -ErrorAction SilentlyContinue
     exit
 }
 
