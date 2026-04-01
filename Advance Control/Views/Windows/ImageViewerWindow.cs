@@ -7,13 +7,15 @@ namespace Advance_Control.Views.Windows
 {
     public sealed class ImageViewerWindow : Window
     {
+        private readonly ViewerImagenes _viewer;
+
         public ImageViewerWindow(string imagePath, string? title = null)
         {
             Title = string.IsNullOrWhiteSpace(title) ? "Visor de imagen" : title;
 
-            var viewer = new ViewerImagenes();
-            viewer.SetImageSource(imagePath);
-            Content = viewer;
+            _viewer = new ViewerImagenes();
+            _viewer.SetImageSource(imagePath);
+            Content = _viewer;
 
             ConfigureWindow();
         }
@@ -31,6 +33,9 @@ namespace Advance_Control.Views.Windows
                 presenter.IsMaximizable = true;
                 presenter.IsMinimizable = true;
             }
+
+            // Pasar el HWND al viewer para que el FileSavePicker funcione desde esta ventana
+            _viewer.WindowHandle = hwnd;
         }
     }
 }

@@ -41,6 +41,12 @@
                     ToolTipService.ToolTip="Ajustar al área visible">
                     <FontIcon Glyph="&#xE799;" />
                 </Button>
+                <Button
+                    x:Name="DownloadButton"
+                    Click="DownloadButton_Click"
+                    ToolTipService.ToolTip="Guardar imagen en PC">
+                    <SymbolIcon Symbol="Save" />
+                </Button>
             </StackPanel>
 
             <StackPanel

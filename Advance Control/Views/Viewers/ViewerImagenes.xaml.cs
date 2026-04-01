@@ -1,13 +1,22 @@
 using System;
 using System.IO;
+using System.Collections.Generic;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.Storage.Pickers;
 
 namespace Advance_Control.Views.Viewers
 {
     public sealed partial class ViewerImagenes : UserControl
     {
+        /// <summary>
+        /// Handle de la ventana que contiene este control.
+        /// Necesario para inicializar el FileSavePicker.
+        /// Se establece desde ImageViewerWindow después de configurar la ventana.
+        /// </summary>
+        public nint WindowHandle { get; set; }
+
         public ViewerImagenes()
         {
             InitializeComponent();
@@ -135,6 +144,83 @@ namespace Advance_Control.Views.Viewers
         private void FitButton_Click(object sender, RoutedEventArgs e)
         {
             ResetZoom();
+        }
+
+        private async void DownloadButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(ImagePath) || !File.Exists(ImagePath))
+            {
+                await MostrarMensajeAsync("No hay imagen disponible para guardar.");
+                return;
+            }
+
+            var ext = Path.GetExtension(ImagePath).TrimStart('.').ToLowerInvariant();
+            var nombreSugerido = Path.GetFileName(ImagePath);
+
+            var picker = new FileSavePicker();
+
+            // Obtener HWND: primero el asignado, luego el de MainWindow como respaldo
+            var hwnd = WindowHandle != 0
+                ? WindowHandle
+                : WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow!);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+
+            picker.SuggestedStartLocation = PickerLocationId.Downloads;
+            picker.SuggestedFileName = nombreSugerido;
+
+            switch (ext)
+            {
+                case "jpg" or "jpeg":
+                    picker.FileTypeChoices.Add("Imagen JPEG", new List<string> { ".jpg", ".jpeg" });
+                    break;
+                case "png":
+                    picker.FileTypeChoices.Add("Imagen PNG", new List<string> { ".png" });
+                    break;
+                case "gif":
+                    picker.FileTypeChoices.Add("Imagen GIF", new List<string> { ".gif" });
+                    break;
+                case "bmp":
+                    picker.FileTypeChoices.Add("Imagen BMP", new List<string> { ".bmp" });
+                    break;
+                case "webp":
+                    picker.FileTypeChoices.Add("Imagen WebP", new List<string> { ".webp" });
+                    break;
+                case "pdf":
+                    picker.FileTypeChoices.Add("Documento PDF", new List<string> { ".pdf" });
+                    break;
+                default:
+                    picker.FileTypeChoices.Add("Todos los archivos", new List<string> { "." });
+                    break;
+            }
+
+            var archivo = await picker.PickSaveFileAsync();
+            if (archivo == null) return; // Usuario canceló
+
+            try
+            {
+                DownloadButton.IsEnabled = false;
+                File.Copy(ImagePath, archivo.Path, overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                await MostrarMensajeAsync($"Error al guardar la imagen: {ex.Message}");
+            }
+            finally
+            {
+                DownloadButton.IsEnabled = true;
+            }
+        }
+
+        private async System.Threading.Tasks.Task MostrarMensajeAsync(string mensaje)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Visor de imágenes",
+                Content = mensaje,
+                CloseButtonText = "Cerrar",
+                XamlRoot = XamlRoot
+            };
+            await dialog.ShowAsync();
         }
     }
 }
