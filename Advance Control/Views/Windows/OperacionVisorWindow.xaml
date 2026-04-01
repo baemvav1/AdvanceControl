@@ -945,7 +945,7 @@
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Ver imagen"
-                                                            Visibility="{x:Bind ImageVisibility, Mode=OneTime}">
+                                                            Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
                                                             <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
                                                         </Button>
                                                         <!--  Miniatura PDF  -->
@@ -959,7 +959,7 @@
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Abrir PDF"
-                                                            Visibility="{x:Bind PdfVisibility, Mode=OneTime}">
+                                                            Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
                                                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
                                                                 <FontIcon
                                                                     HorizontalAlignment="Center"
@@ -1031,7 +1031,7 @@
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Ver imagen"
-                                                            Visibility="{x:Bind ImageVisibility, Mode=OneTime}">
+                                                            Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
                                                             <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
                                                         </Button>
                                                         <Button
@@ -1044,7 +1044,7 @@
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Abrir PDF"
-                                                            Visibility="{x:Bind PdfVisibility, Mode=OneTime}">
+                                                            Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
                                                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
                                                                 <FontIcon
                                                                     HorizontalAlignment="Center"
@@ -1115,7 +1115,7 @@
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Ver imagen"
-                                                            Visibility="{x:Bind ImageVisibility, Mode=OneTime}">
+                                                            Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
                                                             <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
                                                         </Button>
                                                         <Button
@@ -1128,7 +1128,7 @@
                                                             CornerRadius="6"
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Abrir PDF"
-                                                            Visibility="{x:Bind PdfVisibility, Mode=OneTime}">
+                                                            Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
                                                             <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
                                                                 <FontIcon
                                                                     HorizontalAlignment="Center"

@@ -34,6 +34,10 @@ namespace Advance_Control.Models
                 {
                     _fileName = value;
                     OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsPdf));
+                    OnPropertyChanged(nameof(IsImage));
+                    OnPropertyChanged(nameof(PdfVisibility));
+                    OnPropertyChanged(nameof(ImageVisibility));
                 }
             }
         }
