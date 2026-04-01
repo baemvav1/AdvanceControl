@@ -557,8 +557,17 @@ namespace Advance_Control.ViewModels
                 }
 
                 OperacionesConciliacionPendientes = result.OperacionesConciliacionPendientes;
+                var idMovimientoActual = MovimientoCargado?.IdMovimiento;
                 await CargarDatosAsync();
                 await CargarDetalleFacturaAsync(idFactura, autocompletarFiltroAbono: false);
+
+                // Si fue overpayment el movimiento no queda conciliado: refrescar desde la base actualizada
+                // para que MontoRestante refleje el nuevo saldo disponible.
+                if (abonoExcedeFactura && idMovimientoActual.HasValue)
+                {
+                    MovimientoCargado = _movimientosPendientesBase
+                        .FirstOrDefault(m => m.IdMovimiento == idMovimientoActual.Value);
+                }
 
                 var mensaje = abonoExcedeFactura
                     ? $"Factura pagada correctamente. El movimiento no fue conciliado porque tiene saldo restante disponible para otras facturas."
