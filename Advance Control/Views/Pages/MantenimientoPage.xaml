@@ -43,6 +43,17 @@
                     PlaceholderText="Filtrar área..."
                     QuerySubmitted="AreaASB_QuerySubmitted"
                     TextChanged="AreaASB_TextChanged" />
+                <Button
+                    x:Name="Nuevo"
+                    VerticalAlignment="Center"
+                    Click="NuevoButton_Click"
+                    Style="{StaticResource AccentButtonStyle}"
+                    ToolTipService.ToolTip="Crear nuevo mantenimiento">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <SymbolIcon Symbol="Add" />
+                        <TextBlock VerticalAlignment="Center" Text="Nuevo" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 
