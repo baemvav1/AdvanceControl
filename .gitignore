@@ -41,6 +41,10 @@ secrets.json
 *.pem
 installer/Secrets/
 
+# Instaladores / artefactos binarios grandes
+installer/
+artifacts/installer/
+
 # Logs
 *.log
 
