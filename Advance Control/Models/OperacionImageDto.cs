@@ -1,3 +1,4 @@
+using Microsoft.UI.Xaml;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -112,5 +113,11 @@ namespace Advance_Control.Models
         /// Indica si el archivo es una imagen (no PDF).
         /// </summary>
         public bool IsImage => !IsPdf;
+
+        /// <summary>Visibility para mostrar el botón de previsualización PDF.</summary>
+        public Visibility PdfVisibility => IsPdf ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>Visibility para mostrar la miniatura de imagen.</summary>
+        public Visibility ImageVisibility => IsPdf ? Visibility.Collapsed : Visibility.Visible;
     }
 }
