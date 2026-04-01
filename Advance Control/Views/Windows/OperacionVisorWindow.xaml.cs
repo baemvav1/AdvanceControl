@@ -311,6 +311,26 @@ namespace Advance_Control.Views.Windows
             if (sender is not TextBox tb || tb.Tag is not CargoDto cargo || cargo.IdCargo <= 0) return;
             try
             {
+                // {x:Bind Mode=TwoWay} en TextBox actualiza el modelo en LostFocus, no en KeyDown.
+                // Forzamos la lectura desde tb.Text antes de que el binding haya podido sincronizar.
+                int col = (int)tb.GetValue(Grid.ColumnProperty);
+                if (col == 2)
+                {
+                    if (double.TryParse(tb.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var cant) ||
+                        double.TryParse(tb.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out cant))
+                        cargo.Cantidad = cant;
+                }
+                else if (col == 3)
+                {
+                    if (double.TryParse(tb.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out var unit) ||
+                        double.TryParse(tb.Text, NumberStyles.Any, CultureInfo.CurrentCulture, out unit))
+                        cargo.Unitario = unit;
+                }
+                else if (col == 5)
+                {
+                    cargo.Nota = tb.Text;
+                }
+
                 if (cargo.TipoCargo == "Servicio" && cargo.Cantidad != 1)
                 {
                     cargo.Cantidad = 1;
