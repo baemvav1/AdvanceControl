@@ -56,13 +56,25 @@ $ErrorActionPreference = 'Stop'
 
 $CerBase64 = '{{CERT_BASE64}}'
 
-function Write-Step([string]$msg) { Write-Host "`n>> $msg" -ForegroundColor Cyan }
-function Write-Ok([string]$msg)   { Write-Host "   OK: $msg" -ForegroundColor Green }
-function Write-Warn([string]$msg) { Write-Host "   AVISO: $msg" -ForegroundColor Yellow }
+# Log en la misma carpeta del script para diagnostico
+$logPath = Join-Path (Split-Path $PSCommandPath -Parent) 'instalar.log'
+function Log([string]$msg) {
+    $line = "[$(Get-Date -Format 'HH:mm:ss')] $msg"
+    Add-Content -Path $logPath -Value $line -Encoding UTF8
+    Write-Host $line
+}
+
+Log "=== Inicio instalacion Advance Control ==="
+Log "Usuario   : $env:USERNAME"
+Log "Equipo    : $env:COMPUTERNAME"
+Log "PSVersion : $($PSVersionTable.PSVersion)"
+Log "Script    : $PSCommandPath"
 
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+Log "Es admin  : $isAdmin"
+
 if (-not $isAdmin) {
-    Write-Host 'Solicitando permisos de administrador...' -ForegroundColor Yellow
+    Log "Solicitando elevacion UAC..."
     Start-Process -FilePath 'powershell.exe' `
         -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" `
         -Verb RunAs -Wait
@@ -70,51 +82,56 @@ if (-not $isAdmin) {
 }
 
 try {
-    Write-Step 'Preparando certificado de firma...'
+    Log "--- Paso 1: Certificado ---"
     $certPath = Join-Path $env:TEMP 'AdvanceControl-signing.cer'
     [System.IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($CerBase64))
-
     $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2($certPath)
     $thumb = $cert.Thumbprint
+    Log "Thumbprint: $thumb"
 
     function Import-IfMissing([string]$store) {
         $existing = Get-ChildItem $store -ErrorAction SilentlyContinue | Where-Object { $_.Thumbprint -eq $thumb }
-        if ($existing) { Write-Warn "Certificado ya existe en $store" ; return }
+        if ($existing) { Log "Cert ya existe en $store" ; return }
         Import-Certificate -FilePath $certPath -CertStoreLocation $store | Out-Null
-        Write-Ok "Certificado importado en $store"
+        Log "Cert importado en $store"
     }
 
     Import-IfMissing 'Cert:\LocalMachine\TrustedPeople'
     Import-IfMissing 'Cert:\LocalMachine\Root'
 
-    Write-Step 'Descargando instalador desde GitHub...'
+    Log "--- Paso 2: Descarga ---"
     $appInstallerPath = Join-Path $env:TEMP 'AdvanceControl.appinstaller'
     $url = '{{APP_URL}}'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Invoke-WebRequest -Uri $url -OutFile $appInstallerPath -UseBasicParsing
-    Write-Ok "Descargado en $appInstallerPath"
+    Log "Descargado: $appInstallerPath"
 
-    Write-Step 'Instalando Advance Control...'
-    # Add-AppxPackage -AppInstallerFile puede fallar en W10 si App Installer no esta actualizado.
-    # Fallback: abrir el .appinstaller con el handler del sistema (UI de App Installer).
+    Log "--- Paso 3: Instalacion ---"
     try {
         Add-AppxPackage -Path $appInstallerPath -AppInstallerFile
-        Write-Ok 'Instalacion completada. La app se actualizara automaticamente en cada inicio.'
+        Log "RESULTADO: Instalacion completada OK. Auto-actualizacion activa."
+        Write-Host "`n   Instalacion exitosa!" -ForegroundColor Green
     }
     catch {
-        Write-Warn "Metodo silencioso fallo ($($_.Exception.Message)). Abriendo instalador visual..."
+        Log "Add-AppxPackage fallo: $($_.Exception.Message) (HRESULT: $($_.Exception.HResult))"
+        Log "Abriendo instalador visual como fallback..."
         Start-Process -FilePath $appInstallerPath
-        Write-Ok 'Se abrio el instalador. Completa la instalacion en la ventana que aparecio.'
+        Log "Instalador visual abierto. Completa la instalacion en la ventana emergente."
+        Write-Host "`n   Completa la instalacion en la ventana que se abrio." -ForegroundColor Yellow
     }
 }
 catch {
-    Write-Host "`nERROR: $_" -ForegroundColor Red
+    Log "ERROR FATAL: $($_.Exception.Message)"
+    Write-Host "`nERROR: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "Revisa el log en: $logPath" -ForegroundColor Yellow
     Write-Host 'Presiona Enter para cerrar...'
     Read-Host | Out-Null
     exit 1
 }
 
-Write-Host "`nInstalacion exitosa. Presiona Enter para cerrar..." -ForegroundColor Green
+Log "=== Fin. Log guardado en: $logPath ==="
+Write-Host "`nLog guardado en: $logPath" -ForegroundColor Gray
+Write-Host 'Presiona Enter para cerrar...'
 Read-Host | Out-Null
 '@
 
