@@ -72,8 +72,15 @@
                                 <TextBlock
                                     HorizontalAlignment="Center"
                                     FontWeight="SemiBold"
-                                    Text="Abono" />
-                                <TextBlock HorizontalAlignment="Center" Text="{Binding Movimiento.AbonoTexto, ElementName=Root}" />
+                                    Text="Disponible" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    Text="{Binding Movimiento.MontoRestanteTexto, ElementName=Root}" />
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    FontSize="11"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{Binding Movimiento.AbonoTexto, ElementName=Root}" />
                             </StackPanel>
                         </Grid>
                     </Border>
