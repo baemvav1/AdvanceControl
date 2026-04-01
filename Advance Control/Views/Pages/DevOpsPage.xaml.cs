@@ -37,6 +37,8 @@ namespace Advance_Control.Views.Pages
         {
             if (await ConfirmarLimpieza("Operaciones",
                 "Se eliminarán TODAS las operaciones, cargos, checks y relaciones.\n\n" +
+                "También se borrarán todos los archivos físicos asociados (imágenes y PDFs de " +
+                "prefacturas, hojas de servicio, órdenes de compra y facturas).\n\n" +
                 "Esta acción NO se puede deshacer."))
             {
                 await ViewModel.EjecutarLimpiezaAsync("operaciones");
@@ -48,6 +50,8 @@ namespace Advance_Control.Views.Pages
             if (await ConfirmarLimpieza("Mantenimiento",
                 "Se eliminarán TODOS los mantenimientos y las operaciones que dependen de ellos.\n\n" +
                 "Los tipos de mantenimiento (catálogo) se preservan.\n\n" +
+                "También se borrarán todos los archivos físicos de operaciones (imágenes y PDFs de " +
+                "prefacturas, hojas de servicio, órdenes de compra y facturas).\n\n" +
                 "Esta acción NO se puede deshacer."))
             {
                 await ViewModel.EjecutarLimpiezaAsync("mantenimiento");
