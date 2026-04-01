@@ -11,6 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Windows.Storage.Streams;
 
 namespace Advance_Control.Services.Quotes
 {
@@ -428,6 +429,7 @@ namespace Advance_Control.Services.Quotes
             if (cargos == null)
                 throw new ArgumentNullException(nameof(cargos));
 
+            var tempImageFiles = new List<string>();
             try
             {
                 await _logger.LogInformationAsync($"Generando reporte PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateReportePdfAsync");
@@ -461,21 +463,10 @@ namespace Advance_Control.Services.Quotes
                     try { ordenesCompra = await _operacionImageService.GetOrdenComprasAsync(operacion.IdOperacion.Value); } catch { }
                 }
 
-                // Filtrar rutas válidas antes del lambda (igual que cotización usa File.Exists)
-                var prefacturasPaths = prefacturas
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url))
-                    .Select(x => x.Url!)
-                    .ToList();
-
-                var hojasPaths = hojasServicio
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url))
-                    .Select(x => x.Url!)
-                    .ToList();
-
-                var ordenesPaths = ordenesCompra
-                    .Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url))
-                    .Select(x => x.Url!)
-                    .ToList();
+                // Expandir rutas: imágenes directamente, PDFs convertidos a PNGs temporales
+                var prefacturasPaths = await ExpandDocumentPathsAsync(prefacturas, tempImageFiles);
+                var hojasPaths       = await ExpandDocumentPathsAsync(hojasServicio, tempImageFiles);
+                var ordenesPaths     = await ExpandDocumentPathsAsync(ordenesCompra, tempImageFiles);
 
                 // Filtrar rutas de imágenes de cargos (validadas fuera del lambda)
                 var cargosConImagenes = cargosList.Select(cargo => new
@@ -699,6 +690,63 @@ namespace Advance_Control.Services.Quotes
                 await _logger.LogErrorAsync("Error al generar reporte PDF", ex, "QuoteService", "GenerateReportePdfAsync");
                 throw;
             }
+            finally
+            {
+                foreach (var tmp in tempImageFiles)
+                    try { File.Delete(tmp); } catch { }
+            }
+        }
+
+        /// <summary>
+        /// Expande las rutas de documentos: imágenes directamente, PDFs convertidos a PNGs temporales (una imagen por página).
+        /// </summary>
+        private static async Task<List<string>> ExpandDocumentPathsAsync(
+            List<OperacionImageDto> docs, List<string> tempFiles)
+        {
+            var result = new List<string>();
+            foreach (var dto in docs.Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url)))
+            {
+                if (dto.IsPdf)
+                {
+                    var pages = await ConvertPdfPagesToImagesAsync(dto.Url!);
+                    result.AddRange(pages);
+                    tempFiles.AddRange(pages);
+                }
+                else
+                {
+                    result.Add(dto.Url!);
+                }
+            }
+            return result;
+        }
+
+        /// <summary>
+        /// Renderiza cada página de un PDF a un PNG temporal usando Windows.Data.Pdf (API nativa Windows, sin dependencias extra).
+        /// </summary>
+        private static async Task<List<string>> ConvertPdfPagesToImagesAsync(string pdfPath)
+        {
+            var tempFiles = new List<string>();
+            try
+            {
+                var file    = await Windows.Storage.StorageFile.GetFileFromPathAsync(pdfPath);
+                var pdfDoc  = await Windows.Data.Pdf.PdfDocument.LoadFromFileAsync(file);
+                var tempFolder = Path.GetTempPath();
+                var baseName   = Path.GetFileNameWithoutExtension(pdfPath);
+
+                for (uint i = 0; i < pdfDoc.PageCount; i++)
+                {
+                    using var page     = pdfDoc.GetPage(i);
+                    var tempPath       = Path.Combine(tempFolder, $"__acreporte_{baseName}_p{i}.png");
+                    using var memStream = new InMemoryRandomAccessStream();
+                    await page.RenderToStreamAsync(memStream);
+                    memStream.Seek(0);
+                    using var fileStream = File.Create(tempPath);
+                    await memStream.AsStreamForRead().CopyToAsync(fileStream);
+                    tempFiles.Add(tempPath);
+                }
+            }
+            catch { /* Si falla la conversión del PDF, se omite sin romper el reporte */ }
+            return tempFiles;
         }
     }
 }

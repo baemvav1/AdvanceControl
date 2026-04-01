@@ -793,8 +793,36 @@ namespace Advance_Control.Views.Windows
             {
                 if (img.IsPdf)
                 {
-                    var file = await WinStorage.StorageFile.GetFileFromPathAsync(img.Url);
-                    await WinSystem.Launcher.LaunchFileAsync(file);
+                    // Cargar contactos del cliente para el visor con opción de correo
+                    List<ContactoDto> contactos = [];
+                    ContactoDto? contactoPrincipal = null;
+                    if (Operacion.IdCliente.HasValue && Operacion.IdCliente.Value > 0)
+                    {
+                        try
+                        {
+                            contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = Operacion.IdCliente.Value });
+                            contactoPrincipal = contactos.FirstOrDefault();
+                        }
+                        catch (Exception ex) { LogDebugError("ContactosDocumento", ex); }
+                    }
+                    var tipoDisplay = img.Tipo switch
+                    {
+                        "HojaServicio" => "Hoja de Servicio",
+                        "OrdenCompra"  => "Orden de Compra",
+                        _              => img.Tipo ?? "Documento"
+                    };
+                    var visor = new CotizacionVisorDialog(img.Url, contactoPrincipal, contactos, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: tipoDisplay);
+                    visor.NotificarResultado(await visor.ShowAsync());
+                    if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
+                    {
+                        var email = new EnviarCotizacionDialog(img.Url, contactoPrincipal, contactos, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: tipoDisplay, idOperacion: Operacion.IdOperacion);
+                        await email.ShowAsync();
+                    }
+                    else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
+                    {
+                        var file = await WinStorage.StorageFile.GetFileFromPathAsync(img.Url);
+                        await WinSystem.Launcher.LaunchFileAsync(file);
+                    }
                 }
                 else
                 {
