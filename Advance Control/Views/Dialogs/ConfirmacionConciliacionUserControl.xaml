@@ -133,7 +133,7 @@
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:ConciliacionMatchPropuestaDto">
                     <Grid
-                        Height="80"
+                        MinHeight="80"
                         Margin="0,5,0,0"
                         Padding="0,4,0,4"
                         Background="{ThemeResource AccentControlElevationBorderBrush}"

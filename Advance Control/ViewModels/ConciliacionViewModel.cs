@@ -467,7 +467,6 @@ namespace Advance_Control.ViewModels
                 FacturaCargada = detalle.Factura;
                 ReemplazarColeccion(FacturaCargadaConceptos, detalle.Conceptos);
                 ReemplazarColeccion(FacturaCargadaAbonos, detalle.Abonos);
-                PrecargarMovimientoCoincidente(detalle.Factura);
                 MovimientoAbonoBusquedaTexto = autocompletarFiltroAbono
                     ? _conciliacionMatchingEngine
                         .ObtenerMontoPendienteFactura(detalle.Factura)
@@ -906,15 +905,6 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
-        }
-
-        private void PrecargarMovimientoCoincidente(FacturaResumenDto factura)
-        {
-            MovimientoCargado = _conciliacionMatchingEngine.BuscarMovimientoCoincidente(
-                _movimientosPendientesBase,
-                _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura),
-                new[] { factura },
-                factura.Fecha);
         }
 
         private List<ConciliacionMatchPropuestaDto> RecolectarPropuestasAbonos(

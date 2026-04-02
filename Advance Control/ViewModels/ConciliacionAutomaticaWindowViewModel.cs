@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Conciliacion;
@@ -40,7 +41,8 @@ namespace Advance_Control.ViewModels
         public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CargarPropuestasAsync(
             ConciliacionAutomaticaModo modo,
             bool aplicarReglaPueMismoMes,
-            bool usarRfcComoRegla)
+            bool usarRfcComoRegla,
+            CancellationToken ct = default)
         {
             _aplicarReglaPueMismoMes = aplicarReglaPueMismoMes;
             _usarRfcComoRegla = usarRfcComoRegla;
@@ -50,7 +52,9 @@ namespace Advance_Control.ViewModels
                 _movimientosVetadosPorFacturaAbonos.Clear();
             }
 
-            await CargarDatosBaseAsync();
+            await CargarDatosBaseAsync(ct);
+
+            ct.ThrowIfCancellationRequested();
 
             return modo switch
             {
@@ -269,14 +273,16 @@ namespace Advance_Control.ViewModels
             return propuestas;
         }
 
-        private async Task CargarDatosBaseAsync()
+        private async Task CargarDatosBaseAsync(CancellationToken ct = default)
         {
             await InicializarBitacoraConciliacionSiEsNecesarioAsync();
+            ct.ThrowIfCancellationRequested();
 
             var estadosTask = _estadoCuentaXmlService.ObtenerEstadosCuentaAsync();
             var facturasTask = _facturaService.ObtenerFacturasAsync();
 
             await Task.WhenAll(estadosTask, facturasTask);
+            ct.ThrowIfCancellationRequested();
 
             var estados = await estadosTask;
             var facturas = await facturasTask;
@@ -290,6 +296,7 @@ namespace Advance_Control.ViewModels
             var resultadosDetalle = detalleTasks.Count == 0
                 ? Array.Empty<(EstadoCuentaDetalleDto? Detalle, string? Error)>()
                 : await Task.WhenAll(detalleTasks);
+            ct.ThrowIfCancellationRequested();
 
             var detallesValidos = resultadosDetalle
                 .Where(resultado => resultado.Detalle?.EstadoCuenta != null)

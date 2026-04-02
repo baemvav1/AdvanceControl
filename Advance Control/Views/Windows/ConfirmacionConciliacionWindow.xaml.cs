@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Utilities;
@@ -21,6 +22,7 @@ namespace Advance_Control.Views.Windows
         private readonly bool _usarRfcComoRegla;
         private bool _resultadoEntregado;
         private bool _recalculandoAbonos;
+        private CancellationTokenSource? _ctsLoading;
 
         public Task<IReadOnlyList<ConciliacionMatchPropuestaDto>?> ResultTask => _tcs.Task;
 
@@ -83,11 +85,25 @@ namespace Advance_Control.Views.Windows
             }
 
             BtnConfirmar.IsEnabled = false;
+            BtnCancelar.IsEnabled = true;
+            TxtResumen.Text = "Calculando propuestas de conciliacion...";
 
-            var propuestas = await _viewModel.CargarPropuestasAsync(_modo.Value, _aplicarReglaPueMismoMes, _usarRfcComoRegla);
-            ControlConfirmacion.SetPropuestas(propuestas);
-            ActualizarResumen(propuestas.Count, _modo == ConciliacionAutomaticaModo.Abonos);
-            BtnConfirmar.IsEnabled = propuestas.Count > 0;
+            _ctsLoading = new CancellationTokenSource();
+            try
+            {
+                var propuestas = await _viewModel.CargarPropuestasAsync(
+                    _modo.Value,
+                    _aplicarReglaPueMismoMes,
+                    _usarRfcComoRegla,
+                    _ctsLoading.Token);
+                ControlConfirmacion.SetPropuestas(propuestas);
+                ActualizarResumen(propuestas.Count, _modo == ConciliacionAutomaticaModo.Abonos);
+                BtnConfirmar.IsEnabled = propuestas.Count > 0;
+            }
+            catch (OperationCanceledException)
+            {
+                TxtResumen.Text = "Proceso cancelado.";
+            }
         }
 
         private async void BtnConfirmar_Click(object sender, RoutedEventArgs e)
@@ -128,6 +144,7 @@ namespace Advance_Control.Views.Windows
 
         private void BtnCancelar_Click(object sender, RoutedEventArgs e)
         {
+            _ctsLoading?.Cancel();
             _resultadoEntregado = true;
             _tcs.TrySetResult(null);
             Close();
@@ -196,6 +213,9 @@ namespace Advance_Control.Views.Windows
 
         private void ConfirmacionConciliacionWindow_Closed(object sender, WindowEventArgs args)
         {
+            _ctsLoading?.Cancel();
+            _ctsLoading?.Dispose();
+            _ctsLoading = null;
             ControlConfirmacion.PropuestaAbonosDescartada -= ControlConfirmacion_PropuestaAbonosDescartada;
             ControlConfirmacion.MovimientoAbonosDescartado -= ControlConfirmacion_MovimientoAbonosDescartado;
             if (!_resultadoEntregado)
