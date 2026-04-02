@@ -157,11 +157,10 @@
                                 Grid.Column="0"
                                 Margin="5,5,0,0"
                                 VerticalAlignment="Top"
-                                
                                 IsChecked="{x:Bind Aprobado, Mode=TwoWay}"
-                                Unchecked="PropuestaCheckBox_Unchecked" >
+                                Unchecked="PropuestaCheckBox_Unchecked">
                                 <CheckBox.RenderTransform>
-                                    <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+                                    <ScaleTransform ScaleX="1.5" ScaleY="1.5" />
                                 </CheckBox.RenderTransform>
                             </CheckBox>
 
@@ -201,12 +200,18 @@
                                 VerticalAlignment="Center"
                                 Text="{x:Bind ReceptorNombre}"
                                 TextTrimming="CharacterEllipsis">
-                                <ToolTipService.ToolTip >
-                                    <ToolTip Content="{x:Bind ReceptorNombre}" FontSize="20"  />
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="{x:Bind ReceptorNombre}" FontSize="20" />
                                 </ToolTipService.ToolTip>
                             </TextBlock>
 
-                            <Grid Grid.Column="5" Background="{ThemeResource TextControlElevationBorderBrush}" Margin="5,0,5,0" Padding="10,5,5,5" CornerRadius="5">
+                            <Grid
+                                Grid.Column="5"
+                                MaxHeight="110"
+                                Margin="5,0,5,0"
+                                Padding="10,5,5,5"
+                                Background="{ThemeResource TextControlElevationBorderBrush}"
+                                CornerRadius="5">
                                 <TextBlock
                                     x:Name="TxtMetadato"
                                     VerticalAlignment="Center"
@@ -222,8 +227,8 @@
                             <TextBlock
                                 Grid.Column="6"
                                 VerticalAlignment="Center"
-                                FontWeight="SemiBold"
                                 FontSize="18"
+                                FontWeight="SemiBold"
                                 Foreground="{ThemeResource SystemFillColorSuccessBrush}"
                                 Text="{x:Bind MontoAbonoTotal, Converter={StaticResource CurrencyConverter}}" />
                         </Grid>
