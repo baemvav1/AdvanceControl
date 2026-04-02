@@ -454,7 +454,7 @@ namespace Advance_Control.ViewModels
                 {
                     await _activityService.CrearActividadAsync("Operaciones", $"Operación eliminada (ID: {idOperacion})");
                     await _logger.LogInformationAsync($"Operación {idOperacion} eliminada exitosamente", "OperacionesViewModel", "DeleteOperacionAsync");
-                    await LoadOperacionesAsync(cancellationToken);
+                    await LoadOperacionesAsync(cancellationToken: cancellationToken);
                 }
                 else
                 {
