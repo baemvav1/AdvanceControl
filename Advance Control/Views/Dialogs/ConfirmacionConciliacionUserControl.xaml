@@ -7,7 +7,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:Advance_Control.Models"
     MinWidth="820"
-    MinHeight="300"
     mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -45,7 +44,6 @@
         <ListView
             x:Name="ListaPropuestas"
             Grid.Row="1"
-            MaxHeight="420"
             SelectionMode="None">
 
             <ListView.Header>
@@ -55,13 +53,13 @@
                         Padding="8,4"
                         ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="40" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="100" />
-                            <ColumnDefinition Width="100" />
-                            <ColumnDefinition Width="140" />
+                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="250" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="120" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="" />
                         <TextBlock
@@ -98,10 +96,10 @@
 
                     <Border
                         x:Name="HeaderAbonos"
-                        Visibility="Collapsed"
                         Padding="12,8"
                         Background="{ThemeResource LayerFillColorAltBrush}"
-                        CornerRadius="8">
+                        CornerRadius="8"
+                        Visibility="Collapsed">
                         <Grid ColumnSpacing="12">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="32" />
@@ -134,28 +132,38 @@
 
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:ConciliacionMatchPropuestaDto">
-                    <Grid Padding="0,4,0,4">
+                    <Grid
+                        Height="80"
+                        Margin="0,5,0,0"
+                        Padding="0,4,0,4"
+                        Background="{ThemeResource AccentControlElevationBorderBrush}"
+                        CornerRadius="5">
                         <Grid
                             Padding="8,6"
                             Background="Transparent"
                             ColumnSpacing="8"
                             Visibility="{x:Bind EsGenerica, Converter={StaticResource BoolToVisibility}}">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="32" />
+                                <ColumnDefinition Width="40" />
                                 <ColumnDefinition Width="90" />
                                 <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="140" />
+                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="250" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="120" />
                             </Grid.ColumnDefinitions>
 
                             <CheckBox
                                 Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
+                                Margin="5,5,0,0"
+                                VerticalAlignment="Top"
+                                
                                 IsChecked="{x:Bind Aprobado, Mode=TwoWay}"
-                                Unchecked="PropuestaCheckBox_Unchecked" />
+                                Unchecked="PropuestaCheckBox_Unchecked" >
+                                <CheckBox.RenderTransform>
+                                    <ScaleTransform ScaleX="1.5" ScaleY="1.5"/>
+                                </CheckBox.RenderTransform>
+                            </CheckBox>
 
                             <Border
                                 Grid.Column="1"
@@ -185,6 +193,7 @@
                             <TextBlock
                                 Grid.Column="3"
                                 VerticalAlignment="Center"
+                                FontSize="18"
                                 Text="{x:Bind TotalFacturas, Converter={StaticResource CurrencyConverter}}" />
 
                             <TextBlock
@@ -192,34 +201,36 @@
                                 VerticalAlignment="Center"
                                 Text="{x:Bind ReceptorNombre}"
                                 TextTrimming="CharacterEllipsis">
-                                <ToolTipService.ToolTip>
-                                    <ToolTip Content="{x:Bind ReceptorNombre}" />
+                                <ToolTipService.ToolTip >
+                                    <ToolTip Content="{x:Bind ReceptorNombre}" FontSize="20"  />
                                 </ToolTipService.ToolTip>
                             </TextBlock>
 
-                            <TextBlock
-                                x:Name="TxtMetadato"
-                                Grid.Column="5"
-                                VerticalAlignment="Center"
-                                MaxLines="1"
-                                Text="{x:Bind MetadatosAgregados}"
-                                TextTrimming="CharacterEllipsis">
-                                <ToolTipService.ToolTip>
-                                    <ToolTip Content="{x:Bind MetadatosAgregados}" />
-                                </ToolTipService.ToolTip>
-                            </TextBlock>
+                            <Grid Grid.Column="5" Background="{ThemeResource TextControlElevationBorderBrush}" Margin="5,0,5,0" Padding="10,5,5,5" CornerRadius="5">
+                                <TextBlock
+                                    x:Name="TxtMetadato"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind MetadatosAgregados}"
+                                    TextTrimming="CharacterEllipsis"
+                                    TextWrapping="Wrap">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="{x:Bind MetadatosAgregados}" FontSize="16" />
+                                    </ToolTipService.ToolTip>
+                                </TextBlock>
+                            </Grid>
 
                             <TextBlock
                                 Grid.Column="6"
                                 VerticalAlignment="Center"
                                 FontWeight="SemiBold"
+                                FontSize="18"
                                 Foreground="{ThemeResource SystemFillColorSuccessBrush}"
                                 Text="{x:Bind MontoAbonoTotal, Converter={StaticResource CurrencyConverter}}" />
                         </Grid>
 
                         <Border
-                            Padding="12"
                             Margin="0,0,0,6"
+                            Padding="12"
                             Background="{ThemeResource LayerFillColorAltBrush}"
                             CornerRadius="10"
                             Visibility="{x:Bind EsAbonos, Converter={StaticResource BoolToVisibility}}">
@@ -236,9 +247,7 @@
                                     IsChecked="{x:Bind Aprobado, Mode=TwoWay}"
                                     Unchecked="PropuestaCheckBox_Unchecked" />
 
-                                <StackPanel
-                                    Grid.Column="1"
-                                    Spacing="10">
+                                <StackPanel Grid.Column="1" Spacing="10">
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -246,9 +255,7 @@
                                         </Grid.ColumnDefinitions>
 
                                         <StackPanel Spacing="2">
-                                            <TextBlock
-                                                FontWeight="SemiBold"
-                                                Text="{x:Bind FacturaObjetivoFolio}" />
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind FacturaObjetivoFolio}" />
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{StaticResource CaptionTextBlockStyle}"
@@ -282,9 +289,7 @@
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{StaticResource CaptionTextBlockStyle}"
                                                 Text="Saldo pendiente" />
-                                            <TextBlock
-                                                FontWeight="SemiBold"
-                                                Text="{x:Bind FacturaObjetivoSaldoTexto}" />
+                                            <TextBlock FontWeight="SemiBold" Text="{x:Bind FacturaObjetivoSaldoTexto}" />
                                         </StackPanel>
 
                                         <StackPanel Grid.Column="1" Spacing="2">
@@ -330,9 +335,7 @@
                                                                 <ColumnDefinition Width="150" />
                                                             </Grid.ColumnDefinitions>
 
-                                                            <TextBlock
-                                                                Grid.Column="0"
-                                                                Text="{x:Bind FechaTexto}" />
+                                                            <TextBlock Grid.Column="0" Text="{x:Bind FechaTexto}" />
                                                             <TextBlock
                                                                 Grid.Column="1"
                                                                 Text="{x:Bind GrupoId}"

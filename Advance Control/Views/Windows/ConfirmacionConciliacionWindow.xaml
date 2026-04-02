@@ -2,63 +2,72 @@
     x:Class="Advance_Control.Views.Windows.ConfirmacionConciliacionWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:dialogs="using:Advance_Control.Views.Dialogs"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dialogs="using:Advance_Control.Views.Dialogs"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
     <Grid RowSpacing="0">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <!-- Barra de filtro -->
-        <Border
-            Grid.Row="0"
-            Padding="20,14,20,10"
-            BorderThickness="0,0,0,1"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-            <TextBox
-                x:Name="TxtFiltroMetadato"
-                PlaceholderText="Filtrar por metadato del movimiento..."
-                TextChanged="TxtFiltroMetadato_TextChanged"
-                Width="420"
-                HorizontalAlignment="Left"/>
-        </Border>
+        <!--  Barra de filtro  -->
+        <StackPanel Orientation="Horizontal">
+            <Border
+                Grid.Row="0"
+                Padding="20,14,20,10"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,0,0,1">
+                <TextBox
+                    x:Name="TxtFiltroMetadato"
+                    Width="420"
+                    HorizontalAlignment="Left"
+                    PlaceholderText="Filtrar por metadato del movimiento..."
+                    TextChanged="TxtFiltroMetadato_TextChanged" />
+            </Border>
+            
+        </StackPanel>
 
-        <!-- Contenido: UserControl con la tabla de propuestas -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="20,12,20,0">
-            <dialogs:ConfirmacionConciliacionUserControl x:Name="ControlConfirmacion"/>
+        <!--  Contenido: UserControl con la tabla de propuestas  -->
+        <ScrollViewer 
+            Grid.Row="1"
+            Padding="20,12,20,0"
+            VerticalScrollBarVisibility="Auto">
+            <dialogs:ConfirmacionConciliacionUserControl x:Name="ControlConfirmacion" />
         </ScrollViewer>
 
-        <!-- Footer con botones -->
+        <!--  Footer con botones  -->
         <Border
             Grid.Row="2"
-            BorderThickness="0,1,0,0"
+            Padding="20,12"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            Padding="20,12">
+            BorderThickness="0,1,0,0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock
-                    Grid.Column="0"
                     x:Name="TxtResumen"
+                    Grid.Column="0"
                     VerticalAlignment="Center"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <StackPanel
+                    Grid.Column="1"
+                    Orientation="Horizontal"
+                    Spacing="8">
                     <Button
                         x:Name="BtnCancelar"
-                        Content="Cancelar"
-                        Click="BtnCancelar_Click"/>
+                        Click="BtnCancelar_Click"
+                        Content="Cancelar" />
                     <Button
                         x:Name="BtnConfirmar"
+                        Click="BtnConfirmar_Click"
                         Content="Confirmar seleccionadas"
-                        Style="{StaticResource AccentButtonStyle}"
-                        Click="BtnConfirmar_Click"/>
+                        Style="{StaticResource AccentButtonStyle}" />
                 </StackPanel>
             </Grid>
         </Border>
