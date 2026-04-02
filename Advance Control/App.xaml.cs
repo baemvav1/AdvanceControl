@@ -111,7 +111,7 @@ namespace Advance_Control
         {
             if (!File.Exists(PackagedConfigurationFile))
             {
-                return "http://187.124.243.107:5030/";
+                return "https://advance-elevadores.mx/";
             }
 
             using var stream = File.OpenRead(PackagedConfigurationFile);
@@ -128,7 +128,7 @@ namespace Advance_Control
                 }
             }
 
-            return "http://187.124.243.107:5030/";
+            return "https://advance-elevadores.mx/";
         }
 
         public App()
