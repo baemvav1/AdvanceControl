@@ -12,6 +12,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
@@ -58,14 +59,12 @@ namespace Advance_Control.Views.Pages
             base.OnNavigatedTo(e);
             
             await ViewModel.InitializeAsync();
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -73,8 +72,7 @@ namespace Advance_Control.Views.Pages
             ClienteASB.Text = string.Empty;
             EquipoASB.Text = string.Empty;
             AreaASB.Text = string.Empty;
-            await ViewModel.ClearFiltersAsync();
-            await PreloadCargosAsync();
+            await ViewModel.ClearFiltersAsync(CargosPreloadCallback());
         }
 
         private void ToggleFiltros_Click(object sender, RoutedEventArgs e)
@@ -95,8 +93,7 @@ namespace Advance_Control.Views.Pages
         {
             var texto = args.ChosenSuggestion as string ?? args.QueryText;
             ViewModel.AplicarFiltroCliente(texto);
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         // --- Handlers AutoSuggestBox Equipo ---
@@ -110,8 +107,7 @@ namespace Advance_Control.Views.Pages
         {
             var texto = args.ChosenSuggestion as string ?? args.QueryText;
             ViewModel.AplicarFiltroEquipo(texto);
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         // --- Handlers AutoSuggestBox Área ---
@@ -129,37 +125,32 @@ namespace Advance_Control.Views.Pages
             else if (!string.IsNullOrWhiteSpace(args.QueryText))
                 area = ViewModel.Areas.FirstOrDefault(a => a.Nombre.Equals(args.QueryText, StringComparison.OrdinalIgnoreCase));
             ViewModel.AplicarFiltroArea(area);
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         // --- Handlers filtros que disparan carga inmediata ---
         private async void IdTipoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ViewModel == null) return;
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void FechaInicialPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
             if (ViewModel == null) return;
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void FechaFinalPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
             if (ViewModel == null) return;
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void NotaTextBox_EnterInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         {
             args.Handled = true;
-            await ViewModel.LoadOperacionesAsync();
-            await PreloadCargosAsync();
+            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
@@ -181,16 +172,17 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
-        /// Precarga los cargos de todas las operaciones visibles para mostrar el total correcto.
+        /// Devuelve un callback que precarga los cargos de una lista de operaciones antes
+        /// de que sean visibles en la UI, evitando el parpadeo de TotalMonto = 0.
         /// </summary>
-        private async Task PreloadCargosAsync()
-        {
-            if (ViewModel?.Operaciones == null || ViewModel.Operaciones.Count == 0) return;
-            var tasks = ViewModel.Operaciones
-                .Where(op => op.IdOperacion.HasValue && !op.CargosLoaded)
-                .Select(op => LoadCargosForOperacionAsync(op));
-            await Task.WhenAll(tasks);
-        }
+        private Func<List<Models.OperacionDto>, Task> CargosPreloadCallback() =>
+            async staged =>
+            {
+                var tasks = staged
+                    .Where(op => op.IdOperacion.HasValue && !op.CargosLoaded)
+                    .Select(op => LoadCargosForOperacionAsync(op));
+                await Task.WhenAll(tasks);
+            };
 
         private async Task LoadCargosForOperacionAsync(Models.OperacionDto operacion)
         {

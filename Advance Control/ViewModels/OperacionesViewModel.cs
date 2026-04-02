@@ -319,7 +319,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Carga las operaciones desde el servicio con los filtros aplicados
         /// </summary>
-        public async Task LoadOperacionesAsync(CancellationToken cancellationToken = default)
+        public async Task LoadOperacionesAsync(Func<List<OperacionDto>, Task>? onBeforeCommit = null, CancellationToken cancellationToken = default)
         {
             if (IsLoading)
                 return;
@@ -354,13 +354,14 @@ namespace Advance_Control.ViewModels
                     filtrados = filtrados.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
                 }
 
-                Operaciones.Clear();
                 foreach (var operacion in filtrados)
-                {
                     operacion.BuildCheckFromInlineFields();
-                    Operaciones.Add(operacion);
-                }
-                OnPropertyChanged(nameof(IsEmpty));
+
+                if (onBeforeCommit != null)
+                    await onBeforeCommit(filtrados);
+
+                // Asignar de una sola vez para evitar renders intermedios con TotalMonto = 0
+                Operaciones = new ObservableCollection<OperacionDto>(filtrados);
 
                 await _logger.LogInformationAsync($"Se cargaron {filtrados.Count} operaciones exitosamente (de {operaciones.Count} totales)", "OperacionesViewModel", "LoadOperacionesAsync");
             }
@@ -411,7 +412,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Limpia los filtros y recarga todas las operaciones
         /// </summary>
-        public async Task ClearFiltersAsync(CancellationToken cancellationToken = default)
+        public async Task ClearFiltersAsync(Func<List<OperacionDto>, Task>? onBeforeCommit = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -429,7 +430,7 @@ namespace Advance_Control.ViewModels
                 _equipoSugerencias.Clear();
                 _areaSugerencias.Clear();
                 ErrorMessage = null;
-                await LoadOperacionesAsync(cancellationToken);
+                await LoadOperacionesAsync(onBeforeCommit, cancellationToken);
             }
             catch (Exception ex)
             {
