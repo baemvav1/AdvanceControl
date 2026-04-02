@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Window
     x:Class="Advance_Control.Views.Windows.OperacionVisorWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -412,7 +412,7 @@
                                                                         <Image
                                                                             HorizontalAlignment="Center"
                                                                             VerticalAlignment="Center"
-                                                                            Source="{x:Bind Url, Mode=OneWay}"
+                                                                            Source="{x:Bind converters:FilePathToImageConverter.ToImage(Url), Mode=OneWay}"
                                                                             Stretch="UniformToFill" />
                                                                     </Button>
                                                                     <Button
@@ -946,7 +946,7 @@
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Ver imagen"
                                                             Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
-                                                            <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
+                                                            <Image Source="{x:Bind converters:FilePathToImageConverter.ToImage(Url), Mode=OneWay}" Stretch="UniformToFill" />
                                                         </Button>
                                                         <!--  Miniatura PDF  -->
                                                         <Button
@@ -1032,7 +1032,7 @@
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Ver imagen"
                                                             Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
-                                                            <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
+                                                            <Image Source="{x:Bind converters:FilePathToImageConverter.ToImage(Url), Mode=OneWay}" Stretch="UniformToFill" />
                                                         </Button>
                                                         <Button
                                                             Padding="4"
@@ -1116,7 +1116,7 @@
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Ver imagen"
                                                             Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
-                                                            <Image Source="{x:Bind Url, Mode=OneWay}" Stretch="UniformToFill" />
+                                                            <Image Source="{x:Bind converters:FilePathToImageConverter.ToImage(Url), Mode=OneWay}" Stretch="UniformToFill" />
                                                         </Button>
                                                         <Button
                                                             Padding="4"

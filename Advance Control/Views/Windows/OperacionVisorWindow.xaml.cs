@@ -187,9 +187,11 @@ namespace Advance_Control.Views.Windows
                 Operacion.HasOrdenCompra  = ordenesCompra.Count > 0;
                 Operacion.HasFactura      = hasFactura;
 
-                Operacion.ImagenesPrefactura   = new System.Collections.ObjectModel.ObservableCollection<OperacionImageDto>(prefacturas);
-                Operacion.ImagenesHojaServicio = new System.Collections.ObjectModel.ObservableCollection<OperacionImageDto>(hojasServicio);
-                Operacion.ImagenesOrdenCompra  = new System.Collections.ObjectModel.ObservableCollection<OperacionImageDto>(ordenesCompra);
+                // Limpiar y repoblar las colecciones existentes en vez de reemplazar
+                // para que ItemsRepeater detecte los cambios vía CollectionChanged.
+                ReplaceItems(Operacion.ImagenesPrefactura, prefacturas);
+                ReplaceItems(Operacion.ImagenesHojaServicio, hojasServicio);
+                ReplaceItems(Operacion.ImagenesOrdenCompra, ordenesCompra);
 
                 Operacion.ImagesLoaded = true;
             }
@@ -197,6 +199,16 @@ namespace Advance_Control.Views.Windows
             {
                 LogDebugError(nameof(RefreshImageIndicatorsAsync), ex);
             }
+        }
+
+        /// <summary>
+        /// Limpia y repobla una ObservableCollection manteniendo la misma instancia.
+        /// </summary>
+        private static void ReplaceItems<T>(System.Collections.ObjectModel.ObservableCollection<T> collection, System.Collections.Generic.IList<T> newItems)
+        {
+            collection.Clear();
+            foreach (var item in newItems)
+                collection.Add(item);
         }
 
         private async Task ActualizarMontoEnServidorAsync()
@@ -727,8 +739,23 @@ namespace Advance_Control.Views.Windows
                 };
                 if (result != null)
                 {
-                    Operacion.ImagesLoaded = false;
-                    await RefreshImageIndicatorsAsync();
+                    // Agregar directamente a la colección existente en vez de reemplazar
+                    // para que el ItemsRepeater detecte el cambio vía CollectionChanged.
+                    switch (imageType)
+                    {
+                        case "Prefactura":
+                            Operacion.ImagenesPrefactura.Add(result);
+                            Operacion.HasPrefactura = true;
+                            break;
+                        case "HojaServicio":
+                            Operacion.ImagenesHojaServicio.Add(result);
+                            Operacion.HasHojaServicio = true;
+                            break;
+                        case "OrdenCompra":
+                            Operacion.ImagenesOrdenCompra.Add(result);
+                            Operacion.HasOrdenCompra = true;
+                            break;
+                    }
                     _activityService.Registrar("Operaciones", $"{imageType} cargada");
                     var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
                     if (campo != null) await _viewModel.UpdateCheckAsync(Operacion, campo);

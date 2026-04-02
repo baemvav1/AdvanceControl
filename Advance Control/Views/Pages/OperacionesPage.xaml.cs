@@ -334,9 +334,11 @@ namespace Advance_Control.Views.Pages
                 operacion.HasOrdenCompra = ordenesCompra.Count > 0;
                 operacion.HasFactura = hasFactura;
 
-                operacion.ImagenesPrefactura = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(prefacturas);
-                operacion.ImagenesHojaServicio = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(hojasServicio);
-                operacion.ImagenesOrdenCompra = new System.Collections.ObjectModel.ObservableCollection<Models.OperacionImageDto>(ordenesCompra);
+                // Limpiar y repoblar las colecciones existentes en vez de reemplazar
+                // para que ItemsRepeater detecte los cambios vía CollectionChanged.
+                ReplaceItems(operacion.ImagenesPrefactura, prefacturas);
+                ReplaceItems(operacion.ImagenesHojaServicio, hojasServicio);
+                ReplaceItems(operacion.ImagenesOrdenCompra, ordenesCompra);
 
                 operacion.ImagesLoaded = true;
             }
@@ -352,6 +354,16 @@ namespace Advance_Control.Views.Pages
                 return;
             var visor = new Views.Windows.OperacionVisorWindow(operacion);
             visor.Activate();
+        }
+
+        /// <summary>
+        /// Limpia y repobla una ObservableCollection manteniendo la misma instancia.
+        /// </summary>
+        private static void ReplaceItems<T>(System.Collections.ObjectModel.ObservableCollection<T> collection, System.Collections.Generic.IList<T> newItems)
+        {
+            collection.Clear();
+            foreach (var item in newItems)
+                collection.Add(item);
         }
     }
 }
