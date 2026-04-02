@@ -252,27 +252,14 @@ namespace Advance_Control.ViewModels
 
             var movimientosDisponibles = _movimientosPendientesBase
                 .Where(movimiento => decimal.Round(movimiento.Abono, 2) > 0)
-                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
                 .OrderBy(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
                 .ToList();
 
-            var propuestas = RecolectarPropuestasAbonos(facturasObjetivo, movimientosDisponibles)
+            var propuestas = RecolectarPropuestasAbonos(facturasObjetivo, movimientosDisponibles, _usarRfcComoRegla)
                 .OrderBy(propuesta => propuesta.FacturaPrincipal?.Fecha ?? DateTime.MaxValue)
                 .ThenBy(propuesta => propuesta.FacturaPrincipal?.IdFactura ?? int.MaxValue)
                 .ToList();
-
-            if (_usarRfcComoRegla)
-            {
-                propuestas = propuestas
-                    .Where(p => p.Movimiento != null
-                        && p.Facturas.Any()
-                        && string.Equals(
-                            p.Movimiento.RfcEmisor?.Trim(),
-                            p.Facturas.First().ReceptorRfc?.Trim(),
-                            StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
 
             if (propuestas.Count == 0 && mostrarMensajeSinResultados)
             {
@@ -412,7 +399,8 @@ namespace Advance_Control.ViewModels
 
         private List<ConciliacionMatchPropuestaDto> RecolectarPropuestasAbonos(
             List<FacturaResumenDto> facturasObjetivo,
-            List<ConciliacionMovimientoResumenDto> movimientosDisponibles)
+            List<ConciliacionMovimientoResumenDto> movimientosDisponibles,
+            bool usarRfcComoRegla = false)
         {
             var propuestas = new List<ConciliacionMatchPropuestaDto>();
 
@@ -426,6 +414,11 @@ namespace Advance_Control.ViewModels
                     aplicarReglaPueMismoMes: _aplicarReglaPueMismoMes,
                     limitarCandidatos: false)
                     .Where(movimiento => !EsMovimientoVetadoParaFactura(facturaObjetivo.IdFactura, movimiento.IdMovimiento))
+                    .Where(movimiento => !usarRfcComoRegla
+                        || string.Equals(
+                            movimiento.RfcEmisor?.Trim(),
+                            facturaObjetivo.ReceptorRfc?.Trim(),
+                            StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
                 if (candidatos.Count < 2)
