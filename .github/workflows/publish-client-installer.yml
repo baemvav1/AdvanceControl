@@ -95,24 +95,6 @@ jobs:
             -CertificatePath $env:CERT_PATH `
             -CertificatePassword $env:CERT_PASSWORD
 
-      - name: Generar instalador único (Instalar-AdvanceControl.cmd)
-        shell: pwsh
-        run: |
-          # Exportar el .cer desde el PFX para embeber en el instalador único
-          $secPwd = ConvertTo-SecureString $env:CERT_PASSWORD -AsPlainText -Force
-          $pfxCert = Get-PfxCertificate -FilePath $env:CERT_PATH
-          $cerPath = "artifacts\installer\AdvanceControl-signing.cer"
-          Export-Certificate -Cert $pfxCert -FilePath $cerPath -Type CERT | Out-Null
-
-          .\build\Generate-SingleInstaller.ps1 `
-            -CertificatePath $cerPath `
-            -OutputPath "artifacts\installer\Instalar-AdvanceControl.cmd"
-
-          Write-Host "Instalador único generado."
-        env:
-          CERT_PATH: ${{ steps.cert.outputs.path }}
-          CERT_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
-
       - name: Publicar artefactos del workflow
         uses: actions/upload-artifact@v4
         with:
@@ -120,7 +102,6 @@ jobs:
           path: |
             artifacts/installer/AdvanceControl.appinstaller
             artifacts/installer/AdvanceControl-x64.msix
-            artifacts/installer/Instalar-AdvanceControl.cmd
 
       # Release 'client-latest': tag estable que AppInstaller usa para la URL de auto-actualización.
       # Se recrea en cada build para que la URL no cambie nunca (sin redirects).
@@ -134,12 +115,11 @@ jobs:
           gh release delete client-latest --yes 2>$null
           git tag -f client-latest
           git push -f origin client-latest
-          # Crear nuevo release con los tres archivos
+          # Crear nuevo release con los archivos MSIX
           gh release create client-latest `
             --title "Ultima version del cliente" `
-            --notes "Version actual: v$env:PACKAGE_VERSION``n``nDescarga **Instalar-AdvanceControl.cmd** y ejecútalo con doble clic para instalar." `
+            --notes "Version actual: v$env:PACKAGE_VERSION" `
             --latest `
-            "artifacts\installer\Instalar-AdvanceControl.cmd" `
             "artifacts\installer\AdvanceControl.appinstaller" `
             "artifacts\installer\AdvanceControl-x64.msix"
 
@@ -152,6 +132,5 @@ jobs:
           generate_release_notes: true
           make_latest: false
           files: |
-            artifacts/installer/Instalar-AdvanceControl.cmd
             artifacts/installer/AdvanceControl.appinstaller
             artifacts/installer/AdvanceControl-x64.msix
