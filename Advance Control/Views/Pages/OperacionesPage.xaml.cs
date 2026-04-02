@@ -29,6 +29,8 @@ namespace Advance_Control.Views.Pages
         private readonly ICargoService _cargoService;
         private readonly ICargoImageService _cargoImageService;
         private readonly IOperacionImageService _operacionImageService;
+        // Bloquea handlers de filtros que se disparan durante InitializeComponent()
+        private bool _isNavigating = true;
 
         public OperacionesPage()
         {
@@ -57,9 +59,10 @@ namespace Advance_Control.Views.Pages
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            
+            _isNavigating = true;
             await ViewModel.InitializeAsync();
             await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            _isNavigating = false;
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
@@ -131,19 +134,19 @@ namespace Advance_Control.Views.Pages
         // --- Handlers filtros que disparan carga inmediata ---
         private async void IdTipoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (ViewModel == null) return;
+            if (ViewModel == null || _isNavigating) return;
             await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void FechaInicialPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
-            if (ViewModel == null) return;
+            if (ViewModel == null || _isNavigating) return;
             await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
         private async void FechaFinalPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
-            if (ViewModel == null) return;
+            if (ViewModel == null || _isNavigating) return;
             await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
         }
 
