@@ -407,7 +407,6 @@ namespace Advance_Control.Models
         /// </summary>
         public void NotifyImagesChanged()
         {
-            OnPropertyChanged(nameof(Images));
             OnPropertyChanged(nameof(HasImages));
             OnPropertyChanged(nameof(HasImagesVisibility));
             OnPropertyChanged(nameof(ShouldShowGallery));
