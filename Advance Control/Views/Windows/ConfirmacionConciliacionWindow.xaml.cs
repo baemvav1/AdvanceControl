@@ -18,6 +18,7 @@ namespace Advance_Control.Views.Windows
         private readonly ConciliacionAutomaticaWindowViewModel? _viewModel;
         private readonly ConciliacionAutomaticaModo? _modo;
         private readonly bool _aplicarReglaPueMismoMes;
+        private readonly bool _usarRfcComoRegla;
         private bool _resultadoEntregado;
         private bool _recalculandoAbonos;
 
@@ -42,12 +43,14 @@ namespace Advance_Control.Views.Windows
 
         public ConfirmacionConciliacionWindow(
             ConciliacionAutomaticaModo modo,
-            bool aplicarReglaPueMismoMes)
+            bool aplicarReglaPueMismoMes,
+            bool usarRfcComoRegla)
         {
             InitializeComponent();
             _viewModel = AppServices.Get<ConciliacionAutomaticaWindowViewModel>();
             _modo = modo;
             _aplicarReglaPueMismoMes = aplicarReglaPueMismoMes;
+            _usarRfcComoRegla = usarRfcComoRegla;
             Title = ObtenerTitulo(modo);
 
             AjustarTamano(1300, 680);
@@ -81,7 +84,7 @@ namespace Advance_Control.Views.Windows
 
             BtnConfirmar.IsEnabled = false;
 
-            var propuestas = await _viewModel.CargarPropuestasAsync(_modo.Value, _aplicarReglaPueMismoMes);
+            var propuestas = await _viewModel.CargarPropuestasAsync(_modo.Value, _aplicarReglaPueMismoMes, _usarRfcComoRegla);
             ControlConfirmacion.SetPropuestas(propuestas);
             ActualizarResumen(propuestas.Count, _modo == ConciliacionAutomaticaModo.Abonos);
             BtnConfirmar.IsEnabled = propuestas.Count > 0;
@@ -231,7 +234,6 @@ namespace Advance_Control.Views.Windows
                 ConciliacionAutomaticaModo.Automatica => "Conciliacion automatica",
                 ConciliacionAutomaticaModo.Combinacional => "Conciliacion automatica convinacional",
                 ConciliacionAutomaticaModo.Abonos => "Conciliacion automatica de abonos",
-                ConciliacionAutomaticaModo.RfcAutomatica => "Conciliacion RFC automatica",
                 _ => "Confirmar conciliaciones propuestas"
             };
         }

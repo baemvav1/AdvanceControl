@@ -23,6 +23,7 @@ namespace Advance_Control.ViewModels
         private readonly Dictionary<int, HashSet<int>> _movimientosVetadosPorFacturaAbonos = new();
         private bool _bitacoraConciliacionInicializada;
         private bool _aplicarReglaPueMismoMes = true;
+        private bool _usarRfcComoRegla = false;
 
         public ConciliacionAutomaticaWindowViewModel(
             IEstadoCuentaXmlService estadoCuentaXmlService,
@@ -38,9 +39,11 @@ namespace Advance_Control.ViewModels
 
         public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CargarPropuestasAsync(
             ConciliacionAutomaticaModo modo,
-            bool aplicarReglaPueMismoMes)
+            bool aplicarReglaPueMismoMes,
+            bool usarRfcComoRegla)
         {
             _aplicarReglaPueMismoMes = aplicarReglaPueMismoMes;
+            _usarRfcComoRegla = usarRfcComoRegla;
             if (modo == ConciliacionAutomaticaModo.Abonos)
             {
                 _facturasDescartadasAbonos.Clear();
@@ -54,7 +57,6 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
                 ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(),
-                ConciliacionAutomaticaModo.RfcAutomatica => await CrearPropuestasRfcAutomaticasAsync(),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -130,6 +132,7 @@ namespace Advance_Control.ViewModels
         {
             var facturasObjetivo = _facturasPendientesBase
                 .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
+                .Where(factura => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
                 .OrderBy(factura => factura.Fecha)
                 .ThenBy(factura => factura.IdFactura)
                 .ToList();
@@ -146,6 +149,7 @@ namespace Advance_Control.ViewModels
             }
 
             var movimientosDisponibles = _movimientosPendientesBase
+                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
                 .OrderBy(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
                 .ToList();
@@ -154,6 +158,18 @@ namespace Advance_Control.ViewModels
             var propuestasUnoAUno = RecolectarPropuestasUnoAUno(facturasUnoAUno, movimientosDisponibles, facturasRemanentes);
             var propuestasCombinacional = RecolectarPropuestasCombinacional(facturasRemanentes, movimientosDisponibles);
             var propuestas = propuestasUnoAUno.Concat(propuestasCombinacional).ToList();
+
+            if (_usarRfcComoRegla)
+            {
+                propuestas = propuestas
+                    .Where(p => p.Movimiento != null
+                        && p.Facturas.Any()
+                        && string.Equals(
+                            p.Movimiento.RfcEmisor?.Trim(),
+                            p.Facturas.First().ReceptorRfc?.Trim(),
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
 
             if (propuestas.Count == 0)
             {
@@ -167,6 +183,7 @@ namespace Advance_Control.ViewModels
         {
             var facturasObjetivo = _facturasPendientesBase
                 .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
+                .Where(factura => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
                 .OrderBy(factura => factura.Fecha)
                 .ThenBy(factura => factura.IdFactura)
                 .ToList();
@@ -178,11 +195,24 @@ namespace Advance_Control.ViewModels
             }
 
             var movimientosDisponibles = _movimientosPendientesBase
+                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
                 .OrderBy(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
                 .ToList();
             var facturasRemanentes = new List<FacturaResumenDto>(facturasObjetivo);
             var propuestas = RecolectarPropuestasCombinacional(facturasRemanentes, movimientosDisponibles);
+
+            if (_usarRfcComoRegla)
+            {
+                propuestas = propuestas
+                    .Where(p => p.Movimiento != null
+                        && p.Facturas.Any()
+                        && p.Facturas.All(f => string.Equals(
+                            p.Movimiento.RfcEmisor?.Trim(),
+                            f.ReceptorRfc?.Trim(),
+                            StringComparison.OrdinalIgnoreCase)))
+                    .ToList();
+            }
 
             if (propuestas.Count == 0)
             {
@@ -200,6 +230,7 @@ namespace Advance_Control.ViewModels
                 .Where(factura =>
                     _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0
                     && !_facturasDescartadasAbonos.Contains(factura.IdFactura))
+                .Where(factura => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
                 .ToList();
 
             facturasObjetivo = prioridadFacturaId.HasValue
@@ -221,6 +252,7 @@ namespace Advance_Control.ViewModels
 
             var movimientosDisponibles = _movimientosPendientesBase
                 .Where(movimiento => decimal.Round(movimiento.Abono, 2) > 0)
+                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
                 .OrderBy(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
                 .ToList();
@@ -229,84 +261,22 @@ namespace Advance_Control.ViewModels
                 .OrderBy(propuesta => propuesta.FacturaPrincipal?.Fecha ?? DateTime.MaxValue)
                 .ThenBy(propuesta => propuesta.FacturaPrincipal?.IdFactura ?? int.MaxValue)
                 .ToList();
+
+            if (_usarRfcComoRegla)
+            {
+                propuestas = propuestas
+                    .Where(p => p.Movimiento != null
+                        && p.Facturas.Any()
+                        && string.Equals(
+                            p.Movimiento.RfcEmisor?.Trim(),
+                            p.Facturas.First().ReceptorRfc?.Trim(),
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+            }
+
             if (propuestas.Count == 0 && mostrarMensajeSinResultados)
             {
                 await MostrarErrorConciliacionAsync("No se encontraron combinaciones de movimientos para las facturas pendientes.");
-            }
-
-            return propuestas;
-        }
-
-        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasRfcAutomaticasAsync()
-        {
-            var movimientosConRfc = _movimientosPendientesBase
-                .Where(m => !string.IsNullOrWhiteSpace(m.RfcEmisor) && decimal.Round(m.Abono, 2) > 0)
-                .OrderBy(m => m.Fecha)
-                .ThenBy(m => m.IdMovimiento)
-                .ToList();
-
-            if (movimientosConRfc.Count == 0)
-            {
-                await MostrarErrorConciliacionAsync("No hay movimientos pendientes con RFC emisor definido.");
-                return Array.Empty<ConciliacionMatchPropuestaDto>();
-            }
-
-            var facturasObjetivo = _facturasPendientesBase
-                .Where(f => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(f) > 0
-                    && !string.IsNullOrWhiteSpace(f.ReceptorRfc))
-                .OrderBy(f => f.Fecha)
-                .ThenBy(f => f.IdFactura)
-                .ToList();
-
-            if (facturasObjetivo.Count == 0)
-            {
-                await MostrarErrorConciliacionAsync("No hay facturas con saldo pendiente y RFC receptor definido.");
-                return Array.Empty<ConciliacionMatchPropuestaDto>();
-            }
-
-            var propuestas = new List<ConciliacionMatchPropuestaDto>();
-            var movimientosUsados = new HashSet<int>();
-            var facturasUsadas = new HashSet<int>();
-
-            foreach (var movimiento in movimientosConRfc)
-            {
-                if (movimientosUsados.Contains(movimiento.IdMovimiento))
-                {
-                    continue;
-                }
-
-                var rfcMovimiento = movimiento.RfcEmisor!.Trim();
-                var montoAbono = decimal.Round(movimiento.Abono, 2);
-
-                var facturaCoincidente = facturasObjetivo
-                    .Where(f => !facturasUsadas.Contains(f.IdFactura)
-                        && string.Equals(f.ReceptorRfc?.Trim(), rfcMovimiento, StringComparison.OrdinalIgnoreCase)
-                        && decimal.Round(_conciliacionMatchingEngine.ObtenerMontoPendienteFactura(f), 2) == montoAbono)
-                    .OrderBy(f => Math.Abs((f.Fecha - movimiento.Fecha).Ticks))
-                    .ThenBy(f => f.Fecha)
-                    .ThenBy(f => f.IdFactura)
-                    .FirstOrDefault();
-
-                if (facturaCoincidente == null)
-                {
-                    continue;
-                }
-
-                propuestas.Add(new ConciliacionMatchPropuestaDto
-                {
-                    Tipo = "RFC Automatica",
-                    Facturas = new List<FacturaResumenDto> { facturaCoincidente },
-                    Movimiento = movimiento,
-                    Observaciones = $"Conciliacion RFC automatica: RFC {rfcMovimiento}, movimiento {movimiento.GrupoId}."
-                });
-
-                movimientosUsados.Add(movimiento.IdMovimiento);
-                facturasUsadas.Add(facturaCoincidente.IdFactura);
-            }
-
-            if (propuestas.Count == 0)
-            {
-                await MostrarErrorConciliacionAsync("No se encontraron coincidencias por RFC, monto y fecha entre movimientos y facturas.");
             }
 
             return propuestas;
@@ -671,15 +641,6 @@ namespace Advance_Control.ViewModels
                     await MostrarResultadoFinalConciliacionAsync(
                         "Conciliacion automatica de abonos",
                         new[] { $"{facturasConciliadas} factura(s) conciliada(s) con {movimientosAplicados} movimiento(s)" });
-                    break;
-                }
-
-                case ConciliacionAutomaticaModo.RfcAutomatica:
-                {
-                    var totalConciliadas = aprobadas.Count;
-                    await MostrarResultadoFinalConciliacionAsync(
-                        "Conciliacion RFC automatica",
-                        new[] { $"{totalConciliadas} factura(s) conciliada(s) por coincidencia de RFC y monto" });
                     break;
                 }
             }

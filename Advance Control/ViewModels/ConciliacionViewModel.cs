@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -33,6 +33,7 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private string? _successMessage;
         private bool _aplicarReglaPueMismoMes = true;
+        private bool _usarRfcComoRegla = false;
         private string? _movimientoMetadatoBusquedaTexto;
         private string? _movimientoAbonoBusquedaTexto;
         private DateTimeOffset? _movimientoFechaInicio;
@@ -110,7 +111,6 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
                     OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
                     OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
                 }
@@ -139,7 +139,20 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
+                }
+            }
+        }
+
+        public bool UsarRfcComoRegla
+        {
+            get => _usarRfcComoRegla;
+            set
+            {
+                if (SetProperty(ref _usarRfcComoRegla, value))
+                {
+                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
+                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
+                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
                 }
             }
         }
@@ -291,7 +304,6 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                     OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
                     OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
                     OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
                     OnPropertyChanged(nameof(OpacidadIndicadorConciliacion));
@@ -328,10 +340,6 @@ namespace Advance_Control.ViewModels
         public bool CanEjecutarConciliacionAutomaticaAbonos => !IsLoading
             && !IsConciliacionAutomaticaEnProceso
             && _conciliacionMatchingEngine.CanRunAbonos(_facturasPendientesBase, _movimientosPendientesBase);
-        public bool CanEjecutarConciliacionRfcAutomatica => !IsLoading
-            && !IsConciliacionAutomaticaEnProceso
-            && _movimientosPendientesBase.Count > 0
-            && _facturasPendientesBase.Count > 0;
         public bool CanDeshacerUltimaOperacionConciliacion => !IsLoading
             && !IsConciliacionAutomaticaEnProceso
             && OperacionesConciliacionPendientes > 0;
@@ -429,7 +437,6 @@ namespace Advance_Control.ViewModels
                 OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
                 OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
                 OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-                OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
             }
             catch (Exception ex)
             {
@@ -1229,7 +1236,6 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
         }
 
         private void LimpiarFacturaCargada()
@@ -1258,7 +1264,6 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
         }
 
         private void NotificarCambioMovimientoCargado()
@@ -1279,7 +1284,6 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionRfcAutomatica));
         }
 
         private async Task MostrarErrorConciliacionAsync(string mensaje)

@@ -62,7 +62,6 @@ namespace Advance_Control.Views.Pages
                 || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomatica)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaConvinacional)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaAbonos)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionRfcAutomatica)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerUltimaOperacionConciliacion)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerTodasOperacionesConciliacion))
             {
@@ -75,7 +74,6 @@ namespace Advance_Control.Views.Pages
             BtnConciliacionAutomatica.IsEnabled = ViewModel.CanEjecutarConciliacionAutomatica;
             BtnConciliacionAutomaticaConvinacional.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaConvinacional;
             BtnConciliacionAutomaticaAbonos.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaAbonos;
-            BtnConciliacionRfcAutomatica.IsEnabled = ViewModel.CanEjecutarConciliacionRfcAutomatica;
             BtnDeshacerUltimo.IsEnabled = ViewModel.CanDeshacerUltimaOperacionConciliacion;
             BtnDeshacerTodo.IsEnabled = ViewModel.CanDeshacerTodasOperacionesConciliacion;
             ConciliacionPanelGrid.IsHitTestVisible = ViewModel.ConciliacionPanelHabilitado;
@@ -252,11 +250,6 @@ namespace Advance_Control.Views.Pages
             await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.Abonos);
         }
 
-        private async void BtnConciliacionRfcAutomatica_Click(object sender, RoutedEventArgs e)
-        {
-            await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.RfcAutomatica);
-        }
-
         private async void BtnDeshacerUltimo_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.DeshacerUltimaOperacionConciliacionAsync();
@@ -269,7 +262,10 @@ namespace Advance_Control.Views.Pages
 
         private async Task AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo modo)
         {
-            var ventana = new ConfirmacionConciliacionWindow(modo, ViewModel.AplicarReglaPueMismoMes);
+            var ventana = new ConfirmacionConciliacionWindow(
+                modo,
+                ViewModel.AplicarReglaPueMismoMes,
+                ViewModel.UsarRfcComoRegla);
             ventana.Activate();
 
             var aprobadas = await ventana.ResultTask;
@@ -280,4 +276,3 @@ namespace Advance_Control.Views.Pages
         }
     }
 }
-

@@ -436,12 +436,6 @@
                             <Grid Grid.Column="0">
                                 <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
                                     <Button
-                                        x:Name="BtnConciliacionRfcAutomatica"
-                                        Height="34"
-                                        Margin="5,0,0,0"
-                                        Click="BtnConciliacionRfcAutomatica_Click"
-                                        Content="Conciliacion RFC" />
-                                    <Button
                                         x:Name="BtnConciliacionAutomatica"
                                         Height="34"
                                         Margin="5,0,0,0"
@@ -479,6 +473,29 @@
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Center"
                                                 IsOn="{x:Bind ViewModel.AplicarReglaPueMismoMes, Mode=TwoWay}"
+                                                OffContent=""
+                                                OnContent="" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border
+                                        Margin="5,0,0,0"
+                                        Padding="0"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="2"
+                                        CornerRadius="8">
+                                        <StackPanel Width="148" Orientation="Horizontal">
+                                            <TextBlock
+                                                Margin="10,0,0,0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Text="Filtrar por RFC" />
+                                            <ToggleSwitch
+                                                Margin="10,0,0,0"
+                                                Padding="0"
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Center"
+                                                IsOn="{x:Bind ViewModel.UsarRfcComoRegla, Mode=TwoWay}"
                                                 OffContent=""
                                                 OnContent="" />
                                         </StackPanel>
