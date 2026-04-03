@@ -88,9 +88,20 @@ namespace Advance_Control.Services.LocalStorage
 
                 if (apiFiles == null) return result;
 
+                // Limpiar archivos locales que ya no existen en el VPS (stale cache).
+                // Protege contra operaciones eliminadas/recreadas con el mismo ID y
+                // contra archivos subidos desde otra PC que ya fueron eliminados remotamente.
+                var folder = GetOperacionFolder(idOperacion);
+                var vpsNames = new HashSet<string>(apiFiles.Select(f => f.FileName), StringComparer.OrdinalIgnoreCase);
+                foreach (var localFile in Directory.GetFiles(folder, $"{idOperacion}_{idCargo}_*_Cargo.*"))
+                {
+                    if (!vpsNames.Contains(Path.GetFileName(localFile)))
+                        try { File.Delete(localFile); } catch { /* ignorar errores de borrado */ }
+                }
+
                 foreach (var file in apiFiles)
                 {
-                    var localPath = Path.Combine(GetOperacionFolder(idOperacion), file.FileName);
+                    var localPath = Path.Combine(folder, file.FileName);
                     if (!File.Exists(localPath))
                         await DownloadToLocalAsync(file.Url, localPath, ct);
 

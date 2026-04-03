@@ -127,5 +127,42 @@ namespace Advance_Control.ViewModels
                 IsLoading = false;
             }
         }
+        /// <summary>Ejecuta una limpieza de conciliación por rango de fechas.</summary>
+        public async Task<bool> EjecutarLimpiezaRangoAsync(DateTime fechaInicio, DateTime fechaFin)
+        {
+            try
+            {
+                IsLoading = true;
+                HasError = false;
+                StatusMessage = $"Limpiando conciliación del {fechaInicio:dd/MM/yyyy} al {fechaFin:dd/MM/yyyy}...";
+
+                var resultados = await _devOpsService.LimpiarConciliacionPorRangoAsync(fechaInicio, fechaFin);
+
+                UltimosResultados.Clear();
+                long totalEliminados = 0;
+                foreach (var r in resultados)
+                {
+                    UltimosResultados.Add(r);
+                    totalEliminados += r.RegistrosEliminados;
+                }
+
+                StatusMessage = $"Limpieza de conciliación completada. {totalEliminados} registros eliminados en {resultados.Count} tablas.";
+
+                await CargarEstadisticasAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                HasError = true;
+                StatusMessage = $"Error al limpiar conciliación por rango: {ex.Message}";
+                await _logger.LogErrorAsync(ex.Message, ex, "DevOpsViewModel", "EjecutarLimpiezaRangoAsync");
+                return false;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
     }
 }

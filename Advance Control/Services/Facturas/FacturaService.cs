@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -103,6 +104,30 @@ namespace Advance_Control.Services.Facturas
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error inesperado al consultar facturas", ex, "FacturaService", "ObtenerFacturasAsync");
+                throw;
+            }
+        }
+
+        public async Task<FacturaResumenDto?> BuscarFacturaPorFolioAsync(string folio, CancellationToken cancellationToken = default)
+        {
+            var url = new ApiQueryBuilder()
+                .Add("folio", folio)
+                .Build(_endpoints.GetEndpoint("api", "factura"));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Buscando factura por folio en: {url}", "FacturaService", "BuscarFacturaPorFolioAsync");
+                var result = await _http.GetFromJsonAsync<List<FacturaResumenDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result?.FirstOrDefault();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al buscar factura por folio", ex, "FacturaService", "BuscarFacturaPorFolioAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al buscar la factura.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al buscar factura por folio", ex, "FacturaService", "BuscarFacturaPorFolioAsync");
                 throw;
             }
         }

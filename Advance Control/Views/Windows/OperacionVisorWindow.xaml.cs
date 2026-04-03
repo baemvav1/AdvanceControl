@@ -104,10 +104,15 @@ namespace Advance_Control.Views.Windows
 
         private async Task CargarDatosInicialesAsync()
         {
-            await LoadCargosAsync();
+            // Resetear flags para garantizar datos frescos en cada apertura del visor.
+            // Los DTOs se reutilizan desde el ViewModel cacheado; sin este reset los
+            // guards de ImagesLoaded/CargosLoaded evitarían recargar del VPS.
+            Operacion.ImagesLoaded  = false;
+            Operacion.CargosLoaded  = false;
+            foreach (var c in Operacion.Cargos) c.ImagesLoaded = false;
 
-            if (!Operacion.ImagesLoaded)
-                await RefreshImageIndicatorsAsync();
+            await LoadCargosAsync();
+            await RefreshImageIndicatorsAsync();
 
             if (!Operacion.TieneCheck)
             {
@@ -226,6 +231,17 @@ namespace Advance_Control.Views.Windows
         private static void LogDebugError(string contexto, Exception ex)
         {
             System.Diagnostics.Debug.WriteLine($"OperacionVisorWindow::{contexto}: {ex.GetType().Name} - {ex.Message}");
+        }
+
+        private async void MainTabView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Tab 1 = "Documentos" — refrescar imágenes del VPS cada vez que se activa
+            if (MainTabView.SelectedIndex == 1 && Operacion.IdOperacion.HasValue)
+            {
+                Operacion.ImagesLoaded = false;
+                try { await RefreshImageIndicatorsAsync(); }
+                catch (Exception ex) { LogDebugError(nameof(MainTabView_SelectionChanged), ex); }
+            }
         }
 
         public Visibility ToBoolVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
@@ -468,7 +484,7 @@ namespace Advance_Control.Views.Windows
 
         private async Task LoadImagesForCargoAsync(CargoDto cargo)
         {
-            if (cargo.IdCargo <= 0 || !cargo.IdOperacion.HasValue || cargo.ImagesLoaded || cargo.IsLoadingImages) return;
+            if (cargo.IdCargo <= 0 || !cargo.IdOperacion.HasValue || cargo.IsLoadingImages) return;
             try
             {
                 cargo.IsLoadingImages = true;
@@ -739,23 +755,10 @@ namespace Advance_Control.Views.Windows
                 };
                 if (result != null)
                 {
-                    // Agregar directamente a la colección existente en vez de reemplazar
-                    // para que el ItemsRepeater detecte el cambio vía CollectionChanged.
-                    switch (imageType)
-                    {
-                        case "Prefactura":
-                            Operacion.ImagenesPrefactura.Add(result);
-                            Operacion.HasPrefactura = true;
-                            break;
-                        case "HojaServicio":
-                            Operacion.ImagenesHojaServicio.Add(result);
-                            Operacion.HasHojaServicio = true;
-                            break;
-                        case "OrdenCompra":
-                            Operacion.ImagenesOrdenCompra.Add(result);
-                            Operacion.HasOrdenCompra = true;
-                            break;
-                    }
+                    // Refrescar desde el servidor igual que hace el delete, para garantizar
+                    // que los DTOs en las colecciones sean verificados y la imagen sea visualizable.
+                    Operacion.ImagesLoaded = false;
+                    await RefreshImageIndicatorsAsync();
                     _activityService.Registrar("Operaciones", $"{imageType} cargada");
                     var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
                     if (campo != null) await _viewModel.UpdateCheckAsync(Operacion, campo);

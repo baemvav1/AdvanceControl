@@ -16,6 +16,7 @@ namespace Advance_Control.Models
 
         // Helpers para display en diálogo
         public bool EsAbonos => string.Equals(Tipo, "Abonos", StringComparison.OrdinalIgnoreCase);
+        public bool EsUnoAUno => string.Equals(Tipo, "1 a 1", StringComparison.OrdinalIgnoreCase);
         public bool EsGenerica => !EsAbonos;
         public FacturaResumenDto? FacturaPrincipal => Facturas.FirstOrDefault();
         public string FoliosTexto => string.Join(", ", Facturas.Select(f => f.Folio ?? "-"));

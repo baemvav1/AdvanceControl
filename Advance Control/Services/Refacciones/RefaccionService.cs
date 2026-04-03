@@ -240,6 +240,12 @@ namespace Advance_Control.Services.Refacciones
                 // Realizar la petición POST
                 using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
 
+                if (response.StatusCode == System.Net.HttpStatusCode.Conflict)
+                {
+                    await _logger.LogWarningAsync("Serie duplicada al crear refacción", "RefaccionService", "CreateRefaccionAsync");
+                    throw new InvalidOperationException("Ya existe una refacción activa con esa serie.");
+                }
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);

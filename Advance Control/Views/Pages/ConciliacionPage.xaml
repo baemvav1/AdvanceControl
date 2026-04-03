@@ -207,7 +207,7 @@
         <Grid
             x:Name="Facturas"
             Grid.Row="0"
-            Grid.Column="0">
+            Grid.Column="0" >
             <Border
                 Margin="5"
                 Padding="5"
@@ -347,7 +347,7 @@
                                             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                             BorderThickness="2"
                                             CornerRadius="8">
-                                            <StackPanel Orientation="Vertical">
+                                            <StackPanel Orientation="Vertical" >
                                                 <TextBlock
                                                     Margin="0,0,0,5"
                                                     HorizontalAlignment="Center"
@@ -414,7 +414,7 @@
         <Grid
             x:Name="Conciliacion"
             Grid.Row="2"
-            Grid.ColumnSpan="3">
+            Grid.ColumnSpan="3" >
             <Border
                 Margin="5"
                 Padding="5"
@@ -484,7 +484,7 @@
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="2"
                                         CornerRadius="8">
-                                        <StackPanel Width="148" Orientation="Horizontal">
+                                        <StackPanel Width="160" Orientation="Horizontal">
                                             <TextBlock
                                                 Margin="10,0,0,0"
                                                 HorizontalAlignment="Left"

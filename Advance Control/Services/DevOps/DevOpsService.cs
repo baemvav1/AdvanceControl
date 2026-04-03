@@ -46,6 +46,37 @@ namespace Advance_Control.Services.DevOps
         public async Task<List<DevOpsWipeResult>> LimpiarUbicacionesAsync(CancellationToken ct = default)
             => await EjecutarLimpiezaAsync("limpiar/ubicaciones", ct);
 
+        public async Task<List<DevOpsWipeResult>> LimpiarConciliacionPorRangoAsync(
+            DateTime fechaInicio, DateTime fechaFin, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "DevOps", "limpiar/conciliacion-rango");
+                await _logger.LogWarningAsync(
+                    $"Ejecutando limpieza de conciliación por rango: {fechaInicio:yyyy-MM-dd} – {fechaFin:yyyy-MM-dd}",
+                    "DevOpsService", "LimpiarConciliacionPorRangoAsync");
+
+                var payload = new { FechaInicio = fechaInicio, FechaFin = fechaFin };
+                using var response = await _http.PostAsJsonAsync(url, payload, ct).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+                    throw new Exception($"Error al ejecutar limpieza de conciliación: {response.StatusCode} - {error}");
+                }
+
+                return await response.Content.ReadFromJsonAsync<List<DevOpsWipeResult>>(cancellationToken: ct)
+                    .ConfigureAwait(false) ?? new List<DevOpsWipeResult>();
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync(
+                    $"Error al limpiar conciliación por rango: {ex.Message}", ex,
+                    "DevOpsService", "LimpiarConciliacionPorRangoAsync");
+                throw;
+            }
+        }
+
         public async Task<List<DevOpsStatsResult>> ObtenerEstadisticasAsync(CancellationToken ct = default)
         {
             try

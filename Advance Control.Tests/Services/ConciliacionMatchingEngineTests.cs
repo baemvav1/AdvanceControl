@@ -166,6 +166,110 @@ namespace Advance_Control.Tests.Services
             Assert.Equal(10, movimientoObjetivo!.IdMovimiento);
         }
 
+        [Fact]
+        public void EsUnoAUno_WhenTipoIs1a1_ReturnsTrue()
+        {
+            var propuesta = CrearPropuesta("1 a 1", 100m, "F-001");
+
+            Assert.True(propuesta.EsUnoAUno);
+        }
+
+        [Fact]
+        public void EsUnoAUno_WhenTipoIsCombinacional_ReturnsFalse()
+        {
+            var propuesta = CrearPropuesta("Combinacional", 100m, "F-001");
+
+            Assert.False(propuesta.EsUnoAUno);
+        }
+
+        [Fact]
+        public void FolioSwap_WhenBothPropuestasHaveSameAbono_SwapsCorrectly()
+        {
+            var facturaA = CrearFactura(idFactura: 1, total: 500m, saldoPendiente: 500m);
+            var facturaB = CrearFactura(idFactura: 2, total: 500m, saldoPendiente: 500m);
+            facturaA.Folio = "F-001";
+            facturaB.Folio = "F-002";
+
+            var propuestaA = CrearPropuesta("1 a 1", 500m, "F-001", facturaA);
+            var propuestaB = CrearPropuesta("1 a 1", 500m, "F-002", facturaB);
+
+            // Simular el swap: propuestaA debe quedar con facturaB y viceversa
+            var temp = propuestaA.Facturas[0];
+            propuestaA.Facturas[0] = propuestaB.Facturas[0];
+            propuestaB.Facturas[0] = temp;
+
+            Assert.Equal("F-002", propuestaA.FacturaPrincipal?.Folio);
+            Assert.Equal("F-001", propuestaB.FacturaPrincipal?.Folio);
+        }
+
+        [Fact]
+        public void FolioReplace_WhenFolioNotInOtherPropuesta_ReplacesDirectly()
+        {
+            var facturaOriginal = CrearFactura(idFactura: 1, total: 300m, saldoPendiente: 300m);
+            var facturaNueva = CrearFactura(idFactura: 2, total: 300m, saldoPendiente: 300m);
+            facturaOriginal.Folio = "F-100";
+            facturaNueva.Folio = "F-999";
+
+            var propuesta = CrearPropuesta("1 a 1", 300m, "F-100", facturaOriginal);
+
+            // El folio F-999 no está en ninguna otra propuesta: reemplazo directo
+            propuesta.Facturas[0] = facturaNueva;
+
+            Assert.Equal("F-999", propuesta.FacturaPrincipal?.Folio);
+            Assert.Single(propuesta.Facturas);
+        }
+
+        [Fact]
+        public void FolioSwap_WhenAbonoAmountsDoNotMatch_ShouldNotSwap()
+        {
+            // Validación de negocio: no se hace swap si los montos difieren
+            var facturaA = CrearFactura(idFactura: 1, total: 500m, saldoPendiente: 500m);
+            var facturaB = CrearFactura(idFactura: 2, total: 300m, saldoPendiente: 300m);
+            facturaA.Folio = "F-001";
+            facturaB.Folio = "F-002";
+
+            var propuestaA = CrearPropuesta("1 a 1", 500m, "F-001", facturaA);
+            var propuestaB = CrearPropuesta("1 a 1", 300m, "F-002", facturaB);
+
+            // Monto de propuestaA (500) != monto de propuestaB (300) => no hay swap
+            var montoObjetivo = decimal.Round(propuestaA.Movimiento.Abono, 2);
+            var candidatos = new List<ConciliacionMatchPropuestaDto> { propuestaA, propuestaB };
+
+            var otraPropuesta = candidatos.FirstOrDefault(p =>
+                p != propuestaA
+                && p.EsUnoAUno
+                && string.Equals(p.FacturaPrincipal?.Folio, "F-002", StringComparison.OrdinalIgnoreCase)
+                && decimal.Round(p.Movimiento.Abono, 2) == montoObjetivo);
+
+            Assert.Null(otraPropuesta);
+        }
+
+        private static ConciliacionMatchPropuestaDto CrearPropuesta(
+            string tipo,
+            decimal abono,
+            string folio,
+            FacturaResumenDto? factura = null)
+        {
+            var facturaUsada = factura ?? new FacturaResumenDto
+            {
+                IdFactura = 1,
+                Total = abono,
+                SaldoPendiente = abono,
+                Folio = folio,
+                MetodoPago = "PUE",
+                ReceptorRfc = "XAXX010101000",
+                Fecha = new DateTime(2026, 1, 1)
+            };
+
+            return new ConciliacionMatchPropuestaDto
+            {
+                Tipo = tipo,
+                Facturas = new List<FacturaResumenDto> { facturaUsada },
+                Movimiento = CrearMovimiento(1, abono, new DateTime(2026, 1, 15)),
+                Observaciones = string.Empty
+            };
+        }
+
         private static FacturaResumenDto CrearFactura(
             int idFactura = 1,
             decimal total = 100m,

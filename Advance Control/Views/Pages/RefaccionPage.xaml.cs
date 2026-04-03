@@ -146,7 +146,7 @@ namespace Advance_Control.Views.Pages
 
                     var success = await ViewModel.CreateRefaccionAsync(
                         string.IsNullOrWhiteSpace(marcaTextBox.Text) ? null : marcaTextBox.Text,
-                        string.IsNullOrWhiteSpace(serieTextBox.Text) ? null : serieTextBox.Text,
+                        string.IsNullOrWhiteSpace(serieTextBox.Text) ? "N/D" : serieTextBox.Text,
                         costo,
                         string.IsNullOrWhiteSpace(descripcionTextBox.Text) ? null : descripcionTextBox.Text,
                         estatusCheckBox.IsChecked ?? true
@@ -360,7 +360,7 @@ namespace Advance_Control.Views.Pages
                     {
                         IdRefaccion = refaccion.IdRefaccion,
                         Marca = string.IsNullOrWhiteSpace(marcaTextBox.Text) ? null : marcaTextBox.Text,
-                        Serie = string.IsNullOrWhiteSpace(serieTextBox.Text) ? null : serieTextBox.Text,
+                        Serie = string.IsNullOrWhiteSpace(serieTextBox.Text) ? "N/D" : serieTextBox.Text,
                         Costo = costo,
                         Descripcion = string.IsNullOrWhiteSpace(descripcionTextBox.Text) ? null : descripcionTextBox.Text,
                         Estatus = estatusCheckBox.IsChecked ?? true

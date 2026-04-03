@@ -190,7 +190,7 @@ namespace Advance_Control.Services.Clientes
 
                 await _logger.LogInformationAsync("Cliente creado exitosamente", "ClienteService", "CreateClienteAsync");
 
-                return result ?? new ClienteOperationResponse { Success = true, Message = "Cliente creado correctamente" };
+                return result ?? new ClienteOperationResponse { Success = false, Message = "El servidor devolvió una respuesta vacía al crear el cliente." };
             }
             catch (HttpRequestException ex)
             {
@@ -251,7 +251,7 @@ namespace Advance_Control.Services.Clientes
 
                 await _logger.LogInformationAsync($"Cliente {query.IdCliente} actualizado exitosamente", "ClienteService", "UpdateClienteAsync");
 
-                return result ?? new ClienteOperationResponse { Success = true, Message = "Cliente actualizado exitosamente" };
+                return result ?? new ClienteOperationResponse { Success = false, Message = "El servidor devolvió una respuesta vacía al actualizar el cliente." };
             }
             catch (HttpRequestException ex)
             {
@@ -294,7 +294,7 @@ namespace Advance_Control.Services.Clientes
 
                 await _logger.LogInformationAsync($"Cliente {idCliente} eliminado exitosamente", "ClienteService", "DeleteClienteAsync");
 
-                return result ?? new ClienteOperationResponse { Success = true, Message = "Cliente eliminado exitosamente" };
+                return result ?? new ClienteOperationResponse { Success = false, Message = "El servidor devolvió una respuesta vacía al eliminar el cliente." };
             }
             catch (HttpRequestException ex)
             {

@@ -74,10 +74,12 @@
         <!--  Contenido en 3 paneles  -->
         <Grid Grid.Row="1">
             <TabView
+                x:Name="MainTabView"
                 VerticalAlignment="Stretch"
                 CanDragTabs="False"
                 CanReorderTabs="False"
-                IsAddTabButtonVisible="False">
+                IsAddTabButtonVisible="False"
+                SelectionChanged="MainTabView_SelectionChanged">
 
                 <TabViewItem IsClosable="False">
                     <TabViewItem.IconSource>

@@ -311,6 +311,10 @@
                                                         ToolTipService.ToolTip="Eliminar refacción"/>
                                                 </StackPanel>
                                             </PivotItem>
+
+                                            <PivotItem Header="Documentos">
+                                                
+                                            </PivotItem>
                                         </Pivot>
                                     </Grid>
                                 </StackPanel>

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,6 +30,9 @@ namespace Advance_Control.Services.DevOps
 
         /// <summary>Limpia areas, coordenadas, marcadores, ubicaciones y relaciones usuario-area</summary>
         Task<List<DevOpsWipeResult>> LimpiarUbicacionesAsync(CancellationToken ct = default);
+
+        /// <summary>Borra facturas, estados de cuenta y todo lo vinculado dentro del rango de fechas</summary>
+        Task<List<DevOpsWipeResult>> LimpiarConciliacionPorRangoAsync(DateTime fechaInicio, DateTime fechaFin, CancellationToken ct = default);
 
         /// <summary>Obtiene estadísticas de la base de datos</summary>
         Task<List<DevOpsStatsResult>> ObtenerEstadisticasAsync(CancellationToken ct = default);

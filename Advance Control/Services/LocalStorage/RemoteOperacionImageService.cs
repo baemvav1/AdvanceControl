@@ -157,9 +157,29 @@ namespace Advance_Control.Services.LocalStorage
 
                 if (apiFiles == null) return result;
 
+                // Limpiar archivos locales stale que ya no existen en el VPS.
+                var folder = GetOperacionFolder(idOperacion);
+                var vpsNames = new HashSet<string>(apiFiles.Select(f => f.FileName), StringComparer.OrdinalIgnoreCase);
+                var localPattern = tipo switch
+                {
+                    "prefactura"    => $"{idOperacion}_Prefactura_*.*",
+                    "hoja_servicio" => $"{idOperacion}_HojaServicio_*.*",
+                    "orden_compra"  => $"{idOperacion}_*_OrdenCompra.*",
+                    "factura"       => $"{idOperacion}_Factura.*",
+                    _               => null
+                };
+                if (localPattern != null)
+                {
+                    foreach (var localFile in Directory.GetFiles(folder, localPattern))
+                    {
+                        if (!vpsNames.Contains(Path.GetFileName(localFile)))
+                            try { File.Delete(localFile); } catch { /* ignorar errores de borrado */ }
+                    }
+                }
+
                 foreach (var file in apiFiles)
                 {
-                    var localPath = Path.Combine(GetOperacionFolder(idOperacion), file.FileName);
+                    var localPath = Path.Combine(folder, file.FileName);
                     if (!File.Exists(localPath))
                         await DownloadToLocalAsync(file.Url, localPath, ct);
 

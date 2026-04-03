@@ -142,7 +142,7 @@ namespace Advance_Control.Services.Contactos
 
                 await _logger.LogInformationAsync("Contacto creado exitosamente", "ContactoService", "CreateContactoAsync");
 
-                return result ?? new ContactoOperationResponse { Success = true, Message = "Contacto creado correctamente" };
+                return result ?? new ContactoOperationResponse { Success = false, Message = "El servidor devolvió una respuesta vacía al crear el contacto." };
             }
             catch (HttpRequestException ex)
             {
@@ -206,7 +206,7 @@ namespace Advance_Control.Services.Contactos
 
                 await _logger.LogInformationAsync($"Contacto {query.ContactoId} actualizado exitosamente", "ContactoService", "UpdateContactoAsync");
 
-                return result ?? new ContactoOperationResponse { Success = true, Message = "Contacto actualizado exitosamente" };
+                return result ?? new ContactoOperationResponse { Success = false, Message = "El servidor devolvió una respuesta vacía al actualizar el contacto." };
             }
             catch (HttpRequestException ex)
             {
@@ -251,7 +251,7 @@ namespace Advance_Control.Services.Contactos
 
                 await _logger.LogInformationAsync($"Contacto {contactoId} eliminado exitosamente", "ContactoService", "DeleteContactoAsync");
 
-                return result ?? new ContactoOperationResponse { Success = true, Message = "Contacto eliminado exitosamente" };
+                return result ?? new ContactoOperationResponse { Success = false, Message = "El servidor devolvió una respuesta vacía al eliminar el contacto." };
             }
             catch (HttpRequestException ex)
             {

@@ -114,6 +114,16 @@
                         <TextBlock Text="Borrado Ubicaciones" />
                     </StackPanel>
                 </Button>
+
+                <Button x:Name="BtnConciliacionRango" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                        HorizontalAlignment="Stretch" Margin="4,4,0,0" Padding="16,12"
+                        Background="#CC4A1A" Foreground="White"
+                        Click="OnLimpiarConciliacionRangoClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE738;" FontSize="16" />
+                        <TextBlock Text="Borrar Conciliación por Rango de Fechas" />
+                    </StackPanel>
+                </Button>
             </Grid>
 
             <!-- Botón de estadísticas -->

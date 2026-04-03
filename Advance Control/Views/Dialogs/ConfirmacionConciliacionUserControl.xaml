@@ -179,15 +179,67 @@
                                     Text="{x:Bind Tipo}" />
                             </Border>
 
-                            <TextBlock
-                                Grid.Column="2"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind FoliosTexto}"
-                                TextTrimming="CharacterEllipsis">
-                                <ToolTipService.ToolTip>
-                                    <ToolTip Content="{x:Bind FoliosTexto}" />
-                                </ToolTipService.ToolTip>
-                            </TextBlock>
+                            <!--  Folio(s): clickeable solo en propuestas 1 a 1  -->
+                            <Grid Grid.Column="2" VerticalAlignment="Center">
+
+                                <!--  Texto plano para propuestas no 1-a-1 (combinacional)  -->
+                                <TextBlock
+                                    Text="{x:Bind FoliosTexto}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Visibility="{x:Bind EsUnoAUno, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="{x:Bind FoliosTexto}" />
+                                    </ToolTipService.ToolTip>
+                                </TextBlock>
+
+                                <!--  Botón-folio con Flyout de reasignación para propuestas 1 a 1  -->
+                                <HyperlinkButton
+                                    x:Name="BtnFolioReasignar"
+                                    Padding="0"
+                                    Click="BtnFolioReasignar_Click"
+                                    Content="{x:Bind FoliosTexto}"
+                                    FontSize="14"
+                                    ToolTipService.ToolTip="Haz clic para reasignar a otra factura"
+                                    Visibility="{x:Bind EsUnoAUno, Converter={StaticResource BoolToVisibility}}">
+                                    <FlyoutBase.AttachedFlyout>
+                                        <Flyout x:Name="FlyoutReasignacion" Opening="FlyoutFolio_Opening" Placement="Bottom">
+                                            <StackPanel MinWidth="280" Spacing="10">
+                                                <TextBlock
+                                                    FontWeight="SemiBold"
+                                                    Text="Reasignar folio de factura" />
+                                                <TextBox
+                                                    x:Name="TxtFolioNuevo"
+                                                    Header="Nuevo folio"
+                                                    PlaceholderText="Ej. A-459"
+                                                    KeyDown="TxtFolioNuevo_KeyDown" />
+                                                <Button
+                                                    x:Name="BtnComprobarFolio"
+                                                    HorizontalAlignment="Stretch"
+                                                    Click="BtnComprobarFolio_Click"
+                                                    Content="Comprobar"
+                                                    Style="{StaticResource AccentButtonStyle}" />
+                                                <StackPanel
+                                                    x:Name="PanelEstadoFolio"
+                                                    Orientation="Horizontal"
+                                                    Spacing="8"
+                                                    Visibility="Collapsed">
+                                                    <ProgressRing
+                                                        x:Name="RingFolio"
+                                                        Width="16"
+                                                        Height="16"
+                                                        IsActive="True"
+                                                        Visibility="Collapsed" />
+                                                    <TextBlock
+                                                        x:Name="TxtEstadoFolio"
+                                                        VerticalAlignment="Center"
+                                                        TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </StackPanel>
+                                        </Flyout>
+                                    </FlyoutBase.AttachedFlyout>
+                                </HyperlinkButton>
+
+                            </Grid>
 
                             <TextBlock
                                 Grid.Column="3"

@@ -1348,8 +1348,8 @@ namespace Advance_Control.ViewModels
 
             var facturasFiltradas = _facturasPendientesBase
                 .Where(CoincideFacturaBusqueda)
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
+                .OrderByDescending(factura => factura.Folio)
+                .ThenByDescending(factura => factura.IdFactura)
                 .ToList();
 
             MovimientosPendientes = new ObservableCollection<ConciliacionMovimientoResumenDto>(movimientosFiltrados);

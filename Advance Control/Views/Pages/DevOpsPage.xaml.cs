@@ -99,6 +99,81 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void OnLimpiarConciliacionRangoClick(object sender, RoutedEventArgs e)
+        {
+            var fechaInicioLabel = new TextBlock { Text = "Fecha inicio:", Margin = new Thickness(0, 0, 0, 4) };
+            var pickerInicio = new CalendarDatePicker
+            {
+                PlaceholderText = "Selecciona fecha de inicio",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+            var fechaFinLabel = new TextBlock { Text = "Fecha fin:", Margin = new Thickness(0, 0, 0, 4) };
+            var pickerFin = new CalendarDatePicker
+            {
+                PlaceholderText = "Selecciona fecha de fin",
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            var advertencia = new TextBlock
+            {
+                Text = "⚠️ Se eliminarán TODAS las facturas, estados de cuenta, movimientos y " +
+                       "datos de conciliación dentro del rango. Esta acción NO se puede deshacer.",
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 16, 0, 0),
+                Opacity = 0.8
+            };
+
+            var panel = new StackPanel { Width = 320 };
+            panel.Children.Add(fechaInicioLabel);
+            panel.Children.Add(pickerInicio);
+            panel.Children.Add(fechaFinLabel);
+            panel.Children.Add(pickerFin);
+            panel.Children.Add(advertencia);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Borrar Conciliación por Rango de Fechas",
+                Content = panel,
+                PrimaryButtonText = "Eliminar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result != ContentDialogResult.Primary) return;
+
+            if (pickerInicio.Date == null || pickerFin.Date == null)
+            {
+                await MostrarError("Debes seleccionar ambas fechas.");
+                return;
+            }
+
+            var fechaInicio = pickerInicio.Date.Value.DateTime;
+            var fechaFin = pickerFin.Date.Value.DateTime;
+
+            if (fechaFin < fechaInicio)
+            {
+                await MostrarError("La fecha de fin debe ser mayor o igual a la fecha de inicio.");
+                return;
+            }
+
+            await ViewModel.EjecutarLimpiezaRangoAsync(fechaInicio, fechaFin);
+        }
+
+        private async System.Threading.Tasks.Task MostrarError(string mensaje)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Error de validación",
+                Content = mensaje,
+                CloseButtonText = "Aceptar",
+                XamlRoot = this.XamlRoot
+            };
+            await dialog.ShowAsync();
+        }
+
         private async void OnCargarEstadisticasClick(object sender, RoutedEventArgs e)
         {
             await ViewModel.CargarEstadisticasAsync();
