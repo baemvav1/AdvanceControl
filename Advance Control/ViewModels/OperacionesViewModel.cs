@@ -232,19 +232,23 @@ namespace Advance_Control.ViewModels
             try
             {
                 await _logger.LogInformationAsync("Vista de Operaciones inicializada", "OperacionesViewModel", "InitializeAsync");
-                var areas = await _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
+
+                // Cargar catálogos en paralelo para reducir latencia de red
+                var areasTask    = _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
+                var clientesTask = _clienteService.GetClientesAsync(null, cancellationToken);
+                var equiposTask  = _equipoService.GetEquiposAsync(null, cancellationToken);
+                await Task.WhenAll(areasTask, clientesTask, equiposTask);
+
                 Areas.Clear();
-                foreach (var a in areas)
+                foreach (var a in areasTask.Result)
                     Areas.Add(a);
 
-                var clientes = await _clienteService.GetClientesAsync(null, cancellationToken);
-                _todosLosClientes = clientes
+                _todosLosClientes = clientesTask.Result
                     .Select(c => (c.IdCliente, Texto: c.RazonSocial ?? c.NombreComercial ?? ""))
                     .Where(c => !string.IsNullOrWhiteSpace(c.Texto))
                     .ToList();
 
-                var equipos = await _equipoService.GetEquiposAsync(null, cancellationToken);
-                _todosLosEquipos = equipos
+                _todosLosEquipos = equiposTask.Result
                     .Where(e => !string.IsNullOrWhiteSpace(e.Identificador))
                     .Select(e => (Id: e.IdEquipo, Identificador: e.Identificador!))
                     .DistinctBy(e => e.Identificador, StringComparer.OrdinalIgnoreCase)

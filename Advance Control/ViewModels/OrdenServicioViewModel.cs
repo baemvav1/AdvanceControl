@@ -144,13 +144,16 @@ namespace Advance_Control.ViewModels
         {
             try
             {
-                var areas = await _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
+                // Cargar catálogos en paralelo para reducir latencia de red
+                var areasTask   = _areasService.GetAreasAsync(activo: true, cancellationToken: cancellationToken);
+                var equiposTask = _equipoService.GetEquiposAsync(null, cancellationToken);
+                await Task.WhenAll(areasTask, equiposTask);
+
                 Areas.Clear();
-                foreach (var a in areas)
+                foreach (var a in areasTask.Result)
                     Areas.Add(a);
 
-                var equipos = await _equipoService.GetEquiposAsync(null, cancellationToken);
-                _todosLosIdentificadores = equipos
+                _todosLosIdentificadores = equiposTask.Result
                     .Select(e => e.Identificador)
                     .Where(id => !string.IsNullOrWhiteSpace(id))
                     .Distinct(StringComparer.OrdinalIgnoreCase)
