@@ -12,13 +12,13 @@ using Advance_Control.Services.OrdenServicio;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Session;
 using Advance_Control.Services.Activity;
-using Advance_Control.Services.RelacionUsuarioArea;
 
 namespace Advance_Control.ViewModels
 {
     /// <summary>
     /// ViewModel para la vista de Órdenes de Servicio.
     /// Gestiona la lógica de presentación para operaciones de órdenes de servicio.
+    /// El filtrado por área/nivel es responsabilidad de la API.
     /// </summary>
     public class OrdenServicioViewModel : ViewModelBase
     {
@@ -27,7 +27,6 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly IUserSessionService _userSession;
         private readonly IActivityService _activityService;
-        private readonly IRelacionUsuarioAreaService _relacionAreaService;
         private readonly IAreasService _areasService;
         private ObservableCollection<OrdenServicioDto> _ordenesServicio;
         private ObservableCollection<AreaDto> _areas;
@@ -40,14 +39,13 @@ namespace Advance_Control.ViewModels
         private int _idClienteFilter;
         private AreaDto? _selectedAreaFilter;
 
-        public OrdenServicioViewModel(IOrdenServicioService ordenServicioService, IEquipoService equipoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService, IRelacionUsuarioAreaService relacionAreaService, IAreasService areasService)
+        public OrdenServicioViewModel(IOrdenServicioService ordenServicioService, IEquipoService equipoService, ILoggingService logger, IUserSessionService userSession, IActivityService activityService, IAreasService areasService)
         {
             _ordenServicioService = ordenServicioService ?? throw new ArgumentNullException(nameof(ordenServicioService));
             _equipoService        = equipoService        ?? throw new ArgumentNullException(nameof(equipoService));
             _logger               = logger               ?? throw new ArgumentNullException(nameof(logger));
             _userSession          = userSession          ?? throw new ArgumentNullException(nameof(userSession));
             _activityService      = activityService      ?? throw new ArgumentNullException(nameof(activityService));
-            _relacionAreaService  = relacionAreaService   ?? throw new ArgumentNullException(nameof(relacionAreaService));
             _areasService         = areasService         ?? throw new ArgumentNullException(nameof(areasService));
             _ordenesServicio     = new ObservableCollection<OrdenServicioDto>();
             _areas               = new ObservableCollection<AreaDto>();
@@ -222,15 +220,13 @@ namespace Advance_Control.ViewModels
 
                 var ordenes = await _ordenServicioService.GetOrdenesServicioAsync(query, cancellationToken);
 
-                // Filtrado por área según tipo de usuario
-                var filtrados = await FiltrarPorAreaAsync(ordenes, cancellationToken);
-
-                // Filtro manual de área seleccionado por el usuario
+                // Filtro manual de área seleccionado por el usuario (el filtrado por nivel lo maneja la API)
+                List<OrdenServicioDto> filtrados = ordenes;
                 if (SelectedAreaFilter != null)
                 {
                     var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
                     var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
-                    filtrados = filtrados.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
+                    filtrados = ordenes.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
                 }
 
                 OrdenesServicio.Clear();
@@ -261,31 +257,6 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
-        }
-
-        /// <summary>
-        /// Filtra registros según las áreas asignadas al usuario.
-        /// Niveles superiores (Devs, Director, Admin, etc.) ven todo.
-        /// TecSup/Tecnico solo ven equipos en sus áreas asignadas.
-        /// Niveles inferiores no ven nada.
-        /// </summary>
-        private async Task<List<OrdenServicioDto>> FiltrarPorAreaAsync(List<OrdenServicioDto> items, CancellationToken ct)
-        {
-            if (!_userSession.IsLoaded) return items;
-
-            var tipo = _userSession.TipoUsuario;
-            if (tipo is "Devs" or "Director" or "Admin" or "Cont" or "AuxAdm" or "AuxCont")
-                return items;
-
-            if (tipo is "TecSup" or "Tecnico")
-            {
-                var permitidos = await _relacionAreaService.GetEquiposEnAreasAsync(_userSession.CredencialId, ct);
-                var set = new HashSet<string>(permitidos, StringComparer.OrdinalIgnoreCase);
-                return items.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
-            }
-
-            // Niveles inferiores: no ven órdenes de servicio
-            return new List<OrdenServicioDto>();
         }
 
         /// <summary>

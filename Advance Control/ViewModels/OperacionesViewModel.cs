@@ -16,14 +16,13 @@ using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.CheckOperacion;
-using Advance_Control.Services.Session;
-using Advance_Control.Services.RelacionUsuarioArea;
 
 namespace Advance_Control.ViewModels
 {
     /// <summary>
     /// ViewModel para la vista de Operaciones.
     /// Gestiona la lógica de presentación para operaciones del sistema.
+    /// El filtrado por área/nivel es responsabilidad de la API.
     /// </summary>
     public class OperacionesViewModel : ViewModelBase
     {
@@ -41,8 +40,6 @@ namespace Advance_Control.ViewModels
         private readonly IClienteService _clienteService;
         private readonly IActivityService _activityService;
         private readonly ICheckOperacionService _checkService;
-        private readonly IUserSessionService _userSession;
-        private readonly IRelacionUsuarioAreaService _relacionAreaService;
         private readonly IAreasService _areasService;
         private ObservableCollection<OperacionDto> _operaciones;
         private ObservableCollection<AreaDto> _areas;
@@ -64,7 +61,7 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaFinalFilter;
         private AreaDto? _selectedAreaFilter;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IUserSessionService userSession, IRelacionUsuarioAreaService relacionAreaService, IAreasService areasService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
             _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
@@ -75,8 +72,6 @@ namespace Advance_Control.ViewModels
             _entidadService    = entidadService    ?? throw new ArgumentNullException(nameof(entidadService));
             _activityService   = activityService   ?? throw new ArgumentNullException(nameof(activityService));
             _checkService      = checkService      ?? throw new ArgumentNullException(nameof(checkService));
-            _userSession       = userSession       ?? throw new ArgumentNullException(nameof(userSession));
-            _relacionAreaService = relacionAreaService ?? throw new ArgumentNullException(nameof(relacionAreaService));
             _areasService      = areasService      ?? throw new ArgumentNullException(nameof(areasService));
             _operaciones         = new ObservableCollection<OperacionDto>();
             _areas               = new ObservableCollection<AreaDto>();
@@ -343,15 +338,13 @@ namespace Advance_Control.ViewModels
 
                 var operaciones = await _operacionService.GetOperacionesAsync(query, cancellationToken);
 
-                // Filtrado por área según tipo de usuario
-                var filtrados = await FiltrarPorAreaAsync(operaciones, cancellationToken);
-
-                // Filtro manual de área seleccionado por el usuario
+                // Filtro manual de área seleccionado por el usuario (el filtrado por nivel lo maneja la API)
+                List<OperacionDto> filtrados = operaciones;
                 if (SelectedAreaFilter != null)
                 {
                     var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
                     var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
-                    filtrados = filtrados.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
+                    filtrados = operaciones.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
                 }
 
                 foreach (var operacion in filtrados)
@@ -384,29 +377,6 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
-        }
-
-        /// <summary>
-        /// Filtra registros según las áreas asignadas al usuario.
-        /// Niveles superiores ven todo. TecSup/Tecnico solo ven equipos en sus áreas.
-        /// Niveles inferiores no ven nada.
-        /// </summary>
-        private async Task<List<OperacionDto>> FiltrarPorAreaAsync(List<OperacionDto> items, CancellationToken ct)
-        {
-            if (!_userSession.IsLoaded) return items;
-
-            var tipo = _userSession.TipoUsuario;
-            if (tipo is "Devs" or "Director" or "Admin" or "Cont" or "AuxAdm" or "AuxCont")
-                return items;
-
-            if (tipo is "TecSup" or "Tecnico")
-            {
-                var permitidos = await _relacionAreaService.GetEquiposEnAreasAsync(_userSession.CredencialId, ct);
-                var set = new HashSet<string>(permitidos, StringComparer.OrdinalIgnoreCase);
-                return items.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
-            }
-
-            return new List<OperacionDto>();
         }
 
         /// <summary>

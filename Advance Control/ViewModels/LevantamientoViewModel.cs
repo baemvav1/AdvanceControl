@@ -11,8 +11,6 @@ using Advance_Control.Services.Levantamiento;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Reportes;
-using Advance_Control.Services.Session;
-using Advance_Control.Services.RelacionUsuarioArea;
 using Microsoft.UI.Xaml.Media.Imaging;
 
 namespace Advance_Control.ViewModels
@@ -27,8 +25,6 @@ namespace Advance_Control.ViewModels
         private readonly ILevantamientoApiService _levantamientoApiService;
         private readonly ILevantamientoReportService _reportService;
         private readonly ILevantamientoImageService _imageService;
-        private readonly Lazy<IUserSessionService> _session;
-        private readonly IRelacionUsuarioAreaService _relacionAreaService;
         private readonly JsonSerializerOptions _jsonOptions = new JsonSerializerOptions { WriteIndented = true };
         private readonly Dictionary<string, string> _tagToHotspotKey = new Dictionary<string, string>(StringComparer.Ordinal);
         private bool _isLoading;
@@ -49,17 +45,13 @@ namespace Advance_Control.ViewModels
             IEquipoService equipoService,
             ILevantamientoApiService levantamientoApiService,
             ILevantamientoReportService reportService,
-            ILevantamientoImageService imageService,
-            Lazy<IUserSessionService> session,
-            IRelacionUsuarioAreaService relacionAreaService)
+            ILevantamientoImageService imageService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _equipoService = equipoService ?? throw new ArgumentNullException(nameof(equipoService));
             _levantamientoApiService = levantamientoApiService ?? throw new ArgumentNullException(nameof(levantamientoApiService));
             _reportService = reportService ?? throw new ArgumentNullException(nameof(reportService));
             _imageService = imageService ?? throw new ArgumentNullException(nameof(imageService));
-            _session = session ?? throw new ArgumentNullException(nameof(session));
-            _relacionAreaService = relacionAreaService ?? throw new ArgumentNullException(nameof(relacionAreaService));
             Hotspots = new ObservableCollection<LevantamientoHotspotItem>();
             HotspotsConFalla = new ObservableCollection<LevantamientoHotspotItem>();
             CapturedTreeItems = new ObservableCollection<LevantamientoTreeItemModel>();
@@ -299,31 +291,8 @@ namespace Advance_Control.ViewModels
             try
             {
                 IsLoadingEquipos = true;
-                var allEquipos = await _equipoService.GetEquiposAsync(null, CancellationToken.None);
-
-                // Filtrar equipos según áreas del usuario
-                if (_session.Value.IsLoaded)
-                {
-                    var tipo = _session.Value.TipoUsuario;
-                    if (tipo is "TecSup" or "Tecnico")
-                    {
-                        var permitidos = await _relacionAreaService.GetEquiposEnAreasAsync(_session.Value.CredencialId);
-                        var set = new HashSet<string>(permitidos, StringComparer.OrdinalIgnoreCase);
-                        _allEquipos = allEquipos.Where(e => !string.IsNullOrEmpty(e.Identificador) && set.Contains(e.Identificador)).ToList();
-                    }
-                    else if (tipo is "Devs" or "Director" or "Admin" or "Cont" or "AuxAdm" or "AuxCont")
-                    {
-                        _allEquipos = allEquipos;
-                    }
-                    else
-                    {
-                        _allEquipos = new List<EquipoDto>();
-                    }
-                }
-                else
-                {
-                    _allEquipos = allEquipos;
-                }
+                // La API aplica el filtrado por área/nivel según el usuario autenticado
+                _allEquipos = await _equipoService.GetEquiposAsync(null, CancellationToken.None);
             }
             catch (Exception ex)
             {
