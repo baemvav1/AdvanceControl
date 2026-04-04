@@ -22,7 +22,7 @@ using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Services.Session;
 using Advance_Control.Services.Relaciones;
-using Advance_Control.Services.Mantenimiento;
+using Advance_Control.Services.OrdenServicio;
 using Advance_Control.Services.Refacciones;
 using Advance_Control.Services.RelacionesRefaccionEquipo;
 using Advance_Control.Services.Proveedores;
@@ -367,8 +367,8 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
-                    // Registrar MantenimientoService y su HttpClient pipeline con autenticación
-                    services.AddHttpClient<IMantenimientoService, MantenimientoService>((sp, client) =>
+                    // Registrar OrdenServicioService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IOrdenServicioService, OrdenServicioService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
@@ -789,7 +789,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.EquiposViewModel>();
                     services.AddTransient<ViewModels.OperacionesViewModel>();
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
-                    services.AddTransient<ViewModels.MttoViewModel>();
+                    services.AddTransient<ViewModels.OrdenServicioViewModel>();
                     services.AddTransient<ViewModels.LevantamientoViewModel>();
                     services.AddTransient<ViewModels.LevantamientosViewModel>();
                     services.AddTransient<ViewModels.NuevoEquipoViewModel>();

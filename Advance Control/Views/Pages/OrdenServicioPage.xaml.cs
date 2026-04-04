@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -11,59 +11,48 @@ using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Services.Activity;
-using Advance_Control.Services.Mantenimiento;
+using Advance_Control.Services.OrdenServicio;
 using Advance_Control.Views.Dialogs;
 using Advance_Control.Models;
 
 namespace Advance_Control.Views.Pages
 {
     /// <summary>
-    /// Página para visualizar y gestionar operaciones de mantenimiento
+    /// Página para visualizar y gestionar órdenes de servicio
     /// </summary>
-    public sealed partial class MantenimientoPage : Page
+    public sealed partial class OrdenServicioPage : Page
     {
-        public MttoViewModel ViewModel { get; }
+        public OrdenServicioViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly IUserInfoService _userInfoService;
         private readonly IActivityService _activityService;
-        private readonly IMantenimientoService _mantenimientoService;
+        private readonly IOrdenServicioService _ordenServicioService;
 
-        public MantenimientoPage()
+        public OrdenServicioPage()
         {
-            // Resolver el ViewModel desde DI
-            ViewModel = AppServices.Get<MttoViewModel>();
-
-            // Resolver el servicio de notificaciones desde DI
+            ViewModel = AppServices.Get<OrdenServicioViewModel>();
             _notificacionService = AppServices.Get<INotificacionService>();
-
-            // Resolver el servicio de información de usuario desde DI
             _userInfoService = AppServices.Get<IUserInfoService>();
-
-            // Resolver el servicio de actividades desde DI
             _activityService = AppServices.Get<IActivityService>();
-
-            // Resolver el servicio de mantenimiento desde DI
-            _mantenimientoService = AppServices.Get<IMantenimientoService>();
+            _ordenServicioService = AppServices.Get<IOrdenServicioService>();
 
             this.InitializeComponent();
-            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(MantenimientoPage));
-            
-            // Establecer el DataContext para los bindings
+            ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(OrdenServicioPage));
+
             this.DataContext = ViewModel;
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            
+
             await ViewModel.InitializeAsync();
-            // Cargar los mantenimientos cuando se navega a esta página
-            await ViewModel.LoadMantenimientosAsync();
+            await ViewModel.LoadOrdenesServicioAsync();
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.LoadMantenimientosAsync();
+            await ViewModel.LoadOrdenesServicioAsync();
         }
 
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -100,15 +89,15 @@ namespace Advance_Control.Views.Pages
                 area = ViewModel.Areas.FirstOrDefault(a => a.Nombre.Equals(args.QueryText, StringComparison.OrdinalIgnoreCase));
             await ViewModel.AplicarFiltroArea(area);
         }
+
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
         {
-            // Crear el UserControl para el nuevo mantenimiento
-            var nuevoMantenimientoControl = new NuevoMantenimientoUserControl();
+            var nuevaOrdenControl = new NuevaOrdenServicioUserControl();
 
             var dialog = new ContentDialog
             {
-                Title = "Nuevo Mantenimiento",
-                Content = nuevoMantenimientoControl,
+                Title = "Nueva Orden de Servicio",
+                Content = nuevaOrdenControl,
                 PrimaryButtonText = "Crear",
                 CloseButtonText = "Cancelar",
                 DefaultButton = ContentDialogButton.Primary,
@@ -119,20 +108,19 @@ namespace Advance_Control.Views.Pages
 
             if (result == ContentDialogResult.Primary)
             {
-                // Validar campos obligatorios
-                if (!nuevoMantenimientoControl.IdTipoMantenimiento.HasValue)
+                if (!nuevaOrdenControl.IdTipoMantenimiento.HasValue)
                 {
                     await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un tipo de mantenimiento.");
                     return;
                 }
 
-                if (!nuevoMantenimientoControl.IdEquipo.HasValue)
+                if (!nuevaOrdenControl.IdEquipo.HasValue)
                 {
                     await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un equipo.");
                     return;
                 }
 
-                if (!nuevoMantenimientoControl.IdCliente.HasValue)
+                if (!nuevaOrdenControl.IdCliente.HasValue)
                 {
                     await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un cliente.");
                     return;
@@ -140,62 +128,58 @@ namespace Advance_Control.Views.Pages
 
                 try
                 {
-                    var success = await ViewModel.CreateMantenimientoAsync(
-                        nuevoMantenimientoControl.IdTipoMantenimiento.Value,
-                        nuevoMantenimientoControl.IdCliente.Value,
-                        nuevoMantenimientoControl.IdEquipo.Value,
-                        nuevoMantenimientoControl.Nota
+                    var success = await ViewModel.CreateOrdenServicioAsync(
+                        nuevaOrdenControl.IdTipoMantenimiento.Value,
+                        nuevaOrdenControl.IdCliente.Value,
+                        nuevaOrdenControl.IdEquipo.Value,
+                        nuevaOrdenControl.Nota
                     );
 
                     if (success)
                     {
-                        await _notificacionService.MostrarAsync("Mantenimiento creado", "El mantenimiento se ha creado correctamente.");
+                        await _notificacionService.MostrarAsync("Orden de servicio creada", "La orden de servicio se ha creado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarAsync("Error", "No se pudo crear el mantenimiento. Por favor, intente nuevamente.");
+                        await _notificacionService.MostrarAsync("Error", "No se pudo crear la orden de servicio. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error al crear mantenimiento: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear el mantenimiento. Por favor, intente nuevamente.");
+                    System.Diagnostics.Debug.WriteLine($"Error al crear orden de servicio: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear la orden de servicio. Por favor, intente nuevamente.");
                 }
             }
         }
 
         private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
         {
-            // Get the MantenimientoDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.MantenimientoDto mantenimiento)
+            if (sender is FrameworkElement element && element.Tag is Models.OrdenServicioDto orden)
             {
-                mantenimiento.Expand = !mantenimiento.Expand;
+                orden.Expand = !orden.Expand;
             }
         }
 
         private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
-            // Get the MantenimientoDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.MantenimientoDto mantenimiento)
+            if (sender is FrameworkElement element && element.Tag is Models.OrdenServicioDto orden)
             {
-                mantenimiento.Expand = !mantenimiento.Expand;
+                orden.Expand = !orden.Expand;
             }
         }
 
-        private async void DeleteMantenimientoButton_Click(object sender, RoutedEventArgs e)
+        private async void DeleteOrdenServicioButton_Click(object sender, RoutedEventArgs e)
         {
-            // Obtener el mantenimiento desde el Tag del botón
-            if (sender is not FrameworkElement element || element.Tag is not Models.MantenimientoDto mantenimiento)
+            if (sender is not FrameworkElement element || element.Tag is not Models.OrdenServicioDto orden)
                 return;
 
-            if (!mantenimiento.IdMantenimiento.HasValue)
+            if (!orden.IdOrdenServicio.HasValue)
                 return;
 
-            // Mostrar diálogo de confirmación
             var dialog = new ContentDialog
             {
                 Title = "Confirmar eliminación",
-                Content = $"¿Está seguro de que desea eliminar el mantenimiento #{mantenimiento.IdMantenimiento} ({mantenimiento.TipoMantenimiento})?",
+                Content = $"¿Está seguro de que desea eliminar la orden de servicio #{orden.IdOrdenServicio} ({orden.TipoMantenimiento})?",
                 PrimaryButtonText = "Eliminar",
                 CloseButtonText = "Cancelar",
                 DefaultButton = ContentDialogButton.Close,
@@ -208,37 +192,35 @@ namespace Advance_Control.Views.Pages
             {
                 try
                 {
-                    var success = await ViewModel.DeleteMantenimientoAsync(mantenimiento.IdMantenimiento.Value);
+                    var success = await ViewModel.DeleteOrdenServicioAsync(orden.IdOrdenServicio.Value);
 
                     if (success)
                     {
-                        await _notificacionService.MostrarAsync("Mantenimiento eliminado", "El mantenimiento se ha eliminado correctamente.");
+                        await _notificacionService.MostrarAsync("Orden de servicio eliminada", "La orden de servicio se ha eliminado correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar el mantenimiento. Por favor, intente nuevamente.");
+                        await _notificacionService.MostrarAsync("Error", "No se pudo eliminar la orden de servicio. Por favor, intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error al eliminar mantenimiento: {ex.GetType().Name} - {ex.Message}");
-                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar el mantenimiento. Por favor, intente nuevamente.");
+                    System.Diagnostics.Debug.WriteLine($"Error al eliminar orden de servicio: {ex.GetType().Name} - {ex.Message}");
+                    await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la orden de servicio. Por favor, intente nuevamente.");
                 }
             }
         }
 
-        private async void AtenderMantenimientoButton_Click(object sender, RoutedEventArgs e)
+        private async void AtenderOrdenServicioButton_Click(object sender, RoutedEventArgs e)
         {
-            // Obtener el mantenimiento desde el Tag del botón
-            if (sender is not FrameworkElement element || element.Tag is not Models.MantenimientoDto mantenimiento)
+            if (sender is not FrameworkElement element || element.Tag is not Models.OrdenServicioDto orden)
                 return;
 
-            if (!mantenimiento.IdMantenimiento.HasValue)
+            if (!orden.IdOrdenServicio.HasValue)
                 return;
 
             try
             {
-                // Obtener la información del usuario autenticado
                 var userInfo = await _userInfoService.GetUserInfoAsync();
 
                 if (userInfo == null)
@@ -247,12 +229,11 @@ namespace Advance_Control.Views.Pages
                     return;
                 }
 
-                // Mostrar diálogo de confirmación
-                var tipoMantenimiento = mantenimiento.TipoMantenimiento ?? "sin tipo especificado";
+                var tipoMantenimiento = orden.TipoMantenimiento ?? "sin tipo especificado";
                 var dialog = new ContentDialog
                 {
                     Title = "Confirmar atención",
-                    Content = $"¿Está seguro de que desea marcar como atendido el mantenimiento #{mantenimiento.IdMantenimiento} ({tipoMantenimiento})?",
+                    Content = $"¿Está seguro de que desea marcar como atendida la orden de servicio #{orden.IdOrdenServicio} ({tipoMantenimiento})?",
                     PrimaryButtonText = "Atender",
                     CloseButtonText = "Cancelar",
                     DefaultButton = ContentDialogButton.Primary,
@@ -263,54 +244,50 @@ namespace Advance_Control.Views.Pages
 
                 if (result == ContentDialogResult.Primary)
                 {
-                    var success = await ViewModel.UpdateAtendidoAsync(mantenimiento.IdMantenimiento.Value, userInfo.CredencialId);
+                    var success = await ViewModel.UpdateAtendidoAsync(orden.IdOrdenServicio.Value, userInfo.CredencialId);
 
                     if (success)
                     {
-                        _activityService.Registrar("Mantenimiento", "Mant. atendido");
-                        await _notificacionService.MostrarAsync("Mantenimiento atendido", "El mantenimiento se ha marcado como atendido correctamente.");
+                        _activityService.Registrar("OrdenServicio", "Orden de servicio atendida");
+                        await _notificacionService.MostrarAsync("Orden de servicio atendida", "La orden de servicio se ha marcado como atendida correctamente.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarAsync("Error", "No se pudo marcar el mantenimiento como atendido. Por favor, intente nuevamente.");
+                        await _notificacionService.MostrarAsync("Error", "No se pudo marcar la orden de servicio como atendida. Por favor, intente nuevamente.");
                     }
                 }
             }
             catch (Exception)
             {
-                // Error is already logged in ViewModel and Service layers
-                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender la orden de servicio. Por favor, intente nuevamente.");
             }
         }
 
         private async void AtenderComoButton_Click(object sender, RoutedEventArgs e)
         {
-            // Obtener el mantenimiento desde el Tag del botón
-            if (sender is not FrameworkElement element || element.Tag is not Models.MantenimientoDto mantenimiento)
+            if (sender is not FrameworkElement element || element.Tag is not Models.OrdenServicioDto orden)
                 return;
 
-            if (!mantenimiento.IdMantenimiento.HasValue)
+            if (!orden.IdOrdenServicio.HasValue)
                 return;
 
             try
             {
-                // Obtener técnicos disponibles filtrados por área del equipo
-                var identificador = mantenimiento.Identificador;
+                var identificador = orden.Identificador;
                 if (string.IsNullOrWhiteSpace(identificador))
                 {
-                    await _notificacionService.MostrarAsync("Error", "El mantenimiento no tiene un equipo asociado.");
+                    await _notificacionService.MostrarAsync("Error", "La orden de servicio no tiene un equipo asociado.");
                     return;
                 }
 
-                var tecnicos = await _mantenimientoService.GetTecnicosDisponiblesAsync(identificador);
+                var tecnicos = await _ordenServicioService.GetTecnicosDisponiblesAsync(identificador);
 
                 if (tecnicos == null || tecnicos.Count == 0)
                 {
-                    await _notificacionService.MostrarAsync("Sin técnicos", "No hay técnicos disponibles para atender este mantenimiento en el área del equipo.");
+                    await _notificacionService.MostrarAsync("Sin técnicos", "No hay técnicos disponibles para atender esta orden de servicio en el área del equipo.");
                     return;
                 }
 
-                // Crear ListView para seleccionar técnico
                 var tecnicoListView = new ListView
                 {
                     SelectionMode = ListViewSelectionMode.Single,
@@ -357,7 +334,7 @@ namespace Advance_Control.Views.Pages
                     {
                         new TextBlock
                         {
-                            Text = $"Seleccione un técnico para atender el mantenimiento #{mantenimiento.IdMantenimiento}:",
+                            Text = $"Seleccione un técnico para atender la orden de servicio #{orden.IdOrdenServicio}:",
                             TextWrapping = TextWrapping.Wrap,
                             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
                         },
@@ -377,14 +354,14 @@ namespace Advance_Control.Views.Pages
 
                 var result = await dialog.ShowAsync();
 
-                if (result == ContentDialogResult.Primary && tecnicoListView.SelectedItem is ListViewItem selectedItem 
+                if (result == ContentDialogResult.Primary && tecnicoListView.SelectedItem is ListViewItem selectedItem
                     && selectedItem.Tag is TecnicoDisponibleDto selectedTecnico)
                 {
-                    var tipoMantenimiento = mantenimiento.TipoMantenimiento ?? "sin tipo especificado";
+                    var tipoMantenimiento = orden.TipoMantenimiento ?? "sin tipo especificado";
                     var confirmDialog = new ContentDialog
                     {
                         Title = "Confirmar atención",
-                        Content = $"¿Está seguro de que desea marcar como atendido el mantenimiento #{mantenimiento.IdMantenimiento} ({tipoMantenimiento}) por \"{selectedTecnico.NombreCompleto}\"?",
+                        Content = $"¿Está seguro de que desea marcar como atendida la orden de servicio #{orden.IdOrdenServicio} ({tipoMantenimiento}) por \"{selectedTecnico.NombreCompleto}\"?",
                         PrimaryButtonText = "Atender",
                         CloseButtonText = "Cancelar",
                         DefaultButton = ContentDialogButton.Primary,
@@ -395,28 +372,27 @@ namespace Advance_Control.Views.Pages
 
                     if (confirmResult == ContentDialogResult.Primary)
                     {
-                        // Usar CredencialId del técnico (no ContactoId) — id_atendio referencia credenciales(id)
                         var success = await ViewModel.UpdateAtendidoAsync(
-                            mantenimiento.IdMantenimiento.Value,
+                            orden.IdOrdenServicio.Value,
                             (int)selectedTecnico.CredencialId
                         );
 
                         if (success)
                         {
-                            _activityService.Registrar("Mantenimiento", "Atendido como técnico");
-                            await _notificacionService.MostrarAsync("Mantenimiento atendido", $"El mantenimiento se ha marcado como atendido por {selectedTecnico.NombreCompleto}.");
+                            _activityService.Registrar("OrdenServicio", "Atendida como técnico");
+                            await _notificacionService.MostrarAsync("Orden de servicio atendida", $"La orden de servicio se ha marcado como atendida por {selectedTecnico.NombreCompleto}.");
                         }
                         else
                         {
-                            await _notificacionService.MostrarAsync("Error", "No se pudo marcar el mantenimiento como atendido. Por favor, intente nuevamente.");
+                            await _notificacionService.MostrarAsync("Error", "No se pudo marcar la orden de servicio como atendida. Por favor, intente nuevamente.");
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error al atender mantenimiento como técnico: {ex.GetType().Name} - {ex.Message}");
-                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender el mantenimiento. Por favor, intente nuevamente.");
+                System.Diagnostics.Debug.WriteLine($"Error al atender orden de servicio como técnico: {ex.GetType().Name} - {ex.Message}");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender la orden de servicio. Por favor, intente nuevamente.");
             }
         }
     }

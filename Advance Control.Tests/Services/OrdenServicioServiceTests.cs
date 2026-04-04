@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
-using Advance_Control.Services.Mantenimiento;
+using Advance_Control.Services.OrdenServicio;
 using Moq;
 using Moq.Protected;
 using Xunit;
@@ -14,16 +14,16 @@ using Xunit;
 namespace Advance_Control.Tests.Services
 {
     /// <summary>
-    /// Pruebas unitarias para el servicio de mantenimiento
+    /// Pruebas unitarias para el servicio de órdenes de servicio
     /// </summary>
-    public class MantenimientoServiceTests
+    public class OrdenServicioServiceTests
     {
         private readonly Mock<IApiEndpointProvider> _mockEndpointProvider;
         private readonly Mock<ILoggingService> _mockLogger;
         private readonly Mock<HttpMessageHandler> _mockHttpMessageHandler;
         private readonly HttpClient _httpClient;
 
-        public MantenimientoServiceTests()
+        public OrdenServicioServiceTests()
         {
             _mockEndpointProvider = new Mock<IApiEndpointProvider>();
             _mockLogger = new Mock<ILoggingService>();
@@ -36,15 +36,15 @@ namespace Advance_Control.Tests.Services
 
             // Setup default endpoint provider behavior
             _mockEndpointProvider
-                .Setup(x => x.GetEndpoint("api", "Mantenimiento"))
-                .Returns("https://test.api.com/api/Mantenimiento");
+                .Setup(x => x.GetEndpoint("api", "OrdenServicio"))
+                .Returns("https://test.api.com/api/OrdenServicio");
         }
 
         [Fact]
         public async Task UpdateAtendidoAsync_WhenSuccessful_ReturnsTrue()
         {
             // Arrange
-            int idMantenimiento = 1;
+            int idOrdenServicio = 1;
             int idAtendio = 5;
 
             var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
@@ -59,15 +59,15 @@ namespace Advance_Control.Tests.Services
                     ItExpr.Is<HttpRequestMessage>(req => 
                         req.Method == HttpMethod.Patch &&
                         req.RequestUri!.ToString().Contains("/atendido") &&
-                        req.RequestUri.ToString().Contains($"idMantenimiento={idMantenimiento}") &&
+                        req.RequestUri.ToString().Contains($"idOrdenServicio={idOrdenServicio}") &&
                         req.RequestUri.ToString().Contains($"idAtendio={idAtendio}")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(responseMessage);
 
-            var service = new MantenimientoService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
+            var service = new OrdenServicioService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
 
             // Act
-            var result = await service.UpdateAtendidoAsync(idMantenimiento, idAtendio);
+            var result = await service.UpdateAtendidoAsync(idOrdenServicio, idAtendio);
 
             // Assert
             Assert.True(result);
@@ -77,7 +77,7 @@ namespace Advance_Control.Tests.Services
         public async Task UpdateAtendidoAsync_WhenServerError_ReturnsFalse()
         {
             // Arrange
-            int idMantenimiento = 1;
+            int idOrdenServicio = 1;
             int idAtendio = 5;
 
             var responseMessage = new HttpResponseMessage(HttpStatusCode.InternalServerError)
@@ -93,10 +93,10 @@ namespace Advance_Control.Tests.Services
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(responseMessage);
 
-            var service = new MantenimientoService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
+            var service = new OrdenServicioService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
 
             // Act
-            var result = await service.UpdateAtendidoAsync(idMantenimiento, idAtendio);
+            var result = await service.UpdateAtendidoAsync(idOrdenServicio, idAtendio);
 
             // Assert
             Assert.False(result);
@@ -106,12 +106,12 @@ namespace Advance_Control.Tests.Services
         public async Task UpdateAtendidoAsync_WhenBadRequest_ReturnsFalse()
         {
             // Arrange
-            int idMantenimiento = -1;  // Invalid ID (negative values are not allowed by API)
+            int idOrdenServicio = -1;  // Invalid ID (negative values are not allowed by API)
             int idAtendio = 5;
 
             var responseMessage = new HttpResponseMessage(HttpStatusCode.BadRequest)
             {
-                Content = new StringContent("{\"message\": \"El campo 'idMantenimiento' debe ser mayor que 0.\"}")
+                Content = new StringContent("{\"message\": \"El campo 'idOrdenServicio' debe ser mayor que 0.\"}")
             };
 
             _mockHttpMessageHandler
@@ -122,10 +122,10 @@ namespace Advance_Control.Tests.Services
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(responseMessage);
 
-            var service = new MantenimientoService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
+            var service = new OrdenServicioService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
 
             // Act
-            var result = await service.UpdateAtendidoAsync(idMantenimiento, idAtendio);
+            var result = await service.UpdateAtendidoAsync(idOrdenServicio, idAtendio);
 
             // Assert
             Assert.False(result);
@@ -135,7 +135,7 @@ namespace Advance_Control.Tests.Services
         public async Task UpdateAtendidoAsync_WhenNetworkError_ThrowsInvalidOperationException()
         {
             // Arrange
-            int idMantenimiento = 1;
+            int idOrdenServicio = 1;
             int idAtendio = 5;
 
             _mockHttpMessageHandler
@@ -146,18 +146,18 @@ namespace Advance_Control.Tests.Services
                     ItExpr.IsAny<CancellationToken>())
                 .ThrowsAsync(new HttpRequestException("Network error"));
 
-            var service = new MantenimientoService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
+            var service = new OrdenServicioService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => 
-                service.UpdateAtendidoAsync(idMantenimiento, idAtendio));
+                service.UpdateAtendidoAsync(idOrdenServicio, idAtendio));
         }
 
         [Fact]
         public async Task UpdateAtendidoAsync_CallsCorrectEndpoint()
         {
             // Arrange
-            int idMantenimiento = 123;
+            int idOrdenServicio = 123;
             int idAtendio = 456;
 
             var responseMessage = new HttpResponseMessage(HttpStatusCode.OK)
@@ -181,15 +181,15 @@ namespace Advance_Control.Tests.Services
                 })
                 .ReturnsAsync(responseMessage);
 
-            var service = new MantenimientoService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
+            var service = new OrdenServicioService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
 
             // Act
-            await service.UpdateAtendidoAsync(idMantenimiento, idAtendio);
+            await service.UpdateAtendidoAsync(idOrdenServicio, idAtendio);
 
             // Assert
             Assert.NotNull(capturedUri);
             Assert.Contains("/atendido", capturedUri);
-            Assert.Contains($"idMantenimiento={idMantenimiento}", capturedUri);
+            Assert.Contains($"idOrdenServicio={idOrdenServicio}", capturedUri);
             Assert.Contains($"idAtendio={idAtendio}", capturedUri);
             Assert.Equal(HttpMethod.Patch, capturedMethod);
         }
@@ -198,7 +198,7 @@ namespace Advance_Control.Tests.Services
         public async Task UpdateAtendidoAsync_WithCancellationToken_PropagatesCancellation()
         {
             // Arrange
-            int idMantenimiento = 1;
+            int idOrdenServicio = 1;
             int idAtendio = 5;
             var cts = new CancellationTokenSource();
             cts.Cancel();
@@ -211,11 +211,11 @@ namespace Advance_Control.Tests.Services
                     ItExpr.IsAny<CancellationToken>())
                 .ThrowsAsync(new TaskCanceledException());
 
-            var service = new MantenimientoService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
+            var service = new OrdenServicioService(_httpClient, _mockEndpointProvider.Object, _mockLogger.Object);
 
             // Act & Assert
             await Assert.ThrowsAsync<TaskCanceledException>(() => 
-                service.UpdateAtendidoAsync(idMantenimiento, idAtendio, cts.Token));
+                service.UpdateAtendidoAsync(idOrdenServicio, idAtendio, cts.Token));
         }
     }
 }

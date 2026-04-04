@@ -133,9 +133,9 @@
                                     Content="Asesoría" Icon="ContactInfo" Tag="Asesoria" /
                                 -->
                                 <NavigationViewItem
-                                    Content="Mantenimiento"
+                                    Content="Orden de Servicio"
                                     Icon="Repair"
-                                    Tag="Mantenimiento" />
+                                    Tag="OrdenServicio" />
                                 <NavigationViewItem Content="Levantamientos" Tag="Levantamientos">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xE8FF;" />

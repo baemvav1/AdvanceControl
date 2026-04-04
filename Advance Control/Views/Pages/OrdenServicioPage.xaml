@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Page
-    x:Class="Advance_Control.Views.Pages.MantenimientoPage"
+    x:Class="Advance_Control.Views.Pages.OrdenServicioPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:Advance_Control.Converters"
@@ -48,7 +48,7 @@
                     VerticalAlignment="Center"
                     Click="NuevoButton_Click"
                     Style="{StaticResource AccentButtonStyle}"
-                    ToolTipService.ToolTip="Crear nuevo mantenimiento">
+                    ToolTipService.ToolTip="Crear nueva orden de servicio">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <SymbolIcon Symbol="Add" />
                         <TextBlock VerticalAlignment="Center" Text="Nuevo" />
@@ -57,16 +57,16 @@
             </StackPanel>
         </Grid>
 
-        <!--  Lista de mantenimientos  -->
+        <!--  Lista de órdenes de servicio  -->
         <Grid Grid.Row="1">
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Mantenimientos, Mode=OneWay}">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.OrdenesServicio, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="0" />
                     </ItemsRepeater.Layout>
                     <ItemsRepeater.ItemTemplate>
-                        <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:MantenimientoDto">
+                        <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:OrdenServicioDto">
                             <Grid Margin="0,5,20,5">
                                 <StackPanel Orientation="Vertical">
                                     <Grid
@@ -85,7 +85,7 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
 
-                                        <!--  Información principal del mantenimiento  -->
+                                        <!--  Información principal de la orden de servicio  -->
                                         <StackPanel Grid.Column="0" Spacing="6">
                                             <TextBlock
                                                 FontSize="16"
@@ -121,7 +121,7 @@
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
                                         Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
                                         <Pivot>
-                                            <!--  Información del Mantenimiento  -->
+                                            <!--  Información de la Orden de Servicio  -->
                                             <PivotItem Header="Información">
                                                 <Grid Padding="8">
                                                     <Grid.ColumnDefinitions>
@@ -142,11 +142,11 @@
                                                         <TextBlock
                                                             FontSize="12"
                                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="ID Mantenimiento:" />
+                                                            Text="ID Orden de Servicio:" />
                                                         <TextBlock
                                                             FontSize="13"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind IdMantenimiento}" />
+                                                            Text="{x:Bind IdOrdenServicio}" />
                                                     </StackPanel>
 
                                                     <StackPanel
@@ -232,10 +232,10 @@
                                                     Orientation="Horizontal"
                                                     Spacing="8">
                                                     <Button
-                                                        AutomationProperties.Name="Atender mantenimiento"
-                                                        Click="AtenderMantenimientoButton_Click"
+                                                        AutomationProperties.Name="Atender orden de servicio"
+                                                        Click="AtenderOrdenServicioButton_Click"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Atender mantenimiento">
+                                                        ToolTipService.ToolTip="Atender orden de servicio">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="Accept" />
                                                             <TextBlock Text="Atender" />
@@ -245,17 +245,17 @@
                                                         AutomationProperties.Name="Atender como contacto"
                                                         Click="AtenderComoButton_Click"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Atender mantenimiento como contacto">
+                                                        ToolTipService.ToolTip="Atender orden de servicio como técnico">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="ContactInfo" />
                                                             <TextBlock Text="Atender Como..." />
                                                         </StackPanel>
                                                     </Button>
                                                     <Button
-                                                        AutomationProperties.Name="Eliminar mantenimiento"
-                                                        Click="DeleteMantenimientoButton_Click"
+                                                        AutomationProperties.Name="Eliminar orden de servicio"
+                                                        Click="DeleteOrdenServicioButton_Click"
                                                         Tag="{x:Bind}"
-                                                        ToolTipService.ToolTip="Eliminar mantenimiento">
+                                                        ToolTipService.ToolTip="Eliminar orden de servicio">
                                                         <StackPanel Orientation="Horizontal" Spacing="4">
                                                             <SymbolIcon Symbol="Delete" />
                                                             <TextBlock Text="Eliminar" />
@@ -289,12 +289,12 @@
                     FontSize="16"
                     FontWeight="SemiBold"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Sin mantenimientos" />
+                    Text="Sin órdenes de servicio" />
                 <TextBlock
                     HorizontalAlignment="Center"
                     FontSize="13"
                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                    Text="No se encontraron mantenimientos con los filtros actuales." />
+                    Text="No se encontraron órdenes de servicio con los filtros actuales." />
                 <Button
                     HorizontalAlignment="Center"
                     Click="ClearButton_Click"

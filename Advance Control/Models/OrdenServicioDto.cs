@@ -5,9 +5,9 @@ using System.Text.Json.Serialization;
 namespace Advance_Control.Models
 {
     /// <summary>
-    /// DTO para los datos del mantenimiento que se reciben desde la API
+    /// DTO para los datos de la orden de servicio que se reciben desde la API
     /// </summary>
-    public class MantenimientoDto : INotifyPropertyChanged
+    public class OrdenServicioDto : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -17,13 +17,13 @@ namespace Advance_Control.Models
         }
 
         /// <summary>
-        /// ID del mantenimiento
+        /// ID de la orden de servicio
         /// </summary>
-        [JsonPropertyName("idMantenimiento")]
-        public int? IdMantenimiento { get; set; }
+        [JsonPropertyName("idOrdenServicio")]
+        public int? IdOrdenServicio { get; set; }
 
         /// <summary>
-        /// Tipo de mantenimiento
+        /// Tipo de mantenimiento asociado a la orden
         /// </summary>
         [JsonPropertyName("tipoMantenimiento")]
         public string? TipoMantenimiento { get; set; }
@@ -41,7 +41,7 @@ namespace Advance_Control.Models
         public string? RazonSocial { get; set; }
 
         /// <summary>
-        /// Nota asociada al mantenimiento
+        /// Nota asociada a la orden de servicio
         /// </summary>
         [JsonPropertyName("descripcion")]
         public string? Descripcion { get; set; }
@@ -53,7 +53,7 @@ namespace Advance_Control.Models
         public string? Identificador { get; set; }
 
         /// <summary>
-        /// ID de la credencial del usuario que creó el mantenimiento
+        /// ID de la credencial del usuario que creó la orden de servicio
         /// </summary>
         [JsonPropertyName("credencialId")]
         public int? CredencialId { get; set; }

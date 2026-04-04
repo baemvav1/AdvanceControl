@@ -274,7 +274,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.DashboardPage>("Inicio");
             _navigationService.Configure<Views.Pages.OperacionesPage>("Operaciones");
             _navigationService.Configure<Views.Pages.AsesoriaPage>("Asesoria");
-            _navigationService.Configure<Views.Pages.MantenimientoPage>("Mantenimiento");
+            _navigationService.Configure<Views.Pages.OrdenServicioPage>("OrdenServicio");
             _navigationService.Configure<Views.Pages.LevantamientosView>("Levantamientos");
             _navigationService.Configure<Views.Pages.LevantamientoView>("Levantamiento");
             _navigationService.Configure<Views.Pages.ClientesPage>("Clientes");

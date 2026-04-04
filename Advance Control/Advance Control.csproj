@@ -22,7 +22,7 @@
     <None Remove="Views\Pages\DevsOpsView.xaml" />
     <None Remove="Views\Pages\LevantamientosView.xaml" />
     <None Remove="Views\Pages\LevantamientoView.xaml" />
-    <None Remove="Views\Pages\MantenimientoPage.xaml" />
+    <None Remove="Views\Pages\OrdenServicioPage.xaml" />
     <None Remove="Views\Pages\OperacionesPage.xaml" />
     <None Remove="Views\Pages\AreasPage.xaml" />
     <None Remove="Views\Pages\ConciliacionPage.xaml" />
@@ -197,7 +197,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Page Update="Views\Pages\MantenimientoPage.xaml">
+    <Page Update="Views\Pages\OrdenServicioPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>

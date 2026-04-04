@@ -3,51 +3,52 @@ using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 
-namespace Advance_Control.Services.Mantenimiento
+namespace Advance_Control.Services.OrdenServicio
 {
     /// <summary>
-    /// Servicio para gestionar operaciones con mantenimientos
+    /// Servicio para gestionar operaciones con órdenes de servicio
     /// </summary>
-    public interface IMantenimientoService
+    public interface IOrdenServicioService
     {
         /// <summary>
-        /// Obtiene una lista de mantenimientos según los criterios de búsqueda proporcionados
+        /// Obtiene una lista de órdenes de servicio según los criterios de búsqueda proporcionados
         /// </summary>
         /// <param name="query">Parámetros de búsqueda opcionales</param>
         /// <param name="cancellationToken">Token de cancelación</param>
-        /// <returns>Lista de mantenimientos que cumplen con los criterios</returns>
-        Task<List<MantenimientoDto>> GetMantenimientosAsync(MantenimientoQueryDto? query = null, CancellationToken cancellationToken = default);
+        /// <returns>Lista de órdenes de servicio que cumplen con los criterios</returns>
+        Task<List<OrdenServicioDto>> GetOrdenesServicioAsync(OrdenServicioQueryDto? query = null, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Elimina (soft delete) un mantenimiento por su ID
+        /// Elimina (soft delete) una orden de servicio por su ID
         /// </summary>
-        /// <param name="idMantenimiento">ID del mantenimiento a eliminar</param>
+        /// <param name="idOrdenServicio">ID de la orden de servicio a eliminar</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<bool> DeleteMantenimientoAsync(int idMantenimiento, CancellationToken cancellationToken = default);
+        Task<bool> DeleteOrdenServicioAsync(int idOrdenServicio, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Crea un nuevo mantenimiento
+        /// Crea una nueva orden de servicio
         /// </summary>
         /// <param name="idTipoMantenimiento">ID del tipo de mantenimiento (obligatorio)</param>
         /// <param name="idCliente">ID del cliente (obligatorio)</param>
         /// <param name="idEquipo">ID del equipo (obligatorio)</param>
-        /// <param name="nota">Nota asociada al mantenimiento (opcional)</param>
+        /// <param name="nota">Nota asociada a la orden de servicio (opcional)</param>
+        /// <param name="credencialId">ID de credencial del usuario que crea la orden</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<bool> CreateMantenimientoAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, int credencialId = 0, CancellationToken cancellationToken = default);
+        Task<bool> CreateOrdenServicioAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, int credencialId = 0, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Actualiza el estado de atendido de un mantenimiento
+        /// Actualiza el estado de atendido de una orden de servicio
         /// </summary>
-        /// <param name="idMantenimiento">ID del mantenimiento (obligatorio)</param>
+        /// <param name="idOrdenServicio">ID de la orden de servicio (obligatorio)</param>
         /// <param name="idAtendio">ID del usuario que atendió (obligatorio)</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<bool> UpdateAtendidoAsync(int idMantenimiento, int idAtendio, CancellationToken cancellationToken = default);
+        Task<bool> UpdateAtendidoAsync(int idOrdenServicio, int idAtendio, CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Obtiene los técnicos disponibles para atender un mantenimiento,
+        /// Obtiene los técnicos disponibles para atender una orden de servicio,
         /// filtrados por el área del equipo asociado
         /// </summary>
         /// <param name="identificador">Identificador del equipo</param>

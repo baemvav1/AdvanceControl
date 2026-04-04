@@ -1,9 +1,9 @@
 namespace Advance_Control.Models
 {
     /// <summary>
-    /// DTO para los parámetros de búsqueda del endpoint de mantenimientos
+    /// DTO para los parámetros de búsqueda del endpoint de órdenes de servicio
     /// </summary>
-    public class MantenimientoQueryDto
+    public class OrdenServicioQueryDto
     {
         /// <summary>
         /// Búsqueda parcial por identificador del equipo

@@ -14,9 +14,9 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Advance_Control.Views.Dialogs
 {
     /// <summary>
-    /// UserControl para crear un nuevo mantenimiento con búsqueda de equipo y selección de cliente relacionado
+    /// UserControl para crear una nueva orden de servicio con búsqueda de equipo y selección de cliente relacionado
     /// </summary>
-    public sealed partial class NuevoMantenimientoUserControl : UserControl
+    public sealed partial class NuevaOrdenServicioUserControl : UserControl
     {
         private readonly IEquipoService _equipoService;
         private readonly IRelacionService _relacionService;
@@ -26,7 +26,7 @@ namespace Advance_Control.Views.Dialogs
         private EquipoDto? _selectedEquipo;
         private RelacionClienteDto? _selectedCliente;
 
-        public NuevoMantenimientoUserControl()
+        public NuevaOrdenServicioUserControl()
         {
             this.InitializeComponent();
 
