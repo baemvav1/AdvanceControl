@@ -42,8 +42,15 @@ namespace Advance_Control.Views.Pages
 
         private async void EnviarButton_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.EnviarMensajeAsync();
-            MensajeTextBox.Focus(FocusState.Programmatic);
+            try
+            {
+                await ViewModel.EnviarMensajeAsync();
+                MensajeTextBox.Focus(FocusState.Programmatic);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error en EnviarButton_Click: {ex}");
+            }
         }
 
         private async void MensajeTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
@@ -51,7 +58,14 @@ namespace Advance_Control.Views.Pages
             if (e.Key == global::Windows.System.VirtualKey.Enter)
             {
                 e.Handled = true;
-                await ViewModel.EnviarMensajeAsync();
+                try
+                {
+                    await ViewModel.EnviarMensajeAsync();
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error en MensajeTextBox_KeyDown: {ex}");
+                }
             }
         }
 

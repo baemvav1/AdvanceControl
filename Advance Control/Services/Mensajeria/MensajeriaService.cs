@@ -132,9 +132,26 @@ namespace Advance_Control.Services.Mensajeria
             int? idReferencia = null, string? tipoReferencia = null, string? fechaLimite = null,
             string? archivoUrl = null)
         {
-            if (_hubConnection?.State != HubConnectionState.Connected) return;
-            await _hubConnection.InvokeAsync("EnviarMensaje", paraCredencialId, contenido, tipo,
-                idReferencia, tipoReferencia, fechaLimite, archivoUrl);
+            if (_hubConnection == null)
+            {
+                await _logger.LogErrorAsync("No se puede enviar mensaje: hubConnection es null", null, "MensajeriaService", "EnviarMensajeAsync");
+                return;
+            }
+            if (_hubConnection.State != HubConnectionState.Connected)
+            {
+                await _logger.LogErrorAsync($"No se puede enviar mensaje: estado={_hubConnection.State}", null, "MensajeriaService", "EnviarMensajeAsync");
+                return;
+            }
+            try
+            {
+                await _hubConnection.InvokeAsync("EnviarMensaje", paraCredencialId, contenido, tipo,
+                    idReferencia, tipoReferencia, fechaLimite, archivoUrl);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error en InvokeAsync EnviarMensaje", ex, "MensajeriaService", "EnviarMensajeAsync");
+                throw;
+            }
         }
 
         public async Task MarcarLeidoAsync(long mensajeId)

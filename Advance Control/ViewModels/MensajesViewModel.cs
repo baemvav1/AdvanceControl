@@ -268,19 +268,24 @@ namespace Advance_Control.ViewModels
         {
             _dispatcher?.TryEnqueue(() =>
             {
-                msg.EsMio = false;
-                msg.ImagenUrlCompleta = BuildImageUrl(msg.ArchivoUrl);
-                // Si la conversación está abierta con ese usuario, agregar al chat
-                if (UsuarioSeleccionado?.CredencialId == msg.DeCredencialId)
+                try
                 {
-                    Mensajes.Add(msg);
-                    _ = _mensajeria.MarcarLeidoAsync(msg.Id);
+                    msg.EsMio = false;
+                    msg.ImagenUrlCompleta = BuildImageUrl(msg.ArchivoUrl);
+                    if (UsuarioSeleccionado?.CredencialId == msg.DeCredencialId)
+                    {
+                        Mensajes.Add(msg);
+                        _ = _mensajeria.MarcarLeidoAsync(msg.Id);
+                    }
+                    else
+                    {
+                        var user = Usuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
+                        if (user != null) user.MensajesNoLeidos++;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    // Incrementar contador de no leídos
-                    var user = Usuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
-                    if (user != null) user.MensajesNoLeidos++;
+                    System.Diagnostics.Debug.WriteLine($"Error en OnMensajeRecibido: {ex}");
                 }
             });
         }
@@ -289,10 +294,17 @@ namespace Advance_Control.ViewModels
         {
             _dispatcher?.TryEnqueue(() =>
             {
-                msg.EsMio = true;
-                msg.ImagenUrlCompleta = BuildImageUrl(msg.ArchivoUrl);
-                if (UsuarioSeleccionado?.CredencialId == msg.ParaCredencialId)
-                    Mensajes.Add(msg);
+                try
+                {
+                    msg.EsMio = true;
+                    msg.ImagenUrlCompleta = BuildImageUrl(msg.ArchivoUrl);
+                    if (UsuarioSeleccionado?.CredencialId == msg.ParaCredencialId)
+                        Mensajes.Add(msg);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Error en OnMensajeEnviado: {ex}");
+                }
             });
         }
 
