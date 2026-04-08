@@ -366,6 +366,17 @@
                 Width="40" Height="40"
                 HorizontalAlignment="Center" VerticalAlignment="Center"
                 IsActive="{x:Bind ViewModel.Cargando, Mode=OneWay}" />
+
+            <!--  Error de diagnóstico  -->
+            <TextBlock
+                Grid.Row="1"
+                Margin="16,8"
+                VerticalAlignment="Top"
+                FontSize="12"
+                Foreground="Red"
+                IsTextSelectionEnabled="True"
+                Text="{x:Bind ViewModel.ErrorMensaje, Mode=OneWay}"
+                TextWrapping="Wrap" />
         </Grid>
     </Grid>
 </Page>

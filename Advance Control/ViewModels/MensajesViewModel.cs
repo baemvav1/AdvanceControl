@@ -36,7 +36,7 @@ namespace Advance_Control.ViewModels
                 {
                     OnPropertyChanged(nameof(HayUsuarioSeleccionado));
                     if (value != null)
-                        _ = CargarConversacionAsync(value.CredencialId);
+                        _ = CargarConversacionSeguroAsync(value.CredencialId);
                 }
             }
         }
@@ -76,6 +76,13 @@ namespace Advance_Control.ViewModels
         {
             get => _enviandoImagen;
             set => SetProperty(ref _enviandoImagen, value);
+        }
+
+        private string _errorMensaje = string.Empty;
+        public string ErrorMensaje
+        {
+            get => _errorMensaje;
+            set => SetProperty(ref _errorMensaje, value);
         }
 
         public MensajesViewModel(
@@ -144,6 +151,19 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        private async Task CargarConversacionSeguroAsync(long otroUsuarioId)
+        {
+            try
+            {
+                await CargarConversacionAsync(otroUsuarioId);
+            }
+            catch (Exception ex)
+            {
+                ErrorMensaje = $"Error: {ex.GetType().Name}: {ex.Message}";
+                await _logger.LogErrorAsync("Error no controlado al cargar conversación", ex, "MensajesViewModel", "CargarConversacionSeguroAsync");
+            }
+        }
+
         public async Task CargarConversacionAsync(long otroUsuarioId)
         {
             Cargando = true;
@@ -192,8 +212,9 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
+                ErrorMensaje = $"Error envío: {ex.GetType().Name}: {ex.Message}";
                 await _logger.LogErrorAsync("Error al enviar mensaje", ex, "MensajesViewModel", "EnviarMensajeAsync");
-                TextoMensaje = texto; // Restaurar el texto si falla
+                TextoMensaje = texto;
             }
         }
 
