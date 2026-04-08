@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Window
     x:Class="Advance_Control.Views.Windows.OperacionVisorWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -369,6 +369,7 @@
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Center"
                                                         Checked="CargoCheckBox_Checked"
+                                                        Unchecked="CargoCheckBox_UnChecked"
                                                         IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
                                                         Tag="{x:Bind}" />
                                                 </Grid>
@@ -479,12 +480,7 @@
                                                 <TextBlock Text="Refacción" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Click="ExpandSelectedGalleryButton_Click" ToolTipService.ToolTip="Ver imágenes del cargo seleccionado">
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <SymbolIcon Symbol="Pictures" />
-                                                <TextBlock Text="Imágenes" />
-                                            </StackPanel>
-                                        </Button>
+
 
 
 
@@ -914,6 +910,7 @@
 
                                 <!--  Hojas de servicio  -->
                                 <Border
+                                    x:Name="HojaServicioBorder"
                                     Padding="10"
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -1001,6 +998,7 @@
 
                                 <!--  Prefacturas  -->
                                 <Border
+                                    x:Name="PrefacturaBorder"
                                     Padding="10"
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -1085,6 +1083,7 @@
 
                                 <!--  Órdenes de compra  -->
                                 <Border
+                                    x:Name="OrdenCompraBorder"
                                     Padding="10"
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"

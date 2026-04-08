@@ -947,6 +947,30 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar MensajeriaService (chat + SignalR en tiempo real)
+                    services.AddSingleton<Services.Mensajeria.IMensajeriaService, Services.Mensajeria.MensajeriaService>(sp =>
+                    {
+                        var httpFactory = sp.GetRequiredService<IHttpClientFactory>();
+                        var httpClient = httpFactory.CreateClient("MensajeriaRest");
+                        var endpoints = sp.GetRequiredService<IApiEndpointProvider>();
+                        var logger = sp.GetRequiredService<ILoggingService>();
+                        return new Services.Mensajeria.MensajeriaService(httpClient, endpoints, logger);
+                    });
+                    services.AddHttpClient("MensajeriaRest", (sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar MensajesViewModel
+                    services.AddTransient<ViewModels.MensajesViewModel>();
+
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
                 })

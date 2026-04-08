@@ -381,11 +381,15 @@ namespace Advance_Control.Views.Windows
             catch (Exception ex) { LogDebugError(nameof(CargoField_KeyDown), ex); await MostrarErrorAsync("Error", "Ocurrió un error al actualizar el cargo."); }
         }
 
-        private void CargoCheckBox_Checked(object sender, RoutedEventArgs e)
-        {
+        private async void CargoCheckBox_Checked(object sender, RoutedEventArgs e)
+        {   
             if (sender is not CheckBox cb || cb.Tag is not CargoDto selectedCargo) return;
             foreach (var c in Operacion.Cargos)
                 if (c != selectedCargo) { c.IsSelected = false; c.IsGalleryExpanded = false; }
+
+            if (!selectedCargo.ImagesLoaded)
+                await LoadImagesForCargoSafeAsync(selectedCargo);
+            selectedCargo.IsGalleryExpanded = true;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -418,7 +422,6 @@ namespace Advance_Control.Views.Windows
             }
             catch (Exception ex) { LogDebugError(nameof(UploadSelectedCargoImageButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la imagen."); }
             finally { cargo.IsLoadingImages = false; }
-            ExpandSelectedGalleryButton_Click(sender, e);
         }
 
         private async void EditSelectedCargoButton_Click(object sender, RoutedEventArgs e)
@@ -461,15 +464,6 @@ namespace Advance_Control.Views.Windows
                 await dialog.ShowAsync();
             }
             catch (Exception ex) { LogDebugError(nameof(ViewSelectedRefaccionButton_Click), ex); await MostrarErrorAsync("Error", "No se pudo cargar la refacción."); }
-        }
-
-        private async void ExpandSelectedGalleryButton_Click(object sender, RoutedEventArgs e)
-        {
-            var sel = GetSelectedCargos();
-            if (sel.Count == 0) { await MostrarErrorAsync("Sin selección", "Seleccione un cargo para ver imágenes."); return; }
-            var cargo = sel[0];
-            if (!cargo.HasImages) { await MostrarErrorAsync("Sin imágenes", "El cargo seleccionado no tiene imágenes."); return; }
-            cargo.IsGalleryExpanded = !cargo.IsGalleryExpanded;
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -755,10 +749,24 @@ namespace Advance_Control.Views.Windows
                 };
                 if (result != null)
                 {
-                    // Refrescar desde el servidor igual que hace el delete, para garantizar
-                    // que los DTOs en las colecciones sean verificados y la imagen sea visualizable.
-                    Operacion.ImagesLoaded = false;
-                    await RefreshImageIndicatorsAsync();
+                    switch (imageType)
+                    {
+                        case "Prefactura":
+                            Operacion.ImagenesPrefactura.Add(result);
+                            Operacion.HasPrefactura = true;
+                            PrefacturaBorder.Visibility = Visibility.Visible;
+                            break;
+                        case "HojaServicio":
+                            Operacion.ImagenesHojaServicio.Add(result);
+                            Operacion.HasHojaServicio = true;
+                            HojaServicioBorder.Visibility = Visibility.Visible;
+                            break;
+                        case "OrdenCompra":
+                            Operacion.ImagenesOrdenCompra.Add(result);
+                            Operacion.HasOrdenCompra = true;
+                            OrdenCompraBorder.Visibility = Visibility.Visible;
+                            break;
+                    }
                     _activityService.Registrar("Operaciones", $"{imageType} cargada");
                     var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
                     if (campo != null) await _viewModel.UpdateCheckAsync(Operacion, campo);
@@ -885,6 +893,12 @@ namespace Advance_Control.Views.Windows
                 else await MostrarErrorAsync("Error", "No se pudo eliminar la imagen.");
             }
             catch (Exception ex) { LogDebugError(nameof(DeleteOperacionImageButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al eliminar la imagen."); }
+        }
+
+        private  void CargoCheckBox_UnChecked(object sender, RoutedEventArgs e)
+        {
+            if (sender is not CheckBox cb || cb.Tag is not CargoDto selectedCargo) return;
+            selectedCargo.IsGalleryExpanded = false;
         }
     }
 

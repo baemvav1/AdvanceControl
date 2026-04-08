@@ -256,15 +256,20 @@
                         <!--  Grupo: Correo  -->
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
-                            Content="Correo"
+                            Content="Comunicación"
                             IsExpanded="True"
                             SelectsOnInvoked="False">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE715;" />
                             </NavigationViewItem.Icon>
                             <NavigationViewItem.MenuItems>
+                                <NavigationViewItem Content="Mensajes" Tag="Mensajes">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE8BD;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                                 <NavigationViewItem
-                                    Content="Configuración"
+                                    Content="Configuración Correo"
                                     Icon="Setting"
                                     Tag="Correo" />
                             </NavigationViewItem.MenuItems>
