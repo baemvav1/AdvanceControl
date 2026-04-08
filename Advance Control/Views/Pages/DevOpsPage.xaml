@@ -47,6 +47,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!-- Fila 1 -->
@@ -115,8 +116,19 @@
                     </StackPanel>
                 </Button>
 
-                <Button x:Name="BtnConciliacionRango" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                <Button x:Name="BtnPermisos" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                         HorizontalAlignment="Stretch" Margin="4,4,0,0" Padding="16,12"
+                        Background="#8B5CF6" Foreground="White"
+                        Click="OnLimpiarPermisosClick">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon Glyph="&#xE8D7;" FontSize="16" />
+                        <TextBlock Text="Resetear y Regenerar Permisos" />
+                    </StackPanel>
+                </Button>
+
+                <!-- Fila 4 -->
+                <Button x:Name="BtnConciliacionRango" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3"
+                        HorizontalAlignment="Stretch" Margin="0,4,0,0" Padding="16,12"
                         Background="#CC4A1A" Foreground="White"
                         Click="OnLimpiarConciliacionRangoClick">
                     <StackPanel Orientation="Horizontal" Spacing="8">

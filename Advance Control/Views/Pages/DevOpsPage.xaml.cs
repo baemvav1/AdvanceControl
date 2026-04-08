@@ -99,6 +99,19 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void OnLimpiarPermisosClick(object sender, RoutedEventArgs e)
+        {
+            if (await ConfirmarLimpieza("Permisos",
+                "Se eliminarán TODOS los permisos de módulo y acción de la base de datos " +
+                "y se regenerarán automáticamente desde la aplicación.\n\n" +
+                "⚠️ Todos los niveles configurados manualmente se perderán y volverán al valor " +
+                "por defecto (nivel 8 – más restrictivo). Deberás re-ajustarlos después.\n\n" +
+                "Esta acción NO se puede deshacer."))
+            {
+                await ViewModel.EjecutarLimpiezaAsync("permisos");
+            }
+        }
+
         private async void OnLimpiarConciliacionRangoClick(object sender, RoutedEventArgs e)
         {
             var fechaInicioLabel = new TextBlock { Text = "Fecha inicio:", Margin = new Thickness(0, 0, 0, 4) };

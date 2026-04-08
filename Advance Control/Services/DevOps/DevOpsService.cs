@@ -46,6 +46,9 @@ namespace Advance_Control.Services.DevOps
         public async Task<List<DevOpsWipeResult>> LimpiarUbicacionesAsync(CancellationToken ct = default)
             => await EjecutarLimpiezaAsync("limpiar/ubicaciones", ct);
 
+        public async Task<List<DevOpsWipeResult>> LimpiarPermisosAsync(CancellationToken ct = default)
+            => await EjecutarLimpiezaAsync("limpiar/permisos", ct);
+
         public async Task<List<DevOpsWipeResult>> LimpiarConciliacionPorRangoAsync(
             DateTime fechaInicio, DateTime fechaFin, CancellationToken ct = default)
         {

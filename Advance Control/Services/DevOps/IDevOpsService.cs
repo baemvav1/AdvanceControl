@@ -31,6 +31,9 @@ namespace Advance_Control.Services.DevOps
         /// <summary>Limpia areas, coordenadas, marcadores, ubicaciones y relaciones usuario-area</summary>
         Task<List<DevOpsWipeResult>> LimpiarUbicacionesAsync(CancellationToken ct = default);
 
+        /// <summary>Borra todos los permisos de módulo y acción, reinicia secuencias</summary>
+        Task<List<DevOpsWipeResult>> LimpiarPermisosAsync(CancellationToken ct = default);
+
         /// <summary>Borra facturas, estados de cuenta y todo lo vinculado dentro del rango de fechas</summary>
         Task<List<DevOpsWipeResult>> LimpiarConciliacionPorRangoAsync(DateTime fechaInicio, DateTime fechaFin, CancellationToken ct = default);
 

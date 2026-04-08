@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Advance_Control.Services.DevOps;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.PermisosUi;
 
 namespace Advance_Control.ViewModels
 {
@@ -15,15 +16,17 @@ namespace Advance_Control.ViewModels
     {
         private readonly IDevOpsService _devOpsService;
         private readonly ILoggingService _logger;
+        private readonly IPermisoUiRuntimeService _permisoRuntime;
 
         private bool _isLoading;
         private string _statusMessage = string.Empty;
         private bool _hasError;
 
-        public DevOpsViewModel(IDevOpsService devOpsService, ILoggingService logger)
+        public DevOpsViewModel(IDevOpsService devOpsService, ILoggingService logger, IPermisoUiRuntimeService permisoRuntime)
         {
             _devOpsService = devOpsService ?? throw new ArgumentNullException(nameof(devOpsService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _permisoRuntime = permisoRuntime ?? throw new ArgumentNullException(nameof(permisoRuntime));
 
             Estadisticas = new ObservableCollection<DevOpsStatsResult>();
             UltimosResultados = new ObservableCollection<DevOpsWipeResult>();
@@ -97,6 +100,7 @@ namespace Advance_Control.ViewModels
                     "servicios" => await _devOpsService.LimpiarServiciosAsync(),
                     "logs" => await _devOpsService.LimpiarLogsAsync(),
                     "ubicaciones" => await _devOpsService.LimpiarUbicacionesAsync(),
+                    "permisos" => await _devOpsService.LimpiarPermisosAsync(),
                     _ => throw new ArgumentException($"Módulo desconocido: {modulo}")
                 };
 
@@ -109,6 +113,14 @@ namespace Advance_Control.ViewModels
                 }
 
                 StatusMessage = $"Limpieza de {modulo} completada. {totalEliminados} registros eliminados en {resultados.Count} tablas.";
+
+                // Si se limpiaron permisos, regenerar automáticamente
+                if (modulo.Equals("permisos", StringComparison.OrdinalIgnoreCase))
+                {
+                    StatusMessage += " Regenerando permisos...";
+                    await _permisoRuntime.InitializeAsync(_permisoRuntime.NivelUsuario, forceSync: true);
+                    StatusMessage = $"Permisos reseteados y regenerados correctamente. {totalEliminados} registros eliminados.";
+                }
 
                 // Recargar estadísticas automáticamente
                 await CargarEstadisticasAsync();
