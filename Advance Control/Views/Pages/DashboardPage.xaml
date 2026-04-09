@@ -149,7 +149,7 @@
                         </StackPanel>
                     </Border>
 
-                    <!--  Tarjeta: Mantenimientos  -->
+                    <!--  Tarjeta: Órdenes de Servicio  -->
                     <Border
                         Grid.Column="2"
                         Padding="20,16"
@@ -167,13 +167,13 @@
                                     VerticalAlignment="Center"
                                     FontSize="13"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Mantenimientos" />
+                                    Text="Órdenes de Servicio" />
                             </StackPanel>
                             <TextBlock
                                 FontSize="32"
                                 FontWeight="Bold"
                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="{x:Bind ViewModel.TotalMantenimientos, Mode=OneWay}" />
+                                Text="{x:Bind ViewModel.TotalOrdenesServicio, Mode=OneWay}" />
                             <ProgressBar IsIndeterminate="True"
                                          Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
                         </StackPanel>
@@ -264,11 +264,11 @@
                         </StackPanel>
                     </Button>
                     <Button
-                        x:Name="IrMantenimiento"
-                        Click="IrMantenimiento_Click">
+                        x:Name="IrOrdenServicio"
+                        Click="IrOrdenServicio_Click">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <FontIcon FontSize="16" Glyph="&#xE90F;" />
-                            <TextBlock VerticalAlignment="Center" Text="Mantenimiento" />
+                            <TextBlock VerticalAlignment="Center" Text="Orden de Servicio" />
                         </StackPanel>
                     </Button>
                     <Button

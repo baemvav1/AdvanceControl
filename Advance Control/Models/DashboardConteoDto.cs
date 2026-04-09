@@ -10,8 +10,8 @@ namespace Advance_Control.Models
         [JsonPropertyName("totalOperaciones")]
         public int TotalOperaciones { get; set; }
 
-        [JsonPropertyName("totalMantenimientos")]
-        public int TotalMantenimientos { get; set; }
+        [JsonPropertyName("totalOrdenesServicio")]
+        public int TotalOrdenesServicio { get; set; }
 
         [JsonPropertyName("totalClientes")]
         public int TotalClientes { get; set; }

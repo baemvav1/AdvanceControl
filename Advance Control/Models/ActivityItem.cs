@@ -21,7 +21,7 @@ namespace Advance_Control.Models
         {
             "Clientes"     => "\uE716",
             "Operaciones"  => "\uE9F9",
-            "Mantenimiento"=> "\uE90F",
+            "OrdenServicio" => "\uE90F",
             "Equipos"      => "\uE7F4",
             "Proveedores"  => "\uE8D7",
             "Servicios"    => "\uE7BA",

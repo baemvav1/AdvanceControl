@@ -10,7 +10,7 @@ namespace Advance_Control.Services.Dashboard
     public interface IDashboardService
     {
         /// <summary>
-        /// Obtiene los conteos de operaciones, mantenimientos, clientes y equipos
+        /// Obtiene los conteos de operaciones, órdenes de servicio, clientes y equipos
         /// del usuario autenticado.
         /// </summary>
         Task<DashboardConteoDto?> GetConteosAsync(CancellationToken cancellationToken = default);

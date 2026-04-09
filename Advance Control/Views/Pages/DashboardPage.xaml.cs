@@ -51,8 +51,8 @@ namespace Advance_Control.Views.Pages
         private void IrOperaciones_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => _navigationService.Navigate("Operaciones");
 
-        private void IrMantenimiento_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-            => _navigationService.Navigate("Mantenimiento");
+        private void IrOrdenServicio_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+            => _navigationService.Navigate("OrdenServicio");
 
         private void IrClientes_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
             => _navigationService.Navigate("Clientes");

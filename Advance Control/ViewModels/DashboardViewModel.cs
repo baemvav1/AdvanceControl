@@ -35,7 +35,7 @@ namespace Advance_Control.ViewModels
         private bool _isTareasLoading;
         private bool _isTareasEmpty = true;
         private int _totalOperaciones;
-        private int _totalMantenimientos;
+        private int _totalOrdenesServicio;
         private int _totalClientes;
         private int _totalEquipos;
         private bool _showCards;
@@ -133,10 +133,10 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _totalOperaciones, value);
         }
 
-        public int TotalMantenimientos
+        public int TotalOrdenesServicio
         {
-            get => _totalMantenimientos;
-            set => SetProperty(ref _totalMantenimientos, value);
+            get => _totalOrdenesServicio;
+            set => SetProperty(ref _totalOrdenesServicio, value);
         }
 
         public int TotalClientes
@@ -219,7 +219,7 @@ namespace Advance_Control.ViewModels
                 if (conteos != null)
                 {
                     TotalOperaciones = conteos.TotalOperaciones;
-                    TotalMantenimientos = conteos.TotalMantenimientos;
+                    TotalOrdenesServicio = conteos.TotalOrdenesServicio;
                     TotalClientes = conteos.TotalClientes;
                     TotalEquipos = conteos.TotalEquipos;
                 }

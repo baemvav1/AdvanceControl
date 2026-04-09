@@ -18,7 +18,7 @@ namespace Advance_Control.Models
         /// <summary>Icono según el origen de la alerta.</summary>
         public string Icono => Origen switch
         {
-            "Mantenimiento" => "\uE90F",   // Repair/Wrench
+            "OrdenServicio" => "\uE90F",   // Repair/Wrench
             "Operaciones"   => "\uE7BA",   // Warning
             "Equipos"       => "\uE7F4",   // AllApps/Devices
             "Cotizaciones"  => "\uE7BC",   // Document
