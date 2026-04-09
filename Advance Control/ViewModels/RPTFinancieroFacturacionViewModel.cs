@@ -242,6 +242,46 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public async Task<string> GenerarReporteSimplificadoAsync()
+        {
+            if (_detallesBase.Count == 0)
+            {
+                throw new InvalidOperationException("No hay registros visibles para generar el reporte simplificado.");
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var rutaArchivo = await _exportService.GenerarReporteSimplificadoPdfAsync(
+                    _cabecerasBase,
+                    _detallesBase,
+                    ReceptorRfcFiltro,
+                    ReferenciaFiltro,
+                    FechaInicioFiltro,
+                    FechaFinFiltro,
+                    ObtenerFiniquitoFiltro(),
+                    _movimientosNcCount,
+                    _movimientosNcTotal,
+                    _mostrarMovimientosNoConciliados);
+
+                SuccessMessage = $"Reporte simplificado generado: {rutaArchivo}";
+                return rutaArchivo;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el reporte simplificado: {ex.Message}";
+                SuccessMessage = null;
+                throw;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private IEnumerable<ReporteFinancieroFacturacionListadoItemDto> ConstruirListadoVertical()
         {
             foreach (var cabecera in _cabecerasBase)

@@ -18,5 +18,17 @@ namespace Advance_Control.Services.Reportes
             int movimientosNcCount,
             decimal movimientosNcTotal,
             bool mostrarMovimientosNc = true);
+
+        Task<string> GenerarReporteSimplificadoPdfAsync(
+            IReadOnlyList<ReporteFinancieroFacturacionCabeceraDto> cabeceras,
+            IReadOnlyList<ReporteFinancieroFacturacionDetalleDto> detalles,
+            string? receptorRfcFiltro,
+            string? referenciaFiltro,
+            DateTimeOffset? fechaInicioFiltro,
+            DateTimeOffset? fechaFinFiltro,
+            bool? finiquitoFiltro,
+            int movimientosNcCount,
+            decimal movimientosNcTotal,
+            bool mostrarMovimientosNc = true);
     }
 }

@@ -90,6 +90,7 @@
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <Button Click="BtnLimpiar_Click" Content="Limpiar filtros" />
                     <Button Click="BtnGenerarReporte_Click" Content="Generar Reporte" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" />
+                    <Button Click="BtnGenerarReporteSimplificado_Click" Content="Generar Reporte Simplificado" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
                     <CheckBox Content="Mostrar mov. no conciliados" IsChecked="{x:Bind ViewModel.MostrarMovimientosNoConciliados, Mode=TwoWay}" />
                     <ProgressRing
                         Width="24"

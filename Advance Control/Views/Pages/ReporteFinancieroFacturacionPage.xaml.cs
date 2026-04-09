@@ -69,6 +69,23 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void BtnGenerarReporteSimplificado_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var rutaArchivo = await ViewModel.GenerarReporteSimplificadoAsync();
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (System.Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudo generar el reporte simplificado: {ex.Message}";
+                ViewModel.SuccessMessage = null;
+            }
+        }
+
         private void ProgramarRecargaLive()
         {
             _filtrosLiveCts?.Cancel();

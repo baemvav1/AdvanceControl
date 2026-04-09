@@ -38,6 +38,7 @@ namespace Advance_Control.Models
         public string? TipoOperacion { get; set; }
         public decimal? Abono { get; set; }
         public string? Referencia { get; set; }
+        public string? ConceptosTexto { get; set; }
         public List<AbonoFacturaDto> Abonos { get; set; } = new();
 
         public string FolioTexto => string.IsNullOrWhiteSpace(Folio) ? "Sin folio" : Folio!;

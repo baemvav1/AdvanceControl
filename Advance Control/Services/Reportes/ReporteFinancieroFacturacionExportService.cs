@@ -415,5 +415,252 @@ namespace Advance_Control.Services.Reportes
                 .DefaultTextStyle(x => x.FontSize(8));
         }
 
+        /// <summary>
+        /// Genera el PDF del reporte simplificado: tabla tipo Excel con
+        /// Folio, Fecha Emisión, Conceptos y Observación (Pendiente o fechas de abonos).
+        /// </summary>
+        public Task<string> GenerarReporteSimplificadoPdfAsync(
+            IReadOnlyList<ReporteFinancieroFacturacionCabeceraDto> cabeceras,
+            IReadOnlyList<ReporteFinancieroFacturacionDetalleDto> detalles,
+            string? receptorRfcFiltro,
+            string? referenciaFiltro,
+            DateTimeOffset? fechaInicioFiltro,
+            DateTimeOffset? fechaFinFiltro,
+            bool? finiquitoFiltro,
+            int movimientosNcCount,
+            decimal movimientosNcTotal,
+            bool mostrarMovimientosNc = true)
+        {
+            if (cabeceras == null) throw new ArgumentNullException(nameof(cabeceras));
+            if (detalles == null) throw new ArgumentNullException(nameof(detalles));
+            if (detalles.Count == 0) throw new InvalidOperationException("No hay registros visibles para generar el reporte.");
+
+            var carpeta = ObtenerCarpetaReportes();
+            Directory.CreateDirectory(carpeta);
+
+            var rutaArchivo = Path.Combine(carpeta, ConstruirNombreArchivoSimplificado(receptorRfcFiltro));
+            var resumenFiltros = ConstruirResumenFiltros(receptorRfcFiltro, referenciaFiltro, fechaInicioFiltro, fechaFinFiltro, finiquitoFiltro);
+            var totalFacturado = cabeceras.Sum(item => item.TotalFacturado);
+            var totalFiniquitado = cabeceras.Sum(item => item.TotalAbonadoMovimientos);
+            var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "EstadoCuenta.png");
+
+            // Construir las filas del reporte simplificado
+            var filas = ConstruirFilasSimplificadas(detalles);
+
+            var documento = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.Letter.Landscape());
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(9));
+
+                    // Encabezado: misma estructura que el reporte actual
+                    page.Header().ShowOnce().Column(column =>
+                    {
+                        if (File.Exists(cabeceraPath))
+                        {
+                            column.Item().Image(cabeceraPath).FitWidth();
+                        }
+
+                        column.Item().Text("Reporte Simplificado de Facturación")
+                            .FontSize(18)
+                            .SemiBold()
+                            .FontColor(Colors.Blue.Darken2);
+
+                        column.Item().Text($"Generado: {DateTime.Now.ToString("dd/MM/yyyy HH:mm", Cultura)}")
+                            .FontSize(9)
+                            .FontColor(Colors.Grey.Darken1);
+
+                        // Filtros aplicados
+                        column.Item().PaddingTop(4).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(filtros =>
+                        {
+                            filtros.Spacing(2);
+                            filtros.Item().Text("Filtros aplicados").SemiBold().FontSize(8);
+                            foreach (var linea in resumenFiltros)
+                            {
+                                filtros.Item().Text(linea).FontSize(8);
+                            }
+                        });
+
+                        // Resumen
+                        column.Item().PaddingTop(4).PaddingBottom(8).Row(row =>
+                        {
+                            row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(resumen =>
+                            {
+                                resumen.Item().Text("Resumen").SemiBold().FontSize(8);
+                                resumen.Item().Text($"{cabeceras.Sum(item => item.NumeroFacturas)} factura(s) en {cabeceras.Count} cliente(s)").FontSize(8);
+                                resumen.Item().Text($"Total facturado: {totalFacturado.ToString("C2", Cultura)}  |  Total finiquitado: {totalFiniquitado.ToString("C2", Cultura)}").FontSize(8);
+                                if (mostrarMovimientosNc)
+                                {
+                                    resumen.Item().Text($"Movimientos no conciliados: {movimientosNcTotal.ToString("C2", Cultura)} ({movimientosNcCount})").FontSize(8);
+                                }
+                            });
+                        });
+                    });
+
+                    // Contenido: tabla tipo Excel
+                    page.Content().Table(tabla =>
+                    {
+                        tabla.ColumnsDefinition(columnas =>
+                        {
+                            columnas.ConstantColumn(80);   // Folio
+                            columnas.ConstantColumn(85);   // Fecha Emisión
+                            columnas.RelativeColumn();     // Conceptos
+                            columnas.ConstantColumn(100);  // Observación
+                        });
+
+                        // Encabezado de tabla
+                        tabla.Header(header =>
+                        {
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Folio");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Fecha Emisión");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Conceptos");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Observación");
+                        });
+
+                        // Filas de datos
+                        foreach (var fila in filas)
+                        {
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, fila.EsPrimerAbono)).Text(fila.Folio).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, fila.EsPrimerAbono)).Text(fila.FechaEmision).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, fila.EsPrimerAbono)).Text(fila.Conceptos).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, fila.EsPrimerAbono)).Text(fila.Observacion).FontSize(8);
+                        }
+                    });
+
+                    page.Footer().AlignRight().Text(text =>
+                    {
+                        text.Span("Página ");
+                        text.CurrentPageNumber();
+                        text.Span(" de ");
+                        text.TotalPages();
+                    });
+                });
+            });
+
+            documento.GeneratePdf(rutaArchivo);
+            return Task.FromResult(rutaArchivo);
+        }
+
+        /// <summary>
+        /// Construye las filas del reporte simplificado a partir de los detalles.
+        /// Para facturas con múltiples abonos, duplica la fila con diferente Observación.
+        /// </summary>
+        private static List<FilaReporteSimplificado> ConstruirFilasSimplificadas(
+            IReadOnlyList<ReporteFinancieroFacturacionDetalleDto> detalles)
+        {
+            var filas = new List<FilaReporteSimplificado>();
+
+            foreach (var detalle in detalles)
+            {
+                var folio = detalle.FolioTexto;
+                var fecha = detalle.FechaTimbrado.HasValue
+                    ? detalle.FechaTimbrado.Value.ToString("dd/MM/yyyy")
+                    : "Sin fecha";
+                var conceptos = string.IsNullOrWhiteSpace(detalle.ConceptosTexto)
+                    ? "Sin conceptos"
+                    : detalle.ConceptosTexto;
+
+                if (detalle.Abonos.Count == 0)
+                {
+                    // Sin abonos → "Pendiente"
+                    filas.Add(new FilaReporteSimplificado
+                    {
+                        Folio = folio,
+                        FechaEmision = fecha,
+                        Conceptos = conceptos,
+                        Observacion = "Pendiente",
+                        EsPrimerAbono = true
+                    });
+                }
+                else if (detalle.Abonos.Count == 1)
+                {
+                    // Un solo abono → fecha del abono
+                    var abono = detalle.Abonos[0];
+                    filas.Add(new FilaReporteSimplificado
+                    {
+                        Folio = folio,
+                        FechaEmision = fecha,
+                        Conceptos = conceptos,
+                        Observacion = abono.FechaAbono.ToString("dd/MM/yyyy"),
+                        EsPrimerAbono = true
+                    });
+                }
+                else
+                {
+                    // Múltiples abonos → una fila por abono
+                    var abonosOrdenados = detalle.Abonos.OrderBy(a => a.FechaAbono).ThenBy(a => a.IdAbonoFactura).ToList();
+                    for (int i = 0; i < abonosOrdenados.Count; i++)
+                    {
+                        filas.Add(new FilaReporteSimplificado
+                        {
+                            Folio = folio,
+                            FechaEmision = fecha,
+                            Conceptos = conceptos,
+                            Observacion = abonosOrdenados[i].FechaAbono.ToString("dd/MM/yyyy"),
+                            EsPrimerAbono = i == 0
+                        });
+                    }
+                }
+            }
+
+            return filas;
+        }
+
+        private static string ConstruirNombreArchivoSimplificado(string? receptorRfcFiltro)
+        {
+            var rfc = string.IsNullOrWhiteSpace(receptorRfcFiltro)
+                ? "General"
+                : LimpiarNombreArchivo(receptorRfcFiltro.Trim().ToUpperInvariant());
+            return $"ReporteSimplificado_{rfc}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+        }
+
+        private static IContainer EstiloCeldaEncabezado(IContainer container)
+        {
+            return container
+                .Border(1)
+                .BorderColor(Colors.Grey.Medium)
+                .Background(Colors.Blue.Darken2)
+                .PaddingVertical(4)
+                .PaddingHorizontal(4)
+                .DefaultTextStyle(x => x.FontSize(9).SemiBold().FontColor(Colors.White));
+        }
+
+        private static IContainer EstiloCeldaDatos(IContainer container, bool bordeArriba)
+        {
+            var c = container
+                .BorderBottom(1)
+                .BorderLeft(1)
+                .BorderRight(1)
+                .BorderColor(Colors.Grey.Lighten1)
+                .PaddingVertical(3)
+                .PaddingHorizontal(4);
+
+            if (bordeArriba)
+            {
+                c = container
+                    .Border(1)
+                    .BorderColor(Colors.Grey.Lighten1)
+                    .PaddingVertical(3)
+                    .PaddingHorizontal(4);
+            }
+
+            return c;
+        }
+
+        /// <summary>
+        /// Fila del reporte simplificado.
+        /// </summary>
+        private class FilaReporteSimplificado
+        {
+            public string Folio { get; set; } = string.Empty;
+            public string FechaEmision { get; set; } = string.Empty;
+            public string Conceptos { get; set; } = string.Empty;
+            public string Observacion { get; set; } = string.Empty;
+            public bool EsPrimerAbono { get; set; } = true;
+        }
+
     }
 }
