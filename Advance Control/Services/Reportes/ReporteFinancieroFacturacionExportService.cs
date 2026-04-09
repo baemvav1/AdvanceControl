@@ -630,24 +630,22 @@ namespace Advance_Control.Services.Reportes
 
         private static IContainer EstiloCeldaDatos(IContainer container, bool bordeArriba)
         {
-            var c = container
-                .BorderBottom(1)
-                .BorderLeft(1)
-                .BorderRight(1)
-                .BorderColor(Colors.Grey.Lighten1)
-                .PaddingVertical(3)
-                .PaddingHorizontal(4);
-
             if (bordeArriba)
             {
-                c = container
+                return container
                     .Border(1)
                     .BorderColor(Colors.Grey.Lighten1)
                     .PaddingVertical(3)
                     .PaddingHorizontal(4);
             }
 
-            return c;
+            return container
+                .BorderBottom(1)
+                .BorderLeft(1)
+                .BorderRight(1)
+                .BorderColor(Colors.Grey.Lighten1)
+                .PaddingVertical(3)
+                .PaddingHorizontal(4);
         }
 
         /// <summary>
