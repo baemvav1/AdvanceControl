@@ -815,7 +815,7 @@
                                     BorderThickness="1"
                                     CornerRadius="8">
                                     <StackPanel Spacing="10">
-                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <FontIcon
                                                 FontSize="14"
                                                 Foreground="{ThemeResource SystemAccentColor}"
@@ -825,18 +825,8 @@
                                                 FontWeight="SemiBold"
                                                 Text="Cargar documentos" />
                                         </StackPanel>
-                                        <Grid ColumnSpacing="6" RowSpacing="6">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
                                             <Button
-                                                Grid.Row="0"
-                                                Grid.Column="0"
                                                 HorizontalAlignment="Stretch"
                                                 Click="UploadPrefacturaButton_Click"
                                                 IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
@@ -846,9 +836,8 @@
                                                     <TextBlock FontSize="12" Text="Prefactura" />
                                                 </StackPanel>
                                             </Button>
+                                            <AppBarSeparator />
                                             <Button
-                                                Grid.Row="0"
-                                                Grid.Column="1"
                                                 HorizontalAlignment="Stretch"
                                                 Click="UploadHojaServicioButton_Click"
                                                 IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
@@ -858,9 +847,8 @@
                                                     <TextBlock FontSize="12" Text="Hoja Serv." />
                                                 </StackPanel>
                                             </Button>
+                                            <AppBarSeparator />
                                             <Button
-                                                Grid.Row="1"
-                                                Grid.Column="0"
                                                 HorizontalAlignment="Stretch"
                                                 Click="UploadOrdenCompraButton_Click"
                                                 IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
@@ -870,9 +858,19 @@
                                                     <TextBlock FontSize="12" Text="Orden C." />
                                                 </StackPanel>
                                             </Button>
+                                            <AppBarSeparator />
                                             <Button
-                                                Grid.Row="1"
-                                                Grid.Column="1"
+                                                HorizontalAlignment="Stretch"
+                                                Click="UploadLevantamientoButton_Click"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                ToolTipService.ToolTip="Cargar documento de levantamiento">
+                                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                                    <FontIcon FontSize="12" Glyph="&#xE898;" />
+                                                    <TextBlock FontSize="12" Text="Levantamiento" />
+                                                </StackPanel>
+                                            </Button>
+                                            <AppBarSeparator />
+                                            <Button
                                                 HorizontalAlignment="Stretch"
                                                 Click="UploadFacturaButton_Click"
                                                 IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
@@ -883,7 +881,7 @@
                                                     <TextBlock FontSize="12" Text="Factura" />
                                                 </StackPanel>
                                             </Button>
-                                        </Grid>
+                                        </StackPanel>
                                         <Button
                                             HorizontalAlignment="Stretch"
                                             Click="VerFacturaButton_Click"
@@ -1096,6 +1094,91 @@
                                             FontWeight="SemiBold"
                                             Text="Órdenes de compra" />
                                         <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesOrdenCompra, Mode=OneWay}">
+                                            <ItemsRepeater.Layout>
+                                                <StackLayout Orientation="Horizontal" Spacing="6" />
+                                            </ItemsRepeater.Layout>
+                                            <ItemsRepeater.ItemTemplate>
+                                                <DataTemplate x:DataType="models:OperacionImageDto">
+                                                    <Grid
+                                                        Width="88"
+                                                        Height="88"
+                                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                        CornerRadius="6">
+                                                        <Button
+                                                            Padding="0"
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="ViewOperacionImageButton_Click"
+                                                            CornerRadius="6"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Ver imagen"
+                                                            Visibility="{x:Bind ImageVisibility, Mode=OneWay}">
+                                                            <Image Source="{x:Bind converters:FilePathToImageConverter.ToImage(Url), Mode=OneWay}" Stretch="UniformToFill" />
+                                                        </Button>
+                                                        <Button
+                                                            Padding="4"
+                                                            HorizontalAlignment="Stretch"
+                                                            VerticalAlignment="Stretch"
+                                                            Background="Transparent"
+                                                            BorderThickness="0"
+                                                            Click="ViewOperacionImageButton_Click"
+                                                            CornerRadius="6"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Abrir PDF"
+                                                            Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
+                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                                <FontIcon
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="32"
+                                                                    Foreground="#E05252"
+                                                                    Glyph="&#xEA90;" />
+                                                                <TextBlock
+                                                                    HorizontalAlignment="Center"
+                                                                    FontSize="9"
+                                                                    MaxLines="2"
+                                                                    Text="{x:Bind FileName, Mode=OneWay}"
+                                                                    TextTrimming="CharacterEllipsis"
+                                                                    TextWrapping="WrapWholeWords" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                        <Button
+                                                            MinWidth="18"
+                                                            MinHeight="18"
+                                                            Margin="0,2,2,0"
+                                                            Padding="3"
+                                                            HorizontalAlignment="Right"
+                                                            VerticalAlignment="Top"
+                                                            Background="#CC000000"
+                                                            Click="DeleteOperacionImageButton_Click"
+                                                            CornerRadius="9"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Eliminar archivo">
+                                                            <SymbolIcon Foreground="White" Symbol="Cancel" />
+                                                        </Button>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsRepeater.ItemTemplate>
+                                        </ItemsRepeater>
+                                    </StackPanel>
+                                </Border>
+
+                                <!--  Levantamientos  -->
+                                <Border
+                                    x:Name="LevantamientoBorder"
+                                    Padding="10"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="8"
+                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasLevantamiento), Mode=OneWay}">
+                                    <StackPanel Spacing="8">
+                                        <TextBlock
+                                            FontSize="12"
+                                            FontWeight="SemiBold"
+                                            Text="Levantamientos" />
+                                        <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesLevantamiento, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
                                             </ItemsRepeater.Layout>

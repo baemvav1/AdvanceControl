@@ -43,6 +43,11 @@ namespace Advance_Control.Services.LocalStorage
         Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Sube una imagen/PDF de levantamiento para una operación específica
+        /// </summary>
+        Task<OperacionImageDto?> UploadLevantamientoAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Obtiene todas las imágenes de prefacturas de una operación
         /// </summary>
         /// <param name="idOperacion">ID de la operación</param>
@@ -61,10 +66,12 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene todas las imágenes de órdenes de compra de una operación
         /// </summary>
-        /// <param name="idOperacion">ID de la operación</param>
-        /// <param name="cancellationToken">Token de cancelación</param>
-        /// <returns>Lista de imágenes de órdenes de compra de la operación</returns>
         Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene todas las imágenes/PDFs de levantamiento de una operación
+        /// </summary>
+        Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sube un archivo PDF de factura para una operación (solo se permite uno)

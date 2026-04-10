@@ -182,21 +182,24 @@ namespace Advance_Control.Views.Windows
             if (!Operacion.IdOperacion.HasValue) return;
             try
             {
-                var prefacturas   = await _operacionImageService.GetPrefacturasAsync(Operacion.IdOperacion.Value);
-                var hojasServicio = await _operacionImageService.GetHojasServicioAsync(Operacion.IdOperacion.Value);
-                var ordenesCompra = await _operacionImageService.GetOrdenComprasAsync(Operacion.IdOperacion.Value);
-                var hasFactura    = await _operacionImageService.HasFacturaAsync(Operacion.IdOperacion.Value);
+                var prefacturas     = await _operacionImageService.GetPrefacturasAsync(Operacion.IdOperacion.Value);
+                var hojasServicio   = await _operacionImageService.GetHojasServicioAsync(Operacion.IdOperacion.Value);
+                var ordenesCompra   = await _operacionImageService.GetOrdenComprasAsync(Operacion.IdOperacion.Value);
+                var levantamientos  = await _operacionImageService.GetLevantamientosAsync(Operacion.IdOperacion.Value);
+                var hasFactura      = await _operacionImageService.HasFacturaAsync(Operacion.IdOperacion.Value);
 
-                Operacion.HasPrefactura   = prefacturas.Count > 0;
-                Operacion.HasHojaServicio = hojasServicio.Count > 0;
-                Operacion.HasOrdenCompra  = ordenesCompra.Count > 0;
-                Operacion.HasFactura      = hasFactura;
+                Operacion.HasPrefactura    = prefacturas.Count > 0;
+                Operacion.HasHojaServicio  = hojasServicio.Count > 0;
+                Operacion.HasOrdenCompra   = ordenesCompra.Count > 0;
+                Operacion.HasLevantamiento = levantamientos.Count > 0;
+                Operacion.HasFactura       = hasFactura;
 
                 // Limpiar y repoblar las colecciones existentes en vez de reemplazar
                 // para que ItemsRepeater detecte los cambios vía CollectionChanged.
                 ReplaceItems(Operacion.ImagenesPrefactura, prefacturas);
                 ReplaceItems(Operacion.ImagenesHojaServicio, hojasServicio);
                 ReplaceItems(Operacion.ImagenesOrdenCompra, ordenesCompra);
+                ReplaceItems(Operacion.ImagenesLevantamiento, levantamientos);
 
                 Operacion.ImagesLoaded = true;
             }
@@ -742,10 +745,11 @@ namespace Advance_Control.Views.Windows
 
                 OperacionImageDto? result = imageType switch
                 {
-                    "Prefactura"   => await _operacionImageService.UploadPrefacturaAsync(Operacion.IdOperacion.Value, stream, contentType),
-                    "HojaServicio" => await _operacionImageService.UploadHojaServicioAsync(Operacion.IdOperacion.Value, stream, contentType),
-                    "OrdenCompra"  => await _operacionImageService.UploadOrdenCompraAsync(Operacion.IdOperacion.Value, stream, contentType),
-                    _              => null
+                    "Prefactura"    => await _operacionImageService.UploadPrefacturaAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    "HojaServicio"  => await _operacionImageService.UploadHojaServicioAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    "OrdenCompra"   => await _operacionImageService.UploadOrdenCompraAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    "Levantamiento" => await _operacionImageService.UploadLevantamientoAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    _               => null
                 };
                 if (result != null)
                 {
@@ -766,6 +770,11 @@ namespace Advance_Control.Views.Windows
                             Operacion.HasOrdenCompra = true;
                             OrdenCompraBorder.Visibility = Visibility.Visible;
                             break;
+                        case "Levantamiento":
+                            Operacion.ImagenesLevantamiento.Add(result);
+                            Operacion.HasLevantamiento = true;
+                            LevantamientoBorder.Visibility = Visibility.Visible;
+                            break;
                     }
                     _activityService.Registrar("Operaciones", $"{imageType} cargada");
                     var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
@@ -780,6 +789,7 @@ namespace Advance_Control.Views.Windows
         private async void UploadPrefacturaButton_Click(object sender, RoutedEventArgs e)   => await UploadOperacionImageAsync("Prefactura");
         private async void UploadHojaServicioButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageAsync("HojaServicio");
         private async void UploadOrdenCompraButton_Click(object sender, RoutedEventArgs e)  => await UploadOperacionImageAsync("OrdenCompra");
+        private async void UploadLevantamientoButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageAsync("Levantamiento");
 
         private async void UploadFacturaButton_Click(object sender, RoutedEventArgs e)
         {

@@ -45,6 +45,9 @@ namespace Advance_Control.Services.LocalStorage
         public Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken ct = default)
             => UploadAsync(idOperacion, imageStream, contentType, "orden_compra", ct);
 
+        public Task<OperacionImageDto?> UploadLevantamientoAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken ct = default)
+            => UploadAsync(idOperacion, imageStream, contentType, "levantamiento", ct);
+
         public async Task<OperacionImageDto?> UploadFacturaAsync(int idOperacion, Stream pdfStream, CancellationToken ct = default)
         {
             try
@@ -82,6 +85,9 @@ namespace Advance_Control.Services.LocalStorage
 
         public Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, CancellationToken ct = default)
             => GetListAsync(idOperacion, "orden_compra", ct);
+
+        public Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, CancellationToken ct = default)
+            => GetListAsync(idOperacion, "levantamiento", ct);
 
         public async Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, CancellationToken ct = default)
         {
@@ -162,11 +168,12 @@ namespace Advance_Control.Services.LocalStorage
                 var vpsNames = new HashSet<string>(apiFiles.Select(f => f.FileName), StringComparer.OrdinalIgnoreCase);
                 var localPattern = tipo switch
                 {
-                    "prefactura"    => $"{idOperacion}_Prefactura_*.*",
-                    "hoja_servicio" => $"{idOperacion}_HojaServicio_*.*",
-                    "orden_compra"  => $"{idOperacion}_*_OrdenCompra.*",
-                    "factura"       => $"{idOperacion}_Factura.*",
-                    _               => null
+                    "prefactura"     => $"{idOperacion}_Prefactura_*.*",
+                    "hoja_servicio"  => $"{idOperacion}_HojaServicio_*.*",
+                    "orden_compra"   => $"{idOperacion}_*_OrdenCompra.*",
+                    "levantamiento"  => $"{idOperacion}_Levantamiento_*.*",
+                    "factura"        => $"{idOperacion}_Factura.*",
+                    _                => null
                 };
                 if (localPattern != null)
                 {
@@ -277,6 +284,10 @@ namespace Advance_Control.Services.LocalStorage
 
             m = Regex.Match(nameNoExt, $@"^{idOp}_HojaServicio_(\d+)$", RegexOptions.IgnoreCase);
             if (m.Success) return ("HojaServicio", int.Parse(m.Groups[1].Value));
+
+            // Levantamiento: {idOp}_Levantamiento_{N}
+            m = Regex.Match(nameNoExt, $@"^{idOp}_Levantamiento_(\d+)$", RegexOptions.IgnoreCase);
+            if (m.Success) return ("Levantamiento", int.Parse(m.Groups[1].Value));
 
             // OrdenCompra: {idOp}_{N}_OrdenCompra
             m = Regex.Match(nameNoExt, $@"^{idOp}_(\d+)_OrdenCompra$", RegexOptions.IgnoreCase);

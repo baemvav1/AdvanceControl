@@ -73,6 +73,14 @@ namespace Advance_Control.Services.LocalStorage
         }
 
         /// <summary>
+        /// Sube una imagen/PDF de levantamiento para una operación específica
+        /// </summary>
+        public async Task<OperacionImageDto?> UploadLevantamientoAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default)
+        {
+            return await UploadImageAsync(idOperacion, imageStream, contentType, "Levantamiento", cancellationToken);
+        }
+
+        /// <summary>
         /// Sube una imagen para una operación específica
         /// </summary>
         private async Task<OperacionImageDto?> UploadImageAsync(int idOperacion, Stream imageStream, string contentType, string tipo, CancellationToken cancellationToken = default)
@@ -91,8 +99,10 @@ namespace Advance_Control.Services.LocalStorage
                     existingImages = await GetHojasServicioAsync(idOperacion, cancellationToken);
                 else if (tipo == "OrdenCompra")
                     existingImages = await GetOrdenComprasAsync(idOperacion, cancellationToken);
+                else if (tipo == "Levantamiento")
+                    existingImages = await GetLevantamientosAsync(idOperacion, cancellationToken);
                 else
-                    throw new ArgumentException($"Tipo de imagen no válido: {tipo}. Los tipos válidos son 'Prefactura', 'HojaServicio', 'OrdenCompra'.", nameof(tipo));
+                    throw new ArgumentException($"Tipo de imagen no válido: {tipo}.", nameof(tipo));
                 
                 var nextImageNumber = existingImages.Count > 0 
                     ? existingImages.Max(i => i.ImageNumber) + 1 
@@ -242,6 +252,14 @@ namespace Advance_Control.Services.LocalStorage
         public async Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, CancellationToken cancellationToken = default)
         {
             return await GetImagesAsync(idOperacion, "OrdenCompra", cancellationToken);
+        }
+
+        /// <summary>
+        /// Obtiene todos los documentos de levantamiento de una operación
+        /// </summary>
+        public async Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            return await GetImagesAsync(idOperacion, "Levantamiento", cancellationToken);
         }
 
         /// <summary>

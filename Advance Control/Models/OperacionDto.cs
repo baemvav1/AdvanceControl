@@ -584,5 +584,43 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        private bool _hasLevantamiento = false;
+
+        /// <summary>
+        /// Indica si existen documentos de levantamiento para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public bool HasLevantamiento
+        {
+            get => _hasLevantamiento;
+            set
+            {
+                if (_hasLevantamiento != value)
+                {
+                    _hasLevantamiento = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private ObservableCollection<OperacionImageDto> _imagenesLevantamiento = new ObservableCollection<OperacionImageDto>();
+
+        /// <summary>
+        /// Colección de imágenes/PDFs de levantamiento para esta operación
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<OperacionImageDto> ImagenesLevantamiento
+        {
+            get => _imagenesLevantamiento;
+            set
+            {
+                if (_imagenesLevantamiento != value)
+                {
+                    _imagenesLevantamiento = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
     }
 }

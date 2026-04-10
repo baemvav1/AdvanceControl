@@ -335,6 +335,14 @@ namespace Advance_Control.Services.Quotes
                                                     col.Item().PaddingTop(2).Text(cargo.DetalleLinea2 ?? "").FontSize(9).FontColor(Colors.Grey.Medium);
                                                     col.Item().Text(cargo.DetalleLinea3 ?? "").FontSize(9).FontColor(Colors.Grey.Darken1);
                                                 }
+                                                if (!string.IsNullOrWhiteSpace(cargo.Nota))
+                                                {
+                                                    col.Item().PaddingTop(4)
+                                                        .Text(text =>
+                                                        {
+                                                            text.Span(cargo.Nota).FontSize(8).FontColor(Colors.Grey.Darken2).Italic();
+                                                        });
+                                                }
                                             });
                                         table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
                                             .Text($"${(cargo.Unitario ?? 0).ToString("N2", usCulture)}");
@@ -641,6 +649,15 @@ namespace Advance_Control.Services.Quotes
                                                     detCol.Item()
                                                         .Text(cargo.DetalleLinea3 ?? "")
                                                         .FontSize(9).FontColor(Colors.Grey.Darken1);
+                                                }
+                                                if (!string.IsNullOrWhiteSpace(cargo.Nota))
+                                                {
+                                                    detCol.Item().PaddingTop(4)
+                                                        .Text(text =>
+                                                        {
+                                                            text.Span("Nota: ").Bold().FontSize(8).FontColor(Colors.Grey.Darken2);
+                                                            text.Span(cargo.Nota).FontSize(8).FontColor(Colors.Grey.Darken2).Italic();
+                                                        });
                                                 }
                                             });
                                         });
