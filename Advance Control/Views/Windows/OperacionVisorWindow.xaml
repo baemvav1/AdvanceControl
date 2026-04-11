@@ -886,7 +886,7 @@
                                             HorizontalAlignment="Stretch"
                                             Click="VerFacturaButton_Click"
                                             ToolTipService.ToolTip="Abrir factura PDF"
-                                            Visibility="{x:Bind ToBoolVisibility(Operacion.HasFactura), Mode=OneWay}">
+                                            Visibility="{x:Bind Operacion.FacturaVisibility, Mode=OneWay}">
                                             <StackPanel Orientation="Horizontal" Spacing="6">
                                                 <SymbolIcon Symbol="OpenFile" />
                                                 <TextBlock Text="Ver Factura" />
@@ -914,7 +914,7 @@
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
                                     CornerRadius="8"
-                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasHojaServicio), Mode=OneWay}">
+                                    Visibility="{x:Bind Operacion.HojaServicioVisibility, Mode=OneWay}">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"
@@ -1002,7 +1002,7 @@
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
                                     CornerRadius="8"
-                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasPrefactura), Mode=OneWay}">
+                                    Visibility="{x:Bind Operacion.PrefacturaVisibility, Mode=OneWay}">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"
@@ -1087,7 +1087,7 @@
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
                                     CornerRadius="8"
-                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasOrdenCompra), Mode=OneWay}">
+                                    Visibility="{x:Bind Operacion.OrdenCompraVisibility, Mode=OneWay}">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"
@@ -1172,7 +1172,7 @@
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
                                     CornerRadius="8"
-                                    Visibility="{x:Bind ToBoolVisibility(Operacion.HasLevantamiento), Mode=OneWay}">
+                                    Visibility="{x:Bind Operacion.LevantamientoVisibility, Mode=OneWay}">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"

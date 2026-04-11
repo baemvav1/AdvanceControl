@@ -202,6 +202,7 @@ namespace Advance_Control.Views.Windows
                 ReplaceItems(Operacion.ImagenesLevantamiento, levantamientos);
 
                 Operacion.ImagesLoaded = true;
+                Operacion.NotifyDocumentsChanged();
             }
             catch (Exception ex)
             {
@@ -757,9 +758,28 @@ namespace Advance_Control.Views.Windows
                     var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
                     if (campo != null) await _viewModel.UpdateCheckAsync(Operacion, campo);
 
-                    // Refrescar colecciones desde VPS para que ItemsRepeater las renderice
-                    // correctamente (el Add directo falla si el Border padre estaba Collapsed).
-                    await RefreshImageIndicatorsAsync();
+                    // Agregar directamente a la colección y actualizar visibilidad
+                    // (replica el patrón de CargoDto.NotifyImagesChanged que funciona)
+                    switch (imageType)
+                    {
+                        case "Prefactura":
+                            Operacion.ImagenesPrefactura.Add(result);
+                            Operacion.HasPrefactura = true;
+                            break;
+                        case "HojaServicio":
+                            Operacion.ImagenesHojaServicio.Add(result);
+                            Operacion.HasHojaServicio = true;
+                            break;
+                        case "OrdenCompra":
+                            Operacion.ImagenesOrdenCompra.Add(result);
+                            Operacion.HasOrdenCompra = true;
+                            break;
+                        case "Levantamiento":
+                            Operacion.ImagenesLevantamiento.Add(result);
+                            Operacion.HasLevantamiento = true;
+                            break;
+                    }
+                    Operacion.NotifyDocumentsChanged();
 
                     await _notificacionService.MostrarAsync($"{imageType} cargada", $"{result.FileName} guardada correctamente.");
                 }
