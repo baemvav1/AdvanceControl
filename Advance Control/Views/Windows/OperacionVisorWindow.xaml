@@ -369,9 +369,9 @@
                                                         HorizontalAlignment="Center"
                                                         VerticalAlignment="Center"
                                                         Checked="CargoCheckBox_Checked"
-                                                        Unchecked="CargoCheckBox_UnChecked"
                                                         IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
-                                                        Tag="{x:Bind}" />
+                                                        Tag="{x:Bind}"
+                                                        Unchecked="CargoCheckBox_UnChecked" />
                                                 </Grid>
 
                                                 <!--  Galería de imágenes del cargo  -->
@@ -748,163 +748,133 @@
                         </Grid.RowDefinitions>
                         <Grid
                             Grid.Row="0"
-                            Margin="10,10,10,10"
-                            Background="{ThemeResource ControlElevationBorderBrush}">
-                            <StackPanel
-                                Margin="5"
-                                Orientation="Horizontal"
-                                Spacing="5">
-                                <FontIcon
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Foreground="{ThemeResource SystemAccentColor}"
-                                    Glyph="&#xE8A5;" />
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="12"
-                                    FontWeight="SemiBold"
-                                    Text="Generar Documentos" />
-                                <Button
-                                    Grid.Column="0"
-                                    HorizontalAlignment="Stretch"
-                                    Click="GenerarCotizacionButton_Click"
-                                    Style="{StaticResource AccentButtonStyle}"
-                                    ToolTipService.ToolTip="Generar cotización PDF">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <SymbolIcon Symbol="Document" />
-                                        <TextBlock Text="Cotización" />
-                                    </StackPanel>
-                                </Button>
-                                <Button
-                                    Grid.Column="1"
-                                    Margin="6,0,0,0"
-                                    Padding="8"
-                                    Click="AbrirCotizacionPdfButton_Click"
-                                    ToolTipService.ToolTip="Abrir cotización PDF"
-                                    Visibility="{x:Bind ToTextVisibility(Operacion.CotizacionPdfPath), Mode=OneWay}">
-                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
-                                </Button>
-                                <Button
-                                    Grid.Column="0"
-                                    HorizontalAlignment="Stretch"
-                                    Click="GenerarReporteButton_Click"
-                                    Style="{StaticResource AccentButtonStyle}"
-                                    ToolTipService.ToolTip="Generar reporte PDF">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <SymbolIcon Symbol="Pictures" />
-                                        <TextBlock Text="Reporte" />
-                                    </StackPanel>
-                                </Button>
-                                <Button
-                                    Grid.Column="1"
-                                    Margin="6,0,0,0"
-                                    Padding="8"
-                                    Click="AbrirReportePdfButton_Click"
-                                    ToolTipService.ToolTip="Abrir reporte PDF"
-                                    Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}">
-                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
-                                </Button>
+                            HorizontalAlignment="Center" >
+                            <StackPanel Spacing="8">
+
+                                <!--  Título / encabezado (se queda igual o puedes cambiarlo a TextBlock simple)  -->
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <CommandBar DefaultLabelPosition="Right">
+                                        <CommandBar.PrimaryCommands>
+
+                                            <AppBarButton
+                                                Click="GenerarCotizacionButton_Click"
+                                                Icon="Document"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                Label="Generar Cotizacion"
+                                                ToolTipService.ToolTip="Generar cotización PDF" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="AbrirCotizacionPdfButton_Click"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                ToolTipService.ToolTip="Abrir cotización PDF"
+                                                Visibility="{x:Bind ToTextVisibility(Operacion.CotizacionPdfPath), Mode=OneWay}">
+                                                <AppBarButton.Icon>
+                                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
+                                                </AppBarButton.Icon>
+                                            </AppBarButton>
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="GenerarReporteButton_Click"
+                                                Icon="Document"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                Label="Generar Reporte"
+                                                ToolTipService.ToolTip="Generar reporte PDF" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="AbrirReportePdfButton_Click"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                ToolTipService.ToolTip="Abrir reporte PDF"
+                                                Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}">
+                                                <AppBarButton.Icon>
+                                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
+                                                </AppBarButton.Icon>
+                                            </AppBarButton>
+                                            <AppBarSeparator  Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}"/>
+
+
+                                            <AppBarButton
+                                                Click="UploadPrefacturaButton_Click"
+                                                Icon="Attach"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                Label="Prefactura"
+                                                ToolTipService.ToolTip="Cargar prefactura" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="UploadHojaServicioButton_Click"
+                                                Icon="Attach"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                Label="Hoja Serv."
+                                                ToolTipService.ToolTip="Cargar hoja de servicio" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="UploadOrdenCompraButton_Click"
+                                                Icon="Attach"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                Label="Orden C."
+                                                ToolTipService.ToolTip="Cargar orden de compra" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="UploadLevantamientoButton_Click"
+                                                Icon="Attach"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                Label="Levantamiento"
+                                                ToolTipService.ToolTip="Cargar documento de levantamiento" />
+
+                                            <AppBarSeparator />
+
+                                            <!--  Factura (accent)  -->
+                                            <AppBarButton
+                                                Click="UploadFacturaButton_Click"
+                                                Background="Red"
+                                                Icon="Attach"
+                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                Label="Factura"
+                                                ToolTipService.ToolTip="Cargar factura PDF (finaliza la operación)" />
+                                            
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="VerFacturaButton_Click"
+                                                Icon="OpenFile"
+                                                Label="Ver Factura"
+                                                ToolTipService.ToolTip="Abrir factura PDF"
+                                                Visibility="{x:Bind Operacion.FacturaVisibility, Mode=OneWay}" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="ReabrirOperacionButton_Click"
+                                                Background="Green"
+                                                Icon="Undo"
+                                                Label="Reabrir Operación"
+                                                ToolTipService.ToolTip="Reabrir operación finalizada"
+                                                Visibility="{x:Bind ToInverseBoolVisibility(Operacion.IsEditable), Mode=OneWay}" />
+
+                                        </CommandBar.PrimaryCommands>
+                                    </CommandBar>
+                                </StackPanel>
+
+
+
                             </StackPanel>
                         </Grid>
                         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                            <StackPanel Margin="10,8,10,12" Orientation="Vertical" Spacing="8">
-                                <Border
-                                    Padding="12"
-                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    BorderThickness="1"
-                                    CornerRadius="8">
-                                    <StackPanel Spacing="10">
-                                         <StackPanel Orientation="Horizontal" Spacing="6">
-                                            <FontIcon
-                                                FontSize="14"
-                                                Foreground="{ThemeResource SystemAccentColor}"
-                                                Glyph="&#xE898;" />
-                                            <TextBlock
-                                                FontSize="12"
-                                                FontWeight="SemiBold"
-                                                Text="Cargar documentos" />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="4">
-                                            <Button
-                                                HorizontalAlignment="Stretch"
-                                                Click="UploadPrefacturaButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                ToolTipService.ToolTip="Cargar prefactura">
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <FontIcon FontSize="12" Glyph="&#xE898;" />
-                                                    <TextBlock FontSize="12" Text="Prefactura" />
-                                                </StackPanel>
-                                            </Button>
-                                            <AppBarSeparator />
-                                            <Button
-                                                HorizontalAlignment="Stretch"
-                                                Click="UploadHojaServicioButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                ToolTipService.ToolTip="Cargar hoja de servicio">
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <FontIcon FontSize="12" Glyph="&#xE898;" />
-                                                    <TextBlock FontSize="12" Text="Hoja Serv." />
-                                                </StackPanel>
-                                            </Button>
-                                            <AppBarSeparator />
-                                            <Button
-                                                HorizontalAlignment="Stretch"
-                                                Click="UploadOrdenCompraButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                ToolTipService.ToolTip="Cargar orden de compra">
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <FontIcon FontSize="12" Glyph="&#xE898;" />
-                                                    <TextBlock FontSize="12" Text="Orden C." />
-                                                </StackPanel>
-                                            </Button>
-                                            <AppBarSeparator />
-                                            <Button
-                                                HorizontalAlignment="Stretch"
-                                                Click="UploadLevantamientoButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                ToolTipService.ToolTip="Cargar documento de levantamiento">
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <FontIcon FontSize="12" Glyph="&#xE898;" />
-                                                    <TextBlock FontSize="12" Text="Levantamiento" />
-                                                </StackPanel>
-                                            </Button>
-                                            <AppBarSeparator />
-                                            <Button
-                                                HorizontalAlignment="Stretch"
-                                                Click="UploadFacturaButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                Style="{StaticResource AccentButtonStyle}"
-                                                ToolTipService.ToolTip="Cargar factura PDF (finaliza la operación)">
-                                                <StackPanel Orientation="Horizontal" Spacing="4">
-                                                    <SymbolIcon Symbol="Attach" />
-                                                    <TextBlock FontSize="12" Text="Factura" />
-                                                </StackPanel>
-                                            </Button>
-                                        </StackPanel>
-                                        <Button
-                                            HorizontalAlignment="Stretch"
-                                            Click="VerFacturaButton_Click"
-                                            ToolTipService.ToolTip="Abrir factura PDF"
-                                            Visibility="{x:Bind Operacion.FacturaVisibility, Mode=OneWay}">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <SymbolIcon Symbol="OpenFile" />
-                                                <TextBlock Text="Ver Factura" />
-                                            </StackPanel>
-                                        </Button>
-                                        <Button
-                                            HorizontalAlignment="Stretch"
-                                            Click="ReabrirOperacionButton_Click"
-                                            Style="{StaticResource AccentButtonStyle}"
-                                            ToolTipService.ToolTip="Reabrir operación finalizada"
-                                            Visibility="{x:Bind ToInverseBoolVisibility(Operacion.IsEditable), Mode=OneWay}">
-                                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <FontIcon FontSize="14" Glyph="&#xE72C;" />
-                                                <TextBlock Text="Reabrir Operación" />
-                                            </StackPanel>
-                                        </Button>
-                                    </StackPanel>
-                                </Border>
+                            <StackPanel
+                                Margin="10,8,10,12"
+                                Orientation="Vertical"
+                                Spacing="8">
+                                
 
                                 <!--  Hojas de servicio  -->
                                 <Border
@@ -913,22 +883,27 @@
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
-                                    Visibility="{x:Bind Operacion.HojaServicioVisibility, Mode=OneWay}">
+                                    CornerRadius="8">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Hojas de servicio" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            FontSize="12"
+                                            FontStyle="Italic"
+                                            Text="Sin documentos disponibles"
+                                            Visibility="{x:Bind Operacion.HojaServicioEmptyVisibility, Mode=OneWay}" />
                                         <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesHojaServicio, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
-                                                <StackLayout Orientation="Horizontal" Spacing="6" />
+                                                <StackLayout Orientation="Horizontal" Spacing="6" ScrollViewer.HorizontalScrollMode="Enabled"/>
                                             </ItemsRepeater.Layout>
-                                             <ItemsRepeater.ItemTemplate>
+                                            <ItemsRepeater.ItemTemplate>
                                                 <DataTemplate x:DataType="models:OperacionImageDto">
                                                     <Grid
-                                                        Width="88"
-                                                        Height="88"
+                                                        Width="500"
+                                                        Height="300"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="6">
                                                         <!--  Miniatura imagen  -->
@@ -957,7 +932,10 @@
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Abrir PDF"
                                                             Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
-                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                            <StackPanel
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="3">
                                                                 <FontIcon
                                                                     HorizontalAlignment="Center"
                                                                     FontSize="32"
@@ -1001,13 +979,18 @@
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
-                                    Visibility="{x:Bind Operacion.PrefacturaVisibility, Mode=OneWay}">
+                                    CornerRadius="8">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Prefacturas" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            FontSize="12"
+                                            FontStyle="Italic"
+                                            Text="Sin documentos disponibles"
+                                            Visibility="{x:Bind Operacion.PrefacturaEmptyVisibility, Mode=OneWay}" />
                                         <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesPrefactura, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
@@ -1015,8 +998,8 @@
                                             <ItemsRepeater.ItemTemplate>
                                                 <DataTemplate x:DataType="models:OperacionImageDto">
                                                     <Grid
-                                                        Width="88"
-                                                        Height="88"
+                                                        Width="500"
+                                                        Height="300"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="6">
                                                         <Button
@@ -1043,7 +1026,10 @@
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Abrir PDF"
                                                             Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
-                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                            <StackPanel
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="3">
                                                                 <FontIcon
                                                                     HorizontalAlignment="Center"
                                                                     FontSize="32"
@@ -1086,13 +1072,18 @@
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
-                                    Visibility="{x:Bind Operacion.OrdenCompraVisibility, Mode=OneWay}">
+                                    CornerRadius="8">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Órdenes de compra" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            FontSize="12"
+                                            FontStyle="Italic"
+                                            Text="Sin documentos disponibles"
+                                            Visibility="{x:Bind Operacion.OrdenCompraEmptyVisibility, Mode=OneWay}" />
                                         <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesOrdenCompra, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
@@ -1100,8 +1091,8 @@
                                             <ItemsRepeater.ItemTemplate>
                                                 <DataTemplate x:DataType="models:OperacionImageDto">
                                                     <Grid
-                                                        Width="88"
-                                                        Height="88"
+                                                        Width="500"
+                                                        Height="300"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="6">
                                                         <Button
@@ -1128,7 +1119,10 @@
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Abrir PDF"
                                                             Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
-                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                            <StackPanel
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="3">
                                                                 <FontIcon
                                                                     HorizontalAlignment="Center"
                                                                     FontSize="32"
@@ -1171,13 +1165,18 @@
                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="8"
-                                    Visibility="{x:Bind Operacion.LevantamientoVisibility, Mode=OneWay}">
+                                    CornerRadius="8">
                                     <StackPanel Spacing="8">
                                         <TextBlock
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Levantamientos" />
+                                        <TextBlock
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            FontSize="12"
+                                            FontStyle="Italic"
+                                            Text="Sin documentos disponibles"
+                                            Visibility="{x:Bind Operacion.LevantamientoEmptyVisibility, Mode=OneWay}" />
                                         <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesLevantamiento, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
@@ -1185,8 +1184,8 @@
                                             <ItemsRepeater.ItemTemplate>
                                                 <DataTemplate x:DataType="models:OperacionImageDto">
                                                     <Grid
-                                                        Width="88"
-                                                        Height="88"
+                                                        Width="500"
+                                                        Height="300"
                                                         Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                                         CornerRadius="6">
                                                         <Button
@@ -1213,7 +1212,10 @@
                                                             Tag="{x:Bind}"
                                                             ToolTipService.ToolTip="Abrir PDF"
                                                             Visibility="{x:Bind PdfVisibility, Mode=OneWay}">
-                                                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="3">
+                                                            <StackPanel
+                                                                HorizontalAlignment="Center"
+                                                                VerticalAlignment="Center"
+                                                                Spacing="3">
                                                                 <FontIcon
                                                                     HorizontalAlignment="Center"
                                                                     FontSize="32"

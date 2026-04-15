@@ -492,12 +492,16 @@ namespace Advance_Control.Models
                     _hasPrefactura = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(PrefacturaVisibility));
+                    OnPropertyChanged(nameof(PrefacturaEmptyVisibility));
                 }
             }
         }
 
         [JsonIgnore]
         public Visibility PrefacturaVisibility => _hasPrefactura ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility PrefacturaEmptyVisibility => _hasPrefactura ? Visibility.Collapsed : Visibility.Visible;
 
         private bool _hasHojaServicio = false;
 
@@ -515,12 +519,16 @@ namespace Advance_Control.Models
                     _hasHojaServicio = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(HojaServicioVisibility));
+                    OnPropertyChanged(nameof(HojaServicioEmptyVisibility));
                 }
             }
         }
 
         [JsonIgnore]
         public Visibility HojaServicioVisibility => _hasHojaServicio ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility HojaServicioEmptyVisibility => _hasHojaServicio ? Visibility.Collapsed : Visibility.Visible;
 
         private bool _hasOrdenCompra = false;
 
@@ -538,12 +546,16 @@ namespace Advance_Control.Models
                     _hasOrdenCompra = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(OrdenCompraVisibility));
+                    OnPropertyChanged(nameof(OrdenCompraEmptyVisibility));
                 }
             }
         }
 
         [JsonIgnore]
         public Visibility OrdenCompraVisibility => _hasOrdenCompra ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility OrdenCompraEmptyVisibility => _hasOrdenCompra ? Visibility.Collapsed : Visibility.Visible;
 
         private ObservableCollection<OperacionImageDto> _imagenesPrefactura = new ObservableCollection<OperacionImageDto>();
 
@@ -618,12 +630,16 @@ namespace Advance_Control.Models
                     _hasLevantamiento = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(LevantamientoVisibility));
+                    OnPropertyChanged(nameof(LevantamientoEmptyVisibility));
                 }
             }
         }
 
         [JsonIgnore]
         public Visibility LevantamientoVisibility => _hasLevantamiento ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility LevantamientoEmptyVisibility => _hasLevantamiento ? Visibility.Collapsed : Visibility.Visible;
 
         private ObservableCollection<OperacionImageDto> _imagenesLevantamiento = new ObservableCollection<OperacionImageDto>();
 
@@ -654,12 +670,16 @@ namespace Advance_Control.Models
             OnPropertyChanged(nameof(FacturaVisibility));
             OnPropertyChanged(nameof(HasPrefactura));
             OnPropertyChanged(nameof(PrefacturaVisibility));
+            OnPropertyChanged(nameof(PrefacturaEmptyVisibility));
             OnPropertyChanged(nameof(HasHojaServicio));
             OnPropertyChanged(nameof(HojaServicioVisibility));
+            OnPropertyChanged(nameof(HojaServicioEmptyVisibility));
             OnPropertyChanged(nameof(HasOrdenCompra));
             OnPropertyChanged(nameof(OrdenCompraVisibility));
+            OnPropertyChanged(nameof(OrdenCompraEmptyVisibility));
             OnPropertyChanged(nameof(HasLevantamiento));
             OnPropertyChanged(nameof(LevantamientoVisibility));
+            OnPropertyChanged(nameof(LevantamientoEmptyVisibility));
         }
     }
 }
