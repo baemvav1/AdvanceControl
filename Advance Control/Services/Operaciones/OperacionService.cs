@@ -228,5 +228,79 @@ namespace Advance_Control.Services.Operaciones
                 throw;
             }
         }
+
+        /// <summary>
+        /// Marca el trabajo técnico de una operación como finalizado
+        /// </summary>
+        public async Task<bool> FinalizarTrabajoAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}/finalizar-trabajo?idOperacion={idOperacion}";
+
+                await _logger.LogInformationAsync($"Finalizando trabajo de operación {idOperacion} en: {url}", "OperacionService", "FinalizarTrabajoAsync");
+
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al finalizar trabajo. Status: {response.StatusCode}, Content: {errorContent}",
+                        null, "OperacionService", "FinalizarTrabajoAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Trabajo de operación {idOperacion} finalizado correctamente", "OperacionService", "FinalizarTrabajoAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al finalizar trabajo", ex, "OperacionService", "FinalizarTrabajoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al finalizar trabajo", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al finalizar trabajo", ex, "OperacionService", "FinalizarTrabajoAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Desmarca el trabajo técnico de una operación como finalizado
+        /// </summary>
+        public async Task<bool> DesfinalizarTrabajoAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}/desfinalizar-trabajo?idOperacion={idOperacion}";
+
+                await _logger.LogInformationAsync($"Desfinalizando trabajo de operación {idOperacion} en: {url}", "OperacionService", "DesfinalizarTrabajoAsync");
+
+                using var response = await _http.PutAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al desfinalizar trabajo. Status: {response.StatusCode}, Content: {errorContent}",
+                        null, "OperacionService", "DesfinalizarTrabajoAsync");
+                    return false;
+                }
+
+                await _logger.LogInformationAsync($"Trabajo de operación {idOperacion} desfinalizado correctamente", "OperacionService", "DesfinalizarTrabajoAsync");
+                return true;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al desfinalizar trabajo", ex, "OperacionService", "DesfinalizarTrabajoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al desfinalizar trabajo", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al desfinalizar trabajo", ex, "OperacionService", "DesfinalizarTrabajoAsync");
+                throw;
+            }
+        }
     }
 }

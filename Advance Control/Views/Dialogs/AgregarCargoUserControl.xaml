@@ -15,8 +15,8 @@
         <converters:CargoTypeToVisibilityConverter x:Key="CargoTypeToVisibilityConverter" />
     </UserControl.Resources>
 
-    <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto">
+    <Grid >
+        <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto" Padding="0,0,15,0">
             <StackPanel>
                 <Grid
                     x:Name="TipoCargoSelector"

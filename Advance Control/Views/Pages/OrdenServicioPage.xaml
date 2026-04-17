@@ -101,6 +101,12 @@
                                                     <Run FontWeight="SemiBold" Text="{x:Bind RazonSocial}" />
                                                 </TextBlock>
                                             </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Descripcion: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind Descripcion}" />
+                                                </TextBlock>
+                                            </StackPanel>
                                         </StackPanel>
 
                                         <!--  Botón para expandir/colapsar  -->

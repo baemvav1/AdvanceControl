@@ -444,5 +444,69 @@ namespace Advance_Control.Views.Dialogs
 
             await dialog.ShowAsync();
         }
+
+        private void btnNuvaRefaccion_Click(object sender, RoutedEventArgs e)
+        {
+            NuevaRefaccionPanel.Visibility = Visibility.Visible;
+            NuevaMarcaTextBox.Text = string.Empty;
+            NuevaSerieTextBox.Text = string.Empty;
+            NuevaCostoTextBox.Text = string.Empty;
+            NuevaDescripcionTextBox.Text = string.Empty;
+            btnNuvaRefaccion.Visibility = Visibility.Collapsed;
+        }
+
+        private void btnCancelarRefaccion_Click(object sender, RoutedEventArgs e)
+        {
+            NuevaRefaccionPanel.Visibility = Visibility.Collapsed;
+            btnNuvaRefaccion.Visibility = Visibility.Visible;
+        }
+
+        private async void btnGuardarRefaccion_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var marca = string.IsNullOrWhiteSpace(NuevaMarcaTextBox.Text) ? null : NuevaMarcaTextBox.Text.Trim();
+                var serie = string.IsNullOrWhiteSpace(NuevaSerieTextBox.Text) ? "N/D" : NuevaSerieTextBox.Text.Trim();
+                var descripcion = string.IsNullOrWhiteSpace(NuevaDescripcionTextBox.Text) ? null : NuevaDescripcionTextBox.Text.Trim();
+
+                double? costo = null;
+                var costoText = NuevaCostoTextBox.Text?.Trim();
+                if (!string.IsNullOrWhiteSpace(costoText))
+                {
+                    if (double.TryParse(costoText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                        costo = parsed;
+                    else if (double.TryParse(costoText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.CurrentCulture, out parsed))
+                        costo = parsed;
+                }
+
+                var success = await _refaccionService.CreateRefaccionAsync(marca, serie, costo, descripcion, true);
+
+                if (success)
+                {
+                    NuevaRefaccionPanel.Visibility = Visibility.Collapsed;
+
+                    // Recargar lista y preseleccionar la refacción recién creada
+                    _isDataLoaded = false;
+                    _allRefacciones.Clear();
+                    await LoadRefaccionesAsync();
+                    _isDataLoaded = true;
+
+                    // Buscar la refacción recién creada (la de mayor ID con la misma marca/serie)
+                    var nuevaRefaccion = _allRefacciones
+                        .Where(r => r.Marca == marca && r.Serie == serie)
+                        .OrderByDescending(r => r.IdRefaccion)
+                        .FirstOrDefault();
+
+                    if (nuevaRefaccion != null)
+                    {
+                        RefaccionesListView.SelectedItem = nuevaRefaccion;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al crear refacción: {ex.GetType().Name} - {ex.Message}");
+            }
+        }
     }
 }

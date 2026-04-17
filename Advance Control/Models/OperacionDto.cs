@@ -146,6 +146,39 @@ namespace Advance_Control.Models
         [JsonPropertyName("finalizado")]
         public bool Finalizado { get; set; }
 
+        private bool _tFinalizado;
+
+        /// <summary>
+        /// Indica si el trabajo técnico de la operación fue finalizado (pero no necesariamente facturado)
+        /// </summary>
+        [JsonPropertyName("tFinalizado")]
+        public bool TFinalizado
+        {
+            get => _tFinalizado;
+            set
+            {
+                if (_tFinalizado != value)
+                {
+                    _tFinalizado = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(IsTrabajoFinalizado));
+                    OnPropertyChanged(nameof(BarraEstadoColor));
+                }
+            }
+        }
+
+        /// <summary>
+        /// True si el trabajo técnico fue finalizado
+        /// </summary>
+        [JsonIgnore]
+        public bool IsTrabajoFinalizado => TFinalizado;
+
+        /// <summary>
+        /// Color de la barra lateral de estado: Amarillo=TFinalizado, Verde=Activa, Gris=Cerrada
+        /// </summary>
+        [JsonIgnore]
+        public string BarraEstadoColor => TFinalizado ? "Gold" : (IsEditable ? "MediumSeaGreen" : "DimGray");
+
         // Campos del check integrados desde el endpoint de operaciones (LEFT JOIN)
         [JsonPropertyName("ckCotizacionGenerada")]
         public bool CkCotizacionGeneradaApi { get; set; }
@@ -223,6 +256,25 @@ namespace Advance_Control.Models
                 if (_reportePdfPath != value)
                 {
                     _reportePdfPath = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        private string? _notaPdfPath;
+
+        /// <summary>
+        /// Ruta al PDF de nota generado para esta operación. Null si no existe.
+        /// </summary>
+        [JsonIgnore]
+        public string? NotaPdfPath
+        {
+            get => _notaPdfPath;
+            set
+            {
+                if (_notaPdfPath != value)
+                {
+                    _notaPdfPath = value;
                     OnPropertyChanged();
                 }
             }

@@ -154,6 +154,52 @@ public class EmailService : IEmailService
         await client.AuthenticateAsync(usuario, password);
         await client.SendAsync(mime);
         await client.DisconnectAsync(true);
+
+        // Guardar copia en carpetas IMAP (fire-and-forget con timeout para no bloquear)
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(15));
+                using var imap = new ImapClient();
+                imap.Timeout = 10000; // 10 segundos máximo por operación
+
+                await imap.ConnectAsync(ImapHost, ImapPort, SecureSocketOptions.SslOnConnect, cts.Token);
+                await imap.AuthenticateAsync(usuario, password, cts.Token);
+
+                // Guardar en Enviados
+                var sentFolder = imap.GetFolder(SpecialFolder.Sent);
+                await sentFolder.AppendAsync(mime, MessageFlags.Seen, cts.Token);
+
+                // Guardar copia en carpeta del cliente: Clientes/{CarpetaCliente}
+                if (!string.IsNullOrWhiteSpace(mensaje.CarpetaCliente))
+                {
+                    var separador = imap.PersonalNamespaces[0].DirectorySeparator;
+                    var charsInvalidos = Path.GetInvalidFileNameChars();
+                    var safeNombre = mensaje.CarpetaCliente;
+                    if (separador != '\0')
+                        safeNombre = safeNombre.Replace(separador, '-');
+                    safeNombre = string.Concat(safeNombre.Split(charsInvalidos));
+
+                    var personal = imap.GetFolder(imap.PersonalNamespaces[0]);
+
+                    // Buscar o crear carpeta "Clientes" (isMessageFolder: true para compatibilidad)
+                    var subcarpetas = await personal.GetSubfoldersAsync(false, cts.Token);
+                    var clientesFolder = subcarpetas.FirstOrDefault(f => f.Name == "Clientes");
+                    clientesFolder ??= await personal.CreateAsync("Clientes", true, cts.Token);
+
+                    // Buscar o crear subcarpeta del cliente
+                    var subcarpetasCliente = await clientesFolder.GetSubfoldersAsync(false, cts.Token);
+                    var clienteFolder = subcarpetasCliente.FirstOrDefault(f => f.Name == safeNombre);
+                    clienteFolder ??= await clientesFolder.CreateAsync(safeNombre, true, cts.Token);
+
+                    await clienteFolder.AppendAsync(mime, MessageFlags.Seen, cts.Token);
+                }
+
+                await imap.DisconnectAsync(true);
+            }
+            catch { /* No fallar — el correo ya fue enviado por SMTP */ }
+        });
     }
 
     // -------------------------------------------------------------------------

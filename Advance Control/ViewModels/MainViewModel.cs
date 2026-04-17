@@ -95,6 +95,7 @@ namespace Advance_Control.ViewModels
 
             // Initialize commands
             EliminarNotificacionCommand = new RelayCommand<Guid>(EliminarNotificacion);
+            CopiarNotificacionCommand = new RelayCommand<Guid>(CopiarNotificacion);
 
             // Load user info if already authenticated
             if (_isAuthenticated)
@@ -258,6 +259,7 @@ namespace Advance_Control.ViewModels
         }
 
         public ICommand EliminarNotificacionCommand { get; }
+        public ICommand CopiarNotificacionCommand { get; }
 
         public INavigationService NavigationService => _navigationService;
 
@@ -648,6 +650,23 @@ namespace Advance_Control.ViewModels
         private void EliminarNotificacion(Guid notificacionId)
         {
             _notificacionService.EliminarNotificacion(notificacionId);
+        }
+
+        /// <summary>
+        /// Copia el contenido de una notificación al portapapeles
+        /// </summary>
+        private void CopiarNotificacion(Guid notificacionId)
+        {
+            var notif = _notificaciones?.FirstOrDefault(n => n.Id == notificacionId);
+            if (notif == null) return;
+
+            var texto = notif.Titulo;
+            if (!string.IsNullOrWhiteSpace(notif.Nota))
+                texto += Environment.NewLine + notif.Nota;
+
+            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
+            dataPackage.SetText(texto);
+            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
         }
 
         /// <summary>

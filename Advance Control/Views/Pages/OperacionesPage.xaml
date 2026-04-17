@@ -18,6 +18,7 @@
         <converters:CurrencyConverter x:Key="CurrencyConverter" />
 
         <converters:BooleanToSystemColorBrushConverter x:Key="BoolToColorBrushConverter" />
+        <converters:StringToColorBrushConverter x:Key="StringToColorBrushConverter" />
     </Page.Resources>
 
     <Grid Padding="24">
@@ -231,7 +232,7 @@
                                         <!--  Barra de estado (indicador visual izquierdo)  -->
                                         <Border
                                             Grid.Column="0"
-                                            Background="{x:Bind IsEditable, Converter={StaticResource BoolToColorBrushConverter}, ConverterParameter='MediumSeaGreen|DimGray', Mode=OneWay}"
+                                            Background="{x:Bind BarraEstadoColor, Converter={StaticResource StringToColorBrushConverter}, Mode=OneWay}"
                                             CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,0,0,0|8,0,0,8', Mode=OneWay}" />
 
                                         <Grid Grid.Column="1">

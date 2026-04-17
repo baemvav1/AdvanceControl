@@ -220,6 +220,17 @@ namespace Advance_Control.Views.Windows
                 collection.Add(item);
         }
 
+        /// <summary>
+        /// Fuerza al ItemsRepeater a re-leer su ItemsSource desvinculando y re-asignando
+        /// la colección. Soluciona un problema en WinUI 3 donde ObservableCollection.Add
+        /// no siempre genera los contenedores visuales dentro de DataTemplates complejos.
+        /// </summary>
+        private static void ForceRefreshRepeater(ItemsRepeater repeater, object itemsSource)
+        {
+            repeater.ItemsSource = null;
+            repeater.ItemsSource = itemsSource;
+        }
+
         private async Task ActualizarMontoEnServidorAsync()
         {
             if (Operacion.IdOperacion.HasValue != true) return;
@@ -268,6 +279,30 @@ namespace Advance_Control.Views.Windows
 
         public Brush ToChecklistBrush(bool completed) => completed ? CheckCompletedBrush : ChecklistPendingBrush;
 
+        /// <summary>
+        /// Muestra el badge "Trabajo Finalizado" solo si TFinalizado=true y la operación no está facturada
+        /// </summary>
+        public Visibility ToTrabajoFinalizadoBadgeVisibility(bool isTrabajoFinalizado, bool isFinalized)
+            => (isTrabajoFinalizado && !isFinalized) ? Visibility.Visible : Visibility.Collapsed;
+
+        /// <summary>
+        /// Texto del botón toggle: "Finalizar" o "Deshacer Finalización"
+        /// </summary>
+        public string ToFinalizarTrabajoText(bool tFinalizado)
+            => tFinalizado ? "Deshacer Finalización" : "Finalizar";
+
+        /// <summary>
+        /// Glyph del botón toggle: ✓ para finalizar, ↩ para deshacer
+        /// </summary>
+        public string ToFinalizarTrabajoGlyph(bool tFinalizado)
+            => tFinalizado ? "\uE10B" : "\uE73E";
+
+        /// <summary>
+        /// Tooltip del botón toggle
+        /// </summary>
+        public string ToFinalizarTrabajoTooltip(bool tFinalizado)
+            => tFinalizado ? "Desmarcar trabajo como finalizado" : "Marcar trabajo como finalizado";
+
         // ─────────────────────────────────────────────────────────────────────
         //  Operación
         // ─────────────────────────────────────────────────────────────────────
@@ -292,6 +327,53 @@ namespace Advance_Control.Views.Windows
                 else    await MostrarErrorAsync("Error", "No se pudo reabrir la operación.");
             }
             catch (Exception ex) { LogDebugError(nameof(ReabrirOperacionButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al reabrir la operación."); }
+        }
+
+        private async void FinalizarTrabajoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!Operacion.IdOperacion.HasValue) return;
+
+            bool estaFinalizado = Operacion.TFinalizado;
+            var dialog = new ContentDialog
+            {
+                Title = estaFinalizado ? "Deshacer finalización de trabajo" : "Finalizar trabajo",
+                Content = estaFinalizado
+                    ? "¿Desea desmarcar el trabajo de esta operación como finalizado?"
+                    : "¿Desea marcar el trabajo de esta operación como finalizado?",
+                PrimaryButtonText = estaFinalizado ? "Deshacer" : "Finalizar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = _xamlRoot
+            };
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
+
+            try
+            {
+                bool ok;
+                if (estaFinalizado)
+                {
+                    ok = await _viewModel.DesfinalizarTrabajoAsync(Operacion.IdOperacion.Value);
+                    if (ok)
+                    {
+                        _activityService.Registrar("Operaciones", "Trabajo desmarcado como finalizado");
+                        Operacion.TFinalizado = false;
+                        await _notificacionService.MostrarAsync("Trabajo desmarcado", "El trabajo fue desmarcado como finalizado.");
+                    }
+                    else await MostrarErrorAsync("Error", "No se pudo desmarcar el trabajo como finalizado.");
+                }
+                else
+                {
+                    ok = await _viewModel.FinalizarTrabajoAsync(Operacion.IdOperacion.Value);
+                    if (ok)
+                    {
+                        _activityService.Registrar("Operaciones", "Trabajo marcado como finalizado");
+                        Operacion.TFinalizado = true;
+                        await _notificacionService.MostrarAsync("Trabajo finalizado", "El trabajo fue marcado como finalizado correctamente.");
+                    }
+                    else await MostrarErrorAsync("Error", "No se pudo marcar el trabajo como finalizado.");
+                }
+            }
+            catch (Exception ex) { LogDebugError(nameof(FinalizarTrabajoButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al cambiar el estado del trabajo."); }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -655,7 +737,7 @@ namespace Advance_Control.Views.Windows
                     visor.NotificarResultado(await visor.ShowAsync());
                     if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
                     {
-                        var email = new EnviarCotizacionDialog(filePath, contactoReporte, contactosReporte, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Reporte", idOperacion: Operacion.IdOperacion);
+                        var email = new EnviarCotizacionDialog(filePath, contactoReporte, contactosReporte, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Reporte", idOperacion: Operacion.IdOperacion, tFinalizado: Operacion.IsTrabajoFinalizado);
                         if (await email.ShowAsync() == ContentDialogResult.Primary)
                         {
                             await _viewModel.UpdateCheckAsync(Operacion, "reporte_enviado");
@@ -691,6 +773,79 @@ namespace Advance_Control.Views.Windows
             if (string.IsNullOrEmpty(path)) return;
             try { var file = await WinStorage.StorageFile.GetFileFromPathAsync(path); await WinSystem.Launcher.LaunchFileAsync(file); }
             catch (Exception ex) { LogDebugError(nameof(AbrirReportePdfButton_Click), ex); Operacion.ReportePdfPath = null; }
+        }
+
+        private async void GenerarNotaButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!Operacion.IdOperacion.HasValue) return;
+            if (!Operacion.IsTrabajoFinalizado) { await MostrarErrorAsync("Trabajo no finalizado", "El trabajo debe estar finalizado para generar una nota."); return; }
+            if (Operacion.Cargos == null || Operacion.Cargos.Count == 0) { await MostrarErrorAsync("Sin cargos", "No hay cargos para generar la nota."); return; }
+            try
+            {
+                if (!string.IsNullOrEmpty(_viewModel.FindExistingPdf(Operacion.IdOperacion.Value, "Nota")))
+                    _viewModel.DeleteOperacionPdfs(Operacion.IdOperacion.Value, "Nota");
+
+                string? dirigidoA = null;
+                ContactoDto? contactoNota = null;
+                List<ContactoDto> contactosNota = [];
+                if (Operacion.IdCliente.HasValue && Operacion.IdCliente.Value > 0)
+                {
+                    try
+                    {
+                        var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = Operacion.IdCliente.Value });
+                        if (contactos?.Count > 0)
+                        {
+                            contactosNota = contactos;
+                            var lv = new ListView { ItemsSource = contactos, DisplayMemberPath = "NombreCompleto", SelectionMode = ListViewSelectionMode.Single, MaxHeight = 300 };
+                            var sel = new ContentDialog { Title = "¿A quién va dirigida la nota?", Content = new ScrollViewer { Content = lv, MaxHeight = 320 }, PrimaryButtonText = "Seleccionar", SecondaryButtonText = "Omitir", DefaultButton = ContentDialogButton.Primary, XamlRoot = _xamlRoot };
+                            if (await sel.ShowAsync() == ContentDialogResult.Primary && lv.SelectedItem is ContactoDto c)
+                            {
+                                contactoNota = c;
+                                dirigidoA = string.Join(" ", new[] { c.Tratamiento, c.Nombre, c.Apellido }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                            }
+                        }
+                    }
+                    catch (Exception ex) { LogDebugError("ContactosNota", ex); }
+                }
+
+                if (!await VerificarFirmasAntesDePdfAsync()) return;
+
+                var filePath = await _viewModel.GenerateNotaAsync(Operacion, dirigidoA);
+                if (!string.IsNullOrEmpty(filePath))
+                {
+                    _activityService.Registrar("Operaciones", "Nota generada");
+                    Operacion.NotaPdfPath = filePath;
+                    var visor = new CotizacionVisorDialog(filePath, contactoNota, contactosNota, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Nota");
+                    visor.NotificarResultado(await visor.ShowAsync());
+                    if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
+                    {
+                        var email = new EnviarCotizacionDialog(filePath, contactoNota, contactosNota, Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Nota", idOperacion: Operacion.IdOperacion);
+                        if (await email.ShowAsync() == ContentDialogResult.Primary)
+                        {
+                            await _notificacionService.MostrarAsync("Correo enviado", "La nota fue enviada correctamente.");
+                        }
+                    }
+                    else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
+                    {
+                        var file = await WinStorage.StorageFile.GetFileFromPathAsync(filePath);
+                        await WinSystem.Launcher.LaunchFileAsync(file);
+                    }
+                }
+                else
+                {
+                    var msg = !string.IsNullOrWhiteSpace(_viewModel.ErrorMessage) ? _viewModel.ErrorMessage : "No se pudo generar la nota.";
+                    await MostrarErrorAsync("Error al generar nota", msg);
+                }
+            }
+            catch (Exception ex) { LogDebugError(nameof(GenerarNotaButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al generar la nota."); }
+        }
+
+        private async void AbrirNotaPdfButton_Click(object sender, RoutedEventArgs e)
+        {
+            var path = Operacion.NotaPdfPath;
+            if (string.IsNullOrEmpty(path)) return;
+            try { var file = await WinStorage.StorageFile.GetFileFromPathAsync(path); await WinSystem.Launcher.LaunchFileAsync(file); }
+            catch (Exception ex) { LogDebugError(nameof(AbrirNotaPdfButton_Click), ex); Operacion.NotaPdfPath = null; }
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -758,25 +913,31 @@ namespace Advance_Control.Views.Windows
                     var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
                     if (campo != null) await _viewModel.UpdateCheckAsync(Operacion, campo);
 
-                    // Agregar directamente a la colección y actualizar visibilidad
-                    // (replica el patrón de CargoDto.NotifyImagesChanged que funciona)
+                    // Agregar a la colección, actualizar flag y forzar re-bind
+                    // del ItemsRepeater (null → re-set) para garantizar render inmediato.
+                    // ObservableCollection.Add + CollectionChanged no siempre actualiza
+                    // el ItemsRepeater en WinUI 3 con x:Bind en DataTemplates complejos.
                     switch (imageType)
                     {
                         case "Prefactura":
                             Operacion.ImagenesPrefactura.Add(result);
                             Operacion.HasPrefactura = true;
+                            ForceRefreshRepeater(PrefacturaRepeater, Operacion.ImagenesPrefactura);
                             break;
                         case "HojaServicio":
                             Operacion.ImagenesHojaServicio.Add(result);
                             Operacion.HasHojaServicio = true;
+                            ForceRefreshRepeater(HojaServicioRepeater, Operacion.ImagenesHojaServicio);
                             break;
                         case "OrdenCompra":
                             Operacion.ImagenesOrdenCompra.Add(result);
                             Operacion.HasOrdenCompra = true;
+                            ForceRefreshRepeater(OrdenCompraRepeater, Operacion.ImagenesOrdenCompra);
                             break;
                         case "Levantamiento":
                             Operacion.ImagenesLevantamiento.Add(result);
                             Operacion.HasLevantamiento = true;
+                            ForceRefreshRepeater(LevantamientoRepeater, Operacion.ImagenesLevantamiento);
                             break;
                     }
                     Operacion.NotifyDocumentsChanged();

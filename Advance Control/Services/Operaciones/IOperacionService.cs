@@ -33,5 +33,15 @@ namespace Advance_Control.Services.Operaciones
         /// Reabre una operación limpiando su fechaFinal
         /// </summary>
         Task<bool> ReopenOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Marca el trabajo técnico de una operación como finalizado (t_finalizado = TRUE)
+        /// </summary>
+        Task<bool> FinalizarTrabajoAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Desmarca el trabajo técnico de una operación como finalizado (t_finalizado = FALSE)
+        /// </summary>
+        Task<bool> DesfinalizarTrabajoAsync(int idOperacion, CancellationToken cancellationToken = default);
     }
 }

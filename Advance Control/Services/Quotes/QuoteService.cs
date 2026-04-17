@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Windows.Storage.Streams;
+using SkiaSharp;
 
 namespace Advance_Control.Services.Quotes
 {
@@ -24,6 +25,10 @@ namespace Advance_Control.Services.Quotes
         /// IVA rate (16%) for Mexican tax calculation
         /// </summary>
         private const double IVA_RATE = 0.16;
+
+        // Constantes de layout para imágenes adaptativas (página Letter con 2cm margen)
+        private const float CONTENT_WIDTH_CM = 15.59f;   // 21.59 - 2*2 - 2*1 (padding horizontal 1cm)
+        private const float MAX_PAGE_HEIGHT_CM = 21f;    // 27.94 - 4(márgenes) - 2(padding contenido) - margen seguridad
 
         private readonly ILoggingService _logger;
         private readonly IOperacionImageService _operacionImageService;
@@ -427,6 +432,248 @@ namespace Advance_Control.Services.Quotes
         }
 
         /// <summary>
+        /// Genera un PDF de nota a partir de una operación y sus cargos.
+        /// Es igual que la cotización pero con cabecera "Nota.png" y textos "Nota" en lugar de "Cotización".
+        /// </summary>
+        public async Task<string> GenerateNotaPdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? apoderadoNombre = null, decimal? limiteCredito = null, string? dirigidoA = null)
+        {
+            if (operacion == null)
+                throw new ArgumentNullException(nameof(operacion));
+
+            if (cargos == null)
+                throw new ArgumentNullException(nameof(cargos));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Generando nota PDF para operación {operacion.IdOperacion}", "QuoteService", "GenerateNotaPdfAsync");
+
+                var fecha = DateTime.Now.ToString("yyyyMMdd");
+                var idStr = operacion.Identificador ?? "sin-equipo";
+                var safeId = string.Concat(idStr.Split(Path.GetInvalidFileNameChars()));
+                var fileName = $"Nota_{operacion.IdOperacion}_{safeId}_{fecha}.pdf";
+                var operacionFolder = GetOperacionFolder(operacion.IdOperacion ?? 0);
+
+                Directory.CreateDirectory(operacionFolder);
+
+                var filePath = Path.Combine(operacionFolder, fileName);
+                var notaTitle = $"Nota {operacion.IdOperacion}";
+                var notaImagePath = Path.Combine(GetCabecerasFolder(), "Nota.png");
+
+                var document = Document.Create(container =>
+                {
+                    var usCulture = new CultureInfo("en-US");
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.Letter);
+                        page.Margin(2, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(11));
+
+                        page.Header()
+                            .ShowOnce()
+                            .Column(column =>
+                            {
+                                if (File.Exists(notaImagePath))
+                                {
+                                    column.Item().Image(notaImagePath).FitWidth();
+                                }
+
+                                column.Item().AlignRight().Text(notaTitle)
+                                    .FontSize(16)
+                                    .FontColor(Colors.Blue.Darken2);
+                            });
+
+                        page.Content()
+                            .PaddingVertical(1, Unit.Centimetre)
+                            .Column(column =>
+                            {
+                                column.Spacing(5);
+
+                                var quoteDate = operacion.FechaInicio ?? DateTime.Now;
+
+                                column.Item().Row(row =>
+                                {
+                                    row.RelativeItem().Column(col =>
+                                    {
+                                        col.Item().Text(text =>
+                                        {
+                                            text.Span("Cliente: ").Bold();
+                                            text.Span(operacion.RazonSocial ?? "N/A");
+                                        });
+                                        col.Item().Text(text =>
+                                        {
+                                            text.Span("Equipo: ").Bold();
+                                            text.Span(operacion.Identificador ?? "N/A");
+                                        });
+                                        if (!string.IsNullOrWhiteSpace(dirigidoA))
+                                        {
+                                            col.Item().Text(text =>
+                                            {
+                                                text.Span("Dirigido a: ").Bold();
+                                                text.Span(dirigidoA);
+                                            });
+                                        }
+                                    });
+
+                                    row.RelativeItem().PaddingLeft(70).Column(col =>
+                                    {
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Fecha: ").Bold();
+                                            text.Span($"{quoteDate:dd/MM/yyyy}");
+                                        });
+
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Atendido por: ").Bold();
+                                            text.Span(operacion.Atiende ?? "N/A");
+                                        });
+
+                                        col.Item().AlignRight().PaddingLeft(20).Text(text =>
+                                        {
+                                            text.Span("Tipo: ").Bold();
+                                            text.Span((operacion.TipoMantenimiento ?? "N/A"));
+                                        });
+                                    });
+                                });
+
+                                column.Item().Text(text =>
+                                {
+                                    text.AlignCenter();
+                                    text.DefaultTextStyle(s => s.FontSize(13));
+                                    text.Span("Nota No: ").Bold();
+                                    text.Span($"{operacion.IdOperacion}");
+                                });
+
+                                if (!string.IsNullOrWhiteSpace(ubicacionNombre))
+                                {
+                                    column.Item().Text(text =>
+                                    {
+                                        text.Span("Ubicación: ").Bold();
+                                        text.Span(ubicacionNombre);
+                                    });
+                                }
+
+                                var cargosList = cargos.ToList();
+
+                                column.Item().Table(table =>
+                                {
+                                    table.ColumnsDefinition(columns =>
+                                    {
+                                        columns.RelativeColumn(1);  // Cantidad
+                                        columns.RelativeColumn(1);  // Tipo
+                                        columns.RelativeColumn(2);  // Detalle
+                                        columns.RelativeColumn(1);  // P.U.
+                                        columns.RelativeColumn(1);  // SubTotal
+                                    });
+
+                                    table.Header(header =>
+                                    {
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Cantidad").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Tipo").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Detalle").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("P.U.").Bold();
+                                        header.Cell().Background(Colors.Grey.Lighten2).Padding(5).AlignRight().PaddingLeft(20).Text("Monto").Bold();
+                                    });
+
+                                    foreach (var cargo in cargosList)
+                                    {
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .Text(cargo.Cantidad.ToString() ?? "N/A");
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .Text(cargo.TipoCargo ?? "N/A");
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
+                                            .Column(col =>
+                                            {
+                                                col.Item().Text(cargo.DetalleLinea1 ?? "N/A");
+                                                if (cargo.TieneSubdetalle)
+                                                {
+                                                    col.Item().PaddingTop(2).Text(cargo.DetalleLinea2 ?? "").FontSize(9).FontColor(Colors.Grey.Medium);
+                                                    col.Item().Text(cargo.DetalleLinea3 ?? "").FontSize(9).FontColor(Colors.Grey.Darken1);
+                                                }
+                                                if (!string.IsNullOrWhiteSpace(cargo.Nota))
+                                                {
+                                                    col.Item().PaddingTop(4)
+                                                        .Text(text =>
+                                                        {
+                                                            text.Span(cargo.Nota).FontSize(8).FontColor(Colors.Grey.Darken2).Italic();
+                                                        });
+                                                }
+                                            });
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .Text($"${(cargo.Unitario ?? 0).ToString("N2", usCulture)}");
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .AlignRight().PaddingLeft(20).Text($"${(cargo.Monto ?? 0).ToString("N2", usCulture)}");
+                                    }
+                                });
+
+                                var subtotal = cargosList.Sum(c => c.Monto ?? 0);
+                                var iva = subtotal * IVA_RATE;
+                                var total = subtotal + iva;
+
+                                column.Item().PaddingTop(10).AlignRight().Width(140).Column(totalsCol =>
+                                {
+                                    totalsCol.Item().Row(row =>
+                                    {
+                                        row.RelativeItem().Text("SUBTOTAL: ").FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${subtotal.ToString("N2", usCulture)}").FontSize(10).AlignRight();
+                                    });
+                                    totalsCol.Item().PaddingTop(3).Row(row =>
+                                    {
+                                        row.RelativeItem().Text("IVA (16%): ").FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${iva.ToString("N2", usCulture)}").FontSize(10).AlignRight();
+                                    });
+                                    totalsCol.Item().PaddingTop(5).Row(row =>
+                                    {
+                                        row.RelativeItem().Text("TOTAL: ").Bold().FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${total.ToString("N2", usCulture)}").Bold().FontSize(10).FontColor(Colors.Blue.Darken2).AlignRight();
+                                    });
+                                });
+
+                                column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Background(Colors.Grey.Lighten4).Padding(15).Column(notesCol =>
+                                {
+                                    notesCol.Item().Text("Condiciones de pago:").Bold().FontSize(11).FontColor(Colors.Blue.Darken2);
+                                    if (limiteCredito.HasValue && (decimal)total >= limiteCredito.Value)
+                                    {
+                                        notesCol.Item().PaddingTop(8).Text("• Se solicita anticipo del 70% para realizar este trabajo").FontSize(10);
+                                        notesCol.Item().PaddingTop(4).Text("• El 30% restante, al término de este").FontSize(10);
+                                    }
+
+                                    notesCol.Item().PaddingTop(4).Text("• Vigencia de esta nota: treinta días naturales").FontSize(10);
+                                });
+
+                                column.Item().PaddingTop(25).Column(closingCol =>
+                                {
+                                    AddFirmasSection(column.Item(), operacion.IdAtiende);
+                                });
+                            });
+
+                        page.Footer()
+                            .AlignCenter()
+                            .Text(x =>
+                            {
+                                x.Span($"Nota {operacion.IdOperacion}, Hoja ");
+                                x.CurrentPageNumber();
+                                x.Span("/");
+                                x.TotalPages();
+                            });
+                    });
+                });
+
+                document.GeneratePdf(filePath);
+
+                await _logger.LogInformationAsync($"Nota PDF generada exitosamente: {filePath}", "QuoteService", "GenerateNotaPdfAsync");
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al generar nota PDF", ex, "QuoteService", "GenerateNotaPdfAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Genera un PDF de reporte de cotización con fotos de cargos
         /// </summary>
         public async Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? dirigidoA = null)
@@ -463,18 +710,21 @@ namespace Advance_Control.Services.Quotes
                 List<OperacionImageDto> prefacturas = new List<OperacionImageDto>();
                 List<OperacionImageDto> hojasServicio = new List<OperacionImageDto>();
                 List<OperacionImageDto> ordenesCompra = new List<OperacionImageDto>();
+                List<OperacionImageDto> levantamientos = new List<OperacionImageDto>();
 
                 if (operacion.IdOperacion.HasValue)
                 {
                     prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
                     hojasServicio = await _operacionImageService.GetHojasServicioAsync(operacion.IdOperacion.Value);
                     try { ordenesCompra = await _operacionImageService.GetOrdenComprasAsync(operacion.IdOperacion.Value); } catch { }
+                    try { levantamientos = await _operacionImageService.GetLevantamientosAsync(operacion.IdOperacion.Value); } catch { }
                 }
 
                 // Expandir rutas: imágenes directamente, PDFs convertidos a PNGs temporales
                 var prefacturasPaths = await ExpandDocumentPathsAsync(prefacturas, tempImageFiles);
                 var hojasPaths       = await ExpandDocumentPathsAsync(hojasServicio, tempImageFiles);
                 var ordenesPaths     = await ExpandDocumentPathsAsync(ordenesCompra, tempImageFiles);
+                var levantamientosPaths = await ExpandDocumentPathsAsync(levantamientos, tempImageFiles);
 
                 // Filtrar rutas de imágenes de cargos (validadas fuera del lambda)
                 var cargosConImagenes = cargosList.Select(cargo => new
@@ -585,17 +835,6 @@ namespace Advance_Control.Services.Quotes
 
                                 column.Item().LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
 
-                                // ── Órdenes de compra (opcional) ────────────────────
-                                if (ordenesPaths.Count > 0)
-                                {
-                                    column.Item().PaddingTop(4)
-                                        .Background(Colors.Blue.Lighten4).Padding(6)
-                                        .Text("Órdenes de Compra").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
-                                    foreach (var path in ordenesPaths)
-                                        column.Item().PaddingTop(4).Image(path).FitArea();
-                                    column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
-                                }
-
                                 // ── Prefacturas (opcional) ──────────────────────────
                                 if (prefacturasPaths.Count > 0)
                                 {
@@ -603,7 +842,7 @@ namespace Advance_Control.Services.Quotes
                                         .Background(Colors.Blue.Lighten4).Padding(6)
                                         .Text("Prefacturas").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
                                     foreach (var path in prefacturasPaths)
-                                        column.Item().PaddingTop(4).Image(path).FitArea();
+                                        AddAdaptiveImage(column.Item(), path);
                                     column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
@@ -614,7 +853,29 @@ namespace Advance_Control.Services.Quotes
                                         .Background(Colors.Blue.Lighten4).Padding(6)
                                         .Text("Hojas de Servicio").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
                                     foreach (var path in hojasPaths)
-                                        column.Item().PaddingTop(4).Image(path).FitArea();
+                                        AddAdaptiveImage(column.Item(), path);
+                                    column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                                }
+
+                                // ── Levantamientos (opcional) ────────────────────────
+                                if (levantamientosPaths.Count > 0)
+                                {
+                                    column.Item().PaddingTop(4)
+                                        .Background(Colors.Blue.Lighten4).Padding(6)
+                                        .Text("Levantamientos").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
+                                    foreach (var path in levantamientosPaths)
+                                        AddAdaptiveImage(column.Item(), path);
+                                    column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
+                                }
+
+                                // ── Órdenes de compra (opcional) ────────────────────
+                                if (ordenesPaths.Count > 0)
+                                {
+                                    column.Item().PaddingTop(4)
+                                        .Background(Colors.Blue.Lighten4).Padding(6)
+                                        .Text("Órdenes de Compra").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
+                                    foreach (var path in ordenesPaths)
+                                        AddAdaptiveImage(column.Item(), path);
                                     column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
@@ -623,60 +884,100 @@ namespace Advance_Control.Services.Quotes
                                     .Background(Colors.Blue.Lighten4).Padding(6)
                                     .Text("Detalle de Cargos").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
 
+                                var usCulture = new System.Globalization.CultureInfo("en-US");
+
                                 foreach (var item in cargosConImagenes)
                                 {
                                     var cargo = item.Cargo;
 
-                                    // Encabezado del cargo — fondo gris, no paginable (pequeño)
-                                    column.Item().PaddingTop(6)
-                                        .Background(Colors.Grey.Lighten4)
-                                        .BorderTop(1).BorderColor(Colors.Grey.Lighten2)
-                                        .Padding(8)
-                                        .Row(row =>
+                                    // Mini-tabla con encabezado + renglón del cargo (mismo formato que cotización)
+                                    column.Item().PaddingTop(6).Table(table =>
+                                    {
+                                        table.ColumnsDefinition(columns =>
                                         {
-                                            row.RelativeItem(1)
-                                                .Text($"Tipo: {cargo.TipoCargo ?? "N/A"}")
-                                                .Bold().FontSize(10);
+                                            columns.RelativeColumn(1);  // Cantidad
+                                            columns.RelativeColumn(1);  // Tipo
+                                            columns.RelativeColumn(2);  // Detalle
+                                            columns.RelativeColumn(1);  // P.U.
+                                            columns.RelativeColumn(1);  // Monto
+                                        });
 
-                                            row.RelativeItem(3).Column(detCol =>
+                                        table.Header(header =>
+                                        {
+                                            header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Cantidad").Bold();
+                                            header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Tipo").Bold();
+                                            header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("Detalle").Bold();
+                                            header.Cell().Background(Colors.Grey.Lighten2).Padding(5).Text("P.U.").Bold();
+                                            header.Cell().Background(Colors.Grey.Lighten2).Padding(5).AlignRight().PaddingLeft(20).Text("Monto").Bold();
+                                        });
+
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .Text(cargo.Cantidad.ToString() ?? "N/A");
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .Text(cargo.TipoCargo ?? "N/A");
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5)
+                                            .Column(col =>
                                             {
-                                                detCol.Item().Text(cargo.DetalleLinea1 ?? "N/A").Bold();
+                                                col.Item().Text(cargo.DetalleLinea1 ?? "N/A");
                                                 if (cargo.TieneSubdetalle)
                                                 {
-                                                    detCol.Item().PaddingTop(2)
-                                                        .Text(cargo.DetalleLinea2 ?? "")
-                                                        .FontSize(9).FontColor(Colors.Grey.Medium);
-                                                    detCol.Item()
-                                                        .Text(cargo.DetalleLinea3 ?? "")
-                                                        .FontSize(9).FontColor(Colors.Grey.Darken1);
+                                                    col.Item().PaddingTop(2).Text(cargo.DetalleLinea2 ?? "").FontSize(9).FontColor(Colors.Grey.Medium);
+                                                    col.Item().Text(cargo.DetalleLinea3 ?? "").FontSize(9).FontColor(Colors.Grey.Darken1);
                                                 }
                                                 if (!string.IsNullOrWhiteSpace(cargo.Nota))
                                                 {
-                                                    detCol.Item().PaddingTop(4)
+                                                    col.Item().PaddingTop(4)
                                                         .Text(text =>
                                                         {
-                                                            text.Span("Nota: ").Bold().FontSize(8).FontColor(Colors.Grey.Darken2);
                                                             text.Span(cargo.Nota).FontSize(8).FontColor(Colors.Grey.Darken2).Italic();
                                                         });
                                                 }
                                             });
-                                        });
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .Text($"${(cargo.Unitario ?? 0).ToString("N2", usCulture)}");
+                                        table.Cell().BorderBottom(1).BorderColor(Colors.Grey.Lighten2).Padding(5).AlignMiddle()
+                                            .AlignRight().PaddingLeft(20).Text($"${(cargo.Monto ?? 0).ToString("N2", usCulture)}");
+                                    });
 
-                                    // Fotografías del cargo — 2 columnas, FitWidth usa el ancho de cada celda
+                                    // Fotografías del cargo — 2 columnas
                                     var imgPaths = item.ImagesPaths;
                                     for (int i = 0; i < imgPaths.Count; i += 2)
                                     {
-                                        int idx = i; // captura para lambda
+                                        int idx = i;
                                         column.Item().PaddingTop(4).Row(row =>
                                         {
                                             row.RelativeItem().Padding(2).Image(imgPaths[idx]).FitWidth();
                                             if (idx + 1 < imgPaths.Count)
                                                 row.RelativeItem().Padding(2).Image(imgPaths[idx + 1]).FitWidth();
                                             else
-                                                row.RelativeItem(); // celda vacía para mantener alineación
+                                                row.RelativeItem();
                                         });
                                     }
                                 }
+
+                                // ── Totales ─────────────────────────────────────────
+                                var subtotal = cargosList.Sum(c => c.Monto ?? 0);
+                                var iva = subtotal * IVA_RATE;
+                                var total = subtotal + iva;
+
+                                column.Item().PaddingTop(10).AlignRight().Width(140).Column(totalsCol =>
+                                {
+                                    totalsCol.Item().Row(row =>
+                                    {
+                                        row.RelativeItem().Text("SUBTOTAL: ").FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${subtotal.ToString("N2", usCulture)}").FontSize(10).AlignRight();
+                                    });
+                                    totalsCol.Item().PaddingTop(3).Row(row =>
+                                    {
+                                        row.RelativeItem().Text("IVA (16%): ").FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${iva.ToString("N2", usCulture)}").FontSize(10).AlignRight();
+                                    });
+                                    totalsCol.Item().PaddingTop(5).Row(row =>
+                                    {
+                                        row.RelativeItem().Text("TOTAL: ").Bold().FontSize(10).AlignLeft();
+                                        row.RelativeItem().Text($"${total.ToString("N2", usCulture)}").Bold().FontSize(10).FontColor(Colors.Blue.Darken2).AlignRight();
+                                    });
+                                });
 
                                 // ── Sección de firmas ───────────────────────────────
                                 AddFirmasSection(column.Item(), operacion.IdAtiende);
@@ -717,6 +1018,55 @@ namespace Advance_Control.Services.Quotes
         /// <summary>
         /// Expande las rutas de documentos: imágenes directamente, PDFs convertidos a PNGs temporales (una imagen por página).
         /// </summary>
+        /// <summary>
+        /// Agrega una imagen adaptativa al contenedor: si cabe en ancho completo dentro de la página,
+        /// usa FitWidth; si es muy alta, limita la altura y ajusta el ancho proporcionalmente.
+        /// Siempre usa ShowEntire para evitar que se divida entre páginas.
+        /// </summary>
+        private static void AddAdaptiveImage(IContainer container, string imagePath)
+        {
+            try
+            {
+                using var stream = File.OpenRead(imagePath);
+                using var codec = SkiaSharp.SKCodec.Create(stream);
+                if (codec == null)
+                {
+                    // Sin dimensiones: ancho completo como fallback
+                    container.ShowEntire().PaddingTop(4).PaddingHorizontal(1, Unit.Centimetre)
+                        .Image(imagePath).FitWidth();
+                    return;
+                }
+
+                var info = codec.Info;
+                float imgW = info.Width;
+                float imgH = info.Height;
+
+                // Altura resultante si se fuerza al ancho disponible
+                float alturaResultanteCm = (imgH / imgW) * CONTENT_WIDTH_CM;
+
+                if (alturaResultanteCm <= MAX_PAGE_HEIGHT_CM)
+                {
+                    // Cabe en la página: forzar ancho completo
+                    container.ShowEntire().PaddingTop(4).PaddingHorizontal(1, Unit.Centimetre)
+                        .Image(imagePath).FitWidth();
+                }
+                else
+                {
+                    // Muy alta: calcular el ancho que hace que la altura sea exactamente MAX_PAGE_HEIGHT_CM
+                    float anchoAjustadoCm = (imgW / imgH) * MAX_PAGE_HEIGHT_CM;
+                    container.ShowEntire().PaddingTop(4).AlignCenter()
+                        .Width(anchoAjustadoCm, Unit.Centimetre)
+                        .Image(imagePath).FitWidth();
+                }
+            }
+            catch
+            {
+                // Fallback seguro: ancho completo
+                container.ShowEntire().PaddingTop(4).PaddingHorizontal(1, Unit.Centimetre)
+                    .Image(imagePath).FitWidth();
+            }
+        }
+
         private static async Task<List<string>> ExpandDocumentPathsAsync(
             List<OperacionImageDto> docs, List<string> tempFiles)
         {

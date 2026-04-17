@@ -49,4 +49,10 @@ public class EmailMessage
 
     /// <summary>Identificador único del mensaje en el servidor IMAP.</summary>
     public string? MessageId { get; set; }
+
+    /// <summary>
+    /// Nombre de la carpeta del cliente donde guardar una copia vía IMAP (ej: "ACME Corp").
+    /// Se creará en Clientes/{CarpetaCliente}. Null para no crear carpeta de cliente.
+    /// </summary>
+    public string? CarpetaCliente { get; set; }
 }

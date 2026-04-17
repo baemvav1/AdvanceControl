@@ -68,6 +68,19 @@
                         Foreground="#808080"
                         Text="✓ Finalizada" />
                 </Border>
+                <Border
+                    Padding="6,2"
+                    VerticalAlignment="Center"
+                    Background="#15E8A317"
+                    BorderBrush="#E8A317"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Visibility="{x:Bind ToTrabajoFinalizadoBadgeVisibility(Operacion.IsTrabajoFinalizado, Operacion.IsFinalized), Mode=OneWay}">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#E8A317"
+                        Text="🔧 Trabajo Finalizado" />
+                </Border>
             </StackPanel>
         </Grid>
 
@@ -511,6 +524,18 @@
                                                 <TextBlock Text="Agregar Cargo" />
                                             </StackPanel>
                                         </Button>
+                                        <!--  Botón Finalizar / Deshacer Finalización (toggle)  -->
+                                        <Button
+                                            Click="FinalizarTrabajoButton_Click"
+                                            IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                            ToolTipService.ToolTip="{x:Bind ToFinalizarTrabajoTooltip(Operacion.TFinalizado), Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon
+                                                    FontSize="14"
+                                                    Glyph="{x:Bind ToFinalizarTrabajoGlyph(Operacion.TFinalizado), Mode=OneWay}" />
+                                                <TextBlock Text="{x:Bind ToFinalizarTrabajoText(Operacion.TFinalizado), Mode=OneWay}" />
+                                            </StackPanel>
+                                        </Button>
                                     </StackPanel>
                                 </Grid>
                             </Grid>
@@ -796,6 +821,26 @@
                                             </AppBarButton>
                                             <AppBarSeparator  Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}"/>
 
+                                            <AppBarButton
+                                                Click="GenerarNotaButton_Click"
+                                                Icon="Document"
+                                                IsEnabled="{x:Bind Operacion.IsTrabajoFinalizado, Mode=OneWay}"
+                                                Label="Generar Nota"
+                                                ToolTipService.ToolTip="Generar nota PDF (requiere trabajo finalizado)" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
+                                                Click="AbrirNotaPdfButton_Click"
+                                                IsEnabled="{x:Bind Operacion.IsTrabajoFinalizado, Mode=OneWay}"
+                                                ToolTipService.ToolTip="Abrir nota PDF"
+                                                Visibility="{x:Bind ToTextVisibility(Operacion.NotaPdfPath), Mode=OneWay}">
+                                                <AppBarButton.Icon>
+                                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
+                                                </AppBarButton.Icon>
+                                            </AppBarButton>
+                                            <AppBarSeparator  Visibility="{x:Bind ToTextVisibility(Operacion.NotaPdfPath), Mode=OneWay}"/>
+
 
                                             <AppBarButton
                                                 Click="UploadPrefacturaButton_Click"
@@ -895,7 +940,7 @@
                                             FontStyle="Italic"
                                             Text="Sin documentos disponibles"
                                             Visibility="{x:Bind Operacion.HojaServicioEmptyVisibility, Mode=OneWay}" />
-                                        <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesHojaServicio, Mode=OneWay}">
+                                        <ItemsRepeater x:Name="HojaServicioRepeater" ItemsSource="{x:Bind Operacion.ImagenesHojaServicio, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" ScrollViewer.HorizontalScrollMode="Enabled"/>
                                             </ItemsRepeater.Layout>
@@ -991,7 +1036,7 @@
                                             FontStyle="Italic"
                                             Text="Sin documentos disponibles"
                                             Visibility="{x:Bind Operacion.PrefacturaEmptyVisibility, Mode=OneWay}" />
-                                        <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesPrefactura, Mode=OneWay}">
+                                        <ItemsRepeater x:Name="PrefacturaRepeater" ItemsSource="{x:Bind Operacion.ImagenesPrefactura, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
                                             </ItemsRepeater.Layout>
@@ -1084,7 +1129,7 @@
                                             FontStyle="Italic"
                                             Text="Sin documentos disponibles"
                                             Visibility="{x:Bind Operacion.OrdenCompraEmptyVisibility, Mode=OneWay}" />
-                                        <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesOrdenCompra, Mode=OneWay}">
+                                        <ItemsRepeater x:Name="OrdenCompraRepeater" ItemsSource="{x:Bind Operacion.ImagenesOrdenCompra, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
                                             </ItemsRepeater.Layout>
@@ -1177,7 +1222,7 @@
                                             FontStyle="Italic"
                                             Text="Sin documentos disponibles"
                                             Visibility="{x:Bind Operacion.LevantamientoEmptyVisibility, Mode=OneWay}" />
-                                        <ItemsRepeater ItemsSource="{x:Bind Operacion.ImagenesLevantamiento, Mode=OneWay}">
+                                        <ItemsRepeater x:Name="LevantamientoRepeater" ItemsSource="{x:Bind Operacion.ImagenesLevantamiento, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
                                             </ItemsRepeater.Layout>

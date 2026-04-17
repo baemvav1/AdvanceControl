@@ -31,6 +31,12 @@ namespace Advance_Control.Services.Quotes
         Task<string> GenerateReportePdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? dirigidoA = null);
 
         /// <summary>
+        /// Genera un PDF de nota a partir de una operación y sus cargos.
+        /// Es igual que la cotización pero con cabecera "Nota.png" y textos "Nota" en lugar de "Cotización".
+        /// </summary>
+        Task<string> GenerateNotaPdfAsync(OperacionDto operacion, IEnumerable<CargoDto> cargos, string? ubicacionNombre = null, string? nombreEmpresa = null, string? apoderadoNombre = null, decimal? limiteCredito = null, string? dirigidoA = null);
+
+        /// <summary>
         /// Busca un PDF existente para una operación.
         /// </summary>
         /// <param name="idOperacion">ID de la operación</param>

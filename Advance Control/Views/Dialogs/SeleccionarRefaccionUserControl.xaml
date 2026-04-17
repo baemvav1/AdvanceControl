@@ -13,7 +13,7 @@
         <converters:NullableNumberToStringConverter x:Key="NullableNumberConverter" />
     </UserControl.Resources>
 
-    <Grid>
+    <Grid Margin="0,0,15,0">
         <StackPanel Orientation="Vertical">
             <StackPanel
                 x:Name="SearchPanel"
@@ -27,7 +27,59 @@
                     x:Name="SerieTextBox"
                     KeyDown="SearchTextBox_KeyDown"
                     PlaceholderText="Buscar por serie... (Enter para buscar)" />
+
             </StackPanel>
+            <Button
+                x:Name="btnNuvaRefaccion"
+                Margin="0,8,2,0"
+                HorizontalAlignment="Right"
+                Click="btnNuvaRefaccion_Click"
+                Content="Nueva Refaccion" />
+            <!--  Panel inline para crear nueva refacción  -->
+            <Border
+                x:Name="NuevaRefaccionPanel"
+                Margin="0,8,4,8"
+                Padding="12"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6"
+                Visibility="Collapsed">
+                <StackPanel Spacing="10">
+                    <TextBox x:Name="NuevaMarcaTextBox" PlaceholderText="Ingrese la marca" />
+                    <TextBox x:Name="NuevaSerieTextBox" PlaceholderText="Ingrese la serie" />
+                    <TextBox x:Name="NuevaCostoTextBox" PlaceholderText="Ingrese el costo" />
+                    <TextBox
+                        x:Name="NuevaDescripcionTextBox"
+                        MinHeight="60"
+                        MaxHeight="120"
+                        AcceptsReturn="True"
+                        PlaceholderText="Ingrese la descripción"
+                        TextWrapping="Wrap" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*" />
+                            <ColumnDefinition Width="1*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <TextBlock FontSize="16" Text="Nueva Refaccion" />
+                        </Grid>
+                        <StackPanel
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                            <Button Click="btnCancelarRefaccion_Click" Content="Cancelar" />
+                            <Button
+                                Click="btnGuardarRefaccion_Click"
+                                Content="Guardar"
+                                Style="{ThemeResource AccentButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
+
+
+                </StackPanel>
+            </Border>
 
             <StackPanel
                 x:Name="SelectedRefaccionPanel"
@@ -75,7 +127,7 @@
                             Grid.Column="2"
                             VerticalAlignment="Center"
                             Click="ShowListButton_Click"
-                            Content="Cambiar"/>
+                            Content="Cambiar" />
                     </Grid>
                 </Border>
             </StackPanel>
@@ -209,7 +261,7 @@
                             Grid.Column="1"
                             VerticalAlignment="Center"
                             Click="ShowProveedoresListButton_Click"
-                            Content="Cambiar"/>
+                            Content="Cambiar" />
                     </Grid>
                 </Border>
             </StackPanel>
@@ -224,7 +276,7 @@
                     Margin="0,0,0,8"
                     HorizontalAlignment="Stretch"
                     Click="ProveedoresButton_Click"
-                    Content="Proveedores"/>
+                    Content="Proveedores" />
                 <Border
                     x:Name="ProveedoresGrid"
                     MinHeight="100"

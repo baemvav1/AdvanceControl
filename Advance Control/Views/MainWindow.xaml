@@ -468,18 +468,27 @@
                                             Text="{Binding FechaCreacion, Converter={StaticResource DateTimeFormatConverter}}" />
                                     </StackPanel>
 
-                                    <!--  Delete Button  -->
-                                    <Button
-                                        Grid.Column="1"
-                                        Padding="8"
-                                        VerticalAlignment="Top"
-                                        Background="Transparent"
-                                        BorderThickness="0"
-                                        Command="{Binding DataContext.EliminarNotificacionCommand, ElementName=RootGrid}"
-                                        CommandParameter="{Binding Id}"
-                                        ToolTipService.ToolTip="Eliminar notificación">
-                                        <SymbolIcon Symbol="Delete" />
-                                    </Button>
+                                    <!--  Botones de acción  -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="2">
+                                        <Button
+                                            Padding="8"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Command="{Binding DataContext.CopiarNotificacionCommand, ElementName=RootGrid}"
+                                            CommandParameter="{Binding Id}"
+                                            ToolTipService.ToolTip="Copiar al portapapeles">
+                                            <SymbolIcon Symbol="Copy" />
+                                        </Button>
+                                        <Button
+                                            Padding="8"
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Command="{Binding DataContext.EliminarNotificacionCommand, ElementName=RootGrid}"
+                                            CommandParameter="{Binding Id}"
+                                            ToolTipService.ToolTip="Eliminar notificación">
+                                            <SymbolIcon Symbol="Delete" />
+                                        </Button>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
                         </DataTemplate>

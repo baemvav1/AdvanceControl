@@ -486,6 +486,42 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Marca el trabajo técnico de una operación como finalizado
+        /// </summary>
+        public async Task<bool> FinalizarTrabajoAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Finalizando trabajo de operación {idOperacion}...", "OperacionesViewModel", "FinalizarTrabajoAsync");
+                return await _operacionService.FinalizarTrabajoAsync(idOperacion, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al finalizar trabajo: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al finalizar trabajo de operación {idOperacion}", ex, "OperacionesViewModel", "FinalizarTrabajoAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Desmarca el trabajo técnico de una operación como finalizado
+        /// </summary>
+        public async Task<bool> DesfinalizarTrabajoAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Desfinalizando trabajo de operación {idOperacion}...", "OperacionesViewModel", "DesfinalizarTrabajoAsync");
+                return await _operacionService.DesfinalizarTrabajoAsync(idOperacion, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al desfinalizar trabajo: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al desfinalizar trabajo de operación {idOperacion}", ex, "OperacionesViewModel", "DesfinalizarTrabajoAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Genera una cotización PDF para la operación especificada con sus cargos
         /// </summary>
         public async Task<string?> GenerateQuoteAsync(OperacionDto operacion, string? dirigidoA = null, CancellationToken cancellationToken = default)
@@ -673,6 +709,96 @@ namespace Advance_Control.ViewModels
             => _quoteService.FindExistingPdf(idOperacion, tipo);
 
         /// <summary>
+        /// Genera una nota PDF para la operación especificada.
+        /// Es igual que la cotización pero con cabecera "Nota.png" y textos "Nota".
+        /// </summary>
+        public async Task<string?> GenerateNotaAsync(OperacionDto operacion, string? dirigidoA = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                if (operacion == null)
+                {
+                    ErrorMessage = "No se puede generar nota: operación no válida.";
+                    return null;
+                }
+
+                if (operacion.Cargos == null || operacion.Cargos.Count == 0)
+                {
+                    ErrorMessage = "No se puede generar nota: no hay cargos asociados a esta operación.";
+                    return null;
+                }
+
+                await _logger.LogInformationAsync($"Generando nota para operación {operacion.IdOperacion}...", "OperacionesViewModel", "GenerateNotaAsync");
+
+                string? nombreEmpresa = null;
+                string? apoderadoNombre = null;
+                try
+                {
+                    var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
+                    nombreEmpresa = entidadActiva?.NombreComercial;
+                    apoderadoNombre = entidadActiva?.Apoderado;
+                }
+                catch (Exception ex)
+                {
+                    await _logger.LogWarningAsync($"No se pudo obtener la entidad activa: {ex.Message}", "OperacionesViewModel", "GenerateNotaAsync");
+                }
+
+                string? ubicacionNombre = null;
+                try
+                {
+                    if (!string.IsNullOrWhiteSpace(operacion.Identificador))
+                    {
+                        var equipos = await _equipoService.GetEquiposAsync(new EquipoQueryDto { Identificador = operacion.Identificador }, cancellationToken);
+                        var equipo = equipos?.FirstOrDefault();
+
+                        if (equipo?.IdUbicacion.HasValue == true && equipo.IdUbicacion.Value > 0)
+                        {
+                            var ubicacion = await _ubicacionService.GetUbicacionByIdAsync(equipo.IdUbicacion.Value, cancellationToken);
+                            ubicacionNombre = ubicacion?.Nombre;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.LogWarningAsync($"No se pudo obtener la ubicación del equipo: {ex.Message}", "OperacionesViewModel", "GenerateNotaAsync");
+                }
+
+                decimal? limiteCredito = null;
+                try
+                {
+                    if (operacion.IdCliente.HasValue && operacion.IdCliente.Value > 0)
+                    {
+                        var clientes = await _clienteService.GetClienteByIdAsync(operacion.IdCliente.Value, cancellationToken);
+                        limiteCredito = clientes?.FirstOrDefault()?.LimiteCredito;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.LogWarningAsync($"No se pudo obtener el límite de crédito del cliente: {ex.Message}", "OperacionesViewModel", "GenerateNotaAsync");
+                }
+
+                var filePath = await _quoteService.GenerateNotaPdfAsync(operacion, operacion.Cargos, ubicacionNombre, nombreEmpresa, apoderadoNombre, limiteCredito, dirigidoA);
+
+                if (operacion.IdOperacion.HasValue)
+                {
+                    var subtotal = operacion.Cargos.Sum(c => c.Monto ?? 0);
+                    var iva = subtotal * IVA_RATE;
+                    operacion.Monto = (decimal)(subtotal + iva);
+                }
+
+                await _logger.LogInformationAsync($"Nota generada exitosamente: {filePath}", "OperacionesViewModel", "GenerateNotaAsync");
+
+                return filePath;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar nota: {ex.Message}";
+                await _logger.LogErrorAsync($"Error al generar nota para operación {operacion?.IdOperacion}", ex, "OperacionesViewModel", "GenerateNotaAsync");
+                return null;
+            }
+        }
+
+        /// <summary>
         /// Elimina todos los PDFs de un tipo para una operación. tipo: "Cotizacion", "Reporte" o "*" para ambos.
         /// </summary>
         public void DeleteOperacionPdfs(int idOperacion, string tipo)
@@ -686,6 +812,7 @@ namespace Advance_Control.ViewModels
             if (!operacion.IdOperacion.HasValue) return;
             operacion.CotizacionPdfPath = _quoteService.FindExistingPdf(operacion.IdOperacion.Value, "Cotizacion");
             operacion.ReportePdfPath = _quoteService.FindExistingPdf(operacion.IdOperacion.Value, "Reporte");
+            operacion.NotaPdfPath = _quoteService.FindExistingPdf(operacion.IdOperacion.Value, "Nota");
         }
 
         /// <summary>

@@ -20,6 +20,7 @@ namespace Advance_Control.Views.Dialogs;
 public sealed partial class EnviarCotizacionDialog : ContentDialog
 {
     private readonly string _pdfPath;
+    private readonly string _razonSocial;
     private readonly IEmailService _emailService;
     private readonly ICorreoUsuarioService _correoUsuarioService;
     private readonly List<CheckBox> _ccCheckboxes = [];
@@ -41,9 +42,11 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
         string razonSocial,
         XamlRoot xamlRoot,
         string tipo = "Cotización",
-        int? idOperacion = null)
+        int? idOperacion = null,
+        bool tFinalizado = false)
     {
         _pdfPath = pdfPath ?? throw new ArgumentNullException(nameof(pdfPath));
+        _razonSocial = razonSocial;
         _emailService = AppServices.Get<IEmailService>();
         _correoUsuarioService = AppServices.Get<ICorreoUsuarioService>();
 
@@ -53,7 +56,12 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
 
         // Pre-llenar campos
         ParaTextBox.Text = contactoPrincipal?.Correo ?? string.Empty;
-        AsuntoTextBox.Text = $"{tipo} - {razonSocial}";
+        AsuntoTextBox.Text = tipo switch
+        {
+            "Nota" => $"Trabajos Realizados {idOperacion}",
+            "Reporte" when tFinalizado => $"Reporte Trabajos Finalizados {idOperacion}",
+            _ => $"{tipo} {idOperacion}"
+        };
 
         // Construir saludo con tratamiento + nombre + apellido
         var partesSaludo = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre, contactoPrincipal?.Apellido }
@@ -156,7 +164,8 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
                 CuerpoTexto = textoPlano,
                 CuerpoHtml = cuerpoHtml,
                 FirmaImagePath = firmaPath,
-                Adjuntos = [(Path.GetFileName(_pdfPath), pdfBytes)]
+                Adjuntos = [(Path.GetFileName(_pdfPath), pdfBytes)],
+                CarpetaCliente = string.IsNullOrWhiteSpace(_razonSocial) ? null : _razonSocial
             };
 
             if (string.IsNullOrWhiteSpace(mensaje.Asunto))
