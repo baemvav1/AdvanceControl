@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Advance_Control.Services.DevOps;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.PermisosUi;
+using Advance_Control.Services.Session;
 
 namespace Advance_Control.ViewModels
 {
@@ -17,16 +18,19 @@ namespace Advance_Control.ViewModels
         private readonly IDevOpsService _devOpsService;
         private readonly ILoggingService _logger;
         private readonly IPermisoUiRuntimeService _permisoRuntime;
+        private readonly IUserSessionService _session;
 
         private bool _isLoading;
         private string _statusMessage = string.Empty;
         private bool _hasError;
 
-        public DevOpsViewModel(IDevOpsService devOpsService, ILoggingService logger, IPermisoUiRuntimeService permisoRuntime)
+        public DevOpsViewModel(IDevOpsService devOpsService, ILoggingService logger, IPermisoUiRuntimeService permisoRuntime,
+            IUserSessionService session)
         {
             _devOpsService = devOpsService ?? throw new ArgumentNullException(nameof(devOpsService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _permisoRuntime = permisoRuntime ?? throw new ArgumentNullException(nameof(permisoRuntime));
+            _session = session ?? throw new ArgumentNullException(nameof(session));
 
             Estadisticas = new ObservableCollection<DevOpsStatsResult>();
             UltimosResultados = new ObservableCollection<DevOpsWipeResult>();
@@ -52,6 +56,9 @@ namespace Advance_Control.ViewModels
 
         public ObservableCollection<DevOpsStatsResult> Estadisticas { get; }
         public ObservableCollection<DevOpsWipeResult> UltimosResultados { get; }
+
+        /// <summary>ID de credencial del usuario logueado (para pre-llenar emisor).</summary>
+        public int CredencialIdActual => _session.CredencialId;
 
         /// <summary>Carga las estadísticas de la base de datos.</summary>
         public async Task CargarEstadisticasAsync()
@@ -169,6 +176,33 @@ namespace Advance_Control.ViewModels
                 HasError = true;
                 StatusMessage = $"Error al limpiar conciliación por rango: {ex.Message}";
                 await _logger.LogErrorAsync(ex.Message, ex, "DevOpsViewModel", "EjecutarLimpiezaRangoAsync");
+                return false;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>Envía un mensaje de prueba vía REST con emisor arbitrario.</summary>
+        public async Task<bool> EnviarMensajePruebaAsync(long deCredencialId, long paraCredencialId, string contenido)
+        {
+            try
+            {
+                IsLoading = true;
+                HasError = false;
+                StatusMessage = $"Enviando mensaje de prueba de {deCredencialId} a {paraCredencialId}...";
+
+                await _devOpsService.EnviarMensajePruebaAsync(deCredencialId, paraCredencialId, contenido);
+
+                StatusMessage = $"Mensaje de prueba enviado de {deCredencialId} a {paraCredencialId}.";
+                return true;
+            }
+            catch (Exception ex)
+            {
+                HasError = true;
+                StatusMessage = $"Error al enviar mensaje de prueba: {ex.Message}";
+                await _logger.LogErrorAsync(ex.Message, ex, "DevOpsViewModel", "EnviarMensajePruebaAsync");
                 return false;
             }
             finally

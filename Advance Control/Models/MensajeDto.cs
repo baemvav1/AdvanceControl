@@ -1,3 +1,5 @@
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
@@ -73,13 +75,29 @@ namespace Advance_Control.Models
         public bool NotEsMio => !EsMio;
 
         [JsonIgnore]
-        public bool EsImagen => Tipo == "imagen" && !string.IsNullOrEmpty(ArchivoUrl);
+        public bool EsImagen => (Tipo ?? string.Empty) == "imagen" && !string.IsNullOrEmpty(ArchivoUrl);
 
         [JsonIgnore]
-        public bool EsPdf => Tipo == "pdf" && !string.IsNullOrEmpty(ArchivoUrl);
+        public bool EsPdf => (Tipo ?? string.Empty) == "pdf" && !string.IsNullOrEmpty(ArchivoUrl);
 
         [JsonIgnore]
         public bool EsTexto => !EsImagen && !EsPdf;
+
+        // Propiedades Visibility explícitas para evitar conversión implícita bool→Visibility en x:Bind
+        [JsonIgnore]
+        public Visibility EsMioVisibility => EsMio ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility NotEsMioVisibility => !EsMio ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility EsImagenVisibility => EsImagen ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility EsPdfVisibility => EsPdf ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility EsTextoVisibility => EsTexto ? Visibility.Visible : Visibility.Collapsed;
 
         [JsonIgnore]
         public string HoraFormateada => CreatedAt.ToString("HH:mm");
@@ -93,8 +111,28 @@ namespace Advance_Control.Models
         [JsonIgnore]
         public string? ImagenUrlCompleta { get; set; }
 
+        /// <summary>ImageSource seguro para binding (evita conversión implícita string→ImageSource).</summary>
+        [JsonIgnore]
+        public BitmapImage? ImagenSource
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(ImagenUrlCompleta)) return null;
+                try { return new BitmapImage(new Uri(ImagenUrlCompleta)); }
+                catch { return null; }
+            }
+        }
+
+        /// <summary>Contenido seguro para binding (nunca null).</summary>
+        [JsonIgnore]
+        public string ContenidoSeguro => Contenido ?? string.Empty;
+
         /// <summary>Ícono de lectura: doble check si leído, check simple si no.</summary>
         public string GetReadIcon(bool esLeido) => esLeido ? "\uE8FB" : "\uE73E";
+
+        /// <summary>Glyph de lectura para binding (propiedad, no función).</summary>
+        [JsonIgnore]
+        public string ReadIconGlyph => EsLeido ? "\uE8FB" : "\uE73E";
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Advance_Control.Views.Items.Mensajeria.MensajeBurbujaItemView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid>
+        <!--  Mensaje propio (derecha)  -->
+        <Border
+            MaxWidth="400"
+            Margin="80,2,0,2"
+            Padding="12,8"
+            HorizontalAlignment="Right"
+            Background="{ThemeResource AccentFillColorDefaultBrush}"
+            CornerRadius="12,12,4,12"
+            Visibility="{Binding EsMioVisibility}">
+            <StackPanel>
+                <!--  Imagen  -->
+                <Image
+                    MaxWidth="300" MaxHeight="300"
+                    Margin="0,0,0,4"
+                    Source="{Binding ImagenSource}"
+                    Stretch="Uniform"
+                    Visibility="{Binding EsImagenVisibility}" />
+                <!--  PDF  -->
+                <Button
+                    Margin="0,0,0,4"
+                    Padding="10,8"
+                    Background="#22FFFFFF"
+                    Click="PdfButton_Click"
+                    CornerRadius="8"
+                    Tag="{Binding ImagenUrlCompleta}"
+                    Visibility="{Binding EsPdfVisibility}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="20" Foreground="White" Glyph="&#xEA90;" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12" Foreground="White"
+                            Text="{Binding ContenidoSeguro}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Button>
+                <!--  Texto  -->
+                <TextBlock
+                    FontSize="13" Foreground="White"
+                    Text="{Binding ContenidoSeguro}"
+                    TextWrapping="Wrap"
+                    Visibility="{Binding EsTextoVisibility}" />
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="4">
+                    <TextBlock
+                        FontSize="10"
+                        Foreground="#CCFFFFFF"
+                        Text="{Binding HoraFormateada}" />
+                    <FontIcon
+                        FontSize="10"
+                        Foreground="#CCFFFFFF"
+                        Glyph="{Binding ReadIconGlyph}" />
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!--  Mensaje del otro (izquierda)  -->
+        <Border
+            MaxWidth="400"
+            Margin="0,2,80,2"
+            Padding="12,8"
+            HorizontalAlignment="Left"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            CornerRadius="12,12,12,4"
+            Visibility="{Binding NotEsMioVisibility}">
+            <StackPanel>
+                <!--  Imagen  -->
+                <Image
+                    MaxWidth="300" MaxHeight="300"
+                    Margin="0,0,0,4"
+                    Source="{Binding ImagenSource}"
+                    Stretch="Uniform"
+                    Visibility="{Binding EsImagenVisibility}" />
+                <!--  PDF  -->
+                <Button
+                    Margin="0,0,0,4"
+                    Padding="10,8"
+                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                    Click="PdfButton_Click"
+                    CornerRadius="8"
+                    Tag="{Binding ImagenUrlCompleta}"
+                    Visibility="{Binding EsPdfVisibility}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="20" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Glyph="&#xEA90;" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Text="{Binding ContenidoSeguro}"
+                            TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Button>
+                <!--  Texto  -->
+                <TextBlock
+                    FontSize="13"
+                    Text="{Binding ContenidoSeguro}"
+                    TextWrapping="Wrap"
+                    Visibility="{Binding EsTextoVisibility}" />
+                <TextBlock
+                    HorizontalAlignment="Right"
+                    FontSize="10"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding HoraFormateada}" />
+            </StackPanel>
+        </Border>
+    </Grid>
+</UserControl>

@@ -54,6 +54,7 @@ namespace Advance_Control.Models
         {
             get
             {
+                if (string.IsNullOrEmpty(NombreVisible)) return "?";
                 var parts = NombreVisible.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
                 return parts.Length >= 2
                     ? $"{parts[0][0]}{parts[1][0]}".ToUpper()

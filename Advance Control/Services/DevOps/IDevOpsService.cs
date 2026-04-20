@@ -39,6 +39,9 @@ namespace Advance_Control.Services.DevOps
 
         /// <summary>Obtiene estadísticas de la base de datos</summary>
         Task<List<DevOpsStatsResult>> ObtenerEstadisticasAsync(CancellationToken ct = default);
+
+        /// <summary>Envía un mensaje de prueba con emisor arbitrario para testing</summary>
+        Task EnviarMensajePruebaAsync(long deCredencialId, long paraCredencialId, string contenido, CancellationToken ct = default);
     }
 
     /// <summary>Resultado de limpieza por tabla</summary>

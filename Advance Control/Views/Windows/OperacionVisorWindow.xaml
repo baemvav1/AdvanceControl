@@ -878,26 +878,6 @@
 
                                             <AppBarSeparator />
 
-                                            <!--  Factura (accent)  -->
-                                            <AppBarButton
-                                                Click="UploadFacturaButton_Click"
-                                                Background="Red"
-                                                Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                Label="Factura"
-                                                ToolTipService.ToolTip="Cargar factura PDF (finaliza la operación)" />
-                                            
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="VerFacturaButton_Click"
-                                                Icon="OpenFile"
-                                                Label="Ver Factura"
-                                                ToolTipService.ToolTip="Abrir factura PDF"
-                                                Visibility="{x:Bind Operacion.FacturaVisibility, Mode=OneWay}" />
-
-                                            <AppBarSeparator />
-
                                             <AppBarButton
                                                 Click="ReabrirOperacionButton_Click"
                                                 Background="Green"

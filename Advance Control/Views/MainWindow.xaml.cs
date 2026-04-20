@@ -1,11 +1,14 @@
 using System;
 using System.ComponentModel;
 using System.Linq;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Session;
 using Advance_Control.Services.Theme;
+using Advance_Control.Services.Notificacion;
 
 namespace Advance_Control
 {
@@ -15,6 +18,7 @@ namespace Advance_Control
         private readonly IUserSessionService _sessionService;
         private readonly IThemeService _themeService;
         private bool _autoLoginAttempted;
+        private MensajesViewModel? _mensajesVmSuscrito;
 
         // Constructor adapted for DI to inject MainViewModel
         public MainWindow(MainViewModel viewModel, IUserSessionService sessionService, IThemeService themeService)
@@ -39,9 +43,35 @@ namespace Advance_Control
             nvSample.BackRequested += (sender, args) => _viewModel.OnBackRequested(sender, args);
             _viewModel.PropertyChanged += ViewModel_PropertyChanged;
 
+            // Detectar cambio de página para alternar panel contextual
+            contentFrame.Navigated += ContentFrame_Navigated;
+
+            // Inicializar ChatPanelView
+            ChatPanelControl.Initialize();
+
+            // Fallback in-app notifications cuando el sistema toast no está disponible
+            InAppNotificacionMessenger.NotificacionSolicitada += OnNotificacionInApp;
+
             // Subscribe to Loaded event to attempt auto-login after the window is ready
             RootGrid.Loaded += RootGrid_Loaded;
             UpdateNavigationVisibility();
+        }
+
+        private void OnNotificacionInApp(object? sender, (string Titulo, string? Nota) e)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                bool esError = e.Titulo.Contains("Error", StringComparison.OrdinalIgnoreCase)
+                            || e.Titulo.Contains("Validación", StringComparison.OrdinalIgnoreCase);
+
+                NotificacionInfoBar.Severity = esError
+                    ? InfoBarSeverity.Error
+                    : InfoBarSeverity.Success;
+
+                NotificacionInfoBar.Title = e.Titulo;
+                NotificacionInfoBar.Message = e.Nota ?? string.Empty;
+                NotificacionInfoBar.IsOpen = true;
+            });
         }
         
         private async void RootGrid_Loaded(object sender, RoutedEventArgs e)
@@ -51,6 +81,9 @@ namespace Advance_Control
                 return;
 
             _autoLoginAttempted = true;
+
+            // Desuscribirse del evento al cerrar ventana
+            this.Closed += (_, _) => InAppNotificacionMessenger.NotificacionSolicitada -= OnNotificacionInApp;
 
             // Attempt auto-login when the window is loaded
             await _viewModel.TryAutoLoginAsync();
@@ -62,20 +95,81 @@ namespace Advance_Control
             await _viewModel.ShowLoginDialogAsync();
         }
 
-        private void ToggleNotificaciones_Click(object sender, RoutedEventArgs e)
+        private void ToggleChat_Click(object sender, RoutedEventArgs e)
         {
-            _viewModel.IsNotificacionesVisible = !_viewModel.IsNotificacionesVisible;
+            _viewModel.IsChatPanelVisible = !_viewModel.IsChatPanelVisible;
 
             // Ajustar el ancho de la columna según la visibilidad
-            NotificacionesColumn.Width = _viewModel.IsNotificacionesVisible
+            NotificacionesColumn.Width = _viewModel.IsChatPanelVisible
                 ? new GridLength(2, GridUnitType.Star)
                 : new GridLength(0);
+
+            // Al ocultar el panel, limpiar usuario visible del ChatPanel
+            if (!_viewModel.IsChatPanelVisible)
+            {
+                ChatPanelControl.ViewModel.IsPanelVisible = false;
+            }
+            else
+            {
+                ChatPanelControl.ViewModel.IsPanelVisible = true;
+            }
         }
 
-        private async void DescartarAlertas_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Abre el panel lateral de chat (si no está visible).
+        /// Llamado desde la activación de notificaciones.
+        /// </summary>
+        public void MostrarChatPanel()
         {
-            if (_sessionService.IsLoaded && _sessionService.CredencialId > 0)
-                await _viewModel.DescartarAlertasAsync(_sessionService.CredencialId);
+            if (_viewModel.IsChatPanelVisible) return;
+
+            _viewModel.IsChatPanelVisible = true;
+            NotificacionesColumn.Width = new GridLength(2, GridUnitType.Star);
+            ChatPanelControl.ViewModel.IsPanelVisible = true;
+        }
+
+        /// <summary>
+        /// Abre la conversación con un usuario específico en el chat panel.
+        /// Llamado al hacer clic en una notificación de mensaje.
+        /// </summary>
+        public void AbrirChatConUsuario(long credencialId)
+        {
+            ChatPanelControl.ViewModel.AbrirConversacionPorId(credencialId);
+        }
+
+        /// <summary>
+        /// Alterna el contenido del panel lateral según la página activa:
+        /// MensajesPage → UsuarioInfoView, cualquier otra → ChatPanelView.
+        /// </summary>
+        private void ContentFrame_Navigated(object sender, NavigationEventArgs e)
+        {
+            // Desuscribir del ViewModel anterior para evitar memory leaks
+            if (_mensajesVmSuscrito != null)
+            {
+                _mensajesVmSuscrito.PropertyChanged -= MensajesViewModel_PropertyChanged;
+                _mensajesVmSuscrito = null;
+            }
+
+            var esMensajesPage = e.SourcePageType == typeof(Views.Pages.MensajesPage);
+
+            ChatPanelControl.Visibility = esMensajesPage ? Visibility.Collapsed : Visibility.Visible;
+            UsuarioInfoControl.Visibility = esMensajesPage ? Visibility.Visible : Visibility.Collapsed;
+
+            // Cuando se está en MensajesPage, vincular la selección de usuario al panel info
+            if (esMensajesPage && contentFrame.Content is Views.Pages.MensajesPage mensajesPage)
+            {
+                _mensajesVmSuscrito = mensajesPage.ViewModel;
+                _mensajesVmSuscrito.PropertyChanged += MensajesViewModel_PropertyChanged;
+                UsuarioInfoControl.SetUsuario(mensajesPage.ViewModel.UsuarioSeleccionado);
+            }
+        }
+
+        private void MensajesViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(MensajesViewModel.UsuarioSeleccionado) && sender is MensajesViewModel vm)
+            {
+                UsuarioInfoControl.SetUsuario(vm.UsuarioSeleccionado);
+            }
         }
 
         private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Advance_Control"
+    xmlns:views="using:Advance_Control.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Title="Advance Control"
     mc:Ignorable="d">
@@ -18,6 +19,7 @@
             <RowDefinition Height="1*" />
             <RowDefinition Height="28" />
         </Grid.RowDefinitions>
+
         <Grid Grid.Row="0" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="50" />
@@ -78,21 +80,20 @@
 
                     <Grid Grid.Column="2">
                         <Button
-                            x:Name="ToggleNotificacionesButton"
+                            x:Name="ToggleChatButton"
                             Width="36"
                             Height="36"
                             Margin="0,0,5,0"
                             Padding="0"
                             HorizontalAlignment="Right"
-                            Background="{Binding HasUnseenNotifications, Converter={StaticResource NotificationColorConverter}}"
-                            Click="ToggleNotificaciones_Click"
+                            Click="ToggleChat_Click"
                             CornerRadius="5,0,5,0"
-                            ToolTipService.ToolTip="Notificaciones">
+                            ToolTipService.ToolTip="Chat">
                             <FontIcon
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 FontSize="16"
-                                Glyph="&#xEA8F;" />
+                                Glyph="&#xE8BD;" />
                         </Button>
                     </Grid>
                 </Grid>
@@ -314,189 +315,13 @@
 
         </Grid>
         <Grid
-            x:Name="Notificaciones"
+            x:Name="ChatPanel"
             Grid.Row="0"
             Grid.Column="1"
-            Padding="10"
-            Visibility="{Binding IsNotificacionesVisible, Converter={StaticResource BoolToVisibilityConverter}}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
-
-            <!--  Header  -->
-            <TextBlock
-                Grid.Row="0"
-                Margin="0,0,0,10"
-                FontSize="14"
-                FontWeight="SemiBold"
-                Text="Notificaciones" />
-
-            <!--  Alertas inteligentes del sistema  -->
-            <StackPanel
-                Grid.Row="1"
-                Margin="0,0,0,8"
-                Visibility="{Binding HasAlertasDb, Converter={StaticResource BoolToVisibilityConverter}}">
-                <Grid Margin="0,0,0,6">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock
-                        Grid.Column="0"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        FontWeight="SemiBold"
-                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                        Text="⚠ Alertas del sistema" />
-                    <Button
-                        x:Name="DescartarAlertasButton"
-                        Grid.Column="1"
-                        Padding="4,2"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        Click="DescartarAlertas_Click"
-                        FontSize="11"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        ToolTipService.ToolTip="Marcar todas como vistas">
-                        <FontIcon FontSize="11" Glyph="&#xE8BB;" />
-                    </Button>
-                </Grid>
-                <ItemsRepeater ItemsSource="{Binding AlertasDb}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Spacing="4" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:NotificacionAlerta">
-                            <Border
-                                Padding="10,8"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource SystemFillColorCautionBrush}"
-                                BorderThickness="1,1,1,2"
-                                CornerRadius="6">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <FontIcon
-                                        Grid.Column="0"
-                                        Margin="0,0,8,0"
-                                        VerticalAlignment="Top"
-                                        FontSize="14"
-                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                        Glyph="{x:Bind Icono}" />
-                                    <StackPanel Grid.Column="1" Spacing="2">
-                                        <TextBlock
-                                            FontSize="12"
-                                            Text="{x:Bind Titulo}"
-                                            TextWrapping="Wrap" />
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            Text="{x:Bind Origen}" />
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-            </StackPanel>
-
-            <!--  Notification List (UI toasts)  -->
-            <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                <ItemsControl ItemsSource="{Binding Notificaciones}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border
-                                Margin="0,0,0,8"
-                                Padding="10"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1"
-                                CornerRadius="4">
-                                <Grid>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="*" />
-                                    </Grid.RowDefinitions>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <StackPanel Grid.Column="0" Spacing="4">
-                                        <!--  Título  -->
-                                        <TextBlock
-                                            FontSize="14"
-                                            FontWeight="Bold"
-                                            Text="{Binding Titulo}"
-                                            TextWrapping="Wrap" />
-
-                                        <!--  Nota  -->
-                                        <TextBlock
-                                            FontSize="12"
-                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                            Text="{Binding Nota}"
-                                            TextWrapping="Wrap"
-                                            Visibility="{Binding Nota, Converter={StaticResource NullToVisibilityConverter}}" />
-
-                                        <!--  Fecha de Inicio  -->
-                                        <TextBlock
-                                            FontSize="11"
-                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                            Visibility="{Binding FechaHoraInicio, Converter={StaticResource NullToVisibilityConverter}}">
-                                            <Run Text="Inicio: " />
-                                            <Run Text="{Binding FechaHoraInicio, Converter={StaticResource DateTimeFormatConverter}}" />
-                                        </TextBlock>
-
-                                        <!--  Fecha Final  -->
-                                        <TextBlock
-                                            FontSize="11"
-                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                            Visibility="{Binding FechaHoraFinal, Converter={StaticResource NullToVisibilityConverter}}">
-                                            <Run Text="Final: " />
-                                            <Run Text="{Binding FechaHoraFinal, Converter={StaticResource DateTimeFormatConverter}}" />
-                                        </TextBlock>
-
-                                        <!--  Fecha de Creación  -->
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="{ThemeResource TextFillColorDisabledBrush}"
-                                            Text="{Binding FechaCreacion, Converter={StaticResource DateTimeFormatConverter}}" />
-                                    </StackPanel>
-
-                                    <!--  Botones de acción  -->
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Top" Spacing="2">
-                                        <Button
-                                            Padding="8"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Command="{Binding DataContext.CopiarNotificacionCommand, ElementName=RootGrid}"
-                                            CommandParameter="{Binding Id}"
-                                            ToolTipService.ToolTip="Copiar al portapapeles">
-                                            <SymbolIcon Symbol="Copy" />
-                                        </Button>
-                                        <Button
-                                            Padding="8"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Command="{Binding DataContext.EliminarNotificacionCommand, ElementName=RootGrid}"
-                                            CommandParameter="{Binding Id}"
-                                            ToolTipService.ToolTip="Eliminar notificación">
-                                            <SymbolIcon Symbol="Delete" />
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-
-            <!--  (Sección de silenciadas eliminada)  -->
+            Padding="0"
+            Visibility="{Binding IsChatPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
+            <views:ChatPanelView x:Name="ChatPanelControl" Visibility="Visible" />
+            <views:UsuarioInfoView x:Name="UsuarioInfoControl" Visibility="Collapsed" />
         </Grid>
         <Grid
             Grid.Row="1"
@@ -525,6 +350,19 @@
                     Text="En línea" />
             </StackPanel>
         </Grid>
+
+        <!--  InfoBar de notificación in-app (fallback cuando no hay MSIX desplegado)  -->
+        <InfoBar
+            x:Name="NotificacionInfoBar"
+            Grid.Row="0"
+            Grid.ColumnSpan="2"
+            Canvas.ZIndex="10"
+            MaxWidth="420"
+            Margin="0,8,16,0"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            IsClosable="True"
+            IsOpen="False" />
     </Grid>
 
 

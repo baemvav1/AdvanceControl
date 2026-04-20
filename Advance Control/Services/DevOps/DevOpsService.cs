@@ -129,5 +129,27 @@ namespace Advance_Control.Services.DevOps
                 throw;
             }
         }
+
+        public async Task EnviarMensajePruebaAsync(long deCredencialId, long paraCredencialId, string contenido, CancellationToken ct = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "DevOps", "mensaje-prueba");
+                var payload = new { DeCredencialId = deCredencialId, ParaCredencialId = paraCredencialId, Contenido = contenido };
+
+                using var response = await _http.PostAsJsonAsync(url, payload, ct).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var error = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+                    throw new Exception($"Error al enviar mensaje de prueba: {response.StatusCode} - {error}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync($"Error al enviar mensaje de prueba: {ex.Message}", ex, "DevOpsService", "EnviarMensajePruebaAsync");
+                throw;
+            }
+        }
     }
 }

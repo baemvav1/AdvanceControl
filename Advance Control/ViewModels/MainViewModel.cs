@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using Advance_Control.Navigation;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.Logging;
@@ -13,14 +12,13 @@ using Advance_Control.Services.Dialog;
 using Advance_Control.Views.Login;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.Services.Notificacion;
-using System.Collections.ObjectModel;
 using Advance_Control.Models;
-using CommunityToolkit.Mvvm.Input;
 using Advance_Control.Services.AccessControl;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Services.Alertas;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.PermisosUi;
+using Advance_Control.Services.Mensajeria;
 using Advance_Control.Utilities;
 
 namespace Advance_Control.ViewModels
@@ -38,21 +36,16 @@ namespace Advance_Control.ViewModels
         private readonly INotificacionAlertaService _alertaService;
         private readonly IActivityService _activityService;
         private readonly IPermisoUiRuntimeService _permisoUiRuntimeService;
-        private NotificacionService? _notifServiceReference;
+        private readonly IMensajeriaService _mensajeria;
         private bool _disposed;
         private Frame? _contentFrame;
 
         private string _title = "Advance Control";
         private bool _isAuthenticated;
         private bool _isBackEnabled;
-        private bool _isNotificacionesVisible = false;
-        private ObservableCollection<NotificacionDto> _notificaciones;
-        private ObservableCollection<NotificacionAlerta> _alertasDb = new();
-        private bool _hasAlertasDb;
+        private bool _isChatPanelVisible = false;
         private string _userInitials = "";
         private string _userType = "";
-        private bool _hasUnseenNotifications;
-        private int _lastSeenNotificationCount;
 
         public MainViewModel(
             INavigationService navigationService,
@@ -65,7 +58,8 @@ namespace Advance_Control.ViewModels
             IUserInfoService userInfoService,
             INotificacionAlertaService alertaService,
             IActivityService activityService,
-            IPermisoUiRuntimeService permisoUiRuntimeService)
+            IPermisoUiRuntimeService permisoUiRuntimeService,
+            IMensajeriaService mensajeria)
         {
             _navigationService   = navigationService   ?? throw new ArgumentNullException(nameof(navigationService));
             _onlineCheck         = onlineCheck         ?? throw new ArgumentNullException(nameof(onlineCheck));
@@ -78,24 +72,10 @@ namespace Advance_Control.ViewModels
             _alertaService       = alertaService       ?? throw new ArgumentNullException(nameof(alertaService));
             _activityService     = activityService     ?? throw new ArgumentNullException(nameof(activityService));
             _permisoUiRuntimeService = permisoUiRuntimeService ?? throw new ArgumentNullException(nameof(permisoUiRuntimeService));
+            _mensajeria          = mensajeria          ?? throw new ArgumentNullException(nameof(mensajeria));
 
             // Initialize authentication state
             _isAuthenticated = _authService.IsAuthenticated;
-
-            // Initialize notifications collection
-            _notificaciones = new ObservableCollection<NotificacionDto>();
-            
-            // Subscribe to notification service events if the implementation supports it
-            if (_notificacionService is NotificacionService notifService)
-            {
-                _notificaciones = notifService.NotificacionesObservable;
-                _notifServiceReference = notifService;
-                notifService.NotificacionAgregada += OnNotificacionAgregada;
-            }
-
-            // Initialize commands
-            EliminarNotificacionCommand = new RelayCommand<Guid>(EliminarNotificacion);
-            CopiarNotificacionCommand = new RelayCommand<Guid>(CopiarNotificacion);
 
             // Load user info if already authenticated
             if (_isAuthenticated)
@@ -113,28 +93,6 @@ namespace Advance_Control.ViewModels
                     }
                 });
             }
-        }
-
-        /// <summary>
-        /// Handler for when a new notification is added
-        /// </summary>
-        private void OnNotificacionAgregada(object? sender, NotificacionDto _)
-        {
-            // Only update HasUnseenNotifications if the panel is collapsed
-            if (!_isNotificacionesVisible)
-            {
-                UpdateHasUnseenNotifications();
-            }
-        }
-
-        /// <summary>
-        /// Updates the HasUnseenNotifications property based on current notification count
-        /// </summary>
-        private void UpdateHasUnseenNotifications()
-        {
-            // When panel is collapsed, if there are more notifications than we've seen, show green
-            var currentCount = _notificaciones?.Count ?? 0;
-            HasUnseenNotifications = currentCount > _lastSeenNotificationCount;
         }
 
         public string Title
@@ -155,86 +113,10 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _isBackEnabled, value);
         }
 
-        public bool IsNotificacionesVisible
+        public bool IsChatPanelVisible
         {
-            get => _isNotificacionesVisible;
-            set
-            {
-                if (SetProperty(ref _isNotificacionesVisible, value))
-                {
-                    if (value)
-                    {
-                        // When panel is expanded, mark as seen (gray)
-                        HasUnseenNotifications = false;
-                        _lastSeenNotificationCount = _notificaciones?.Count ?? 0;
-                    }
-                    else
-                    {
-                        // When panel is collapsed, check for unseen notifications
-                        UpdateHasUnseenNotifications();
-                    }
-                }
-            }
-        }
-
-        public ObservableCollection<NotificacionDto> Notificaciones
-        {
-            get => _notificaciones;
-            set => SetProperty(ref _notificaciones, value);
-        }
-
-        /// <summary>Alertas inteligentes persistentes generadas por el sistema.</summary>
-        public ObservableCollection<NotificacionAlerta> AlertasDb
-        {
-            get => _alertasDb;
-            private set => SetProperty(ref _alertasDb, value);
-        }
-
-        public bool HasAlertasDb
-        {
-            get => _hasAlertasDb;
-            private set => SetProperty(ref _hasAlertasDb, value);
-        }
-
-        /// <summary>
-        /// Genera y carga las alertas inteligentes del usuario desde la BD.
-        /// Llamar después del login exitoso.
-        /// </summary>
-        public async Task CargarAlertasAsync(int credencialId)
-        {
-            try
-            {
-                var alertas = await _alertaService.GenerarYObtenerAsync(credencialId).ConfigureAwait(false);
-                await UpdateUIPropertiesAsync(() =>
-                {
-                    _alertasDb.Clear();
-                    foreach (var a in alertas) _alertasDb.Add(a);
-                    HasAlertasDb = _alertasDb.Count > 0;
-                    if (HasAlertasDb) HasUnseenNotifications = true;
-                });
-            }
-            catch (Exception ex)
-            {
-                await _logger.LogWarningAsync("No se pudieron cargar alertas del sistema", "MainViewModel", "CargarAlertasAsync");
-            }
-        }
-
-        /// <summary>Descarta todas las alertas marcándolas como vistas en la BD.</summary>
-        public async Task DescartarAlertasAsync(int credencialId)
-        {
-            try
-            {
-                await _alertaService.MarcarVistasAsync(credencialId).ConfigureAwait(false);
-                await UpdateUIPropertiesAsync(() =>
-                {
-                    _alertasDb.Clear();
-                    HasAlertasDb = false;
-                });
-            }
-            catch (Exception ex)
-            {
-                await _logger.LogWarningAsync("No se pudieron descartar las alertas del sistema", "MainViewModel", "DescartarAlertasAsync");
-            }
+            get => _isChatPanelVisible;
+            set => SetProperty(ref _isChatPanelVisible, value);
         }
 
         public string UserInitials
@@ -248,18 +130,6 @@ namespace Advance_Control.ViewModels
             get => _userType;
             set => SetProperty(ref _userType, value);
         }
-
-        /// <summary>
-        /// Indicates if there are unseen notifications (button should be green)
-        /// </summary>
-        public bool HasUnseenNotifications
-        {
-            get => _hasUnseenNotifications;
-            set => SetProperty(ref _hasUnseenNotifications, value);
-        }
-
-        public ICommand EliminarNotificacionCommand { get; }
-        public ICommand CopiarNotificacionCommand { get; }
 
         public INavigationService NavigationService => _navigationService;
 
@@ -644,32 +514,6 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Elimina una notificación específica
-        /// </summary>
-        /// <param name="notificacionId">ID de la notificación a eliminar</param>
-        private void EliminarNotificacion(Guid notificacionId)
-        {
-            _notificacionService.EliminarNotificacion(notificacionId);
-        }
-
-        /// <summary>
-        /// Copia el contenido de una notificación al portapapeles
-        /// </summary>
-        private void CopiarNotificacion(Guid notificacionId)
-        {
-            var notif = _notificaciones?.FirstOrDefault(n => n.Id == notificacionId);
-            if (notif == null) return;
-
-            var texto = notif.Titulo;
-            if (!string.IsNullOrWhiteSpace(notif.Nota))
-                texto += Environment.NewLine + notif.Nota;
-
-            var dataPackage = new Windows.ApplicationModel.DataTransfer.DataPackage();
-            dataPackage.SetText(texto);
-            Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dataPackage);
-        }
-
-        /// <summary>
         /// Carga la información del usuario autenticado
         /// </summary>
         public async Task LoadUserInfoAsync()
@@ -720,6 +564,27 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        /// <summary>
+        /// Genera y carga las alertas inteligentes del usuario desde la BD.
+        /// Las muestra como notificaciones de Windows y las marca como vistas.
+        /// </summary>
+        private async Task CargarAlertasAsync(int credencialId)
+        {
+            try
+            {
+                var alertas = await _alertaService.GenerarYObtenerAsync(credencialId).ConfigureAwait(false);
+                foreach (var alerta in alertas)
+                    await _notificacionService.MostrarNotificacionAsync(alerta.Titulo, alerta.Origen).ConfigureAwait(false);
+
+                if (alertas.Count > 0)
+                    await _alertaService.MarcarVistasAsync(credencialId).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync("No se pudieron cargar alertas del sistema", "MainViewModel", "CargarAlertasAsync");
+            }
+        }
+
         private async Task HandleLoginSuccessAsync()
         {
             try
@@ -732,6 +597,14 @@ namespace Advance_Control.ViewModels
                 });
 
                 await LoadUserInfoAsync();
+
+                // Conectar SignalR al iniciar sesión
+                var token = await _authService.GetAccessTokenAsync();
+                if (!string.IsNullOrEmpty(token))
+                {
+                    await _mensajeria.ConectarAsync(token);
+                }
+
                 await NavigateToInicioAsync(forceReload: true);
             }
             catch (Exception ex)
@@ -765,14 +638,15 @@ namespace Advance_Control.ViewModels
         {
             try
             {
+                // Desconectar SignalR al cerrar sesión
+                await _mensajeria.DesconectarAsync();
+
                 await UpdateUIPropertiesAsync(() =>
                 {
                     IsAuthenticated = false;
                     UserInitials = string.Empty;
                     UserType = string.Empty;
-                    _alertasDb.Clear();
-                    HasAlertasDb = false;
-                    HasUnseenNotifications = false;
+                    IsChatPanelVisible = false;
                 });
 
                 await NavigateToInicioAsync(forceReload: true);
@@ -885,12 +759,7 @@ namespace Advance_Control.ViewModels
 
             if (disposing)
             {
-                // Unsubscribe from NotificacionAgregada event to prevent memory leaks
-                if (_notifServiceReference != null)
-                {
-                    _notifServiceReference.NotificacionAgregada -= OnNotificacionAgregada;
-                    _notifServiceReference = null;
-                }
+                // Recursos futuros se liberan aquí
             }
 
             _disposed = true;

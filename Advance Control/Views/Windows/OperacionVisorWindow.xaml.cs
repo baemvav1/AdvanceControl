@@ -954,48 +954,6 @@ namespace Advance_Control.Views.Windows
         private async void UploadOrdenCompraButton_Click(object sender, RoutedEventArgs e)  => await UploadOperacionImageAsync("OrdenCompra");
         private async void UploadLevantamientoButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageAsync("Levantamiento");
 
-        private async void UploadFacturaButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!Operacion.IdOperacion.HasValue) return;
-            try
-            {
-                var picker = new FileOpenPicker();
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, _hwnd);
-                picker.ViewMode = PickerViewMode.List;
-                picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
-                picker.FileTypeFilter.Add(".pdf");
-                var file = await picker.PickSingleFileAsync();
-                if (file == null) return;
-                using var stream = await file.OpenStreamForReadAsync();
-                var result = await _operacionImageService.UploadFacturaAsync(Operacion.IdOperacion.Value, stream);
-                if (result != null)
-                {
-                    _activityService.Registrar("Operaciones", "Factura cargada");
-                    await _viewModel.UpdateCheckAsync(Operacion, "factura_cargada");
-                    var fechaFinal = DateTime.Today;
-                    if (await _viewModel.UpdateOperacionAsync(Operacion.IdOperacion.Value, fechaFinal: fechaFinal))
-                        Operacion.FechaFinal = fechaFinal;
-                    Operacion.HasFactura = true;
-                    await _notificacionService.MostrarAsync("Factura cargada", "La factura fue guardada y la operación finalizada.");
-                }
-                else await MostrarErrorAsync("Error", "No se pudo guardar la factura.");
-            }
-            catch (Exception ex) { LogDebugError(nameof(UploadFacturaButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la factura."); }
-        }
-
-        private async void VerFacturaButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!Operacion.IdOperacion.HasValue) return;
-            try
-            {
-                var factura = await _operacionImageService.GetFacturaAsync(Operacion.IdOperacion.Value);
-                if (factura == null || string.IsNullOrEmpty(factura.Url)) { await MostrarErrorAsync("Error", "No se encontró el archivo de factura."); return; }
-                var file = await WinStorage.StorageFile.GetFileFromPathAsync(factura.Url);
-                await WinSystem.Launcher.LaunchFileAsync(file);
-            }
-            catch (Exception ex) { LogDebugError(nameof(VerFacturaButton_Click), ex); await MostrarErrorAsync("Error", "No se pudo abrir la factura."); }
-        }
-
         private async void ViewOperacionImageButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not FrameworkElement el || el.Tag is not OperacionImageDto img || string.IsNullOrEmpty(img.Url))

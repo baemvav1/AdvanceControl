@@ -1,10 +1,9 @@
-using Advance_Control.Models;
 using Advance_Control.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Navigation;
+using Advance_Control.Models;
 using System;
 using System.IO;
 using System.Linq;
@@ -12,25 +11,26 @@ using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.Storage.Pickers;
 
-namespace Advance_Control.Views.Pages
+namespace Advance_Control.Views
 {
-    public sealed partial class MensajesPage : Page
+    public sealed partial class ChatPanelView : UserControl
     {
-        private static readonly string[] _extensionesImagen = { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" };
         private static readonly string[] _extensionesPermitidas = { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".pdf" };
 
-        public MensajesViewModel ViewModel { get; }
+        public ChatPanelViewModel ViewModel { get; }
 
-        public MensajesPage()
+        public ChatPanelView()
         {
             var services = ((App)Application.Current).Host.Services;
-            ViewModel = services.GetRequiredService<MensajesViewModel>();
+            ViewModel = services.GetRequiredService<ChatPanelViewModel>();
             this.InitializeComponent();
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        /// <summary>
+        /// Inicializa el panel (debe llamarse después de que el UserControl esté cargado).
+        /// </summary>
+        public async void Initialize()
         {
-            base.OnNavigatedTo(e);
             ViewModel.SetDispatcher(DispatcherQueue);
             try
             {
@@ -38,20 +38,21 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error en MensajesPage.OnNavigatedTo: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Error en ChatPanelView.Initialize: {ex}");
             }
         }
 
-        protected override async void OnNavigatedFrom(NavigationEventArgs e)
+        private void ToggleUserList_Click(object sender, RoutedEventArgs e)
         {
-            base.OnNavigatedFrom(e);
-            try
+            ViewModel.IsUserListVisible = !ViewModel.IsUserListVisible;
+        }
+
+        private void BuscadorUsuarios_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+        {
+            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
-                await ViewModel.CleanupAsync();
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Error en MensajesPage.OnNavigatedFrom: {ex}");
+                try { ViewModel.FiltrarUsuarios(sender.Text); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.BuscadorUsuarios_TextChanged: {ex}"); }
             }
         }
 
@@ -64,7 +65,7 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error en EnviarButton_Click: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.EnviarButton_Click: {ex}");
             }
         }
 
@@ -73,33 +74,16 @@ namespace Advance_Control.Views.Pages
             if (e.Key == global::Windows.System.VirtualKey.Enter)
             {
                 e.Handled = true;
-                try
-                {
-                    await ViewModel.EnviarMensajeAsync();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error en MensajeTextBox_KeyDown: {ex}");
-                }
+                try { await ViewModel.EnviarMensajeAsync(); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.MensajeTextBox_KeyDown: {ex}"); }
             }
         }
 
         private async void MensajeTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             try { await ViewModel.NotificarEscribiendoAsync(); }
-            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en MensajeTextBox_TextChanged: {ex}"); }
+            catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.MensajeTextBox_TextChanged: {ex}"); }
         }
-
-        private void BuscadorUsuarios_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
-        {
-            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
-            {
-                try { ViewModel.FiltrarUsuarios(sender.Text); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en BuscadorUsuarios_TextChanged: {ex}"); }
-            }
-        }
-
-        // ── Drag & Drop de imágenes ──
 
         private void ChatArea_DragOver(object sender, DragEventArgs e)
         {
@@ -133,11 +117,9 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Error en ChatArea_Drop: {ex}");
+                System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.ChatArea_Drop: {ex}");
             }
         }
-
-        // ── Botón adjuntar ──
 
         private async void AdjuntarButton_Click(object sender, RoutedEventArgs e)
         {
@@ -159,32 +141,28 @@ namespace Advance_Control.Views.Pages
             await ViewModel.EnviarArchivoAsync(stream, file.Name, file.ContentType);
         }
 
+        private async void BurbujaPdfButton_Click(object? sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is string url && !string.IsNullOrEmpty(url))
+            {
+                try { await global::Windows.System.Launcher.LaunchUriAsync(new Uri(url)); }
+                catch { }
+            }
+        }
+
         private static bool EsArchivoValido(StorageFile file)
         {
             var ext = Path.GetExtension(file.Name)?.ToLowerInvariant();
             return !string.IsNullOrEmpty(ext) && _extensionesPermitidas.Contains(ext);
         }
 
-        private async void BurbujaPdfButton_Click(object? sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is string url && !string.IsNullOrEmpty(url))
-            {
-                try
-                {
-                    await global::Windows.System.Launcher.LaunchUriAsync(new Uri(url));
-                }
-                catch { }
-            }
-        }
-
-        // Helpers para x:Bind del header (evitan chaining nullable que puede fallar en WinUI 3)
+        // Helpers para x:Bind
 
         public string GetUsuarioIniciales(UsuarioChatDto? user) => user?.Iniciales ?? "";
         public string GetUsuarioNombre(UsuarioChatDto? user) => user?.NombreVisible ?? "";
+
         public Visibility GetUsuarioEnLineaVisibility(UsuarioChatDto? user)
             => (user?.EstaEnLinea ?? false) ? Visibility.Visible : Visibility.Collapsed;
-
-        // Funciones helper para x:Bind
 
         public Microsoft.UI.Xaml.Media.SolidColorBrush GetConnectionColor(bool connected)
         {

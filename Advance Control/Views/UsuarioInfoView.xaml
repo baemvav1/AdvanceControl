@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Advance_Control.Views.UsuarioInfoView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource LayerFillColorDefaultBrush}"
+          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+          BorderThickness="1,0,0,0"
+          Padding="16">
+
+        <!--  Estado sin usuario seleccionado  -->
+        <StackPanel
+            x:Name="EmptyState"
+            HorizontalAlignment="Center" VerticalAlignment="Center"
+            Spacing="8"
+            Visibility="Visible">
+            <FontIcon FontSize="40" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Glyph="&#xE77B;" />
+            <TextBlock
+                HorizontalAlignment="Center"
+                FontSize="13"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Selecciona un usuario para ver su información"
+                TextAlignment="Center"
+                TextWrapping="Wrap" />
+        </StackPanel>
+
+        <!--  Info del usuario  -->
+        <ScrollViewer x:Name="InfoPanel" Visibility="Collapsed">
+            <StackPanel Spacing="16" Padding="0,8">
+
+                <!--  Avatar grande  -->
+                <Grid Width="80" Height="80" HorizontalAlignment="Center">
+                    <Ellipse Width="80" Height="80"
+                             Fill="{ThemeResource AccentFillColorDefaultBrush}" />
+                    <TextBlock
+                        x:Name="AvatarIniciales"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        FontSize="28" FontWeight="SemiBold"
+                        Foreground="White" />
+                </Grid>
+
+                <!--  Nombre visible  -->
+                <TextBlock
+                    x:Name="NombreText"
+                    HorizontalAlignment="Center"
+                    FontSize="18" FontWeight="SemiBold"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+
+                <!--  Nombre de usuario  -->
+                <TextBlock
+                    x:Name="UsuarioText"
+                    HorizontalAlignment="Center"
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextAlignment="Center" />
+
+                <!--  Estado en línea  -->
+                <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" Spacing="6">
+                    <Ellipse
+                        x:Name="EstadoIndicator"
+                        Width="10" Height="10" />
+                    <TextBlock
+                        x:Name="EstadoText"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+
+                <!--  Separador  -->
+                <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,4" />
+
+                <!--  Nivel  -->
+                <StackPanel Spacing="4">
+                    <TextBlock FontSize="11" FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="NIVEL DE ACCESO" />
+                    <TextBlock x:Name="NivelText" FontSize="13" />
+                </StackPanel>
+
+                <!--  Estado de cuenta  -->
+                <StackPanel Spacing="4">
+                    <TextBlock FontSize="11" FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="ESTADO DE CUENTA" />
+                    <TextBlock x:Name="CuentaEstadoText" FontSize="13" />
+                </StackPanel>
+
+                <!--  Separador  -->
+                <Border Height="1" Background="{ThemeResource CardStrokeColorDefaultBrush}" Margin="0,4" />
+
+                <!--  Sección futura: imágenes compartidas  -->
+                <StackPanel Spacing="4">
+                    <TextBlock FontSize="11" FontWeight="SemiBold"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="ARCHIVOS COMPARTIDOS" />
+                    <TextBlock FontSize="12"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                               Text="Próximamente"
+                               FontStyle="Italic" />
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

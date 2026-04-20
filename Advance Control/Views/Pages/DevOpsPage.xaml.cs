@@ -192,6 +192,76 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarEstadisticasAsync();
         }
 
+        private async void OnEnviarMensajePruebaClick(object sender, RoutedEventArgs e)
+        {
+            var emisorBox = new NumberBox
+            {
+                Header = "ID Emisor (credencial)",
+                Value = ViewModel.CredencialIdActual,
+                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+                Minimum = 1,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+
+            var receptorBox = new NumberBox
+            {
+                Header = "ID Receptor (credencial)",
+                PlaceholderText = "Ej: 2",
+                SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact,
+                Minimum = 1,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+
+            var mensajeBox = new TextBox
+            {
+                Header = "Mensaje",
+                PlaceholderText = "Escribe el mensaje de prueba...",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                Height = 100
+            };
+
+            var panel = new StackPanel { Width = 360 };
+            panel.Children.Add(emisorBox);
+            panel.Children.Add(receptorBox);
+            panel.Children.Add(mensajeBox);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Enviar Mensaje de Prueba",
+                Content = panel,
+                PrimaryButtonText = "Enviar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result != ContentDialogResult.Primary) return;
+
+            if (double.IsNaN(emisorBox.Value) || emisorBox.Value < 1)
+            {
+                await MostrarError("Debes ingresar un ID de emisor válido.");
+                return;
+            }
+
+            if (double.IsNaN(receptorBox.Value) || receptorBox.Value < 1)
+            {
+                await MostrarError("Debes ingresar un ID de receptor válido.");
+                return;
+            }
+
+            var mensaje = mensajeBox.Text?.Trim();
+            if (string.IsNullOrEmpty(mensaje))
+            {
+                await MostrarError("El mensaje no puede estar vacío.");
+                return;
+            }
+
+            await ViewModel.EnviarMensajePruebaAsync((long)emisorBox.Value, (long)receptorBox.Value, mensaje);
+        }
+
         /// <summary>
         /// Muestra un diálogo de confirmación antes de ejecutar una limpieza.
         /// </summary>

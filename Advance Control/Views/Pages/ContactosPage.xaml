@@ -26,7 +26,7 @@
         <!--  Header  -->
         <StackPanel
             Grid.Row="0"
-            Margin="0,0,0,24"
+            Margin="0,0,0,10"
             Spacing="8">
             <StackPanel Orientation="Horizontal" Spacing="5">
                 <TextBlock
@@ -35,25 +35,29 @@
                     Text="Contactos" />
                 <Button
                     x:Name="Nuevo"
+                    Margin="0,8,0,0"
                     VerticalAlignment="Center"
-                    Background="Transparent"
                     BorderThickness="0"
                     Click="NuevoButton_Click"
-                    ToolTipService.ToolTip="Crear nuevo contacto">
-                    <SymbolIcon Symbol="Add" />
-                </Button>
+                    Content="Nuevo Contacto"
+                    Style="{StaticResource AccentButtonStyle}"
+                    ToolTipService.ToolTip="Crear nuevo contacto" />
+                <Button
+                    x:Name="ToggleFiltrosButton"
+                    Margin="0,8,0,0"
+                    Click="ToggleFiltros_Click"
+                    Content="Filtros" />
             </StackPanel>
-            <TextBlock
-                FontSize="16"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Gestión de contactos del sistema" />
+            
         </StackPanel>
 
         <!--  Filtros  -->
         <StackPanel
+            x:Name="Filtros"
             Grid.Row="1"
             Margin="0,0,0,16"
-            Spacing="12">
+            Spacing="12"
+            Visibility="Collapsed">
             <TextBlock
                 FontSize="16"
                 FontWeight="SemiBold"
@@ -121,8 +125,8 @@
                     <Button
                         Click="SearchButton_Click"
                         Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}"/>
-                    <Button Click="ClearButton_Click" Content="Limpiar"/>
+                        Style="{StaticResource AccentButtonStyle}" />
+                    <Button Click="ClearButton_Click" Content="Limpiar" />
                 </StackPanel>
             </Grid>
         </StackPanel>
@@ -156,8 +160,7 @@
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="0,0,0,1"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
-                                        Tag="{x:Bind}"
-                                        Tapped="HeadGrid_Tapped">
+                                        Tag="{x:Bind}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
@@ -212,7 +215,7 @@
                                                 BorderThickness="0"
                                                 Click="ToggleExpandButton_Click"
                                                 Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
-                                                Tag="{x:Bind}"/>
+                                                Tag="{x:Bind}" />
                                         </StackPanel>
                                     </Grid>
                                     <Grid
@@ -408,12 +411,12 @@
                                             </PivotItem>
 
                                             <!--  Áreas Asignadas (solo si tiene credencial)  -->
-                                            <PivotItem Header="Áreas"
-                                                Visibility="{x:Bind TieneCredencial, Converter={StaticResource BooleanToVisibilityConverter}}">
+                                            <PivotItem Header="Áreas" Visibility="{x:Bind TieneCredencial, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <StackPanel Orientation="Horizontal" Spacing="5">
                                                         <TextBlock
-                                                            FontSize="14" FontWeight="SemiBold"
+                                                            FontSize="14"
+                                                            FontWeight="SemiBold"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="Áreas Asignadas" />
                                                         <Button
@@ -421,9 +424,9 @@
                                                             Background="{ThemeResource LayerFillColorDefaultBrush}"
                                                             BorderThickness="0"
                                                             Click="AgregarArea_Click"
-                                                            ToolTipService.ToolTip="Asignar área"
                                                             Foreground="DarkGray"
-                                                            Tag="{x:Bind}">
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Asignar área">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Add" />
                                                             </StackPanel>
@@ -432,7 +435,9 @@
 
                                                     <!--  Loading indicator  -->
                                                     <ProgressRing
-                                                        Width="20" Height="20" HorizontalAlignment="Left"
+                                                        Width="20"
+                                                        Height="20"
+                                                        HorizontalAlignment="Left"
                                                         IsActive="{x:Bind IsLoadingAreas, Mode=OneWay}"
                                                         Visibility="{x:Bind IsLoadingAreas, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
 
@@ -447,7 +452,8 @@
                                                                     Padding="12"
                                                                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                                    BorderThickness="1" CornerRadius="4">
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4">
                                                                     <Grid>
                                                                         <Grid.ColumnDefinitions>
                                                                             <ColumnDefinition Width="Auto" />
@@ -457,18 +463,21 @@
                                                                         <!--  Indicador de color del área  -->
                                                                         <Border
                                                                             Grid.Column="0"
-                                                                            Width="4" Height="28"
-                                                                            VerticalAlignment="Center"
+                                                                            Width="4"
+                                                                            Height="28"
                                                                             Margin="0,0,10,0"
-                                                                            CornerRadius="2"
-                                                                            Background="{x:Bind ColorMapa}" />
+                                                                            VerticalAlignment="Center"
+                                                                            Background="{x:Bind ColorMapa}"
+                                                                            CornerRadius="2" />
                                                                         <StackPanel Grid.Column="1" Spacing="2">
                                                                             <TextBlock
-                                                                                FontSize="13" FontWeight="SemiBold"
+                                                                                FontSize="13"
+                                                                                FontWeight="SemiBold"
                                                                                 Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                                                 Text="{x:Bind NombreArea}" />
                                                                             <TextBlock
-                                                                                FontSize="11" FontStyle="Italic"
+                                                                                FontSize="11"
+                                                                                FontStyle="Italic"
                                                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                                                 Text="{x:Bind Nota}"
                                                                                 TextWrapping="Wrap"
@@ -478,7 +487,8 @@
                                                                             Grid.Column="2"
                                                                             VerticalAlignment="Center"
                                                                             AutomationProperties.Name="Eliminar área asignada"
-                                                                            Background="Transparent" BorderThickness="0"
+                                                                            Background="Transparent"
+                                                                            BorderThickness="0"
                                                                             Click="EliminarAreaAsignada_Click"
                                                                             Tag="{x:Bind}"
                                                                             ToolTipService.ToolTip="Quitar área">
@@ -492,7 +502,8 @@
 
                                                     <!--  Mensaje cuando no hay áreas  -->
                                                     <TextBlock
-                                                        FontSize="12" FontStyle="Italic"
+                                                        FontSize="12"
+                                                        FontStyle="Italic"
                                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                         Text="No hay áreas asignadas"
                                                         Visibility="{x:Bind ShowNoAreasMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />

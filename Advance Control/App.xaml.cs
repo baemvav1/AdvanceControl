@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.UI.Xaml;
+using Microsoft.Windows.AppNotifications;
 using System;
 using System.IO;
 using System.Net.Http;
@@ -971,6 +972,9 @@ namespace Advance_Control
                     // Registrar MensajesViewModel
                     services.AddTransient<ViewModels.MensajesViewModel>();
 
+                    // Registrar ChatPanelViewModel (Singleton — vive mientras la app está abierta)
+                    services.AddSingleton<ViewModels.ChatPanelViewModel>();
+
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
                 })
@@ -983,6 +987,18 @@ namespace Advance_Control
 
         protected override async void OnLaunched(Microsoft.UI.Xaml.LaunchActivatedEventArgs args)
         {
+            // Registrar AppNotificationManager para notificaciones de Windows.
+            // El handler debe registrarse ANTES de Register() para interceptar activaciones por clic.
+            try
+            {
+                AppNotificationManager.Default.NotificationInvoked += OnNotificationInvoked;
+                AppNotificationManager.Default.Register();
+            }
+            catch (Exception)
+            {
+                // App corriendo sin identidad MSIX (ej. debug directo): las notificaciones no estarán disponibles.
+            }
+
             // Iniciar el host (permite que HostedServices si existen arranquen)
             await Host.StartAsync();
 
@@ -998,6 +1014,7 @@ namespace Advance_Control
             {
                 try
                 {
+                    AppNotificationManager.Default.Unregister();
                     // Intentar detener el host de forma ordenada (timeout 5s)
                     await Host.StopAsync(TimeSpan.FromSeconds(5));
                 }
@@ -1011,10 +1028,133 @@ namespace Advance_Control
                 }
             };
 
+            // Capturar excepciones no controladas para diagnóstico (muestra el error real en vez de crash silencioso)
+            this.UnhandledException += async (sender, args) =>
+            {
+                args.Handled = true;
+                var ex = args.Exception;
+                var detalle = $"Tipo: {ex?.GetType().FullName}\n\nMensaje: {ex?.Message}\n\nStackTrace:\n{ex?.StackTrace}";
+                EscribirCrashLog("UI.UnhandledException", detalle);
+                System.Diagnostics.Debug.WriteLine($"[CRASH CAPTURADO]\n{detalle}");
+
+                try
+                {
+                    var xamlRoot = MainWindow?.Content?.XamlRoot;
+                    if (xamlRoot != null)
+                    {
+                        var scroll = new Microsoft.UI.Xaml.Controls.ScrollViewer
+                        {
+                            MaxHeight = 400,
+                            Content = new Microsoft.UI.Xaml.Controls.TextBlock
+                            {
+                                Text = detalle,
+                                IsTextSelectionEnabled = true,
+                                TextWrapping = Microsoft.UI.Xaml.TextWrapping.Wrap,
+                                FontFamily = new Microsoft.UI.Xaml.Media.FontFamily("Consolas"),
+                                FontSize = 11
+                            }
+                        };
+                        var dialog = new Microsoft.UI.Xaml.Controls.ContentDialog
+                        {
+                            Title = "⚠ Error no controlado (diagnóstico)",
+                            Content = scroll,
+                            CloseButtonText = "Cerrar",
+                            XamlRoot = xamlRoot
+                        };
+                        await dialog.ShowAsync();
+                    }
+                }
+                catch { /* Si el dialog falla, al menos tenemos el output de Debug */ }
+            };
+
+            // Capturar excepciones de threads no-UI (background threads, finalizers)
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                try
+                {
+                    var ex = e.ExceptionObject as Exception;
+                    EscribirCrashLog("AppDomain.UnhandledException",
+                        $"Tipo: {ex?.GetType().FullName}\n\nMensaje: {ex?.Message}\n\nStackTrace:\n{ex?.StackTrace}\n\nIsTerminating: {e.IsTerminating}");
+                }
+                catch { }
+            };
+
+            // Capturar tasks fire-and-forget que fallan sin observar
+            System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                try
+                {
+                    EscribirCrashLog("TaskScheduler.UnobservedTaskException",
+                        $"Tipo: {e.Exception?.GetType().FullName}\n\nMensaje: {e.Exception?.Message}\n\nStackTrace:\n{e.Exception?.StackTrace}");
+                    e.SetObserved();
+                }
+                catch { }
+            };
+
             window.Activate();
         }
 
+        /// <summary>Escribe un log de crash al archivo %TEMP%\advancecontrol_crash.log para diagnóstico cuando el diálogo falla.</summary>
+        private static void EscribirCrashLog(string fuente, string detalle)
+        {
+            try
+            {
+                var path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "advancecontrol_crash.log");
+                var entrada = $"\n========== {DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | {fuente} ==========\n{detalle}\n";
+                System.IO.File.AppendAllText(path, entrada);
+            }
+            catch { /* Si ni el log a archivo funciona, no podemos hacer más */ }
+        }
 
-       
+        /// <summary>
+        /// Maneja el clic en una notificación de Windows: trae la ventana existente al frente
+        /// y abre el panel de chat con el usuario correspondiente.
+        /// </summary>
+        private void OnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args)
+        {
+            // Leer credencialId de los argumentos de la notificación
+            long credencialId = 0;
+            try
+            {
+                if (args.Arguments.TryGetValue("credencialId", out var idStr))
+                    long.TryParse(idStr, out credencialId);
+            }
+            catch { }
+
+            // Fallback: usar el último ID guardado por ChatPanelViewModel
+            if (credencialId <= 0)
+                credencialId = ViewModels.ChatPanelViewModel.UltimaNotificacionCredencialId;
+
+            System.Diagnostics.Debug.WriteLine($"[Notificacion] credencialId={credencialId}, raw='{args.Argument}'");
+
+            MainWindow?.DispatcherQueue?.TryEnqueue(() =>
+            {
+                if (MainWindow is null) return;
+
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
+
+                if (IsIconic(hwnd))
+                    ShowWindow(hwnd, 9); // SW_RESTORE
+
+                SetForegroundWindow(hwnd);
+
+                if (MainWindow is MainWindow mw)
+                {
+                    mw.MostrarChatPanel();
+
+                    if (credencialId > 0)
+                        mw.AbrirChatConUsuario(credencialId);
+                }
+            });
+        }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool IsIconic(IntPtr hWnd);
     }
 }

@@ -147,6 +147,17 @@
                     <TextBlock Text="Ver Estadísticas de BD" />
                 </StackPanel>
             </Button>
+
+            <!-- Herramientas de mensajería -->
+            <TextBlock Text="Herramientas de Mensajería" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,8" />
+
+            <Button x:Name="BtnMensajePrueba" Padding="16,12"
+                    Click="OnEnviarMensajePruebaClick">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE89B;" FontSize="16" />
+                    <TextBlock Text="Enviar Mensaje de Prueba" />
+                </StackPanel>
+            </Button>
         </StackPanel>
 
         <!-- Tabla de estadísticas / resultados -->

@@ -12,6 +12,12 @@ namespace Advance_Control.Services.Mensajeria
         /// <summary>Indica si la conexión SignalR está activa.</summary>
         bool EstaConectado { get; }
 
+        /// <summary>
+        /// ID del usuario cuya conversación está visible en pantalla.
+        /// Se usa para suprimir notificaciones de mensajes de este usuario.
+        /// </summary>
+        long? UsuarioVisibleId { get; set; }
+
         /// <summary>Se dispara cuando se recibe un mensaje nuevo.</summary>
         event EventHandler<MensajeDto>? MensajeRecibido;
 

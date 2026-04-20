@@ -31,7 +31,7 @@ namespace Advance_Control.Tests.ViewModels
             _mockSecureStorage.Setup(x => x.ClearAsync()).Returns(Task.CompletedTask);
             _mockNotificationService
                 .Setup(x => x.MostrarNotificacionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int?>()))
-                .ReturnsAsync(new Models.NotificacionDto());
+                .Returns(Task.CompletedTask);
         }
 
         [Fact]

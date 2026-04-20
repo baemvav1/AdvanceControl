@@ -149,7 +149,8 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
             // Construir cuerpo HTML con texto del mensaje + referencia CID de firma
             var textoHtml = System.Net.WebUtility.HtmlEncode(textoPlano)
                                   .Replace("\r\n", "<br/>")
-                                  .Replace("\n", "<br/>");
+                                  .Replace("\n", "<br/>")
+                                  .Replace("\r", "<br/>");
             var firmaCidHtml = !string.IsNullOrEmpty(firmaPath)
                 ? FirmaCorreoHelper.GetFirmaCidHtml()
                 : string.Empty;

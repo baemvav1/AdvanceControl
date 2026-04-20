@@ -240,10 +240,7 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            ToggleContactoExpand(sender);
-        }
+        
 
         private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {
@@ -694,6 +691,13 @@ namespace Advance_Control.Views.Pages
                     await _notificacionService.MostrarAsync("Error", "Ocurrió un error al eliminar la asignación.");
                 }
             }
+        }
+
+        private void ToggleFiltros_Click(object sender, RoutedEventArgs e)
+        {
+            Filtros.Visibility = Filtros.Visibility == Visibility.Collapsed
+               ? Visibility.Visible
+               : Visibility.Collapsed;
         }
     }
 }

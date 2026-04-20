@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:items="using:Advance_Control.Views.Items.Mensajeria"
     xmlns:models="using:Advance_Control.Models"
     mc:Ignorable="d">
 
@@ -54,62 +55,7 @@
                 SelectionMode="Single">
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="models:UsuarioChatDto">
-                        <Grid Padding="8,10" ColumnSpacing="10">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <!--  Avatar con indicador de estado  -->
-                            <Grid Grid.Column="0" Width="40" Height="40">
-                                <Ellipse
-                                    Width="40" Height="40"
-                                    Fill="{ThemeResource AccentFillColorDefaultBrush}" />
-                                <TextBlock
-                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    FontSize="14" FontWeight="SemiBold"
-                                    Foreground="White"
-                                    Text="{x:Bind Iniciales}" />
-                                <!--  Indicador en línea  -->
-                                <Ellipse
-                                    Width="12" Height="12"
-                                    HorizontalAlignment="Right" VerticalAlignment="Bottom"
-                                    Fill="#10B981"
-                                    Stroke="{ThemeResource LayerFillColorDefaultBrush}"
-                                    StrokeThickness="2"
-                                    Visibility="{x:Bind EstaEnLinea, Mode=OneWay}" />
-                            </Grid>
-
-                            <!--  Nombre y estado  -->
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock
-                                    FontSize="13" FontWeight="SemiBold"
-                                    Text="{x:Bind NombreVisible}"
-                                    TextTrimming="CharacterEllipsis" />
-                                <TextBlock
-                                    FontSize="11"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Escribiendo…"
-                                    Visibility="{x:Bind EstaEscribiendo, Mode=OneWay}" />
-                            </StackPanel>
-
-                            <!--  Badge de no leídos  -->
-                            <Border
-                                Grid.Column="2"
-                                MinWidth="20" Height="20"
-                                Padding="5,0"
-                                HorizontalAlignment="Center" VerticalAlignment="Center"
-                                Background="{ThemeResource SystemFillColorCriticalBrush}"
-                                CornerRadius="10"
-                                Visibility="{x:Bind TieneNoLeidos, Mode=OneWay}">
-                                <TextBlock
-                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                    FontSize="11" FontWeight="Bold"
-                                    Foreground="White"
-                                    Text="{x:Bind MensajesNoLeidos, Mode=OneWay}" />
-                            </Border>
-                        </Grid>
+                        <items:UsuarioChatItemView />
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
@@ -143,17 +89,17 @@
                             HorizontalAlignment="Center" VerticalAlignment="Center"
                             FontSize="13" FontWeight="SemiBold"
                             Foreground="White"
-                            Text="{x:Bind ViewModel.UsuarioSeleccionado.Iniciales, Mode=OneWay}" />
+                            Text="{x:Bind GetUsuarioIniciales(ViewModel.UsuarioSeleccionado), Mode=OneWay}" />
                     </Grid>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock
                             FontSize="15" FontWeight="SemiBold"
-                            Text="{x:Bind ViewModel.UsuarioSeleccionado.NombreVisible, Mode=OneWay}" />
+                            Text="{x:Bind GetUsuarioNombre(ViewModel.UsuarioSeleccionado), Mode=OneWay}" />
                         <TextBlock
                             FontSize="11"
                             Foreground="#10B981"
                             Text="En línea"
-                            Visibility="{x:Bind ViewModel.UsuarioSeleccionado.EstaEnLinea, Mode=OneWay}" />
+                            Visibility="{x:Bind GetUsuarioEnLineaVisibility(ViewModel.UsuarioSeleccionado), Mode=OneWay}" />
                     </StackPanel>
                 </Grid>
             </Border>
@@ -182,110 +128,7 @@
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="models:MensajeDto">
-                        <Grid>
-                            <!--  Mensaje propio (derecha)  -->
-                            <Border
-                                MaxWidth="400"
-                                Margin="80,2,0,2"
-                                Padding="12,8"
-                                HorizontalAlignment="Right"
-                                Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                CornerRadius="12,12,4,12"
-                                Visibility="{x:Bind EsMio}">
-                                <StackPanel>
-                                    <!--  Imagen  -->
-                                    <Image
-                                        MaxWidth="300" MaxHeight="300"
-                                        Margin="0,0,0,4"
-                                        Source="{x:Bind ImagenUrlCompleta}"
-                                        Stretch="Uniform"
-                                        Visibility="{x:Bind EsImagen}" />
-                                    <!--  PDF  -->
-                                    <Button
-                                        Margin="0,0,0,4"
-                                        Padding="10,8"
-                                        Background="#22FFFFFF"
-                                        Click="PdfButton_Click"
-                                        CornerRadius="8"
-                                        Tag="{x:Bind ImagenUrlCompleta}"
-                                        Visibility="{x:Bind EsPdf}">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon FontSize="20" Foreground="White" Glyph="&#xEA90;" />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                FontSize="12" Foreground="White"
-                                                Text="{x:Bind Contenido}"
-                                                TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                    </Button>
-                                    <!--  Texto  -->
-                                    <TextBlock
-                                        FontSize="13" Foreground="White"
-                                        Text="{x:Bind Contenido}"
-                                        TextWrapping="Wrap"
-                                        Visibility="{x:Bind EsTexto}" />
-                                    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="4">
-                                        <TextBlock
-                                            FontSize="10"
-                                            Foreground="#CCFFFFFF"
-                                            Text="{x:Bind HoraFormateada}" />
-                                        <FontIcon
-                                            FontSize="10"
-                                            Foreground="#CCFFFFFF"
-                                            Glyph="{x:Bind GetReadIcon(EsLeido)}" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-
-                            <!--  Mensaje del otro (izquierda)  -->
-                            <Border
-                                MaxWidth="400"
-                                Margin="0,2,80,2"
-                                Padding="12,8"
-                                HorizontalAlignment="Left"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                CornerRadius="12,12,12,4"
-                                Visibility="{x:Bind NotEsMio}">
-                                <StackPanel>
-                                    <!--  Imagen  -->
-                                    <Image
-                                        MaxWidth="300" MaxHeight="300"
-                                        Margin="0,0,0,4"
-                                        Source="{x:Bind ImagenUrlCompleta}"
-                                        Stretch="Uniform"
-                                        Visibility="{x:Bind EsImagen}" />
-                                    <!--  PDF  -->
-                                    <Button
-                                        Margin="0,0,0,4"
-                                        Padding="10,8"
-                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                        Click="PdfButton_Click"
-                                        CornerRadius="8"
-                                        Tag="{x:Bind ImagenUrlCompleta}"
-                                        Visibility="{x:Bind EsPdf}">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <FontIcon FontSize="20" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Glyph="&#xEA90;" />
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                FontSize="12"
-                                                Text="{x:Bind Contenido}"
-                                                TextTrimming="CharacterEllipsis" />
-                                        </StackPanel>
-                                    </Button>
-                                    <!--  Texto  -->
-                                    <TextBlock
-                                        FontSize="13"
-                                        Text="{x:Bind Contenido}"
-                                        TextWrapping="Wrap"
-                                        Visibility="{x:Bind EsTexto}" />
-                                    <TextBlock
-                                        HorizontalAlignment="Right"
-                                        FontSize="10"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind HoraFormateada}" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
+                        <items:MensajeBurbujaItemView PdfButtonClick="BurbujaPdfButton_Click" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

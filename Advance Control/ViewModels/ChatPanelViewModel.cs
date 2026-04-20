@@ -3,6 +3,7 @@ using Advance_Control.Services.Auth;
 using Advance_Control.Services.EndPointProvider;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Mensajeria;
+using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Session;
 using Microsoft.UI.Dispatching;
 using System;
@@ -10,24 +11,35 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Advance_Control.ViewModels
 {
-    public class MensajesViewModel : ViewModelBase
+    /// <summary>
+    /// ViewModel Singleton para el panel lateral de chat simplificado.
+    /// Funciona independientemente de MensajesViewModel.
+    /// </summary>
+    public class ChatPanelViewModel : ViewModelBase
     {
         private readonly IMensajeriaService _mensajeria;
         private readonly IUserSessionService _session;
         private readonly IAuthService _authService;
         private readonly ILoggingService _logger;
         private readonly IApiEndpointProvider _endpoints;
+        private readonly INotificacionService _notificacionService;
         private DispatcherQueue? _dispatcher;
+        private bool _eventosSubscritos;
+
+        /// <summary>
+        /// ID de credencial del último mensaje recibido que generó notificación.
+        /// Se usa como fallback al hacer clic en la notificación, en caso de que
+        /// los argumentos de la notificación no se parseen correctamente.
+        /// </summary>
+        public static long UltimaNotificacionCredencialId { get; set; }
 
         public ObservableCollection<UsuarioChatDto> Usuarios { get; } = new();
         public ObservableCollection<MensajeDto> Mensajes { get; } = new();
 
-        // Lista completa de usuarios para filtrado
         private readonly List<UsuarioChatDto> _todosLosUsuarios = new();
 
         private UsuarioChatDto? _usuarioSeleccionado;
@@ -39,8 +51,8 @@ namespace Advance_Control.ViewModels
                 if (SetProperty(ref _usuarioSeleccionado, value))
                 {
                     OnPropertyChanged(nameof(HayUsuarioSeleccionado));
-                    // Marcar usuario como visible para suprimir notificaciones
-                    _mensajeria.UsuarioVisibleId = value?.CredencialId;
+                    if (IsPanelVisible)
+                        _mensajeria.UsuarioVisibleId = value?.CredencialId;
                     if (value != null)
                         _ = CargarConversacionSeguroAsync(value.CredencialId);
                 }
@@ -84,6 +96,34 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _enviandoImagen, value);
         }
 
+        private bool _isUserListVisible = false;
+        public bool IsUserListVisible
+        {
+            get => _isUserListVisible;
+            set => SetProperty(ref _isUserListVisible, value);
+        }
+
+        private bool _isPanelVisible;
+        public bool IsPanelVisible
+        {
+            get => _isPanelVisible;
+            set
+            {
+                if (SetProperty(ref _isPanelVisible, value))
+                {
+                    if (!value)
+                    {
+                        // Al ocultar el panel, limpiar usuario visible
+                        _mensajeria.UsuarioVisibleId = null;
+                    }
+                    else if (UsuarioSeleccionado != null)
+                    {
+                        _mensajeria.UsuarioVisibleId = UsuarioSeleccionado.CredencialId;
+                    }
+                }
+            }
+        }
+
         private string _errorMensaje = string.Empty;
         public string ErrorMensaje
         {
@@ -91,28 +131,35 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _errorMensaje, value);
         }
 
-        public MensajesViewModel(
+        public ChatPanelViewModel(
             IMensajeriaService mensajeria,
             IUserSessionService session,
             IAuthService authService,
             ILoggingService logger,
-            IApiEndpointProvider endpoints)
+            IApiEndpointProvider endpoints,
+            INotificacionService notificacionService)
         {
-            _mensajeria = mensajeria;
-            _session = session;
-            _authService = authService;
-            _logger = logger;
-            _endpoints = endpoints;
+            _mensajeria = mensajeria ?? throw new ArgumentNullException(nameof(mensajeria));
+            _session = session ?? throw new ArgumentNullException(nameof(session));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
+            _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
         }
 
         public void SetDispatcher(DispatcherQueue dispatcher) => _dispatcher = dispatcher;
 
+        /// <summary>
+        /// Inicializa el panel: suscribe eventos SignalR y carga usuarios.
+        /// Se llama cuando el panel se muestra por primera vez.
+        /// </summary>
         public async Task InitializeAsync()
         {
+            if (_eventosSubscritos) return;
+
             Cargando = true;
             try
             {
-                // Suscribirse a eventos de SignalR
                 _mensajeria.MensajeRecibido += OnMensajeRecibido;
                 _mensajeria.MensajeEnviado += OnMensajeEnviado;
                 _mensajeria.MensajeLeido += OnMensajeLeido;
@@ -120,22 +167,38 @@ namespace Advance_Control.ViewModels
                 _mensajeria.UsuarioDesconectado += OnUsuarioDesconectado;
                 _mensajeria.UsuarioEscribiendo += OnUsuarioEscribiendo;
                 _mensajeria.EstadoConexionCambiado += OnEstadoConexionCambiado;
+                _eventosSubscritos = true;
 
-                // Verificar estado de conexión (SignalR se conecta en login)
                 EstaConectado = _mensajeria.EstaConectado;
                 EstadoConexion = EstaConectado ? "Conectado" : "Sin conexión";
 
-                // Cargar usuarios
+                await CargarUsuariosAsync();
+            }
+            catch (Exception ex)
+            {
+                try { await _logger.LogErrorAsync("Error al inicializar chat panel", ex, "ChatPanelViewModel", "InitializeAsync"); } catch { }
+            }
+            finally
+            {
+                Cargando = false;
+            }
+        }
+
+        private async Task CargarUsuariosAsync()
+        {
+            try
+            {
                 var usuarios = await _mensajeria.GetUsuariosChatAsync();
                 var miId = _session.CredencialId;
                 _todosLosUsuarios.Clear();
+                Usuarios.Clear();
+
                 foreach (var u in usuarios.Where(u => u.CredencialId != miId))
                 {
                     _todosLosUsuarios.Add(u);
                     Usuarios.Add(u);
                 }
 
-                // Marcar usuarios en línea
                 if (EstaConectado)
                 {
                     var enLinea = await _mensajeria.ObtenerUsuariosEnLineaAsync();
@@ -148,12 +211,30 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                try { await _logger.LogErrorAsync("Error al inicializar mensajería", ex, "MensajesViewModel", "InitializeAsync"); } catch { }
+                try { await _logger.LogErrorAsync("Error al cargar usuarios del chat", ex, "ChatPanelViewModel", "CargarUsuariosAsync"); } catch { }
             }
-            finally
-            {
-                Cargando = false;
-            }
+        }
+
+        /// <summary>
+        /// Abre la conversación con un usuario específico.
+        /// Puede ser llamado externamente (ej. desde MensajesPage).
+        /// </summary>
+        public void AbrirConversacion(UsuarioChatDto usuario)
+        {
+            UsuarioSeleccionado = usuario;
+            IsUserListVisible = false;
+        }
+
+        /// <summary>
+        /// Abre la conversación buscando por CredencialId.
+        /// Usado al hacer clic en una notificación de mensaje.
+        /// </summary>
+        public void AbrirConversacionPorId(long credencialId)
+        {
+            var usuario = Usuarios.FirstOrDefault(u => u.CredencialId == credencialId);
+            System.Diagnostics.Debug.WriteLine($"[ChatVM] AbrirConversacionPorId({credencialId}), encontrado={usuario != null}, Usuarios.Count={Usuarios.Count}");
+            if (usuario != null)
+                AbrirConversacion(usuario);
         }
 
         private async Task CargarConversacionSeguroAsync(long otroUsuarioId)
@@ -165,12 +246,11 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 ErrorMensaje = $"Error: {ex.GetType().Name}: {ex.Message}";
-                try { await _logger.LogErrorAsync("Error no controlado al cargar conversación", ex, "MensajesViewModel", "CargarConversacionSeguroAsync"); }
-                catch { /* Ignorar si el logger también falla para evitar cascada */ }
+                try { await _logger.LogErrorAsync("Error al cargar conversación", ex, "ChatPanelViewModel", "CargarConversacionSeguroAsync"); } catch { }
             }
         }
 
-        public async Task CargarConversacionAsync(long otroUsuarioId)
+        private async Task CargarConversacionAsync(long otroUsuarioId)
         {
             Cargando = true;
             try
@@ -184,21 +264,18 @@ namespace Advance_Control.ViewModels
                     Mensajes.Add(m);
                 }
 
-                // Marcar como leídos los mensajes que me enviaron
                 foreach (var m in mensajes.Where(m => !m.EsMio && !m.EsLeido))
                 {
                     try { await _mensajeria.MarcarLeidoAsync(m.Id); m.LeidoEn = DateTime.Now; }
-                    catch { /* Ignorar errores individuales */ }
+                    catch { }
                 }
 
-                // Limpiar contador de no leídos
                 if (UsuarioSeleccionado != null)
                     UsuarioSeleccionado.MensajesNoLeidos = 0;
             }
             catch (Exception ex)
             {
-                try { await _logger.LogErrorAsync("Error al cargar conversación", ex, "MensajesViewModel", "CargarConversacionAsync"); }
-                catch { /* Ignorar si el logger también falla */ }
+                try { await _logger.LogErrorAsync("Error al cargar conversación", ex, "ChatPanelViewModel", "CargarConversacionAsync"); } catch { }
             }
             finally
             {
@@ -220,7 +297,7 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 ErrorMensaje = $"Error envío: {ex.GetType().Name}: {ex.Message}";
-                try { await _logger.LogErrorAsync("Error al enviar mensaje", ex, "MensajesViewModel", "EnviarMensajeAsync"); } catch { }
+                try { await _logger.LogErrorAsync("Error al enviar mensaje", ex, "ChatPanelViewModel", "EnviarMensajeAsync"); } catch { }
                 TextoMensaje = texto;
             }
         }
@@ -229,10 +306,9 @@ namespace Advance_Control.ViewModels
         {
             if (UsuarioSeleccionado == null) return;
             try { await _mensajeria.EnviandoEscribiendoAsync(UsuarioSeleccionado.CredencialId); }
-            catch { /* Ignorar */ }
+            catch { }
         }
 
-        /// <summary>Enviar un archivo (imagen o PDF) al chat.</summary>
         public async Task EnviarArchivoAsync(Stream fileStream, string fileName, string contentType)
         {
             if (UsuarioSeleccionado == null) return;
@@ -246,7 +322,7 @@ namespace Advance_Control.ViewModels
 
                 if (string.IsNullOrEmpty(archivoUrl))
                 {
-                    await _logger.LogErrorAsync("No se pudo subir el archivo", null, "MensajesViewModel", "EnviarArchivoAsync");
+                    await _logger.LogErrorAsync("No se pudo subir el archivo", null, "ChatPanelViewModel", "EnviarArchivoAsync");
                     return;
                 }
 
@@ -262,7 +338,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                try { await _logger.LogErrorAsync("Error al enviar archivo", ex, "MensajesViewModel", "EnviarArchivoAsync"); } catch { }
+                try { await _logger.LogErrorAsync("Error al enviar archivo", ex, "ChatPanelViewModel", "EnviarArchivoAsync"); } catch { }
             }
             finally
             {
@@ -270,7 +346,20 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        /// <summary>Construye la URL completa de imagen a partir de la URL relativa.</summary>
+        public void FiltrarUsuarios(string texto)
+        {
+            Usuarios.Clear();
+            var filtro = texto?.Trim().ToLowerInvariant() ?? string.Empty;
+            var resultados = string.IsNullOrEmpty(filtro)
+                ? _todosLosUsuarios
+                : _todosLosUsuarios.Where(u =>
+                    (u.NombreVisible?.ToLowerInvariant().Contains(filtro) ?? false) ||
+                    (u.Usuario?.ToLowerInvariant().Contains(filtro) ?? false));
+
+            foreach (var u in resultados)
+                Usuarios.Add(u);
+        }
+
         private string? BuildImageUrl(string? archivoUrl)
         {
             if (string.IsNullOrEmpty(archivoUrl)) return null;
@@ -278,29 +367,17 @@ namespace Advance_Control.ViewModels
             return archivoUrl.StartsWith("http") ? archivoUrl : $"{baseUrl}{archivoUrl}";
         }
 
-        public Task CleanupAsync()
-        {
-            _mensajeria.MensajeRecibido -= OnMensajeRecibido;
-            _mensajeria.MensajeEnviado -= OnMensajeEnviado;
-            _mensajeria.MensajeLeido -= OnMensajeLeido;
-            _mensajeria.UsuarioConectado -= OnUsuarioConectado;
-            _mensajeria.UsuarioDesconectado -= OnUsuarioDesconectado;
-            _mensajeria.UsuarioEscribiendo -= OnUsuarioEscribiendo;
-            _mensajeria.EstadoConexionCambiado -= OnEstadoConexionCambiado;
-            _mensajeria.UsuarioVisibleId = null;
-            return Task.CompletedTask;
-        }
-
         // --- Event handlers ---
 
         private void OnMensajeRecibido(object? sender, MensajeDto msg)
         {
-            _dispatcher?.TryEnqueue(() =>
+            _dispatcher?.TryEnqueue(async () =>
             {
                 try
                 {
                     msg.EsMio = false;
                     msg.ImagenUrlCompleta = BuildImageUrl(msg.ArchivoUrl);
+
                     if (UsuarioSeleccionado?.CredencialId == msg.DeCredencialId)
                     {
                         Mensajes.Add(msg);
@@ -311,10 +388,31 @@ namespace Advance_Control.ViewModels
                         var user = Usuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
                         if (user != null) user.MensajesNoLeidos++;
                     }
+
+                    // Notificación si el remitente no es el usuario visible
+                    if (msg.DeCredencialId != _mensajeria.UsuarioVisibleId)
+                    {
+                        UltimaNotificacionCredencialId = msg.DeCredencialId;
+                        var remitente = Usuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
+                        var nombre = remitente?.NombreVisible ?? "Nuevo mensaje";
+                        try
+                        {
+                            await _notificacionService.MostrarNotificacionAsync(
+                                nombre,
+                                msg.ContenidoSeguro,
+                                tiempoDeVidaSegundos: 5,
+                                argumentos: new System.Collections.Generic.Dictionary<string, string>
+                                {
+                                    { "accion", "abrirChat" },
+                                    { "credencialId", msg.DeCredencialId.ToString() }
+                                });
+                        }
+                        catch { }
+                    }
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error en OnMensajeRecibido: {ex}");
+                    System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.OnMensajeRecibido: {ex}");
                 }
             });
         }
@@ -332,7 +430,7 @@ namespace Advance_Control.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    System.Diagnostics.Debug.WriteLine($"Error en OnMensajeEnviado: {ex}");
+                    System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.OnMensajeEnviado: {ex}");
                 }
             });
         }
@@ -372,7 +470,6 @@ namespace Advance_Control.ViewModels
                 if (user != null)
                 {
                     user.EstaEscribiendo = true;
-                    // Auto-limpiar después de 3 segundos
                     await Task.Delay(3000);
                     user.EstaEscribiendo = false;
                 }
@@ -386,21 +483,6 @@ namespace Advance_Control.ViewModels
                 EstaConectado = conectado;
                 EstadoConexion = conectado ? "Conectado" : "Reconectando…";
             });
-        }
-
-        /// <summary>
-        /// Filtra la lista de usuarios visible según el texto ingresado.
-        /// Llamar desde la vista cuando cambie el texto del buscador.
-        /// </summary>
-        public void FiltrarUsuarios(string texto)
-        {
-            Usuarios.Clear();
-            var filtro = texto?.Trim().ToLowerInvariant() ?? string.Empty;
-            var resultados = string.IsNullOrEmpty(filtro)
-                ? _todosLosUsuarios
-                : _todosLosUsuarios.Where(u => (u.NombreVisible ?? string.Empty).ToLowerInvariant().Contains(filtro));
-            foreach (var u in resultados)
-                Usuarios.Add(u);
         }
     }
 }

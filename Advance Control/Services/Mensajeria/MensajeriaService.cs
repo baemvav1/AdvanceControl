@@ -29,6 +29,8 @@ namespace Advance_Control.Services.Mensajeria
 
         public bool EstaConectado => _hubConnection?.State == HubConnectionState.Connected;
 
+        public long? UsuarioVisibleId { get; set; }
+
         public event EventHandler<MensajeDto>? MensajeRecibido;
         public event EventHandler<MensajeDto>? MensajeEnviado;
         public event EventHandler<long>? MensajeLeido;
@@ -46,6 +48,10 @@ namespace Advance_Control.Services.Mensajeria
 
         public async Task ConectarAsync(string token, CancellationToken ct = default)
         {
+            // Guard: si ya está conectado, no reconectar
+            if (EstaConectado)
+                return;
+
             if (_hubConnection != null)
                 await DesconectarAsync();
 
@@ -62,22 +68,40 @@ namespace Advance_Control.Services.Mensajeria
 
             // Registrar handlers
             _hubConnection.On<MensajeDto>("RecibirMensaje", msg =>
-                MensajeRecibido?.Invoke(this, msg));
+            {
+                try { MensajeRecibido?.Invoke(this, msg); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler RecibirMensaje: {ex}"); }
+            });
 
             _hubConnection.On<MensajeDto>("MensajeEnviado", msg =>
-                MensajeEnviado?.Invoke(this, msg));
+            {
+                try { MensajeEnviado?.Invoke(this, msg); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler MensajeEnviado: {ex}"); }
+            });
 
             _hubConnection.On<long>("MensajeLeido", id =>
-                MensajeLeido?.Invoke(this, id));
+            {
+                try { MensajeLeido?.Invoke(this, id); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler MensajeLeido: {ex}"); }
+            });
 
             _hubConnection.On<string>("UsuarioConectado", id =>
-                UsuarioConectado?.Invoke(this, id));
+            {
+                try { UsuarioConectado?.Invoke(this, id); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler UsuarioConectado: {ex}"); }
+            });
 
             _hubConnection.On<string>("UsuarioDesconectado", id =>
-                UsuarioDesconectado?.Invoke(this, id));
+            {
+                try { UsuarioDesconectado?.Invoke(this, id); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler UsuarioDesconectado: {ex}"); }
+            });
 
             _hubConnection.On<string>("UsuarioEscribiendo", id =>
-                UsuarioEscribiendo?.Invoke(this, id));
+            {
+                try { UsuarioEscribiendo?.Invoke(this, id); }
+                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler UsuarioEscribiendo: {ex}"); }
+            });
 
             _hubConnection.Reconnecting += _ =>
             {
@@ -101,11 +125,11 @@ namespace Advance_Control.Services.Mensajeria
             {
                 await _hubConnection.StartAsync(ct);
                 EstadoConexionCambiado?.Invoke(this, true);
-                await _logger.LogInformationAsync("Conectado al hub de mensajería", "MensajeriaService", "ConectarAsync");
+                try { await _logger.LogInformationAsync("Conectado al hub de mensajería", "MensajeriaService", "ConectarAsync"); } catch { }
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al conectar al hub de mensajería", ex, "MensajeriaService", "ConectarAsync");
+                try { await _logger.LogErrorAsync("Error al conectar al hub de mensajería", ex, "MensajeriaService", "ConectarAsync"); } catch { }
                 EstadoConexionCambiado?.Invoke(this, false);
             }
         }
@@ -119,7 +143,7 @@ namespace Advance_Control.Services.Mensajeria
                     await _hubConnection.StopAsync();
                     await _hubConnection.DisposeAsync();
                 }
-                catch { /* Ignorar errores al desconectar */ }
+                catch (Exception ex) { try { await _logger.LogWarningAsync($"Error al desconectar del hub de mensajería: {ex.Message}", "MensajeriaService", "DesconectarAsync"); } catch { } }
                 finally
                 {
                     _hubConnection = null;
@@ -149,7 +173,7 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error en InvokeAsync EnviarMensaje", ex, "MensajeriaService", "EnviarMensajeAsync");
+                try { await _logger.LogErrorAsync("Error en InvokeAsync EnviarMensaje", ex, "MensajeriaService", "EnviarMensajeAsync"); } catch { }
                 throw;
             }
         }
@@ -184,7 +208,7 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al obtener conversación", ex, "MensajeriaService", "GetConversacionAsync");
+                try { await _logger.LogErrorAsync("Error al obtener conversación", ex, "MensajeriaService", "GetConversacionAsync"); } catch { }
                 return new();
             }
         }
@@ -198,7 +222,7 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al obtener usuarios de chat", ex, "MensajeriaService", "GetUsuariosChatAsync");
+                try { await _logger.LogErrorAsync("Error al obtener usuarios de chat", ex, "MensajeriaService", "GetUsuariosChatAsync"); } catch { }
                 return new();
             }
         }
@@ -237,7 +261,7 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al subir imagen de mensaje", ex, "MensajeriaService", "UploadImagenMensajeAsync");
+                try { await _logger.LogErrorAsync("Error al subir imagen de mensaje", ex, "MensajeriaService", "UploadImagenMensajeAsync"); } catch { }
                 return null;
             }
         }
