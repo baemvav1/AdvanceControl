@@ -19,12 +19,17 @@
             Visibility="{Binding EsMioVisibility}">
             <StackPanel>
                 <!--  Imagen  -->
-                <Image
-                    MaxWidth="300" MaxHeight="300"
+                <Border
+                    MaxWidth="300"
+                    MaxHeight="300"
                     Margin="0,0,0,4"
-                    Source="{Binding ImagenSource}"
-                    Stretch="Uniform"
-                    Visibility="{Binding EsImagenVisibility}" />
+                    Background="Transparent"
+                    Tag="{Binding ImagenUrlCompleta}"
+                    Visibility="{Binding EsImagenVisibility}">
+                    <Image
+                        Source="{Binding ImagenSource}"
+                        Stretch="Uniform" />
+                </Border>
                 <!--  PDF  -->
                 <Button
                     Margin="0,0,0,4"
@@ -73,12 +78,17 @@
             Visibility="{Binding NotEsMioVisibility}">
             <StackPanel>
                 <!--  Imagen  -->
-                <Image
-                    MaxWidth="300" MaxHeight="300"
+                <Border
+                    MaxWidth="300"
+                    MaxHeight="300"
                     Margin="0,0,0,4"
-                    Source="{Binding ImagenSource}"
-                    Stretch="Uniform"
-                    Visibility="{Binding EsImagenVisibility}" />
+                    Background="Transparent"
+                    Tag="{Binding ImagenUrlCompleta}"
+                    Visibility="{Binding EsImagenVisibility}">
+                    <Image
+                        Source="{Binding ImagenSource}"
+                        Stretch="Uniform" />
+                </Border>
                 <!--  PDF  -->
                 <Button
                     Margin="0,0,0,4"

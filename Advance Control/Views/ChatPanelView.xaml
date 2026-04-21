@@ -45,43 +45,6 @@
             </Button>
         </Grid>
 
-        <!--  Lista de usuarios colapsable  -->
-        <Grid Grid.Row="1"
-              MaxHeight="250"
-              Visibility="{x:Bind ViewModel.IsUserListVisible, Mode=OneWay}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-
-            <AutoSuggestBox
-                x:Name="BuscadorUsuarios"
-                Grid.Row="0"
-                Margin="8,6,8,4"
-                PlaceholderText="Buscar…"
-                QueryIcon="Find"
-                TextChanged="BuscadorUsuarios_TextChanged" />
-
-            <ListView
-                Grid.Row="1"
-                MaxHeight="180"
-                ItemsSource="{x:Bind ViewModel.Usuarios, Mode=OneWay}"
-                SelectedItem="{x:Bind ViewModel.UsuarioSeleccionado, Mode=TwoWay}"
-                SelectionMode="Single">
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="models:UsuarioChatDto">
-                        <items:UsuarioChatItemView />
-                    </DataTemplate>
-                </ListView.ItemTemplate>
-                <ListView.ItemContainerStyle>
-                    <Style TargetType="ListViewItem">
-                        <Setter Property="Padding" Value="4,2" />
-                        <Setter Property="MinHeight" Value="0" />
-                    </Style>
-                </ListView.ItemContainerStyle>
-            </ListView>
-        </Grid>
-
         <!--  Área de conversación  -->
         <Grid Grid.Row="2">
             <!--  Header de conversación activa  -->
@@ -152,18 +115,6 @@
                     IsActive="{x:Bind ViewModel.Cargando, Mode=OneWay}" />
             </Grid>
 
-            <!--  Estado vacío (sin usuario seleccionado)  -->
-            <StackPanel
-                HorizontalAlignment="Center" VerticalAlignment="Center"
-                Spacing="6"
-                Visibility="{x:Bind GetEmptyVisibility(ViewModel.HayUsuarioSeleccionado), Mode=OneWay}">
-                <FontIcon FontSize="36" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Glyph="&#xE8BD;" />
-                <TextBlock
-                    HorizontalAlignment="Center"
-                    FontSize="12"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Selecciona un contacto" />
-            </StackPanel>
         </Grid>
 
         <!--  Barra de entrada de texto  -->
@@ -214,5 +165,74 @@
             <ProgressRing Width="16" Height="16" IsActive="{x:Bind ViewModel.EnviandoImagen, Mode=OneWay}" />
             <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Enviando…" />
         </StackPanel>
+
+        <!--  Cortina de usuarios  -->
+        <Grid Grid.Row="1"
+              Grid.RowSpan="3"
+              Canvas.ZIndex="5"
+              Visibility="{x:Bind ViewModel.IsUserListVisible, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
+            <Grid Background="#14000000" />
+
+            <Border
+                Margin="8,8,8,8"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="24"
+                Padding="0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Padding="16,12,16,12" Spacing="10">
+                        <Border
+                            Width="40"
+                            Height="4"
+                            HorizontalAlignment="Center"
+                            Background="{ThemeResource TextFillColorDisabledBrush}"
+                            CornerRadius="2" />
+
+                        <StackPanel Spacing="2">
+                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="Contactos" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Panel rápido del chat" />
+                        </StackPanel>
+
+                        <AutoSuggestBox
+                            x:Name="BuscadorUsuarios"
+                            PlaceholderText="Buscar usuario…"
+                            QueryIcon="Find"
+                            TextChanged="BuscadorUsuarios_TextChanged" />
+                    </StackPanel>
+
+                    <ListView
+                        Grid.Row="1"
+                        Margin="8,0,8,8"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        ItemsSource="{x:Bind ViewModel.Usuarios, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.UsuarioSeleccionado, Mode=TwoWay}"
+                        SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:UsuarioChatDto">
+                                <items:UsuarioChatItemView />
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Margin" Value="4,2" />
+                                <Setter Property="Padding" Value="6,4" />
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                    </ListView>
+                </Grid>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

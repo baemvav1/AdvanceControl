@@ -1,9 +1,15 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Windows.Data.Pdf;
+using Windows.Storage;
+using Windows.Storage.Streams;
 
 namespace Advance_Control.Views.Dialogs;
 
@@ -17,6 +23,7 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
     private readonly List<ContactoDto> _todosContactos;
     private readonly string _razonSocial;
     private bool _pdfCargado;
+    private bool _cargandoPdf;
 
     /// <summary>
     /// Crea el visor de PDF para cotización o reporte.
@@ -48,8 +55,8 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
 
         RutaTextBlock.Text = pdfPath;
 
-        // Inicializar WebView2 cuando cargue el panel
-        PdfWebView.Loaded += async (s, e) => await CargarPdfAsync();
+        // Inicializar WebView2 cuando el diálogo ya esté abierto y anexado al árbol visual.
+        this.Opened += async (_, _) => await CargarPdfAsync();
 
         // Habilitar/deshabilitar "Enviar por correo" según disponibilidad de correo
         IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(_contactoPrincipal?.Correo);
@@ -57,22 +64,111 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
 
     private async Task CargarPdfAsync()
     {
+        if (_pdfCargado || _cargandoPdf)
+            return;
+
+        _cargandoPdf = true;
         try
         {
-            await PdfWebView.EnsureCoreWebView2Async();
-            PdfWebView.Source = new Uri(_pdfPath);
+            EstadoTextBlock.Visibility = Visibility.Collapsed;
+            PdfPagesPanel.Children.Clear();
+
+            var pdfFile = await ObtenerArchivoPdfAsync(_pdfPath);
+            var pdfDocument = await PdfDocument.LoadFromFileAsync(pdfFile);
+
+            if (pdfDocument.PageCount == 0)
+            {
+                EstadoTextBlock.Text = "El PDF no contiene páginas para mostrar.";
+                EstadoTextBlock.Visibility = Visibility.Visible;
+                _pdfCargado = false;
+                return;
+            }
+
+            for (uint i = 0; i < pdfDocument.PageCount; i++)
+            {
+                using var page = pdfDocument.GetPage(i);
+                var pageView = await RenderizarPaginaAsync(page, i + 1, pdfDocument.PageCount);
+                PdfPagesPanel.Children.Add(pageView);
+            }
+
             _pdfCargado = true;
         }
-        catch
+        catch (Exception ex)
         {
-            // Si WebView2 no está disponible, solo mostramos la ruta
+            System.Diagnostics.Debug.WriteLine($"CotizacionVisorDialog::CargarPdfAsync: {ex.GetType().Name} - {ex.Message}");
+            EstadoTextBlock.Text = "No se pudo cargar la vista previa del PDF.";
+            EstadoTextBlock.Visibility = Visibility.Visible;
             _pdfCargado = false;
         }
         finally
         {
+            _cargandoPdf = false;
             CargandoRing.IsActive = false;
             CargandoRing.Visibility = Visibility.Collapsed;
         }
+    }
+
+    private static async Task<StorageFile> ObtenerArchivoPdfAsync(string pdfPath)
+    {
+        if (string.IsNullOrWhiteSpace(pdfPath))
+            throw new ArgumentException("La ruta del PDF no puede estar vacía.", nameof(pdfPath));
+
+        if (Uri.TryCreate(pdfPath, UriKind.Absolute, out var uriExistente))
+        {
+            if (uriExistente.IsFile)
+                return await StorageFile.GetFileFromPathAsync(uriExistente.LocalPath);
+        }
+
+        var fullPath = Path.GetFullPath(pdfPath);
+        return await StorageFile.GetFileFromPathAsync(fullPath);
+    }
+
+    private static async Task<FrameworkElement> RenderizarPaginaAsync(PdfPage page, uint numeroPagina, uint totalPaginas)
+    {
+        using var renderStream = new InMemoryRandomAccessStream();
+        var renderOptions = new PdfPageRenderOptions
+        {
+            DestinationWidth = 1400
+        };
+
+        await page.RenderToStreamAsync(renderStream, renderOptions);
+        renderStream.Seek(0);
+
+        var imageSource = new BitmapImage();
+        await imageSource.SetSourceAsync(renderStream);
+
+        var pageTitle = new TextBlock
+        {
+            Text = $"Página {numeroPagina} de {totalPaginas}",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+        };
+
+        var pageImage = new Image
+        {
+            Source = imageSource,
+            Stretch = Stretch.Uniform,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        var pageBorder = new Border
+        {
+            Padding = new Thickness(8),
+            Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
+            BorderBrush = (Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Child = pageImage
+        };
+
+        var pagePanel = new StackPanel
+        {
+            Spacing = 6
+        };
+        pagePanel.Children.Add(pageTitle);
+        pagePanel.Children.Add(pageBorder);
+
+        return pagePanel;
     }
 
     /// <summary>

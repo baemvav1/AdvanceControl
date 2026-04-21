@@ -505,73 +505,13 @@ namespace Advance_Control.Views.Pages
 
         private List<CargoDto> GetSelectedCargos() => Operacion.Cargos.Where(c => c.IsSelected).ToList();
 
-        private async Task<CargoDto?> GetPrimarySelectedCargoAsync()
-        {
-            var sel = GetSelectedCargos();
-            if (sel.Count == 0)
-            {
-                await MostrarErrorAsync("Sin selección", "Seleccione un cargo para cargar imagen.");
-                return null;
-            }
-
-            var cargo = sel[0];
-            if (sel.Count > 1)
-                await _notificacionService.MostrarAsync("Múltiples selecciones", "Se usará solo el primer cargo seleccionado.");
-
-            if (cargo.IdCargo <= 0 || !cargo.IdOperacion.HasValue)
-            {
-                await MostrarErrorAsync("Error", "El cargo no tiene un ID válido.");
-                return null;
-            }
-
-            return cargo;
-        }
-
-        private async Task<bool> UploadCargoImageCoreAsync(CargoDto cargo, Stream stream, string contentType, string origenNota)
-        {
-            var result = await _cargoImageService.UploadImageAsync(cargo.IdOperacion!.Value, cargo.IdCargo, stream, contentType);
-            if (result == null)
-            {
-                await MostrarErrorAsync("Error", "No se pudo guardar la imagen.");
-                return false;
-            }
-
-            cargo.Images.Add(result);
-            cargo.NotifyImagesChanged();
-            await _notificacionService.MostrarAsync("Imagen cargada", $"Imagen {result.FileName} guardada{origenNota}.");
-            return true;
-        }
-
-        private async Task<ChatImageDownloadResult?> ObtenerImagenClipadaAsync()
-        {
-            var clipboardResult = await ChatImageTransferHelper.GetChatImageUrlFromClipboardAsync();
-            if (!clipboardResult.IsValid)
-            {
-                await MostrarErrorAsync("Portapapeles inválido", clipboardResult.ErrorMessage ?? "El portapapeles no contiene una imagen válida del chat.");
-                return null;
-            }
-
-            try
-            {
-                var image = await ChatImageTransferHelper.DownloadChatImageAsync(clipboardResult.Url!);
-                if (image == null)
-                    await MostrarErrorAsync("Error", "No se pudo descargar la imagen del chat desde el portapapeles.");
-
-                return image;
-            }
-            catch (Exception ex)
-            {
-                LogDebugError(nameof(ObtenerImagenClipadaAsync), ex);
-                await MostrarErrorAsync("Error", "No se pudo descargar la imagen del chat desde el portapapeles.");
-                return null;
-            }
-        }
-
         private async void UploadSelectedCargoImageButton_Click(object sender, RoutedEventArgs e)
         {
-            var cargo = await GetPrimarySelectedCargoAsync();
-            if (cargo == null) return;
-
+            var sel = GetSelectedCargos();
+            if (sel.Count == 0) { await MostrarErrorAsync("Sin selección", "Seleccione un cargo para cargar imagen."); return; }
+            var cargo = sel[0];
+            if (sel.Count > 1) await _notificacionService.MostrarAsync("Múltiples selecciones", "Se usará solo el primer cargo seleccionado.");
+            if (cargo.IdCargo <= 0 || !cargo.IdOperacion.HasValue) { await MostrarErrorAsync("Error", "El cargo no tiene un ID válido."); return; }
             try
             {
                 var picker = new FileOpenPicker();
@@ -583,44 +523,12 @@ namespace Advance_Control.Views.Pages
                 if (file == null) return;
                 cargo.IsLoadingImages = true;
                 using var stream = await file.OpenStreamForReadAsync();
-                await UploadCargoImageCoreAsync(cargo, stream, ImageContentTypeHelper.GetContentTypeFromExtension(file.FileType), " correctamente");
+                var result = await _cargoImageService.UploadImageAsync(cargo.IdOperacion.Value, cargo.IdCargo, stream, ImageContentTypeHelper.GetContentTypeFromExtension(file.FileType));
+                if (result != null) { cargo.Images.Add(result); cargo.NotifyImagesChanged(); await _notificacionService.MostrarAsync("Imagen cargada", $"Imagen {result.FileName} guardada correctamente."); }
+                else await MostrarErrorAsync("Error", "No se pudo guardar la imagen.");
             }
             catch (Exception ex) { LogDebugError(nameof(UploadSelectedCargoImageButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al cargar la imagen."); }
             finally { cargo.IsLoadingImages = false; }
-        }
-
-        private async void UploadSelectedCargoImageFromClipboardButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (!Operacion.IsEditable)
-            {
-                await MostrarErrorAsync("Operación cerrada", "La operación ya no permite cargar imágenes en cargos.");
-                return;
-            }
-
-            var cargo = await GetPrimarySelectedCargoAsync();
-            if (cargo == null) return;
-
-            var image = await ObtenerImagenClipadaAsync();
-            if (image == null) return;
-
-            cargo.IsLoadingImages = true;
-            try
-            {
-                using (image.Stream)
-                {
-                    if (await UploadCargoImageCoreAsync(cargo, image.Stream, image.ContentType, " desde el portapapeles"))
-                        ChatImageTransferHelper.ClearClipboard();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogDebugError(nameof(UploadSelectedCargoImageFromClipboardButton_Click), ex);
-                await MostrarErrorAsync("Error", "Ocurrió un error al cargar la imagen desde el portapapeles.");
-            }
-            finally
-            {
-                cargo.IsLoadingImages = false;
-            }
         }
 
         private async void EditSelectedCargoButton_Click(object sender, RoutedEventArgs e)
@@ -965,77 +873,6 @@ namespace Advance_Control.Views.Pages
         //  Imágenes de operación (Prefactura, Hoja Servicio, Orden Compra, Factura)
         // ─────────────────────────────────────────────────────────────────────
 
-        private static string GetOperacionImageDisplayName(string imageType) => imageType switch
-        {
-            "Prefactura" => "Prefactura",
-            "HojaServicio" => "Hoja de servicio",
-            "OrdenCompra" => "Orden de compra",
-            "Levantamiento" => "Levantamiento",
-            _ => imageType
-        };
-
-        private static string? GetOperacionCheckField(string imageType) => imageType switch
-        {
-            "Prefactura" => "prefactura_cargada",
-            "HojaServicio" => "hoja_servicio_cargada",
-            "OrdenCompra" => "orden_compra_cargada",
-            _ => null
-        };
-
-        private async Task<bool> UploadOperacionImageCoreAsync(string imageType, Stream stream, string contentType, string origenNota)
-        {
-            if (!Operacion.IdOperacion.HasValue)
-                return false;
-
-            OperacionImageDto? result = imageType switch
-            {
-                "Prefactura"    => await _operacionImageService.UploadPrefacturaAsync(Operacion.IdOperacion.Value, stream, contentType),
-                "HojaServicio"  => await _operacionImageService.UploadHojaServicioAsync(Operacion.IdOperacion.Value, stream, contentType),
-                "OrdenCompra"   => await _operacionImageService.UploadOrdenCompraAsync(Operacion.IdOperacion.Value, stream, contentType),
-                "Levantamiento" => await _operacionImageService.UploadLevantamientoAsync(Operacion.IdOperacion.Value, stream, contentType),
-                _               => null
-            };
-
-            if (result == null)
-            {
-                await MostrarErrorAsync("Error", $"No se pudo guardar {GetOperacionImageDisplayName(imageType).ToLowerInvariant()}.");
-                return false;
-            }
-
-            _activityService.Registrar("Operaciones", $"{GetOperacionImageDisplayName(imageType)} cargada{origenNota}");
-            var campo = GetOperacionCheckField(imageType);
-            if (campo != null)
-                await _viewModel.UpdateCheckAsync(Operacion, campo);
-
-            switch (imageType)
-            {
-                case "Prefactura":
-                    Operacion.ImagenesPrefactura.Add(result);
-                    Operacion.HasPrefactura = true;
-                    ForceRefreshRepeater(PrefacturaRepeater, Operacion.ImagenesPrefactura);
-                    break;
-                case "HojaServicio":
-                    Operacion.ImagenesHojaServicio.Add(result);
-                    Operacion.HasHojaServicio = true;
-                    ForceRefreshRepeater(HojaServicioRepeater, Operacion.ImagenesHojaServicio);
-                    break;
-                case "OrdenCompra":
-                    Operacion.ImagenesOrdenCompra.Add(result);
-                    Operacion.HasOrdenCompra = true;
-                    ForceRefreshRepeater(OrdenCompraRepeater, Operacion.ImagenesOrdenCompra);
-                    break;
-                case "Levantamiento":
-                    Operacion.ImagenesLevantamiento.Add(result);
-                    Operacion.HasLevantamiento = true;
-                    ForceRefreshRepeater(LevantamientoRepeater, Operacion.ImagenesLevantamiento);
-                    break;
-            }
-
-            Operacion.NotifyDocumentsChanged();
-            await _notificacionService.MostrarAsync($"{GetOperacionImageDisplayName(imageType)} cargada", $"{result.FileName} guardada{origenNota}.");
-            return true;
-        }
-
         private async Task UploadOperacionImageAsync(string imageType)
         {
             if (!Operacion.IdOperacion.HasValue) return;
@@ -1083,49 +920,56 @@ namespace Advance_Control.Views.Pages
                     ? "application/pdf"
                     : ImageContentTypeHelper.GetContentTypeFromExtension(file.FileType);
 
-                await UploadOperacionImageCoreAsync(imageType, stream, contentType, " correctamente");
+                OperacionImageDto? result = imageType switch
+                {
+                    "Prefactura"    => await _operacionImageService.UploadPrefacturaAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    "HojaServicio"  => await _operacionImageService.UploadHojaServicioAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    "OrdenCompra"   => await _operacionImageService.UploadOrdenCompraAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    "Levantamiento" => await _operacionImageService.UploadLevantamientoAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    _               => null
+                };
+                if (result != null)
+                {
+                    _activityService.Registrar("Operaciones", $"{imageType} cargada");
+                    var campo = imageType switch { "Prefactura" => "prefactura_cargada", "HojaServicio" => "hoja_servicio_cargada", "OrdenCompra" => "orden_compra_cargada", _ => null };
+                    if (campo != null) await _viewModel.UpdateCheckAsync(Operacion, campo);
+
+                    switch (imageType)
+                    {
+                        case "Prefactura":
+                            Operacion.ImagenesPrefactura.Add(result);
+                            Operacion.HasPrefactura = true;
+                            ForceRefreshRepeater(PrefacturaRepeater, Operacion.ImagenesPrefactura);
+                            break;
+                        case "HojaServicio":
+                            Operacion.ImagenesHojaServicio.Add(result);
+                            Operacion.HasHojaServicio = true;
+                            ForceRefreshRepeater(HojaServicioRepeater, Operacion.ImagenesHojaServicio);
+                            break;
+                        case "OrdenCompra":
+                            Operacion.ImagenesOrdenCompra.Add(result);
+                            Operacion.HasOrdenCompra = true;
+                            ForceRefreshRepeater(OrdenCompraRepeater, Operacion.ImagenesOrdenCompra);
+                            break;
+                        case "Levantamiento":
+                            Operacion.ImagenesLevantamiento.Add(result);
+                            Operacion.HasLevantamiento = true;
+                            ForceRefreshRepeater(LevantamientoRepeater, Operacion.ImagenesLevantamiento);
+                            break;
+                    }
+                    Operacion.NotifyDocumentsChanged();
+
+                    await _notificacionService.MostrarAsync($"{imageType} cargada", $"{result.FileName} guardada correctamente.");
+                }
+                else await MostrarErrorAsync("Error", $"No se pudo guardar la {imageType.ToLower()}.");
             }
-            catch (Exception ex) { LogDebugError($"{nameof(UploadOperacionImageAsync)}[{imageType}]", ex); await MostrarErrorAsync("Error", $"Ocurrió un error al cargar {GetOperacionImageDisplayName(imageType).ToLowerInvariant()}."); }
+            catch (Exception ex) { LogDebugError($"{nameof(UploadOperacionImageAsync)}[{imageType}]", ex); await MostrarErrorAsync("Error", $"Ocurrió un error al cargar la {imageType.ToLower()}."); }
         }
 
         private async void UploadPrefacturaButton_Click(object sender, RoutedEventArgs e)   => await UploadOperacionImageAsync("Prefactura");
         private async void UploadHojaServicioButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageAsync("HojaServicio");
         private async void UploadOrdenCompraButton_Click(object sender, RoutedEventArgs e)  => await UploadOperacionImageAsync("OrdenCompra");
         private async void UploadLevantamientoButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageAsync("Levantamiento");
-        private async void UploadPrefacturaFromClipboardButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageFromClipboardAsync("Prefactura");
-        private async void UploadHojaServicioFromClipboardButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageFromClipboardAsync("HojaServicio");
-        private async void UploadOrdenCompraFromClipboardButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageFromClipboardAsync("OrdenCompra");
-        private async void UploadLevantamientoFromClipboardButton_Click(object sender, RoutedEventArgs e) => await UploadOperacionImageFromClipboardAsync("Levantamiento");
-
-        private async Task UploadOperacionImageFromClipboardAsync(string imageType)
-        {
-            if (!Operacion.IsEditable)
-            {
-                await MostrarErrorAsync("Operación cerrada", "La operación ya no permite cargar documentos.");
-                return;
-            }
-
-            if (!Operacion.IdOperacion.HasValue)
-                return;
-
-            var image = await ObtenerImagenClipadaAsync();
-            if (image == null)
-                return;
-
-            try
-            {
-                using (image.Stream)
-                {
-                    if (await UploadOperacionImageCoreAsync(imageType, image.Stream, image.ContentType, " desde el portapapeles"))
-                        ChatImageTransferHelper.ClearClipboard();
-                }
-            }
-            catch (Exception ex)
-            {
-                LogDebugError($"{nameof(UploadOperacionImageFromClipboardAsync)}[{imageType}]", ex);
-                await MostrarErrorAsync("Error", $"Ocurrió un error al cargar {GetOperacionImageDisplayName(imageType).ToLowerInvariant()} desde el portapapeles.");
-            }
-        }
 
         private async void ViewOperacionImageButton_Click(object sender, RoutedEventArgs e)
         {

@@ -177,8 +177,8 @@
                         Margin="0,0,8,0">
                         <AutoSuggestBox
                             x:Name="AreaASB"
-                            Header="Área"
                             DisplayMemberPath="Nombre"
+                            Header="Área"
                             ItemsSource="{x:Bind ViewModel.AreaSugerencias, Mode=OneWay}"
                             PlaceholderText="Todas las áreas..."
                             QuerySubmitted="AreaASB_QuerySubmitted"
@@ -252,6 +252,10 @@
                                                             <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource AccentFillColorDefaultBrush}">
                                                                 <Run Text="Monto" />
                                                                 <Run Text="{x:Bind TotalMonto, Converter={StaticResource CurrencyConverter}, Mode=OneWay}" />
+                                                            </TextBlock>
+                                                            <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource AccentFillColorDefaultBrush}">
+                                                                <Run Text="#" />
+                                                                <Run Text="{x:Bind IdOperacion, Mode=OneWay}" />
                                                             </TextBlock>
                                                         </StackPanel>
                                                     </Grid>

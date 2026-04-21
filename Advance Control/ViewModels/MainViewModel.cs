@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Navigation;
 using Advance_Control.Services.OnlineCheck;
@@ -37,6 +38,7 @@ namespace Advance_Control.ViewModels
         private readonly IActivityService _activityService;
         private readonly IPermisoUiRuntimeService _permisoUiRuntimeService;
         private readonly IMensajeriaService _mensajeria;
+        private readonly SemaphoreSlim _loginStateLock = new(1, 1);
         private bool _disposed;
         private Frame? _contentFrame;
 
@@ -74,25 +76,8 @@ namespace Advance_Control.ViewModels
             _permisoUiRuntimeService = permisoUiRuntimeService ?? throw new ArgumentNullException(nameof(permisoUiRuntimeService));
             _mensajeria          = mensajeria          ?? throw new ArgumentNullException(nameof(mensajeria));
 
-            // Initialize authentication state
-            _isAuthenticated = _authService.IsAuthenticated;
-
-            // Load user info if already authenticated
-            if (_isAuthenticated)
-            {
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        await LoadUserInfoAsync();
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log error but don't propagate to avoid crashing during initialization
-                        await _logger.LogErrorAsync("Error al cargar información del usuario durante la inicialización", ex, "MainViewModel", ".ctor");
-                    }
-                });
-            }
+            var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+            _isAuthenticated = _authService.IsAuthenticated && sessionService?.IsLoaded == true;
         }
 
         public string Title
@@ -166,6 +151,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.MensajesPage>("Mensajes");
             _navigationService.Configure<Views.Pages.AdministracionPage>("Administracion");
             _navigationService.Configure<Views.Pages.DevOpsPage>("DevOps");
+            _navigationService.Configure<Views.Pages.OperacionVisorPage>("OperacionVisor");
             _navigationService.Configure<Views.Pages.SettingsPage>("Settings");
 
             // Subscribe to Frame navigation events
@@ -364,10 +350,17 @@ namespace Advance_Control.ViewModels
 
                 if (credentialsLoginSuccessful)
                 {
-                    await HandleLoginSuccessAsync();
+                    var bootstrapSuccessful = await HandleLoginSuccessAsync();
+                    if (bootstrapSuccessful)
+                    {
+                        await _logger.LogInformationAsync("Inicio de sesión automático exitoso con credenciales guardadas", "MainViewModel", "TryAutoLoginAsync");
+                        return true;
+                    }
 
-                    await _logger.LogInformationAsync("Inicio de sesión automático exitoso con credenciales guardadas", "MainViewModel", "TryAutoLoginAsync");
-                    return true;
+                    await _logger.LogWarningAsync(
+                        "La autenticación automática fue válida, pero el bootstrap de la sesión no se pudo completar",
+                        "MainViewModel",
+                        "TryAutoLoginAsync");
                 }
 
                 // Si no hay credenciales guardadas, intentar restaurar la sesión desde los tokens almacenados
@@ -375,17 +368,22 @@ namespace Advance_Control.ViewModels
 
                 if (sessionRestored)
                 {
-                    await HandleLoginSuccessAsync();
+                    var bootstrapSuccessful = await HandleLoginSuccessAsync();
+                    if (bootstrapSuccessful)
+                    {
+                        await _logger.LogInformationAsync("Inicio de sesión automático exitoso con tokens", "MainViewModel", "TryAutoLoginAsync");
+                        return true;
+                    }
 
-                    await _logger.LogInformationAsync("Inicio de sesión automático exitoso con tokens", "MainViewModel", "TryAutoLoginAsync");
-                    return true;
+                    await _logger.LogWarningAsync(
+                        "La sesión se restauró desde tokens, pero el bootstrap de la sesión no se pudo completar",
+                        "MainViewModel",
+                        "TryAutoLoginAsync");
                 }
-                else
-                {
-                    // No se pudo restaurar la sesión - mostrar diálogo de login
-                    await _logger.LogInformationAsync("No se pudo restaurar sesión, mostrando diálogo de login", "MainViewModel", "TryAutoLoginAsync");
-                    return await ShowLoginDialogAsync();
-                }
+
+                // No se pudo restaurar la sesión - mostrar diálogo de login
+                await _logger.LogInformationAsync("No se pudo restaurar sesión, mostrando diálogo de login", "MainViewModel", "TryAutoLoginAsync");
+                return await ShowLoginDialogAsync();
             }
             catch (Exception ex)
             {
@@ -449,27 +447,19 @@ namespace Advance_Control.ViewModels
                     }
                 };
 
-                // Manejar el cierre automático cuando el login sea exitoso
-                PropertyChangedEventHandler loginPropertyChangedHandler = (s, e) =>
-                {
-                    if (e.PropertyName == nameof(LoginViewModel.LoginSuccessful) && loginViewModel.LoginSuccessful)
-                    {
-                        _ = HandleLoginSuccessAsync();
-                    }
-                    
-                    // Manejar cuando el usuario cierra sesión desde el diálogo
-                    if (e.PropertyName == nameof(LoginViewModel.IsAuthenticated) && !loginViewModel.IsAuthenticated)
-                    {
-                        _ = HandleLogoutStateAsync();
-                    }
-                };
-                loginViewModel.PropertyChanged += loginPropertyChangedHandler;
-
                 var result = await dialog.ShowAsync();
-                loginViewModel.PropertyChanged -= loginPropertyChangedHandler; // Prevenir memory leak
-                
-                // Retornar true si el login fue exitoso, false si fue cancelado
-                return loginViewModel.LoginSuccessful;
+
+                if (loginViewModel.LoginSuccessful)
+                {
+                    return await HandleLoginSuccessAsync();
+                }
+
+                if (!loginViewModel.IsAuthenticated && IsAuthenticated)
+                {
+                    await HandleLogoutStateAsync();
+                }
+
+                return false;
             }
             catch (InvalidOperationException ex)
             {
@@ -520,6 +510,29 @@ namespace Advance_Control.ViewModels
         {
             try
             {
+                var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+                if (sessionService?.IsLoaded == true && !string.IsNullOrWhiteSpace(sessionService.NombreCompleto))
+                {
+                    var sessionInitials = GetInitials(sessionService.NombreCompleto);
+                    var sessionUserType = sessionService.TipoUsuario ?? string.Empty;
+
+                    await UpdateUIPropertiesAsync(() =>
+                    {
+                        UserInitials = sessionInitials;
+                        UserType = sessionUserType;
+                    });
+
+                    await _logger.LogInformationAsync(
+                        $"Información de usuario cargada desde la sesión: {sessionService.NombreCompleto} ({sessionService.TipoUsuario})",
+                        "MainViewModel",
+                        "LoadUserInfoAsync");
+
+                    if (sessionService.CredencialId > 0)
+                        _ = CargarAlertasAsync(sessionService.CredencialId);
+
+                    return;
+                }
+
                 var userInfo = await _userInfoService.GetUserInfoAsync();
                 
                 if (userInfo != null)
@@ -538,9 +551,9 @@ namespace Advance_Control.ViewModels
                     await _logger.LogInformationAsync($"Información de usuario cargada: {userInfo.NombreCompleto} ({userInfo.TipoUsuario})", "MainViewModel", "LoadUserInfoAsync");
 
                     // Generar y cargar alertas inteligentes para el usuario recién autenticado
-                    var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
-                    if (sessionService?.IsLoaded == true && sessionService.CredencialId > 0)
-                        _ = CargarAlertasAsync(sessionService.CredencialId);
+                    var loadedSessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+                    if (loadedSessionService?.IsLoaded == true && loadedSessionService.CredencialId > 0)
+                        _ = CargarAlertasAsync(loadedSessionService.CredencialId);
                 }
                 else
                 {
@@ -579,37 +592,41 @@ namespace Advance_Control.ViewModels
                 if (alertas.Count > 0)
                     await _alertaService.MarcarVistasAsync(credencialId).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await _logger.LogWarningAsync("No se pudieron cargar alertas del sistema", "MainViewModel", "CargarAlertasAsync");
             }
         }
 
-        private async Task HandleLoginSuccessAsync()
+        private async Task<bool> HandleLoginSuccessAsync()
         {
+            await _loginStateLock.WaitAsync();
             try
             {
                 await EnsureSessionContextAsync();
+                await LoadUserInfoAsync();
+                await TryConnectMensajeriaAsync();
 
                 await UpdateUIPropertiesAsync(() =>
                 {
                     IsAuthenticated = true;
                 });
 
-                await LoadUserInfoAsync();
-
-                // Conectar SignalR al iniciar sesión
-                var token = await _authService.GetAccessTokenAsync();
-                if (!string.IsNullOrEmpty(token))
-                {
-                    await _mensajeria.ConectarAsync(token);
-                }
-
                 await NavigateToInicioAsync(forceReload: true);
+                return true;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al aplicar el estado posterior al login", ex, "MainViewModel", nameof(HandleLoginSuccessAsync));
+                await ResetAuthenticatedStateAsync();
+                await _notificacionService.MostrarAsync(
+                    "Error de sesión",
+                    "No se pudo completar la carga inicial de la sesión. Inicia sesión nuevamente.");
+                return false;
+            }
+            finally
+            {
+                _loginStateLock.Release();
             }
         }
 
@@ -618,7 +635,7 @@ namespace Advance_Control.ViewModels
             var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
             if (sessionService == null)
             {
-                return;
+                throw new InvalidOperationException("No se pudo resolver el servicio de sesión del usuario.");
             }
 
             if (!sessionService.IsLoaded)
@@ -626,12 +643,72 @@ namespace Advance_Control.ViewModels
                 await sessionService.LoadAsync();
             }
 
-            if (sessionService.IsLoaded
-                && sessionService.Nivel > 0
+            if (!sessionService.IsLoaded || sessionService.CredencialId <= 0)
+            {
+                throw new InvalidOperationException("La sesión del usuario quedó incompleta después de autenticarse.");
+            }
+
+            if (sessionService.Nivel > 0
                 && !_permisoUiRuntimeService.IsInitialized)
             {
                 await _permisoUiRuntimeService.InitializeAsync(sessionService.Nivel);
             }
+        }
+
+        private async Task TryConnectMensajeriaAsync()
+        {
+            var token = await _authService.GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                await _logger.LogWarningAsync(
+                    "Se omitió la conexión de mensajería porque no hay token de acceso disponible",
+                    "MainViewModel",
+                    nameof(TryConnectMensajeriaAsync));
+                return;
+            }
+
+            try
+            {
+                await _mensajeria.ConectarAsync(token);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync(
+                    $"La mensajería no pudo conectarse durante el inicio de sesión: {ex.Message}",
+                    "MainViewModel",
+                    nameof(TryConnectMensajeriaAsync));
+                await _notificacionService.MostrarAsync(
+                    "Mensajería no disponible",
+                    "La sesión inició correctamente, pero el chat no pudo conectarse en este momento.");
+            }
+        }
+
+        private async Task ResetAuthenticatedStateAsync()
+        {
+            var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+            sessionService?.Clear();
+
+            await _authService.ClearTokenAsync();
+
+            try
+            {
+                await _mensajeria.DesconectarAsync();
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync(
+                    $"No se pudo cerrar la conexión de mensajería durante el reinicio de sesión: {ex.Message}",
+                    "MainViewModel",
+                    nameof(ResetAuthenticatedStateAsync));
+            }
+
+            await UpdateUIPropertiesAsync(() =>
+            {
+                IsAuthenticated = false;
+                UserInitials = string.Empty;
+                UserType = string.Empty;
+                IsChatPanelVisible = false;
+            });
         }
 
         private async Task HandleLogoutStateAsync()

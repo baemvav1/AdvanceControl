@@ -45,6 +45,13 @@ namespace Advance_Control.Views
         private void ToggleUserList_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.IsUserListVisible = !ViewModel.IsUserListVisible;
+
+            if (ViewModel.IsUserListVisible)
+            {
+                BuscadorUsuarios.Text = string.Empty;
+                ViewModel.FiltrarUsuarios(string.Empty);
+                _ = DispatcherQueue.TryEnqueue(() => BuscadorUsuarios.Focus(FocusState.Programmatic));
+            }
         }
 
         private void BuscadorUsuarios_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
@@ -172,9 +179,5 @@ namespace Advance_Control.Views
                     : global::Windows.UI.Color.FromArgb(255, 239, 68, 68));
         }
 
-        public Visibility GetEmptyVisibility(bool hayUsuarioSeleccionado)
-        {
-            return hayUsuarioSeleccionado ? Visibility.Collapsed : Visibility.Visible;
-        }
     }
 }

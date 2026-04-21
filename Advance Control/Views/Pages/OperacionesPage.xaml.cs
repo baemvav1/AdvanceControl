@@ -347,8 +347,8 @@ namespace Advance_Control.Views.Pages
         {
             if (sender is not FrameworkElement element || element.Tag is not Models.OperacionDto operacion)
                 return;
-            var visor = new Views.Windows.OperacionVisorWindow(operacion);
-            visor.Activate();
+            var navigationService = AppServices.Get<Navigation.INavigationService>();
+            navigationService.Navigate("OperacionVisor", operacion);
         }
 
         /// <summary>

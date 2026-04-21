@@ -478,12 +478,6 @@
                                                 <TextBlock Text="Imagen" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Click="UploadSelectedCargoImageFromClipboardButton_Click" ToolTipService.ToolTip="Usar la URL clipeada del chat en el cargo seleccionado">
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <SymbolIcon Symbol="Paste" />
-                                                <TextBlock Text="Clip" />
-                                            </StackPanel>
-                                        </Button>
                                         <Button Click="EditSelectedCargoButton_Click" ToolTipService.ToolTip="Editar cargo seleccionado">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Edit" />
@@ -862,29 +856,11 @@
                                             <AppBarSeparator />
 
                                             <AppBarButton
-                                                Click="UploadPrefacturaFromClipboardButton_Click"
-                                                Icon="Paste"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                Label="Clip Pref."
-                                                ToolTipService.ToolTip="Usar la URL clipeada del chat como prefactura" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
                                                 Click="UploadHojaServicioButton_Click"
                                                 Icon="Attach"
                                                 IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
                                                 Label="Hoja Serv."
                                                 ToolTipService.ToolTip="Cargar hoja de servicio" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="UploadHojaServicioFromClipboardButton_Click"
-                                                Icon="Paste"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                Label="Clip Hoja"
-                                                ToolTipService.ToolTip="Usar la URL clipeada del chat como hoja de servicio" />
 
                                             <AppBarSeparator />
 
@@ -898,29 +874,11 @@
                                             <AppBarSeparator />
 
                                             <AppBarButton
-                                                Click="UploadOrdenCompraFromClipboardButton_Click"
-                                                Icon="Paste"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                Label="Clip Orden"
-                                                ToolTipService.ToolTip="Usar la URL clipeada del chat como orden de compra" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
                                                 Click="UploadLevantamientoButton_Click"
                                                 Icon="Attach"
                                                 IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
                                                 Label="Levantamiento"
                                                 ToolTipService.ToolTip="Cargar documento de levantamiento" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="UploadLevantamientoFromClipboardButton_Click"
-                                                Icon="Paste"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
-                                                Label="Clip Lev."
-                                                ToolTipService.ToolTip="Usar la URL clipeada del chat como levantamiento" />
 
                                             <AppBarSeparator />
 
@@ -963,33 +921,6 @@
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Hojas de servicio" />
-                                        <Border
-                                            MinHeight="92"
-                                            Padding="12"
-                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                            BorderBrush="{ThemeResource SystemAccentColorLight2}"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Visibility="{x:Bind Operacion.HojaServicioEmptyVisibility, Mode=OneWay}">
-                                            <StackPanel
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Spacing="6">
-                                                <FontIcon
-                                                    HorizontalAlignment="Center"
-                                                    FontSize="20"
-                                                    Foreground="{ThemeResource SystemAccentColor}"
-                                                    Glyph="&#xE898;" />
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    FontSize="12"
-                                                    FontStyle="Italic"
-                                                    Text="Usa Cargar o Clip en la barra superior"
-                                                    TextAlignment="Center"
-                                                    TextWrapping="Wrap" />
-                                            </StackPanel>
-                                        </Border>
                                         <ItemsRepeater x:Name="HojaServicioRepeater" ItemsSource="{x:Bind Operacion.ImagenesHojaServicio, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" ScrollViewer.HorizontalScrollMode="Enabled"/>
@@ -1080,33 +1011,6 @@
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Prefacturas" />
-                                        <Border
-                                            MinHeight="92"
-                                            Padding="12"
-                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                            BorderBrush="{ThemeResource SystemAccentColorLight2}"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Visibility="{x:Bind Operacion.PrefacturaEmptyVisibility, Mode=OneWay}">
-                                            <StackPanel
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Spacing="6">
-                                                <FontIcon
-                                                    HorizontalAlignment="Center"
-                                                    FontSize="20"
-                                                    Foreground="{ThemeResource SystemAccentColor}"
-                                                    Glyph="&#xE898;" />
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    FontSize="12"
-                                                    FontStyle="Italic"
-                                                    Text="Usa Cargar o Clip en la barra superior"
-                                                    TextAlignment="Center"
-                                                    TextWrapping="Wrap" />
-                                            </StackPanel>
-                                        </Border>
                                         <ItemsRepeater x:Name="PrefacturaRepeater" ItemsSource="{x:Bind Operacion.ImagenesPrefactura, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
@@ -1194,33 +1098,6 @@
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Órdenes de compra" />
-                                        <Border
-                                            MinHeight="92"
-                                            Padding="12"
-                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                            BorderBrush="{ThemeResource SystemAccentColorLight2}"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Visibility="{x:Bind Operacion.OrdenCompraEmptyVisibility, Mode=OneWay}">
-                                            <StackPanel
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Spacing="6">
-                                                <FontIcon
-                                                    HorizontalAlignment="Center"
-                                                    FontSize="20"
-                                                    Foreground="{ThemeResource SystemAccentColor}"
-                                                    Glyph="&#xE898;" />
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    FontSize="12"
-                                                    FontStyle="Italic"
-                                                    Text="Usa Cargar o Clip en la barra superior"
-                                                    TextAlignment="Center"
-                                                    TextWrapping="Wrap" />
-                                            </StackPanel>
-                                        </Border>
                                         <ItemsRepeater x:Name="OrdenCompraRepeater" ItemsSource="{x:Bind Operacion.ImagenesOrdenCompra, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />
@@ -1308,33 +1185,6 @@
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Levantamientos" />
-                                        <Border
-                                            MinHeight="92"
-                                            Padding="12"
-                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                            BorderBrush="{ThemeResource SystemAccentColorLight2}"
-                                            BorderThickness="1"
-                                            CornerRadius="6"
-                                            Visibility="{x:Bind Operacion.LevantamientoEmptyVisibility, Mode=OneWay}">
-                                            <StackPanel
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Spacing="6">
-                                                <FontIcon
-                                                    HorizontalAlignment="Center"
-                                                    FontSize="20"
-                                                    Foreground="{ThemeResource SystemAccentColor}"
-                                                    Glyph="&#xE898;" />
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    FontSize="12"
-                                                    FontStyle="Italic"
-                                                    Text="Usa Cargar o Clip en la barra superior"
-                                                    TextAlignment="Center"
-                                                    TextWrapping="Wrap" />
-                                            </StackPanel>
-                                        </Border>
                                         <ItemsRepeater x:Name="LevantamientoRepeater" ItemsSource="{x:Bind Operacion.ImagenesLevantamiento, Mode=OneWay}">
                                             <ItemsRepeater.Layout>
                                                 <StackLayout Orientation="Horizontal" Spacing="6" />

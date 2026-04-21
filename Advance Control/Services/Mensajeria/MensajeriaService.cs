@@ -46,6 +46,15 @@ namespace Advance_Control.Services.Mensajeria
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        private void LogEventHandlerError(string handlerName, Exception ex)
+        {
+            _ = _logger.LogErrorAsync(
+                $"Error en el handler de mensajería '{handlerName}'",
+                ex,
+                "MensajeriaService",
+                handlerName);
+        }
+
         public async Task ConectarAsync(string token, CancellationToken ct = default)
         {
             // Guard: si ya está conectado, no reconectar
@@ -70,37 +79,37 @@ namespace Advance_Control.Services.Mensajeria
             _hubConnection.On<MensajeDto>("RecibirMensaje", msg =>
             {
                 try { MensajeRecibido?.Invoke(this, msg); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler RecibirMensaje: {ex}"); }
+                catch (Exception ex) { LogEventHandlerError("RecibirMensaje", ex); }
             });
 
             _hubConnection.On<MensajeDto>("MensajeEnviado", msg =>
             {
                 try { MensajeEnviado?.Invoke(this, msg); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler MensajeEnviado: {ex}"); }
+                catch (Exception ex) { LogEventHandlerError("MensajeEnviado", ex); }
             });
 
             _hubConnection.On<long>("MensajeLeido", id =>
             {
                 try { MensajeLeido?.Invoke(this, id); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler MensajeLeido: {ex}"); }
+                catch (Exception ex) { LogEventHandlerError("MensajeLeido", ex); }
             });
 
             _hubConnection.On<string>("UsuarioConectado", id =>
             {
                 try { UsuarioConectado?.Invoke(this, id); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler UsuarioConectado: {ex}"); }
+                catch (Exception ex) { LogEventHandlerError("UsuarioConectado", ex); }
             });
 
             _hubConnection.On<string>("UsuarioDesconectado", id =>
             {
                 try { UsuarioDesconectado?.Invoke(this, id); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler UsuarioDesconectado: {ex}"); }
+                catch (Exception ex) { LogEventHandlerError("UsuarioDesconectado", ex); }
             });
 
             _hubConnection.On<string>("UsuarioEscribiendo", id =>
             {
                 try { UsuarioEscribiendo?.Invoke(this, id); }
-                catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en handler UsuarioEscribiendo: {ex}"); }
+                catch (Exception ex) { LogEventHandlerError("UsuarioEscribiendo", ex); }
             });
 
             _hubConnection.Reconnecting += _ =>
@@ -129,8 +138,9 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                try { await _logger.LogErrorAsync("Error al conectar al hub de mensajería", ex, "MensajeriaService", "ConectarAsync"); } catch { }
+                await _logger.LogErrorAsync("Error al conectar al hub de mensajería", ex, "MensajeriaService", "ConectarAsync");
                 EstadoConexionCambiado?.Invoke(this, false);
+                throw;
             }
         }
 
@@ -208,7 +218,7 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                try { await _logger.LogErrorAsync("Error al obtener conversación", ex, "MensajeriaService", "GetConversacionAsync"); } catch { }
+                await _logger.LogErrorAsync("Error al obtener conversación", ex, "MensajeriaService", "GetConversacionAsync");
                 return new();
             }
         }
@@ -222,7 +232,7 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                try { await _logger.LogErrorAsync("Error al obtener usuarios de chat", ex, "MensajeriaService", "GetUsuariosChatAsync"); } catch { }
+                await _logger.LogErrorAsync("Error al obtener usuarios de chat", ex, "MensajeriaService", "GetUsuariosChatAsync");
                 return new();
             }
         }
@@ -235,8 +245,9 @@ namespace Advance_Control.Services.Mensajeria
                 var result = await _http.GetFromJsonAsync<JsonElement>(url, ct);
                 return result.GetProperty("count").GetInt64();
             }
-            catch
+            catch (Exception ex)
             {
+                await _logger.LogErrorAsync("Error al obtener el conteo de mensajes no leídos", ex, "MensajeriaService", "GetNoLeidosCountAsync");
                 return 0;
             }
         }
@@ -261,7 +272,7 @@ namespace Advance_Control.Services.Mensajeria
             }
             catch (Exception ex)
             {
-                try { await _logger.LogErrorAsync("Error al subir imagen de mensaje", ex, "MensajeriaService", "UploadImagenMensajeAsync"); } catch { }
+                await _logger.LogErrorAsync("Error al subir imagen de mensaje", ex, "MensajeriaService", "UploadImagenMensajeAsync");
                 return null;
             }
         }

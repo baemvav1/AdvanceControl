@@ -22,10 +22,28 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Visor PDF via WebView2 -->
-        <WebView2 x:Name="PdfWebView"
-                  Grid.Row="0"
-                  MinHeight="540"/>
+        <ScrollViewer
+            x:Name="PdfScrollViewer"
+            Grid.Row="0"
+            MinHeight="540"
+            HorizontalScrollBarVisibility="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <StackPanel
+                x:Name="PdfPagesPanel"
+                Padding="8"
+                Spacing="12" />
+        </ScrollViewer>
+
+        <TextBlock
+            x:Name="EstadoTextBlock"
+            Grid.Row="0"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="No se pudo cargar la vista previa del PDF."
+            TextAlignment="Center"
+            TextWrapping="Wrap"
+            Visibility="Collapsed" />
 
         <!-- Mensaje de carga -->
         <ProgressRing x:Name="CargandoRing"

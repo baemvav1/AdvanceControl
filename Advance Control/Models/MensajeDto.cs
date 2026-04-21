@@ -109,17 +109,38 @@ namespace Advance_Control.Models
 
         /// <summary>URL completa de la imagen para binding.</summary>
         [JsonIgnore]
-        public string? ImagenUrlCompleta { get; set; }
+        public string? ImagenUrlCompleta
+        {
+            get => _imagenUrlCompleta;
+            set
+            {
+                if (_imagenUrlCompleta == value) return;
+
+                _imagenUrlCompleta = value;
+                _imagenSource = CreateImagenSource(value);
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(ImagenSource));
+            }
+        }
 
         /// <summary>ImageSource seguro para binding (evita conversión implícita string→ImageSource).</summary>
         [JsonIgnore]
-        public BitmapImage? ImagenSource
+        public BitmapImage? ImagenSource => _imagenSource;
+
+        private string? _imagenUrlCompleta;
+        private BitmapImage? _imagenSource;
+
+        private static BitmapImage? CreateImagenSource(string? imageUrl)
         {
-            get
+            if (string.IsNullOrWhiteSpace(imageUrl)) return null;
+
+            try
             {
-                if (string.IsNullOrEmpty(ImagenUrlCompleta)) return null;
-                try { return new BitmapImage(new Uri(ImagenUrlCompleta)); }
-                catch { return null; }
+                return new BitmapImage(new Uri(imageUrl));
+            }
+            catch
+            {
+                return null;
             }
         }
 

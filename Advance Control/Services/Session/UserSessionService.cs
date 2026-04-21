@@ -18,6 +18,7 @@ namespace Advance_Control.Services.Session
         private readonly IUserInfoService _userInfoService;
         private readonly ILoggingService _logger;
         private readonly IPermisoUiRuntimeService _permisoUiRuntimeService;
+        private readonly SemaphoreSlim _loadLock = new(1, 1);
 
         public int CredencialId { get; private set; }
         public int IdProveedor { get; private set; }
@@ -43,44 +44,42 @@ namespace Advance_Control.Services.Session
         {
             if (IsLoaded) return;
 
+            await _loadLock.WaitAsync(cancellationToken);
+
             try
             {
+                if (IsLoaded) return;
+
                 var userInfo = await _userInfoService.GetUserInfoAsync(cancellationToken);
-                if (userInfo != null)
-                {
-                    CredencialId = userInfo.CredencialId;
-                    IdProveedor = userInfo.IdProveedor;
-                    NombreCompleto = userInfo.NombreCompleto;
-                    Correo = userInfo.Correo;
-                    Telefono = userInfo.Telefono;
-                    Nivel = userInfo.Nivel;
-                    TipoUsuario = userInfo.TipoUsuario;
-                    AccessControlService.Current.SetNivel(Nivel);
-                    IsLoaded = true;
+                if (userInfo == null)
+                    throw new InvalidOperationException("La API no devolvió la información del usuario autenticado.");
 
-                    try
-                    {
-                        await _permisoUiRuntimeService.InitializeAsync(Nivel, cancellationToken: cancellationToken);
-                    }
-                    catch (Exception permissionEx)
-                    {
-                        await _logger.LogErrorAsync("Error al inicializar permisos UI durante la carga de sesión", permissionEx, "UserSessionService", "LoadAsync");
-                    }
+                CredencialId = userInfo.CredencialId;
+                IdProveedor = userInfo.IdProveedor;
+                NombreCompleto = userInfo.NombreCompleto;
+                Correo = userInfo.Correo;
+                Telefono = userInfo.Telefono;
+                Nivel = userInfo.Nivel;
+                TipoUsuario = userInfo.TipoUsuario;
+                AccessControlService.Current.SetNivel(Nivel);
 
-                    await _logger.LogInformationAsync(
-                        $"Sesión de usuario cargada: CredencialId={CredencialId}, IdProveedor={IdProveedor}",
-                        "UserSessionService", "LoadAsync");
-                }
-                else
-                {
-                    await _logger.LogWarningAsync(
-                        "No se pudo obtener información del usuario desde el API",
-                        "UserSessionService", "LoadAsync");
-                }
+                await _permisoUiRuntimeService.InitializeAsync(Nivel, cancellationToken: cancellationToken);
+
+                IsLoaded = true;
+
+                await _logger.LogInformationAsync(
+                    $"Sesión de usuario cargada: CredencialId={CredencialId}, IdProveedor={IdProveedor}",
+                    "UserSessionService", "LoadAsync");
             }
             catch (Exception ex)
             {
+                Clear();
                 await _logger.LogErrorAsync("Error al cargar sesión de usuario", ex, "UserSessionService", "LoadAsync");
+                throw;
+            }
+            finally
+            {
+                _loadLock.Release();
             }
         }
 

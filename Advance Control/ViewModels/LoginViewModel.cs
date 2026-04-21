@@ -268,8 +268,7 @@ namespace Advance_Control.ViewModels
                 
                 if (success)
                 {
-                    // Cargar datos de sesión (CredencialId, IdProveedor, etc.) una sola vez
-                    await _userSessionService.LoadAsync();
+                    IsAuthenticated = true;
                     LoginSuccessful = true;
                     await _activityService.CrearActividadAsync("Sesion", $"Inicio de sesión: {User}");
                     await _logger.LogInformationAsync($"Usuario autenticado exitosamente: {User}", "LoginViewModel", "ExecuteLogin");
@@ -279,12 +278,6 @@ namespace Advance_Control.ViewModels
                     {
                         await SaveCredentialsAsync();
                     }
-                    
-                    // Mostrar notificación de bienvenida
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Bienvenido",
-                        nota: $"Usuario {User} ha iniciado sesión exitosamente",
-                        fechaHoraInicio: DateTime.Now);
                 }
                 else
                 {
@@ -498,19 +491,13 @@ namespace Advance_Control.ViewModels
                 var restored = await _authService.TryRestoreSessionAsync();
                 if (restored)
                 {
-                    // Cargar datos de sesión (CredencialId, IdProveedor, etc.) una sola vez
-                    await _userSessionService.LoadAsync();
                     _user = savedUsername;
                     _rememberMe = true;
+                    IsAuthenticated = true;
                     OnPropertyChanged(nameof(User));
                     OnPropertyChanged(nameof(RememberMe));
                     LoginSuccessful = true;
                     await _logger.LogInformationAsync("Sesión restaurada automáticamente", "LoginViewModel", "TryAutoLoginAsync");
-
-                    await _notificacionService.MostrarNotificacionAsync(
-                        titulo: "Bienvenido",
-                        nota: $"Usuario {savedUsername} ha iniciado sesión automáticamente",
-                        fechaHoraInicio: DateTime.Now);
 
                     return true;
                 }

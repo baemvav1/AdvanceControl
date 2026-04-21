@@ -54,6 +54,8 @@ namespace Advance_Control.ViewModels
                     if (IsPanelVisible)
                         _mensajeria.UsuarioVisibleId = value?.CredencialId;
                     if (value != null)
+                        IsUserListVisible = false;
+                    if (value != null)
                         _ = CargarConversacionSeguroAsync(value.CredencialId);
                 }
             }
