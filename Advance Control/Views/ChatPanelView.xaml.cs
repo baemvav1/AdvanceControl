@@ -16,6 +16,7 @@ namespace Advance_Control.Views
     public sealed partial class ChatPanelView : UserControl
     {
         private static readonly string[] _extensionesPermitidas = { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".pdf" };
+        private bool _isSynchronizingUserListSelection;
 
         public ChatPanelViewModel ViewModel { get; }
 
@@ -50,6 +51,7 @@ namespace Advance_Control.Views
             {
                 BuscadorUsuarios.Text = string.Empty;
                 ViewModel.FiltrarUsuarios(string.Empty);
+                SincronizarUsuarioSeleccionadoEnLista();
                 _ = DispatcherQueue.TryEnqueue(() => BuscadorUsuarios.Focus(FocusState.Programmatic));
             }
         }
@@ -58,9 +60,31 @@ namespace Advance_Control.Views
         {
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
             {
-                try { ViewModel.FiltrarUsuarios(sender.Text); }
+                try
+                {
+                    ViewModel.FiltrarUsuarios(sender.Text);
+                    SincronizarUsuarioSeleccionadoEnLista();
+                }
                 catch (Exception ex) { System.Diagnostics.Debug.WriteLine($"Error en ChatPanel.BuscadorUsuarios_TextChanged: {ex}"); }
             }
+        }
+
+        private void UsuariosListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isSynchronizingUserListSelection)
+                return;
+
+            if (UsuariosListView.SelectedItem is not UsuarioChatDto usuarioSeleccionado)
+                return;
+
+            if (ViewModel.UsuarioSeleccionado?.CredencialId == usuarioSeleccionado.CredencialId)
+            {
+                ViewModel.IsUserListVisible = false;
+                return;
+            }
+
+            ViewModel.AbrirConversacion(usuarioSeleccionado);
+            SincronizarUsuarioSeleccionadoEnLista();
         }
 
         private async void EnviarButton_Click(object sender, RoutedEventArgs e)
@@ -161,6 +185,22 @@ namespace Advance_Control.Views
         {
             var ext = Path.GetExtension(file.Name)?.ToLowerInvariant();
             return !string.IsNullOrEmpty(ext) && _extensionesPermitidas.Contains(ext);
+        }
+
+        private void SincronizarUsuarioSeleccionadoEnLista()
+        {
+            _isSynchronizingUserListSelection = true;
+            try
+            {
+                var usuarioActual = ViewModel.UsuarioSeleccionado;
+                UsuariosListView.SelectedItem = usuarioActual == null
+                    ? null
+                    : ViewModel.Usuarios.FirstOrDefault(u => u.CredencialId == usuarioActual.CredencialId);
+            }
+            finally
+            {
+                _isSynchronizingUserListSelection = false;
+            }
         }
 
         // Helpers para x:Bind

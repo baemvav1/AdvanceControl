@@ -17,6 +17,8 @@ namespace Advance_Control
         private readonly MainViewModel _viewModel;
         private readonly IUserSessionService _sessionService;
         private readonly IThemeService _themeService;
+        private const double ChatPanelExpandedWidth = 420;
+        private const double ChatPanelCollapsedWidth = 0;
         private bool _autoLoginAttempted;
         private MensajesViewModel? _mensajesVmSuscrito;
 
@@ -101,8 +103,8 @@ namespace Advance_Control
 
             // Ajustar el ancho de la columna según la visibilidad
             NotificacionesColumn.Width = _viewModel.IsChatPanelVisible
-                ? new GridLength(2, GridUnitType.Star)
-                : new GridLength(0);
+                ? new GridLength(ChatPanelExpandedWidth)
+                : new GridLength(ChatPanelCollapsedWidth);
 
             // Al ocultar el panel, limpiar usuario visible del ChatPanel
             if (!_viewModel.IsChatPanelVisible)
@@ -124,7 +126,7 @@ namespace Advance_Control
             if (_viewModel.IsChatPanelVisible) return;
 
             _viewModel.IsChatPanelVisible = true;
-            NotificacionesColumn.Width = new GridLength(2, GridUnitType.Star);
+            NotificacionesColumn.Width = new GridLength(ChatPanelExpandedWidth);
             ChatPanelControl.ViewModel.IsPanelVisible = true;
         }
 
