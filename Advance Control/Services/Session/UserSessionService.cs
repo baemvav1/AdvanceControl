@@ -54,22 +54,39 @@ namespace Advance_Control.Services.Session
                 if (userInfo == null)
                     throw new InvalidOperationException("La API no devolvió la información del usuario autenticado.");
 
-                CredencialId = userInfo.CredencialId;
-                IdProveedor = userInfo.IdProveedor;
-                NombreCompleto = userInfo.NombreCompleto;
-                Correo = userInfo.Correo;
-                Telefono = userInfo.Telefono;
-                Nivel = userInfo.Nivel;
-                TipoUsuario = userInfo.TipoUsuario;
-                AccessControlService.Current.SetNivel(Nivel);
+                if (userInfo.CredencialId <= 0)
+                    throw new InvalidOperationException("La API devolvió una sesión sin credencial válida.");
 
-                await _permisoUiRuntimeService.InitializeAsync(Nivel, cancellationToken: cancellationToken);
+                var credencialId = userInfo.CredencialId;
+                var idProveedor = userInfo.IdProveedor;
+                var nombreCompleto = userInfo.NombreCompleto;
+                var correo = userInfo.Correo;
+                var telefono = userInfo.Telefono;
+                var nivel = userInfo.Nivel;
+                var tipoUsuario = userInfo.TipoUsuario;
+
+                await _permisoUiRuntimeService.InitializeAsync(nivel, cancellationToken: cancellationToken);
+
+                CredencialId = credencialId;
+                IdProveedor = idProveedor;
+                NombreCompleto = nombreCompleto;
+                Correo = correo;
+                Telefono = telefono;
+                Nivel = nivel;
+                TipoUsuario = tipoUsuario;
+                AccessControlService.Current.SetNivel(Nivel);
 
                 IsLoaded = true;
 
                 await _logger.LogInformationAsync(
                     $"Sesión de usuario cargada: CredencialId={CredencialId}, IdProveedor={IdProveedor}",
                     "UserSessionService", "LoadAsync");
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Clear();
+                await _logger.LogErrorAsync("La sesión del usuario ya no es válida durante la carga inicial", ex, "UserSessionService", "LoadAsync");
+                throw;
             }
             catch (Exception ex)
             {

@@ -385,6 +385,15 @@ namespace Advance_Control.ViewModels
                 await _logger.LogInformationAsync("No se pudo restaurar sesión, mostrando diálogo de login", "MainViewModel", "TryAutoLoginAsync");
                 return await ShowLoginDialogAsync();
             }
+            catch (InvalidOperationException ex)
+            {
+                await _logger.LogWarningAsync($"No se pudo verificar la sesión porque el servidor no está disponible: {ex.Message}", "MainViewModel", "TryAutoLoginAsync");
+                await ResetBootstrapStateAsync();
+                await _notificacionService.MostrarAsync(
+                    "Servidor no disponible",
+                    "No se pudo verificar la sesión con el servidor. Intenta nuevamente cuando termine el reinicio del VPS.");
+                return false;
+            }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error durante inicio de sesión automático", ex, "MainViewModel", "TryAutoLoginAsync");
@@ -615,6 +624,24 @@ namespace Advance_Control.ViewModels
                 await NavigateToInicioAsync(forceReload: true);
                 return true;
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                await _logger.LogErrorAsync("La sesión autenticada fue rechazada durante el bootstrap", ex, "MainViewModel", nameof(HandleLoginSuccessAsync));
+                await ResetAuthenticatedStateAsync();
+                await _notificacionService.MostrarAsync(
+                    "Error de sesión",
+                    "La sesión ya no es válida. Inicia sesión nuevamente.");
+                return false;
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _logger.LogErrorAsync("No se pudo completar el bootstrap de la sesión por un fallo temporal del servidor", ex, "MainViewModel", nameof(HandleLoginSuccessAsync));
+                await ResetBootstrapStateAsync();
+                await _notificacionService.MostrarAsync(
+                    "Carga inicial incompleta",
+                    "La autenticación fue correcta, pero el servidor no pudo completar la carga inicial de la sesión.");
+                return false;
+            }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al aplicar el estado posterior al login", ex, "MainViewModel", nameof(HandleLoginSuccessAsync));
@@ -628,6 +655,32 @@ namespace Advance_Control.ViewModels
             {
                 _loginStateLock.Release();
             }
+        }
+
+        private async Task ResetBootstrapStateAsync()
+        {
+            var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+            sessionService?.Clear();
+
+            try
+            {
+                await _mensajeria.DesconectarAsync();
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync(
+                    $"No se pudo cerrar la conexión de mensajería al limpiar el bootstrap: {ex.Message}",
+                    "MainViewModel",
+                    nameof(ResetBootstrapStateAsync));
+            }
+
+            await UpdateUIPropertiesAsync(() =>
+            {
+                IsAuthenticated = false;
+                UserInitials = string.Empty;
+                UserType = string.Empty;
+                IsChatPanelVisible = false;
+            });
         }
 
         private async Task EnsureSessionContextAsync()

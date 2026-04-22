@@ -48,6 +48,29 @@
                             TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </Button>
+                <Button
+                    Margin="0,0,0,4"
+                    Padding="10,8"
+                    Background="#22FFFFFF"
+                    Click="OperacionReferenciaButton_Click"
+                    CornerRadius="8"
+                    Tag="{Binding}"
+                    Visibility="{Binding EsReferenciaOperacionVisibility}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="20" Foreground="White" Glyph="&#xE8A5;" />
+                        <StackPanel Spacing="2">
+                            <TextBlock
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Foreground="White"
+                                Text="{Binding TituloReferenciaOperacion}" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="#CCFFFFFF"
+                                Text="Abrir operación" />
+                        </StackPanel>
+                    </StackPanel>
+                </Button>
                 <!--  Texto  -->
                 <TextBlock
                     FontSize="13" Foreground="White"
@@ -105,6 +128,28 @@
                             FontSize="12"
                             Text="{Binding ContenidoSeguro}"
                             TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Margin="0,0,0,4"
+                    Padding="10,8"
+                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                    Click="OperacionReferenciaButton_Click"
+                    CornerRadius="8"
+                    Tag="{Binding}"
+                    Visibility="{Binding EsReferenciaOperacionVisibility}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon FontSize="20" Foreground="{ThemeResource SystemAccentColor}" Glyph="&#xE8A5;" />
+                        <StackPanel Spacing="2">
+                            <TextBlock
+                                FontSize="12"
+                                FontWeight="SemiBold"
+                                Text="{Binding TituloReferenciaOperacion}" />
+                            <TextBlock
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Abrir operación" />
+                        </StackPanel>
                     </StackPanel>
                 </Button>
                 <!--  Texto  -->

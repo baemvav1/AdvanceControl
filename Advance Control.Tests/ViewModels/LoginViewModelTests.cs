@@ -30,7 +30,13 @@ namespace Advance_Control.Tests.ViewModels
             _mockSecureStorage.Setup(x => x.RemoveAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
             _mockSecureStorage.Setup(x => x.ClearAsync()).Returns(Task.CompletedTask);
             _mockNotificationService
-                .Setup(x => x.MostrarNotificacionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int?>()))
+                .Setup(x => x.MostrarNotificacionAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<System.Collections.Generic.Dictionary<string, string>?>()))
                 .Returns(Task.CompletedTask);
         }
 
@@ -89,7 +95,7 @@ namespace Advance_Control.Tests.ViewModels
         }
 
         [Fact]
-        public async Task LoginCommand_WithValidCredentialsAndSuccess_LoadsSession()
+        public async Task LoginCommand_WithValidCredentialsAndSuccess_MarksLoginAsSuccessful()
         {
             _mockAuthService
                 .Setup(x => x.AuthenticateAsync("demo", "1234", It.IsAny<CancellationToken>()))
@@ -102,8 +108,8 @@ namespace Advance_Control.Tests.ViewModels
             await ((IAsyncRelayCommand)viewModel.LoginCommand).ExecuteAsync(null);
 
             Assert.True(viewModel.LoginSuccessful);
+            Assert.True(viewModel.IsAuthenticated);
             Assert.Equal(string.Empty, viewModel.ErrorMessage);
-            _mockUserSessionService.Verify(x => x.LoadAsync(It.IsAny<CancellationToken>()), Times.Once);
             _mockActivityService.Verify(x => x.CrearActividadAsync("Sesion", It.Is<string>(s => s.Contains("demo")), It.IsAny<CancellationToken>()), Times.Once);
         }
 

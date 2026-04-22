@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="Advance_Control.Views.Pages.OperacionVisorPage"
+    x:Name="PageRoot"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:Advance_Control.Converters"
@@ -84,6 +85,25 @@
                         Foreground="#E8A317"
                         Text="🔧 Trabajo Finalizado" />
                 </Border>
+                <Border
+                    Padding="6,2"
+                    VerticalAlignment="Center"
+                    Background="#152563EB"
+                    BorderBrush="#2563EB"
+                    BorderThickness="1"
+                    CornerRadius="10"
+                    Visibility="{x:Bind Operacion.AccessBadgeVisibility, Mode=OneWay}">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="#2563EB"
+                        Text="🔒 Solo lectura por chat" />
+                </Border>
+                <Button Click="CompartirOperacionButton_Click" ToolTipService.ToolTip="Enviar referencia de esta operación al chat activo">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <SymbolIcon Symbol="Share" />
+                        <TextBlock Text="Compartir" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Grid>
 
@@ -445,6 +465,7 @@
                                                                         Click="DeleteCargoImageButton_Click"
                                                                         CornerRadius="9"
                                                                         Tag="{x:Bind}"
+                                                                        Visibility="{Binding Operacion.CanMutateOperation, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}"
                                                                         ToolTipService.ToolTip="Eliminar imagen">
                                                                         <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                                     </Button>
@@ -472,19 +493,19 @@
                                             FontSize="12"
                                             FontWeight="SemiBold"
                                             Text="Selección:" />
-                                        <Button Click="UploadSelectedCargoImageButton_Click" ToolTipService.ToolTip="Cargar imagen al cargo seleccionado">
+                                        <Button Click="UploadSelectedCargoImageButton_Click" IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}" ToolTipService.ToolTip="Cargar imagen al cargo seleccionado">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Camera" />
                                                 <TextBlock Text="Imagen" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Click="EditSelectedCargoButton_Click" ToolTipService.ToolTip="Editar cargo seleccionado">
+                                        <Button Click="EditSelectedCargoButton_Click" IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}" ToolTipService.ToolTip="Editar cargo seleccionado">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Edit" />
                                                 <TextBlock Text="Editar" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Click="DeleteSelectedCargosButton_Click" ToolTipService.ToolTip="Eliminar cargos seleccionados">
+                                        <Button Click="DeleteSelectedCargosButton_Click" IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}" ToolTipService.ToolTip="Eliminar cargos seleccionados">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Delete" />
                                                 <TextBlock Text="Eliminar" />
@@ -521,7 +542,7 @@
                                             Background="{ThemeResource AccentFillColorDefaultBrush}"
                                             Click="AddCargoButton_Click"
                                             Foreground="{ThemeResource FocusVisualBlackStrokeThemeBrush}"
-                                            IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}">
+                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Add" />
                                                 <TextBlock Text="Agregar Cargo" />
@@ -530,7 +551,7 @@
                                         <!--  Botón Finalizar / Deshacer Finalización (toggle)  -->
                                         <Button
                                             Click="FinalizarTrabajoButton_Click"
-                                            IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
                                             ToolTipService.ToolTip="{x:Bind ToFinalizarTrabajoTooltip(Operacion.TFinalizado), Mode=OneWay}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <FontIcon
@@ -788,7 +809,7 @@
                                             <AppBarButton
                                                 Click="GenerarCotizacionButton_Click"
                                                 Icon="Document"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="True"
                                                 Label="Generar Cotizacion"
                                                 ToolTipService.ToolTip="Generar cotización PDF" />
 
@@ -796,7 +817,7 @@
 
                                             <AppBarButton
                                                 Click="AbrirCotizacionPdfButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="True"
                                                 ToolTipService.ToolTip="Abrir cotización PDF"
                                                 Visibility="{x:Bind ToTextVisibility(Operacion.CotizacionPdfPath), Mode=OneWay}">
                                                 <AppBarButton.Icon>
@@ -808,7 +829,7 @@
                                             <AppBarButton
                                                 Click="GenerarReporteButton_Click"
                                                 Icon="Document"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="True"
                                                 Label="Generar Reporte"
                                                 ToolTipService.ToolTip="Generar reporte PDF" />
 
@@ -816,7 +837,7 @@
 
                                             <AppBarButton
                                                 Click="AbrirReportePdfButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="True"
                                                 ToolTipService.ToolTip="Abrir reporte PDF"
                                                 Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}">
                                                 <AppBarButton.Icon>
@@ -849,7 +870,7 @@
                                             <AppBarButton
                                                 Click="UploadPrefacturaButton_Click"
                                                 Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
                                                 Label="Prefactura"
                                                 ToolTipService.ToolTip="Cargar prefactura" />
 
@@ -858,7 +879,7 @@
                                             <AppBarButton
                                                 Click="UploadHojaServicioButton_Click"
                                                 Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
                                                 Label="Hoja Serv."
                                                 ToolTipService.ToolTip="Cargar hoja de servicio" />
 
@@ -867,7 +888,7 @@
                                             <AppBarButton
                                                 Click="UploadOrdenCompraButton_Click"
                                                 Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
                                                 Label="Orden C."
                                                 ToolTipService.ToolTip="Cargar orden de compra" />
 
@@ -876,7 +897,7 @@
                                             <AppBarButton
                                                 Click="UploadLevantamientoButton_Click"
                                                 Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.IsEditable, Mode=OneWay}"
+                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
                                                 Label="Levantamiento"
                                                 ToolTipService.ToolTip="Cargar documento de levantamiento" />
 
@@ -888,7 +909,7 @@
                                                 Icon="Undo"
                                                 Label="Reabrir Operación"
                                                 ToolTipService.ToolTip="Reabrir operación finalizada"
-                                                Visibility="{x:Bind ToInverseBoolVisibility(Operacion.IsEditable), Mode=OneWay}" />
+                                                Visibility="{x:Bind ToBoolVisibility(Operacion.CanReopenOperation), Mode=OneWay}" />
 
                                         </CommandBar.PrimaryCommands>
                                     </CommandBar>
@@ -988,7 +1009,8 @@
                                                             Click="DeleteOperacionImageButton_Click"
                                                             CornerRadius="9"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar archivo">
+                                                            ToolTipService.ToolTip="Eliminar archivo"
+                                                            Visibility="{Binding Operacion.CanMutateOperation, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                         </Button>
                                                     </Grid>
@@ -1075,7 +1097,8 @@
                                                             Click="DeleteOperacionImageButton_Click"
                                                             CornerRadius="9"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar archivo">
+                                                            ToolTipService.ToolTip="Eliminar archivo"
+                                                            Visibility="{Binding Operacion.CanMutateOperation, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                         </Button>
                                                     </Grid>
@@ -1162,7 +1185,8 @@
                                                             Click="DeleteOperacionImageButton_Click"
                                                             CornerRadius="9"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar archivo">
+                                                            ToolTipService.ToolTip="Eliminar archivo"
+                                                            Visibility="{Binding Operacion.CanMutateOperation, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                         </Button>
                                                     </Grid>
@@ -1249,7 +1273,8 @@
                                                             Click="DeleteOperacionImageButton_Click"
                                                             CornerRadius="9"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Eliminar archivo">
+                                                            ToolTipService.ToolTip="Eliminar archivo"
+                                                            Visibility="{Binding Operacion.CanMutateOperation, ElementName=PageRoot, Converter={StaticResource BooleanToVisibilityConverter}}">
                                                             <SymbolIcon Foreground="White" Symbol="Cancel" />
                                                         </Button>
                                                     </Grid>

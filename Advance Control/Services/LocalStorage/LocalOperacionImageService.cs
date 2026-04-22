@@ -94,13 +94,13 @@ namespace Advance_Control.Services.LocalStorage
                 // Obtener el próximo número de imagen para este tipo en esta operación
                 List<OperacionImageDto> existingImages;
                 if (tipo == "Prefactura")
-                    existingImages = await GetPrefacturasAsync(idOperacion, cancellationToken);
+                    existingImages = await GetPrefacturasAsync(idOperacion, cancellationToken: cancellationToken);
                 else if (tipo == "HojaServicio")
-                    existingImages = await GetHojasServicioAsync(idOperacion, cancellationToken);
+                    existingImages = await GetHojasServicioAsync(idOperacion, cancellationToken: cancellationToken);
                 else if (tipo == "OrdenCompra")
-                    existingImages = await GetOrdenComprasAsync(idOperacion, cancellationToken);
+                    existingImages = await GetOrdenComprasAsync(idOperacion, cancellationToken: cancellationToken);
                 else if (tipo == "Levantamiento")
-                    existingImages = await GetLevantamientosAsync(idOperacion, cancellationToken);
+                    existingImages = await GetLevantamientosAsync(idOperacion, cancellationToken: cancellationToken);
                 else
                     throw new ArgumentException($"Tipo de imagen no válido: {tipo}.", nameof(tipo));
                 
@@ -200,7 +200,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene la factura PDF de una operación si existe
         /// </summary>
-        public Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, CancellationToken cancellationToken = default)
+        public Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             var folder = Path.Combine(_basePath, $"Operacion_{idOperacion}");
             var fileName = $"{idOperacion}_Factura.pdf";
@@ -222,7 +222,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Indica si existe una factura PDF para la operación
         /// </summary>
-        public Task<bool> HasFacturaAsync(int idOperacion, CancellationToken cancellationToken = default)
+        public Task<bool> HasFacturaAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             var folder = Path.Combine(_basePath, $"Operacion_{idOperacion}");
             var fileName = $"{idOperacion}_Factura.pdf";
@@ -233,7 +233,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene todas las imágenes de prefacturas de una operación
         /// </summary>
-        public async Task<List<OperacionImageDto>> GetPrefacturasAsync(int idOperacion, CancellationToken cancellationToken = default)
+        public async Task<List<OperacionImageDto>> GetPrefacturasAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             return await GetImagesAsync(idOperacion, "Prefactura", cancellationToken);
         }
@@ -241,7 +241,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene todas las imágenes de hojas de servicio de una operación
         /// </summary>
-        public async Task<List<OperacionImageDto>> GetHojasServicioAsync(int idOperacion, CancellationToken cancellationToken = default)
+        public async Task<List<OperacionImageDto>> GetHojasServicioAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             return await GetImagesAsync(idOperacion, "HojaServicio", cancellationToken);
         }
@@ -249,7 +249,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene todas las imágenes de órdenes de compra de una operación
         /// </summary>
-        public async Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, CancellationToken cancellationToken = default)
+        public async Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             return await GetImagesAsync(idOperacion, "OrdenCompra", cancellationToken);
         }
@@ -257,7 +257,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene todos los documentos de levantamiento de una operación
         /// </summary>
-        public async Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, CancellationToken cancellationToken = default)
+        public async Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             return await GetImagesAsync(idOperacion, "Levantamiento", cancellationToken);
         }

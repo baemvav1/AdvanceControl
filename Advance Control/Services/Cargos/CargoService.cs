@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -40,7 +41,7 @@ namespace Advance_Control.Services.Cargos
         /// <summary>
         /// Obtiene una lista de cargos según los criterios de búsqueda proporcionados
         /// </summary>
-        public async Task<List<CargoDto>> GetCargosAsync(CargoEditDto query, CancellationToken cancellationToken = default)
+        public async Task<List<CargoDto>> GetCargosAsync(CargoEditDto query, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -60,6 +61,7 @@ namespace Advance_Control.Services.Cargos
                         .Add("idProveedor", query.IdProveedor)
                         .Add("cantidad", query.Cantidad)
                         .Add("unitario", query.Unitario)
+                        .Add("mensajeReferenciaId", mensajeReferenciaId)
                         .Build(url);
                 }
 
@@ -72,12 +74,21 @@ namespace Advance_Control.Services.Cargos
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                    {
+                        await _logger.LogWarningAsync(
+                            $"La sesión fue rechazada al obtener cargos. Status: {response.StatusCode}, Content: {errorContent}",
+                            "CargoService",
+                            "GetCargosAsync");
+                        throw new UnauthorizedAccessException("No se pudieron cargar los cargos porque la sesión ya no es válida.");
+                    }
+
                     await _logger.LogErrorAsync(
                         $"Error al obtener cargos. Status: {response.StatusCode}, Content: {errorContent}",
                         null,
                         "CargoService",
                         "GetCargosAsync");
-                    return new List<CargoDto>();
+                    throw new InvalidOperationException($"No se pudieron cargar los cargos porque el servidor respondió con el estado {(int)response.StatusCode} ({response.StatusCode}).");
                 }
 
                 // Deserializar la respuesta
@@ -97,7 +108,7 @@ namespace Advance_Control.Services.Cargos
                         ex,
                         "CargoService",
                         "GetCargosAsync");
-                    return new List<CargoDto>();
+                    throw new InvalidOperationException("La respuesta del servidor para cargos no tiene un formato válido.", ex);
                 }
 
                 await _logger.LogInformationAsync($"Se obtuvieron {cargos?.Count ?? 0} cargos", "CargoService", "GetCargosAsync");
@@ -113,6 +124,14 @@ namespace Advance_Control.Services.Cargos
                 }
 
                 return cargos ?? new List<CargoDto>();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (HttpRequestException ex)
             {

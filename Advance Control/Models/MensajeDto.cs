@@ -83,6 +83,19 @@ namespace Advance_Control.Models
         [JsonIgnore]
         public bool EsTexto => !EsImagen && !EsPdf;
 
+        [JsonIgnore]
+        public bool EsReferenciaOperacion =>
+            IdReferencia.HasValue &&
+            string.Equals(TipoReferencia, "Operacion", StringComparison.OrdinalIgnoreCase);
+
+        [JsonIgnore]
+        public Visibility EsReferenciaOperacionVisibility => EsReferenciaOperacion ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public string TituloReferenciaOperacion => IdReferencia.HasValue
+            ? $"Operación {IdReferencia.Value}"
+            : "Operación";
+
         // Propiedades Visibility explícitas para evitar conversión implícita bool→Visibility en x:Bind
         [JsonIgnore]
         public Visibility EsMioVisibility => EsMio ? Visibility.Visible : Visibility.Collapsed;

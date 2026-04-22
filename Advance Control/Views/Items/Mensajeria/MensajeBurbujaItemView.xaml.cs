@@ -11,6 +11,7 @@ namespace Advance_Control.Views.Items.Mensajeria
         /// El sender es el Button con la URL en Tag.
         /// </summary>
         public event EventHandler<RoutedEventArgs>? PdfButtonClick;
+        public event EventHandler<RoutedEventArgs>? OperacionReferenciaClick;
 
         public MensajeBurbujaItemView()
         {
@@ -20,6 +21,11 @@ namespace Advance_Control.Views.Items.Mensajeria
         private void PdfButton_Click(object sender, RoutedEventArgs e)
         {
             PdfButtonClick?.Invoke(sender, e);
+        }
+
+        private void OperacionReferenciaButton_Click(object sender, RoutedEventArgs e)
+        {
+            OperacionReferenciaClick?.Invoke(sender, e);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Advance_Control.Services.Cargos
         /// <summary>
         /// Obtiene cargos según los criterios especificados
         /// </summary>
-        Task<List<CargoDto>> GetCargosAsync(CargoEditDto query, CancellationToken cancellationToken = default);
+        Task<List<CargoDto>> GetCargosAsync(CargoEditDto query, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Crea un nuevo cargo

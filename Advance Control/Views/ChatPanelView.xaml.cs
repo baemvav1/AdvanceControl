@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Advance_Control.Models;
+using Advance_Control.Utilities;
 using System;
 using System.IO;
 using System.Linq;
@@ -179,6 +180,12 @@ namespace Advance_Control.Views
                 try { await global::Windows.System.Launcher.LaunchUriAsync(new Uri(url)); }
                 catch { }
             }
+        }
+
+        private void BurbujaOperacionReferencia_Click(object? sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is MensajeDto mensaje)
+                OperacionVisorNavigator.Navigate(mensaje);
         }
 
         private static bool EsArchivoValido(StorageFile file)

@@ -29,7 +29,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <param name="idCargo">ID del cargo</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Lista de imágenes del cargo</returns>
-        Task<List<CargoImageDto>> GetImagesAsync(int idOperacion, int idCargo, CancellationToken cancellationToken = default);
+        Task<List<CargoImageDto>> GetImagesAsync(int idOperacion, int idCargo, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Elimina una imagen de un cargo dentro de la carpeta de su operación

@@ -5,6 +5,7 @@ using Microsoft.Windows.AppNotifications;
 using System;
 using System.IO;
 using System.Net.Http;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Advance_Control.Services.OnlineCheck;
@@ -43,6 +44,7 @@ using Advance_Control.Services.CorreoUsuario;
 using Advance_Control.Services.TipoUsuario;
 using Advance_Control.Services.PermisosUi;
 using Advance_Control.Services.UsuariosAdmin;
+using Windows.ApplicationModel.DataTransfer;
 
 namespace Advance_Control
 {
@@ -1113,6 +1115,14 @@ namespace Advance_Control
         /// </summary>
         private void OnNotificationInvoked(AppNotificationManager sender, AppNotificationActivatedEventArgs args)
         {
+            if (args.Arguments.TryGetValue("notificationCommand", out var command)
+                && string.Equals(command, "copy", StringComparison.OrdinalIgnoreCase))
+            {
+                var textoCopiable = GetClipboardTextFromNotification(args);
+                MainWindow?.DispatcherQueue?.TryEnqueue(() => CopyNotificationTextToClipboard(textoCopiable));
+                return;
+            }
+
             // Leer credencialId de los argumentos de la notificación
             long credencialId = 0;
             try
@@ -1147,6 +1157,35 @@ namespace Advance_Control
                         mw.AbrirChatConUsuario(credencialId);
                 }
             });
+        }
+
+        private static string GetClipboardTextFromNotification(AppNotificationActivatedEventArgs args)
+        {
+            if (!args.Arguments.TryGetValue("clipboardTextBase64", out var encodedText)
+                || string.IsNullOrWhiteSpace(encodedText))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                return Encoding.UTF8.GetString(Convert.FromBase64String(encodedText));
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static void CopyNotificationTextToClipboard(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return;
+
+            var dataPackage = new DataPackage();
+            dataPackage.SetText(texto);
+            Clipboard.SetContent(dataPackage);
+            Clipboard.Flush();
         }
 
         [System.Runtime.InteropServices.DllImport("user32.dll")]

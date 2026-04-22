@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
@@ -77,27 +78,27 @@ namespace Advance_Control.Services.LocalStorage
 
         // ── Get ───────────────────────────────────────────────────────────────
 
-        public Task<List<OperacionImageDto>> GetPrefacturasAsync(int idOperacion, CancellationToken ct = default)
-            => GetListAsync(idOperacion, "prefactura", ct);
+        public Task<List<OperacionImageDto>> GetPrefacturasAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
+            => GetListAsync(idOperacion, "prefactura", mensajeReferenciaId, ct);
 
-        public Task<List<OperacionImageDto>> GetHojasServicioAsync(int idOperacion, CancellationToken ct = default)
-            => GetListAsync(idOperacion, "hoja_servicio", ct);
+        public Task<List<OperacionImageDto>> GetHojasServicioAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
+            => GetListAsync(idOperacion, "hoja_servicio", mensajeReferenciaId, ct);
 
-        public Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, CancellationToken ct = default)
-            => GetListAsync(idOperacion, "orden_compra", ct);
+        public Task<List<OperacionImageDto>> GetOrdenComprasAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
+            => GetListAsync(idOperacion, "orden_compra", mensajeReferenciaId, ct);
 
-        public Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, CancellationToken ct = default)
-            => GetListAsync(idOperacion, "levantamiento", ct);
+        public Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
+            => GetListAsync(idOperacion, "levantamiento", mensajeReferenciaId, ct);
 
-        public async Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, CancellationToken ct = default)
+        public async Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
         {
-            var list = await GetListAsync(idOperacion, "factura", ct);
+            var list = await GetListAsync(idOperacion, "factura", mensajeReferenciaId, ct);
             return list.FirstOrDefault();
         }
 
-        public async Task<bool> HasFacturaAsync(int idOperacion, CancellationToken ct = default)
+        public async Task<bool> HasFacturaAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
         {
-            var dto = await GetFacturaAsync(idOperacion, ct);
+            var dto = await GetFacturaAsync(idOperacion, mensajeReferenciaId, ct);
             return dto != null;
         }
 
@@ -153,13 +154,26 @@ namespace Advance_Control.Services.LocalStorage
             }
         }
 
-        private async Task<List<OperacionImageDto>> GetListAsync(int idOperacion, string tipo, CancellationToken ct)
+        private async Task<List<OperacionImageDto>> GetListAsync(int idOperacion, string tipo, long? mensajeReferenciaId, CancellationToken ct)
         {
             var result = new List<OperacionImageDto>();
             try
             {
-                var apiFiles = await _http.GetFromJsonAsync<List<UploadFileResponseDto>>(
-                    $"api/uploads/operaciones/{idOperacion}?tipo={tipo}", ct);
+                var url = mensajeReferenciaId.HasValue
+                    ? $"api/uploads/operaciones/{idOperacion}?tipo={tipo}&mensajeReferenciaId={mensajeReferenciaId.Value}"
+                    : $"api/uploads/operaciones/{idOperacion}?tipo={tipo}";
+
+                using var response = await _http.GetAsync(url, ct);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(ct);
+                    if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                        throw new UnauthorizedAccessException("No tienes acceso para ver los archivos de esta operación.");
+
+                    throw new InvalidOperationException($"No se pudieron obtener los archivos '{tipo}' porque el servidor respondió con el estado {(int)response.StatusCode} ({response.StatusCode}). {errorContent}");
+                }
+
+                var apiFiles = await response.Content.ReadFromJsonAsync<List<UploadFileResponseDto>>(cancellationToken: ct);
 
                 if (apiFiles == null) return result;
 
@@ -192,13 +206,27 @@ namespace Advance_Control.Services.LocalStorage
 
                     result.Add(BuildDto(idOperacion, file));
                 }
+
+                return result;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                await _logger.LogErrorAsync($"Acceso denegado al obtener lista {tipo} del VPS", ex,
+                    nameof(RemoteOperacionImageService), nameof(GetListAsync));
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _logger.LogErrorAsync($"No se pudo obtener lista {tipo} del VPS", ex,
+                    nameof(RemoteOperacionImageService), nameof(GetListAsync));
+                throw;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync($"Error al obtener lista {tipo} del VPS", ex,
                     nameof(RemoteOperacionImageService), nameof(GetListAsync));
+                throw;
             }
-            return result;
         }
 
         private async Task<UploadFileResponseDto?> PostFileAsync(int idOperacion, Stream stream,
@@ -240,7 +268,8 @@ namespace Advance_Control.Services.LocalStorage
         {
             Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
             var response = await _http.GetAsync(relativeUrl, ct);
-            if (!response.IsSuccessStatusCode) return;
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"No se pudo descargar el archivo de operación '{Path.GetFileName(localPath)}' desde el servidor.");
 
             await using var fs = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
             await response.Content.CopyToAsync(fs, ct);

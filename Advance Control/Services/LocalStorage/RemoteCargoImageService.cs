@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.RegularExpressions;
@@ -78,13 +79,26 @@ namespace Advance_Control.Services.LocalStorage
         }
 
         public async Task<List<CargoImageDto>> GetImagesAsync(int idOperacion, int idCargo,
-            CancellationToken ct = default)
+            long? mensajeReferenciaId = null, CancellationToken ct = default)
         {
             var result = new List<CargoImageDto>();
             try
             {
-                var apiFiles = await _http.GetFromJsonAsync<List<UploadFileResponseDto>>(
-                    $"api/uploads/operaciones/{idOperacion}?tipo=cargo&idCargo={idCargo}", ct);
+                var url = mensajeReferenciaId.HasValue
+                    ? $"api/uploads/operaciones/{idOperacion}?tipo=cargo&idCargo={idCargo}&mensajeReferenciaId={mensajeReferenciaId.Value}"
+                    : $"api/uploads/operaciones/{idOperacion}?tipo=cargo&idCargo={idCargo}";
+
+                using var response = await _http.GetAsync(url, ct);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(ct);
+                    if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                        throw new UnauthorizedAccessException("No tienes acceso para ver las imágenes de este cargo.");
+
+                    throw new InvalidOperationException($"No se pudieron obtener las imágenes del cargo porque el servidor respondió con el estado {(int)response.StatusCode} ({response.StatusCode}). {errorContent}");
+                }
+
+                var apiFiles = await response.Content.ReadFromJsonAsync<List<UploadFileResponseDto>>(cancellationToken: ct);
 
                 if (apiFiles == null) return result;
 
@@ -107,13 +121,27 @@ namespace Advance_Control.Services.LocalStorage
 
                     result.Add(BuildDto(idOperacion, idCargo, file));
                 }
+
+                return result;
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                await _logger.LogErrorAsync($"Acceso denegado al obtener imágenes del cargo {idCargo}", ex,
+                    nameof(RemoteCargoImageService), nameof(GetImagesAsync));
+                throw;
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _logger.LogErrorAsync($"No se pudieron obtener imágenes del cargo {idCargo}", ex,
+                    nameof(RemoteCargoImageService), nameof(GetImagesAsync));
+                throw;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync($"Error al obtener imágenes del cargo {idCargo} desde el VPS", ex,
                     nameof(RemoteCargoImageService), nameof(GetImagesAsync));
+                throw;
             }
-            return result;
         }
 
         public async Task<bool> DeleteImageAsync(int idOperacion, string fileName, CancellationToken ct = default)
@@ -171,7 +199,8 @@ namespace Advance_Control.Services.LocalStorage
         {
             Directory.CreateDirectory(Path.GetDirectoryName(localPath)!);
             var response = await _http.GetAsync(relativeUrl, ct);
-            if (!response.IsSuccessStatusCode) return;
+            if (!response.IsSuccessStatusCode)
+                throw new InvalidOperationException($"No se pudo descargar el archivo de cargo '{Path.GetFileName(localPath)}' desde el servidor.");
 
             await using var fs = new FileStream(localPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, true);
             await response.Content.CopyToAsync(fs, ct);

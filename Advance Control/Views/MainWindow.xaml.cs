@@ -5,6 +5,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.ApplicationModel.DataTransfer;
 using Advance_Control.ViewModels;
 using Advance_Control.Services.Session;
 using Advance_Control.Services.Theme;
@@ -59,7 +60,7 @@ namespace Advance_Control
             UpdateNavigationVisibility();
         }
 
-        private void OnNotificacionInApp(object? sender, (string Titulo, string? Nota) e)
+        private void OnNotificacionInApp(object? sender, InAppNotificacionPayload e)
         {
             DispatcherQueue.TryEnqueue(() =>
             {
@@ -72,6 +73,13 @@ namespace Advance_Control
 
                 NotificacionInfoBar.Title = e.Titulo;
                 NotificacionInfoBar.Message = e.Nota ?? string.Empty;
+                NotificacionInfoBar.ActionButton = new Button
+                {
+                    Content = "Copiar"
+                };
+                if (NotificacionInfoBar.ActionButton is Button copyButton)
+                    copyButton.Click += (_, _) => CopyNotificationTextToClipboard(e.TextoCopiable);
+
                 NotificacionInfoBar.IsOpen = true;
             });
         }
@@ -185,6 +193,17 @@ namespace Advance_Control
         private void UpdateNavigationVisibility()
         {
             UpdateNavigationItemsVisibility(nvSample.MenuItems.Cast<object>());
+        }
+
+        private static void CopyNotificationTextToClipboard(string texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return;
+
+            var dataPackage = new DataPackage();
+            dataPackage.SetText(texto);
+            Clipboard.SetContent(dataPackage);
+            Clipboard.Flush();
         }
 
         private int UpdateNavigationItemsVisibility(System.Collections.Generic.IEnumerable<object> menuItemsSource)

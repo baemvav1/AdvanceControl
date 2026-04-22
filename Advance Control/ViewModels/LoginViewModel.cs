@@ -503,8 +503,12 @@ namespace Advance_Control.ViewModels
                 }
 
                 await _logger.LogDebugAsync("Auto-login omitido: no se pudo restaurar la sesión", "LoginViewModel", "TryAutoLoginAsync");
-                await ClearSavedCredentialsAsync();
                 return false;
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _logger.LogWarningAsync($"No se pudo restaurar la sesión automáticamente por un fallo temporal: {ex.Message}", "LoginViewModel", "TryAutoLoginAsync");
+                throw;
             }
             catch (Exception ex)
             {

@@ -73,18 +73,24 @@ namespace Advance_Control.Services.Http
             // If unauthorized, attempt a single refresh + retry
             if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                // Dispose original response early
-                response.Dispose();
+                bool refreshed;
+                try
+                {
+                    refreshed = await _authService.Value.RefreshTokenAsync(cancellationToken).ConfigureAwait(false);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    response.Dispose();
+                    throw new InvalidOperationException("No se pudo renovar la sesión con el servidor.", ex);
+                }
 
-                var refreshed = await _authService.Value.RefreshTokenAsync(cancellationToken).ConfigureAwait(false);
                 if (!refreshed)
                 {
-                    // refresh failed -> return 401 to caller
-                    return new HttpResponseMessage(HttpStatusCode.Unauthorized)
-                    {
-                        RequestMessage = request
-                    };
+                    return response;
                 }
+
+                // Dispose original response early
+                response.Dispose();
 
                 // Get new token and retry once
                 var newToken = await _authService.Value.GetAccessTokenAsync(cancellationToken).ConfigureAwait(false);

@@ -104,6 +104,8 @@ namespace Advance_Control.Models
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(IsFinalized));
                     OnPropertyChanged(nameof(IsEditable));
+                    OnPropertyChanged(nameof(CanMutateOperation));
+                    OnPropertyChanged(nameof(CanReopenOperation));
                     OnPropertyChanged(nameof(StatusText));
                 }
 
@@ -121,6 +123,34 @@ namespace Advance_Control.Models
         /// </summary>
         [JsonIgnore]
         public bool IsEditable => FechaFinal == null;
+
+        private bool _isSharedReadOnly;
+
+        [JsonIgnore]
+        public bool IsSharedReadOnly
+        {
+            get => _isSharedReadOnly;
+            set
+            {
+                if (_isSharedReadOnly == value)
+                    return;
+
+                _isSharedReadOnly = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanMutateOperation));
+                OnPropertyChanged(nameof(CanReopenOperation));
+                OnPropertyChanged(nameof(AccessBadgeVisibility));
+            }
+        }
+
+        [JsonIgnore]
+        public bool CanMutateOperation => !IsSharedReadOnly && FechaFinal == null;
+
+        [JsonIgnore]
+        public bool CanReopenOperation => !IsSharedReadOnly && FechaFinal != null;
+
+        [JsonIgnore]
+        public Visibility AccessBadgeVisibility => IsSharedReadOnly ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
         /// Fecha de inicio formateada de forma corta para mostrar en el header (dd/MM/yy)

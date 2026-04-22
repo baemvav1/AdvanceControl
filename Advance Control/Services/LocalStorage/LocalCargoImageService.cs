@@ -59,7 +59,7 @@ namespace Advance_Control.Services.LocalStorage
                 var operacionFolder = GetOperacionFolder(idOperacion);
 
                 // Obtener el próximo número de imagen para este cargo
-                var existingImages = await GetImagesAsync(idOperacion, idCargo, cancellationToken);
+                var existingImages = await GetImagesAsync(idOperacion, idCargo, cancellationToken: cancellationToken);
                 var nextImageNumber = existingImages.Count > 0 
                     ? existingImages.Max(i => i.ImageNumber) + 1 
                     : 1;
@@ -107,7 +107,7 @@ namespace Advance_Control.Services.LocalStorage
         /// <summary>
         /// Obtiene todas las imágenes de un cargo desde el almacenamiento local
         /// </summary>
-        public async Task<List<CargoImageDto>> GetImagesAsync(int idOperacion, int idCargo, CancellationToken cancellationToken = default)
+        public async Task<List<CargoImageDto>> GetImagesAsync(int idOperacion, int idCargo, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             var images = new List<CargoImageDto>();
 

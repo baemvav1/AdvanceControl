@@ -20,6 +20,11 @@ namespace Advance_Control.Services.Operaciones
         Task<List<OperacionDto>> GetOperacionesAsync(OperacionQueryDto? query = null, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Resuelve una operación para el visor, validando acceso normal o referencia de chat.
+        /// </summary>
+        Task<OperacionVisorAccessDto?> GetOperacionVisorAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Elimina (soft delete) una operación por su ID
         /// </summary>
         Task<bool> DeleteOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);

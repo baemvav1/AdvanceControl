@@ -1,4 +1,5 @@
 using Advance_Control.Models;
+using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
@@ -197,6 +198,12 @@ namespace Advance_Control.Views.Pages
         public Visibility GetEmptyVisibility(bool hayUsuarioSeleccionado)
         {
             return hayUsuarioSeleccionado ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void BurbujaOperacionReferencia_Click(object? sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn && btn.Tag is MensajeDto mensaje)
+                OperacionVisorNavigator.Navigate(mensaje);
         }
     }
 }

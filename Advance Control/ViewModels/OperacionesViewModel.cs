@@ -367,6 +367,16 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = "La operación fue cancelada.";
                 await _logger.LogInformationAsync("Operación de carga de operaciones cancelada por el usuario", "OperacionesViewModel", "LoadOperacionesAsync");
             }
+            catch (UnauthorizedAccessException ex)
+            {
+                ErrorMessage = ex.Message;
+                await _logger.LogErrorAsync("La sesión fue rechazada al cargar operaciones", ex, "OperacionesViewModel", "LoadOperacionesAsync");
+            }
+            catch (InvalidOperationException ex)
+            {
+                ErrorMessage = ex.Message;
+                await _logger.LogErrorAsync("No se pudieron cargar operaciones por un fallo del servidor", ex, "OperacionesViewModel", "LoadOperacionesAsync");
+            }
             catch (HttpRequestException ex)
             {
                 ErrorMessage = "Error de conexión: No se pudo conectar con el servidor. Verifique su conexión a internet.";
@@ -381,6 +391,11 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        public async Task<OperacionVisorAccessDto?> GetOperacionVisorAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
+        {
+            return await _operacionService.GetOperacionVisorAsync(idOperacion, mensajeReferenciaId, cancellationToken);
         }
 
         /// <summary>

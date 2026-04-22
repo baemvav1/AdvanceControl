@@ -128,7 +128,7 @@
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="models:MensajeDto">
-                        <items:MensajeBurbujaItemView PdfButtonClick="BurbujaPdfButton_Click" />
+                        <items:MensajeBurbujaItemView OperacionReferenciaClick="BurbujaOperacionReferencia_Click" PdfButtonClick="BurbujaPdfButton_Click" />
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

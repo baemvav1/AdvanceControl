@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
@@ -105,8 +106,19 @@ namespace Advance_Control.Services.Auth
                 var resp = await _http.PostAsJsonAsync(url, body, effectiveToken);
                 if (!resp.IsSuccessStatusCode) 
                 {
-                    await _logger.LogWarningAsync($"Autenticación falló con código de estado: {resp.StatusCode}", "AuthService", "AuthenticateAsync");
-                    return false;
+                    if (resp.StatusCode == HttpStatusCode.Unauthorized)
+                    {
+                        await _logger.LogWarningAsync($"Autenticación rechazada con código de estado: {resp.StatusCode}", "AuthService", "AuthenticateAsync");
+                        return false;
+                    }
+
+                    var errorContent = await ReadErrorContentAsync(resp, effectiveToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Autenticación falló con código de estado: {resp.StatusCode}. Contenido: {errorContent}",
+                        null,
+                        "AuthService",
+                        "AuthenticateAsync");
+                    throw new InvalidOperationException(BuildServerFailureMessage("iniciar sesión", resp.StatusCode));
                 }
 
                 var dto = await resp.Content.ReadFromJsonAsync<LoginResponseDto>(cancellationToken: effectiveToken);
@@ -128,17 +140,21 @@ namespace Advance_Control.Services.Auth
             catch (OperationCanceledException)
             {
                 await _logger.LogWarningAsync("Autenticación excedió el tiempo de espera (30 segundos)", "AuthService", "AuthenticateAsync");
-                return false;
+                throw new InvalidOperationException("El servidor tardó demasiado en responder al iniciar sesión.");
             }
             catch (HttpRequestException ex)
             {
                 await _logger.LogErrorAsync($"Error de conexión al autenticar usuario: {username}", ex, "AuthService", "AuthenticateAsync");
-                return false;
+                throw new InvalidOperationException("No se pudo iniciar sesión porque no hay comunicación con el servidor.", ex);
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync($"Error al autenticar usuario: {username}", ex, "AuthService", "AuthenticateAsync");
-                return false;
+                throw new InvalidOperationException("Ocurrió un error inesperado al iniciar sesión.", ex);
             }
         }
 
@@ -198,8 +214,14 @@ namespace Advance_Control.Services.Auth
                         await ClearTokenAsync();
                         return false;
                     }
-                    await _logger.LogWarningAsync($"Refresh token falló con código de estado: {resp.StatusCode}", "AuthService", "RefreshTokenAsync");
-                    return false;
+
+                    var errorContent = await ReadErrorContentAsync(resp, effectiveToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Refresh token falló con código de estado: {resp.StatusCode}. Contenido: {errorContent}",
+                        null,
+                        "AuthService",
+                        "RefreshTokenAsync");
+                    throw new InvalidOperationException(BuildServerFailureMessage("renovar la sesión", resp.StatusCode));
                 }
 
                 var dto = await resp.Content.ReadFromJsonAsync<RefreshResponseDto>(cancellationToken: effectiveToken);
@@ -221,17 +243,21 @@ namespace Advance_Control.Services.Auth
             catch (OperationCanceledException)
             {
                 await _logger.LogWarningAsync("Refresh token excedió el tiempo de espera (15 segundos)", "AuthService", "RefreshTokenAsync");
-                return false;
+                throw new InvalidOperationException("El servidor tardó demasiado en responder al renovar la sesión.");
             }
             catch (HttpRequestException ex)
             {
                 await _logger.LogErrorAsync("Error de conexión al refrescar token de autenticación", ex, "AuthService", "RefreshTokenAsync");
-                return false;
+                throw new InvalidOperationException("No se pudo renovar la sesión porque el servidor no está disponible.", ex);
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al refrescar token de autenticación", ex, "AuthService", "RefreshTokenAsync");
-                return false;
+                throw new InvalidOperationException("Ocurrió un error inesperado al renovar la sesión.", ex);
             }
             finally
             {
@@ -261,7 +287,14 @@ namespace Advance_Control.Services.Auth
                 {
                     return await RefreshTokenAsync(cancellationToken);
                 }
-                return false;
+
+                var errorContent = await ReadErrorContentAsync(resp, effectiveToken).ConfigureAwait(false);
+                await _logger.LogErrorAsync(
+                    $"Validación de token falló con código de estado: {resp.StatusCode}. Contenido: {errorContent}",
+                    null,
+                    "AuthService",
+                    "ValidateTokenAsync");
+                throw new InvalidOperationException(BuildServerFailureMessage("validar la sesión", resp.StatusCode));
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -271,17 +304,21 @@ namespace Advance_Control.Services.Auth
             catch (OperationCanceledException)
             {
                 await _logger.LogWarningAsync("Validación de token excedió el tiempo de espera (10 segundos)", "AuthService", "ValidateTokenAsync");
-                return false;
+                throw new InvalidOperationException("El servidor tardó demasiado en validar la sesión.");
             }
             catch (HttpRequestException ex)
             {
                 await _logger.LogErrorAsync("Error de conexión al validar token de autenticación", ex, "AuthService", "ValidateTokenAsync");
-                return false;
+                throw new InvalidOperationException("No se pudo validar la sesión porque no hay comunicación con el servidor.", ex);
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al validar token de autenticación", ex, "AuthService", "ValidateTokenAsync");
-                return false;
+                throw new InvalidOperationException("Ocurrió un error inesperado al validar la sesión.", ex);
             }
         }
 
@@ -424,6 +461,11 @@ namespace Advance_Control.Services.Auth
                 await _logger.LogInformationAsync("No se pudo restaurar la sesión: tokens inválidos o expirados", "AuthService", "TryRestoreSessionAsync");
                 return false;
             }
+            catch (InvalidOperationException ex)
+            {
+                await _logger.LogWarningAsync($"No se pudo restaurar la sesión por un fallo temporal del servidor: {ex.Message}", "AuthService", "TryRestoreSessionAsync");
+                throw;
+            }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al intentar restaurar sesión", ex, "AuthService", "TryRestoreSessionAsync");
@@ -447,6 +489,26 @@ namespace Advance_Control.Services.Auth
                 await _logger.LogErrorAsync("Error al persistir tokens en almacenamiento seguro", ex, "AuthService", "PersistTokensAsync");
                 // ignore
             }
+        }
+
+        private static async Task<string> ReadErrorContentAsync(HttpResponseMessage response, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string BuildServerFailureMessage(string accion, HttpStatusCode statusCode)
+        {
+            var code = (int)statusCode;
+            return code >= 500
+                ? $"No se pudo {accion} porque el servidor no está disponible en este momento."
+                : $"No se pudo {accion}. El servidor respondió con el estado {(int)statusCode} ({statusCode}).";
         }
 
         // DTOs to match server responses

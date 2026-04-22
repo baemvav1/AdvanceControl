@@ -9,6 +9,7 @@ using Advance_Control.Services.Alertas;
 using Advance_Control.Services.Auth;
 using Advance_Control.Services.Dialog;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.Mensajeria;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.OnlineCheck;
 using Advance_Control.Services.PermisosUi;
@@ -32,6 +33,7 @@ namespace Advance_Control.Tests.ViewModels
         private readonly Mock<INotificacionAlertaService> _mockAlertaService = new();
         private readonly Mock<IActivityService> _mockActivityService = new();
         private readonly Mock<IPermisoUiRuntimeService> _mockPermisoUiRuntimeService = new();
+        private readonly Mock<IMensajeriaService> _mockMensajeriaService = new();
 
         [Fact]
         public void Constructor_WithNullUserInfoService_ThrowsArgumentNullException()
@@ -48,7 +50,8 @@ namespace Advance_Control.Tests.ViewModels
                     null!,
                     _mockAlertaService.Object,
                     _mockActivityService.Object,
-                    _mockPermisoUiRuntimeService.Object));
+                    _mockPermisoUiRuntimeService.Object,
+                    _mockMensajeriaService.Object));
         }
 
         [Fact]
@@ -99,7 +102,13 @@ namespace Advance_Control.Tests.ViewModels
                  });
 
             _mockNotificacionService
-                .Setup(x => x.MostrarNotificacionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int?>()))
+                .Setup(x => x.MostrarNotificacionAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<System.Collections.Generic.Dictionary<string, string>?>()))
                 .Returns(Task.CompletedTask);
 
             var viewModel = CreateViewModel();
@@ -117,7 +126,13 @@ namespace Advance_Control.Tests.ViewModels
                 .ReturnsAsync(new List<NotificacionAlerta> { new() { IdNotificacion = 1, Titulo = "Alerta 1" } });
 
             _mockNotificacionService
-                .Setup(x => x.MostrarNotificacionAsync(It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), It.IsAny<int?>()))
+                .Setup(x => x.MostrarNotificacionAsync(
+                    It.IsAny<string>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<DateTime?>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<System.Collections.Generic.Dictionary<string, string>?>()))
                 .Returns(Task.CompletedTask);
 
             _mockAlertaService
@@ -196,6 +211,7 @@ namespace Advance_Control.Tests.ViewModels
                 _mockUserInfoService.Object,
                 _mockAlertaService.Object,
                 _mockActivityService.Object,
-                _mockPermisoUiRuntimeService.Object);
+                _mockPermisoUiRuntimeService.Object,
+                _mockMensajeriaService.Object);
     }
 }

@@ -5,6 +5,7 @@ using Advance_Control.Services.Cargos;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Services.ImageViewer;
 using Advance_Control.Services.LocalStorage;
+using Advance_Control.Services.Mensajeria;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Session;
 using Advance_Control.Utilities;
@@ -52,9 +53,13 @@ namespace Advance_Control.Views.Pages
         private readonly IActivityService _activityService;
         private readonly IContactoService _contactoService;
         private readonly IFirmaService _firmaService;
+        private readonly IMensajeriaService _mensajeriaService;
+        private readonly ChatPanelViewModel _chatPanelViewModel;
 
         private XamlRoot? _xamlRoot;
         private IntPtr _hwnd;
+        private long? _mensajeReferenciaId;
+        private OperacionVisorNavigationContext? _navigationContext;
 
         /// <summary>La operación que se visualiza en esta página.</summary>
         public OperacionDto Operacion { get; private set; } = null!;
@@ -74,6 +79,8 @@ namespace Advance_Control.Views.Pages
             _activityService      = AppServices.Get<IActivityService>();
             _contactoService      = AppServices.Get<IContactoService>();
             _firmaService         = AppServices.Get<IFirmaService>();
+            _mensajeriaService    = AppServices.Get<IMensajeriaService>();
+            _chatPanelViewModel   = AppServices.Get<ChatPanelViewModel>();
 
             var fmt = new CurrencyFormatter("MXN");
             fmt.FractionDigits = 2;
@@ -86,9 +93,22 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
 
-            if (e.Parameter is OperacionDto operacion)
+            if (e.Parameter is OperacionVisorNavigationContext contexto)
+            {
+                _navigationContext = contexto;
+                _mensajeReferenciaId = contexto.MensajeReferenciaId;
+
+                if (contexto.Operacion != null)
+                {
+                    Operacion = contexto.Operacion;
+                    Operacion.IsSharedReadOnly = false;
+                }
+            }
+            else if (e.Parameter is OperacionDto operacion)
             {
                 Operacion = operacion;
+                Operacion.IsSharedReadOnly = false;
+                _mensajeReferenciaId = null;
             }
 
             // Obtener el handle de la ventana principal para los pickers
@@ -98,18 +118,74 @@ namespace Advance_Control.Views.Pages
             RootGrid.Loaded += async (_, _) =>
             {
                 _xamlRoot = RootGrid.XamlRoot;
-                if (Operacion != null)
+                if (_navigationContext?.IdOperacion.HasValue == true || Operacion != null)
                 {
                     try
                     {
+                        await EnsureOperacionContextAsync();
+
+                        if (Operacion.IsSharedReadOnly)
+                            await _notificacionService.MostrarAsync(
+                                "Modo solo lectura",
+                                "Esta operación fue compartida contigo por chat. Puedes consultar y descargar, pero no editar.");
+
                         await CargarDatosInicialesAsync();
                     }
                     catch (Exception ex)
                     {
                         LogDebugError(nameof(CargarDatosInicialesAsync), ex);
+                        await MostrarErrorAsync("Acceso no disponible", ex is UnauthorizedAccessException
+                            ? ex.Message
+                            : "No se pudo abrir la operación solicitada.");
+                        if (Frame.CanGoBack)
+                            Frame.GoBack();
                     }
                 }
             };
+        }
+
+        private async Task EnsureOperacionContextAsync()
+        {
+            var idOperacion = _navigationContext?.IdOperacion ?? Operacion?.IdOperacion;
+            if (!idOperacion.HasValue || idOperacion.Value <= 0)
+                throw new InvalidOperationException("No se pudo determinar la operación a visualizar.");
+
+            if (_mensajeReferenciaId.HasValue || _navigationContext?.Operacion == null)
+            {
+                var acceso = await _viewModel.GetOperacionVisorAsync(idOperacion.Value, _mensajeReferenciaId);
+                if (acceso?.Operacion == null)
+                    throw new UnauthorizedAccessException("No tienes acceso a esta operación o la referencia de chat ya no está disponible.");
+
+                Operacion = acceso.Operacion;
+                Operacion.BuildCheckFromInlineFields();
+                Operacion.IsSharedReadOnly = acceso.SoloLectura;
+                _mensajeReferenciaId = acceso.SoloLectura ? acceso.MensajeReferenciaId : null;
+                return;
+            }
+
+            Operacion.IsSharedReadOnly = false;
+            _mensajeReferenciaId = null;
+        }
+
+        private async Task<bool> EnsureCanMutateAsync(string accion)
+        {
+            if (Operacion.CanMutateOperation)
+                return true;
+
+            if (Operacion.IsSharedReadOnly)
+            {
+                await MostrarErrorAsync("Solo lectura", $"Esta operación fue compartida por chat en modo solo lectura. No puedes {accion}.");
+                return false;
+            }
+
+            if (Operacion.IsFinalized)
+            {
+                await MostrarErrorAsync("Operación finalizada", "La operación está finalizada y no permite esta acción.");
+                return false;
+            }
+
+            await MostrarErrorAsync("Acción no disponible", "La operación no permite esta acción.");
+            return false;
         }
 
         /// <summary>Navega de vuelta a la lista de operaciones.</summary>
@@ -117,6 +193,75 @@ namespace Advance_Control.Views.Pages
         {
             if (Frame.CanGoBack)
                 Frame.GoBack();
+        }
+
+        private async void CompartirOperacionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!Operacion.IdOperacion.HasValue)
+                return;
+
+            var xamlRoot = _xamlRoot ?? RootGrid.XamlRoot;
+            if (_chatPanelViewModel.UsuarioSeleccionado == null)
+            {
+                var sinChatDialog = new ContentDialog
+                {
+                    Title = "Compartir operación",
+                    Content = "Debes seleccionar un chat",
+                    CloseButtonText = "Cerrar",
+                    XamlRoot = xamlRoot
+                };
+                await sinChatDialog.ShowAsync();
+                return;
+            }
+
+            var comentarioBox = new TextBox
+            {
+                PlaceholderText = "Comentario opcional",
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 96
+            };
+
+            var dialogContent = new StackPanel { Spacing = 8 };
+            dialogContent.Children.Add(new TextBlock
+            {
+                Text = $"Se enviará al chat con {_chatPanelViewModel.UsuarioSeleccionado.NombreVisible}.",
+                TextWrapping = TextWrapping.Wrap
+            });
+            dialogContent.Children.Add(comentarioBox);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Compartir operación",
+                Content = dialogContent,
+                PrimaryButtonText = "Enviar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = xamlRoot
+            };
+
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+                return;
+
+            if (!_mensajeriaService.EstaConectado)
+            {
+                await MostrarErrorAsync("Chat sin conexión", "No se pudo enviar la referencia porque el chat no está conectado.");
+                return;
+            }
+
+            var contenido = string.IsNullOrWhiteSpace(comentarioBox.Text)
+                ? $"Referencia de operación {Operacion.Identificador ?? Operacion.IdOperacion.Value.ToString()}"
+                : comentarioBox.Text.Trim();
+
+            await _mensajeriaService.EnviarMensajeAsync(
+                _chatPanelViewModel.UsuarioSeleccionado.CredencialId,
+                contenido,
+                idReferencia: Operacion.IdOperacion.Value,
+                tipoReferencia: "Operacion");
+
+            await _notificacionService.MostrarAsync(
+                "Referencia enviada",
+                $"La operación se envió al chat con {_chatPanelViewModel.UsuarioSeleccionado.NombreVisible}.");
         }
 
         // ─────────────────────────────────────────────────────────────────────
@@ -171,7 +316,7 @@ namespace Advance_Control.Views.Pages
                 if (!Operacion.CargosLoaded && !Operacion.IsLoadingCargos)
                 {
                     Operacion.IsLoadingCargos = true;
-                    var cargos = await _cargoService.GetCargosAsync(new CargoEditDto { IdOperacion = Operacion.IdOperacion.Value });
+                    var cargos = await _cargoService.GetCargosAsync(new CargoEditDto { IdOperacion = Operacion.IdOperacion.Value }, _mensajeReferenciaId);
                     Operacion.Cargos.Clear();
                     foreach (var c in cargos)
                     {
@@ -190,7 +335,7 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex)
             {
                 LogDebugError(nameof(LoadCargosAsync), ex);
-                await MostrarErrorAsync("Error al cargar cargos", "No se pudieron cargar los cargos. Intente nuevamente.");
+                await MostrarErrorAsync("Error al cargar cargos", ex.Message);
             }
             finally
             {
@@ -203,11 +348,11 @@ namespace Advance_Control.Views.Pages
             if (!Operacion.IdOperacion.HasValue) return;
             try
             {
-                var prefacturas     = await _operacionImageService.GetPrefacturasAsync(Operacion.IdOperacion.Value);
-                var hojasServicio   = await _operacionImageService.GetHojasServicioAsync(Operacion.IdOperacion.Value);
-                var ordenesCompra   = await _operacionImageService.GetOrdenComprasAsync(Operacion.IdOperacion.Value);
-                var levantamientos  = await _operacionImageService.GetLevantamientosAsync(Operacion.IdOperacion.Value);
-                var hasFactura      = await _operacionImageService.HasFacturaAsync(Operacion.IdOperacion.Value);
+                var prefacturas     = await _operacionImageService.GetPrefacturasAsync(Operacion.IdOperacion.Value, _mensajeReferenciaId);
+                var hojasServicio   = await _operacionImageService.GetHojasServicioAsync(Operacion.IdOperacion.Value, _mensajeReferenciaId);
+                var ordenesCompra   = await _operacionImageService.GetOrdenComprasAsync(Operacion.IdOperacion.Value, _mensajeReferenciaId);
+                var levantamientos  = await _operacionImageService.GetLevantamientosAsync(Operacion.IdOperacion.Value, _mensajeReferenciaId);
+                var hasFactura      = await _operacionImageService.HasFacturaAsync(Operacion.IdOperacion.Value, _mensajeReferenciaId);
 
                 Operacion.HasPrefactura    = prefacturas.Count > 0;
                 Operacion.HasHojaServicio  = hojasServicio.Count > 0;
@@ -228,6 +373,13 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex)
             {
                 LogDebugError(nameof(RefreshImageIndicatorsAsync), ex);
+                await MostrarErrorAsync("Error al cargar archivos", ex.Message);
+            }
+            finally
+            {
+                // Asegurar que la UI no quede con spinner infinito aunque haya excepcion
+                Operacion.ImagesLoaded = true;
+                Operacion.NotifyDocumentsChanged();
             }
         }
 
@@ -275,8 +427,15 @@ namespace Advance_Control.Views.Pages
             if (MainTabView.SelectedIndex == 1 && Operacion.IdOperacion.HasValue)
             {
                 Operacion.ImagesLoaded = false;
-                try { await RefreshImageIndicatorsAsync(); }
-                catch (Exception ex) { LogDebugError(nameof(MainTabView_SelectionChanged), ex); }
+                try
+                {
+                    await RefreshImageIndicatorsAsync();
+                }
+                catch (Exception ex)
+                {
+                    LogDebugError(nameof(MainTabView_SelectionChanged), ex);
+                    await MostrarErrorAsync("Error al cargar documentos", ex.Message);
+                }
             }
         }
 
@@ -331,6 +490,7 @@ namespace Advance_Control.Views.Pages
         private async void ReabrirOperacionButton_Click(object sender, RoutedEventArgs e)
         {
             if (!Operacion.IdOperacion.HasValue) return;
+            if (!await EnsureCanMutateAsync("reabrir esta operación")) return;
             var dialog = new ContentDialog
             {
                 Title = "Reabrir operación",
@@ -353,6 +513,7 @@ namespace Advance_Control.Views.Pages
         private async void FinalizarTrabajoButton_Click(object sender, RoutedEventArgs e)
         {
             if (!Operacion.IdOperacion.HasValue) return;
+            if (!await EnsureCanMutateAsync("cambiar el estado del trabajo")) return;
 
             bool estaFinalizado = Operacion.TFinalizado;
             var dialog = new ContentDialog
@@ -404,6 +565,7 @@ namespace Advance_Control.Views.Pages
         private async void AddCargoButton_Click(object sender, RoutedEventArgs e)
         {
             if (!Operacion.IdOperacion.HasValue) return;
+            if (!await EnsureCanMutateAsync("agregar cargos")) return;
             var ctrl = new Dialogs.AgregarCargoUserControl(Operacion.IdOperacion.Value, _userSessionService.IdProveedor > 0 ? _userSessionService.IdProveedor : (int?)null);
             var dialog = new ContentDialog { Title = "Agregar Cargo", Content = ctrl, PrimaryButtonText = "Agregar", CloseButtonText = "Cancelar", DefaultButton = ContentDialogButton.Primary, XamlRoot = _xamlRoot };
             dialog.PrimaryButtonClick += (d, args) => { if (!ctrl.IsValid) args.Cancel = true; };
@@ -444,6 +606,7 @@ namespace Advance_Control.Views.Pages
         {
             if (e.Key != WinSystem.VirtualKey.Enter) return;
             if (sender is not TextBox tb || tb.Tag is not CargoDto cargo || cargo.IdCargo <= 0) return;
+            if (!await EnsureCanMutateAsync("editar cargos")) return;
             try
             {
                 // {x:Bind Mode=TwoWay} en TextBox actualiza el modelo en LostFocus, no en KeyDown.
@@ -507,6 +670,7 @@ namespace Advance_Control.Views.Pages
 
         private async void UploadSelectedCargoImageButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!await EnsureCanMutateAsync("cargar imágenes al cargo")) return;
             var sel = GetSelectedCargos();
             if (sel.Count == 0) { await MostrarErrorAsync("Sin selección", "Seleccione un cargo para cargar imagen."); return; }
             var cargo = sel[0];
@@ -533,6 +697,7 @@ namespace Advance_Control.Views.Pages
 
         private async void EditSelectedCargoButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!await EnsureCanMutateAsync("editar cargos")) return;
             var sel = GetSelectedCargos();
             if (sel.Count == 0) { await MostrarErrorAsync("Sin selección", "Seleccione un cargo para editar."); return; }
             if (sel.Count > 1) await _notificacionService.MostrarAsync("Múltiples selecciones", "Se usará solo el primer cargo seleccionado.");
@@ -541,6 +706,7 @@ namespace Advance_Control.Views.Pages
 
         private async void DeleteSelectedCargosButton_Click(object sender, RoutedEventArgs e)
         {
+            if (!await EnsureCanMutateAsync("eliminar cargos")) return;
             var sel = GetSelectedCargos();
             if (sel.Count == 0) { await MostrarErrorAsync("Sin selección", "Seleccione al menos un cargo para eliminar."); return; }
             var msg = sel.Count == 1 ? $"¿Eliminar el cargo {sel[0].IdCargo}?" : $"¿Eliminar {sel.Count} cargos seleccionados?";
@@ -580,7 +746,11 @@ namespace Advance_Control.Views.Pages
         private async Task LoadImagesForCargoSafeAsync(CargoDto cargo)
         {
             try { await LoadImagesForCargoAsync(cargo); }
-            catch (Exception ex) { LogDebugError($"{nameof(LoadImagesForCargoSafeAsync)}[{cargo.IdCargo}]", ex); }
+            catch (Exception ex)
+            {
+                LogDebugError($"{nameof(LoadImagesForCargoSafeAsync)}[{cargo.IdCargo}]", ex);
+                await MostrarErrorAsync("Error al cargar imágenes", $"No se pudieron cargar las imágenes del cargo {cargo.IdCargo}. {ex.Message}");
+            }
         }
 
         private async Task LoadImagesForCargoAsync(CargoDto cargo)
@@ -589,19 +759,20 @@ namespace Advance_Control.Views.Pages
             try
             {
                 cargo.IsLoadingImages = true;
-                var imgs = await _cargoImageService.GetImagesAsync(cargo.IdOperacion.Value, cargo.IdCargo);
+                var imgs = await _cargoImageService.GetImagesAsync(cargo.IdOperacion.Value, cargo.IdCargo, _mensajeReferenciaId);
                 cargo.Images.Clear();
                 foreach (var img in imgs) cargo.Images.Add(img);
                 cargo.NotifyImagesChanged();
                 cargo.ImagesLoaded = true;
             }
-            catch (Exception ex) { LogDebugError($"{nameof(LoadImagesForCargoAsync)}[{cargo.IdCargo}]", ex); }
+            catch (Exception ex) { LogDebugError($"{nameof(LoadImagesForCargoAsync)}[{cargo.IdCargo}]", ex); throw; }
             finally { cargo.IsLoadingImages = false; }
         }
 
         private async void DeleteCargoImageButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not FrameworkElement el || el.Tag is not CargoImageDto image || string.IsNullOrEmpty(image.FileName)) return;
+            if (!await EnsureCanMutateAsync("eliminar imágenes del cargo")) return;
             var dialog = new ContentDialog { Title = "Confirmar eliminación", Content = $"¿Eliminar la imagen {image.FileName}?", PrimaryButtonText = "Eliminar", CloseButtonText = "Cancelar", DefaultButton = ContentDialogButton.Close, XamlRoot = _xamlRoot };
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
             try
@@ -876,6 +1047,7 @@ namespace Advance_Control.Views.Pages
         private async Task UploadOperacionImageAsync(string imageType)
         {
             if (!Operacion.IdOperacion.HasValue) return;
+            if (!await EnsureCanMutateAsync($"cargar {imageType.ToLowerInvariant()}")) return;
             try
             {
                 // Preguntar al usuario el tipo de archivo
@@ -1027,6 +1199,7 @@ namespace Advance_Control.Views.Pages
         private async void DeleteOperacionImageButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not FrameworkElement el || el.Tag is not OperacionImageDto image || string.IsNullOrEmpty(image.FileName)) return;
+            if (!await EnsureCanMutateAsync("eliminar archivos de la operación")) return;
             var dialog = new ContentDialog { Title = "Confirmar eliminación", Content = $"¿Eliminar la imagen {image.FileName}?", PrimaryButtonText = "Eliminar", CloseButtonText = "Cancelar", DefaultButton = ContentDialogButton.Close, XamlRoot = _xamlRoot };
             if (await dialog.ShowAsync() != ContentDialogResult.Primary) return;
             try

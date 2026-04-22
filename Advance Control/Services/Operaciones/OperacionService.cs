@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -68,12 +69,21 @@ namespace Advance_Control.Services.Operaciones
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    if (response.StatusCode == HttpStatusCode.Unauthorized || response.StatusCode == HttpStatusCode.Forbidden)
+                    {
+                        await _logger.LogWarningAsync(
+                            $"La sesión fue rechazada al obtener operaciones. Status: {response.StatusCode}, Content: {errorContent}",
+                            "OperacionService",
+                            "GetOperacionesAsync");
+                        throw new UnauthorizedAccessException("La sesión ya no es válida para cargar operaciones. Inicia sesión nuevamente.");
+                    }
+
                     await _logger.LogErrorAsync(
                         $"Error al obtener operaciones. Status: {response.StatusCode}, Content: {errorContent}",
                         null,
                         "OperacionService",
                         "GetOperacionesAsync");
-                    return new List<OperacionDto>();
+                    throw new InvalidOperationException($"No se pudieron cargar las operaciones porque el servidor respondió con el estado {(int)response.StatusCode} ({response.StatusCode}).");
                 }
 
                 // Deserializar la respuesta
@@ -89,12 +99,20 @@ namespace Advance_Control.Services.Operaciones
                         ex,
                         "OperacionService",
                         "GetOperacionesAsync");
-                    return new List<OperacionDto>();
+                    throw new InvalidOperationException("La respuesta del servidor para operaciones no tiene un formato válido.", ex);
                 }
 
                 await _logger.LogInformationAsync($"Se obtuvieron {operaciones?.Count ?? 0} operaciones", "OperacionService", "GetOperacionesAsync");
 
                 return operaciones ?? new List<OperacionDto>();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch (InvalidOperationException)
+            {
+                throw;
             }
             catch (HttpRequestException ex)
             {
@@ -104,6 +122,48 @@ namespace Advance_Control.Services.Operaciones
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error inesperado al obtener operaciones", ex, "OperacionService", "GetOperacionesAsync");
+                throw;
+            }
+        }
+
+        public async Task<OperacionVisorAccessDto?> GetOperacionVisorAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "Operaciones", $"visor/{idOperacion}");
+                url = new ApiQueryBuilder()
+                    .Add("mensajeReferenciaId", mensajeReferenciaId)
+                    .Build(url);
+
+                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                if (response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                    throw new UnauthorizedAccessException("No tienes acceso a esta operación o la referencia de chat ya no está disponible.");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al resolver operación para visor. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "OperacionService",
+                        "GetOperacionVisorAsync");
+                    return null;
+                }
+
+                return await response.Content.ReadFromJsonAsync<OperacionVisorAccessDto>(_jsonOptions, cancellationToken: cancellationToken).ConfigureAwait(false);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                throw;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al resolver operación para visor", ex, "OperacionService", "GetOperacionVisorAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al resolver la operación", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al resolver operación para visor", ex, "OperacionService", "GetOperacionVisorAsync");
                 throw;
             }
         }
