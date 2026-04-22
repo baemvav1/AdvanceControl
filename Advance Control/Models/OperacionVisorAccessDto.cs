@@ -15,5 +15,12 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("mensajeReferenciaId")]
         public long? MensajeReferenciaId { get; set; }
+
+        /// <summary>
+        /// Indica si el usuario tiene acceso normal (puede mutar) a la operación.
+        /// Conveniencia espejo de !SoloLectura — provista por la API.
+        /// </summary>
+        [JsonPropertyName("tieneAcceso")]
+        public bool TieneAcceso { get; set; }
     }
 }

@@ -177,9 +177,7 @@ namespace Advance_Control.Services.LocalStorage
 
                 if (apiFiles == null) return result;
 
-                // Limpiar archivos locales stale que ya no existen en el VPS.
                 var folder = GetOperacionFolder(idOperacion);
-                var vpsNames = new HashSet<string>(apiFiles.Select(f => f.FileName), StringComparer.OrdinalIgnoreCase);
                 var localPattern = tipo switch
                 {
                     "prefactura"     => $"{idOperacion}_Prefactura_*.*",
@@ -189,6 +187,22 @@ namespace Advance_Control.Services.LocalStorage
                     "factura"        => $"{idOperacion}_Factura.*",
                     _                => null
                 };
+
+                // Fallback defensivo: si el VPS regresa lista vacía pero existen archivos en
+                // cache local que matchean el patrón, mostrarlos. Esto protege contra el caso de
+                // storage del VPS vacío o problemas transitorios donde el listado vuelve vacío.
+                if (apiFiles.Count == 0 && localPattern != null)
+                {
+                    foreach (var localFile in Directory.GetFiles(folder, localPattern).OrderBy(f => f))
+                    {
+                        var fileName = Path.GetFileName(localFile);
+                        result.Add(BuildDto(idOperacion, new UploadFileResponseDto { FileName = fileName, Url = localFile }));
+                    }
+                    return result;
+                }
+
+                // Solo limpiar cache local cuando el VPS confirma listado con datos.
+                var vpsNames = new HashSet<string>(apiFiles.Select(f => f.FileName), StringComparer.OrdinalIgnoreCase);
                 if (localPattern != null)
                 {
                     foreach (var localFile in Directory.GetFiles(folder, localPattern))

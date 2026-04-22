@@ -110,12 +110,31 @@ namespace Advance_Control.Services.LocalStorage
                 if (apiFiles == null) return result;
 
                 var safeNodo = SanitizeSegment(infoNodo);
+                var folder = GetLevantamientoFolder(idLevantamiento);
+                Directory.CreateDirectory(folder);
+
+                // Fallback defensivo: si el VPS no devuelve archivos pero hay cache local del nodo,
+                // mostrarlos. Protege contra storage del VPS vacío o respuestas transitoriamente vacías.
+                if (apiFiles.Count == 0)
+                {
+                    foreach (var localFile in Directory.GetFiles(folder, $"{safeNodo}_*").OrderBy(f => f))
+                    {
+                        var fileName = Path.GetFileName(localFile);
+                        var num = ExtractImageNumber(fileName, safeNodo, idLevantamiento);
+                        result.Add(new LevantamientoImageResult
+                        {
+                            FileName = fileName,
+                            FilePath = localFile,
+                            Title = $"{infoNodo} - Levantamiento {idLevantamiento} - Imagen {num}",
+                            ImageNumber = num
+                        });
+                    }
+                    return result;
+                }
+
                 // Filtrar solo los que corresponden al nodo solicitado
                 var relevant = apiFiles.Where(f =>
                     f.FileName.StartsWith(safeNodo + "_", StringComparison.OrdinalIgnoreCase)).ToList();
-
-                var folder = GetLevantamientoFolder(idLevantamiento);
-                Directory.CreateDirectory(folder);
 
                 foreach (var file in relevant.OrderBy(f => f.FileName))
                 {

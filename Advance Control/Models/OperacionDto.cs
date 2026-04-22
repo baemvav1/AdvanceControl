@@ -153,6 +153,13 @@ namespace Advance_Control.Models
         public Visibility AccessBadgeVisibility => IsSharedReadOnly ? Visibility.Visible : Visibility.Collapsed;
 
         /// <summary>
+        /// Indica si el usuario tiene acceso normal a la operación según el SP fn_operaciones_gestionar.
+        /// True para nivel 0-6, o nivel 7-8 con áreas asignadas que cubran el equipo. Provisto por API.
+        /// </summary>
+        [JsonPropertyName("tieneAcceso")]
+        public bool TieneAcceso { get; set; }
+
+        /// <summary>
         /// Fecha de inicio formateada de forma corta para mostrar en el header (dd/MM/yy)
         /// </summary>
         [JsonIgnore]
