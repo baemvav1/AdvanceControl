@@ -160,6 +160,11 @@ namespace Advance_Control.Views.Pages
                 Operacion.BuildCheckFromInlineFields();
                 Operacion.IsSharedReadOnly = acceso.SoloLectura;
                 _mensajeReferenciaId = acceso.SoloLectura ? acceso.MensajeReferenciaId : null;
+
+                // Al navegar desde el chat, Operacion era null cuando los {x:Bind} se evaluaron
+                // por primera vez (durante el Loaded de la página). Forzar re-evaluación para que
+                // los bindings se suscriban a la nueva instancia de OperacionDto.
+                Bindings.Update();
                 return;
             }
 
