@@ -1,8 +1,9 @@
 # AdvanceControl — Documentación Técnica (Cliente WinUI 3)
 
-> **Versión del stack:** .NET 8 · WinUI 3 (Windows App SDK) · MVVM estricto  
-> **Plataforma:** Windows (x64 obligatorio — no AnyCPU)  
-> **API objetivo por defecto:** `https://localhost:7055`
+> **Versión del stack:** .NET 8 · WinUI 3 (Windows App SDK 1.8) · MVVM estricto  
+> **Plataforma:** Windows (x64, x86, ARM64)  
+> **API objetivo por defecto:** `https://localhost:7055`  
+> **Tests:** xUnit 2.9 + Moq 4.20
 
 ---
 
@@ -35,17 +36,31 @@ Advance Control/
 ├── App.xaml / App.xaml.cs    # Host de DI, registro de servicios, ventana principal
 ├── appsettings.json           # URL base de la API, modo desarrollo
 ├── Converters/                # IValueConverter para XAML bindings
-├── Models/                    # DTOs del cliente
-├── Navigation/                # Servicio de navegación entre páginas
-├── Services/                  # Servicios organizados por carpeta de dominio
+├── Models/                    # DTOs del cliente (~130 clases)
+├── Navigation/                # Servicio de navegación entre páginas (Frame)
+├── Rules/                     # Reglas de negocio (conciliación bancaria)
+├── Services/                  # Servicios organizados por carpeta de dominio (~48 categorías)
 ├── Settings/                  # Clases de opciones de configuración
 ├── Utilities/                 # Helpers de uso general
-├── ViewModels/                # Un ViewModel por View
+├── ViewModels/                # Un ViewModel por View (~28 ViewModels)
 └── Views/
+    ├── Details/               # Vistas de detalle (estado de cuenta)
     ├── Dialogs/               # ContentDialogs y UserControls
+    ├── Items/                 # ItemTemplates para listas (administración, conciliación, etc.)
     ├── Login/                 # Pantalla de login
-    ├── Pages/                 # Páginas del menú principal
+    ├── Pages/                 # Páginas del menú principal (~24 páginas)
+    ├── Viewers/               # Visor reutilizable de imágenes
+    ├── Windows/               # Ventanas secundarias (factura, operación, usuario, conciliación)
     └── MainWindow.xaml        # Ventana raíz con NavigationView
+
+Advance Control.Tests/         # Proyecto de pruebas unitarias (xUnit + Moq)
+├── Converters/                # Tests de convertidores XAML
+├── Services/                  # Tests de servicios
+└── ViewModels/                # Tests de ViewModels
+
+build/                         # Scripts PowerShell para empaquetado MSIX y distribución
+installer/                     # Certificados, scripts de instalación y LEEME
+docs/                          # Documentación técnica adicional
 ```
 
 ---
@@ -155,16 +170,27 @@ IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterPa
 |---|---|
 | `IApiEndpointProvider` | Construye URLs completas desde la base URL configurada |
 | `IAuthService` | Login, logout, refresh token |
-| `ISecureStorage` | Windows PasswordVault |
+| `ISecureStorage` | Windows PasswordVault (almacén de secretos) |
 | `AuthenticatedHttpHandler` | Inyecta Bearer token en requests HTTP |
 | `IOnlineCheck` | Verifica conectividad con la API |
-| `INavigationService` | Navegación entre páginas (Frame) |
+| `INavigationService` | Navegación entre páginas (Frame) con registro de rutas |
 | `INotificacionService` | Muestra ContentDialogs de alerta/confirmación |
 | `ILoggingService` | Envía logs a la API |
 | `IActivityService` | Registra actividad del usuario |
 | `IImageViewerService` | Abre imágenes en visor flotante |
-| `ILocalStorageService` | Persistencia local simple |
 | `IEmailService` | Envío de correos SMTP (Hostinger/MailKit) |
+| `IDialogService` | Gestión centralizada de diálogos modales |
+| `IThemeService` | Persistencia y cambio de tema (Claro/Oscuro/Sistema) |
+| `IUserSessionService` | Datos de sesión del usuario actual |
+| `IAccessControlService` | Control de acceso local (singleton) |
+| `INotificacionAlertaService` | Alertas push por credencial |
+
+### Servicios de almacenamiento local de imágenes
+| Servicio | Descripción |
+|---|---|
+| `ICargoImageService` | Imágenes de cargos (local) |
+| `ILevantamientoImageService` | Imágenes de levantamientos (local) |
+| `IOperacionImageService` | Imágenes de operaciones (local) |
 
 ### Servicios de dominio (HTTP hacia la API)
 | Servicio | Endpoint API |
@@ -184,13 +210,30 @@ IsEnabled="{Binding Converter={StaticResource AccessLevelConverter}, ConverterPa
 | `IRelacionEquipoClienteService` | `/api/Relaciones` |
 | `IRelacionRefaccionEquipoService` | `/api/RelacionRefaccionEquipo` |
 | `IRelacionProveedorRefaccionService` | `/api/RelacionProveedorRefaccion` |
-| `IRelacionOperacionProveedorRefaccionService` | `/api/RelacionOpPR` |
+| `IRelacionUsuarioAreaService` | `/api/RelacionUsuarioArea` |
 | `IEntidadService` | `/api/Entidad` |
 | `INivelService` | `/api/Nivel` |
 | `IUserInfoService` | `/api/UserInfo` |
-| `IGoogleMapsService` | `/api/GoogleMaps` |
-| `IEstadoCuentaService` (+ financieros) | `/api/EstadoCuenta`, etc. |
+| `IGoogleMapsConfigService` | `/api/GoogleMaps` |
+| `IDashboardService` | `/api/Dashboard` (conteos) |
+| `IFacturaService` | `/api/factura` (CRUD, abonos, conciliación) |
+| `IEstadoCuentaXmlService` | Parseo de estados de cuenta bancarios (XML) |
+| `ILevantamientoApiService` | `/api/Levantamiento` |
+| `IPermisoUiService` | `/api/PermisosUi` (catálogo, sincronización, niveles) |
+| `IUsuarioAdminService` | `/api/UsuariosAdmin` |
+| `ITipoUsuarioService` | `/api/TipoUsuario` |
+| `ICorreoUsuarioService` | `/api/CorreoUsuario` |
+| `IDevOpsService` | `/api/DevOps` (estadísticas, limpieza de módulos) |
+| `IReporteFinancieroFacturacionService` | `/api/reportefinancierofacturacion` |
+| `IReporteFinancieroFacturacionExportService` | Exportación de reportes financieros |
+| `ILevantamientoReportService` | Generación de reportes de levantamiento |
 | `IQuoteService` | Local — genera PDFs (cotización/reporte) |
+
+### Motor de conciliación (lógica local)
+| Servicio | Descripción |
+|---|---|
+| `ConciliacionMatchingEngine` | Motor de conciliación automática (sin API) |
+| `IConciliacionRulesProvider` | Proveedor de reglas de conciliación configurables |
 
 ---
 
@@ -205,26 +248,36 @@ public class ViewModelBase : INotifyPropertyChanged
 }
 ```
 
-| ViewModel | Page |
+| ViewModel | Page / Ventana |
 |---|---|
 | `LoginViewModel` | Login |
 | `MainViewModel` | MainWindow (NavigationView) |
 | `DashboardViewModel` | DashboardPage |
-| `OperacionesViewModel` | OperacionesView |
-| `CustomersViewModel` | ClientesView |
-| `ContactosViewModel` | ContactosView |
-| `EquiposViewModel` | EquiposView |
-| `MttoViewModel` | MttoView (Mantenimiento) |
-| `ProveedoresViewModel` | ProveedoresView |
-| `RefaccionesViewModel` | RefaaccionView |
-| `ServiciosViewModel` | ServiciosView |
-| `UbicacionesViewModel` | UbicacionesView |
-| `AreasViewModel` | AreasView |
-| `EntidadesViewModel` | EntidadesView |
-| `CorreoViewModel` | CorreoView |
-| `EsCuentaViewModel` | EsCuentaView (Estado de Cuenta) |
-| `AcesoriaViewModel` | AcesoriaView |
-| `NuevoEquipoViewModel` | NuevoEquipoView |
+| `OperacionesViewModel` | OperacionesPage |
+| `CustomersViewModel` | ClientesPage |
+| `ContactosViewModel` | ContactosPage |
+| `EquiposViewModel` | EquiposPage |
+| `MttoViewModel` | MantenimientoPage |
+| `ProveedoresViewModel` | ProveedoresPage |
+| `RefaccionesViewModel` | RefaccionPage |
+| `ServiciosViewModel` | ServiciosPage |
+| `UbicacionesViewModel` | UbicacionesPage |
+| `AreasViewModel` | AreasPage |
+| `EntidadesViewModel` | EntidadesPage |
+| `CorreoViewModel` | CorreoPage |
+| `EsCuentaViewModel` | EstadoCuentaPage |
+| `AcesoriaViewModel` | AsesoriaPage |
+| `NuevoEquipoViewModel` | NuevoEquipoUserControl |
+| `FacturasViewModel` | FacturasPage |
+| `DetailFacturaViewModel` | DetailFacturaWindow |
+| `DetailEstadoCuentaViewModel` | DetailEstadoCuentaView |
+| `ConciliacionViewModel` | ConciliacionPage |
+| `ConciliacionAutomaticaWindowViewModel` | ConfirmacionConciliacionWindow |
+| `LevantamientosViewModel` | LevantamientosView |
+| `LevantamientoViewModel` | LevantamientoView |
+| `DevOpsViewModel` | DevOpsPage |
+| `UsuariosAdminViewModel` | AdministracionPage |
+| `RPTFinancieroFacturacionViewModel` | ReporteFinancieroFacturacionPage |
 
 ---
 
@@ -232,25 +285,35 @@ public class ViewModelBase : INotifyPropertyChanged
 
 | Page | Función |
 |---|---|
-| `DashboardPage` | Vista principal / resumen |
-| `OperacionesView` | Gestión de operaciones (núcleo del sistema) |
-| `ClientesView` | CRUD de clientes |
-| `ContactosView` | CRUD de contactos |
-| `EquiposView` | CRUD de equipos |
-| `MttoView` | Mantenimientos pendientes → convertir en operación |
-| `ProveedoresView` | CRUD de proveedores |
-| `RefaaccionView` | CRUD de refacciones |
-| `ServiciosView` | CRUD de servicios |
-| `UbicacionesView` | Gestión de ubicaciones con mapa Google Maps |
-| `AreasView` | Áreas geográficas (polígonos, círculos) con mapa |
-| `EntidadesView` | Datos de la empresa (para cabeceras de PDFs) |
-| `CorreoView` | Configuración de correo SMTP + firma de correo |
-| `EsCuentaView` | Estado de cuenta bancario |
-| `AcesoriaView` | Vista de asesoría |
+| `DashboardPage` | Vista principal / resumen con conteos |
+| `OperacionesPage` | Gestión de operaciones (núcleo del sistema) |
+| `ClientesPage` | CRUD de clientes |
+| `ContactosPage` | CRUD de contactos |
+| `EquiposPage` | CRUD de equipos |
+| `MantenimientoPage` | Mantenimientos pendientes → convertir en operación |
+| `ProveedoresPage` | CRUD de proveedores |
+| `RefaccionPage` | CRUD de refacciones |
+| `ServiciosPage` | CRUD de servicios |
+| `UbicacionesPage` | Gestión de ubicaciones con mapa Google Maps |
+| `AreasPage` | Áreas geográficas (polígonos, círculos) con mapa |
+| `EntidadesPage` | Datos de la empresa (para cabeceras de PDFs) |
+| `CorreoPage` | Configuración de correo SMTP + firma de correo |
+| `EstadoCuentaPage` | Estado de cuenta bancario (carga XML, movimientos) |
+| `AsesoriaPage` | Vista de asesoría |
+| `FacturasPage` | Gestión de facturas CFDI (carga XML, conceptos, abonos) |
+| `ConciliacionPage` | Conciliación bancaria automática y manual |
+| `LevantamientosView` | Lista de levantamientos / auditorías de campo |
+| `LevantamientoView` | Detalle de un levantamiento (hotspots, imágenes, árbol) |
+| `AdministracionPage` | Administración de usuarios, seguridad y permisos UI |
+| `ReporteFinancieroFacturacionPage` | Reporte financiero de facturación |
+| `DevOpsPage` | Estadísticas y herramientas de limpieza del sistema |
+| `SettingsPage` | Configuración de apariencia (tema claro/oscuro/sistema) |
 
 ---
 
-## 9. Dialogs y UserControls (Views/Dialogs)
+## 9. Dialogs, Ventanas Secundarias e Item Templates
+
+### Dialogs y UserControls (Views/Dialogs)
 
 | Dialog/Control | Uso |
 |---|---|
@@ -258,15 +321,52 @@ public class ViewModelBase : INotifyPropertyChanged
 | `EnviarCotizacionDialog` | Composición y envío de correo con PDF adjunto. Parámetro `tipo`. Soporta Para, CC (checkboxes de contactos), CC manual, CCO |
 | `NuevoClienteUserControl` | Formulario de alta de cliente |
 | `NuevoMantenimientoUserControl` | Alta de mantenimiento |
-| `NuevoEquipoView` | Alta de equipo |
+| `NuevoEquipoUserControl` | Alta de equipo |
 | `AgregarCargoUserControl` | Agrega cargo (servicio/refacción/proveedor) a operación |
 | `SeleccionarClienteUserControl` | Picker de cliente |
 | `SeleccionarEquipoUserControl` | Picker de equipo |
 | `SeleccionarServicioUserControl` | Picker de servicio |
 | `SeleccionarRefaccionUserControl` | Picker de refacción |
 | `SeleccionarUbicacionUserControl` | Picker de ubicación |
-| `ViewerImagenes` | Visor reutilizable de imágenes con zoom/pan hospedado en ventana independiente |
+| `ImageViewerUserControl` | Visor de imágenes embebido en diálogos |
 | `RefaccionesViewerUserControl` | Lista de refacciones de un equipo |
+| `ConfirmacionConciliacionUserControl` | Confirmación de match de conciliación |
+| `NormalizarFacturaUsdDialog` | Normalización de montos de facturas en USD |
+
+### Ventanas secundarias (Views/Windows)
+
+| Ventana | Uso |
+|---|---|
+| `DetailFacturaWindow` | Detalle completo de una factura (conceptos, abonos, registro de pagos) |
+| `OperacionVisorWindow` | Visor expandido de operación con todos sus documentos y cargos |
+| `UsuarioEditorWindow` | Crear/editar usuario admin (acceso, contacto, asignaciones, correo) |
+| `ConfirmacionConciliacionWindow` | Confirmación de resultados de conciliación automática |
+
+### Vistas de detalle (Views/Details)
+
+| Vista | Uso |
+|---|---|
+| `DetailEstadoCuentaView` | Detalle de estado de cuenta bancario con movimientos |
+
+### Visor de imágenes (Views/Viewers)
+
+| Vista | Uso |
+|---|---|
+| `ViewerImagenes` | Visor reutilizable de imágenes con zoom/pan hospedado en ventana independiente |
+
+### Item Templates (Views/Items)
+
+| Categoría | Item Template | Uso |
+|---|---|---|
+| Raíz | `MovimientoItemView` | Movimiento de estado de cuenta bancario |
+| Administración | `UsuarioAdminItemView` | Tarjeta de usuario con acciones editar/eliminar |
+| Administración | `PermisoModuloItemView` | Permiso a nivel de módulo |
+| Administración | `PermisoAccionItemView` | Permiso a nivel de acción |
+| Conciliación | `ConciliacionFacturaItemView` | Factura en vista de conciliación |
+| Conciliación | `ConciliacionMovimientoItemView` | Movimiento bancario en vista de conciliación |
+| Levantamiento | `LevantamientoTreeItemView` | Nodo del árbol de levantamiento |
+| RPT Facturas | `ReporteFacturacionCabeceraItemView` | Cabecera de reporte financiero |
+| RPT Facturas | `ReporteFacturacionDetalleItemView` | Detalle de reporte financiero |
 
 ---
 
@@ -343,28 +443,145 @@ El HTML usa `<img src="cid:email-firma"/>`.
 
 ---
 
-## 12. Converters XAML Disponibles
+## 12. Sistema de Facturas (CFDI)
+
+El módulo de facturas permite cargar, visualizar y gestionar facturas CFDI (Comprobantes Fiscales Digitales por Internet).
+
+### Flujo principal
+```
+Carga de XML CFDI → Parseo → Guardado en API
+    │
+    ▼
+FacturasPage (lista de facturas)
+    ├── Detalle (DetailFacturaWindow)
+    │   ├── Conceptos (líneas de factura)
+    │   ├── Abonos registrados
+    │   └── Registrar nuevo abono
+    ├── Normalizar USD (NormalizarFacturaUsdDialog)
+    └── Conciliación bancaria
+```
+
+### Servicios involucrados
+- `IFacturaService` — CRUD de facturas, registro de abonos, conciliación
+- `IEstadoCuentaXmlService` — Parseo de estados de cuenta bancarios (XML bancario)
+
+---
+
+## 13. Sistema de Conciliación Bancaria
+
+La conciliación bancaria permite cruzar automáticamente facturas CFDI con movimientos bancarios del estado de cuenta.
+
+### Modos de conciliación
+| Modo | Descripción |
+|---|---|
+| Uno a uno | Match directo entre una factura y un movimiento |
+| Combinacional | Match de un movimiento contra múltiples facturas |
+| Abonos | Match de múltiples movimientos contra una factura |
+
+### Motor de reglas (`Rules/ConciliacionRules.cs`)
+```csharp
+ConciliacionUnoAUnoRules        // Reglas 1:1 (saldo pendiente, sin abonos previos, no finiquitada)
+ConciliacionCombinacionalRules  // Reglas N:1 (mínimo facturas por grupo)
+ConciliacionAbonosRules         // Reglas 1:N (máximo candidatos, mínimo por combinación)
+ConciliacionMetodoPagoRules     // PUE vs PPD, meses posteriores para pago diferido
+```
+
+### Servicios involucrados
+- `ConciliacionMatchingEngine` — Motor de matching local (sin API)
+- `IConciliacionRulesProvider` — Proveedor de reglas configurables
+- `IFacturaService` — Endpoints de conciliación (`inicializar-bitacora`, `deshacer-ultimo`, `deshacer-todo`)
+
+### Flujo
+1. Cargar estado de cuenta (XML bancario) → `IEstadoCuentaXmlService`
+2. Cargar facturas del periodo → `IFacturaService`
+3. Ejecutar conciliación automática → `ConciliacionMatchingEngine`
+4. Confirmar matches → `ConfirmacionConciliacionWindow`
+5. Registrar abonos → `IFacturaService.RegistrarAbono`
+
+---
+
+## 14. Sistema de Levantamientos
+
+Los levantamientos son auditorías/inspecciones de campo con estructura de árbol, imágenes y hotspots.
+
+### Estructura
+- `LevantamientosView` — Lista de todos los levantamientos
+- `LevantamientoView` — Detalle de un levantamiento con árbol jerárquico
+- `LevantamientoTreeItemView` — Nodo del árbol con imágenes y hotspots
+
+### Servicios involucrados
+- `ILevantamientoApiService` — CRUD de levantamientos (`/api/Levantamiento`)
+- `ILevantamientoImageService` — Almacenamiento local de imágenes
+- `ILevantamientoReportService` — Generación de reportes de levantamiento
+
+---
+
+## 15. Administración de Usuarios y Permisos
+
+### AdministracionPage
+Página central de administración con pestañas:
+1. **Usuarios** — Lista, crear, editar y desactivar usuarios admin
+2. **Permisos** — Gestión de permisos por módulo y acción
+
+### Sistema de permisos UI (`PermisosUi`)
+El sistema escanea la UI en runtime y controla visibilidad/habilitación de controles según el nivel del usuario.
+
+| Servicio | Descripción |
+|---|---|
+| `IPermisoUiService` | CRUD de permisos en API (`/api/PermisosUi`) |
+| `IPermisoUiRuntimeService` | Evaluación de permisos en runtime |
+| `IPermisoUiScanner` | Escaneo automático de módulos y acciones de la UI |
+| `PermisoUiKeyBuilder` | Generación de claves únicas para permisos |
+| `PermisoUiVisualBinder` | Aplicación visual de permisos en controles XAML |
+
+### Editor de usuarios (`UsuarioEditorWindow`)
+Ventana con 4 secciones:
+1. **Acceso** — Login, contraseña, nivel de acceso
+2. **Vinculación de contacto** — Asociar usuario con contacto existente
+3. **Datos de contacto y asignaciones** — Áreas y equipos asignados
+4. **Correo** — Configuración de correo del usuario
+
+---
+
+## 16. Dashboard y DevOps
+
+### DashboardPage
+Vista principal con conteos generales del sistema vía `IDashboardService` (`/api/Dashboard/conteos`).
+
+### DevOpsPage
+Herramientas de administración técnica:
+- **Estadísticas** del sistema (`/api/DevOps/estadisticas`)
+- **Limpieza de módulos** — permite limpiar datos por módulo (financiero, operaciones, mantenimiento, levantamientos, servicios, logs, ubicaciones)
+
+---
+
+## 17. Converters XAML Disponibles
 
 | Converter | ResourceKey | Uso |
 |---|---|---|
 | `BooleanToVisibilityConverter` | `BooleanToVisibilityConverter` | `bool → Visibility` |
 | `BooleanToCornerRadiusConverter` | `BooleanToCornerRadiusConverter` | Esquinas según expand |
 | `BooleanToExpandTextConverter` | `BooleanToExpandTextConverter` | Texto del botón expandir |
+| `BooleanToArrowConverter` | `BooleanToArrowConverter` | `bool → dirección de flecha` |
+| `BooleanToGridBrushConverter` | `BoolToColorBrushConverter` | `bool → Brush (param: 'Color1\|Color2')` para grids |
 | `NullToVisibilityConverter` | `NullToVisibilityConverter` | `null → Collapsed` |
+| `NullToBoolConverter` | `NullToBoolConverter` | `null → false`, `non-null → true` |
 | `CurrencyConverter` | `CurrencyConverter` | `float → "$X,XXX.XX"` |
 | `AccessLevelConverter` | `AccessLevelConverter` | `nivel >= param → IsEnabled` |
-| `BooleanToSystemColorBrushConverter` | `BoolToColorBrushConverter` | `bool → Brush (param: 'Color1\|Color2')` |
 | `RefaccionVisibilityConverter` | `RefaccionVisibilityConverter` | Visibility según tipo de cargo |
+| `CargoTypeToVisibilityConverter` | `CargoTypeToVisibilityConverter` | Visibility según tipo de cargo |
 | `BoolNegationConverter` | — | Negación bool |
 | `NullableNumberToStringConverter` | — | Nullable numérico a string |
 | `DateTimeFormatConverter` | — | Formateo de fechas |
-| `LevelToBackgroundConverter` / `LevelToForegroundConverter` | — | Colores por nivel de log |
+| `LevelToBackgroundConverter` | — | Colores de fondo por nivel de log |
+| `LevelToForegroundConverter` | — | Colores de texto por nivel de log |
+| `CargoDtoJsonConverter` | — | Deserialización personalizada de `CargoDto` (JSON) |
 
 ---
 
-## 13. Modelos del Cliente (Models/)
+## 18. Modelos del Cliente (Models/)
 
-Los DTOs del cliente **no son los mismos** que los del servidor. Tienen propiedades adicionales para el estado de UI:
+Los DTOs del cliente **no son los mismos** que los del servidor. Tienen propiedades adicionales para el estado de UI. El proyecto contiene ~130 clases de modelo organizadas por dominio.
 
 ### `OperacionDto` (cliente)
 - Implementa `INotifyPropertyChanged` directamente
@@ -384,9 +601,57 @@ Los DTOs del cliente **no son los mismos** que los del servidor. Tienen propieda
 - Deserialización personalizada con `CargoDtoJsonConverter`
 - `Imágenes` se cargan lazy
 
+### Modelos de facturas y finanzas
+| Modelo | Descripción |
+|---|---|
+| `FacturaResumenDto` | Resumen de factura CFDI |
+| `FacturaDetalleDto` | Detalle completo de factura con conceptos y abonos |
+| `FacturaConceptoDto` | Línea de concepto de factura |
+| `FacturaTrasladoDto` | Traslado/impuesto de factura |
+| `AbonoFacturaDto` | Abono/pago registrado contra factura |
+| `GuardarFacturaRequestDto` / `ResponseDto` | Request/response para guardar factura |
+| `RegistrarAbonoFacturaRequestDto` / `ResponseDto` | Request/response para registrar abono |
+
+### Modelos de estado de cuenta bancario
+| Modelo | Descripción |
+|---|---|
+| `EstadoCuentaBancario` | Estado de cuenta completo (parseado de XML) |
+| `EstadoCuentaResumenDto` / `DetalleDto` | Resumen y detalle de estado de cuenta |
+| `MovimientoBancario` | Movimiento individual |
+| `MovimientoEstadoCuentaDto` | Movimiento con relaciones |
+| `DepositoBancario`, `ComisionBancaria`, `TransferenciaSPEI`, etc. | Tipos específicos de movimientos |
+
+### Modelos de conciliación
+| Modelo | Descripción |
+|---|---|
+| `ConciliacionMovimientoResumenDto` | Resumen de movimiento para conciliación |
+| `ConciliacionMatchPropuestaDto` | Propuesta de match automático |
+| `ConciliacionAutomaticaRequestDto` / `ResponseDto` | Request/response de conciliación automática |
+| `BitacoraConciliacionResponseDto` | Bitácora/auditoría de conciliación |
+
+### Modelos de levantamiento
+| Modelo | Descripción |
+|---|---|
+| `LevantamientoTreeItemModel` | Nodo del árbol de levantamiento |
+| `LevantamientoImageItem` | Imagen asociada a un nodo |
+| `LevantamientoHotspotItem` | Hotspot de imagen |
+| `LevantamientoReporteDto` | Datos para reporte de levantamiento |
+
+### Otros modelos relevantes
+| Modelo | Descripción |
+|---|---|
+| `ApiResponse<T>` | Wrapper genérico de respuesta de API |
+| `DashboardConteoDto` | Conteos para el dashboard |
+| `PermisosUiDto` | Permisos de interfaz por módulo/acción |
+| `NotificacionAlerta` | Alerta del sistema |
+| `RelacionUsuarioAreaDto` | Relación usuario-área |
+| `TipoUsuarioDto` | Tipo de usuario |
+| `UsuarioAdminDto` | Usuario administrador |
+| `GoogleMapsConfigDto` | Configuración de Google Maps |
+
 ---
 
-## 14. Patrón para Implementar una Pantalla Nueva
+## 19. Patrón para Implementar una Pantalla Nueva
 
 ### Paso 1: Servicio (si hay nuevo endpoint)
 ```
@@ -443,7 +708,7 @@ services.AddTransient<NombreEntidadViewModel>();
 
 ---
 
-## 15. Restricciones Técnicas Conocidas
+## 20. Restricciones Técnicas Conocidas
 
 | Restricción | Solución |
 |---|---|
@@ -458,7 +723,7 @@ services.AddTransient<NombreEntidadViewModel>();
 
 ---
 
-## 16. Archivos Locales de la Aplicación
+## 21. Archivos Locales de la Aplicación
 
 ```
 Documents\Advance Control\
@@ -471,7 +736,7 @@ Documents\Advance Control\
 
 ---
 
-## 17. Compilar y Ejecutar
+## 22. Compilar, Ejecutar y Probar
 
 ```bash
 # Restaurar dependencias
@@ -480,10 +745,25 @@ dotnet restore
 # Compilar (SIEMPRE Platform=x64)
 dotnet build -p:Platform=x64
 
+# Ejecutar pruebas unitarias
+dotnet test -p:Platform=x64
+
 # Ejecutar en Visual Studio con perfil "Advance Control (Package)"
 ```
 
-## 18. Instalador autoactualizable del cliente
+### Proyecto de pruebas (`Advance Control.Tests`)
+
+- **Framework:** xUnit 2.9.2 + Moq 4.20.72
+- **Cobertura:** coverlet.collector 6.0.2
+- **Target:** net8.0-windows10.0.19041.0
+
+| Área | Tests |
+|---|---|
+| Converters | `BooleanToArrowConverterTests`, `BooleanToCornerRadiusConverterTests`, `CurrencyConverterTests`, `DateTimeFormatConverterTests`, `LevelToForegroundConverterTests`, `NullToVisibilityConverterTests`, `PriorityToBackgroundConverterTests` |
+| Services | `AuthServiceTests`, `MantenimientoServiceTests`, `UserInfoServiceTests`, `NotificacionServiceTests`, `ConciliacionMatchingEngineTests` |
+| ViewModels | `LoginViewModelTests`, `MainViewModelTests`, `CustomersViewModelTests`, `EntidadesViewModelTests`, `EsCuentaViewModelNamespaceTests`, `EsCuentaViewModelParsingTests` |
+
+## 23. Instalador autoactualizable del cliente
 
 El cliente queda preparado para distribuirse como `MSIX` con `App Installer`.
 
