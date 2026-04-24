@@ -41,31 +41,42 @@ namespace Advance_Control.Services.Operaciones
         /// </summary>
         public async Task<List<OperacionDto>> GetOperacionesAsync(OperacionQueryDto? query = null, CancellationToken cancellationToken = default)
         {
+            var (items, _) = await GetOperacionesPaginadasInternalAsync(query, 0, 0, cancellationToken).ConfigureAwait(false);
+            return items;
+        }
+
+        public Task<(List<OperacionDto> Items, long Total)> GetOperacionesPaginadasAsync(OperacionQueryDto? query, int skip, int take, CancellationToken cancellationToken = default)
+        {
+            return GetOperacionesPaginadasInternalAsync(query, skip, take, cancellationToken);
+        }
+
+        private async Task<(List<OperacionDto> Items, long Total)> GetOperacionesPaginadasInternalAsync(OperacionQueryDto? query, int skip, int take, CancellationToken cancellationToken)
+        {
             try
             {
                 // Construir la URL base usando el endpoint correcto
                 var url = _endpoints.GetEndpoint("api", "Operaciones");
 
-                // Agregar parámetros de consulta si existen
+                var builder = new ApiQueryBuilder();
                 if (query != null)
                 {
-                    url = new ApiQueryBuilder()
+                    builder
                         .AddPositive("idTipo", query.IdTipo)
                         .AddPositive("idCliente", query.IdCliente)
                         .AddPositive("idEquipo", query.IdEquipo)
                         .AddPositive("idAtiende", query.IdAtiende)
                         .Add("nota", query.Nota)
                         .Add("fechainicial", query.FechaInicial?.ToString("yyyy-MM-dd"))
-                        .Add("fechaFinalFiltro", query.FechaFinalFiltro?.ToString("yyyy-MM-dd"))
-                        .Build(url);
+                        .Add("fechaFinalFiltro", query.FechaFinalFiltro?.ToString("yyyy-MM-dd"));
                 }
+                if (skip > 0) builder.Add("skip", skip.ToString());
+                if (take > 0) builder.Add("take", take.ToString());
+                url = builder.Build(url);
 
                 await _logger.LogInformationAsync($"Obteniendo operaciones desde: {url}", "OperacionService", "GetOperacionesAsync");
 
-                // Realizar la petición GET
                 var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
-                // Verificar si la respuesta fue exitosa
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
@@ -86,7 +97,12 @@ namespace Advance_Control.Services.Operaciones
                     throw new InvalidOperationException($"No se pudieron cargar las operaciones porque el servidor respondió con el estado {(int)response.StatusCode} ({response.StatusCode}).");
                 }
 
-                // Deserializar la respuesta
+                long total = 0;
+                if (response.Headers.TryGetValues("X-Total-Count", out var totalValues))
+                {
+                    long.TryParse(System.Linq.Enumerable.FirstOrDefault(totalValues), out total);
+                }
+
                 List<OperacionDto>? operaciones;
                 try
                 {
@@ -102,9 +118,12 @@ namespace Advance_Control.Services.Operaciones
                     throw new InvalidOperationException("La respuesta del servidor para operaciones no tiene un formato válido.", ex);
                 }
 
-                await _logger.LogInformationAsync($"Se obtuvieron {operaciones?.Count ?? 0} operaciones", "OperacionService", "GetOperacionesAsync");
+                var items = operaciones ?? new List<OperacionDto>();
+                if (total == 0) total = items.Count;
 
-                return operaciones ?? new List<OperacionDto>();
+                await _logger.LogInformationAsync($"Se obtuvieron {items.Count} operaciones (total: {total})", "OperacionService", "GetOperacionesAsync");
+
+                return (items, total);
             }
             catch (UnauthorizedAccessException)
             {

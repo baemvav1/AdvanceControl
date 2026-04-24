@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -361,37 +362,139 @@ namespace Advance_Control.Models
 
         private ObservableCollection<CargoDto> _cargos = new ObservableCollection<CargoDto>();
         private INumberFormatter2? _currencyFormatter;
+        private double _totalMonto = 0.0;
+        private bool _cargosSubscribed = false;
 
         /// <summary>
-        /// Colección de cargos asociados a esta operación
+        /// Colección de cargos asociados a esta operación.
+        /// Las suscripciones a CollectionChanged y PropertyChanged se manejan internamente
+        /// para mantener TotalMonto cacheado y evitar memory leaks.
         /// </summary>
         [JsonIgnore]
         public ObservableCollection<CargoDto> Cargos
         {
-            get => _cargos;
+            get
+            {
+                EnsureCargosSubscribed();
+                return _cargos;
+            }
             set
             {
                 if (_cargos != value)
                 {
-                    _cargos = value;
+                    UnsubscribeCargos();
+                    _cargos = value ?? new ObservableCollection<CargoDto>();
+                    _cargosSubscribed = false;
+                    EnsureCargosSubscribed();
                     OnPropertyChanged();
-                    OnPropertyChanged(nameof(TotalMonto));
+                    RecalcTotalMonto();
                 }
             }
         }
 
         /// <summary>
-        /// Calcula el total de todos los montos en la colección de cargos
+        /// Total cacheado de los montos de los cargos. Se recalcula automáticamente
+        /// cuando cambia la colección o cuando un cargo modifica su Monto.
+        /// Si el backend envía un total pre-calculado (TotalMontoCargos) y los cargos
+        /// aún no han sido cargados desde la API, se devuelve ese seed.
         /// </summary>
         [JsonIgnore]
         public double TotalMonto
         {
             get
             {
-                if (Cargos == null || Cargos.Count == 0)
-                    return 0.0;
+                EnsureCargosSubscribed();
+                return _totalMonto;
+            }
+        }
 
-                return Cargos.Sum(c => c.Monto ?? 0.0);
+        /// <summary>
+        /// Total agregado de los cargos pre-calculado por el backend en
+        /// fn_operaciones_gestionar. Se usa para pintar la lista sin necesidad
+        /// de hacer GET /api/cargos por cada operación (elimina N+1).
+        /// </summary>
+        [JsonPropertyName("totalMontoCargos")]
+        public double TotalMontoCargos
+        {
+            get => _totalMontoCargosFromBackend;
+            set
+            {
+                _totalMontoCargosFromBackend = value;
+                // Sembrar el total cacheado mientras los cargos no han sido cargados.
+                // Cuando se carguen, RecalcTotalMonto lo recalculará desde la colección.
+                if (!_cargosLoaded && Math.Abs(_totalMonto - value) > double.Epsilon)
+                {
+                    _totalMonto = value;
+                    OnPropertyChanged(nameof(TotalMonto));
+                }
+            }
+        }
+        private double _totalMontoCargosFromBackend = 0;
+
+        /// <summary>
+        /// Número de cargos pre-calculado por el backend; útil para mostrar contadores
+        /// sin pagar el costo de traer la colección completa.
+        /// </summary>
+        [JsonPropertyName("cantidadCargos")]
+        public int CantidadCargosBackend { get; set; } = 0;
+
+        private void EnsureCargosSubscribed()
+        {
+            if (_cargosSubscribed) return;
+            _cargosSubscribed = true;
+            _cargos.CollectionChanged += OnCargosCollectionChanged;
+            foreach (var c in _cargos)
+                c.PropertyChanged += OnCargoPropertyChanged;
+            RecalcTotalMonto();
+        }
+
+        private void UnsubscribeCargos()
+        {
+            if (!_cargosSubscribed) return;
+            _cargos.CollectionChanged -= OnCargosCollectionChanged;
+            foreach (var c in _cargos)
+                c.PropertyChanged -= OnCargoPropertyChanged;
+            _cargosSubscribed = false;
+        }
+
+        private void OnCargosCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+                foreach (CargoDto c in e.OldItems)
+                    c.PropertyChanged -= OnCargoPropertyChanged;
+            if (e.NewItems != null)
+                foreach (CargoDto c in e.NewItems)
+                    c.PropertyChanged += OnCargoPropertyChanged;
+            if (e.Action == NotifyCollectionChangedAction.Reset)
+                foreach (var c in _cargos)
+                {
+                    c.PropertyChanged -= OnCargoPropertyChanged;
+                    c.PropertyChanged += OnCargoPropertyChanged;
+                }
+            RecalcTotalMonto();
+        }
+
+        private void OnCargoPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(CargoDto.Monto))
+                RecalcTotalMonto();
+        }
+
+        private void RecalcTotalMonto()
+        {
+            // Si los cargos aún no se han cargado desde la API, conservar el seed
+            // pre-calculado por el backend (TotalMontoCargos). Recalcular sólo
+            // cuando la colección refleja la realidad (cargos cargados o limpiados).
+            if (!_cargosLoaded && _cargos.Count == 0 && _totalMontoCargosFromBackend > 0)
+                return;
+
+            double total = 0.0;
+            foreach (var c in _cargos)
+                total += c.Monto ?? 0.0;
+            if (Math.Abs(_totalMonto - total) > double.Epsilon)
+            {
+                _totalMonto = total;
+                OnPropertyChanged(nameof(TotalMonto));
             }
         }
 

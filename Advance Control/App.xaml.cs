@@ -50,6 +50,19 @@ namespace Advance_Control
 {
     public partial class App : Application
     {
+        // Helper: handler con pool de conexiones aumentado para HttpClients que disparan
+        // muchas requests concurrentes (operaciones, cargos, imágenes). El default de
+        // SocketsHttpHandler es int.MaxValue en .NET 8, pero al usar AuthenticatedHttpHandler
+        // sin handler primario explícito, se crea un HttpClientHandler nuevo con cola
+        // intermedia menos eficiente. Forzamos SocketsHttpHandler con pool reciclado.
+        private static SocketsHttpHandler CreateHighThroughputHandler() => new()
+        {
+            MaxConnectionsPerServer = 20,
+            PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+            PooledConnectionIdleTimeout = TimeSpan.FromMinutes(1),
+            EnableMultipleHttp2Connections = true
+        };
+
         public IHost Host { get; }
         private static readonly string PackagedConfigurationFile = Path.Combine(
             AppContext.BaseDirectory,
@@ -200,7 +213,7 @@ namespace Advance_Control
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
                             ? System.Threading.Timeout.InfiniteTimeSpan
                             : TimeSpan.FromSeconds(15);
-                    });
+                    }).ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler);
 
                     // Singleton: una sola instancia para toda la vida de la app.
                     // LoggingService no tiene estado de sesión propio, solo usa HttpClient y Lazy<IUserSessionService>.
@@ -225,7 +238,7 @@ namespace Advance_Control
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
                             ? System.Threading.Timeout.InfiniteTimeSpan
                             : TimeSpan.FromSeconds(30);
-                    });
+                    }).ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler);
 
                     // SINGLETON CRÍTICO: una sola instancia de AuthService en toda la app.
                     // Si fuera Transient (AddHttpClient<IAuthService, AuthService>), cada handler
@@ -325,6 +338,7 @@ namespace Advance_Control
                             client.Timeout = TimeSpan.FromSeconds(30);
                         }
                     })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Singleton de sesión de usuario: se carga una vez tras el login y está disponible en toda la app
@@ -411,6 +425,7 @@ namespace Advance_Control
                             client.Timeout = TimeSpan.FromSeconds(30);
                         }
                     })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar CheckOperacionService
@@ -421,6 +436,7 @@ namespace Advance_Control
                             client.BaseAddress = baseUri;
                         client.Timeout = TimeSpan.FromSeconds(15);
                     })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar CargoService y su HttpClient pipeline con autenticación
@@ -442,6 +458,7 @@ namespace Advance_Control
                             client.Timeout = TimeSpan.FromSeconds(30);
                         }
                     })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar RefaccionService y su HttpClient pipeline con autenticación
@@ -729,7 +746,9 @@ namespace Advance_Control
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
                             ? System.Threading.Timeout.InfiniteTimeSpan
                             : TimeSpan.FromSeconds(120);
-                    }).AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+                    })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     services.AddSingleton<ICargoImageService>(sp =>
                     {
@@ -772,7 +791,9 @@ namespace Advance_Control
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
                             ? System.Threading.Timeout.InfiniteTimeSpan
                             : TimeSpan.FromSeconds(120);
-                    }).AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+                    })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     services.AddSingleton<IOperacionImageService>(sp =>
                     {
@@ -837,6 +858,7 @@ namespace Advance_Control
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                     })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar DashboardService para conteos del dashboard
@@ -846,6 +868,7 @@ namespace Advance_Control
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                     })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     // Registrar LevantamientoApiService con autenticación
@@ -904,6 +927,7 @@ namespace Advance_Control
                             ? System.Threading.Timeout.InfiniteTimeSpan
                             : TimeSpan.FromSeconds(30);
                     })
+                    .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
                     services.AddSingleton<IPermisoUiScanner, PermisoUiScanner>();

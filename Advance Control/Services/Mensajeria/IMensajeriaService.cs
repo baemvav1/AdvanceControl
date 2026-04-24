@@ -27,6 +27,18 @@ namespace Advance_Control.Services.Mensajeria
         /// <summary>Se dispara cuando un mensaje es marcado como leído por el destinatario.</summary>
         event EventHandler<long>? MensajeLeido;
 
+        /// <summary>Se dispara cuando varios mensajes son marcados como leídos en bloque.</summary>
+        event EventHandler<List<long>>? MensajesLeidos;
+
+        /// <summary>Se dispara cuando varios mensajes son marcados como entregados (destinatario en línea).</summary>
+        event EventHandler<List<long>>? MensajesEntregados;
+
+        /// <summary>Se dispara cuando un mensaje es eliminado para todos (soft-delete global).</summary>
+        event EventHandler<long>? MensajeEliminado;
+
+        /// <summary>Se dispara cuando un mensaje fue ocultado por el caller (eliminar para mí).</summary>
+        event EventHandler<long>? MensajeOcultado;
+
         /// <summary>Se dispara cuando un usuario se conecta.</summary>
         event EventHandler<string>? UsuarioConectado;
 
@@ -48,10 +60,19 @@ namespace Advance_Control.Services.Mensajeria
         /// <summary>Enviar un mensaje via SignalR.</summary>
         Task EnviarMensajeAsync(long paraCredencialId, string contenido, string tipo = "mensaje",
             int? idReferencia = null, string? tipoReferencia = null, string? fechaLimite = null,
-            string? archivoUrl = null);
+            string? archivoUrl = null, long? respuestaAMensajeId = null);
+
+        /// <summary>Eliminar un mensaje "para todos" (soft-delete global). Solo el remitente puede.</summary>
+        Task EliminarMensajeParaTodosAsync(long mensajeId);
+
+        /// <summary>Ocultar un mensaje únicamente para el caller ("eliminar para mí").</summary>
+        Task OcultarMensajeParaMiAsync(long mensajeId);
 
         /// <summary>Marcar un mensaje como leído via SignalR.</summary>
         Task MarcarLeidoAsync(long mensajeId);
+
+        /// <summary>Marcar como leídos en bloque todos los mensajes recibidos del otro usuario.</summary>
+        Task MarcarConversacionLeidaAsync(long otroCredencialId);
 
         /// <summary>Notificar que estoy escribiendo.</summary>
         Task EnviandoEscribiendoAsync(long paraCredencialId);

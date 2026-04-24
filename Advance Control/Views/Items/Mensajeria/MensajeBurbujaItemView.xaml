@@ -17,75 +17,68 @@
             Background="{ThemeResource AccentFillColorDefaultBrush}"
             CornerRadius="12,12,4,12"
             Visibility="{Binding EsMioVisibility}">
+            <Border.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Click="Responder_Click" Text="Responder">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE97A;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem Click="CrearTarea_Click" Text="Crear tarea">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE762;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutSubItem Text="Eliminar">
+                        <MenuFlyoutSubItem.Icon>
+                            <FontIcon Glyph="&#xE74D;" />
+                        </MenuFlyoutSubItem.Icon>
+                        <MenuFlyoutItem Click="EliminarParaMi_Click" Text="Para mí" />
+                        <MenuFlyoutItem Click="EliminarParaTodos_Click" Text="Para todos" />
+                    </MenuFlyoutSubItem>
+                </MenuFlyout>
+            </Border.ContextFlyout>
             <StackPanel>
-                <!--  Imagen  -->
                 <Border
-                    MaxWidth="300"
-                    MaxHeight="300"
-                    Margin="0,0,0,4"
-                    Background="Transparent"
-                    Tag="{Binding ImagenUrlCompleta}"
-                    Visibility="{Binding EsImagenVisibility}">
-                    <Image
-                        Source="{Binding ImagenSource}"
-                        Stretch="Uniform" />
-                </Border>
-                <!--  PDF  -->
-                <Button
-                    Margin="0,0,0,4"
-                    Padding="10,8"
+                    Margin="0,0,0,6"
+                    Padding="8,4"
                     Background="#22FFFFFF"
-                    Click="PdfButton_Click"
-                    CornerRadius="8"
-                    Tag="{Binding ImagenUrlCompleta}"
-                    Visibility="{Binding EsPdfVisibility}">
+                    BorderBrush="White"
+                    BorderThickness="3,0,0,0"
+                    CornerRadius="4"
+                    Tapped="RespuestaCita_Tapped"
+                    Visibility="{Binding EsRespuestaVisibility}">
+                    <StackPanel>
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="White" Text="{Binding RespuestaAAutorSeguro}" />
+                        <TextBlock FontSize="11" Foreground="#CCFFFFFF" Text="{Binding RespuestaAResumenSeguro}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{Binding EstaEliminadoVisibility}">
+                    <FontIcon FontSize="12" Foreground="#CCFFFFFF" Glyph="&#xE74D;" />
+                    <TextBlock FontSize="13" FontStyle="Italic" Foreground="#CCFFFFFF" Text="Mensaje eliminado" />
+                </StackPanel>
+                <Border MaxWidth="300" MaxHeight="300" Margin="0,0,0,4" Background="Transparent" Tag="{Binding ImagenUrlCompleta}" Visibility="{Binding EsImagenVisibility}">
+                    <Image Source="{Binding ImagenSource}" Stretch="Uniform" />
+                </Border>
+                <Button Margin="0,0,0,4" Padding="10,8" Background="#22FFFFFF" Click="PdfButton_Click" CornerRadius="8" Tag="{Binding ImagenUrlCompleta}" Visibility="{Binding EsPdfVisibility}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="20" Foreground="White" Glyph="&#xEA90;" />
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="12" Foreground="White"
-                            Text="{Binding ContenidoSeguro}"
-                            TextTrimming="CharacterEllipsis" />
+                        <TextBlock VerticalAlignment="Center" FontSize="12" Foreground="White" Text="{Binding ContenidoSeguro}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </Button>
-                <Button
-                    Margin="0,0,0,4"
-                    Padding="10,8"
-                    Background="#22FFFFFF"
-                    Click="OperacionReferenciaButton_Click"
-                    CornerRadius="8"
-                    Tag="{Binding}"
-                    Visibility="{Binding EsReferenciaOperacionVisibility}">
+                <Button Margin="0,0,0,4" Padding="10,8" Background="#22FFFFFF" Click="OperacionReferenciaButton_Click" CornerRadius="8" Tag="{Binding}" Visibility="{Binding EsReferenciaOperacionVisibility}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="20" Foreground="White" Glyph="&#xE8A5;" />
                         <StackPanel Spacing="2">
-                            <TextBlock
-                                FontSize="12"
-                                FontWeight="SemiBold"
-                                Foreground="White"
-                                Text="{Binding TituloReferenciaOperacion}" />
-                            <TextBlock
-                                FontSize="11"
-                                Foreground="#CCFFFFFF"
-                                Text="Abrir operación" />
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Foreground="White" Text="{Binding TituloReferenciaOperacion}" />
+                            <TextBlock FontSize="11" Foreground="#CCFFFFFF" Text="Abrir operación" />
                         </StackPanel>
                     </StackPanel>
                 </Button>
-                <!--  Texto  -->
-                <TextBlock
-                    FontSize="13" Foreground="White"
-                    Text="{Binding ContenidoSeguro}"
-                    TextWrapping="Wrap"
-                    Visibility="{Binding EsTextoVisibility}" />
+                <TextBlock FontSize="13" Foreground="White" Text="{Binding ContenidoSeguro}" TextWrapping="Wrap" Visibility="{Binding EsTextoVisibility}" />
                 <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="4">
-                    <TextBlock
-                        FontSize="10"
-                        Foreground="#CCFFFFFF"
-                        Text="{Binding HoraFormateada}" />
-                    <FontIcon
-                        FontSize="10"
-                        Foreground="#CCFFFFFF"
-                        Glyph="{Binding ReadIconGlyph}" />
+                    <TextBlock FontSize="10" Foreground="#CCFFFFFF" Text="{Binding HoraFormateada}" />
+                    <FontIcon FontSize="10" Foreground="{Binding ReadIconBrush}" Glyph="{Binding ReadIconGlyph}" ToolTipService.ToolTip="{Binding ReadStatusTooltip}" />
                 </StackPanel>
             </StackPanel>
         </Border>
@@ -99,70 +92,64 @@
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             CornerRadius="12,12,12,4"
             Visibility="{Binding NotEsMioVisibility}">
+            <Border.ContextFlyout>
+                <MenuFlyout>
+                    <MenuFlyoutItem Click="Responder_Click" Text="Responder">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE97A;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem Click="CrearTarea_Click" Text="Crear tarea">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE762;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem Click="EliminarParaMi_Click" Text="Eliminar para mí">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE74D;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                </MenuFlyout>
+            </Border.ContextFlyout>
             <StackPanel>
-                <!--  Imagen  -->
                 <Border
-                    MaxWidth="300"
-                    MaxHeight="300"
-                    Margin="0,0,0,4"
-                    Background="Transparent"
-                    Tag="{Binding ImagenUrlCompleta}"
-                    Visibility="{Binding EsImagenVisibility}">
-                    <Image
-                        Source="{Binding ImagenSource}"
-                        Stretch="Uniform" />
-                </Border>
-                <!--  PDF  -->
-                <Button
-                    Margin="0,0,0,4"
-                    Padding="10,8"
+                    Margin="0,0,0,6"
+                    Padding="8,4"
                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                    Click="PdfButton_Click"
-                    CornerRadius="8"
-                    Tag="{Binding ImagenUrlCompleta}"
-                    Visibility="{Binding EsPdfVisibility}">
+                    BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                    BorderThickness="3,0,0,0"
+                    CornerRadius="4"
+                    Tapped="RespuestaCita_Tapped"
+                    Visibility="{Binding EsRespuestaVisibility}">
+                    <StackPanel>
+                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="{Binding RespuestaAAutorSeguro}" />
+                        <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding RespuestaAResumenSeguro}" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                    </StackPanel>
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{Binding EstaEliminadoVisibility}">
+                    <FontIcon FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Glyph="&#xE74D;" />
+                    <TextBlock FontSize="13" FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Mensaje eliminado" />
+                </StackPanel>
+                <Border MaxWidth="300" MaxHeight="300" Margin="0,0,0,4" Background="Transparent" Tag="{Binding ImagenUrlCompleta}" Visibility="{Binding EsImagenVisibility}">
+                    <Image Source="{Binding ImagenSource}" Stretch="Uniform" />
+                </Border>
+                <Button Margin="0,0,0,4" Padding="10,8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" Click="PdfButton_Click" CornerRadius="8" Tag="{Binding ImagenUrlCompleta}" Visibility="{Binding EsPdfVisibility}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="20" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Glyph="&#xEA90;" />
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="12"
-                            Text="{Binding ContenidoSeguro}"
-                            TextTrimming="CharacterEllipsis" />
+                        <TextBlock VerticalAlignment="Center" FontSize="12" Text="{Binding ContenidoSeguro}" TextTrimming="CharacterEllipsis" />
                     </StackPanel>
                 </Button>
-                <Button
-                    Margin="0,0,0,4"
-                    Padding="10,8"
-                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                    Click="OperacionReferenciaButton_Click"
-                    CornerRadius="8"
-                    Tag="{Binding}"
-                    Visibility="{Binding EsReferenciaOperacionVisibility}">
+                <Button Margin="0,0,0,4" Padding="10,8" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" Click="OperacionReferenciaButton_Click" CornerRadius="8" Tag="{Binding}" Visibility="{Binding EsReferenciaOperacionVisibility}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="20" Foreground="{ThemeResource SystemAccentColor}" Glyph="&#xE8A5;" />
                         <StackPanel Spacing="2">
-                            <TextBlock
-                                FontSize="12"
-                                FontWeight="SemiBold"
-                                Text="{Binding TituloReferenciaOperacion}" />
-                            <TextBlock
-                                FontSize="11"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Abrir operación" />
+                            <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding TituloReferenciaOperacion}" />
+                            <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Abrir operación" />
                         </StackPanel>
                     </StackPanel>
                 </Button>
-                <!--  Texto  -->
-                <TextBlock
-                    FontSize="13"
-                    Text="{Binding ContenidoSeguro}"
-                    TextWrapping="Wrap"
-                    Visibility="{Binding EsTextoVisibility}" />
-                <TextBlock
-                    HorizontalAlignment="Right"
-                    FontSize="10"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="{Binding HoraFormateada}" />
+                <TextBlock FontSize="13" Text="{Binding ContenidoSeguro}" TextWrapping="Wrap" Visibility="{Binding EsTextoVisibility}" />
+                <TextBlock HorizontalAlignment="Right" FontSize="10" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding HoraFormateada}" />
             </StackPanel>
         </Border>
     </Grid>

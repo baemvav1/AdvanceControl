@@ -34,6 +34,10 @@ namespace Advance_Control.Services.Mensajeria
         public event EventHandler<MensajeDto>? MensajeRecibido;
         public event EventHandler<MensajeDto>? MensajeEnviado;
         public event EventHandler<long>? MensajeLeido;
+        public event EventHandler<List<long>>? MensajesLeidos;
+        public event EventHandler<List<long>>? MensajesEntregados;
+        public event EventHandler<long>? MensajeEliminado;
+        public event EventHandler<long>? MensajeOcultado;
         public event EventHandler<string>? UsuarioConectado;
         public event EventHandler<string>? UsuarioDesconectado;
         public event EventHandler<string>? UsuarioEscribiendo;
@@ -92,6 +96,30 @@ namespace Advance_Control.Services.Mensajeria
             {
                 try { MensajeLeido?.Invoke(this, id); }
                 catch (Exception ex) { LogEventHandlerError("MensajeLeido", ex); }
+            });
+
+            _hubConnection.On<List<long>>("MensajesLeidos", ids =>
+            {
+                try { MensajesLeidos?.Invoke(this, ids); }
+                catch (Exception ex) { LogEventHandlerError("MensajesLeidos", ex); }
+            });
+
+            _hubConnection.On<List<long>>("MensajesEntregados", ids =>
+            {
+                try { MensajesEntregados?.Invoke(this, ids); }
+                catch (Exception ex) { LogEventHandlerError("MensajesEntregados", ex); }
+            });
+
+            _hubConnection.On<long>("MensajeEliminado", id =>
+            {
+                try { MensajeEliminado?.Invoke(this, id); }
+                catch (Exception ex) { LogEventHandlerError("MensajeEliminado", ex); }
+            });
+
+            _hubConnection.On<long>("MensajeOcultado", id =>
+            {
+                try { MensajeOcultado?.Invoke(this, id); }
+                catch (Exception ex) { LogEventHandlerError("MensajeOcultado", ex); }
             });
 
             _hubConnection.On<string>("UsuarioConectado", id =>
@@ -164,7 +192,7 @@ namespace Advance_Control.Services.Mensajeria
 
         public async Task EnviarMensajeAsync(long paraCredencialId, string contenido, string tipo = "mensaje",
             int? idReferencia = null, string? tipoReferencia = null, string? fechaLimite = null,
-            string? archivoUrl = null)
+            string? archivoUrl = null, long? respuestaAMensajeId = null)
         {
             if (_hubConnection == null)
             {
@@ -179,7 +207,7 @@ namespace Advance_Control.Services.Mensajeria
             try
             {
                 await _hubConnection.InvokeAsync("EnviarMensaje", paraCredencialId, contenido, tipo,
-                    idReferencia, tipoReferencia, fechaLimite, archivoUrl);
+                    idReferencia, tipoReferencia, fechaLimite, archivoUrl, respuestaAMensajeId);
             }
             catch (Exception ex)
             {
@@ -188,10 +216,48 @@ namespace Advance_Control.Services.Mensajeria
             }
         }
 
+        public async Task EliminarMensajeParaTodosAsync(long mensajeId)
+        {
+            if (_hubConnection?.State != HubConnectionState.Connected) return;
+            try
+            {
+                await _hubConnection.InvokeAsync("EliminarMensajeParaTodos", mensajeId);
+            }
+            catch (Exception ex)
+            {
+                try { await _logger.LogErrorAsync("Error al eliminar mensaje para todos", ex, "MensajeriaService", "EliminarMensajeParaTodosAsync"); } catch { }
+                throw;
+            }
+        }
+
+        public async Task OcultarMensajeParaMiAsync(long mensajeId)
+        {
+            if (_hubConnection?.State != HubConnectionState.Connected) return;
+            try
+            {
+                await _hubConnection.InvokeAsync("OcultarMensajeParaMi", mensajeId);
+            }
+            catch (Exception ex)
+            {
+                try { await _logger.LogErrorAsync("Error al ocultar mensaje para mí", ex, "MensajeriaService", "OcultarMensajeParaMiAsync"); } catch { }
+                throw;
+            }
+        }
+
         public async Task MarcarLeidoAsync(long mensajeId)
         {
             if (_hubConnection?.State != HubConnectionState.Connected) return;
             await _hubConnection.InvokeAsync("MarcarLeido", mensajeId);
+        }
+
+        /// <summary>
+        /// Marca como leídos en bloque todos los mensajes recibidos del otro usuario.
+        /// Mucho más eficiente que invocar MarcarLeidoAsync por cada mensaje al abrir un chat.
+        /// </summary>
+        public async Task MarcarConversacionLeidaAsync(long otroCredencialId)
+        {
+            if (_hubConnection?.State != HubConnectionState.Connected) return;
+            await _hubConnection.InvokeAsync("MarcarConversacionLeida", otroCredencialId);
         }
 
         public async Task EnviandoEscribiendoAsync(long paraCredencialId)

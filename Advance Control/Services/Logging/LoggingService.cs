@@ -63,9 +63,9 @@ namespace Advance_Control.Services.Logging
             string? categoria = null, string? page = null, CancellationToken cancellationToken = default)
             => LogAsync(Build(Models.LogLevel.Critical, message, exception, source, method, categoria, page), cancellationToken);
 
-        public async Task LogAsync(LogEntry logEntry, CancellationToken cancellationToken = default)
+        public Task LogAsync(LogEntry logEntry, CancellationToken cancellationToken = default)
         {
-            if (logEntry == null) return;
+            if (logEntry == null) return Task.CompletedTask;
 
             // Auto-completar campos de sesión si están vacíos y la sesión ya fue cargada
             try
@@ -81,17 +81,24 @@ namespace Advance_Control.Services.Logging
             }
             catch { /* sesión aún no lista — se omite */ }
 
-            try
+            // Fire-and-forget: el POST nunca debe bloquear el flujo del usuario.
+            // Cualquier error (timeout, red caída, API down) se silencia para que
+            // el logging jamás interrumpa el login, dashboard o cualquier acción.
+            _ = Task.Run(async () =>
             {
-                var url = _endpoints.GetEndpoint("api", "Logging", "log");
-                using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                cts.CancelAfter(TimeSpan.FromSeconds(5));
-                _ = await _http.PostAsJsonAsync(url, logEntry, cts.Token);
-            }
-            catch
-            {
-                // Silenciar: el logging nunca debe interrumpir el flujo principal
-            }
+                try
+                {
+                    var url = _endpoints.GetEndpoint("api", "Logging", "log");
+                    using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    await _http.PostAsJsonAsync(url, logEntry, cts.Token).ConfigureAwait(false);
+                }
+                catch
+                {
+                    // Silenciar: el logging nunca debe interrumpir el flujo principal
+                }
+            }, CancellationToken.None);
+
+            return Task.CompletedTask;
         }
 
         private LogEntry Build(Models.LogLevel level, string message, Exception? exception,

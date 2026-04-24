@@ -16,11 +16,49 @@
             <ColumnDefinition x:Name="NotificacionesColumn" Width="0" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="36" />
             <RowDefinition Height="1*" />
             <RowDefinition Height="28" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Grid.Column="0">
+        <!--  Barra de título personalizada (drag region + botones nativos del sistema a la derecha)  -->
+        <Grid
+            x:Name="AppTitleBar"
+            Grid.Row="0"
+            Grid.ColumnSpan="2"
+            Height="36"
+            Background="{ThemeResource LayerFillColorDefaultBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <!--  Espacio reservado para los botones nativos min/max/close (≈138 px)  -->
+                <ColumnDefinition Width="138" />
+            </Grid.ColumnDefinitions>
+            <StackPanel
+                Grid.Column="0"
+                Margin="12,0,0,0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <FontIcon
+                    FontSize="14"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    Glyph="&#xE7EE;" />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Advance Control" />
+            </StackPanel>
+            <!--  Zona arrastrable  -->
+            <Grid
+                x:Name="AppTitleBarDragRegion"
+                Grid.Column="1"
+                Background="Transparent" />
+        </Grid>
+
+        <Grid Grid.Row="1" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="50" />
                 <RowDefinition />
@@ -316,7 +354,7 @@
         </Grid>
         <Grid
             x:Name="ChatPanel"
-            Grid.Row="0"
+            Grid.Row="1"
             Grid.Column="1"
             Padding="0"
             Visibility="{Binding IsChatPanelVisible, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -324,7 +362,7 @@
             <views:UsuarioInfoView x:Name="UsuarioInfoControl" Visibility="Collapsed" />
         </Grid>
         <Grid
-            Grid.Row="1"
+            Grid.Row="2"
             Grid.ColumnSpan="2"
             Padding="12,0"
             Background="{ThemeResource LayerFillColorDefaultBrush}"
@@ -354,7 +392,7 @@
         <!--  InfoBar de notificación in-app (fallback cuando no hay MSIX desplegado)  -->
         <InfoBar
             x:Name="NotificacionInfoBar"
-            Grid.Row="0"
+            Grid.Row="1"
             Grid.ColumnSpan="2"
             Canvas.ZIndex="10"
             MaxWidth="420"

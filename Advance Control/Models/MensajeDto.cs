@@ -1,4 +1,6 @@
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.ComponentModel;
@@ -55,7 +57,37 @@ namespace Advance_Control.Models
         public DateTime? LeidoEn
         {
             get => _leidoEn;
-            set { if (_leidoEn != value) { _leidoEn = value; OnPropertyChanged(); OnPropertyChanged(nameof(EsLeido)); } }
+            set
+            {
+                if (_leidoEn != value)
+                {
+                    _leidoEn = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(EsLeido));
+                    OnPropertyChanged(nameof(ReadIconGlyph));
+                    OnPropertyChanged(nameof(ReadIconBrush));
+                    OnPropertyChanged(nameof(ReadStatusTooltip));
+                }
+            }
+        }
+
+        private DateTime? _entregadoEn;
+        [JsonPropertyName("entregadoEn")]
+        public DateTime? EntregadoEn
+        {
+            get => _entregadoEn;
+            set
+            {
+                if (_entregadoEn != value)
+                {
+                    _entregadoEn = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(EsEntregado));
+                    OnPropertyChanged(nameof(ReadIconGlyph));
+                    OnPropertyChanged(nameof(ReadIconBrush));
+                    OnPropertyChanged(nameof(ReadStatusTooltip));
+                }
+            }
         }
 
         [JsonPropertyName("actualizadoEn")]
@@ -64,9 +96,43 @@ namespace Advance_Control.Models
         [JsonPropertyName("archivoUrl")]
         public string? ArchivoUrl { get; set; }
 
+        private DateTime? _eliminadoEn;
+        [JsonPropertyName("eliminadoEn")]
+        public DateTime? EliminadoEn
+        {
+            get => _eliminadoEn;
+            set
+            {
+                if (_eliminadoEn != value)
+                {
+                    _eliminadoEn = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(EstaEliminado));
+                    OnPropertyChanged(nameof(EstaEliminadoVisibility));
+                    OnPropertyChanged(nameof(NoEstaEliminadoVisibility));
+                    OnPropertyChanged(nameof(EsImagenVisibility));
+                    OnPropertyChanged(nameof(EsPdfVisibility));
+                    OnPropertyChanged(nameof(EsTextoVisibility));
+                    OnPropertyChanged(nameof(EsRespuestaVisibility));
+                }
+            }
+        }
+
+        [JsonPropertyName("respuestaAMensajeId")]
+        public long? RespuestaAMensajeId { get; set; }
+
+        [JsonPropertyName("respuestaAAutor")]
+        public string? RespuestaAAutor { get; set; }
+
+        [JsonPropertyName("respuestaAResumen")]
+        public string? RespuestaAResumen { get; set; }
+
         // Propiedades computadas para la UI
         [JsonIgnore]
         public bool EsLeido => LeidoEn.HasValue;
+
+        [JsonIgnore]
+        public bool EsEntregado => EntregadoEn.HasValue;
 
         [JsonIgnore]
         public bool EsMio { get; set; }
@@ -75,13 +141,37 @@ namespace Advance_Control.Models
         public bool NotEsMio => !EsMio;
 
         [JsonIgnore]
-        public bool EsImagen => (Tipo ?? string.Empty) == "imagen" && !string.IsNullOrEmpty(ArchivoUrl);
+        public bool EsImagen => (Tipo ?? string.Empty) == "imagen" && !string.IsNullOrEmpty(ArchivoUrl) && !EstaEliminado;
 
         [JsonIgnore]
-        public bool EsPdf => (Tipo ?? string.Empty) == "pdf" && !string.IsNullOrEmpty(ArchivoUrl);
+        public bool EsPdf => (Tipo ?? string.Empty) == "pdf" && !string.IsNullOrEmpty(ArchivoUrl) && !EstaEliminado;
 
         [JsonIgnore]
-        public bool EsTexto => !EsImagen && !EsPdf;
+        public bool EsTexto => !EsImagen && !EsPdf && !EstaEliminado;
+
+        [JsonIgnore]
+        public bool EstaEliminado => EliminadoEn.HasValue;
+
+        [JsonIgnore]
+        public Visibility EstaEliminadoVisibility => EstaEliminado ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public Visibility NoEstaEliminadoVisibility => EstaEliminado ? Visibility.Collapsed : Visibility.Visible;
+
+        [JsonIgnore]
+        public bool EsRespuesta => RespuestaAMensajeId.HasValue && !string.IsNullOrWhiteSpace(RespuestaAAutor);
+
+        [JsonIgnore]
+        public Visibility EsRespuestaVisibility => EsRespuesta ? Visibility.Visible : Visibility.Collapsed;
+
+        [JsonIgnore]
+        public string ContenidoMostrado => EstaEliminado ? "Mensaje eliminado" : (Contenido ?? string.Empty);
+
+        [JsonIgnore]
+        public string RespuestaAResumenSeguro => RespuestaAResumen ?? string.Empty;
+
+        [JsonIgnore]
+        public string RespuestaAAutorSeguro => RespuestaAAutor ?? string.Empty;
 
         [JsonIgnore]
         public bool EsReferenciaOperacion =>
@@ -164,9 +254,42 @@ namespace Advance_Control.Models
         /// <summary>Ícono de lectura: doble check si leído, check simple si no.</summary>
         public string GetReadIcon(bool esLeido) => esLeido ? "\uE8FB" : "\uE73E";
 
-        /// <summary>Glyph de lectura para binding (propiedad, no función).</summary>
+        /// <summary>
+        /// Glyph del check de estado: enviado (✓) si solo creado, doble check (✓✓) si entregado o leído.
+        /// El color (ReadIconBrush) diferencia entregado vs leído.
+        /// </summary>
         [JsonIgnore]
-        public string ReadIconGlyph => EsLeido ? "\uE8FB" : "\uE73E";
+        public string ReadIconGlyph => (EsEntregado || EsLeido) ? "\uE8FB" : "\uE73E";
+
+        /// <summary>
+        /// Color del check para burbujas propias:
+        /// - enviado/entregado: blanco semitransparente.
+        /// - leído: azul claro estilo WhatsApp para destacar.
+        /// </summary>
+        [JsonIgnore]
+        public Brush ReadIconBrush
+        {
+            get
+            {
+                if (EsLeido)
+                    return new SolidColorBrush(Windows.UI.Color.FromArgb(0xFF, 0x4F, 0xC3, 0xF7));
+                return new SolidColorBrush(Windows.UI.Color.FromArgb(0xCC, 0xFF, 0xFF, 0xFF));
+            }
+        }
+
+        /// <summary>Tooltip "Enviado/Entregado/Leído HH:mm".</summary>
+        [JsonIgnore]
+        public string ReadStatusTooltip
+        {
+            get
+            {
+                if (EsLeido && LeidoEn.HasValue)
+                    return $"Leído {LeidoEn.Value.ToLocalTime():HH:mm}";
+                if (EsEntregado && EntregadoEn.HasValue)
+                    return $"Entregado {EntregadoEn.Value.ToLocalTime():HH:mm}";
+                return $"Enviado {CreatedAt.ToLocalTime():HH:mm}";
+            }
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string? name = null)

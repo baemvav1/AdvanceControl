@@ -1,4 +1,4 @@
-﻿using Advance_Control.Models;
+using Advance_Control.Models;
 using Advance_Control.Services.Cargos;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Notificacion;
@@ -61,13 +61,13 @@ namespace Advance_Control.Views.Pages
             base.OnNavigatedTo(e);
             _isNavigating = true;
             await ViewModel.InitializeAsync();
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.LoadOperacionesAsync(null /* preload eliminado: TotalMonto viene del backend */);
             _isNavigating = false;
         }
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
@@ -75,7 +75,17 @@ namespace Advance_Control.Views.Pages
             ClienteASB.Text = string.Empty;
             EquipoASB.Text = string.Empty;
             AreaASB.Text = string.Empty;
-            await ViewModel.ClearFiltersAsync(CargosPreloadCallback());
+            await ViewModel.ClearFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
+        }
+
+        private async void PaginaAnterior_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.GoToPreviousPageAsync();
+        }
+
+        private async void PaginaSiguiente_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.GoToNextPageAsync();
         }
 
         private void ToggleFiltros_Click(object sender, RoutedEventArgs e)
@@ -96,7 +106,7 @@ namespace Advance_Control.Views.Pages
         {
             var texto = args.ChosenSuggestion as string ?? args.QueryText;
             ViewModel.AplicarFiltroCliente(texto);
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         // --- Handlers AutoSuggestBox Equipo ---
@@ -110,7 +120,7 @@ namespace Advance_Control.Views.Pages
         {
             var texto = args.ChosenSuggestion as string ?? args.QueryText;
             ViewModel.AplicarFiltroEquipo(texto);
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         // --- Handlers AutoSuggestBox Área ---
@@ -128,32 +138,32 @@ namespace Advance_Control.Views.Pages
             else if (!string.IsNullOrWhiteSpace(args.QueryText))
                 area = ViewModel.Areas.FirstOrDefault(a => a.Nombre.Equals(args.QueryText, StringComparison.OrdinalIgnoreCase));
             ViewModel.AplicarFiltroArea(area);
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         // --- Handlers filtros que disparan carga inmediata ---
         private async void IdTipoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (ViewModel == null || _isNavigating) return;
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         private async void FechaInicialPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
             if (ViewModel == null || _isNavigating) return;
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         private async void FechaFinalPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
             if (ViewModel == null || _isNavigating) return;
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         private async void NotaTextBox_EnterInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
         {
             args.Handled = true;
-            await ViewModel.LoadOperacionesAsync(CargosPreloadCallback());
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
         private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
@@ -175,17 +185,11 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
-        /// Devuelve un callback que precarga los cargos de una lista de operaciones antes
-        /// de que sean visibles en la UI, evitando el parpadeo de TotalMonto = 0.
+        /// (Eliminado) El preload masivo de cargos se removió. El TotalMonto
+        /// viene pre-calculado por el backend (fn_operaciones_gestionar) y los
+        /// cargos se cargan a demanda al abrir el visor de cada operación.
         /// </summary>
-        private Func<List<Models.OperacionDto>, Task> CargosPreloadCallback() =>
-            async staged =>
-            {
-                var tasks = staged
-                    .Where(op => op.IdOperacion.HasValue && !op.CargosLoaded)
-                    .Select(op => LoadCargosForOperacionAsync(op));
-                await Task.WhenAll(tasks);
-            };
+        private static Func<List<Models.OperacionDto>, Task>? CargosPreloadCallbackEliminado() => null;
 
         private async Task LoadCargosForOperacionAsync(Models.OperacionDto operacion)
         {
@@ -205,47 +209,19 @@ namespace Advance_Control.Views.Pages
                     };
 
                     var cargos = await _cargoService.GetCargosAsync(query);
-                    
+
+                    // OperacionDto ahora maneja internamente CollectionChanged + PropertyChanged
+                    // para mantener TotalMonto cacheado, sin memory leaks. No es necesario
+                    // suscribir handlers aquí.
                     operacion.Cargos.Clear();
                     foreach (var cargo in cargos)
                     {
                         operacion.Cargos.Add(cargo);
-                        // Subscribe to PropertyChanged to update total when Monto changes
-                        cargo.PropertyChanged += (s, e) =>
-                        {
-                            if (e.PropertyName == nameof(CargoDto.Monto))
-                                operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
-                        };
-
-                        // Load images for this cargo asynchronously with error handling
+                        // Carga de imágenes en background con manejo de errores
                         _ = LoadImagesForCargoSafeAsync(cargo);
                     }
-                    
-                    // Notify that TotalMonto should be recalculated after loading cargos
-                    operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
-                    
-                    operacion.CargosLoaded = true;
-                }
 
-                // Suscribir CollectionChanged solo una vez por operación para evitar acumulación de handlers
-                if (!operacion.CollectionChangedSubscribed)
-                {
-                    operacion.Cargos.CollectionChanged += (s, e) =>
-                    {
-                        if (e.Action == NotifyCollectionChangedAction.Add && e.NewItems != null)
-                        {
-                            foreach (CargoDto cargo in e.NewItems)
-                            {
-                                cargo.PropertyChanged += (sender, args) =>
-                                {
-                                    if (args.PropertyName == nameof(CargoDto.Monto))
-                                        operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
-                                };
-                            }
-                        }
-                        operacion.OnPropertyChanged(nameof(operacion.TotalMonto));
-                    };
-                    operacion.CollectionChangedSubscribed = true;
+                    operacion.CargosLoaded = true;
                 }
             }
             catch (Exception ex)
@@ -319,10 +295,18 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                var prefacturas = await _operacionImageService.GetPrefacturasAsync(operacion.IdOperacion.Value);
-                var hojasServicio = await _operacionImageService.GetHojasServicioAsync(operacion.IdOperacion.Value);
-                var ordenesCompra = await _operacionImageService.GetOrdenComprasAsync(operacion.IdOperacion.Value);
-                var hasFactura = await _operacionImageService.HasFacturaAsync(operacion.IdOperacion.Value);
+                // Paralelizar las 4 llamadas (antes eran secuenciales: latencia ~4x mayor).
+                var idOp = operacion.IdOperacion.Value;
+                var prefacturasTask   = _operacionImageService.GetPrefacturasAsync(idOp);
+                var hojasServicioTask = _operacionImageService.GetHojasServicioAsync(idOp);
+                var ordenesCompraTask = _operacionImageService.GetOrdenComprasAsync(idOp);
+                var hasFacturaTask    = _operacionImageService.HasFacturaAsync(idOp);
+                await Task.WhenAll(prefacturasTask, hojasServicioTask, ordenesCompraTask, hasFacturaTask);
+
+                var prefacturas   = prefacturasTask.Result;
+                var hojasServicio = hojasServicioTask.Result;
+                var ordenesCompra = ordenesCompraTask.Result;
+                var hasFactura    = hasFacturaTask.Result;
 
                 operacion.HasPrefactura = prefacturas.Count > 0;
                 operacion.HasHojaServicio = hojasServicio.Count > 0;

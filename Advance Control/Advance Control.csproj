@@ -55,6 +55,10 @@
     <Content Include="Assets\Images\ImagenHotSpotElevadorDeTraccion.jpg" />
     <Content Include="Assets\geo\estados.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\geo\municipios.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Cabeceras\Cotizacion.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Cabeceras\Reporte.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Cabeceras\Nota.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Cabeceras\EstadoCuenta.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

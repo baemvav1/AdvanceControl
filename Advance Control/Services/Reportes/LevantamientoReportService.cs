@@ -220,8 +220,7 @@ namespace Advance_Control.Services.Reportes
 
         private static string GetCabeceraPath()
         {
-            var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(docs, "Advance Control", "Cabeceras", "Reporte.png");
+            return Path.Combine(AppContext.BaseDirectory, "Assets", "Cabeceras", "Reporte.png");
         }
 
         private static string GetFirmaDireccionPath()

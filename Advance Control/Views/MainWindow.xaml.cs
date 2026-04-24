@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel;
 using System.Linq;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
@@ -33,6 +34,9 @@ namespace Advance_Control
 
             // Aplicar tema guardado antes de mostrar contenido
             _themeService.Initialize(RootGrid);
+
+            // Configurar barra de título personalizada
+            ConfigurarTitleBarPersonalizada();
 
             // Set the DataContext to the ViewModel on the root Grid
             // Note: Window class in WinUI 3 doesn't have a DataContext property
@@ -253,6 +257,16 @@ namespace Advance_Control
         {
             return menuItem is NavigationViewItem navigationItem
                 && navigationItem.Visibility == Visibility.Visible;
+        }
+
+        // ════════════════════════════════════════════════════════════
+        //  Title bar personalizada (drag region; botones nativos del sistema)
+        // ════════════════════════════════════════════════════════════
+
+        private void ConfigurarTitleBarPersonalizada()
+        {
+            ExtendsContentIntoTitleBar = true;
+            SetTitleBar(AppTitleBarDragRegion);
         }
     }
 }

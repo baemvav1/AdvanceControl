@@ -65,6 +65,10 @@ namespace Advance_Control.Services.Session
                 var nivel = userInfo.Nivel;
                 var tipoUsuario = userInfo.TipoUsuario;
 
+                // Solo cargamos el catálogo (rápido). El SCAN+SYNC pesado de XAML
+                // se dispara en background fire-and-forget porque el catálogo en
+                // servidor sólo cambia cuando se publica una versión nueva del
+                // cliente; no necesita re-sincronizarse en cada login.
                 await _permisoUiRuntimeService.InitializeAsync(nivel, cancellationToken: cancellationToken);
 
                 CredencialId = credencialId;
@@ -78,7 +82,7 @@ namespace Advance_Control.Services.Session
 
                 IsLoaded = true;
 
-                await _logger.LogInformationAsync(
+                _ = _logger.LogInformationAsync(
                     $"Sesión de usuario cargada: CredencialId={CredencialId}, IdProveedor={IdProveedor}",
                     "UserSessionService", "LoadAsync");
             }

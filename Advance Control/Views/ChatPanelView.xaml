@@ -46,7 +46,8 @@
         </Grid>
 
         <!--  Área de conversación  -->
-        <Grid Grid.Row="2">
+        <Grid Grid.Row="2"
+              Visibility="{x:Bind ViewModel.IsUserListVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=invert, Mode=OneWay}">
             <!--  Header de conversación activa  -->
             <Grid Visibility="{x:Bind ViewModel.HayUsuarioSeleccionado, Mode=OneWay}">
                 <Grid.RowDefinitions>
@@ -103,7 +104,14 @@
                     </ListView.ItemContainerStyle>
                     <ListView.ItemTemplate>
                         <DataTemplate x:DataType="models:MensajeDto">
-                            <items:MensajeBurbujaItemView OperacionReferenciaClick="BurbujaOperacionReferencia_Click" PdfButtonClick="BurbujaPdfButton_Click" />
+                            <items:MensajeBurbujaItemView
+                                CrearTareaClick="Burbuja_CrearTareaClick"
+                                EliminarParaMiClick="Burbuja_EliminarParaMiClick"
+                                EliminarParaTodosClick="Burbuja_EliminarParaTodosClick"
+                                OperacionReferenciaClick="BurbujaOperacionReferencia_Click"
+                                PdfButtonClick="BurbujaPdfButton_Click"
+                                ResponderClick="Burbuja_ResponderClick"
+                                RespuestaCitaClick="Burbuja_RespuestaCitaClick" />
                         </DataTemplate>
                     </ListView.ItemTemplate>
                 </ListView>
@@ -117,45 +125,77 @@
 
         </Grid>
 
-        <!--  Barra de entrada de texto  -->
-        <Grid Grid.Row="3" Padding="8,6"
-              Background="{ThemeResource LayerFillColorDefaultBrush}"
-              BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-              BorderThickness="0,1,0,0"
-              ColumnSpacing="4"
-              Visibility="{x:Bind ViewModel.HayUsuarioSeleccionado, Mode=OneWay}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Width="40" Height="40"
-                    Click="AdjuntarButton_Click"
-                    CornerRadius="16"
-                    IsEnabled="{x:Bind ViewModel.EstaConectado, Mode=OneWay}"
-                    ToolTipService.ToolTip="Adjuntar archivo">
-                <FontIcon FontSize="13" Glyph="&#xE7C5;" />
-            </Button>
-            <TextBox
-                x:Name="MensajeTextBox"
-                Grid.Column="1"
-                MaxHeight="80"
-                AcceptsReturn="False"
-                KeyDown="MensajeTextBox_KeyDown"
-                PlaceholderText="Escribe un mensaje…"
-                Text="{x:Bind ViewModel.TextoMensaje, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                TextChanged="MensajeTextBox_TextChanged"
-                TextWrapping="Wrap"
-                FontSize="12" />
-            <Button Grid.Column="2" Width="40" Height="40"
-                    Background="{ThemeResource AccentFillColorDefaultBrush}"
-                    Click="EnviarButton_Click"
-                    CornerRadius="16"
-                    IsEnabled="{x:Bind ViewModel.EstaConectado, Mode=OneWay}"
-                    ToolTipService.ToolTip="Enviar">
-                <FontIcon FontSize="13" Foreground="White" Glyph="&#xE724;" />
-            </Button>
-        </Grid>
+        <!--  Barra de entrada de texto + preview de respuesta  -->
+        <StackPanel Grid.Row="3"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    Visibility="{x:Bind ViewModel.MostrarBarraEntrada, Mode=OneWay}">
+            <Grid Padding="8,4"
+                  Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                  ColumnSpacing="6"
+                  Visibility="{x:Bind ViewModel.MostrarPreviewRespuesta, Mode=OneWay}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="3" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Background="{ThemeResource AccentFillColorDefaultBrush}" />
+                <StackPanel Grid.Column="1" Margin="6,0,0,0">
+                    <TextBlock FontSize="11" FontWeight="SemiBold"
+                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}">
+                        <Run Text="Respondiendo a " />
+                        <Run Text="{x:Bind ViewModel.RespuestaAutor, Mode=OneWay}" />
+                    </TextBlock>
+                    <TextBlock FontSize="11"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="{x:Bind ViewModel.RespuestaResumen, Mode=OneWay}"
+                               TextTrimming="CharacterEllipsis"
+                               TextWrapping="NoWrap" />
+                </StackPanel>
+                <Button Grid.Column="2"
+                        Width="28" Height="28"
+                        Background="Transparent"
+                        Click="CancelarRespuesta_Click"
+                        ToolTipService.ToolTip="Cancelar respuesta">
+                    <FontIcon FontSize="12" Glyph="&#xE711;" />
+                </Button>
+            </Grid>
+            <Grid Padding="8,6"
+                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                  BorderThickness="0,1,0,0"
+                  ColumnSpacing="4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Width="40" Height="40"
+                        Click="AdjuntarButton_Click"
+                        CornerRadius="16"
+                        IsEnabled="{x:Bind ViewModel.EstaConectado, Mode=OneWay}"
+                        ToolTipService.ToolTip="Adjuntar archivo">
+                    <FontIcon FontSize="13" Glyph="&#xE7C5;" />
+                </Button>
+                <TextBox
+                    x:Name="MensajeTextBox"
+                    Grid.Column="1"
+                    MaxHeight="80"
+                    AcceptsReturn="False"
+                    KeyDown="MensajeTextBox_KeyDown"
+                    PlaceholderText="Escribe un mensaje…"
+                    Text="{x:Bind ViewModel.TextoMensaje, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    TextChanged="MensajeTextBox_TextChanged"
+                    TextWrapping="Wrap"
+                    FontSize="12" />
+                <Button Grid.Column="2" Width="40" Height="40"
+                        Background="{ThemeResource AccentFillColorDefaultBrush}"
+                        Click="EnviarButton_Click"
+                        CornerRadius="16"
+                        IsEnabled="{x:Bind ViewModel.EstaConectado, Mode=OneWay}"
+                        ToolTipService.ToolTip="Enviar">
+                    <FontIcon FontSize="13" Foreground="White" Glyph="&#xE724;" />
+                </Button>
+            </Grid>
+        </StackPanel>
 
         <!--  Indicador de subida  -->
         <StackPanel Grid.Row="3"
@@ -166,74 +206,55 @@
             <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Enviando…" />
         </StackPanel>
 
-        <!--  Cortina de usuarios  -->
-        <Grid Grid.Row="1"
-              Grid.RowSpan="3"
-              Canvas.ZIndex="5"
+        <!--  Lista de usuarios (alterna con el área de conversación)  -->
+        <Grid Grid.Row="2"
+              Grid.RowSpan="2"
+              Background="{ThemeResource LayerFillColorDefaultBrush}"
               Visibility="{x:Bind ViewModel.IsUserListVisible, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}">
-            <Grid Background="#14000000" />
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
-            <Border
-                Margin="8,8,8,8"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="24"
-                Padding="0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
+            <StackPanel Grid.Row="0" Padding="12,10,12,8" Spacing="8">
+                <StackPanel Spacing="2">
+                    <TextBlock FontSize="14" FontWeight="SemiBold" Text="Contactos" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Selecciona un usuario para conversar" />
+                </StackPanel>
 
-                    <StackPanel Grid.Row="0" Padding="16,12,16,12" Spacing="10">
-                        <Border
-                            Width="40"
-                            Height="4"
-                            HorizontalAlignment="Center"
-                            Background="{ThemeResource TextFillColorDisabledBrush}"
-                            CornerRadius="2" />
+                <AutoSuggestBox
+                    x:Name="BuscadorUsuarios"
+                    PlaceholderText="Buscar usuario…"
+                    QueryIcon="Find"
+                    TextChanged="BuscadorUsuarios_TextChanged" />
+            </StackPanel>
 
-                        <StackPanel Spacing="2">
-                            <TextBlock FontSize="15" FontWeight="SemiBold" Text="Contactos" />
-                            <TextBlock
-                                FontSize="11"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Panel rápido del chat" />
-                        </StackPanel>
-
-                        <AutoSuggestBox
-                            x:Name="BuscadorUsuarios"
-                            PlaceholderText="Buscar usuario…"
-                            QueryIcon="Find"
-                            TextChanged="BuscadorUsuarios_TextChanged" />
-                    </StackPanel>
-
-                    <ListView
-                        x:Name="UsuariosListView"
-                        Grid.Row="1"
-                        Margin="8,0,8,8"
-                        Background="Transparent"
-                        BorderThickness="0"
-                        ItemsSource="{x:Bind ViewModel.Usuarios, Mode=OneWay}"
-                        SelectionChanged="UsuariosListView_SelectionChanged"
-                        SelectionMode="Single">
-                        <ListView.ItemTemplate>
-                            <DataTemplate x:DataType="models:UsuarioChatDto">
-                                <items:UsuarioChatItemView />
-                            </DataTemplate>
-                        </ListView.ItemTemplate>
-                        <ListView.ItemContainerStyle>
-                            <Style TargetType="ListViewItem">
-                                <Setter Property="Margin" Value="4,2" />
-                                <Setter Property="Padding" Value="6,4" />
-                                <Setter Property="MinHeight" Value="0" />
-                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            </Style>
-                        </ListView.ItemContainerStyle>
-                    </ListView>
-                </Grid>
-            </Border>
+            <ListView
+                x:Name="UsuariosListView"
+                Grid.Row="1"
+                Margin="4,0,4,8"
+                Background="Transparent"
+                BorderThickness="0"
+                ItemsSource="{x:Bind ViewModel.Usuarios, Mode=OneWay}"
+                SelectionChanged="UsuariosListView_SelectionChanged"
+                SelectionMode="Single">
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="models:UsuarioChatDto">
+                        <items:UsuarioChatItemView />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Margin" Value="4,2" />
+                        <Setter Property="Padding" Value="6,4" />
+                        <Setter Property="MinHeight" Value="0" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    </Style>
+                </ListView.ItemContainerStyle>
+            </ListView>
         </Grid>
     </Grid>
 </UserControl>

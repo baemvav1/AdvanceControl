@@ -20,6 +20,13 @@ namespace Advance_Control.Services.Operaciones
         Task<List<OperacionDto>> GetOperacionesAsync(OperacionQueryDto? query = null, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Obtiene una página de operaciones. Devuelve la lista junto con el total
+        /// de operaciones que cumplen los filtros (independiente del paginado),
+        /// leído de la cabecera HTTP X-Total-Count.
+        /// </summary>
+        Task<(List<OperacionDto> Items, long Total)> GetOperacionesPaginadasAsync(OperacionQueryDto? query, int skip, int take, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Resuelve una operación para el visor, validando acceso normal o referencia de chat.
         /// </summary>
         Task<OperacionVisorAccessDto?> GetOperacionVisorAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default);

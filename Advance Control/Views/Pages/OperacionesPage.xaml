@@ -26,6 +26,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!--  Header  -->
@@ -424,6 +425,55 @@
                     VerticalAlignment="Center"
                     IsActive="True" />
             </Grid>
+        </Grid>
+
+        <!--  Paginación  -->
+        <Grid
+            Grid.Row="3"
+            Margin="0,12,0,0"
+            Padding="8,6"
+            Background="{ThemeResource LayerFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="6">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                FontSize="13"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{x:Bind ViewModel.PaginationLabel, Mode=OneWay}" />
+            <TextBlock
+                Grid.Column="1"
+                Margin="16,0,16,0"
+                VerticalAlignment="Center"
+                FontSize="13"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{x:Bind ViewModel.ContadoresLabel, Mode=OneWay}"
+                TextTrimming="CharacterEllipsis" />
+            <StackPanel
+                Grid.Column="2"
+                Orientation="Horizontal"
+                Spacing="6">
+                <Button
+                    x:Name="PaginaAnteriorButton"
+                    Click="PaginaAnterior_Click"
+                    IsEnabled="{x:Bind ViewModel.CanGoPrevious, Mode=OneWay}"
+                    ToolTipService.ToolTip="Página anterior">
+                    <FontIcon FontSize="14" Glyph="&#xE76B;" />
+                </Button>
+                <Button
+                    x:Name="PaginaSiguienteButton"
+                    Click="PaginaSiguiente_Click"
+                    IsEnabled="{x:Bind ViewModel.CanGoNext, Mode=OneWay}"
+                    ToolTipService.ToolTip="Página siguiente">
+                    <FontIcon FontSize="14" Glyph="&#xE76C;" />
+                </Button>
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>

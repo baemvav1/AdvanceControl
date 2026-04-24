@@ -33,30 +33,23 @@ namespace Advance_Control.Services.PermisosUi
             NivelUsuario = nivelUsuario > 0 ? nivelUsuario : 8;
             AccessControlService.Current.SetNivel(NivelUsuario);
 
-            if (!IsInitialized || forceSync)
+            // El SCAN+SYNC del catálogo es costoso (lee N archivos XAML del FS y
+            // los parsea con XDocument, luego POST grande al servidor). El catálogo
+            // sólo cambia con cada release del cliente, así que no necesita
+            // ejecutarse en cada login del usuario.
+            //
+            // - forceSync=true (administrador re-sincronizando): se ejecuta inline.
+            // - forceSync=false: se dispara fire-and-forget para no bloquear el login.
+            if (forceSync)
             {
-                try
-                {
-                    var scannedModules = await _scanner.ScanAsync(cancellationToken).ConfigureAwait(false);
-                    if (scannedModules.Count > 0)
-                    {
-                        await _permisoUiService.SyncCatalogoAsync(new PermisoUiSyncRequestDto
-                        {
-                            Modulos = scannedModules
-                        }, cancellationToken).ConfigureAwait(false);
-                        await _logger.LogInformationAsync($"Sincronización automática completada: {scannedModules.Count} módulos procesados.", "PermisoUiRuntimeService", "InitializeAsync");
-                    }
-                    else
-                    {
-                        await _logger.LogWarningAsync("El escáner no encontró módulos. La raíz del proyecto no fue localizada o no contiene archivos XAML.", "PermisoUiRuntimeService", "InitializeAsync");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    await _logger.LogWarningAsync($"No fue posible sincronizar el catálogo de permisos UI durante la inicialización: {ex.Message}", "PermisoUiRuntimeService", "InitializeAsync");
-                }
+                await RunScanAndSyncAsync(cancellationToken).ConfigureAwait(false);
+            }
+            else if (!IsInitialized)
+            {
+                _ = Task.Run(() => RunScanAndSyncAsync(CancellationToken.None));
             }
 
+            // El GetCatalogo SÍ es necesario para validar permisos en la UI.
             var catalog = await _permisoUiService.GetCatalogoAsync(cancellationToken: cancellationToken).ConfigureAwait(false);
             _modulos.Clear();
             _acciones.Clear();
@@ -71,7 +64,31 @@ namespace Advance_Control.Services.PermisosUi
             }
 
             IsInitialized = true;
-            await _logger.LogInformationAsync($"Permisos UI inicializados. Módulos: {_modulos.Count}, Acciones: {_acciones.Count}.", "PermisoUiRuntimeService", "InitializeAsync");
+            _ = _logger.LogInformationAsync($"Permisos UI inicializados. Módulos: {_modulos.Count}, Acciones: {_acciones.Count}.", "PermisoUiRuntimeService", "InitializeAsync");
+        }
+
+        private async Task RunScanAndSyncAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var scannedModules = await _scanner.ScanAsync(cancellationToken).ConfigureAwait(false);
+                if (scannedModules.Count > 0)
+                {
+                    await _permisoUiService.SyncCatalogoAsync(new PermisoUiSyncRequestDto
+                    {
+                        Modulos = scannedModules
+                    }, cancellationToken).ConfigureAwait(false);
+                    _ = _logger.LogInformationAsync($"Sincronización automática completada: {scannedModules.Count} módulos procesados.", "PermisoUiRuntimeService", "RunScanAndSyncAsync");
+                }
+                else
+                {
+                    _ = _logger.LogWarningAsync("El escáner no encontró módulos. La raíz del proyecto no fue localizada o no contiene archivos XAML.", "PermisoUiRuntimeService", "RunScanAndSyncAsync");
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = _logger.LogWarningAsync($"No fue posible sincronizar el catálogo de permisos UI en background: {ex.Message}", "PermisoUiRuntimeService", "RunScanAndSyncAsync");
+            }
         }
 
         public void Reset()

@@ -52,12 +52,11 @@ namespace Advance_Control.Services.Quotes
         private string GetFirmasFolder() => _firmaService.GetFirmasFolder();
 
         /// <summary>
-        /// Obtiene la ruta de la carpeta de cabeceras
+        /// Obtiene la ruta de la carpeta de cabeceras (assets embebidos en la app)
         /// </summary>
-        private string GetCabecerasFolder()
+        private static string GetCabecerasFolder()
         {
-            var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(documentsPath, "Advance Control", "Cabeceras");
+            return Path.Combine(AppContext.BaseDirectory, "Assets", "Cabeceras");
         }
 
         /// <summary>

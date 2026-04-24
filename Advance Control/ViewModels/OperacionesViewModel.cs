@@ -61,6 +61,12 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaFinalFilter;
         private AreaDto? _selectedAreaFilter;
 
+        // Paginación
+        private int _currentPage = 1;
+        private int _pageSize = 20;
+        private long _totalItems;
+        private List<OperacionDto>? _allFilteredOperaciones;
+
         public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
@@ -86,9 +92,32 @@ namespace Advance_Control.ViewModels
             set
             {
                 if (SetProperty(ref _operaciones, value))
+                {
                     OnPropertyChanged(nameof(IsEmpty));
+                    OnPropertyChanged(nameof(ContadorMostrados));
+                    OnPropertyChanged(nameof(ContadorFinalizados));
+                    OnPropertyChanged(nameof(ContadorSinFinalizar));
+                    OnPropertyChanged(nameof(ContadorFacturados));
+                    OnPropertyChanged(nameof(ContadoresLabel));
+                }
             }
         }
+
+        /// <summary>Cantidad de operaciones mostradas en la página actual.</summary>
+        public int ContadorMostrados => _operaciones?.Count ?? 0;
+
+        /// <summary>Cantidad de operaciones finalizadas (trabajo técnico TFinalizado = true) en la página actual.</summary>
+        public int ContadorFinalizados => _operaciones?.Count(o => o.TFinalizado) ?? 0;
+
+        /// <summary>Cantidad de operaciones sin finalizar (TFinalizado = false) en la página actual.</summary>
+        public int ContadorSinFinalizar => _operaciones?.Count(o => !o.TFinalizado) ?? 0;
+
+        /// <summary>Cantidad de operaciones facturadas (FechaFinal != null) en la página actual.</summary>
+        public int ContadorFacturados => _operaciones?.Count(o => o.IsFinalized) ?? 0;
+
+        /// <summary>Etiqueta resumen de contadores para la barra de paginación.</summary>
+        public string ContadoresLabel =>
+            $"Mostradas: {ContadorMostrados} · Finalizadas: {ContadorFinalizados} · Sin finalizar: {ContadorSinFinalizar} · Facturadas: {ContadorFacturados}";
 
         public ObservableCollection<AreaDto> Areas
         {
@@ -239,16 +268,22 @@ namespace Advance_Control.ViewModels
                 var equiposTask  = _equipoService.GetEquiposAsync(null, cancellationToken);
                 await Task.WhenAll(areasTask, clientesTask, equiposTask);
 
+                // Desempaquetar con await (en lugar de .Result) — propaga excepciones de forma
+                // idiomática y evita el anti-pattern de bloquear el hilo.
+                var areas    = await areasTask;
+                var clientes = await clientesTask;
+                var equipos  = await equiposTask;
+
                 Areas.Clear();
-                foreach (var a in areasTask.Result)
+                foreach (var a in areas)
                     Areas.Add(a);
 
-                _todosLosClientes = clientesTask.Result
+                _todosLosClientes = clientes
                     .Select(c => (c.IdCliente, Texto: c.RazonSocial ?? c.NombreComercial ?? ""))
                     .Where(c => !string.IsNullOrWhiteSpace(c.Texto))
                     .ToList();
 
-                _todosLosEquipos = equiposTask.Result
+                _todosLosEquipos = equipos
                     .Where(e => !string.IsNullOrWhiteSpace(e.Identificador))
                     .Select(e => (Id: e.IdEquipo, Identificador: e.Identificador!))
                     .DistinctBy(e => e.Identificador, StringComparer.OrdinalIgnoreCase)
@@ -315,13 +350,98 @@ namespace Advance_Control.ViewModels
         /// <summary>Aplica el filtro de área</summary>
         public void AplicarFiltroArea(AreaDto? area) => SelectedAreaFilter = area;
 
+        // ==================== Paginación ====================
+
+        /// <summary>Página actual (1-based) que se está visualizando.</summary>
+        public int CurrentPage
+        {
+            get => _currentPage;
+            set
+            {
+                if (value < 1) value = 1;
+                if (SetProperty(ref _currentPage, value))
+                {
+                    OnPropertyChanged(nameof(CanGoPrevious));
+                    OnPropertyChanged(nameof(CanGoNext));
+                    OnPropertyChanged(nameof(PaginationLabel));
+                }
+            }
+        }
+
+        /// <summary>Cantidad de operaciones por página.</summary>
+        public int PageSize
+        {
+            get => _pageSize;
+            set
+            {
+                if (value <= 0) value = 10;
+                if (SetProperty(ref _pageSize, value))
+                {
+                    OnPropertyChanged(nameof(TotalPages));
+                    OnPropertyChanged(nameof(CanGoPrevious));
+                    OnPropertyChanged(nameof(CanGoNext));
+                    OnPropertyChanged(nameof(PaginationLabel));
+                }
+            }
+        }
+
+        /// <summary>Cantidad total de operaciones (independiente del paginado actual).</summary>
+        public long TotalItems
+        {
+            get => _totalItems;
+            private set
+            {
+                if (SetProperty(ref _totalItems, value))
+                {
+                    OnPropertyChanged(nameof(TotalPages));
+                    OnPropertyChanged(nameof(CanGoPrevious));
+                    OnPropertyChanged(nameof(CanGoNext));
+                    OnPropertyChanged(nameof(PaginationLabel));
+                }
+            }
+        }
+
+        public int TotalPages => PageSize <= 0 ? 1 : (int)Math.Max(1, Math.Ceiling(TotalItems / (double)PageSize));
+
+        public bool CanGoPrevious => CurrentPage > 1;
+        public bool CanGoNext => CurrentPage < TotalPages;
+
+        public string PaginationLabel => TotalItems == 0 ? "Sin resultados" : $"Página {CurrentPage} de {TotalPages} · {TotalItems} operaciones";
+
+        public async Task GoToNextPageAsync(CancellationToken cancellationToken = default)
+        {
+            if (!CanGoNext) return;
+            CurrentPage++;
+            await LoadOperacionesAsync(cancellationToken: cancellationToken);
+        }
+
+        public async Task GoToPreviousPageAsync(CancellationToken cancellationToken = default)
+        {
+            if (!CanGoPrevious) return;
+            CurrentPage--;
+            await LoadOperacionesAsync(cancellationToken: cancellationToken);
+        }
+
+        public async Task GoToPageAsync(int page, CancellationToken cancellationToken = default)
+        {
+            if (page < 1) page = 1;
+            if (page > TotalPages) page = TotalPages;
+            if (page == CurrentPage) return;
+            CurrentPage = page;
+            await LoadOperacionesAsync(cancellationToken: cancellationToken);
+        }
+
+        // ==================== Carga ====================
+
         /// <summary>
         /// Carga las operaciones desde el servicio con los filtros aplicados
         /// </summary>
-        public async Task LoadOperacionesAsync(Func<List<OperacionDto>, Task>? onBeforeCommit = null, CancellationToken cancellationToken = default)
+        public async Task LoadOperacionesAsync(Func<List<OperacionDto>, Task>? onBeforeCommit = null, CancellationToken cancellationToken = default, bool resetPage = false)
         {
             if (IsLoading)
                 return;
+
+            if (resetPage) CurrentPage = 1;
 
             try
             {
@@ -340,15 +460,42 @@ namespace Advance_Control.ViewModels
                     FechaFinalFiltro = FechaFinalFilter
                 };
 
-                var operaciones = await _operacionService.GetOperacionesAsync(query, cancellationToken);
+                List<OperacionDto> filtrados;
+                long total;
 
-                // Filtro manual de área seleccionado por el usuario (el filtrado por nivel lo maneja la API)
-                List<OperacionDto> filtrados = operaciones;
                 if (SelectedAreaFilter != null)
                 {
+                    // El filtro por área es client-side: tenemos que traer TODO el conjunto filtrado
+                    // por la API, aplicar el filtro de área en memoria y luego paginar también en memoria.
+                    var todas = await _operacionService.GetOperacionesAsync(query, cancellationToken);
                     var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
                     var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
-                    filtrados = operaciones.Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador)).ToList();
+                    var todasFiltradas = todas
+                        .Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador))
+                        .ToList();
+
+                    total = todasFiltradas.Count;
+                    var totalPagesLocal = PageSize <= 0 ? 1 : (int)Math.Max(1, Math.Ceiling(total / (double)PageSize));
+                    if (CurrentPage > totalPagesLocal) CurrentPage = totalPagesLocal;
+                    var skipLocal = Math.Max(0, (CurrentPage - 1) * PageSize);
+                    filtrados = todasFiltradas.Skip(skipLocal).Take(PageSize).ToList();
+                }
+                else
+                {
+                    // Paginación end-to-end vía API (header X-Total-Count).
+                    var skip = Math.Max(0, (CurrentPage - 1) * PageSize);
+                    var (pagina, totalApi) = await _operacionService.GetOperacionesPaginadasAsync(query, skip, PageSize, cancellationToken);
+                    total = totalApi;
+                    // Si por una eliminación quedamos en una página inexistente, volver a la última válida
+                    var totalPagesLocal = PageSize <= 0 ? 1 : (int)Math.Max(1, Math.Ceiling(total / (double)PageSize));
+                    if (CurrentPage > totalPagesLocal && totalPagesLocal >= 1)
+                    {
+                        CurrentPage = totalPagesLocal;
+                        skip = Math.Max(0, (CurrentPage - 1) * PageSize);
+                        (pagina, totalApi) = await _operacionService.GetOperacionesPaginadasAsync(query, skip, PageSize, cancellationToken);
+                        total = totalApi;
+                    }
+                    filtrados = pagina;
                 }
 
                 foreach (var operacion in filtrados)
@@ -359,8 +506,9 @@ namespace Advance_Control.ViewModels
 
                 // Asignar de una sola vez para evitar renders intermedios con TotalMonto = 0
                 Operaciones = new ObservableCollection<OperacionDto>(filtrados);
+                TotalItems = total;
 
-                await _logger.LogInformationAsync($"Se cargaron {filtrados.Count} operaciones exitosamente (de {operaciones.Count} totales)", "OperacionesViewModel", "LoadOperacionesAsync");
+                await _logger.LogInformationAsync($"Página {CurrentPage}/{TotalPages}: {filtrados.Count} operaciones (total filtrado: {total})", "OperacionesViewModel", "LoadOperacionesAsync");
             }
             catch (OperationCanceledException)
             {
@@ -419,13 +567,22 @@ namespace Advance_Control.ViewModels
                 _equipoSugerencias.Clear();
                 _areaSugerencias.Clear();
                 ErrorMessage = null;
-                await LoadOperacionesAsync(onBeforeCommit, cancellationToken);
+                await LoadOperacionesAsync(onBeforeCommit, cancellationToken, resetPage: true);
             }
             catch (Exception ex)
             {
                 ErrorMessage = "Error al limpiar filtros y recargar operaciones.";
                 await _logger.LogErrorAsync("Error al limpiar filtros", ex, "OperacionesViewModel", "ClearFiltersAsync");
             }
+        }
+
+        /// <summary>
+        /// Aplica los filtros actuales y vuelve a la primera página. Usar este método
+        /// desde la View al hacer click en "Buscar".
+        /// </summary>
+        public Task ApplyFiltersAsync(Func<List<OperacionDto>, Task>? onBeforeCommit = null, CancellationToken cancellationToken = default)
+        {
+            return LoadOperacionesAsync(onBeforeCommit, cancellationToken, resetPage: true);
         }
 
         /// <summary>

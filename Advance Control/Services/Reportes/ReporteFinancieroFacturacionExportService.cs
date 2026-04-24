@@ -315,12 +315,11 @@ namespace Advance_Control.Services.Reportes
         }
 
         /// <summary>
-        /// Devuelve la carpeta donde se almacenan las imágenes de cabecera.
+        /// Devuelve la carpeta donde se almacenan las imágenes de cabecera (assets embebidos en la app).
         /// </summary>
         private static string ObtenerCarpetaCabeceras()
         {
-            var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(documentos, "Advance Control", "Cabeceras");
+            return Path.Combine(AppContext.BaseDirectory, "Assets", "Cabeceras");
         }
 
         /// <summary>

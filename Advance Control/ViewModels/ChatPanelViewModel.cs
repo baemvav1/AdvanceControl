@@ -51,6 +51,10 @@ namespace Advance_Control.ViewModels
                 if (SetProperty(ref _usuarioSeleccionado, value))
                 {
                     OnPropertyChanged(nameof(HayUsuarioSeleccionado));
+                    OnPropertyChanged(nameof(MostrarBarraEntrada));
+                    OnPropertyChanged(nameof(MostrarPreviewRespuesta));
+                    OnPropertyChanged(nameof(RespuestaAutor));
+                    MensajeRespondiendo = null;
                     if (IsPanelVisible)
                         _mensajeria.UsuarioVisibleId = value?.CredencialId;
                     if (value != null)
@@ -62,6 +66,8 @@ namespace Advance_Control.ViewModels
         }
 
         public bool HayUsuarioSeleccionado => UsuarioSeleccionado != null;
+
+        public bool MostrarBarraEntrada => HayUsuarioSeleccionado && !IsUserListVisible;
 
         private string _textoMensaje = string.Empty;
         public string TextoMensaje
@@ -102,7 +108,14 @@ namespace Advance_Control.ViewModels
         public bool IsUserListVisible
         {
             get => _isUserListVisible;
-            set => SetProperty(ref _isUserListVisible, value);
+            set
+            {
+                if (SetProperty(ref _isUserListVisible, value))
+                {
+                    OnPropertyChanged(nameof(MostrarBarraEntrada));
+                    OnPropertyChanged(nameof(MostrarPreviewRespuesta));
+                }
+            }
         }
 
         private bool _isPanelVisible;
@@ -131,6 +144,36 @@ namespace Advance_Control.ViewModels
         {
             get => _errorMensaje;
             set => SetProperty(ref _errorMensaje, value);
+        }
+
+        private MensajeDto? _mensajeRespondiendo;
+        /// <summary>Mensaje al que se está respondiendo (estilo WhatsApp). Null si no hay respuesta activa.</summary>
+        public MensajeDto? MensajeRespondiendo
+        {
+            get => _mensajeRespondiendo;
+            set
+            {
+                if (SetProperty(ref _mensajeRespondiendo, value))
+                {
+                    OnPropertyChanged(nameof(HayRespuestaActiva));
+                    OnPropertyChanged(nameof(MostrarPreviewRespuesta));
+                    OnPropertyChanged(nameof(RespuestaResumen));
+                    OnPropertyChanged(nameof(RespuestaAutor));
+                }
+            }
+        }
+
+        public bool HayRespuestaActiva => MensajeRespondiendo != null;
+        public bool MostrarPreviewRespuesta => HayRespuestaActiva && MostrarBarraEntrada;
+        public string RespuestaAutor => MensajeRespondiendo?.EsMio == true ? "Tú" : (UsuarioSeleccionado?.NombreVisible ?? string.Empty);
+        public string RespuestaResumen
+        {
+            get
+            {
+                var c = MensajeRespondiendo?.Contenido ?? string.Empty;
+                if (c.Length > 80) c = c.Substring(0, 80) + "…";
+                return c;
+            }
         }
 
         public ChatPanelViewModel(
@@ -165,6 +208,10 @@ namespace Advance_Control.ViewModels
                 _mensajeria.MensajeRecibido += OnMensajeRecibido;
                 _mensajeria.MensajeEnviado += OnMensajeEnviado;
                 _mensajeria.MensajeLeido += OnMensajeLeido;
+                _mensajeria.MensajesLeidos += OnMensajesLeidos;
+                _mensajeria.MensajesEntregados += OnMensajesEntregados;
+                _mensajeria.MensajeEliminado += OnMensajeEliminado;
+                _mensajeria.MensajeOcultado += OnMensajeOcultado;
                 _mensajeria.UsuarioConectado += OnUsuarioConectado;
                 _mensajeria.UsuarioDesconectado += OnUsuarioDesconectado;
                 _mensajeria.UsuarioEscribiendo += OnUsuarioEscribiendo;
@@ -266,10 +313,18 @@ namespace Advance_Control.ViewModels
                     Mensajes.Add(m);
                 }
 
+                // Bulk-marcar como leído (1 sola llamada al hub en lugar de N).
+                // El servidor responderá con 'MensajesLeidos' al remitente; aquí asumimos OK localmente.
+                try
+                {
+                    if (UsuarioSeleccionado != null)
+                        await _mensajeria.MarcarConversacionLeidaAsync(UsuarioSeleccionado.CredencialId);
+                }
+                catch { }
+                var ahora = DateTime.UtcNow;
                 foreach (var m in mensajes.Where(m => !m.EsMio && !m.EsLeido))
                 {
-                    try { await _mensajeria.MarcarLeidoAsync(m.Id); m.LeidoEn = DateTime.Now; }
-                    catch { }
+                    m.LeidoEn = ahora;
                 }
 
                 if (UsuarioSeleccionado != null)
@@ -291,10 +346,13 @@ namespace Advance_Control.ViewModels
 
             var texto = TextoMensaje.Trim();
             TextoMensaje = string.Empty;
+            var respuestaA = MensajeRespondiendo?.Id;
+            MensajeRespondiendo = null;
 
             try
             {
-                await _mensajeria.EnviarMensajeAsync(UsuarioSeleccionado.CredencialId, texto);
+                await _mensajeria.EnviarMensajeAsync(UsuarioSeleccionado.CredencialId, texto,
+                    respuestaAMensajeId: respuestaA);
             }
             catch (Exception ex)
             {
@@ -302,6 +360,47 @@ namespace Advance_Control.ViewModels
                 try { await _logger.LogErrorAsync("Error al enviar mensaje", ex, "ChatPanelViewModel", "EnviarMensajeAsync"); } catch { }
                 TextoMensaje = texto;
             }
+        }
+
+        /// <summary>Inicia el modo respuesta para un mensaje (estilo WhatsApp).</summary>
+        public void IniciarRespuesta(MensajeDto mensaje)
+        {
+            if (mensaje == null || mensaje.EstaEliminado) return;
+            MensajeRespondiendo = mensaje;
+        }
+
+        /// <summary>Cancela el modo respuesta.</summary>
+        public void CancelarRespuesta() => MensajeRespondiendo = null;
+
+        /// <summary>Elimina un mensaje propio para todos (soft-delete global).</summary>
+        public async Task EliminarMensajeParaTodosAsync(MensajeDto mensaje)
+        {
+            if (mensaje == null || !mensaje.EsMio) return;
+            try { await _mensajeria.EliminarMensajeParaTodosAsync(mensaje.Id); }
+            catch (Exception ex)
+            {
+                ErrorMensaje = $"Error al eliminar: {ex.Message}";
+                try { await _logger.LogErrorAsync("Error al eliminar mensaje para todos", ex, "ChatPanelViewModel", "EliminarMensajeParaTodosAsync"); } catch { }
+            }
+        }
+
+        /// <summary>Oculta un mensaje únicamente para el usuario actual.</summary>
+        public async Task OcultarMensajeParaMiAsync(MensajeDto mensaje)
+        {
+            if (mensaje == null) return;
+            try { await _mensajeria.OcultarMensajeParaMiAsync(mensaje.Id); }
+            catch (Exception ex)
+            {
+                ErrorMensaje = $"Error al ocultar: {ex.Message}";
+                try { await _logger.LogErrorAsync("Error al ocultar mensaje", ex, "ChatPanelViewModel", "OcultarMensajeParaMiAsync"); } catch { }
+            }
+        }
+
+        /// <summary>TODO: integrar con módulo de tareas.</summary>
+        public Task CrearTareaDesdeMensajeAsync(MensajeDto mensaje)
+        {
+            _ = _logger.LogInformationAsync($"Crear tarea solicitado para mensaje {mensaje?.Id}", "ChatPanelViewModel", "CrearTareaDesdeMensajeAsync");
+            return Task.CompletedTask;
         }
 
         public async Task NotificarEscribiendoAsync()
@@ -443,6 +542,54 @@ namespace Advance_Control.ViewModels
             {
                 var msg = Mensajes.FirstOrDefault(m => m.Id == mensajeId);
                 if (msg != null) msg.LeidoEn = DateTime.Now;
+            });
+        }
+
+        private void OnMensajesLeidos(object? sender, List<long> ids)
+        {
+            _dispatcher?.TryEnqueue(() =>
+            {
+                var ahora = DateTime.UtcNow;
+                var set = new HashSet<long>(ids);
+                foreach (var msg in Mensajes)
+                {
+                    if (set.Contains(msg.Id) && !msg.EsLeido)
+                        msg.LeidoEn = ahora;
+                }
+            });
+        }
+
+        private void OnMensajesEntregados(object? sender, List<long> ids)
+        {
+            _dispatcher?.TryEnqueue(() =>
+            {
+                var ahora = DateTime.UtcNow;
+                var set = new HashSet<long>(ids);
+                foreach (var msg in Mensajes)
+                {
+                    if (set.Contains(msg.Id) && !msg.EsEntregado)
+                        msg.EntregadoEn = ahora;
+                }
+            });
+        }
+
+        private void OnMensajeEliminado(object? sender, long mensajeId)
+        {
+            _dispatcher?.TryEnqueue(() =>
+            {
+                var msg = Mensajes.FirstOrDefault(m => m.Id == mensajeId);
+                if (msg != null) msg.EliminadoEn = DateTime.Now;
+                if (MensajeRespondiendo?.Id == mensajeId) MensajeRespondiendo = null;
+            });
+        }
+
+        private void OnMensajeOcultado(object? sender, long mensajeId)
+        {
+            _dispatcher?.TryEnqueue(() =>
+            {
+                var msg = Mensajes.FirstOrDefault(m => m.Id == mensajeId);
+                if (msg != null) Mensajes.Remove(msg);
+                if (MensajeRespondiendo?.Id == mensajeId) MensajeRespondiendo = null;
             });
         }
 

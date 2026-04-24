@@ -20,16 +20,23 @@ namespace Advance_Control.Services.PermisosUi
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<List<PermisoModuloSyncDto>> ScanAsync(CancellationToken cancellationToken = default)
+        public Task<List<PermisoModuloSyncDto>> ScanAsync(CancellationToken cancellationToken = default)
+        {
+            // El escaneo accede al disco y parsea XML — operaciones bloqueantes.
+            // Lo ejecutamos en el ThreadPool para no congelar el hilo llamador.
+            return Task.Run(() => ScanInternal(cancellationToken), cancellationToken);
+        }
+
+        private List<PermisoModuloSyncDto> ScanInternal(CancellationToken cancellationToken)
         {
             var projectRoot = ResolveProjectRoot();
             if (projectRoot == null)
             {
-                await _logger.LogWarningAsync("No fue posible localizar la raíz del proyecto para escanear permisos UI.", "PermisoUiScanner", "ScanAsync");
+                _ = _logger.LogWarningAsync("No fue posible localizar la raíz del proyecto para escanear permisos UI.", "PermisoUiScanner", "ScanAsync");
                 return new List<PermisoModuloSyncDto>();
             }
 
-            await _logger.LogInformationAsync($"Raíz del proyecto resuelta: {projectRoot}", "PermisoUiScanner", "ScanAsync");
+            _ = _logger.LogInformationAsync($"Raíz del proyecto resuelta: {projectRoot}", "PermisoUiScanner", "ScanAsync");
 
             var modules = new List<PermisoModuloSyncDto>();
             var targets = new[]
@@ -63,7 +70,7 @@ namespace Advance_Control.Services.PermisosUi
                 }
             }
 
-            await _logger.LogInformationAsync($"Escaneo completado: {modules.Count} módulos encontrados.", "PermisoUiScanner", "ScanAsync");
+            _ = _logger.LogInformationAsync($"Escaneo completado: {modules.Count} módulos encontrados.", "PermisoUiScanner", "ScanAsync");
             return modules;
         }
 

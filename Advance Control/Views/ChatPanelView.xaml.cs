@@ -8,6 +8,7 @@ using Advance_Control.Utilities;
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
 using Windows.Storage;
 using Windows.Storage.Pickers;
@@ -187,6 +188,57 @@ namespace Advance_Control.Views
             if (sender is Button btn && btn.Tag is MensajeDto mensaje)
                 OperacionVisorNavigator.Navigate(mensaje);
         }
+
+        private void Burbuja_ResponderClick(object? sender, MensajeDto mensaje)
+            => ViewModel.IniciarRespuesta(mensaje);
+
+        private async void Burbuja_CrearTareaClick(object? sender, MensajeDto mensaje)
+            => await ViewModel.CrearTareaDesdeMensajeAsync(mensaje);
+
+        private async void Burbuja_EliminarParaMiClick(object? sender, MensajeDto mensaje)
+            => await ViewModel.OcultarMensajeParaMiAsync(mensaje);
+
+        private async void Burbuja_EliminarParaTodosClick(object? sender, MensajeDto mensaje)
+            => await ViewModel.EliminarMensajeParaTodosAsync(mensaje);
+
+        private async void Burbuja_RespuestaCitaClick(object? sender, MensajeDto mensaje)
+        {
+            if (mensaje.RespuestaAMensajeId is not long targetId) return;
+
+            var target = ViewModel.Mensajes.FirstOrDefault(m => m.Id == targetId);
+            if (target == null) return;
+
+            MensajesListView.ScrollIntoView(target, ScrollIntoViewAlignment.Leading);
+
+            // Esperar a que se materialice el contenedor y aplicar resaltado breve
+            await Task.Delay(80);
+            if (MensajesListView.ContainerFromItem(target) is ListViewItem container)
+            {
+                await ResaltarBurbujaAsync(container);
+            }
+        }
+
+        private static async Task ResaltarBurbujaAsync(ListViewItem container)
+        {
+            var originalOpacity = container.Opacity;
+            try
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    container.Opacity = 0.35;
+                    await Task.Delay(140);
+                    container.Opacity = 1.0;
+                    await Task.Delay(140);
+                }
+            }
+            finally
+            {
+                container.Opacity = originalOpacity;
+            }
+        }
+
+        private void CancelarRespuesta_Click(object sender, RoutedEventArgs e)
+            => ViewModel.CancelarRespuesta();
 
         private static bool EsArchivoValido(StorageFile file)
         {
