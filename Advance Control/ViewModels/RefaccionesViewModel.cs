@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +21,12 @@ namespace Advance_Control.ViewModels
         private string? _marcaFilter;
         private string? _serieFilter;
         private string? _descripcionFilter;
+
+        // Paginación (cliente-side)
+        private List<RefaccionDto> _allRefacciones = new();
+        private int _currentPage = 1;
+        private int _pageSize = 20;
+        private long _totalItems;
 
         public RefaccionesViewModel(IRefaccionService refaccionService, ILoggingService logger)
         {
@@ -77,13 +85,122 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _descripcionFilter, value);
         }
 
+        // ==================== Paginación ====================
+
+        /// <summary>Página actual (1-based) que se está visualizando.</summary>
+        public int CurrentPage
+        {
+            get => _currentPage;
+            set
+            {
+                if (value < 1) value = 1;
+                if (SetProperty(ref _currentPage, value))
+                {
+                    OnPropertyChanged(nameof(CanGoPrevious));
+                    OnPropertyChanged(nameof(CanGoNext));
+                    OnPropertyChanged(nameof(PaginationLabel));
+                }
+            }
+        }
+
+        /// <summary>Cantidad de refacciones por página.</summary>
+        public int PageSize
+        {
+            get => _pageSize;
+            set
+            {
+                if (value <= 0) value = 10;
+                if (SetProperty(ref _pageSize, value))
+                {
+                    OnPropertyChanged(nameof(TotalPages));
+                    OnPropertyChanged(nameof(CanGoPrevious));
+                    OnPropertyChanged(nameof(CanGoNext));
+                    OnPropertyChanged(nameof(PaginationLabel));
+                }
+            }
+        }
+
+        /// <summary>Cantidad total de refacciones (independiente del paginado actual).</summary>
+        public long TotalItems
+        {
+            get => _totalItems;
+            private set
+            {
+                if (SetProperty(ref _totalItems, value))
+                {
+                    OnPropertyChanged(nameof(TotalPages));
+                    OnPropertyChanged(nameof(CanGoPrevious));
+                    OnPropertyChanged(nameof(CanGoNext));
+                    OnPropertyChanged(nameof(PaginationLabel));
+                }
+            }
+        }
+
+        public int TotalPages => PageSize <= 0 ? 1 : (int)Math.Max(1, Math.Ceiling(TotalItems / (double)PageSize));
+
+        public bool CanGoPrevious => CurrentPage > 1;
+        public bool CanGoNext => CurrentPage < TotalPages;
+
+        public string PaginationLabel => TotalItems == 0
+            ? "Sin resultados"
+            : $"Página {CurrentPage} de {TotalPages} · {TotalItems} refacciones";
+
+        public Task GoToNextPageAsync(CancellationToken cancellationToken = default)
+        {
+            if (!CanGoNext) return Task.CompletedTask;
+            CurrentPage++;
+            ApplyPagination();
+            return Task.CompletedTask;
+        }
+
+        public Task GoToPreviousPageAsync(CancellationToken cancellationToken = default)
+        {
+            if (!CanGoPrevious) return Task.CompletedTask;
+            CurrentPage--;
+            ApplyPagination();
+            return Task.CompletedTask;
+        }
+
+        public Task GoToPageAsync(int page, CancellationToken cancellationToken = default)
+        {
+            if (page < 1) page = 1;
+            if (page > TotalPages) page = TotalPages;
+            if (page == CurrentPage) return Task.CompletedTask;
+            CurrentPage = page;
+            ApplyPagination();
+            return Task.CompletedTask;
+        }
+
         /// <summary>
-        /// Carga las refacciones desde el servicio con los filtros aplicados
+        /// Recalcula la página actual a partir de la lista completa (_allRefacciones)
+        /// sin hacer una nueva llamada al API.
         /// </summary>
-        public async Task LoadRefaccionesAsync(CancellationToken cancellationToken = default)
+        private void ApplyPagination()
+        {
+            var total = _allRefacciones.Count;
+            TotalItems = total;
+
+            var totalPagesLocal = PageSize <= 0 ? 1 : (int)Math.Max(1, Math.Ceiling(total / (double)PageSize));
+            if (CurrentPage > totalPagesLocal) CurrentPage = totalPagesLocal;
+            if (CurrentPage < 1) CurrentPage = 1;
+
+            var skip = Math.Max(0, (CurrentPage - 1) * PageSize);
+            var pagina = _allRefacciones.Skip(skip).Take(PageSize).ToList();
+
+            Refacciones = new ObservableCollection<RefaccionDto>(pagina);
+        }
+
+        /// <summary>
+        /// Carga las refacciones desde el servicio con los filtros aplicados.
+        /// </summary>
+        /// <param name="cancellationToken">Token de cancelación.</param>
+        /// <param name="resetPage">Si es true, vuelve a la página 1 (típico al cambiar filtros).</param>
+        public async Task LoadRefaccionesAsync(CancellationToken cancellationToken = default, bool resetPage = false)
         {
             if (IsLoading)
                 return;
+
+            if (resetPage) CurrentPage = 1;
 
             try
             {
@@ -100,13 +217,12 @@ namespace Advance_Control.ViewModels
 
                 var refacciones = await _refaccionService.GetRefaccionesAsync(query, cancellationToken);
 
-                Refacciones.Clear();
-                foreach (var refaccion in refacciones)
-                {
-                    Refacciones.Add(refaccion);
-                }
+                _allRefacciones = refacciones ?? new List<RefaccionDto>();
+                ApplyPagination();
 
-                await _logger.LogInformationAsync($"Se cargaron {refacciones.Count} refacciones exitosamente", "RefaccionesViewModel", "LoadRefaccionesAsync");
+                await _logger.LogInformationAsync(
+                    $"Página {CurrentPage}/{TotalPages}: {Refacciones.Count} refacciones (total filtrado: {TotalItems})",
+                    "RefaccionesViewModel", "LoadRefaccionesAsync");
             }
             catch (OperationCanceledException)
             {
@@ -140,7 +256,7 @@ namespace Advance_Control.ViewModels
                 SerieFilter = null;
                 DescripcionFilter = null;
                 ErrorMessage = null;
-                await LoadRefaccionesAsync(cancellationToken);
+                await LoadRefaccionesAsync(cancellationToken, resetPage: true);
             }
             catch (Exception ex)
             {

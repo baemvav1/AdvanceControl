@@ -63,12 +63,22 @@ namespace Advance_Control.Views.Pages
 
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.LoadRefaccionesAsync();
+            await ViewModel.LoadRefaccionesAsync(resetPage: true);
         }
 
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.ClearFiltersAsync();
+        }
+
+        private async void PaginaAnterior_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.GoToPreviousPageAsync();
+        }
+
+        private async void PaginaSiguiente_Click(object sender, RoutedEventArgs e)
+        {
+            await ViewModel.GoToNextPageAsync();
         }
 
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
