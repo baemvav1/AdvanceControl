@@ -104,7 +104,7 @@ namespace Advance_Control
         {
             if (!File.Exists(PackagedConfigurationFile))
             {
-                return "https://localhost:7055/";
+                return "http://187.124.243.107:5031/";
             }
 
             using var stream = File.OpenRead(PackagedConfigurationFile);
@@ -121,7 +121,7 @@ namespace Advance_Control
                 }
             }
 
-            return "https://localhost:7055/";
+            return "http://187.124.243.107:5031/";
         }
 
         private static string GetDefaultApiProductionUrl()
@@ -159,6 +159,15 @@ namespace Advance_Control
                     cfg.AddJsonFile(PackagedConfigurationFile, optional: true, reloadOnChange: true);
                     cfg.AddJsonFile(ExternalConfigurationFile, optional: true, reloadOnChange: true);
                     cfg.AddEnvironmentVariables(prefix: "ADVANCECONTROL_");
+#if DEBUG
+                    // En builds Debug forzamos el modo Development para que ApiEndpointProvider
+                    // utilice la URL de pruebas (ExternalApi:BaseUrl) en lugar de la de producción.
+                    // Esta sobrescritura va al final para tener prioridad sobre los JSON cargados.
+                    cfg.AddInMemoryCollection(new System.Collections.Generic.Dictionary<string, string?>
+                    {
+                        ["DevelopmentMode:Enabled"] = "true"
+                    });
+#endif
                 })
                 .ConfigureServices((context, services) =>
                 {
@@ -834,6 +843,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.DetailFacturaViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();
                     services.AddTransient<ViewModels.DevOpsViewModel>();
+                    services.AddTransient<ViewModels.AccesoClienteViewModel>();
 
                     services.AddHttpClient<ICorreoUsuarioService, CorreoUsuarioService>((sp, client) =>
                     {

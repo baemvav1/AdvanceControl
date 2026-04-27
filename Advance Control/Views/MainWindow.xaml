@@ -207,6 +207,11 @@
                                         <FontIcon Glyph="&#xE8C7;" />
                                     </NavigationViewItem.Icon>
                                 </NavigationViewItem>
+                                <NavigationViewItem Content="Acceso Cliente" Tag="AccesoCliente">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE8D7;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 

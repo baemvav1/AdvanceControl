@@ -60,8 +60,15 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
             _isNavigating = true;
-            await ViewModel.InitializeAsync();
-            await ViewModel.LoadOperacionesAsync(null /* preload eliminado: TotalMonto viene del backend */);
+            if (e.Parameter is AccesoClienteContext ctx)
+            {
+                await ViewModel.ApplyAccesoClienteContextAsync(ctx);
+            }
+            else
+            {
+                await ViewModel.InitializeAsync();
+                await ViewModel.LoadOperacionesAsync(null /* preload eliminado: TotalMonto viene del backend */);
+            }
             _isNavigating = false;
         }
 

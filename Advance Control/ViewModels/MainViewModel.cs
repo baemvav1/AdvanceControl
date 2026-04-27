@@ -152,6 +152,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.AdministracionPage>("Administracion");
             _navigationService.Configure<Views.Pages.DevOpsPage>("DevOps");
             _navigationService.Configure<Views.Pages.OperacionVisorPage>("OperacionVisor");
+            _navigationService.Configure<Views.Pages.AccesoClientePage>("AccesoCliente");
             _navigationService.Configure<Views.Pages.SettingsPage>("Settings");
 
             // Subscribe to Frame navigation events

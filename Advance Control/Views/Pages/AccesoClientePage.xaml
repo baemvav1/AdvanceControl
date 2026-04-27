@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Advance_Control.Views.Pages.AccesoClientePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Advance_Control.Views.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <ResourceDictionary xmlns:converters="using:Advance_Control.Converters">
+            <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid Padding="24" RowSpacing="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Encabezado  -->
+        <StackPanel Grid.Row="0" Spacing="4">
+            <TextBlock
+                FontSize="24"
+                FontWeight="SemiBold"
+                Text="Acceso Cliente" />
+            <TextBlock
+                FontSize="13"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{x:Bind ViewModel.EncabezadoCliente, Mode=OneWay}" />
+        </StackPanel>
+
+        <!--  Buscador de cliente  -->
+        <Grid Grid.Row="1" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <AutoSuggestBox
+                x:Name="ClienteSearchBox"
+                Grid.Column="0"
+                ItemsSource="{x:Bind ViewModel.Sugerencias, Mode=OneWay}"
+                PlaceholderText="Buscar cliente por razón social o nombre comercial…"
+                QueryIcon="Find"
+                QuerySubmitted="ClienteSearchBox_QuerySubmitted"
+                SuggestionChosen="ClienteSearchBox_SuggestionChosen"
+                Text="{x:Bind ViewModel.TextoBusqueda, Mode=TwoWay}"
+                TextChanged="ClienteSearchBox_TextChanged" />
+            <ProgressRing
+                Grid.Column="1"
+                Width="24"
+                Height="24"
+                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+        </Grid>
+
+        <!--  Mensaje de error  -->
+        <InfoBar
+            Grid.Row="2"
+            IsClosable="False"
+            IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+            Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+            Severity="Error" />
+
+        <!--  Tarjetas de contadores  -->
+        <Grid
+            Grid.Row="3"
+            ColumnSpacing="16"
+            Visibility="{x:Bind ViewModel.HasCliente, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Button
+                Grid.Column="0"
+                Padding="20"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                Click="TodasCard_Click"
+                CornerRadius="10">
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Total operaciones" />
+                    <TextBlock
+                        FontSize="34"
+                        FontWeight="SemiBold"
+                        Text="{x:Bind ViewModel.TotalOperaciones, Mode=OneWay}" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Ver todas" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Column="1"
+                Padding="20"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                Click="FacturadasCard_Click"
+                CornerRadius="10">
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Facturadas" />
+                    <TextBlock
+                        FontSize="34"
+                        FontWeight="SemiBold"
+                        Text="{x:Bind ViewModel.TotalFacturadas, Mode=OneWay}" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Ver facturadas" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Column="2"
+                Padding="20"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                Background="{ThemeResource SystemFillColorCautionBackgroundBrush}"
+                Click="FinalizadasCard_Click"
+                CornerRadius="10">
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Finalizadas (trabajo)" />
+                    <TextBlock
+                        FontSize="34"
+                        FontWeight="SemiBold"
+                        Text="{x:Bind ViewModel.TotalFinalizadas, Mode=OneWay}" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Ver finalizadas" />
+                </StackPanel>
+            </Button>
+
+            <Button
+                Grid.Column="3"
+                Padding="20"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Stretch"
+                Background="{ThemeResource SystemFillColorAttentionBackgroundBrush}"
+                Click="SinFinalizarCard_Click"
+                CornerRadius="10">
+                <StackPanel Spacing="6">
+                    <TextBlock
+                        FontSize="13"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Sin finalizar" />
+                    <TextBlock
+                        FontSize="34"
+                        FontWeight="SemiBold"
+                        Text="{x:Bind ViewModel.TotalSinFinalizar, Mode=OneWay}" />
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Ver pendientes" />
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <!--  Vacío  -->
+        <StackPanel
+            Grid.Row="4"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Spacing="6"
+            Visibility="{x:Bind ViewModel.NoHasCliente, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <FontIcon FontSize="48" Glyph="&#xE716;" />
+            <TextBlock
+                FontSize="14"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Selecciona un cliente para visualizar el resumen de sus operaciones." />
+        </StackPanel>
+    </Grid>
+</Page>

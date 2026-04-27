@@ -86,6 +86,27 @@ namespace Advance_Control.ViewModels
             _areaSugerencias     = new ObservableCollection<AreaDto>();
         }
 
+        // === Modo Acceso Cliente (solo lectura) ===
+        private bool _accesoSoloLectura;
+        private AccesoClienteFiltro _statusFilterCliente = AccesoClienteFiltro.Todas;
+
+        /// <summary>
+        /// Cuando es true, la vista entra en modo solo lectura (proveniente de AccesoClientePage).
+        /// Las acciones mutadoras del VM se cancelan silenciosamente.
+        /// </summary>
+        public bool AccesoSoloLectura
+        {
+            get => _accesoSoloLectura;
+            private set => SetProperty(ref _accesoSoloLectura, value);
+        }
+
+        /// <summary>Filtro de estatus aplicado en memoria cuando el modo Acceso Cliente está activo.</summary>
+        public AccesoClienteFiltro StatusFilterCliente
+        {
+            get => _statusFilterCliente;
+            private set => SetProperty(ref _statusFilterCliente, value);
+        }
+
         public ObservableCollection<OperacionDto> Operaciones
         {
             get => _operaciones;
@@ -434,6 +455,36 @@ namespace Advance_Control.ViewModels
         // ==================== Carga ====================
 
         /// <summary>
+        /// Aplica el contexto de Acceso Cliente (filtra por idCliente y por estatus)
+        /// y entra en modo solo lectura. Sustituye al InitializeAsync/LoadOperacionesAsync por defecto.
+        /// </summary>
+        public async Task ApplyAccesoClienteContextAsync(AccesoClienteContext ctx, CancellationToken cancellationToken = default)
+        {
+            if (ctx == null) return;
+
+            // Inicializa catálogos básicos (áreas, etc.) sin recargar la lista de operaciones todavía.
+            await InitializeAsync(cancellationToken);
+
+            // Limpiar filtros previos para evitar que ensucien la consulta.
+            IdTipoFilter = 0;
+            IdEquipoFilter = 0;
+            IdAtiendeFilter = 0;
+            NotaFilter = null;
+            FechaInicialFilter = null;
+            FechaFinalFilter = null;
+            SelectedAreaFilter = null;
+            SelectedEquipoText = null;
+
+            IdClienteFilter = ctx.IdCliente;
+            SelectedClienteText = ctx.NombreCliente;
+            StatusFilterCliente = ctx.Filtro;
+            AccesoSoloLectura = ctx.BypassAcceso;
+
+            CurrentPage = 1;
+            await LoadOperacionesAsync(null, cancellationToken);
+        }
+
+        /// <summary>
         /// Carga las operaciones desde el servicio con los filtros aplicados
         /// </summary>
         public async Task LoadOperacionesAsync(Func<List<OperacionDto>, Task>? onBeforeCommit = null, CancellationToken cancellationToken = default, bool resetPage = false)
@@ -463,22 +514,36 @@ namespace Advance_Control.ViewModels
                 List<OperacionDto> filtrados;
                 long total;
 
-                if (SelectedAreaFilter != null)
+                if (AccesoSoloLectura || SelectedAreaFilter != null)
                 {
-                    // El filtro por área es client-side: tenemos que traer TODO el conjunto filtrado
-                    // por la API, aplicar el filtro de área en memoria y luego paginar también en memoria.
+                    // Modo cliente o filtro de área: traer todo y paginar/filtrar en memoria.
                     var todas = await _operacionService.GetOperacionesAsync(query, cancellationToken);
-                    var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
-                    var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
-                    var todasFiltradas = todas
-                        .Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador))
-                        .ToList();
 
-                    total = todasFiltradas.Count;
+                    if (SelectedAreaFilter != null)
+                    {
+                        var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
+                        var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                        todas = todas
+                            .Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador))
+                            .ToList();
+                    }
+
+                    if (AccesoSoloLectura)
+                    {
+                        todas = StatusFilterCliente switch
+                        {
+                            AccesoClienteFiltro.Facturadas   => todas.Where(o => o.IsFinalized).ToList(),
+                            AccesoClienteFiltro.Finalizadas  => todas.Where(o => o.TFinalizado).ToList(),
+                            AccesoClienteFiltro.SinFinalizar => todas.Where(o => !o.TFinalizado).ToList(),
+                            _ => todas,
+                        };
+                    }
+
+                    total = todas.Count;
                     var totalPagesLocal = PageSize <= 0 ? 1 : (int)Math.Max(1, Math.Ceiling(total / (double)PageSize));
                     if (CurrentPage > totalPagesLocal) CurrentPage = totalPagesLocal;
                     var skipLocal = Math.Max(0, (CurrentPage - 1) * PageSize);
-                    filtrados = todasFiltradas.Skip(skipLocal).Take(PageSize).ToList();
+                    filtrados = todas.Skip(skipLocal).Take(PageSize).ToList();
                 }
                 else
                 {
