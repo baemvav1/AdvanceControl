@@ -29,6 +29,15 @@
                 FontWeight="Bold"
                 Text="Ubicaciones" />
 
+            <!--  Diagnóstico visible (no depende del logger ni del notificador)  -->
+            <InfoBar
+                x:Name="DiagInfoBar"
+                IsClosable="True"
+                IsOpen="False"
+                Severity="Informational"
+                Message=""
+                Title="Estado del mapa" />
+
             <!--  Map Search Bar  -->
             <Grid
                 Padding="12"

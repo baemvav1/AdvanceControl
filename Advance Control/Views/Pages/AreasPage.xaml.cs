@@ -126,14 +126,45 @@ namespace Advance_Control.Views.Pages
                 }
 
                 await _loggingService.LogInformationAsync("Initializing CoreWebView2 and message handler", "AreasPage", "EnsureWebView2InitializedAsync");
-                
+
+                if (MapWebView == null)
+                {
+                    await _loggingService.LogWarningAsync("MapWebView aún no está disponible en el árbol visual", "AreasPage", "EnsureWebView2InitializedAsync");
+                    return;
+                }
+
                 await MapWebView.EnsureCoreWebView2Async();
-                MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+
+                if (_isDisposed)
+                {
+                    await _loggingService.LogWarningAsync("La página se descargó durante la inicialización de WebView2", "AreasPage", "EnsureWebView2InitializedAsync");
+                    return;
+                }
+
+                var coreWebView2 = MapWebView.CoreWebView2;
+                if (coreWebView2 == null)
+                {
+                    await _loggingService.LogErrorAsync(
+                        "CoreWebView2 es null tras EnsureCoreWebView2Async. Verifica que el runtime de Microsoft Edge WebView2 (Evergreen) esté instalado en este equipo.",
+                        new InvalidOperationException("CoreWebView2 no se inicializó correctamente"),
+                        "AreasPage",
+                        "EnsureWebView2InitializedAsync");
+                    return;
+                }
+
+                coreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+
+                // Habilitar DevTools y menú contextual para diagnóstico (clic derecho → Inspeccionar)
+                coreWebView2.Settings.AreDevToolsEnabled = true;
+                coreWebView2.Settings.AreDefaultContextMenusEnabled = true;
+
+                // Capturar errores JS y de Google Maps Auth y reenviarlos al log .NET
+                await coreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(WebView2DiagnosticsScript.JS);
 
                 // Virtual host para servir GeoJSON localmente sin peticiones de red
                 var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
                 if (Directory.Exists(geoFolder))
-                    MapWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                    coreWebView2.SetVirtualHostNameToFolderMapping(
                         "geo-assets", geoFolder,
                         Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
 
@@ -170,25 +201,61 @@ namespace Advance_Control.Views.Pages
 
             try
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Inicializando WebView2…");
                 await _loggingService.LogInformationAsync("Navegando a página de Áreas", "AreasPage", "OnNavigatedTo");
 
                 await EnsureWebView2InitializedAsync();
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, $"WebView2 listo. CoreWebView2 = {(MapWebView?.CoreWebView2 != null ? "OK" : "NULL")}");
 
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Cargando configuración de Google Maps desde la API…");
                 await ViewModel.InitializeAsync();
+
+                var hasCfg = ViewModel.MapsConfig != null;
+                var keyPreview = hasCfg && !string.IsNullOrEmpty(ViewModel.MapsConfig!.ApiKey)
+                    ? ViewModel.MapsConfig.ApiKey.Substring(0, Math.Min(8, ViewModel.MapsConfig.ApiKey.Length)) + "…"
+                    : "(vacía)";
+                ShowDiag(
+                    hasCfg && !string.IsNullOrWhiteSpace(ViewModel.MapsConfig!.ApiKey)
+                        ? Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational
+                        : Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
+                    $"MapsConfig: {(hasCfg ? "recibida" : "NULL (API no respondió o devolvió 404)")}. ApiKey={keyPreview}. Centro={ViewModel.MapsConfig?.DefaultCenter ?? "?"}");
 
                 await LoadMapAsync();
             }
             catch (Exception ex)
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, $"Excepción en OnNavigatedTo: {ex.GetType().Name}: {ex.Message}");
                 await _loggingService.LogErrorAsync("Error al navegar a Áreas", ex, "AreasPage", "OnNavigatedTo");
             }
+        }
+
+        /// <summary>
+        /// Muestra un mensaje de diagnóstico visible en la página, sin depender del logger ni del notificador.
+        /// </summary>
+        private void ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity severity, string message)
+        {
+            try
+            {
+                if (DiagInfoBar == null) return;
+                void Apply()
+                {
+                    DiagInfoBar.Severity = severity;
+                    DiagInfoBar.Message = message;
+                    DiagInfoBar.IsOpen = true;
+                }
+                if (this.DispatcherQueue.HasThreadAccess) Apply();
+                else this.DispatcherQueue.TryEnqueue(Apply);
+            }
+            catch { /* nunca debe romper el flujo del mapa */ }
         }
 
         private async void CoreWebView2_WebMessageReceived(Microsoft.Web.WebView2.Core.CoreWebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs args)
         {
             try
             {
-                var message = args.WebMessageAsJson.ToString();
+                // Soportar mensajes posteados como string (JSON.stringify) o como objeto
+                var rawString = args.TryGetWebMessageAsString();
+                var message = !string.IsNullOrEmpty(rawString) ? rawString : args.WebMessageAsJson.ToString();
                 await _loggingService.LogInformationAsync($"Mensaje recibido de WebView2: {message}", "AreasPage", "CoreWebView2_WebMessageReceived");
 
                 var jsonDoc = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(message);
@@ -202,11 +269,17 @@ namespace Advance_Control.Views.Pages
                         var debugMsg = jsonDoc.TryGetValue("message", out var dbgEl) ? dbgEl.GetString() : "unknown";
                         await _loggingService.LogInformationAsync($"[JS DEBUG] {debugMsg}", "AreasPage", "CoreWebView2_WebMessageReceived");
                     }
-                    else if (messageType == "jsError")
+                    else if (messageType == "jsError" || messageType == "jsConsoleError" ||
+                             messageType == "jsUnhandledRejection" || messageType == "gmAuthFailure")
                     {
                         var errorMsg = jsonDoc.TryGetValue("message", out var errEl) ? errEl.GetString() : "unknown";
                         var errorStack = jsonDoc.TryGetValue("stack", out var stackEl) ? stackEl.GetString() : "";
-                        await _loggingService.LogErrorAsync($"[JS ERROR] {errorMsg}\nStack: {errorStack}", null!, "AreasPage", "CoreWebView2_WebMessageReceived");
+                        var errorSource = jsonDoc.TryGetValue("source", out var srcEl) ? srcEl.GetString() : "";
+                        var fullMsg = $"[{messageType}] {errorMsg}" +
+                                      (string.IsNullOrEmpty(errorSource) ? "" : $" @ {errorSource}") +
+                                      (string.IsNullOrEmpty(errorStack) ? "" : $"\nStack: {errorStack}");
+                        ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, $"[{messageType}] {errorMsg}");
+                        await _loggingService.LogErrorAsync(fullMsg, new System.InvalidOperationException(messageType ?? "jsError"), "AreasPage", "CoreWebView2_WebMessageReceived");
                     }
                     else if (messageType == "shapeDrawn" || messageType == "shapeEdited")
                     {
@@ -296,16 +369,35 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
+                // CoreWebView2 listo siempre, incluso si vamos a mostrar mensaje de diagnóstico
+                await EnsureWebView2InitializedAsync();
+                if (_isDisposed || MapWebView?.CoreWebView2 == null)
+                {
+                    await _loggingService.LogWarningAsync("No se puede cargar el mapa: CoreWebView2 no está inicializado. Verifica que el runtime de Microsoft Edge WebView2 esté instalado.", "AreasPage", "LoadMapAsync");
+                    return;
+                }
+
                 if (ViewModel.MapsConfig == null)
                 {
-                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible", "AreasPage", "LoadMapAsync");
+                    ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, "No se pudo cargar la configuración del mapa. Verifica que /api/GoogleMapsConfig responda.");
+                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible (endpoint /api/GoogleMapsConfig devolvió null o 404)", "AreasPage", "LoadMapAsync");
+                    MapWebView.NavigateToString(WebView2DiagnosticHtml.Build(
+                        "No se pudo cargar la configuración del mapa",
+                        "El endpoint <code>/api/GoogleMapsConfig</code> no devolvió configuración. Verifica que la API esté en línea y que <code>GoogleMaps:ApiKey</code> esté definida en <code>appsettings.json</code> de la API."));
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(ViewModel.MapsConfig.ApiKey))
+                {
+                    ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, "ApiKey de Google Maps vacía en la configuración recibida del API.");
+                    await _loggingService.LogWarningAsync("ApiKey de Google Maps vacía", "AreasPage", "LoadMapAsync");
+                    MapWebView.NavigateToString(WebView2DiagnosticHtml.Build(
+                        "Clave de Google Maps no configurada",
+                        "La API devolvió configuración pero <code>ApiKey</code> está vacía. Define <code>GoogleMaps:ApiKey</code> en <code>appsettings.json</code> de la API y reinicia el servicio."));
                     return;
                 }
 
                 await _loggingService.LogInformationAsync($"Cargando mapa. ApiKey={ViewModel.MapsConfig.ApiKey?.Substring(0, Math.Min(10, ViewModel.MapsConfig.ApiKey?.Length ?? 0))}..., Center={ViewModel.MapsConfig.DefaultCenter}, Zoom={ViewModel.MapsConfig.DefaultZoom}", "AreasPage", "LoadMapAsync");
-
-                // Asegurar que CoreWebView2 esté inicializado antes de usar NavigateToString
-                await MapWebView.EnsureCoreWebView2Async();
                 await _loggingService.LogInformationAsync("CoreWebView2 listo", "AreasPage", "LoadMapAsync");
 
                 // Parsear el centro del mapa
@@ -469,9 +561,21 @@ namespace Advance_Control.Views.Pages
     
     <script>
         window._gmapsLoadError = false;
+        window.__acMapsLoaded = false;
+        setTimeout(function(){{
+            if (!window.__acMapsLoaded && window.chrome && window.chrome.webview) {{
+                try {{
+                    window.chrome.webview.postMessage({{
+                        type: 'jsError',
+                        message: 'Timeout: el script de Google Maps no cargó en 8 segundos. Revisa internet/firewall/restricciones de la API key.'
+                    }});
+                }} catch(e) {{}}
+            }}
+        }}, 8000);
     </script>
     <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=drawing,geometry,places'
-            onerror='window._gmapsLoadError=true;'></script>
+            onload='window.__acMapsLoaded = true; try {{ window.chrome.webview.postMessage({{type:""debug"", message:""Google Maps script cargado OK""}}); }} catch(e) {{}}'
+            onerror='window._gmapsLoadError=true; try {{ window.chrome.webview.postMessage({{type:""jsError"", message:""Falló la descarga del script de Google Maps (maps.googleapis.com).""}}); }} catch(e) {{}}'></script>
     <script>
         // Capturar errores globales de JavaScript
         window.onerror = function(message, source, lineno, colno, error) {{

@@ -72,7 +72,7 @@
 
             </Grid>
 
-            <ScrollViewer Grid.Row="2">
+            <ScrollViewer Grid.Row="2" VerticalScrollMode="Enabled" HorizontalScrollMode="Enabled" Background="Red">
                 <StackPanel Spacing="12">
                     <TreeView ItemsSource="{x:Bind ViewModel.CapturedTreeItems, Mode=OneWay}">
                         <TreeView.ItemTemplate>

@@ -66,6 +66,7 @@ namespace Advance_Control.Views.Pages
         private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
+        private string? _pendingEstadosGeoJson = null;
 
         public UbicacionesPage()
         {
@@ -148,14 +149,46 @@ namespace Advance_Control.Views.Pages
                 }
 
                 await _loggingService.LogInformationAsync("Initializing CoreWebView2 and message handler", "UbicacionesPage", "EnsureWebView2InitializedAsync");
-                
+
+                if (MapWebView == null)
+                {
+                    await _loggingService.LogWarningAsync("MapWebView aún no está disponible en el árbol visual", "UbicacionesPage", "EnsureWebView2InitializedAsync");
+                    return;
+                }
+
                 await MapWebView.EnsureCoreWebView2Async();
-                MapWebView.CoreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+
+                // Tras el await, la página puede haberse descargado o el runtime de WebView2 puede no estar instalado
+                if (_isDisposed)
+                {
+                    await _loggingService.LogWarningAsync("La página se descargó durante la inicialización de WebView2", "UbicacionesPage", "EnsureWebView2InitializedAsync");
+                    return;
+                }
+
+                var coreWebView2 = MapWebView.CoreWebView2;
+                if (coreWebView2 == null)
+                {
+                    await _loggingService.LogErrorAsync(
+                        "CoreWebView2 es null tras EnsureCoreWebView2Async. Verifica que el runtime de Microsoft Edge WebView2 (Evergreen) esté instalado en este equipo.",
+                        new InvalidOperationException("CoreWebView2 no se inicializó correctamente"),
+                        "UbicacionesPage",
+                        "EnsureWebView2InitializedAsync");
+                    return;
+                }
+
+                coreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
+
+                // Habilitar DevTools y menú contextual para diagnóstico (clic derecho → Inspeccionar)
+                coreWebView2.Settings.AreDevToolsEnabled = true;
+                coreWebView2.Settings.AreDefaultContextMenusEnabled = true;
+
+                // Capturar errores JS y de Google Maps Auth y reenviarlos al log .NET
+                await coreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(WebView2DiagnosticsScript.JS);
 
                 // Virtual host para servir GeoJSON localmente sin peticiones de red
                 var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
                 if (Directory.Exists(geoFolder))
-                    MapWebView.CoreWebView2.SetVirtualHostNameToFolderMapping(
+                    coreWebView2.SetVirtualHostNameToFolderMapping(
                         "geo-assets", geoFolder,
                         Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
                 
@@ -201,6 +234,21 @@ namespace Advance_Control.Views.Pages
                 if (jsonDoc != null && jsonDoc.TryGetValue("type", out var typeElement))
                 {
                     var messageType = typeElement.GetString();
+
+                    // Diagnóstico: errores JS / fallos de autenticación de Google Maps inyectados por WebView2DiagnosticsScript
+                    if (messageType == "jsError" || messageType == "jsConsoleError" ||
+                        messageType == "jsUnhandledRejection" || messageType == "gmAuthFailure")
+                    {
+                        var jsMsg = jsonDoc.TryGetValue("message", out var mEl) ? mEl.GetString() : "";
+                        var jsStack = jsonDoc.TryGetValue("stack", out var sEl) ? sEl.GetString() : "";
+                        var jsSource = jsonDoc.TryGetValue("source", out var srcEl) ? srcEl.GetString() : "";
+                        var fullMsg = $"[{messageType}] {jsMsg}" +
+                                      (string.IsNullOrEmpty(jsSource) ? "" : $" @ {jsSource}") +
+                                      (string.IsNullOrEmpty(jsStack) ? "" : $"\nStack: {jsStack}");
+                        ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, $"[{messageType}] {jsMsg}");
+                        await _loggingService.LogErrorAsync(fullMsg, new System.InvalidOperationException(messageType ?? "jsError"), "UbicacionesPage", "CoreWebView2_WebMessageReceived");
+                        return;
+                    }
 
                     if (messageType == "markerMoved" || messageType == "placeSelected")
                     {
@@ -340,13 +388,26 @@ namespace Advance_Control.Views.Pages
 
             try
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Inicializando WebView2…");
                 await _loggingService.LogInformationAsync("Navegando a página de Ubicaciones", "UbicacionesPage", "OnNavigatedTo");
 
                 // Ensure CoreWebView2 is initialized and message handler is registered BEFORE loading any map
                 await EnsureWebView2InitializedAsync();
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, $"WebView2 listo. CoreWebView2 = {(MapWebView?.CoreWebView2 != null ? "OK" : "NULL")}");
 
                 // Inicializar el mapa y cargar datos
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Cargando configuración de Google Maps desde la API…");
                 await ViewModel.InitializeAsync();
+
+                var hasCfg = ViewModel.MapsConfig != null;
+                var keyPreview = hasCfg && !string.IsNullOrEmpty(ViewModel.MapsConfig!.ApiKey)
+                    ? ViewModel.MapsConfig.ApiKey.Substring(0, Math.Min(8, ViewModel.MapsConfig.ApiKey.Length)) + "…"
+                    : "(vacía)";
+                ShowDiag(
+                    hasCfg && !string.IsNullOrWhiteSpace(ViewModel.MapsConfig!.ApiKey)
+                        ? Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational
+                        : Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
+                    $"MapsConfig: {(hasCfg ? "recibida" : "NULL (API no respondió o devolvió 404)")}. ApiKey={keyPreview}. Centro={ViewModel.MapsConfig?.DefaultCenter ?? "?"}");
 
                 // Cargar el HTML del mapa en el WebView2
                 await LoadMapAsync();
@@ -360,8 +421,29 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, $"Excepción en OnNavigatedTo: {ex.GetType().Name}: {ex.Message}");
                 await _loggingService.LogErrorAsync("Error al navegar a Ubicaciones", ex, "UbicacionesPage", "OnNavigatedTo");
             }
+        }
+
+        /// <summary>
+        /// Muestra un mensaje de diagnóstico visible en la página, sin depender del logger ni del notificador.
+        /// </summary>
+        private void ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity severity, string message)
+        {
+            try
+            {
+                if (DiagInfoBar == null) return;
+                void Apply()
+                {
+                    DiagInfoBar.Severity = severity;
+                    DiagInfoBar.Message = message;
+                    DiagInfoBar.IsOpen = true;
+                }
+                if (this.DispatcherQueue.HasThreadAccess) Apply();
+                else this.DispatcherQueue.TryEnqueue(Apply);
+            }
+            catch { /* nunca debe romper el flujo del mapa */ }
         }
 
         /// <summary>
@@ -371,19 +453,45 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "LoadMapAsync: entrando…");
+
+                // Asegurar CoreWebView2 listo siempre — incluso si vamos a mostrar un mensaje de diagnóstico
+                await EnsureWebView2InitializedAsync();
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational,
+                    $"LoadMapAsync: tras EnsureWebView2. disposed={_isDisposed}, MapWebView={(MapWebView==null?"NULL":"OK")}, CoreWebView2={(MapWebView?.CoreWebView2==null?"NULL":"OK")}");
+
+                if (_isDisposed || MapWebView?.CoreWebView2 == null)
+                {
+                    ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
+                        $"LoadMapAsync abortado: disposed={_isDisposed}, CoreWebView2 null={(MapWebView?.CoreWebView2==null)}");
+                    await _loggingService.LogWarningAsync("No se puede cargar el mapa: CoreWebView2 no está inicializado.", "UbicacionesPage", "LoadMapAsync");
+                    return;
+                }
+
                 if (ViewModel.MapsConfig == null)
                 {
-                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible", "UbicacionesPage", "LoadMapAsync");
+                    ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, "No se pudo cargar la configuración del mapa. Verifica que /api/GoogleMapsConfig responda.");
+                    await _loggingService.LogWarningAsync("No hay configuración de Google Maps disponible (endpoint /api/GoogleMapsConfig devolvió null o 404)", "UbicacionesPage", "LoadMapAsync");
+                    MapWebView.NavigateToString(WebView2DiagnosticHtml.Build(
+                        "No se pudo cargar la configuración del mapa",
+                        "El endpoint <code>/api/GoogleMapsConfig</code> no devolvió configuración. Verifica que la API esté en línea y que <code>GoogleMaps:ApiKey</code> esté definida en <code>appsettings.json</code> de la API."));
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(ViewModel.MapsConfig.ApiKey))
+                {
+                    ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, "ApiKey de Google Maps vacía en la configuración recibida del API.");
+                    await _loggingService.LogWarningAsync("ApiKey de Google Maps vacía", "UbicacionesPage", "LoadMapAsync");
+                    MapWebView.NavigateToString(WebView2DiagnosticHtml.Build(
+                        "Clave de Google Maps no configurada",
+                        "La API devolvió una configuración pero <code>ApiKey</code> está vacía. Define <code>GoogleMaps:ApiKey</code> en <code>appsettings.json</code> de la API y reinicia el servicio."));
                     return;
                 }
 
                 await _loggingService.LogInformationAsync("Cargando mapa de Google Maps", "UbicacionesPage", "LoadMapAsync");
 
-                // Ensure CoreWebView2 is initialized before using NavigateToString
-                await MapWebView.EnsureCoreWebView2Async();
-
                 // Parsear el centro del mapa
-                var centerParts = ViewModel.MapsConfig.DefaultCenter.Split(',');
+                var centerParts = (ViewModel.MapsConfig.DefaultCenter ?? string.Empty).Split(',');
                 var lat = centerParts.Length > 0 ? centerParts[0].Trim() : DEFAULT_LATITUDE;
                 var lng = centerParts.Length > 1 ? centerParts[1].Trim() : DEFAULT_LONGITUDE;
 
@@ -391,31 +499,45 @@ namespace Advance_Control.Views.Pages
                 var ubicacionesJson = JsonSerializer.Serialize(ViewModel.Ubicaciones);
 
                 // Leer GeoJSON de estados embebido en el cliente
-                var estadosGeoJson = "null";
+                // NOTA: NO embebemos el GeoJSON en el HTML porque NavigateToString tiene un límite
+                // de aproximadamente 2 MB. Lo cargaremos por separado con ExecuteScriptAsync una vez
+                // que la página esté lista.
+                string? estadosGeoJsonContent = null;
                 try
                 {
                     var geoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "geo", "estados.json");
                     if (File.Exists(geoPath))
-                        estadosGeoJson = File.ReadAllText(geoPath);
+                        estadosGeoJsonContent = File.ReadAllText(geoPath);
                 }
                 catch { /* Si no existe el archivo, la capa simplemente no estará disponible */ }
 
-                // Crear el HTML con Google Maps
+                // Crear el HTML con Google Maps (sin el GeoJSON embebido)
                 var html = GenerateMapHtml(
                     ViewModel.MapsConfig.ApiKey,
                     lat,
                     lng,
                     ViewModel.MapsConfig.DefaultZoom,
                     ubicacionesJson,
-                    estadosGeoJson);
+                    "null");
+
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational,
+                    $"Cargando HTML del mapa ({html.Length:N0} caracteres)…");
 
                 // Cargar el HTML en el WebView2
                 MapWebView.NavigateToString(html);
+
+                // Inyectar el GeoJSON tras la carga (si lo tenemos) para evitar el límite de NavigateToString
+                if (!string.IsNullOrEmpty(estadosGeoJsonContent))
+                {
+                    _pendingEstadosGeoJson = estadosGeoJsonContent;
+                }
 
                 await _loggingService.LogInformationAsync("Mapa cargado exitosamente", "UbicacionesPage", "LoadMapAsync");
             }
             catch (Exception ex)
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
+                    $"Excepción en LoadMapAsync: {ex.GetType().Name}: {ex.Message}");
                 await _loggingService.LogErrorAsync("Error al cargar el mapa", ex, "UbicacionesPage", "LoadMapAsync");
             }
         }
@@ -503,7 +625,21 @@ namespace Advance_Control.Views.Pages
 <body>
     <div id='map'></div>
     
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places,marker'></script>
+    <script>
+        // Detector temprano: si Google Maps no carga en 8s, reportar al host
+        window.__acMapsLoaded = false;
+        setTimeout(function(){{
+            if (!window.__acMapsLoaded && window.chrome && window.chrome.webview) {{
+                window.chrome.webview.postMessage(JSON.stringify({{
+                    type: 'jsError',
+                    message: 'Timeout: el script de Google Maps no cargó en 8 segundos. Posibles causas: sin internet en WebView2, firewall/proxy bloqueando maps.googleapis.com, o restricción de referer en la API key.'
+                }}));
+            }}
+        }}, 8000);
+    </script>
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places,marker'
+            onload=""window.__acMapsLoaded = true; if (window.chrome && window.chrome.webview) {{ window.chrome.webview.postMessage(JSON.stringify({{type:'debug', message:'Google Maps script cargado OK'}})); }}""
+            onerror=""if (window.chrome && window.chrome.webview) {{ window.chrome.webview.postMessage(JSON.stringify({{type:'jsError', message:'Falló la descarga del script de Google Maps (maps.googleapis.com). Verifica conexión a internet, firewall corporativo o restricciones de la API key.'}})); }}""></script>
     <script>
         // Pin colors for different marker types
         const PIN_COLORS = {{
@@ -518,7 +654,7 @@ namespace Advance_Control.Views.Pages
         let markers = [];
 
         // --- Capa geográfica: Estados ---
-        const ESTADOS_DATA = {estadosGeoJson};
+        let ESTADOS_DATA = {estadosGeoJson};
         let estadosLayer = null;
         let estadosVisible = false;
 
@@ -1077,9 +1213,35 @@ namespace Advance_Control.Views.Pages
             if (args.IsSuccess)
             {
                 await _loggingService.LogInformationAsync("WebView2 navegación completada exitosamente", "UbicacionesPage", "MapWebView_NavigationCompleted");
+
+                // Si tenemos GeoJSON pendiente que era demasiado grande para embeber en NavigateToString,
+                // lo inyectamos ahora vía ExecuteScriptAsync (sin límite práctico de tamaño).
+                if (!string.IsNullOrEmpty(_pendingEstadosGeoJson) && sender?.CoreWebView2 != null)
+                {
+                    try
+                    {
+                        // _pendingEstadosGeoJson YA es JSON válido, así que lo asignamos directo a la variable global.
+                        var script = "window.ESTADOS_DATA = " + _pendingEstadosGeoJson + ";";
+                        await sender.CoreWebView2.ExecuteScriptAsync(script);
+                        ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success,
+                            $"Mapa cargado. GeoJSON de estados inyectado ({_pendingEstadosGeoJson.Length:N0} caracteres).");
+                        _pendingEstadosGeoJson = null;
+                    }
+                    catch (Exception exGeo)
+                    {
+                        ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning,
+                            $"Mapa cargado, pero falló inyectar GeoJSON: {exGeo.Message}");
+                    }
+                }
+                else
+                {
+                    ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Success, "Mapa cargado.");
+                }
             }
             else
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
+                    $"WebView2 navegación falló. Status: {args.WebErrorStatus}");
                 await _loggingService.LogErrorAsync($"WebView2 navegación falló. Status: {args.WebErrorStatus}", null, "UbicacionesPage", "MapWebView_NavigationCompleted");
             }
         }
