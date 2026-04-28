@@ -573,7 +573,8 @@ namespace Advance_Control.Views.Pages
             }}
         }}, 8000);
     </script>
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=drawing,geometry,places'
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=drawing,geometry,places&callback=initMap'
+            async
             onload='window.__acMapsLoaded = true; try {{ window.chrome.webview.postMessage({{type:""debug"", message:""Google Maps script cargado OK""}}); }} catch(e) {{}}'
             onerror='window._gmapsLoadError=true; try {{ window.chrome.webview.postMessage({{type:""jsError"", message:""Falló la descarga del script de Google Maps (maps.googleapis.com).""}}); }} catch(e) {{}}'></script>
     <script>
@@ -1380,8 +1381,8 @@ namespace Advance_Control.Views.Pages
         window.highlightArea = highlightArea;
         window.drawSelectedArea = drawSelectedArea;
 
-        // Inicializar el mapa cuando la página esté completamente cargada
-        window.onload = initMap;
+        // initMap es llamado por Google Maps vía callback= en la URL del script (async)
+        window.onload = undefined; // limpiar en caso de que algún polyfill lo haya definido
     </script>
 </body>
 </html>";

@@ -250,6 +250,13 @@ namespace Advance_Control.Views.Pages
                         return;
                     }
 
+                    if (messageType == "debug")
+                    {
+                        var dbgMsg = jsonDoc.TryGetValue("message", out var dbgEl) ? dbgEl.GetString() : "";
+                        ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, $"[debug] {dbgMsg}");
+                        return;
+                    }
+
                     if (messageType == "markerMoved" || messageType == "placeSelected")
                     {
                         // Extract coordinates
@@ -637,7 +644,8 @@ namespace Advance_Control.Views.Pages
             }}
         }}, 8000);
     </script>
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places,marker'
+    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places,marker&callback=initMap'
+            async
             onload=""window.__acMapsLoaded = true; if (window.chrome && window.chrome.webview) {{ window.chrome.webview.postMessage(JSON.stringify({{type:'debug', message:'Google Maps script cargado OK'}})); }}""
             onerror=""if (window.chrome && window.chrome.webview) {{ window.chrome.webview.postMessage(JSON.stringify({{type:'jsError', message:'Falló la descarga del script de Google Maps (maps.googleapis.com). Verifica conexión a internet, firewall corporativo o restricciones de la API key.'}})); }}""></script>
     <script>
@@ -777,7 +785,9 @@ namespace Advance_Control.Views.Pages
         }}
 
         function initMap() {{
-            // Crear el mapa con Map ID para AdvancedMarkerElement
+            if (window.chrome && window.chrome.webview) {{
+                window.chrome.webview.postMessage(JSON.stringify({{type:'debug', message:'initMap() invocado por Google Maps callback'}}));
+            }}
             map = new google.maps.Map(document.getElementById('map'), {{
                 center: {{ lat: {lat}, lng: {lng} }},
                 zoom: {zoom},
@@ -1197,8 +1207,7 @@ namespace Advance_Control.Views.Pages
             showUbicacionInfo(ubicacion, position);
         }}
 
-        // Inicializar el mapa cuando cargue la página
-        window.onload = initMap;
+        // initMap es llamado por Google Maps vía callback= en la URL del script (async)
     </script>
 </body>
 </html>";
