@@ -88,8 +88,7 @@
                 <!--  WebView2 for Google Maps  -->
                 <WebView2
                     x:Name="MapWebView"
-                    NavigationCompleted="MapWebView_NavigationCompleted"
-                    Visibility="{x:Bind ViewModel.IsMapInitialized, Mode=OneWay, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    NavigationCompleted="MapWebView_NavigationCompleted" />
             </Grid>
 
             <!--  Right Column: Forms and Lists  -->

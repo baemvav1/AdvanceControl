@@ -21,6 +21,8 @@ using Advance_Control.Utilities;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Models;
 using System.Globalization;
+using System.Diagnostics;
+using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -62,11 +64,14 @@ namespace Advance_Control.Views.Pages
 
         
         // WebView2 initialization state
-        // Volatile ensures visibility across threads
         private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
         private string? _pendingEstadosGeoJson = null;
+        // Guarda el parámetro de navegación para procesarlo en Loaded
+        private object? _navigationParameter = null;
+        // Evita doble inicialización si Loaded se dispara más de una vez
+        private bool _pageInitialized = false;
 
         public UbicacionesPage()
         {
@@ -185,12 +190,14 @@ namespace Advance_Control.Views.Pages
                 // Capturar errores JS y de Google Maps Auth y reenviarlos al log .NET
                 await coreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(WebView2DiagnosticsScript.JS);
 
-                // Virtual host para servir GeoJSON localmente sin peticiones de red
-                var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
-                if (Directory.Exists(geoFolder))
-                    coreWebView2.SetVirtualHostNameToFolderMapping(
-                        "geo-assets", geoFolder,
-                        Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+                // Virtual host para servir el HTML del mapa — da origen https:// a Google Maps
+                var mapCacheDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Advance Control", "map_cache");
+                Directory.CreateDirectory(mapCacheDir);
+                coreWebView2.SetVirtualHostNameToFolderMapping(
+                    "ac-maps-local", mapCacheDir,
+                    Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
                 
                 _isWebView2Initialized = true;
                 
@@ -210,14 +217,48 @@ namespace Advance_Control.Views.Pages
 
         private async void UbicacionesView_Loaded(object sender, RoutedEventArgs e)
         {
+            // Evitar doble inicialización (Loaded puede dispararse más de una vez)
+            if (_pageInitialized || _isDisposed) return;
+            _pageInitialized = true;
+
             try
             {
-                // Ensure WebView2 is initialized when page loads
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Inicializando WebView2 (Loaded)…");
+                await _loggingService.LogInformationAsync("Loaded event: inicializando WebView2", "UbicacionesPage", "UbicacionesView_Loaded");
+
+                // Inicializar WebView2 AQUÍ (control ya está en el árbol visual)
                 await EnsureWebView2InitializedAsync();
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational,
+                    $"WebView2 listo. CoreWebView2={(MapWebView?.CoreWebView2 != null ? "OK" : "NULL")}");
+
+                // Cargar datos del ViewModel
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Cargando configuración de Google Maps desde la API…");
+                await ViewModel.InitializeAsync();
+
+                var hasCfg = ViewModel.MapsConfig != null;
+                var keyPreview = hasCfg && !string.IsNullOrEmpty(ViewModel.MapsConfig!.ApiKey)
+                    ? ViewModel.MapsConfig.ApiKey.Substring(0, Math.Min(8, ViewModel.MapsConfig.ApiKey.Length)) + "…"
+                    : "(vacía)";
+                ShowDiag(
+                    hasCfg && !string.IsNullOrWhiteSpace(ViewModel.MapsConfig!.ApiKey)
+                        ? Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational
+                        : Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
+                    $"MapsConfig: {(hasCfg ? "recibida" : "NULL")}. ApiKey={keyPreview}. Centro={ViewModel.MapsConfig?.DefaultCenter ?? "?"}");
+
+                // Cargar el mapa
+                await LoadMapAsync();
+
+                // Procesar parámetro de navegación
+                if (_navigationParameter is int idUbicacion)
+                {
+                    await _loggingService.LogInformationAsync($"Parámetro de nav: IdUbicacion={idUbicacion}", "UbicacionesPage", "UbicacionesView_Loaded");
+                    await SelectAndCenterUbicacionAsync(idUbicacion);
+                }
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al configurar WebView2 en Loaded event", ex, "UbicacionesPage", "UbicacionesView_Loaded");
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, $"Error en Loaded: {ex.GetType().Name}: {ex.Message}");
+                await _loggingService.LogErrorAsync("Error en Loaded event", ex, "UbicacionesPage", "UbicacionesView_Loaded");
             }
         }
 
@@ -382,48 +423,12 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        protected override async void OnNavigatedTo(NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-
-            try
-            {
-                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Inicializando WebView2…");
-                await _loggingService.LogInformationAsync("Navegando a página de Ubicaciones", "UbicacionesPage", "OnNavigatedTo");
-
-                // Ensure CoreWebView2 is initialized and message handler is registered BEFORE loading any map
-                await EnsureWebView2InitializedAsync();
-                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, $"WebView2 listo. CoreWebView2 = {(MapWebView?.CoreWebView2 != null ? "OK" : "NULL")}");
-
-                // Inicializar el mapa y cargar datos
-                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "Cargando configuración de Google Maps desde la API…");
-                await ViewModel.InitializeAsync();
-
-                var hasCfg = ViewModel.MapsConfig != null;
-                var keyPreview = hasCfg && !string.IsNullOrEmpty(ViewModel.MapsConfig!.ApiKey)
-                    ? ViewModel.MapsConfig.ApiKey.Substring(0, Math.Min(8, ViewModel.MapsConfig.ApiKey.Length)) + "…"
-                    : "(vacía)";
-                ShowDiag(
-                    hasCfg && !string.IsNullOrWhiteSpace(ViewModel.MapsConfig!.ApiKey)
-                        ? Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational
-                        : Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
-                    $"MapsConfig: {(hasCfg ? "recibida" : "NULL (API no respondió o devolvió 404)")}. ApiKey={keyPreview}. Centro={ViewModel.MapsConfig?.DefaultCenter ?? "?"}");
-
-                // Cargar el HTML del mapa en el WebView2
-                await LoadMapAsync();
-
-                // Si se pasó un ID de ubicación como parámetro, seleccionarla y centrar el mapa
-                if (e.Parameter is int idUbicacion)
-                {
-                    await _loggingService.LogInformationAsync($"Navegación con parámetro: IdUbicacion = {idUbicacion}", "UbicacionesPage", "OnNavigatedTo");
-                    await SelectAndCenterUbicacionAsync(idUbicacion);
-                }
-            }
-            catch (Exception ex)
-            {
-                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, $"Excepción en OnNavigatedTo: {ex.GetType().Name}: {ex.Message}");
-                await _loggingService.LogErrorAsync("Error al navegar a Ubicaciones", ex, "UbicacionesPage", "OnNavigatedTo");
-            }
+            // Guardar parámetro; toda la init se hace en Loaded donde el WebView2 ya está en el árbol visual
+            _navigationParameter = e.Parameter;
+            _pageInitialized = false; // permitir re-inicialización si se navega de vuelta
         }
 
         /// <summary>
@@ -455,15 +460,11 @@ namespace Advance_Control.Views.Pages
             {
                 ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational, "LoadMapAsync: entrando…");
 
-                // Asegurar CoreWebView2 listo siempre — incluso si vamos a mostrar un mensaje de diagnóstico
-                await EnsureWebView2InitializedAsync();
-                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational,
-                    $"LoadMapAsync: tras EnsureWebView2. disposed={_isDisposed}, MapWebView={(MapWebView==null?"NULL":"OK")}, CoreWebView2={(MapWebView?.CoreWebView2==null?"NULL":"OK")}");
-
-                if (_isDisposed || MapWebView?.CoreWebView2 == null)
+                // WebView2 ya fue inicializado en Loaded — solo verificar estado, no reinicializar
+                if (_isDisposed || !_isWebView2Initialized || MapWebView?.CoreWebView2 == null)
                 {
                     ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
-                        $"LoadMapAsync abortado: disposed={_isDisposed}, CoreWebView2 null={(MapWebView?.CoreWebView2==null)}");
+                        $"WebView2 no listo: disposed={_isDisposed}, initialized={_isWebView2Initialized}, CoreWebView2={MapWebView?.CoreWebView2 != null}");
                     await _loggingService.LogWarningAsync("No se puede cargar el mapa: CoreWebView2 no está inicializado.", "UbicacionesPage", "LoadMapAsync");
                     return;
                 }
@@ -490,47 +491,53 @@ namespace Advance_Control.Views.Pages
 
                 await _loggingService.LogInformationAsync("Cargando mapa de Google Maps", "UbicacionesPage", "LoadMapAsync");
 
+                // ── DIAGNÓSTICO DE RED ────────────────────────────────────────────────────
+                var diagLog = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Advance Control", "maps_diag.txt");
+                try
+                {
+                    using var httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(10) };
+                    var testUrl = "https://maps.googleapis.com/maps/api/geocode/json?latlng=19.4326,-99.1332&key=" + ViewModel.MapsConfig.ApiKey;
+                    var response = await httpClient.GetAsync(testUrl);
+                    var body = await response.Content.ReadAsStringAsync();
+                    var statusCode = (int)response.StatusCode;
+                    var resumen = "HTTP " + statusCode + "\r\n" + body[..Math.Min(500, body.Length)];
+                    await File.WriteAllTextAsync(diagLog, resumen);
+                }
+                catch (Exception diagEx)
+                {
+                    var errorMsg = "EXCEPCION: " + diagEx.GetType().Name + "\r\n" + diagEx.Message;
+                    try { await File.WriteAllTextAsync(diagLog, errorMsg); } catch { }
+                }
+                // ── FIN DIAGNÓSTICO ───────────────────────────────────────────────────────
+
                 // Parsear el centro del mapa
                 var centerParts = (ViewModel.MapsConfig.DefaultCenter ?? string.Empty).Split(',');
                 var lat = centerParts.Length > 0 ? centerParts[0].Trim() : DEFAULT_LATITUDE;
                 var lng = centerParts.Length > 1 ? centerParts[1].Trim() : DEFAULT_LONGITUDE;
 
-                // Serializar las ubicaciones como JSON
                 var ubicacionesJson = JsonSerializer.Serialize(ViewModel.Ubicaciones);
 
-                // Leer GeoJSON de estados embebido en el cliente
-                // NOTA: NO embebemos el GeoJSON en el HTML porque NavigateToString tiene un límite
-                // de aproximadamente 2 MB. Lo cargaremos por separado con ExecuteScriptAsync una vez
-                // que la página esté lista.
-                string? estadosGeoJsonContent = null;
-                try
-                {
-                    var geoPath = Path.Combine(AppContext.BaseDirectory, "Assets", "geo", "estados.json");
-                    if (File.Exists(geoPath))
-                        estadosGeoJsonContent = File.ReadAllText(geoPath);
-                }
-                catch { /* Si no existe el archivo, la capa simplemente no estará disponible */ }
-
-                // Crear el HTML con Google Maps (sin el GeoJSON embebido)
                 var html = GenerateMapHtml(
                     ViewModel.MapsConfig.ApiKey,
-                    lat,
-                    lng,
+                    lat, lng,
                     ViewModel.MapsConfig.DefaultZoom,
-                    ubicacionesJson,
-                    "null");
+                    ubicacionesJson);
+
+                // Escribir el HTML a disco y navegar con origen https:// real.
+                // NavigateToString crea origen null que Google Maps rechaza.
+                var mapCacheDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Advance Control", "map_cache");
+                Directory.CreateDirectory(mapCacheDir);
+                var mapFile = Path.Combine(mapCacheDir, "ubicaciones.html");
+                await System.IO.File.WriteAllTextAsync(mapFile, html, System.Text.Encoding.UTF8);
 
                 ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Informational,
-                    $"Cargando HTML del mapa ({html.Length:N0} caracteres)…");
+                    $"Cargando mapa ({html.Length:N0} chars)…");
 
-                // Cargar el HTML en el WebView2
-                MapWebView.NavigateToString(html);
-
-                // Inyectar el GeoJSON tras la carga (si lo tenemos) para evitar el límite de NavigateToString
-                if (!string.IsNullOrEmpty(estadosGeoJsonContent))
-                {
-                    _pendingEstadosGeoJson = estadosGeoJsonContent;
-                }
+                MapWebView.CoreWebView2.Navigate("https://ac-maps-local/ubicaciones.html");
 
                 await _loggingService.LogInformationAsync("Mapa cargado exitosamente", "UbicacionesPage", "LoadMapAsync");
             }
@@ -561,644 +568,291 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        /// <summary>
-        /// Genera el HTML para el mapa de Google Maps
-        /// </summary>
-        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string ubicacionesJson, string estadosGeoJson = "null")
+        private string GenerateMapHtml(string apiKey, string lat, string lng, int zoom, string ubicacionesJson)
         {
-            return $@"
-<!DOCTYPE html>
+            return $@"<!DOCTYPE html>
 <html>
 <head>
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <title>Google Maps - Ubicaciones</title>
     <style>
-        body, html {{
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-        }}
-        #map {{
-            height: 100%;
-            width: 100%;
-        }}
+        body, html {{ margin:0; padding:0; height:100%; width:100%; overflow:hidden; }}
+        #map {{ height:100%; width:100%; }}
+        #status {{ position:fixed; top:8px; left:50%; transform:translateX(-50%);
+                   background:rgba(0,0,0,.75); color:#fff; padding:6px 14px;
+                   border-radius:4px; font:13px sans-serif; z-index:9999;
+                   max-width:90%; text-align:center; }}
+        #status.ok  {{ background:rgba(0,120,0,.8); }}
+        #status.err {{ background:rgba(180,0,0,.85); }}
         @keyframes marker-drop {{
-            0% {{ transform: translateY(-200px); opacity: 0; }}
-            60% {{ transform: translateY(10px); opacity: 1; }}
-            80% {{ transform: translateY(-5px); }}
-            100% {{ transform: translateY(0); }}
+            0%   {{ transform:translateY(-180px); opacity:0; }}
+            60%  {{ transform:translateY(8px);   opacity:1; }}
+            80%  {{ transform:translateY(-4px); }}
+            100% {{ transform:translateY(0); }}
         }}
         @keyframes marker-bounce {{
-            0%, 100% {{ transform: translateY(0); }}
-            25% {{ transform: translateY(-20px); }}
-            50% {{ transform: translateY(0); }}
-            75% {{ transform: translateY(-10px); }}
+            0%, 100% {{ transform:translateY(0); }}
+            25%       {{ transform:translateY(-18px); }}
+            75%       {{ transform:translateY(-8px); }}
         }}
-        .marker-drop {{ animation: marker-drop 0.5s ease-out; }}
-        .marker-bounce {{ animation: marker-bounce 0.6s ease-in-out infinite; }}
-        .geo-toggle-btn {{
-            background: #fff;
-            border: 2px solid #ccc;
-            border-radius: 4px;
-            color: #444;
-            cursor: pointer;
-            font-family: Roboto, Arial, sans-serif;
-            font-size: 13px;
-            font-weight: 500;
-            height: 32px;
-            padding: 0 10px;
-            margin: 4px 2px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.2);
-            transition: background 0.15s, border-color 0.15s, color 0.15s;
-        }}
-        .geo-toggle-btn:hover {{ background: #f5f5f5; }}
-        .geo-toggle-btn.active {{
-            background: #e8f0fe;
-            border-color: #1a73e8;
-            color: #1a73e8;
-        }}
+        .marker-drop   {{ animation:marker-drop   0.45s ease-out; }}
+        .marker-bounce {{ animation:marker-bounce 0.7s  ease-in-out infinite; }}
     </style>
 </head>
 <body>
     <div id='map'></div>
-    
+    <div id='status'>Cargando Google Maps…</div>
     <script>
-        // Detector temprano: si Google Maps no carga en 8s, reportar al host
-        window.__acMapsLoaded = false;
-        setTimeout(function(){{
-            if (!window.__acMapsLoaded && window.chrome && window.chrome.webview) {{
-                window.chrome.webview.postMessage(JSON.stringify({{
-                    type: 'jsError',
-                    message: 'Timeout: el script de Google Maps no cargó en 8 segundos. Posibles causas: sin internet en WebView2, firewall/proxy bloqueando maps.googleapis.com, o restricción de referer en la API key.'
-                }}));
+        // ─── diagnóstico ─────────────────────────────────────────────────────────
+        var _gmLoaded = false;
+        var _statusEl = document.getElementById('status');
+
+        function setStatus(msg, isErr) {{
+            if (_statusEl) {{
+                _statusEl.textContent = msg;
+                _statusEl.className = isErr ? 'err' : 'ok';
+                setTimeout(() => {{ if (_statusEl) _statusEl.style.display='none'; }}, isErr ? 8000 : 3000);
             }}
-        }}, 8000);
-    </script>
-    <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places,marker'
-            onload=""window.__acMapsLoaded = true; if (window.chrome && window.chrome.webview) {{ window.chrome.webview.postMessage(JSON.stringify({{type:'debug', message:'Google Maps script cargado OK'}})); }}""
-            onerror=""if (window.chrome && window.chrome.webview) {{ window.chrome.webview.postMessage(JSON.stringify({{type:'jsError', message:'Falló la descarga del script de Google Maps (maps.googleapis.com). Verifica conexión a internet, firewall corporativo o restricciones de la API key.'}})); }}""></script>
-    <script>
-        // Pin colors for different marker types
-        const PIN_COLORS = {{
-            search:   {{ background: '#4285F4', border: '#1a73e8', glyph: '#FFFFFF' }},
-            edit:     {{ background: '#EA4335', border: '#d93025', glyph: '#FFFFFF' }},
-            selected: {{ background: '#34A853', border: '#0d652d', glyph: '#FFFFFF' }},
-            default:  {{ background: '#FF6B6B', border: '#CC5555', glyph: '#FFFFFF' }}
+        }}
+
+        function postToHost(obj) {{
+            try {{ if (window.chrome?.webview) window.chrome.webview.postMessage(JSON.stringify(obj)); }} catch(e) {{}}
+        }}
+
+        // Hook oficial de auth failure de Google Maps
+        window.gm_authFailure = function() {{
+            var msg = 'gm_authFailure: API key inválida, billing deshabilitado, o restricción de HTTP Referrer. Verifica Google Cloud Console: (1) Maps JS API habilitada, (2) Billing activo, (3) Restricciones de key incluyen https://ac-maps-local/*.';
+            setStatus(msg, true);
+            postToHost({{ type:'gmAuthFailure', message: msg }});
         }};
 
-        let map;
-        let ubicaciones = {ubicacionesJson};
+        // Timeout de 12s: si initMap no se llamó, reportar
+        setTimeout(function() {{
+            if (!_gmLoaded) {{
+                var gmExists = typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined';
+                var msg = gmExists
+                    ? 'Timeout 12s: google.maps existe pero initMap nunca se llamó. Posible error de Map ID o AdvancedMarkerElement.'
+                    : 'Timeout 12s: google.maps NO existe. El script de Google Maps no se descargó. Verifica: internet, API key válida, billing activo.';
+                setStatus(msg, true);
+                postToHost({{ type:'jsError', message: msg }});
+            }}
+        }}, 12000);
+
+        // ─── estado global ───────────────────────────────────────────────────────
+        const PIN = {{
+            search:   {{ background:'#4285F4', borderColor:'#1a73e8', glyphColor:'#fff' }},
+            edit:     {{ background:'#EA4335', borderColor:'#d93025', glyphColor:'#fff' }},
+            selected: {{ background:'#34A853', borderColor:'#0d652d', glyphColor:'#fff' }},
+            default:  {{ background:'#FF6B6B', borderColor:'#CC5555', glyphColor:'#fff' }}
+        }};
+        const ubicaciones = {ubicacionesJson};
+
+        let map, infoWindow, geocoder;
         let markers = [];
-
-        // --- Capa geográfica: Estados ---
-        let ESTADOS_DATA = {estadosGeoJson};
-        let estadosLayer = null;
-        let estadosVisible = false;
-
-        function toggleEstados() {{
-            if (!ESTADOS_DATA) return;
-            if (!estadosLayer) {{
-                estadosLayer = new google.maps.Data();
-                estadosLayer.addGeoJson(ESTADOS_DATA);
-                estadosLayer.setStyle({{
-                    strokeColor: '#1A73E8',
-                    strokeWeight: 1.5,
-                    strokeOpacity: 0.8,
-                    fillColor: '#1A73E8',
-                    fillOpacity: 0.05
-                }});
-            }}
-            estadosVisible = !estadosVisible;
-            estadosLayer.setMap(estadosVisible ? map : null);
-            const btn = document.getElementById('btn-estados');
-            if (btn) btn.className = 'geo-toggle-btn' + (estadosVisible ? ' active' : '');
-        }}
-
-        // --- Capa geográfica: Municipios (carga bajo demanda desde disco local) ---
-        let municipiosLayer = null;
-        let municipiosVisible = false;
-        let municipiosLoading = false;
-
-        function toggleMunicipios() {{
-            if (municipiosLoading) return;
-            if (!municipiosLayer) {{
-                municipiosLoading = true;
-                const btn = document.getElementById('btn-municipios');
-                if (btn) btn.textContent = '⏳ Cargando...';
-                fetch('https://geo-assets/municipios.json')
-                    .then(r => r.json())
-                    .then(data => {{
-                        municipiosLayer = new google.maps.Data();
-                        municipiosLayer.addGeoJson(data);
-                        municipiosLayer.setStyle({{
-                            strokeColor: '#000000',
-                            strokeWeight: 1,
-                            strokeOpacity: 1.0,
-                            fillColor: '#000000',
-                            fillOpacity: 0.03
-                        }});
-                        municipiosLayer.setMap(map);
-                        municipiosVisible = true;
-                        municipiosLoading = false;
-                        if (btn) {{
-                            btn.textContent = '🗺 Municipios';
-                            btn.className = 'geo-toggle-btn active';
-                        }}
-                    }})
-                    .catch(() => {{
-                        municipiosLoading = false;
-                        const btn = document.getElementById('btn-municipios');
-                        if (btn) btn.textContent = '🗺 Municipios';
-                    }});
-            }} else {{
-                municipiosVisible = !municipiosVisible;
-                municipiosLayer.setMap(municipiosVisible ? map : null);
-                const btn = document.getElementById('btn-municipios');
-                if (btn) btn.className = 'geo-toggle-btn' + (municipiosVisible ? ' active' : '');
-            }}
-        }}
-        let infoWindow;
-        let editMarker = null;
-        let geocoder = null;
+        let editMarker = null, searchMarker = null;
+        let selectedMarker = null, selectedMarkerTimer = null;
         let isFormVisible = false;
-        let searchMarker = null;
-        let selectedLocationMarker = null;
-        let selectedMarkerTimeout = null;
 
-        // HTML encoding function for defense-in-depth security
-        // Encodes HTML special characters to prevent XSS by leveraging
-        // the browser's built-in encoding when setting textContent
-        function escapeHtml(text) {{
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        // ─── helpers ─────────────────────────────────────────────────────────────
+        function esc(t) {{
+            if (!t) return '';
+            const d = document.createElement('div');
+            d.textContent = String(t);
+            return d.innerHTML;
         }}
 
-        // Crea un PinElement con colores personalizados
-        function createPinContent(colorKey) {{
-            const colors = PIN_COLORS[colorKey] || PIN_COLORS.default;
-            const pin = new google.maps.marker.PinElement({{
-                background: colors.background,
-                borderColor: colors.border,
-                glyphColor: colors.glyph
-            }});
-            return pin.element;
+        function makePin(key) {{
+            const p = new google.maps.marker.PinElement(PIN[key] || PIN.default);
+            return p.element;
         }}
 
-        // Crea un elemento DOM con imagen para iconos personalizados
-        function createIconContent(iconUrl) {{
-            const img = document.createElement('img');
-            img.src = iconUrl;
-            img.style.width = '40px';
-            img.style.height = '40px';
-            return img;
+        function dropIn(marker) {{
+            if (!marker?.content) return;
+            marker.content.classList.add('marker-drop');
+            setTimeout(() => marker.content?.classList.remove('marker-drop'), 500);
         }}
 
-        // Aplica animación CSS al content de un marker
-        function animateMarker(marker, animClass) {{
-            if (marker && marker.content) {{
-                marker.content.classList.add(animClass);
-                // Remover clase después de la animación para poder re-aplicar
-                if (animClass === 'marker-drop') {{
-                    setTimeout(() => marker.content.classList.remove(animClass), 500);
-                }}
-            }}
-        }}
+        function clearMarker(m) {{ if (m) m.map = null; }}
 
-        // Remueve un AdvancedMarkerElement del mapa
-        function removeMarker(marker) {{
-            if (marker) {{
-                marker.map = null;
-            }}
-        }}
-
+        // ─── initMap ─────────────────────────────────────────────────────────────
         function initMap() {{
-            // Crear el mapa con Map ID para AdvancedMarkerElement
-            map = new google.maps.Map(document.getElementById('map'), {{
-                center: {{ lat: {lat}, lng: {lng} }},
-                zoom: {zoom},
-                mapTypeId: 'roadmap',
-                mapId: '3457a32dcb6331583ad98107'
-            }});
+            try {{
+                _gmLoaded = true;
+                setStatus('Google Maps cargado OK', false);
+                postToHost({{ type:'debug', message:'initMap ejecutado OK' }});
 
-            // Crear InfoWindow global
-            infoWindow = new google.maps.InfoWindow();
+                map = new google.maps.Map(document.getElementById('map'), {{
+                    center: {{ lat: {lat}, lng: {lng} }},
+                    zoom: {zoom},
+                    mapId: '3457a32dcb6331583ad98107'
+                }});
+                infoWindow = new google.maps.InfoWindow();
+                geocoder   = new google.maps.Geocoder();
+                renderAll();
 
-            // Crear geocoder para reverse geocoding
-            geocoder = new google.maps.Geocoder();
-
-            // Renderizar las ubicaciones (markers)
-            renderUbicaciones();
-
-            // Botones toggle de capas geográficas
-            if (ESTADOS_DATA) {{
-                const geoControls = document.createElement('div');
-                geoControls.style.margin = '8px';
-                geoControls.style.display = 'flex';
-                geoControls.style.flexDirection = 'column';
-                geoControls.style.gap = '4px';
-
-                const btnEstados = document.createElement('button');
-                btnEstados.id = 'btn-estados';
-                btnEstados.className = 'geo-toggle-btn';
-                btnEstados.textContent = '🗺 Estados';
-                btnEstados.onclick = toggleEstados;
-                geoControls.appendChild(btnEstados);
-
-                const btnMunicipios = document.createElement('button');
-                btnMunicipios.id = 'btn-municipios';
-                btnMunicipios.className = 'geo-toggle-btn';
-                btnMunicipios.textContent = '🗺 Municipios';
-                btnMunicipios.onclick = toggleMunicipios;
-                geoControls.appendChild(btnMunicipios);
-
-                map.controls[google.maps.ControlPosition.TOP_RIGHT].push(geoControls);
-            }}
-
-            // Click listener: detectar click normal o click sobre un Place/POI
-            map.addListener('click', (event) => {{
-                if (!isFormVisible) return;
-
-                if (event.placeId) {{
-                    // Click sobre un negocio/lugar (POI) — obtener nombre del Place
-                    event.stop(); // Evitar que se abra el infoWindow default de Google
-                    handlePlaceClick(event.placeId, event.latLng);
-                }} else {{
-                    // Click normal en el mapa — colocar pin sin nombre
-                    placeMarker(event.latLng);
-                }}
-            }});
-        }}
-
-        function searchLocation(query) {{
-            if (!query || query.trim() === '') {{
-                return;
-            }}
-
-            const request = {{
-                query: query,
-                fields: ['name', 'geometry', 'formatted_address']
-            }};
-
-            const service = new google.maps.places.PlacesService(map);
-            
-            service.findPlaceFromQuery(request, (results, status) => {{
-                if (status === google.maps.places.PlacesServiceStatus.OK && results && results.length > 0) {{
-                    const place = results[0];
-                    
-                    // Remove previous search marker if exists
-                    if (searchMarker) {{
-                        removeMarker(searchMarker);
-                    }}
-
-                    // Center map on the found location
-                    if (place.geometry && place.geometry.location) {{
-                        map.setCenter(place.geometry.location);
-                        map.setZoom(15);
-
-                        // Add a marker for the search result
-                        searchMarker = new google.maps.marker.AdvancedMarkerElement({{
-                            position: place.geometry.location,
-                            map: map,
-                            title: place.name,
-                            content: createPinContent('search')
-                        }});
-                        animateMarker(searchMarker, 'marker-drop');
-
-                        // Auto-colocar el pin de edición en la ubicación del Place encontrado
-                        if (isFormVisible) {{
-                            placeMarkerFromPlace(place);
-                        }}
-
-                        // Show info window with search result
-                        const safeName = escapeHtml(place.name || 'Ubicación encontrada');
-                        const safeAddress = place.formatted_address ? escapeHtml(place.formatted_address) : '';
-                        
-                        const content = `
-                            <div style='padding: 8px; min-width: 200px;'>
-                                <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{safeName}}</h3>
-                                <div style='color: #5f6368; font-size: 14px;'>
-                                    ${{safeAddress ? `<p style='margin: 4px 0;'>${{safeAddress}}</p>` : ''}}
-                                </div>
-                            </div>
-                        `;
-                        
-                        infoWindow.setContent(content);
-                        infoWindow.open({{ anchor: searchMarker, map: map }});
-                    }}
-                }} else {{
-                    // Show error to user via InfoWindow
-                    const errorMessages = {{
-                        'ZERO_RESULTS': 'No se encontraron resultados para la búsqueda.',
-                        'OVER_QUERY_LIMIT': 'Se ha excedido el límite de consultas. Intente más tarde.',
-                        'REQUEST_DENIED': 'La solicitud fue denegada.',
-                        'INVALID_REQUEST': 'La solicitud no es válida.',
-                        'UNKNOWN_ERROR': 'Ocurrió un error desconocido. Intente nuevamente.'
-                    }};
-                    
-                    const errorMessage = errorMessages[status] || errorMessages.UNKNOWN_ERROR;
-                    const safeErrorMessage = escapeHtml(errorMessage);
-                    
-                    const errorContent = `
-                        <div style='padding: 8px; min-width: 200px;'>
-                            <h3 style='margin: 0 0 8px 0; color: #d93025; font-size: 16px;'>Error en la búsqueda</h3>
-                            <div style='color: #5f6368; font-size: 14px;'>
-                                <p style='margin: 4px 0;'>${{safeErrorMessage}}</p>
-                            </div>
-                        </div>
-                    `;
-                    
-                    infoWindow.setContent(errorContent);
-                    infoWindow.setPosition(map.getCenter());
-                    infoWindow.open(map);
-                    
-                    // Log status only, not user input
-                    console.error('Error en búsqueda de ubicación. Status:', status);
-                }}
-            }});
-        }}
-
-        // Maneja click sobre un Place/POI del mapa — consulta detalles y coloca pin
-        function handlePlaceClick(placeId, latLng) {{
-            const service = new google.maps.places.PlacesService(map);
-            service.getDetails({{
-                placeId: placeId,
-                fields: ['name', 'geometry', 'formatted_address']
-            }}, (place, status) => {{
-                if (status === google.maps.places.PlacesServiceStatus.OK && place) {{
-                    const location = place.geometry ? place.geometry.location : latLng;
-                    
-                    // Construir un objeto compatible con placeMarkerFromPlace
-                    const placeData = {{
-                        name: place.name,
-                        formatted_address: place.formatted_address,
-                        geometry: {{ location: location }}
-                    }};
-                    placeMarkerFromPlace(placeData);
-                }} else {{
-                    // Si falla Place Details, colocar pin normal
-                    placeMarker(latLng);
-                }}
-            }});
-        }}
-
-        function placeMarker(location) {{
-            // Remove existing edit marker
-            if (editMarker) {{
-                removeMarker(editMarker);
-            }}
-
-            // Create new marker
-            editMarker = new google.maps.marker.AdvancedMarkerElement({{
-                position: location,
-                map: map,
-                gmpDraggable: true,
-                title: 'Nueva ubicación',
-                content: createPinContent('edit')
-            }});
-            animateMarker(editMarker, 'marker-drop');
-
-            // Update form with coordinates
-            updateFormWithLocation(location);
-
-            // Add drag end listener
-            editMarker.addEventListener('gmp-dragend', () => {{
-                const pos = editMarker.position;
-                updateFormWithLocation(new google.maps.LatLng(pos.lat, pos.lng));
-            }});
-        }}
-
-        // Coloca el pin de edición desde un resultado de Google Places (incluye nombre del Place)
-        function placeMarkerFromPlace(place) {{
-            if (!place.geometry || !place.geometry.location) return;
-
-            const location = place.geometry.location;
-
-            // Remove existing edit marker
-            if (editMarker) {{
-                removeMarker(editMarker);
-            }}
-
-            // Create new draggable marker
-            editMarker = new google.maps.marker.AdvancedMarkerElement({{
-                position: location,
-                map: map,
-                gmpDraggable: true,
-                title: place.name || 'Nueva ubicación',
-                content: createPinContent('edit')
-            }});
-            animateMarker(editMarker, 'marker-drop');
-
-            // Enviar datos del Place a C# (incluye nombre)
-            const lat = location.lat();
-            const lng = location.lng();
-
-            geocoder.geocode({{ location: location }}, (results, status) => {{
-                let addressData = {{}};
-                
-                if (status === 'OK' && results && results[0]) {{
-                    addressData.formatted = results[0].formatted_address;
-                    addressData.place_id = results[0].place_id;
-                    
-                    results[0].address_components.forEach(component => {{
-                        if (component.types.includes('locality')) {{
-                            addressData.city = component.long_name;
-                        }}
-                        if (component.types.includes('administrative_area_level_1')) {{
-                            addressData.state = component.long_name;
-                        }}
-                        if (component.types.includes('country')) {{
-                            addressData.country = component.long_name;
-                        }}
-                    }});
-                }}
-
-                const message = JSON.stringify({{
-                    type: 'placeSelected',
-                    lat: lat,
-                    lng: lng,
-                    placeName: place.name || '',
-                    address: addressData
+                map.addListener('click', evt => {{
+                    if (!isFormVisible) return;
+                    if (evt.placeId) {{ evt.stop(); placeFromPoiId(evt.placeId, evt.latLng); }}
+                    else             {{ placeEditPin(evt.latLng); }}
                 }});
 
-                if (window.chrome && window.chrome.webview) {{
-                    window.chrome.webview.postMessage(message);
-                }}
-            }});
-
-            // Add drag end listener (al arrastrar pierde el nombre del place)
-            editMarker.addEventListener('gmp-dragend', () => {{
-                const pos = editMarker.position;
-                updateFormWithLocation(new google.maps.LatLng(pos.lat, pos.lng));
-            }});
-        }}
-
-        function updateFormWithLocation(location) {{
-            const lat = location.lat();
-            const lng = location.lng();
-
-            // Use geocoder to get address
-            geocoder.geocode({{ location: location }}, (results, status) => {{
-                let addressData = {{}};
-                
-                if (status === 'OK' && results && results[0]) {{
-                    addressData.formatted = results[0].formatted_address;
-                    addressData.place_id = results[0].place_id;
-                    
-                    // Extract address components
-                    results[0].address_components.forEach(component => {{
-                        if (component.types.includes('locality')) {{
-                            addressData.city = component.long_name;
-                        }}
-                        if (component.types.includes('administrative_area_level_1')) {{
-                            addressData.state = component.long_name;
-                        }}
-                        if (component.types.includes('country')) {{
-                            addressData.country = component.long_name;
-                        }}
-                    }});
-                }}
-
-                // Send message to C# app
-                const message = JSON.stringify({{
-                    type: 'markerMoved',
-                    lat: lat,
-                    lng: lng,
-                    address: addressData
-                }});
-
-                if (window.chrome && window.chrome.webview) {{
-                    window.chrome.webview.postMessage(message);
-                }}
-            }});
-        }}
-
-        function setFormVisibility(visible) {{
-            isFormVisible = visible;
-            
-            // Remove marker if form is hidden
-            if (!visible && editMarker) {{
-                removeMarker(editMarker);
-                editMarker = null;
+                postToHost({{ type:'debug', message:'initMap completo, markers=' + ubicaciones.length }});
+            }} catch(err) {{
+                var msg = 'Error en initMap: ' + err.message;
+                setStatus(msg, true);
+                postToHost({{ type:'jsError', message: msg, stack: err.stack || '' }});
             }}
         }}
 
-        function loadExistingMarker(lat, lng) {{
-            if (lat && lng) {{
-                const location = new google.maps.LatLng(parseFloat(lat), parseFloat(lng));
-                placeMarker(location);
-                map.setCenter(location);
-            }}
-        }}
-
-        function renderUbicaciones() {{
-            // Limpiar markers existentes
-            markers.forEach(marker => removeMarker(marker));
+        // ─── renderizado ─────────────────────────────────────────────────────────
+        function renderAll() {{
+            markers.forEach(clearMarker);
             markers = [];
-
-            // Renderizar cada ubicación como marker
-            ubicaciones.forEach(ubicacion => {{
-                try {{
-                    if (!ubicacion.latitud || !ubicacion.longitud) {{
-                        return;
-                    }}
-
-                    const content = ubicacion.icono 
-                        ? createIconContent(ubicacion.icono) 
-                        : createPinContent('default');
-
-                    const marker = new google.maps.marker.AdvancedMarkerElement({{
-                        position: {{ 
-                            lat: parseFloat(ubicacion.latitud), 
-                            lng: parseFloat(ubicacion.longitud) 
-                        }},
-                        map: map,
-                        title: ubicacion.nombre,
-                        content: content
-                    }});
-
-                    markers.push(marker);
-
-                    // Agregar listener para click con InfoWindow
-                    marker.addEventListener('gmp-click', () => {{
-                        showUbicacionInfo(ubicacion, marker.position);
-                    }});
-                }} catch (error) {{
-                    console.error('Error al renderizar ubicación', ubicacion.nombre, error);
-                }}
+            ubicaciones.forEach(u => {{
+                if (u.Latitud == null || u.Longitud == null) return;
+                const marker = new google.maps.marker.AdvancedMarkerElement({{
+                    position: {{ lat: Number(u.Latitud), lng: Number(u.Longitud) }},
+                    map,
+                    title: u.Nombre ?? '',
+                    content: u.Icono
+                        ? (() => {{ const img = document.createElement('img'); img.src=u.Icono; img.style.cssText='width:40px;height:40px'; return img; }})()
+                        : makePin('default')
+                }});
+                marker.addEventListener('gmp-click', () => showInfo(u, marker.position));
+                markers.push(marker);
             }});
         }}
 
-        function showUbicacionInfo(ubicacion, position) {{
-            // Use reverse geocoding to get current address information
-            geocoder.geocode({{ location: position }}, (results, status) => {{
-                let direccionActual = escapeHtml(ubicacion.direccionCompleta || '');
-                
-                // If geocoding is successful, use the current address
-                if (status === 'OK' && results && results[0]) {{
-                    direccionActual = escapeHtml(results[0].formatted_address);
-                }}
-                
-                // Create info window content with geocoded address
-                const content = `
-                    <div style='padding: 8px; min-width: 250px;'>
-                        <h3 style='margin: 0 0 8px 0; color: #1a73e8; font-size: 16px;'>${{escapeHtml(ubicacion.nombre)}}</h3>
-                        <div style='color: #5f6368; font-size: 14px;'>
-                            ${{ubicacion.descripcion ? `<p style='margin: 4px 0;'>${{escapeHtml(ubicacion.descripcion)}}</p>` : ''}}
-                            ${{direccionActual ? `<p style='margin: 4px 0;'><strong>Dirección:</strong> ${{direccionActual}}</p>` : ''}}
-                            ${{ubicacion.telefono ? `<p style='margin: 4px 0;'><strong>Tel:</strong> ${{escapeHtml(ubicacion.telefono)}}</p>` : ''}}
-                            ${{ubicacion.email ? `<p style='margin: 4px 0;'><strong>Email:</strong> ${{escapeHtml(ubicacion.email)}}</p>` : ''}}
-                            <p style='margin: 4px 0; font-size: 12px;'><strong>Coordenadas:</strong> ${{escapeHtml(String(ubicacion.latitud))}}, ${{escapeHtml(String(ubicacion.longitud))}}</p>
-                        </div>
-                    </div>
-                `;
-                
-                infoWindow.setContent(content);
-                infoWindow.setPosition(position);
+        function showInfo(u, pos) {{
+            geocoder.geocode({{ location: pos }}, (res, st) => {{
+                const dir = st === 'OK' && res?.[0] ? esc(res[0].formatted_address) : esc(u.DireccionCompleta);
+                infoWindow.setContent(`<div style='padding:8px;min-width:240px'>
+                    <h3 style='margin:0 0 6px;color:#1a73e8'>${{esc(u.Nombre)}}</h3>
+                    ${{u.Descripcion ? `<p style='margin:3px 0;color:#5f6368'>${{esc(u.Descripcion)}}</p>` : ''}}
+                    ${{dir ? `<p style='margin:3px 0;font-size:13px'>${{dir}}</p>` : ''}}
+                    <p style='margin:3px 0;font-size:11px;color:#888'>Lat ${{u.Latitud}}, Lng ${{u.Longitud}}</p>
+                </div>`);
+                infoWindow.setPosition(pos);
                 infoWindow.open(map);
             }});
         }}
 
-        function showSelectedLocationMarker(ubicacion, position) {{
-            // Clear any existing timeout to prevent race conditions
-            if (selectedMarkerTimeout) {{
-                clearTimeout(selectedMarkerTimeout);
-                selectedMarkerTimeout = null;
-            }}
-
-            // Remove previous selected location marker if exists
-            if (selectedLocationMarker) {{
-                removeMarker(selectedLocationMarker);
-            }}
-
-            // Create a new marker for the selected location with distinctive green color
-            selectedLocationMarker = new google.maps.marker.AdvancedMarkerElement({{
-                position: position,
-                map: map,
-                title: ubicacion.nombre,
-                content: createPinContent('selected'),
-                zIndex: 9999
+        // ─── pin de edición ───────────────────────────────────────────────────────
+        function placeEditPin(latLng) {{
+            clearMarker(editMarker);
+            editMarker = new google.maps.marker.AdvancedMarkerElement({{
+                position: latLng, map, gmpDraggable: true,
+                title: 'Nueva ubicación', content: makePin('edit')
             }});
-            animateMarker(selectedLocationMarker, 'marker-bounce');
-
-            // Stop bouncing after 2 seconds
-            selectedMarkerTimeout = setTimeout(() => {{
-                if (selectedLocationMarker && selectedLocationMarker.content) {{
-                    selectedLocationMarker.content.classList.remove('marker-bounce');
-                }}
-                selectedMarkerTimeout = null;
-            }}, 2000);
-
-            // Show info window for the selected location
-            showUbicacionInfo(ubicacion, position);
+            dropIn(editMarker);
+            geocodeAndNotify(latLng, 'markerMoved', null);
+            editMarker.addEventListener('gmp-dragend', () => {{
+                const p = editMarker.position;
+                geocodeAndNotify(new google.maps.LatLng(p.lat, p.lng), 'markerMoved', null);
+            }});
         }}
 
-        // Inicializar el mapa cuando cargue la página
-        window.onload = initMap;
+        function placeFromPoiId(placeId, fallbackLatLng) {{
+            const svc = new google.maps.places.PlacesService(map);
+            svc.getDetails({{ placeId, fields:['name','geometry','formatted_address'] }}, (place, st) => {{
+                if (st === google.maps.places.PlacesServiceStatus.OK && place) placeFromResult(place);
+                else placeEditPin(fallbackLatLng);
+            }});
+        }}
+
+        function placeFromResult(place) {{
+            if (!place.geometry?.location) return;
+            const loc = place.geometry.location;
+            clearMarker(editMarker);
+            editMarker = new google.maps.marker.AdvancedMarkerElement({{
+                position: loc, map, gmpDraggable: true,
+                title: place.name ?? '', content: makePin('edit')
+            }});
+            dropIn(editMarker);
+            geocodeAndNotify(loc, 'placeSelected', place.name ?? '');
+            editMarker.addEventListener('gmp-dragend', () => {{
+                const p = editMarker.position;
+                geocodeAndNotify(new google.maps.LatLng(p.lat, p.lng), 'markerMoved', null);
+            }});
+        }}
+
+        function geocodeAndNotify(latLng, type, placeName) {{
+            const lat = typeof latLng.lat === 'function' ? latLng.lat() : latLng.lat;
+            const lng = typeof latLng.lng === 'function' ? latLng.lng() : latLng.lng;
+            geocoder.geocode({{ location: latLng }}, (res, st) => {{
+                const addr = {{}};
+                if (st === 'OK' && res?.[0]) {{
+                    addr.formatted = res[0].formatted_address;
+                    addr.place_id  = res[0].place_id;
+                    res[0].address_components.forEach(c => {{
+                        if (c.types.includes('locality'))                    addr.city    = c.long_name;
+                        if (c.types.includes('administrative_area_level_1')) addr.state   = c.long_name;
+                        if (c.types.includes('country'))                     addr.country = c.long_name;
+                    }});
+                }}
+                const msg = {{ type, lat, lng, address: addr }};
+                if (placeName != null) msg.placeName = placeName;
+                postToHost(msg);
+            }});
+        }}
+
+        // ─── funciones llamadas desde C# ─────────────────────────────────────────
+        function setFormVisibility(visible) {{
+            isFormVisible = visible;
+            if (!visible) {{ clearMarker(editMarker); editMarker = null; }}
+        }}
+
+        function loadExistingMarker(lat, lng) {{
+            const loc = new google.maps.LatLng(lat, lng);
+            placeEditPin(loc);
+            map.setCenter(loc);
+            map.setZoom(15);
+        }}
+
+        function showSelectedLocationMarker(ubicacion, position) {{
+            if (selectedMarkerTimer) {{ clearTimeout(selectedMarkerTimer); selectedMarkerTimer = null; }}
+            clearMarker(selectedMarker);
+            selectedMarker = new google.maps.marker.AdvancedMarkerElement({{
+                position, map, title: ubicacion.Nombre ?? '',
+                content: makePin('selected'), zIndex: 9999
+            }});
+            if (selectedMarker.content) {{
+                selectedMarker.content.classList.add('marker-bounce');
+                selectedMarkerTimer = setTimeout(() => {{
+                    selectedMarker?.content?.classList.remove('marker-bounce');
+                }}, 2000);
+            }}
+            showInfo(ubicacion, position);
+        }}
+
+        function searchLocation(query) {{
+            if (!query?.trim()) return;
+            const svc = new google.maps.places.PlacesService(map);
+            svc.findPlaceFromQuery(
+                {{ query, fields: ['name','geometry','formatted_address'] }},
+                (results, status) => {{
+                    if (status !== google.maps.places.PlacesServiceStatus.OK || !results?.length) return;
+                    const place = results[0];
+                    if (!place.geometry?.location) return;
+                    clearMarker(searchMarker);
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(15);
+                    searchMarker = new google.maps.marker.AdvancedMarkerElement({{
+                        position: place.geometry.location, map,
+                        title: place.name, content: makePin('search')
+                    }});
+                    dropIn(searchMarker);
+                    infoWindow.setContent(`<div style='padding:8px'><b>${{esc(place.name)}}</b><br><span style='font-size:13px;color:#5f6368'>${{esc(place.formatted_address)}}</span></div>`);
+                    infoWindow.open({{ anchor: searchMarker, map }});
+                    if (isFormVisible) placeFromResult(place);
+                }}
+            );
+        }}
+    </script>
+    <script
+        src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places,marker&callback=initMap'
+        defer
+        onerror='setStatus(""Error: no se pudo descargar el script de Google Maps (maps.googleapis.com). Verifica internet y que la API key sea válida."", true); postToHost({{type:""jsError"",message:""Script de Google Maps no descargado""}});'>
     </script>
 </body>
 </html>";

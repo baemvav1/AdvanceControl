@@ -161,6 +161,15 @@ namespace Advance_Control.Views.Pages
                 // Capturar errores JS y de Google Maps Auth y reenviarlos al log .NET
                 await coreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(WebView2DiagnosticsScript.JS);
 
+                // Virtual host para servir el HTML del mapa — da origen https:// a Google Maps
+                var mapCacheDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Advance Control", "map_cache");
+                Directory.CreateDirectory(mapCacheDir);
+                coreWebView2.SetVirtualHostNameToFolderMapping(
+                    "ac-maps-local", mapCacheDir,
+                    Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+
                 // Virtual host para servir GeoJSON localmente sin peticiones de red
                 var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
                 if (Directory.Exists(geoFolder))
@@ -415,10 +424,18 @@ namespace Advance_Control.Views.Pages
                 var html = GenerateAreasMapHtml(ViewModel.MapsConfig.ApiKey, centerLat, centerLng, zoom, areasJson);
                 await _loggingService.LogInformationAsync($"HTML generado: {html.Length} chars ({html.Length / 1024} KB)", "AreasPage", "LoadMapAsync");
 
-                MapWebView.NavigateToString(html);
+                // Escribir a disco y navegar con origen https:// real.
+                // NavigateToString crea origen null que Google Maps rechaza.
+                var mapCacheDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Advance Control", "map_cache");
+                Directory.CreateDirectory(mapCacheDir);
+                var mapFile = Path.Combine(mapCacheDir, "areas.html");
+                await System.IO.File.WriteAllTextAsync(mapFile, html, System.Text.Encoding.UTF8);
+                MapWebView.CoreWebView2.Navigate("https://ac-maps-local/areas.html");
                 ViewModel.IsMapInitialized = true;
 
-                await _loggingService.LogInformationAsync("NavigateToString ejecutado, IsMapInitialized=true", "AreasPage", "LoadMapAsync");
+                await _loggingService.LogInformationAsync("Mapa cargado: https://ac-maps-local/areas.html", "AreasPage", "LoadMapAsync");
             }
             catch (Exception ex)
             {
