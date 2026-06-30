@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using System.Threading.Tasks;
 using Microsoft.UI.Dispatching;
 using Microsoft.Windows.AppLifecycle;
 
@@ -14,18 +13,12 @@ namespace Advance_Control
     public static class Program
     {
         [STAThread]
-        static async Task<int> Main(string[] args)
+        static int Main(string[] args)
         {
             WinRT.ComWrappersSupport.InitializeComWrappers();
 
-            // Registrar esta instancia con una clave fija
-            var isMainInstance = await TryRedirectIfNotMainAsync();
-
-            if (!isMainInstance)
-            {
-                // Ya existe una instancia principal; esta se cierra silenciosamente
+            if (!TryRegisterMainInstance())
                 return 0;
-            }
 
             Microsoft.UI.Xaml.Application.Start((p) =>
             {
@@ -38,10 +31,10 @@ namespace Advance_Control
         }
 
         /// <summary>
-        /// Intenta registrarse como instancia principal. Si ya hay una,
-        /// redirige la activación a ella y retorna false.
+        /// Registra esta instancia como principal. Si ya existe una, redirige la activación
+        /// a ella de forma síncrona para no ceder el thread STA antes de Application.Start.
         /// </summary>
-        private static async Task<bool> TryRedirectIfNotMainAsync()
+        private static bool TryRegisterMainInstance()
         {
             try
             {
@@ -49,19 +42,16 @@ namespace Advance_Control
 
                 if (!mainInstance.IsCurrent)
                 {
-                    // Redirigir la activación a la instancia existente
                     var activatedArgs = AppInstance.GetCurrent().GetActivatedEventArgs();
-                    await mainInstance.RedirectActivationToAsync(activatedArgs);
+                    mainInstance.RedirectActivationToAsync(activatedArgs).AsTask().GetAwaiter().GetResult();
                     return false;
                 }
 
-                // Somos la instancia principal — escuchar futuras activaciones
                 mainInstance.Activated += OnInstanceActivated;
                 return true;
             }
             catch
             {
-                // Si AppLifecycle no está disponible, continuar como instancia normal
                 return true;
             }
         }
