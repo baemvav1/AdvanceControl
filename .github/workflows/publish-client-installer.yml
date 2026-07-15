@@ -102,15 +102,36 @@ jobs:
             ConvertTo-Json -Compress |
             Set-Content -Encoding UTF8 artifacts/installer/version.json
 
-      - name: Subir MSIX y version.json al VPS
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          source: "artifacts/installer/AdvanceControl-x64.msix,artifacts/installer/version.json,artifacts/installer/AdvanceControl.appinstaller"
-          target: /opt/advanceapi/storage/client-dist/
-          strip_components: 2
+      - name: Subir MSIX, version.json y AppInstaller al VPS
+        shell: pwsh
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          # appleboy/scp-action es una Docker container action: GitHub no permite
+          # correr acciones Docker en runners Windows, solo Linux. Este job corre
+          # en windows-latest (obligatorio para MSBuild/MSIX), asi que usamos el
+          # cliente scp nativo de OpenSSH que ya viene instalado en el runner.
+          $keyPath = Join-Path $env:RUNNER_TEMP 'vps_deploy_key'
+          [System.IO.File]::WriteAllText($keyPath, $env:VPS_SSH_KEY, [System.Text.Encoding]::ASCII)
+          icacls $keyPath /inheritance:r | Out-Null
+          icacls $keyPath /grant:r "$($env:USERNAME):(R)" | Out-Null
+
+          $files = @(
+            'artifacts\installer\AdvanceControl-x64.msix',
+            'artifacts\installer\version.json',
+            'artifacts\installer\AdvanceControl.appinstaller'
+          )
+
+          foreach ($file in $files) {
+            & scp -o StrictHostKeyChecking=no -i $keyPath $file "${env:VPS_USER}@${env:VPS_HOST}:/opt/advanceapi/storage/client-dist/"
+            if ($LASTEXITCODE -ne 0) {
+              throw "scp fallo para '$file' (exit code $LASTEXITCODE)"
+            }
+          }
+
+          Remove-Item $keyPath -Force
 
       - name: Publicar artefactos del workflow
         uses: actions/upload-artifact@v4
