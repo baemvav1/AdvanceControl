@@ -114,7 +114,10 @@ jobs:
           # en windows-latest (obligatorio para MSBuild/MSIX), asi que usamos el
           # cliente scp nativo de OpenSSH que ya viene instalado en el runner.
           $keyPath = Join-Path $env:RUNNER_TEMP 'vps_deploy_key'
-          [System.IO.File]::WriteAllText($keyPath, $env:VPS_SSH_KEY, [System.Text.Encoding]::ASCII)
+          # Normalizar a LF puro — OpenSSH rechaza la llave si tiene CRLF
+          # (puede colarse al copiar/pegar el secret desde el navegador en Windows).
+          $normalizedKey = ($env:VPS_SSH_KEY -replace "`r`n", "`n" -replace "`r", "`n").TrimEnd("`n") + "`n"
+          [System.IO.File]::WriteAllText($keyPath, $normalizedKey, [System.Text.Encoding]::ASCII)
           icacls $keyPath /inheritance:r | Out-Null
           icacls $keyPath /grant:r "$($env:USERNAME):(R)" | Out-Null
 
