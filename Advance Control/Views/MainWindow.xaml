@@ -5,8 +5,8 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Advance_Control"
-    xmlns:views="using:Advance_Control.Views"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:views="using:Advance_Control.Views"
     Title="Advance Control"
     mc:Ignorable="d">
 
@@ -209,6 +209,34 @@
                                 </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
+                        <!--  Grupo: Direccion  -->
+                        <NavigationViewItem
+                            Background="{ThemeResource ControlElevationBorderBrush}"
+                            Content="Catálogos"
+                            Icon="Library"
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
+
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Visor Mundial"
+                                    Icon="AllApps"
+                                    Tag="Equipos" />
+                                <NavigationViewItem
+                                    Content="Dashboard"
+                                    Icon="Setting"
+                                    Tag="Refacciones" />
+                                <NavigationViewItem Content="Servicios" Tag="Servicios">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xEC7A;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
+                                <NavigationViewItem
+                                    Content="Proveedores"
+                                    Icon="Contact"
+                                    Tag="Proveedores" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
 
                         <!--  Grupo: Catálogos  -->
                         <NavigationViewItem
@@ -394,11 +422,11 @@
             x:Name="NotificacionInfoBar"
             Grid.Row="1"
             Grid.ColumnSpan="2"
-            Canvas.ZIndex="10"
             MaxWidth="420"
             Margin="0,8,16,0"
             HorizontalAlignment="Right"
             VerticalAlignment="Top"
+            Canvas.ZIndex="10"
             IsClosable="True"
             IsOpen="False" />
     </Grid>

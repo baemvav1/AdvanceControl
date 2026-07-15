@@ -72,6 +72,7 @@ namespace Advance_Control.Views.Pages
 
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
         {
+            IdOperacionTextBox.Text = string.Empty;
             ClienteASB.Text = string.Empty;
             EquipoASB.Text = string.Empty;
             AreaASB.Text = string.Empty;
@@ -157,6 +158,12 @@ namespace Advance_Control.Views.Pages
         private async void FechaFinalPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
             if (ViewModel == null || _isNavigating) return;
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
+        }
+
+        private async void IdOperacionTextBox_EnterInvoked(KeyboardAccelerator sender, KeyboardAcceleratorInvokedEventArgs args)
+        {
+            args.Handled = true;
             await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 

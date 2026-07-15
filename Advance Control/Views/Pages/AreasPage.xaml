@@ -222,7 +222,7 @@
                             Margin="0,4,0,4"
                             IsClosable="False"
                             IsOpen="True"
-                            Message="Utiliza las herramientas de dibujo del mapa para crear un polígono o círculo que defina el área."
+                            Message="Activa la capa Estado o Municipio y haz clic sobre una región para definir el área."
                             Severity="Informational" />
 
                         <TextBox

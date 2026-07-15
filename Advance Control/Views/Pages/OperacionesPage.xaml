@@ -65,6 +65,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
@@ -129,11 +130,25 @@
                     <StackPanel
                         Grid.Row="1"
                         Grid.Column="0"
-                        Margin="0,0,0,8">
+                        Margin="0,0,8,8">
+                        <TextBlock Margin="0,0,0,4" Text="ID Operación" />
+                        <TextBox
+                            x:Name="IdOperacionTextBox"
+                            PlaceholderText="Buscar por ID"
+                            Text="{x:Bind ViewModel.IdOperacionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
+                            <TextBox.KeyboardAccelerators>
+                                <KeyboardAccelerator Key="Enter" Invoked="IdOperacionTextBox_EnterInvoked" />
+                            </TextBox.KeyboardAccelerators>
+                        </TextBox>
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Row="1"
+                        Grid.Column="1"
+                        Margin="0,0,8,8">
                         <TextBlock Margin="0,0,0,4" Text="Nota" />
                         <TextBox
                             x:Name="NotaTextBox"
-                            Margin="0,0,8,0"
                             PlaceholderText="Buscar por nota"
                             Text="{x:Bind ViewModel.NotaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                             <TextBox.KeyboardAccelerators>
@@ -142,11 +157,10 @@
                         </TextBox>
                     </StackPanel>
 
-
                     <!--  Third row: rango de fechas  -->
                     <StackPanel
                         Grid.Row="1"
-                        Grid.Column="1"
+                        Grid.Column="2"
                         Margin="0,0,8,0">
                         <TextBlock Margin="0,0,0,4" Text="Fecha inicio (desde)" />
                         <CalendarDatePicker
@@ -160,7 +174,7 @@
 
                     <StackPanel
                         Grid.Row="1"
-                        Grid.Column="2"
+                        Grid.Column="3"
                         Margin="0,0,0,0">
                         <TextBlock Margin="0,0,0,4" Text="Fecha cierre (hasta)" />
                         <CalendarDatePicker

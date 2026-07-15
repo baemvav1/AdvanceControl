@@ -40,7 +40,9 @@ namespace Advance_Control.Views.Pages
         private bool _isEditMode = false;
         private int? _editingAreaId = null;
         private bool _isFormVisible = false;
-        private string? _pendingGeoNombre = null; // nombre del estado/municipio para pre-llenar el formulario
+        private string? _pendingGeoNombre = null;   // nombre del estado/municipio para pre-llenar el formulario
+        private string? _pendingGeoType = null;    // "Estado" o "Municipio"
+        private string? _pendingEstadoNombre = null; // para municipios: nombre del estado padre
         
         // Store polygon/shape data from Google Maps Drawing Manager
         private string? _currentShapeType = null;
@@ -239,6 +241,24 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private void OpenFormForGeoSelection(string nombre, string geoType, string? estadoNombre = null)
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                _isEditMode = false;
+                _editingAreaId = null;
+                FormTitle.Text = "Nueva Área";
+                NombreTextBox.Text = nombre;
+                DescripcionTextBox.Text = geoType == "Municipio" && estadoNombre != null
+                    ? $"Municipio del estado de {estadoNombre}"
+                    : string.Empty;
+                ColorComboBox.SelectedIndex = 0;
+                ActivoCheckBox.IsChecked = true;
+                AreaForm.Visibility = Visibility.Visible;
+                _isFormVisible = true;
+            });
+        }
+
         /// <summary>
         /// Muestra un mensaje de diagnóstico visible en la página, sin depender del logger ni del notificador.
         /// </summary>
@@ -357,6 +377,31 @@ namespace Advance_Control.Views.Pages
                             $"Bounds={(string.IsNullOrEmpty(_currentShapeBounds) ? "EMPTY" : "SET")}",
                             "AreasPage",
                             "CoreWebView2_WebMessageReceived");
+                    }
+                    else if (messageType == "estadoSelected")
+                    {
+                        var nombre = jsonDoc.TryGetValue("nombre", out var nEl) ? nEl.GetString() : null;
+                        if (!string.IsNullOrWhiteSpace(nombre))
+                        {
+                            _pendingGeoNombre = nombre;
+                            _pendingGeoType = "Estado";
+                            _pendingEstadoNombre = nombre;
+                            _currentShapeType = "Estado";
+                            OpenFormForGeoSelection(nombre, "Estado");
+                        }
+                    }
+                    else if (messageType == "municipioSelected")
+                    {
+                        var nombre = jsonDoc.TryGetValue("nombre", out var nEl) ? nEl.GetString() : null;
+                        var estado = jsonDoc.TryGetValue("estado", out var eEl) ? eEl.GetString() : null;
+                        if (!string.IsNullOrWhiteSpace(nombre))
+                        {
+                            _pendingGeoNombre = nombre;
+                            _pendingGeoType = "Municipio";
+                            _pendingEstadoNombre = estado;
+                            _currentShapeType = "Municipio";
+                            OpenFormForGeoSelection(nombre, "Municipio", estado);
+                        }
                     }
                     else if (messageType == "geoClickError")
                     {
@@ -533,19 +578,316 @@ namespace Advance_Control.Views.Pages
 <html>
 <head>
   <meta charset='utf-8'>
-  <style>html,body,#map{{margin:0;height:100%;width:100%}}</style>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <style>
+    html, body, #map {{ margin: 0; height: 100%; width: 100%; font-family: Roboto, Arial, sans-serif; }}
+    #search-container {{
+      position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+      z-index: 10; width: 500px; max-width: 60%;
+      display: flex; align-items: center;
+      background: #fff; border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.18);
+      transition: box-shadow 0.2s ease;
+    }}
+    #search-container:focus-within {{ box-shadow: 0 4px 20px rgba(0,0,0,0.28); }}
+    #search-box {{
+      flex: 1; padding: 12px 10px 12px 16px; font-size: 15px;
+      border: none; border-radius: 8px 0 0 8px; outline: none;
+      background: transparent; min-width: 0;
+    }}
+    #clear-btn {{
+      flex-shrink: 0; width: 36px; height: 36px; margin-right: 6px;
+      display: none; align-items: center; justify-content: center;
+      background: none; border: none; border-radius: 50%;
+      cursor: pointer; font-size: 18px; color: #666; line-height: 1;
+    }}
+    #clear-btn:hover {{ background: #f0f0f0; color: #333; }}
+    #clear-btn.visible {{ display: flex; }}
+    .pac-container {{ border-radius: 8px; margin-top: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-top: none; }}
+    #layer-btns {{
+      position: absolute; top: 16px; right: 16px; z-index: 10;
+      display: flex; flex-direction: column; gap: 8px;
+    }}
+    #layer-btns button {{
+      padding: 9px 18px; background: #fff;
+      border: 1px solid #dadce0; border-radius: 4px;
+      cursor: pointer; font-size: 14px; font-weight: 500; color: #3c4043;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+      white-space: nowrap; text-align: left;
+    }}
+    #layer-btns button:hover:not(:disabled) {{ background: #f1f3f4; }}
+    #layer-btns button:disabled {{ opacity: 0.45; cursor: default; box-shadow: none; }}
+    #layer-btns button.active {{ background: #e8f0fe; color: #1a73e8; border-color: #4285F4; }}
+    #loading-overlay {{
+      position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%);
+      z-index: 10; background: rgba(0,0,0,0.65); color: #fff;
+      padding: 8px 18px; border-radius: 20px; font-size: 13px;
+      display: none; pointer-events: none;
+    }}
+  </style>
 </head>
 <body>
+  <div id='search-container'>
+    <input id='search-box' type='text' placeholder='Buscar lugar, colonia, coordenadas…' />
+    <button id='clear-btn' title='Limpiar búsqueda'>&#x2715;</button>
+  </div>
+  <div id='layer-btns'>
+    <button id='estado-btn' onclick='toggleEstado()'>Estado</button>
+    <button id='municipio-btn' onclick='toggleMunicipio()' disabled>Municipio</button>
+  </div>
+  <div id='loading-overlay'>Cargando…</div>
   <div id='map'></div>
   <script>
-    function initMap() {{
-      new google.maps.Map(document.getElementById('map'), {{
+    let map, marker, autocomplete, infoWindow;
+    let estadoLayerActive = false;
+    let municipioLayerActive = false;
+    let selectedEstadoNombre = null;
+    let estadosGeoJson = null;
+    let municipiosGeoJson = null;
+
+    const STYLE_ESTADO = {{
+      fillColor: '#4285F4', fillOpacity: 0.07,
+      strokeColor: '#4285F4', strokeWeight: 2, strokeOpacity: 0.85
+    }};
+    const STYLE_ESTADO_SEL = {{
+      fillColor: '#1565C0', fillOpacity: 0.22,
+      strokeColor: '#1565C0', strokeWeight: 2.5, strokeOpacity: 1
+    }};
+    const STYLE_MUNICIPIO = {{
+      fillColor: '#0F9D58', fillOpacity: 0.07,
+      strokeColor: '#0F9D58', strokeWeight: 1.5, strokeOpacity: 0.85
+    }};
+    const STYLE_MUNICIPIO_SEL = {{
+      fillColor: '#1B5E20', fillOpacity: 0.25,
+      strokeColor: '#1B5E20', strokeWeight: 2, strokeOpacity: 1
+    }};
+
+    async function initMap() {{
+      const {{ Map }} = await google.maps.importLibrary(""maps"");
+      const {{ AdvancedMarkerElement }} = await google.maps.importLibrary(""marker"");
+      map = new Map(document.getElementById('map'), {{
         center: {{lat: {centerLat}, lng: {centerLng}}},
-        zoom: {zoom}
+        zoom: {zoom}, mapId: 'DEMO_MAP_ID'
+      }});
+      infoWindow = new google.maps.InfoWindow();
+
+      const input = document.getElementById('search-box');
+      const clearBtn = document.getElementById('clear-btn');
+      autocomplete = new google.maps.places.Autocomplete(input,
+        {{ fields: ['geometry', 'name', 'formatted_address'] }});
+      autocomplete.bindTo('bounds', map);
+      autocomplete.addListener('place_changed', function() {{
+        const place = autocomplete.getPlace();
+        if (!place.geometry || !place.geometry.location) return;
+        navigateTo(place.geometry.location.lat(), place.geometry.location.lng(),
+          place.name || '', place.formatted_address || '');
+      }});
+      input.addEventListener('input', function() {{
+        clearBtn.classList.toggle('visible', this.value.length > 0);
+      }});
+      input.addEventListener('keydown', function(e) {{
+        if (e.key !== 'Enter') return;
+        const text = this.value.trim();
+        const coordMatch = text.match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+        if (coordMatch) {{
+          navigateTo(parseFloat(coordMatch[1]), parseFloat(coordMatch[2]), 'Coordenadas', text);
+        }} else {{ google.maps.event.trigger(autocomplete, 'place_changed'); }}
+      }});
+      clearBtn.addEventListener('click', function() {{
+        input.value = ''; clearBtn.classList.remove('visible');
+        if (marker) {{ marker.setMap(null); marker = null; }}
+        infoWindow.close(); input.focus();
+      }});
+
+      map.data.addListener('click', function(event) {{
+        try {{
+          const feature = event.feature;
+          const nombre = feature.getProperty('nombre') || '';
+          const estado = feature.getProperty('estado') || nombre;
+          if (!municipioLayerActive) {{
+            selectedEstadoNombre = nombre;
+            applyEstadoStyles();
+            updateButtons();
+            try {{
+              window.chrome.webview.postMessage(JSON.stringify({{
+                type: 'estadoSelected', nombre: nombre
+              }}));
+            }} catch(e) {{}}
+          }} else {{
+            map.data.revertStyle();
+            map.data.overrideStyle(feature, STYLE_MUNICIPIO_SEL);
+            try {{
+              window.chrome.webview.postMessage(JSON.stringify({{
+                type: 'municipioSelected', nombre: nombre, estado: estado
+              }}));
+            }} catch(e) {{}}
+          }}
+        }} catch(err) {{
+          try {{ window.chrome.webview.postMessage(JSON.stringify({{ type: 'geoClickError', message: err.message }})); }} catch(e) {{}}
+        }}
+      }});
+    }}
+
+    function applyEstadoStyles() {{
+      map.data.setStyle(function(feature) {{
+        return feature.getProperty('nombre') === selectedEstadoNombre
+          ? STYLE_ESTADO_SEL : STYLE_ESTADO;
+      }});
+    }}
+
+    function setLoading(text) {{
+      const el = document.getElementById('loading-overlay');
+      if (text) {{ el.textContent = text; el.style.display = 'block'; }}
+      else {{ el.style.display = 'none'; }}
+    }}
+
+    async function toggleEstado() {{
+      if (estadoLayerActive) {{
+        map.data.forEach(f => map.data.remove(f));
+        estadoLayerActive = false;
+        municipioLayerActive = false;
+        selectedEstadoNombre = null;
+        updateButtons();
+        return;
+      }}
+      setLoading('Cargando estados…');
+      try {{
+        if (!estadosGeoJson) {{
+          const resp = await fetch('https://geo-assets/estados.json');
+          estadosGeoJson = await resp.json();
+        }}
+        map.data.forEach(f => map.data.remove(f));
+        municipioLayerActive = false;
+        selectedEstadoNombre = null;
+        map.data.addGeoJson(estadosGeoJson);
+        map.data.setStyle(STYLE_ESTADO);
+        estadoLayerActive = true;
+        updateButtons();
+      }} catch(err) {{
+        try {{ window.chrome.webview.postMessage(JSON.stringify({{ type: 'geoClickError', message: 'toggleEstado: ' + err.message }})); }} catch(e) {{}}
+      }} finally {{
+        setLoading(null);
+      }}
+    }}
+
+    async function toggleMunicipio() {{
+      if (municipioLayerActive) {{
+        municipioLayerActive = false;
+        map.data.forEach(f => map.data.remove(f));
+        map.data.addGeoJson(estadosGeoJson);
+        applyEstadoStyles();
+        updateButtons();
+        return;
+      }}
+      if (!selectedEstadoNombre) return;
+      setLoading(`Cargando municipios de ${{selectedEstadoNombre}}…`);
+      try {{
+        if (!municipiosGeoJson) {{
+          const resp = await fetch('https://geo-assets/municipios.json');
+          municipiosGeoJson = await resp.json();
+        }}
+        const filtered = {{
+          type: 'FeatureCollection',
+          features: municipiosGeoJson.features.filter(
+            f => f.properties && f.properties.estado === selectedEstadoNombre)
+        }};
+        map.data.forEach(f => map.data.remove(f));
+        map.data.addGeoJson(filtered);
+        map.data.setStyle(STYLE_MUNICIPIO);
+        municipioLayerActive = true;
+        updateButtons();
+      }} catch(err) {{
+        try {{ window.chrome.webview.postMessage(JSON.stringify({{ type: 'geoClickError', message: 'toggleMunicipio: ' + err.message }})); }} catch(e) {{}}
+      }} finally {{
+        setLoading(null);
+      }}
+    }}
+
+    function updateButtons() {{
+      const eBtn = document.getElementById('estado-btn');
+      const mBtn = document.getElementById('municipio-btn');
+      eBtn.classList.toggle('active', estadoLayerActive);
+      mBtn.disabled = !selectedEstadoNombre && !municipioLayerActive;
+      mBtn.classList.toggle('active', municipioLayerActive);
+    }}
+
+    function navigateTo(lat, lng, name, address) {{
+      const pos = {{ lat: lat, lng: lng }};
+      map.panTo(pos); map.setZoom(13);
+      if (marker) marker.setMap(null);
+      infoWindow.close();
+      marker = new google.maps.marker.AdvancedMarkerElement({{
+        map: map, position: pos, title: name
+      }});
+      if (name || address) {{
+        const contentString = `<div style='padding: 4px; max-width: 200px;'>` +
+          `${{name ? `<strong>${{name}}</strong><br/>` : ''}}` +
+          `${{address ? `<span style='font-size:12px;color:#555;'>${{address}}</span>` : ''}}` +
+          `</div>`;
+        infoWindow.setContent(contentString);
+        infoWindow.open({{ map, anchor: marker }});
+      }}
+    }}
+
+    function fitBoundsToFeature(feature) {{
+      try {{
+        const bounds = new google.maps.LatLngBounds();
+        feature.getGeometry().forEachLatLng(function(latlng) {{ bounds.extend(latlng); }});
+        if (!bounds.isEmpty()) map.fitBounds(bounds);
+      }} catch(e) {{}}
+    }}
+
+    async function highlightEstado(nombre) {{
+      if (municipioLayerActive) {{
+        municipioLayerActive = false;
+        map.data.forEach(f => map.data.remove(f));
+        if (estadosGeoJson) map.data.addGeoJson(estadosGeoJson);
+        estadoLayerActive = true;
+      }} else if (!estadoLayerActive) {{
+        await toggleEstado();
+      }}
+      selectedEstadoNombre = nombre;
+      applyEstadoStyles();
+      updateButtons();
+      map.data.forEach(function(feature) {{
+        if (feature.getProperty('nombre') === nombre) fitBoundsToFeature(feature);
+      }});
+    }}
+
+    async function highlightMunicipio(nombre, estado) {{
+      if (!estadoLayerActive || selectedEstadoNombre !== estado || municipioLayerActive) {{
+        if (!estadoLayerActive) await toggleEstado();
+        selectedEstadoNombre = estado;
+        municipioLayerActive = false;
+        setLoading(`Cargando municipios de ${{estado}}…`);
+        try {{
+          if (!municipiosGeoJson) {{
+            const resp = await fetch('https://geo-assets/municipios.json');
+            municipiosGeoJson = await resp.json();
+          }}
+          const filtered = {{
+            type: 'FeatureCollection',
+            features: municipiosGeoJson.features.filter(
+              f => f.properties && f.properties.estado === estado)
+          }};
+          map.data.forEach(f => map.data.remove(f));
+          map.data.addGeoJson(filtered);
+          map.data.setStyle(STYLE_MUNICIPIO);
+          municipioLayerActive = true;
+          updateButtons();
+        }} finally {{ setLoading(null); }}
+      }}
+      map.data.revertStyle();
+      map.data.forEach(function(feature) {{
+        if (feature.getProperty('nombre') === nombre && feature.getProperty('estado') === estado) {{
+          map.data.overrideStyle(feature, STYLE_MUNICIPIO_SEL);
+          fitBoundsToFeature(feature);
+        }}
       }});
     }}
   </script>
-  <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&callback=initMap' defer></script>
+  <script src='https://maps.googleapis.com/maps/api/js?key={apiKey}&libraries=places&callback=initMap' async defer></script>
 </body>
 </html>";
         }
@@ -769,34 +1111,23 @@ namespace Advance_Control.Views.Pages
                 return;
             }
 
+            bool isGeoType = _currentShapeType == "Estado" || _currentShapeType == "Municipio";
+
             if (!_isEditMode && string.IsNullOrEmpty(_currentShapeType))
             {
-                await _loggingService.LogErrorAsync(
-                    "Validation failed: _currentShapeType is null or empty when creating a new area.",
-                    null,
-                    "AreasPage",
-                    "SaveButton_Click");
-                
-                await _notificacionService.MostrarAsync("Validación", "Debe dibujar un área en el mapa antes de guardar.");
+                await _notificacionService.MostrarAsync("Validación", "Selecciona un estado o municipio en el mapa antes de guardar.");
                 return;
             }
 
-            if (!_isEditMode)
+            if (!_isEditMode && !isGeoType)
             {
-                bool hasValidShapeData = false;
-                
-                if (_currentShapeType?.ToLower() == "circle")
-                {
-                    hasValidShapeData = !string.IsNullOrEmpty(_currentShapeCenter) && _currentShapeRadius.HasValue;
-                }
-                else
-                {
-                    hasValidShapeData = !string.IsNullOrEmpty(_currentShapePath);
-                }
+                bool hasValidShapeData = _currentShapeType?.ToLower() == "circle"
+                    ? !string.IsNullOrEmpty(_currentShapeCenter) && _currentShapeRadius.HasValue
+                    : !string.IsNullOrEmpty(_currentShapePath);
 
                 if (!hasValidShapeData)
                 {
-                    await _notificacionService.MostrarAsync("Validación", "Debe dibujar un área en el mapa antes de guardar.");
+                    await _notificacionService.MostrarAsync("Validación", "Selecciona un estado o municipio en el mapa antes de guardar.");
                     return;
                 }
             }
@@ -818,15 +1149,22 @@ namespace Advance_Control.Views.Pages
                 AnchoBorde = 2,
                 Activo = ActivoCheckBox.IsChecked,
                 TipoGeometria = _currentShapeType ?? "Polygon",
-                MetadataJSON = _isEditMode && string.IsNullOrEmpty(_currentShapePath)
-                    ? null
-                    : JsonSerializer.Serialize(new Dictionary<string, object?>
-                    {
-                        ["path"] = _currentShapePath != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapePath) : (object?)null,
-                        ["center"] = _currentShapeCenter != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapeCenter) : (object?)null,
-                        ["bounds"] = _currentShapeBounds != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapeBounds) : (object?)null,
-                        ["radius"] = _currentShapeRadius
-                    })
+                MetadataJSON = isGeoType
+                    ? JsonSerializer.Serialize(new
+                      {
+                          geoType = _currentShapeType,
+                          nombre = _pendingGeoNombre ?? NombreTextBox.Text.Trim(),
+                          estado = _pendingEstadoNombre
+                      })
+                    : _isEditMode && string.IsNullOrEmpty(_currentShapePath)
+                        ? null
+                        : JsonSerializer.Serialize(new Dictionary<string, object?>
+                        {
+                            ["path"] = _currentShapePath != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapePath) : (object?)null,
+                            ["center"] = _currentShapeCenter != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapeCenter) : (object?)null,
+                            ["bounds"] = _currentShapeBounds != null ? JsonSerializer.Deserialize<JsonElement>(_currentShapeBounds) : (object?)null,
+                            ["radius"] = _currentShapeRadius
+                        })
             };
 
             // Log the serialized MetadataJSON for debugging data flow
@@ -921,6 +1259,8 @@ namespace Advance_Control.Views.Pages
             _currentShapeRadius = null;
             _currentShapeBounds = null;
             _pendingGeoNombre = null;
+            _pendingGeoType = null;
+            _pendingEstadoNombre = null;
 
             AreasList.SelectedItem = null;
         }
@@ -971,7 +1311,7 @@ namespace Advance_Control.Views.Pages
         /// <summary>
         /// Centra el mapa en un área seleccionada y la dibuja si no existe
         /// </summary>
-        private async Task CenterMapOnAreaAsync(AreaDto area,int zoom)
+        private async Task CenterMapOnAreaAsync(AreaDto area, int zoom)
         {
             try
             {
@@ -979,6 +1319,28 @@ namespace Advance_Control.Views.Pages
                 {
                     await _loggingService.LogWarningAsync("MapWebView o CoreWebView2 es null", "AreasPage", "CenterMapOnAreaAsync");
                     return;
+                }
+
+                // Detectar si es un área de tipo geo (estado/municipio)
+                if (!string.IsNullOrEmpty(area.MetadataJSON))
+                {
+                    try
+                    {
+                        var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(area.MetadataJSON);
+                        if (meta != null && meta.TryGetValue("geoType", out var geoTypeEl))
+                        {
+                            var geoType = geoTypeEl.GetString();
+                            var nombre = meta.TryGetValue("nombre", out var nEl) ? nEl.GetString() : area.Nombre;
+                            var estado = meta.TryGetValue("estado", out var eEl) ? eEl.GetString() : null;
+                            var nombreJson = JsonSerializer.Serialize(nombre);
+                            var script = geoType == "Estado"
+                                ? $"highlightEstado({nombreJson});"
+                                : $"highlightMunicipio({nombreJson}, {JsonSerializer.Serialize(estado)});";
+                            await MapWebView.CoreWebView2.ExecuteScriptAsync(script);
+                            return;
+                        }
+                    }
+                    catch { /* continuar con lógica de coordenadas */ }
                 }
 
                 // Check if area has center coordinates

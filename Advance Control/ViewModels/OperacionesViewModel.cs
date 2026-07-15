@@ -50,6 +50,7 @@ namespace Advance_Control.ViewModels
         private List<(int Id, string Identificador)> _todosLosEquipos = new();
         private bool _isLoading;
         private string? _errorMessage;
+        private string? _idOperacionFilter;
         private int _idTipoFilter;
         private int _idClienteFilter;
         private int _idEquipoFilter;
@@ -186,6 +187,12 @@ namespace Advance_Control.ViewModels
         /// Indica si hay un mensaje de error activo
         /// </summary>
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
+
+        public string? IdOperacionFilter
+        {
+            get => _idOperacionFilter;
+            set => SetProperty(ref _idOperacionFilter, value);
+        }
 
         public int IdTipoFilter
         {
@@ -451,6 +458,7 @@ namespace Advance_Control.ViewModels
 
                 var query = new OperacionQueryDto
                 {
+                    IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
                     IdTipo = IdTipoFilter,
                     IdCliente = IdClienteFilter,
                     IdEquipo = IdEquipoFilter,
@@ -553,6 +561,7 @@ namespace Advance_Control.ViewModels
         {
             try
             {
+                IdOperacionFilter = null;
                 IdTipoFilter = 0;
                 IdClienteFilter = 0;
                 IdEquipoFilter = 0;

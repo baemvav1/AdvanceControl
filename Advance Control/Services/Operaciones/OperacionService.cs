@@ -61,6 +61,7 @@ namespace Advance_Control.Services.Operaciones
                 if (query != null)
                 {
                     builder
+                        .AddPositive("idOperacion", query.IdOperacion)
                         .AddPositive("idTipo", query.IdTipo)
                         .AddPositive("idCliente", query.IdCliente)
                         .AddPositive("idEquipo", query.IdEquipo)

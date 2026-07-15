@@ -8,6 +8,11 @@ namespace Advance_Control.Models
     public class OperacionQueryDto
     {
         /// <summary>
+        /// Filtro exacto por idOperacion (0 para no filtrar)
+        /// </summary>
+        public int IdOperacion { get; set; }
+
+        /// <summary>
         /// Filtro exacto por idTipo (0 para no filtrar)
         /// </summary>
         public int IdTipo { get; set; }
