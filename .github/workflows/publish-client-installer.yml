@@ -119,7 +119,7 @@ jobs:
           $normalizedKey = ($env:VPS_SSH_KEY -replace "`r`n", "`n" -replace "`r", "`n").TrimEnd("`n") + "`n"
           [System.IO.File]::WriteAllText($keyPath, $normalizedKey, [System.Text.Encoding]::ASCII)
           icacls $keyPath /inheritance:r | Out-Null
-          icacls $keyPath /grant:r "$($env:USERNAME):(R)" | Out-Null
+          icacls $keyPath /grant:r "$($env:USERNAME):(F)" | Out-Null
 
           $files = @(
             'artifacts\installer\AdvanceControl-x64.msix',
