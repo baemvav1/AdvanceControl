@@ -230,6 +230,7 @@
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xEC7A;" />
                                     </NavigationViewItem.Icon>
+                                    
                                 </NavigationViewItem>
                                 <NavigationViewItem
                                     Content="Proveedores"

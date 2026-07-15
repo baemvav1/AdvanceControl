@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppNotifications;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
@@ -1004,6 +1005,16 @@ namespace Advance_Control
 
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
+
+                    // Auto-updater: HttpClient sin autenticación, apunta a /client-dist/ del VPS
+                    services.AddHttpClient("AutoUpdate", (sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        client.Timeout = TimeSpan.FromMinutes(10);
+                    });
+                    services.AddSingleton<Services.AutoUpdate.IAutoUpdateService, Services.AutoUpdate.AutoUpdateService>();
                 })
                 .Build();
         }
@@ -1119,6 +1130,20 @@ namespace Advance_Control
             };
 
             window.Activate();
+
+            // Verificar actualizaciones en background después de que la ventana esté visible.
+            // Se corre en el UI thread via DispatcherQueue para que ContentDialog funcione,
+            // con un delay mínimo para que el frame principal cargue antes del dialog.
+            window.DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await Task.Delay(3000);
+                    var updater = Host.Services.GetRequiredService<Services.AutoUpdate.IAutoUpdateService>();
+                    await updater.CheckAndPromptAsync();
+                }
+                catch { }
+            });
         }
 
         /// <summary>Escribe un log de crash al archivo %TEMP%\advancecontrol_crash.log para diagnóstico cuando el diálogo falla.</summary>

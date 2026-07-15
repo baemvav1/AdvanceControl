@@ -95,6 +95,23 @@ jobs:
             -CertificatePath $env:CERT_PATH `
             -CertificatePassword $env:CERT_PASSWORD
 
+      - name: Generar version.json
+        shell: pwsh
+        run: |
+          @{ version = "${{ steps.version.outputs.version }}" } |
+            ConvertTo-Json -Compress |
+            Set-Content -Encoding UTF8 artifacts/installer/version.json
+
+      - name: Subir MSIX y version.json al VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "artifacts/installer/AdvanceControl-x64.msix,artifacts/installer/version.json"
+          target: /opt/advanceapi/storage/client-dist/
+          strip_components: 2
+
       - name: Publicar artefactos del workflow
         uses: actions/upload-artifact@v4
         with:
