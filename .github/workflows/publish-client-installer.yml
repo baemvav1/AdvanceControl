@@ -80,8 +80,8 @@ jobs:
         shell: pwsh
         env:
           PACKAGE_VERSION: ${{ steps.version.outputs.version }}
-          # URI estable sin redirect — AppInstaller no sigue HTTP 302 de GitHub correctamente
-          APP_INSTALLER_BASE_URI: ${{ github.server_url }}/${{ github.repository }}/releases/download/client-latest
+          # Servido directo desde el VPS — independiente de GitHub Releases
+          APP_INSTALLER_BASE_URI: http://${{ secrets.VPS_HOST }}:5030/client-dist
           CERT_PATH: ${{ steps.cert.outputs.path }}
           CERT_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
         run: |
@@ -108,7 +108,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          source: "artifacts/installer/AdvanceControl-x64.msix,artifacts/installer/version.json"
+          source: "artifacts/installer/AdvanceControl-x64.msix,artifacts/installer/version.json,artifacts/installer/AdvanceControl.appinstaller"
           target: /opt/advanceapi/storage/client-dist/
           strip_components: 2
 

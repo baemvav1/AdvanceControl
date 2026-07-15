@@ -72,7 +72,7 @@ try {
 
     Log "--- Paso 2: Descarga ---"
     $appInstallerPath = Join-Path $env:TEMP 'AdvanceControl.appinstaller'
-    $url = 'https://github.com/baemvav1/AdvanceControl/releases/download/client-latest/AdvanceControl.appinstaller'
+    $url = 'http://187.124.243.107:5030/client-dist/AdvanceControl.appinstaller'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     Invoke-WebRequest -Uri $url -OutFile $appInstallerPath -UseBasicParsing
     Log "Descargado: $appInstallerPath"
