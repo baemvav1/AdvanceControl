@@ -38,5 +38,6 @@ namespace Advance_Control.Models
         public string? XmlContenido { get; set; }
         public List<FacturaConceptoDto> Conceptos { get; set; } = new();
         public List<FacturaTrasladoDto> TrasladosGlobales { get; set; } = new();
+        public int? IdOperacion { get; set; }
     }
 }

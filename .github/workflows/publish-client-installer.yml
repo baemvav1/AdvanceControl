@@ -128,9 +128,19 @@ jobs:
           )
 
           foreach ($file in $files) {
-            & scp -o StrictHostKeyChecking=no -i $keyPath $file "${env:VPS_USER}@${env:VPS_HOST}:/opt/advanceapi/storage/client-dist/"
-            if ($LASTEXITCODE -ne 0) {
-              throw "scp fallo para '$file' (exit code $LASTEXITCODE)"
+            $maxAttempts = 5
+            $succeeded = $false
+            for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+              & scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -i $keyPath $file "${env:VPS_USER}@${env:VPS_HOST}:/opt/advanceapi/storage/client-dist/"
+              if ($LASTEXITCODE -eq 0) {
+                $succeeded = $true
+                break
+              }
+              Write-Host "scp fallo para '$file' (intento $attempt/$maxAttempts, exit code $LASTEXITCODE) — el proveedor del VPS a veces limita momentaneamente IPs de runners en la nube. Reintentando en 20s..."
+              Start-Sleep -Seconds 20
+            }
+            if (-not $succeeded) {
+              throw "scp fallo para '$file' tras $maxAttempts intentos"
             }
           }
 

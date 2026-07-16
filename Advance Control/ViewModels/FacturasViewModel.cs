@@ -191,7 +191,7 @@ namespace Advance_Control.ViewModels
                 if (file != null)
                 {
                     var xmlContent = await FileIO.ReadTextAsync(file);
-                    var request = ConstruirFacturaDesdeXml(xmlContent);
+                    var request = CfdiXmlParser.ParseXmlToRequest(xmlContent);
                     var requestPreparado = await PrepararFacturaParaGuardadoAsync(request, xamlRoot);
                     if (requestPreparado == null)
                     {
@@ -262,7 +262,7 @@ namespace Advance_Control.ViewModels
                     try
                     {
                         var xmlContent = await FileIO.ReadTextAsync(file);
-                        var request = ConstruirFacturaDesdeXml(xmlContent);
+                        var request = CfdiXmlParser.ParseXmlToRequest(xmlContent);
 
                         if (string.IsNullOrWhiteSpace(request.Folio))
                         {
@@ -424,71 +424,6 @@ namespace Advance_Control.ViewModels
             AplicarFiltrosFacturasExistentes();
         }
 
-        private GuardarFacturaRequestDto ConstruirFacturaDesdeXml(string xmlContent)
-        {
-            var doc = XDocument.Parse(xmlContent);
-            var comprobante = doc.Root ?? throw new InvalidOperationException("El XML no contiene el nodo Comprobante.");
-            var emisor = ElementByLocalName(comprobante, "Emisor");
-            var receptor = ElementByLocalName(comprobante, "Receptor");
-            var impuestos = ElementByLocalName(comprobante, "Impuestos");
-            var timbre = ElementByLocalName(ElementByLocalName(comprobante, "Complemento"), "TimbreFiscalDigital");
-
-            var conceptos = comprobante
-                .Elements()
-                .FirstOrDefault(element => string.Equals(element.Name.LocalName, "Conceptos", StringComparison.OrdinalIgnoreCase))?
-                .Elements()
-                .Where(element => string.Equals(element.Name.LocalName, "Concepto", StringComparison.OrdinalIgnoreCase))
-                .Select((concepto, index) => CrearConcepto(concepto, index + 1))
-                .ToList() ?? new List<FacturaConceptoDto>();
-
-            var trasladosGlobales = impuestos?
-                .Elements()
-                .FirstOrDefault(element => string.Equals(element.Name.LocalName, "Traslados", StringComparison.OrdinalIgnoreCase))?
-                .Elements()
-                .Where(element => string.Equals(element.Name.LocalName, "Traslado", StringComparison.OrdinalIgnoreCase))
-                .Select((traslado, index) => CrearTraslado(traslado, index + 1))
-                .ToList() ?? new List<FacturaTrasladoDto>();
-
-            var request = new GuardarFacturaRequestDto
-            {
-                VersionXml = GetStringAttr(comprobante, "Version") ?? "4.0",
-                Folio = GetStringAttr(comprobante, "Folio"),
-                Fecha = GetDateTimeAttr(comprobante, "Fecha") ?? DateTime.Now,
-                FormaPago = GetStringAttr(comprobante, "FormaPago"),
-                NoCertificado = GetStringAttr(comprobante, "NoCertificado"),
-                Certificado = GetStringAttr(comprobante, "Certificado"),
-                Sello = GetStringAttr(comprobante, "Sello"),
-                CondicionesDePago = GetStringAttr(comprobante, "CondicionesDePago"),
-                SubTotal = GetDecimalAttr(comprobante, "SubTotal"),
-                Moneda = GetStringAttr(comprobante, "Moneda") ?? "MXN",
-                Total = GetDecimalAttr(comprobante, "Total"),
-                TipoDeComprobante = GetStringAttr(comprobante, "TipoDeComprobante"),
-                Exportacion = GetStringAttr(comprobante, "Exportacion"),
-                MetodoPago = GetStringAttr(comprobante, "MetodoPago"),
-                LugarExpedicion = GetStringAttr(comprobante, "LugarExpedicion"),
-                TotalImpuestosTrasladados = GetDecimalAttr(impuestos, "TotalImpuestosTrasladados"),
-                EmisorRfc = GetStringAttr(emisor, "Rfc"),
-                EmisorNombre = GetStringAttr(emisor, "Nombre"),
-                EmisorRegimenFiscal = GetStringAttr(emisor, "RegimenFiscal"),
-                ReceptorRfc = GetStringAttr(receptor, "Rfc"),
-                ReceptorNombre = GetStringAttr(receptor, "Nombre"),
-                ReceptorDomicilioFiscal = GetStringAttr(receptor, "DomicilioFiscalReceptor"),
-                ReceptorRegimenFiscal = GetStringAttr(receptor, "RegimenFiscalReceptor"),
-                ReceptorUsoCfdi = GetStringAttr(receptor, "UsoCFDI"),
-                Uuid = GetStringAttr(timbre, "UUID"),
-                FechaTimbrado = GetDateTimeAttr(timbre, "FechaTimbrado"),
-                RfcProvCertif = GetStringAttr(timbre, "RfcProvCertif"),
-                NoCertificadoSat = GetStringAttr(timbre, "NoCertificadoSAT"),
-                SelloCfd = GetStringAttr(timbre, "SelloCFD"),
-                SelloSat = GetStringAttr(timbre, "SelloSAT"),
-                XmlContenido = xmlContent,
-                Conceptos = conceptos,
-                TrasladosGlobales = trasladosGlobales
-            };
-
-            return request;
-        }
-
         private void AplicarFacturaActual(GuardarFacturaRequestDto request)
         {
             _facturaActualRequest = request;
@@ -504,46 +439,6 @@ namespace Advance_Control.ViewModels
             _facturasExistentesBase.Clear();
             _facturasExistentesBase.AddRange(facturas.OrderByDescending(f => f.Fecha).ThenByDescending(f => f.IdFactura));
             AplicarFiltrosFacturasExistentes();
-        }
-
-        private static FacturaConceptoDto CrearConcepto(XElement concepto, int orden)
-        {
-            var traslados = concepto
-                .Elements()
-                .FirstOrDefault(element => string.Equals(element.Name.LocalName, "Impuestos", StringComparison.OrdinalIgnoreCase))?
-                .Elements()
-                .FirstOrDefault(element => string.Equals(element.Name.LocalName, "Traslados", StringComparison.OrdinalIgnoreCase))?
-                .Elements()
-                .Where(element => string.Equals(element.Name.LocalName, "Traslado", StringComparison.OrdinalIgnoreCase))
-                .Select((traslado, index) => CrearTraslado(traslado, index + 1))
-                .ToList() ?? new List<FacturaTrasladoDto>();
-
-            return new FacturaConceptoDto
-            {
-                Orden = orden,
-                ClaveProdServ = GetStringAttr(concepto, "ClaveProdServ"),
-                Cantidad = GetDecimalAttr(concepto, "Cantidad"),
-                ClaveUnidad = GetStringAttr(concepto, "ClaveUnidad"),
-                Unidad = GetStringAttr(concepto, "Unidad"),
-                Descripcion = GetStringAttr(concepto, "Descripcion") ?? string.Empty,
-                ValorUnitario = GetDecimalAttr(concepto, "ValorUnitario"),
-                Importe = GetDecimalAttr(concepto, "Importe"),
-                ObjetoImp = GetStringAttr(concepto, "ObjetoImp"),
-                Traslados = traslados
-            };
-        }
-
-        private static FacturaTrasladoDto CrearTraslado(XElement traslado, int orden)
-        {
-            return new FacturaTrasladoDto
-            {
-                Orden = orden,
-                Base = GetDecimalAttr(traslado, "Base"),
-                Impuesto = GetStringAttr(traslado, "Impuesto"),
-                TipoFactor = GetStringAttr(traslado, "TipoFactor"),
-                TasaOCuota = GetDecimalAttr(traslado, "TasaOCuota"),
-                Importe = GetDecimalAttr(traslado, "Importe")
-            };
         }
 
         private static FacturaResumenDto CrearResumen(GuardarFacturaRequestDto request)
@@ -681,7 +576,7 @@ namespace Advance_Control.ViewModels
             {
                 var document = XDocument.Parse(request.XmlContenido, LoadOptions.PreserveWhitespace);
                 var comprobante = document.Root;
-                var tipoCambio = GetDecimalAttr(comprobante, "TipoCambio");
+                var tipoCambio = CfdiXmlParser.GetDecimalAttr(comprobante, "TipoCambio");
                 return tipoCambio > 0m ? tipoCambio : 1m;
             }
             catch
@@ -881,7 +776,7 @@ namespace Advance_Control.ViewModels
             EstablecerAtributo(comprobante, "Total", FormatearImporte(totalNormalizado));
             EstablecerAtributo(comprobante, "TipoCambio", "1");
 
-            var conceptosNodo = ElementByLocalName(comprobante, "Conceptos")
+            var conceptosNodo = CfdiXmlParser.ElementByLocalName(comprobante, "Conceptos")
                 ?? throw new InvalidOperationException("El XML de la factura no contiene el nodo Conceptos para alinear la normalización.");
 
             var conceptosXml = conceptosNodo
@@ -903,8 +798,8 @@ namespace Advance_Control.ViewModels
                 EstablecerAtributo(conceptoXml, "ValorUnitario", FormatearImporteAmpliado(conceptoNormalizado.ValorUnitario));
                 EstablecerAtributo(conceptoXml, "Importe", FormatearImporte(conceptoNormalizado.Importe));
 
-                var impuestosNodo = ElementByLocalName(conceptoXml, "Impuestos") ?? CrearHijo(conceptoXml, "Impuestos");
-                var trasladosNodo = ElementByLocalName(impuestosNodo, "Traslados") ?? CrearHijo(impuestosNodo, "Traslados");
+                var impuestosNodo = CfdiXmlParser.ElementByLocalName(conceptoXml, "Impuestos") ?? CrearHijo(conceptoXml, "Impuestos");
+                var trasladosNodo = CfdiXmlParser.ElementByLocalName(impuestosNodo, "Traslados") ?? CrearHijo(impuestosNodo, "Traslados");
                 trasladosNodo.RemoveNodes();
 
                 var trasladoNodo = new XElement(
@@ -918,10 +813,10 @@ namespace Advance_Control.ViewModels
                 trasladosNodo.Add(trasladoNodo);
             }
 
-            var impuestosGlobalesNodo = ElementByLocalName(comprobante, "Impuestos") ?? CrearHijo(comprobante, "Impuestos");
+            var impuestosGlobalesNodo = CfdiXmlParser.ElementByLocalName(comprobante, "Impuestos") ?? CrearHijo(comprobante, "Impuestos");
             EstablecerAtributo(impuestosGlobalesNodo, "TotalImpuestosTrasladados", FormatearImporte(impuestosNormalizados));
 
-            var trasladosGlobalesNodo = ElementByLocalName(impuestosGlobalesNodo, "Traslados") ?? CrearHijo(impuestosGlobalesNodo, "Traslados");
+            var trasladosGlobalesNodo = CfdiXmlParser.ElementByLocalName(impuestosGlobalesNodo, "Traslados") ?? CrearHijo(impuestosGlobalesNodo, "Traslados");
             trasladosGlobalesNodo.RemoveNodes();
             trasladosGlobalesNodo.Add(
                 new XElement(
@@ -972,28 +867,5 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        private static XElement? ElementByLocalName(XElement? parent, string localName)
-            => parent?
-                .Elements()
-                .FirstOrDefault(element => string.Equals(element.Name.LocalName, localName, StringComparison.OrdinalIgnoreCase));
-
-        private static string? GetStringAttr(XElement? element, string attributeName)
-            => element?.Attribute(attributeName)?.Value;
-
-        private static decimal GetDecimalAttr(XElement? element, string attributeName)
-        {
-            var value = GetStringAttr(element, attributeName);
-            return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var result)
-                ? result
-                : 0m;
-        }
-
-        private static DateTime? GetDateTimeAttr(XElement? element, string attributeName)
-        {
-            var value = GetStringAttr(element, attributeName);
-            return DateTime.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var result)
-                ? result
-                : null;
-        }
     }
 }

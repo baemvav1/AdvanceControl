@@ -57,7 +57,7 @@ namespace Advance_Control.Services.Facturas
                     return new GuardarFacturaResponseDto
                     {
                         Success = false,
-                        Message = errorContent
+                        Message = ExtraerMensajeError(errorContent)
                     };
                 }
 
@@ -277,6 +277,98 @@ namespace Advance_Control.Services.Facturas
                 Success = false,
                 Message = mensaje
             };
+        }
+
+        public async Task<List<OperacionSinFacturaDto>> ObtenerOperacionesSinFacturaAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "operaciones-sin-factura");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando operaciones sin factura en: {url}", "FacturaService", "ObtenerOperacionesSinFacturaAsync");
+                var result = await _http.GetFromJsonAsync<List<OperacionSinFacturaDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<OperacionSinFacturaDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar operaciones sin factura", ex, "FacturaService", "ObtenerOperacionesSinFacturaAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al consultar operaciones sin factura.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al consultar operaciones sin factura", ex, "FacturaService", "ObtenerOperacionesSinFacturaAsync");
+                throw;
+            }
+        }
+
+        public async Task<List<OperacionFacturadaDto>> ObtenerOperacionesFacturadasAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "operaciones-facturadas");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando operaciones facturadas en: {url}", "FacturaService", "ObtenerOperacionesFacturadasAsync");
+                var result = await _http.GetFromJsonAsync<List<OperacionFacturadaDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<OperacionFacturadaDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar operaciones facturadas", ex, "FacturaService", "ObtenerOperacionesFacturadasAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al consultar operaciones facturadas.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al consultar operaciones facturadas", ex, "FacturaService", "ObtenerOperacionesFacturadasAsync");
+                throw;
+            }
+        }
+
+        public async Task<CancelarFacturaOperacionResponseDto> CancelarFacturaOperacionAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "operacion", idOperacion.ToString());
+
+            try
+            {
+                await _logger.LogInformationAsync($"Cancelando factura de operacion en: {url}", "FacturaService", "CancelarFacturaOperacionAsync");
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    var mensaje = ExtraerMensajeError(errorContent);
+                    await _logger.LogErrorAsync(
+                        $"Error al cancelar factura de operacion. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        "CancelarFacturaOperacionAsync");
+                    throw new InvalidOperationException(mensaje);
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<CancelarFacturaOperacionResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new CancelarFacturaOperacionResponseDto { IdOperacion = idOperacion };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al cancelar factura de operacion", ex, "FacturaService", "CancelarFacturaOperacionAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al cancelar la factura de la operacion.", ex);
+            }
+        }
+
+        private static string ExtraerMensajeError(string errorContent)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(errorContent);
+                if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                {
+                    return messageProp.GetString() ?? errorContent;
+                }
+            }
+            catch (JsonException)
+            {
+                // errorContent no es JSON valido; se devuelve tal cual.
+            }
+
+            return errorContent;
         }
     }
 }

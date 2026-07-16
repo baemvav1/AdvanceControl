@@ -37,6 +37,7 @@ namespace Advance_Control.Models
         public decimal SaldoPendiente { get; set; }
         public int NumeroAbonos { get; set; }
         public DateTime? FechaUltimoAbono { get; set; }
+        public int? IdOperacion { get; set; }
 
         public string FolioTitulo => $"{Folio}";
 

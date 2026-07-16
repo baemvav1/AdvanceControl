@@ -146,6 +146,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.EstadoCuentaPage>("EstadoCuenta");
             _navigationService.Configure<Views.Pages.ConciliacionPage>("Conciliacion");
             _navigationService.Configure<Views.Pages.FacturasPage>("Facturas");
+            _navigationService.Configure<Views.Pages.FacturacionPage>("Facturacion");
             _navigationService.Configure<Views.Pages.ReporteFinancieroFacturacionPage>("ReporteFinancieroFacturacion");
             _navigationService.Configure<Views.Pages.CorreoPage>("Correo");
             _navigationService.Configure<Views.Pages.MensajesPage>("Mensajes");

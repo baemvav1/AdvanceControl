@@ -833,6 +833,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.UsuariosAdminViewModel>();
                     services.AddTransient<ViewModels.FacturasViewModel>();
                     services.AddTransient<ViewModels.DetailFacturaViewModel>();
+                    services.AddTransient<ViewModels.FacturacionViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();
                     services.AddTransient<ViewModels.DevOpsViewModel>();
 
