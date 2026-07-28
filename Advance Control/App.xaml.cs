@@ -737,6 +737,25 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    services.AddHttpClient<Services.VisorMundial.IVisorMundialService, Services.VisorMundial.VisorMundialService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(60);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar LocalCargoImageService para almacenamiento local de imágenes de cargos
                     services.AddHttpClient("RemoteCargos", (sp, client) =>
                     {
@@ -834,6 +853,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.FacturasViewModel>();
                     services.AddTransient<ViewModels.DetailFacturaViewModel>();
                     services.AddTransient<ViewModels.FacturacionViewModel>();
+                    services.AddTransient<ViewModels.VisorMundialViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();
                     services.AddTransient<ViewModels.DevOpsViewModel>();
 

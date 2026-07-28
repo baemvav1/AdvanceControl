@@ -221,7 +221,7 @@
                                 <NavigationViewItem
                                     Content="Visor Mundial"
                                     Icon="AllApps"
-                                    Tag="Equipos" />
+                                    Tag="VisorMundial" />
                                 <NavigationViewItem
                                     Content="Dashboard"
                                     Icon="Setting"
@@ -412,6 +412,7 @@
                     Text="En línea" />
             </StackPanel>
         </Grid>
+
 
         <!--  InfoBar de notificación in-app (fallback cuando no hay MSIX desplegado)  -->
         <InfoBar
