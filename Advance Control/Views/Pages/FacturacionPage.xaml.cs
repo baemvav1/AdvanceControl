@@ -1,13 +1,18 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices.WindowsRuntime;
 using global::Windows.Foundation;
 using Advance_Control.Models;
 using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
+using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.Storage;
 using WinRT.Interop;
 
 namespace Advance_Control.Views.Pages
@@ -44,6 +49,60 @@ namespace Advance_Control.Views.Pages
 
             var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
             await ViewModel.CargarXmlParaOperacionAsync(hwnd, XamlRoot, operacion);
+        }
+
+        private void SinFacturaCard_DragOver(object sender, DragEventArgs e)
+        {
+            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                e.AcceptedOperation = DataPackageOperation.Copy;
+                e.DragUIOverride.Caption = "Vincular factura XML";
+                e.DragUIOverride.IsGlyphVisible = true;
+            }
+        }
+
+        private void SinFacturaCard_DragEnter(object sender, DragEventArgs e)
+        {
+            if (sender is Border border && e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                border.BorderBrush = new SolidColorBrush(Colors.DodgerBlue);
+                border.BorderThickness = new Thickness(2);
+            }
+        }
+
+        private void SinFacturaCard_DragLeave(object sender, DragEventArgs e)
+        {
+            if (sender is Border border)
+            {
+                border.ClearValue(Border.BorderBrushProperty);
+                border.ClearValue(Border.BorderThicknessProperty);
+            }
+        }
+
+        private async void SinFacturaCard_Drop(object sender, DragEventArgs e)
+        {
+            if (sender is not Border border || border.Tag is not OperacionSinFacturaDto operacion)
+            {
+                return;
+            }
+
+            border.ClearValue(Border.BorderBrushProperty);
+            border.ClearValue(Border.BorderThicknessProperty);
+
+            if (!e.DataView.Contains(StandardDataFormats.StorageItems))
+            {
+                return;
+            }
+
+            var items = await e.DataView.GetStorageItemsAsync();
+            var file = items.OfType<StorageFile>()
+                .FirstOrDefault(f => string.Equals(f.FileType, ".xml", StringComparison.OrdinalIgnoreCase));
+            if (file == null)
+            {
+                return;
+            }
+
+            await ViewModel.ProcesarArchivoXmlAsync(file, operacion);
         }
 
         private async void BtnCancelar_Click(object sender, RoutedEventArgs e)

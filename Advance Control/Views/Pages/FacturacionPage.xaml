@@ -83,10 +83,16 @@
                                 <Border
                                     Margin="0,0,0,10"
                                     Padding="12"
+                                    AllowDrop="True"
                                     Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
                                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                     BorderThickness="1"
-                                    CornerRadius="6">
+                                    CornerRadius="6"
+                                    DragEnter="SinFacturaCard_DragEnter"
+                                    DragLeave="SinFacturaCard_DragLeave"
+                                    DragOver="SinFacturaCard_DragOver"
+                                    Drop="SinFacturaCard_Drop"
+                                    Tag="{Binding}">
                                     <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -109,6 +115,11 @@
                                                 FontSize="12"
                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                 Text="{Binding IdOperacionTexto}" />
+                                            <TextBlock
+                                                FontSize="11"
+                                                FontStyle="Italic"
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                Text="Arrastra aquí el XML para vincularlo" />
                                         </StackPanel>
                                         <Button
                                             Grid.Column="1"

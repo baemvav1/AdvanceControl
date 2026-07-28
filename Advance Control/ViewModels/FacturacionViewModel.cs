@@ -91,25 +91,39 @@ namespace Advance_Control.ViewModels
                 return;
             }
 
+            var picker = new FileOpenPicker
+            {
+                ViewMode = PickerViewMode.List,
+                SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+            };
+            picker.FileTypeFilter.Add(".xml");
+
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
+            var file = await picker.PickSingleFileAsync();
+            if (file == null)
+            {
+                return;
+            }
+
+            await ProcesarArchivoXmlAsync(file, operacion);
+        }
+
+        /// <summary>
+        /// Parsea y vincula un XML de factura ya obtenido (desde el FilePicker o desde un
+        /// arrastrar-y-soltar) a la operación indicada.
+        /// </summary>
+        public async Task ProcesarArchivoXmlAsync(StorageFile file, OperacionSinFacturaDto operacion)
+        {
+            if (file == null || operacion == null)
+            {
+                return;
+            }
+
             try
             {
                 IsLoading = true;
                 ErrorMessage = null;
                 SuccessMessage = null;
-
-                var picker = new FileOpenPicker
-                {
-                    ViewMode = PickerViewMode.List,
-                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary
-                };
-                picker.FileTypeFilter.Add(".xml");
-
-                WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
-                var file = await picker.PickSingleFileAsync();
-                if (file == null)
-                {
-                    return;
-                }
 
                 var xmlContent = await FileIO.ReadTextAsync(file);
                 var request = CfdiXmlParser.ParseXmlToRequest(xmlContent);
