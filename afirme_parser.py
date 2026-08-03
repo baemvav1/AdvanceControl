@@ -22,6 +22,10 @@ MONEY = re.compile(r"\$ ?([\d,]+\.\d{2})(-?)")
 ROW_START = re.compile(r"^(\d{2})\s+(.*)$")
 IVA_ROW = re.compile(r"^(\d{2})\s+R\.F\.C\.\s+(\S+)\s+I\.V\.A\.\s+([\d,]*\.?\d+)\s")
 COMPENSACION_FOLIO_RE = re.compile(r"^\d{10,}\s+AFIRMENET\b")
+# "DEPOSITO SBC 000097501 017" -- deposito "Salvo Buen Cobro" (cheque, provisional
+# hasta que el cheque del banco emisor tenga fondos). folio = numero de cheque/folio
+# interno de la transaccion; canal = clave interna del banco (ventanilla/cajero/plaza).
+DEPOSITO_SBC_RE = re.compile(r"^DEPOSITO SBC\s+(\d+)\s+(\d+)$")
 
 DETAIL_KEYS = [
     "CUENTA", "EMISOR", "RFC EMISOR", "CVE RASTREO", "CONCEPTO", "HORA",
@@ -47,6 +51,8 @@ def classify(desc):
         return "SPEI_ENVIADO"
     if d.startswith("DEPOSITO EN EFECTIVO"):
         return "DEPOSITO_EFECTIVO"
+    if d.startswith("DEPOSITO SBC"):
+        return "DEPOSITO_SBC"
     if d.startswith("DEPOSITO"):
         return "DEPOSITO"
     if d.startswith("COM MEMBRESIA") or d.startswith("COM ") or d.startswith("COMISION"):
@@ -181,20 +187,28 @@ def parse_operations(lines, saldo_inicial, year, month):
             monto = money_to_dec(monies[-2].group(1), monies[-2].group(2)) if len(monies) >= 2 else None
             head = line[: monies[0].start()].strip()
             head = re.sub(rf"^{dia}\s+", "", head)
-            ref_m = re.search(r"\s(\S+)$", head)
-            referencia = ""
-            desc = head
-            # referencia = ultimo token si es numerico corto pegado al final
-            tail = head.split()
-            if tail and re.fullmatch(r"[\dA-Z/.]+", tail[-1]) and re.search(r"\d", tail[-1]) and len(tail) > 1:
-                # solo tokens tipo referencia (numeros/codigos), no palabras
-                if re.fullmatch(r"\d+", tail[-1]) or "/" in tail[-1]:
-                    referencia = tail[-1]
-                    desc = " ".join(tail[:-1])
+
+            sbc_m = DEPOSITO_SBC_RE.match(head)
+            if sbc_m:
+                desc = "DEPOSITO SBC"
+                referencia = sbc_m.group(2)
+                folio_sbc = sbc_m.group(1)
+            else:
+                folio_sbc = None
+                referencia = ""
+                desc = head
+                # referencia = ultimo token si es numerico corto pegado al final
+                tail = head.split()
+                if tail and re.fullmatch(r"[\dA-Z/.]+", tail[-1]) and re.search(r"\d", tail[-1]) and len(tail) > 1:
+                    # solo tokens tipo referencia (numeros/codigos), no palabras
+                    if re.fullmatch(r"\d+", tail[-1]) or "/" in tail[-1]:
+                        referencia = tail[-1]
+                        desc = " ".join(tail[:-1])
+
             cur = {
                 "dia": dia, "tipo": classify(desc), "descripcion": desc,
                 "referencia_col": referencia, "monto": monto, "saldo": saldo,
-                "detalle": [],
+                "detalle": [], "folio_sbc": folio_sbc,
             }
             continue
 
@@ -326,6 +340,8 @@ def build_xml(hdr, ops, periodo_ini, periodo_fin):
             metadatos["DESTINATARIO"] = o["destinatario"]
         if o.get("rfc_dest"):
             metadatos["RFC_DESTINATARIO"] = o["rfc_dest"]
+        if o.get("folio_sbc"):
+            metadatos["FOLIO_CHEQUE"] = o["folio_sbc"]
         L += metadatos_block(metadatos)
 
         L.append("        <ns0:montos>")
@@ -379,6 +395,8 @@ def build_json(hdr, ops, periodo_ini, periodo_fin):
             metadatos["DESTINATARIO"] = o["destinatario"]
         if o.get("rfc_dest"):
             metadatos["RFC_DESTINATARIO"] = o["rfc_dest"]
+        if o.get("folio_sbc"):
+            metadatos["FOLIO_CHEQUE"] = o["folio_sbc"]
         if o.get("flujo") == "NO_CUADRA":
             metadatos["ALERTA"] = "NO_CUADRA_CONTRA_SALDO_CORRIDO"
 
