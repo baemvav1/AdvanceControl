@@ -1,3 +1,4 @@
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
@@ -11,5 +12,6 @@ namespace Advance_Control.Services.EstadoCuenta
         Task<List<EstadoCuentaResumenDto>> ObtenerEstadosCuentaAsync(CancellationToken cancellationToken = default);
         Task<EstadoCuentaDetalleDto?> ObtenerDetalleEstadoCuentaAsync(int idEstadoCuenta, CancellationToken cancellationToken = default);
         Task<ConciliacionAutomaticaResponseDto> ConciliarAutomaticamenteAsync(ConciliacionAutomaticaRequestDto request, CancellationToken cancellationToken = default);
+        Task<ImportarPdfEstadoCuentaResponseDto> ImportarPdfAsync(Stream pdfStream, string fileName, CancellationToken cancellationToken = default);
     }
 }

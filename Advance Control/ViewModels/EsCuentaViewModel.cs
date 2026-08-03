@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Linq;
@@ -196,6 +197,83 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error al cargar el archivo XML: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        public async Task CargarArchivoPdfAsync(nint windowHandle)
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var picker = new FileOpenPicker();
+                picker.ViewMode = PickerViewMode.List;
+                picker.SuggestedStartLocation = PickerLocationId.DocumentsLibrary;
+                picker.FileTypeFilter.Add(".pdf");
+
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
+
+                var file = await picker.PickSingleFileAsync();
+                if (file == null)
+                {
+                    return;
+                }
+
+                using var stream = await file.OpenStreamForReadAsync();
+                var resultado = await _estadoCuentaXmlService.ImportarPdfAsync(stream, file.Name);
+
+                PoblarDesdeRequest(resultado.Request);
+
+                if (resultado.Advertencias.TieneProblemas)
+                {
+                    var detalles = new List<string>();
+                    if (resultado.Advertencias.ErroresSaldo.Count > 0)
+                    {
+                        detalles.Add($"{resultado.Advertencias.ErroresSaldo.Count} inconsistencia(s) de saldo");
+                    }
+                    if (!resultado.Advertencias.SaldoCuadra || !resultado.Advertencias.DepositosCuadran || !resultado.Advertencias.RetirosCuadran)
+                    {
+                        detalles.Add("los totales no cuadran contra el resumen del banco");
+                    }
+
+                    ErrorMessage = $"{file.Name}: se cargaron {Movimientos.Count} movimientos pero {string.Join(" y ", detalles)}. " +
+                        "Revisa la tabla y usa \"Guardar\" manualmente si todo se ve correcto.";
+                    return;
+                }
+
+                var resultadoGuardado = await ValidarYGuardarEstadoActualAsync(resultado.Request);
+
+                if (!resultadoGuardado.Success && !string.Equals(resultadoGuardado.Accion, "existente", StringComparison.OrdinalIgnoreCase))
+                {
+                    ErrorMessage = string.IsNullOrWhiteSpace(resultadoGuardado.Message)
+                        ? $"No se pudo guardar el estado de cuenta {file.Name}."
+                        : $"{file.Name}: {resultadoGuardado.Message}";
+                    return;
+                }
+
+                if (EstadoCuentaBancario != null)
+                {
+                    EstadoCuentaBancario.IdEstadoCuentaBancario = resultadoGuardado.IdEstadoCuenta;
+                }
+
+                await CargarEstadosCuentaExistentesAsync();
+
+                var sinClasificarTexto = resultado.Advertencias.SinClasificar.Count > 0
+                    ? $" ({resultado.Advertencias.SinClasificar.Count} movimiento(s) sin clasificar automáticamente, revísalos en el detalle)."
+                    : ".";
+                SuccessMessage = string.IsNullOrWhiteSpace(resultadoGuardado.Message)
+                    ? $"PDF {file.Name} procesado y guardado exitosamente{sinClasificarTexto}"
+                    : $"{file.Name}: {resultadoGuardado.Message}{sinClasificarTexto}";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al importar el PDF: {ex.Message}";
             }
             finally
             {
@@ -464,6 +542,98 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 throw new Exception($"Error al parsear el XML: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
+        /// Puebla EstadoCuentaBancario y Movimientos a partir del request que ya devuelve
+        /// listo el API (flujo de importacion de PDF) -- es el mapeo inverso de
+        /// CrearRequestDesdeEstadoActual, sin pasar por el XML.
+        /// </summary>
+        private void PoblarDesdeRequest(GuardarEstadoCuentaRequestDto request)
+        {
+            var estadoCuenta = new EstadoCuentaBancario
+            {
+                VersionXml = request.VersionXml,
+                NumeroCuenta = request.NumeroCuenta,
+                Clabe = request.Clabe,
+                TipoCuenta = request.TipoCuenta ?? string.Empty,
+                TipoMoneda = request.TipoMoneda ?? string.Empty,
+                Periodo = $"{request.FechaInicio:dd/MM/yyyy} - {request.FechaFin:dd/MM/yyyy}",
+                PeriodoInicio = request.FechaInicio,
+                PeriodoFin = request.FechaFin,
+                FechaCorte = request.FechaCorte,
+                SaldoInicial = request.SaldoInicial,
+                TotalTransacciones = request.TotalTransaccionesIndividuales,
+                TotalGrupos = request.TotalGrupos,
+                TotalCargos = request.TotalCargos,
+                TotalAbonos = request.TotalAbonos,
+                SaldoFinal = request.SaldoFinal,
+                TotalComisiones = request.TotalComisiones,
+                TotalISR = request.TotalISR,
+                TotalIVA = request.TotalIVA,
+                NombreBanco = request.NombreBanco ?? string.Empty,
+                RfcBanco = request.RfcBanco ?? string.Empty,
+                NombreSucursal = request.NombreSucursal ?? string.Empty,
+                DireccionSucursal = request.DireccionSucursal ?? string.Empty,
+                FolioFiscal = request.FolioFiscal ?? string.Empty,
+                CertificadoEmisor = request.CertificadoEmisor ?? string.Empty,
+                FechaEmisionCert = request.FechaEmisionCert ?? string.Empty,
+                CertificadoSAT = request.CertificadoSat ?? string.Empty,
+                FechaCertificacionSAT = request.FechaCertificacionSat ?? string.Empty,
+                RegimenFiscal = request.RegimenFiscal ?? string.Empty,
+                MetodoPago = request.MetodoPago ?? string.Empty,
+                FormaPago = request.FormaPago ?? string.Empty,
+                UsoCFDI = request.UsoCfdi ?? string.Empty,
+                ClaveProdServ = request.ClaveProdServ ?? string.Empty,
+                LugarExpedicion = request.LugarExpedicion ?? string.Empty,
+                Titular = request.Titular ?? string.Empty,
+                RfcTitular = request.RfcTitular ?? string.Empty,
+                NumeroCliente = request.NumeroCliente ?? string.Empty,
+                DireccionTitular = request.DireccionTitular ?? string.Empty,
+            };
+
+            foreach (var grupo in request.Grupos.OrderBy(g => g.OrdenGrupo))
+            {
+                var principal = grupo.TransaccionPrincipal;
+                var movimiento = new MovimientoBancario
+                {
+                    GrupoId = grupo.GrupoId,
+                    Dia = grupo.Dia,
+                    FechaMovimiento = principal.Fecha,
+                    TipoGrupo = grupo.Tipo,
+                    TipoMovimiento = principal.Tipo ?? grupo.Tipo ?? "MOVIMIENTO",
+                    SubtipoMovimiento = principal.Subtipo,
+                    Descripcion = principal.Descripcion,
+                    Referencia = principal.Referencia,
+                    MontoCargo = principal.Cargo,
+                    MontoAbono = principal.Abono,
+                    SaldoResultante = principal.Saldo,
+                    Conciliado = principal.Conciliado,
+                    Metadatos = principal.Metadatos ?? new Dictionary<string, string?>(),
+                };
+
+                foreach (var relacionado in grupo.MovimientosRelacionados)
+                {
+                    movimiento.MovimientosRelacionados.Add(new MovimientoRelacionadoBancario
+                    {
+                        Tipo = relacionado.Tipo ?? string.Empty,
+                        Orden = relacionado.Orden,
+                        Descripcion = relacionado.Descripcion,
+                        Rfc = relacionado.Rfc,
+                        Monto = relacionado.Monto,
+                        Saldo = relacionado.Saldo
+                    });
+                }
+
+                estadoCuenta.Movimientos.Add(movimiento);
+            }
+
+            EstadoCuentaBancario = estadoCuenta;
+            Movimientos.Clear();
+            foreach (var movimiento in estadoCuenta.Movimientos.OrderBy(m => m.FechaMovimiento).ThenBy(m => m.GrupoId))
+            {
+                Movimientos.Add(movimiento);
             }
         }
 

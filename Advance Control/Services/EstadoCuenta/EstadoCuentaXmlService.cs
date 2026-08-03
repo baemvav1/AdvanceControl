@@ -1,5 +1,7 @@
 using System;
+using System.IO;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using System.Threading;
@@ -185,6 +187,71 @@ namespace Advance_Control.Services.EstadoCuenta
                 await _logger.LogErrorAsync("Error inesperado al ejecutar conciliacion automatica", ex, "EstadoCuentaXmlService", "ConciliarAutomaticamenteAsync");
                 throw;
             }
+        }
+
+        public async Task<ImportarPdfEstadoCuentaResponseDto> ImportarPdfAsync(Stream pdfStream, string fileName, CancellationToken cancellationToken = default)
+        {
+            if (pdfStream == null)
+            {
+                throw new ArgumentNullException(nameof(pdfStream));
+            }
+
+            var url = _endpoints.GetEndpoint("api", "estadocuenta", "importar-pdf");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Importando PDF de estado de cuenta en: {url}", "EstadoCuentaXmlService", "ImportarPdfAsync");
+
+                using var content = new MultipartFormDataContent();
+                using var fileContent = new StreamContent(pdfStream);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+                content.Add(fileContent, "file", string.IsNullOrWhiteSpace(fileName) ? "estado_cuenta.pdf" : fileName);
+
+                using var response = await _http.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
+                var body = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var mensaje = ExtraerMensajeError(body);
+                    await _logger.LogErrorAsync(
+                        $"Error al importar PDF. Status: {response.StatusCode}, Mensaje: {mensaje}",
+                        null,
+                        "EstadoCuentaXmlService",
+                        "ImportarPdfAsync");
+                    throw new InvalidOperationException(mensaje);
+                }
+
+                var resultado = JsonSerializer.Deserialize<ImportarPdfEstadoCuentaResponseDto>(body, _jsonOptions);
+                if (resultado == null)
+                {
+                    throw new InvalidOperationException("La API devolvió una respuesta vacía al importar el PDF.");
+                }
+
+                return resultado;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al importar PDF de estado de cuenta", ex, "EstadoCuentaXmlService", "ImportarPdfAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al importar el PDF.", ex);
+            }
+        }
+
+        private static string ExtraerMensajeError(string body)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("message", out var mensaje))
+                {
+                    return mensaje.GetString() ?? body;
+                }
+            }
+            catch (JsonException)
+            {
+                // body no era JSON, se regresa tal cual
+            }
+
+            return body;
         }
     }
 }

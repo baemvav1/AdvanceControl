@@ -61,6 +61,14 @@ namespace Advance_Control.Views.Pages
                 _activityService.Registrar("EsCuenta", "XML cargado y guardado");
         }
 
+        private async void BtnCargarPdf_Click(object sender, RoutedEventArgs e)
+        {
+            var hwnd = WindowNative.GetWindowHandle(App.MainWindow);
+            await ViewModel.CargarArchivoPdfAsync(hwnd);
+            if (!string.IsNullOrEmpty(ViewModel.SuccessMessage))
+                _activityService.Registrar("EsCuenta", "PDF cargado y guardado");
+        }
+
         private async void BtnActualizarListado_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.CargarEstadosCuentaExistentesAsync();

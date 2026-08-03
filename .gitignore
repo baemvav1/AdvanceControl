@@ -41,6 +41,9 @@ secrets.json
 *.pem
 installer/Secrets/
 
+# Estados de cuenta reales usados para pruebas locales del parser (datos financieros sensibles)
+EstadosCuenta/
+
 # Instaladores / artefactos binarios grandes
 installer/
 artifacts/installer/
