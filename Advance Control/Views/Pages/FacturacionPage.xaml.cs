@@ -113,14 +113,14 @@ namespace Advance_Control.Views.Pages
             }
 
             var mensaje = operacion.TieneAbonos
-                ? $"La factura {operacion.Folio} de la operación #{operacion.IdOperacion} ya tiene abonos registrados. ¿Aun así deseas cancelarla? Se eliminará el registro y el XML por completo."
-                : $"¿Deseas cancelar la factura {operacion.Folio} de la operación #{operacion.IdOperacion}? Se eliminará el registro y el XML por completo.";
+                ? $"La factura {operacion.Folio} de la operación #{operacion.IdOperacion} ya tiene abonos registrados. ¿Aun así deseas eliminarla? Se eliminará el registro y el XML por completo."
+                : $"¿Deseas eliminar la factura {operacion.Folio} de la operación #{operacion.IdOperacion}? Se eliminará el registro y el XML por completo.";
 
             var dialog = new ContentDialog
             {
-                Title = "Confirmar cancelación",
+                Title = "Confirmar eliminación",
                 Content = mensaje,
-                PrimaryButtonText = "Cancelar factura",
+                PrimaryButtonText = "Eliminar factura",
                 CloseButtonText = "Volver",
                 DefaultButton = ContentDialogButton.Close,
                 XamlRoot = XamlRoot
@@ -131,6 +131,77 @@ namespace Advance_Control.Views.Pages
             {
                 await ViewModel.CancelarFacturaAsync(operacion);
             }
+        }
+
+        private async void BtnDesligar_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not OperacionFacturadaDto operacion)
+            {
+                return;
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar desvinculación",
+                Content = $"¿Deseas desligar la factura {operacion.Folio} de la operación #{operacion.IdOperacion}? " +
+                    "La factura NO se borra: vuelve al listado general de facturas para poder vincularla a otra operación.",
+                PrimaryButtonText = "Desligar",
+                CloseButtonText = "Volver",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                await ViewModel.DesligarFacturaAsync(operacion);
+            }
+        }
+
+        private async void BtnVincularSugerencia_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button button || button.Tag is not FacturaResumenDto factura)
+            {
+                return;
+            }
+
+            var operacion = FindAncestorDataContext<OperacionSinFacturaDto>(button);
+            if (operacion == null)
+            {
+                return;
+            }
+
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar vínculo",
+                Content = $"¿Vincular la factura {factura.Folio} ({factura.TotalTexto}, {factura.FechaTexto}) a la operación #{operacion.IdOperacion}?",
+                PrimaryButtonText = "Vincular",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.Primary)
+            {
+                await ViewModel.VincularSugerenciaAsync(operacion, factura);
+            }
+        }
+
+        private static T? FindAncestorDataContext<T>(FrameworkElement element) where T : class
+        {
+            DependencyObject? current = element;
+            while (current != null)
+            {
+                if (current is FrameworkElement fe && fe.DataContext is T match)
+                {
+                    return match;
+                }
+
+                current = VisualTreeHelper.GetParent(current);
+            }
+
+            return null;
         }
     }
 }

@@ -120,6 +120,47 @@
                                                 FontStyle="Italic"
                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                 Text="Arrastra aquí el XML para vincularlo" />
+
+                                            <ItemsControl
+                                                Margin="0,6,0,0"
+                                                ItemsSource="{Binding Sugerencias}"
+                                                Visibility="{Binding TieneSugerencias, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                <ItemsControl.ItemsPanel>
+                                                    <ItemsPanelTemplate>
+                                                        <StackPanel Spacing="4" />
+                                                    </ItemsPanelTemplate>
+                                                </ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="models:FacturaResumenDto">
+                                                        <Grid
+                                                            Padding="8"
+                                                            Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                                            ColumnSpacing="8"
+                                                            CornerRadius="4">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="Auto" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <StackPanel Grid.Column="0">
+                                                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding Folio}" />
+                                                                <TextBlock FontSize="12" Text="{Binding TotalTexto}" />
+                                                                <TextBlock
+                                                                    FontSize="11"
+                                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                    Text="{Binding FechaTexto}" />
+                                                            </StackPanel>
+                                                            <Button
+                                                                Grid.Column="1"
+                                                                Padding="8,4"
+                                                                VerticalAlignment="Center"
+                                                                Click="BtnVincularSugerencia_Click"
+                                                                Content="Vincular"
+                                                                FontSize="12"
+                                                                Tag="{Binding}" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
                                         </StackPanel>
                                         <Button
                                             Grid.Column="1"
@@ -187,12 +228,20 @@
                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                 Text="{Binding IdOperacionTexto}" />
                                         </StackPanel>
-                                        <Button
-                                            Grid.Column="1"
-                                            VerticalAlignment="Center"
-                                            Click="BtnCancelar_Click"
-                                            Content="Cancelar"
-                                            Tag="{Binding}" />
+                                        <StackPanel Grid.Column="1" Spacing="6" VerticalAlignment="Center">
+                                            <Button
+                                                HorizontalAlignment="Stretch"
+                                                Click="BtnDesligar_Click"
+                                                Content="Desligar"
+                                                Tag="{Binding}"
+                                                ToolTipService.ToolTip="Quita el vínculo pero conserva la factura para reasignarla despues" />
+                                            <Button
+                                                HorizontalAlignment="Stretch"
+                                                Click="BtnCancelar_Click"
+                                                Content="Eliminar"
+                                                Tag="{Binding}"
+                                                ToolTipService.ToolTip="Elimina la factura por completo" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

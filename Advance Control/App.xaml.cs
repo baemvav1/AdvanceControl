@@ -556,6 +556,7 @@ namespace Advance_Control
                     services.AddSingleton<INotificacionService, NotificacionService>();
                     services.AddSingleton<Services.Conciliacion.IConciliacionRulesProvider, Services.Conciliacion.ConciliacionRulesProvider>();
                     services.AddSingleton<Services.Conciliacion.ConciliacionMatchingEngine>();
+                    services.AddSingleton<Services.Facturacion.FacturaOperacionMatchingEngine>();
 
                     // Registrar FirmaService y QuoteService (PDF generation)
                     // Registrar cliente HTTP nombrado para RemoteFirmaService (Singleton con IHttpClientFactory)

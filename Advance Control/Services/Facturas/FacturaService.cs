@@ -353,6 +353,65 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task VincularFacturaOperacionAsync(int idFactura, int idOperacion, CancellationToken cancellationToken = default)
+        {
+            var url = new ApiQueryBuilder()
+                .AddRequired("idOperacion", idOperacion)
+                .Build(_endpoints.GetEndpoint("api", "factura", idFactura.ToString(), "vincular-operacion"));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Vinculando factura a operacion en: {url}", "FacturaService", "VincularFacturaOperacionAsync");
+                using var response = await _http.PostAsync(url, content: null, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    var mensaje = ExtraerMensajeError(errorContent);
+                    await _logger.LogErrorAsync(
+                        $"Error al vincular factura a operacion. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        "VincularFacturaOperacionAsync");
+                    throw new InvalidOperationException(mensaje);
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al vincular factura a operacion", ex, "FacturaService", "VincularFacturaOperacionAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al vincular la factura a la operacion.", ex);
+            }
+        }
+
+        public async Task<CancelarFacturaOperacionResponseDto> DesvincularFacturaOperacionAsync(int idOperacion, CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "operacion", idOperacion.ToString(), "desvincular");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Desvinculando factura de operacion en: {url}", "FacturaService", "DesvincularFacturaOperacionAsync");
+                using var response = await _http.PostAsync(url, content: null, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    var mensaje = ExtraerMensajeError(errorContent);
+                    await _logger.LogErrorAsync(
+                        $"Error al desvincular factura de operacion. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        "DesvincularFacturaOperacionAsync");
+                    throw new InvalidOperationException(mensaje);
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<CancelarFacturaOperacionResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new CancelarFacturaOperacionResponseDto { IdOperacion = idOperacion };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al desvincular factura de operacion", ex, "FacturaService", "DesvincularFacturaOperacionAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al desvincular la factura de la operacion.", ex);
+            }
+        }
+
         private static string ExtraerMensajeError(string errorContent)
         {
             try

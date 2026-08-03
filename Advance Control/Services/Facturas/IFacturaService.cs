@@ -18,5 +18,7 @@ namespace Advance_Control.Services.Facturas
         Task<List<OperacionSinFacturaDto>> ObtenerOperacionesSinFacturaAsync(CancellationToken cancellationToken = default);
         Task<List<OperacionFacturadaDto>> ObtenerOperacionesFacturadasAsync(CancellationToken cancellationToken = default);
         Task<CancelarFacturaOperacionResponseDto> CancelarFacturaOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
+        Task VincularFacturaOperacionAsync(int idFactura, int idOperacion, CancellationToken cancellationToken = default);
+        Task<CancelarFacturaOperacionResponseDto> DesvincularFacturaOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
     }
 }

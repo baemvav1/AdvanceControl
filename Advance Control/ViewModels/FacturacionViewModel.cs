@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Facturacion;
 using Advance_Control.Services.Facturas;
 using Microsoft.UI.Xaml;
 using Windows.Storage;
@@ -13,15 +14,17 @@ namespace Advance_Control.ViewModels
     public class FacturacionViewModel : ViewModelBase
     {
         private readonly IFacturaService _facturaService;
+        private readonly FacturaOperacionMatchingEngine _matchingEngine;
         private ObservableCollection<OperacionSinFacturaDto> _operacionesSinFactura;
         private ObservableCollection<OperacionFacturadaDto> _operacionesFacturadas;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _successMessage;
 
-        public FacturacionViewModel(IFacturaService facturaService)
+        public FacturacionViewModel(IFacturaService facturaService, FacturaOperacionMatchingEngine matchingEngine)
         {
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
+            _matchingEngine = matchingEngine ?? throw new ArgumentNullException(nameof(matchingEngine));
             _operacionesSinFactura = new ObservableCollection<OperacionSinFacturaDto>();
             _operacionesFacturadas = new ObservableCollection<OperacionFacturadaDto>();
         }
@@ -68,6 +71,18 @@ namespace Advance_Control.ViewModels
 
                 var sinFactura = await _facturaService.ObtenerOperacionesSinFacturaAsync();
                 var facturadas = await _facturaService.ObtenerOperacionesFacturadasAsync();
+                var todasLasFacturas = await _facturaService.ObtenerFacturasAsync();
+
+                var facturasSinOperacion = todasLasFacturas
+                    .Where(factura => !factura.IdOperacion.HasValue || factura.IdOperacion.Value <= 0)
+                    .ToList();
+
+                foreach (var operacion in sinFactura)
+                {
+                    operacion.Sugerencias = _matchingEngine
+                        .ObtenerCandidatos(operacion, facturasSinOperacion)
+                        .ToList();
+                }
 
                 OperacionesSinFactura = new ObservableCollection<OperacionSinFacturaDto>(sinFactura);
                 OperacionesFacturadas = new ObservableCollection<OperacionFacturadaDto>(facturadas);
@@ -77,6 +92,64 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error al cargar las operaciones: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        public async Task VincularSugerenciaAsync(OperacionSinFacturaDto operacion, FacturaResumenDto factura)
+        {
+            if (operacion == null || factura == null)
+            {
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                await _facturaService.VincularFacturaOperacionAsync(factura.IdFactura, operacion.IdOperacion);
+
+                SuccessMessage = $"Factura {factura.Folio} vinculada a la operación #{operacion.IdOperacion}.";
+                await CargarAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al vincular la factura sugerida: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        public async Task DesligarFacturaAsync(OperacionFacturadaDto operacion)
+        {
+            if (operacion == null)
+            {
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var resultado = await _facturaService.DesvincularFacturaOperacionAsync(operacion.IdOperacion);
+
+                SuccessMessage = string.IsNullOrWhiteSpace(resultado.Mensaje)
+                    ? $"Factura desligada de la operación #{operacion.IdOperacion}. La factura se conserva."
+                    : resultado.Mensaje;
+                await CargarAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al desligar la factura: {ex.Message}";
             }
             finally
             {
