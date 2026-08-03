@@ -7,9 +7,11 @@ namespace Advance_Control.Services.Facturacion
 {
     /// <summary>
     /// Sugiere facturas ya cargadas (sin operacion) como candidatas para una
-    /// operacion sin factura: mismo RFC que el cliente de la operacion, mismo
-    /// monto exacto, y fecha de factura no anterior a la fecha de la operacion
-    /// (no se puede facturar antes de que el trabajo termine).
+    /// operacion sin factura: mismo RFC que el cliente de la operacion y mismo
+    /// monto exacto -- comparado contra el SUBTOTAL de la factura (sin IVA),
+    /// porque operacion.Monto tampoco incluye IVA. No hay filtro de fecha: en
+    /// la practica fecha_final de la operacion no es confiable para bloquear
+    /// el vinculo.
     /// </summary>
     public sealed class FacturaOperacionMatchingEngine
     {
@@ -38,26 +40,11 @@ namespace Advance_Control.Services.Facturacion
             return facturasSinOperacion
                 .Where(factura => !factura.IdOperacion.HasValue || factura.IdOperacion.Value <= 0)
                 .Where(factura => string.Equals(factura.ReceptorRfc?.Trim(), rfcCliente, StringComparison.OrdinalIgnoreCase))
-                .Where(factura => decimal.Round(factura.Total, 2) == montoOperacion)
-                .Where(factura => EsFechaValida(operacion, factura))
+                .Where(factura => decimal.Round(factura.SubTotal, 2) == montoOperacion)
                 .OrderBy(factura => DistanciaFecha(operacion, factura))
                 .ThenBy(factura => factura.Fecha)
                 .ThenBy(factura => factura.IdFactura)
                 .ToList();
-        }
-
-        /// <summary>
-        /// La operacion no puede ser posterior a la factura: el trabajo debe haber
-        /// terminado antes (o el mismo dia) de que se emita la factura que lo cobra.
-        /// </summary>
-        public bool EsFechaValida(OperacionSinFacturaDto operacion, FacturaResumenDto factura)
-        {
-            if (!operacion.FechaFinal.HasValue)
-            {
-                return true;
-            }
-
-            return factura.Fecha.Date >= operacion.FechaFinal.Value.Date;
         }
 
         private static int DistanciaFecha(OperacionSinFacturaDto operacion, FacturaResumenDto factura)

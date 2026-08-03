@@ -121,10 +121,15 @@
                                                 Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                                                 Text="Arrastra aquí el XML para vincularlo" />
 
-                                            <ItemsControl
+                                            <TextBlock
                                                 Margin="0,6,0,0"
-                                                ItemsSource="{Binding Sugerencias}"
-                                                Visibility="{Binding TieneSugerencias, Converter={StaticResource BoolToVisibilityConverter}}">
+                                                FontSize="11"
+                                                FontWeight="SemiBold"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{Binding SugerenciasTexto}" />
+                                            <ItemsControl
+                                                Margin="0,4,0,0"
+                                                ItemsSource="{Binding Sugerencias}">
                                                 <ItemsControl.ItemsPanel>
                                                     <ItemsPanelTemplate>
                                                         <StackPanel Spacing="4" />
