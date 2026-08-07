@@ -184,6 +184,43 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        /// <summary>Desvincula todas las facturas de sus operaciones (no las borra) y reabre esas operaciones.</summary>
+        public async Task<bool> DesvincularFacturasAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                HasError = false;
+                StatusMessage = "Desvinculando facturas...";
+
+                var resultados = await _devOpsService.DesvincularFacturasAsync();
+
+                UltimosResultados.Clear();
+                foreach (var r in resultados)
+                {
+                    UltimosResultados.Add(r);
+                }
+
+                var facturas = resultados.Find(r => r.Tabla == "facturas_desvinculadas")?.RegistrosEliminados ?? 0;
+                StatusMessage = $"Desvinculación completada. {facturas} factura(s) desvinculada(s) (se conservan, sin operación asignada).";
+
+                await CargarEstadisticasAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                HasError = true;
+                StatusMessage = $"Error al desvincular facturas: {ex.Message}";
+                await _logger.LogErrorAsync(ex.Message, ex, "DevOpsViewModel", "DesvincularFacturasAsync");
+                return false;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         /// <summary>Envía un mensaje de prueba vía REST con emisor arbitrario.</summary>
         public async Task<bool> EnviarMensajePruebaAsync(long deCredencialId, long paraCredencialId, string contenido)
         {

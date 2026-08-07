@@ -80,6 +80,9 @@ namespace Advance_Control.Services.DevOps
             }
         }
 
+        public async Task<List<DevOpsWipeResult>> DesvincularFacturasAsync(CancellationToken ct = default)
+            => await EjecutarLimpiezaAsync("desvincular/facturas", ct);
+
         public async Task<List<DevOpsStatsResult>> ObtenerEstadisticasAsync(CancellationToken ct = default)
         {
             try

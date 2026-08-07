@@ -148,6 +148,17 @@
                 </StackPanel>
             </Button>
 
+            <!-- Herramientas de facturación -->
+            <TextBlock Text="Herramientas de Facturación" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,8" />
+
+            <Button x:Name="BtnDesvincularFacturas" Padding="16,12"
+                    Click="OnDesvincularFacturasClick">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE71B;" FontSize="16" />
+                    <TextBlock Text="Desvincular Todas las Facturas" />
+                </StackPanel>
+            </Button>
+
             <!-- Herramientas de mensajería -->
             <TextBlock Text="Herramientas de Mensajería" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,8" />
 

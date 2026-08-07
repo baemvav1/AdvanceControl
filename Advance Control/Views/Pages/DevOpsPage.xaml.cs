@@ -187,6 +187,30 @@ namespace Advance_Control.Views.Pages
             await dialog.ShowAsync();
         }
 
+        private async void OnDesvincularFacturasClick(object sender, RoutedEventArgs e)
+        {
+            var dialog = new ContentDialog
+            {
+                Title = "Confirmar desvinculación de facturas",
+                Content = "Se desvincularán TODAS las facturas de sus operaciones.\n\n" +
+                    "Las facturas NO se borran: se conservan y vuelven a aparecer en \"Sin operación\" " +
+                    "para poder volver a vincularse (manual o con \"Vincular facturas automáticamente\" " +
+                    "en Facturación). Las operaciones correspondientes vuelven a quedar pendientes " +
+                    "(no finalizadas).",
+                PrimaryButtonText = "Desvincular todas",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+
+            if (result == ContentDialogResult.Primary)
+            {
+                await ViewModel.DesvincularFacturasAsync();
+            }
+        }
+
         private async void OnCargarEstadisticasClick(object sender, RoutedEventArgs e)
         {
             await ViewModel.CargarEstadisticasAsync();
