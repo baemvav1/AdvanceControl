@@ -25,6 +25,13 @@
                 Click="BtnActualizar_Click"
                 Content="Actualizar listado"
                 IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
+            <Button
+                x:Name="BtnVincularAutomatico"
+                Click="BtnVincularAutomatico_Click"
+                Content="Vincular facturas automáticamente"
+                IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
+                Style="{StaticResource AccentButtonStyle}"
+                ToolTipService.ToolTip="Busca facturas ya cargadas con el mismo RFC y monto antes de IVA que operaciones sin factura, y te deja elegir cuáles vincular" />
         </StackPanel>
 
         <Grid Grid.Row="1" ColumnSpacing="12">

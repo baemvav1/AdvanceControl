@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -125,6 +126,67 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// Calcula, para cada operación sin factura, las facturas ya cargadas (sin operación)
+        /// que coinciden en RFC y monto antes de IVA. Solo devuelve operaciones con al menos
+        /// un candidato -- las que no tienen ninguno no se muestran en el selector.
+        /// </summary>
+        public async Task<IReadOnlyList<FacturaOperacionPropuestaDto>> CargarPropuestasVinculacionAsync()
+        {
+            var sinFactura = await _facturaService.ObtenerOperacionesSinFacturaAsync();
+            var todasLasFacturas = await _facturaService.ObtenerFacturasAsync();
+            var facturasSinOperacion = todasLasFacturas
+                .Where(factura => !factura.IdOperacion.HasValue || factura.IdOperacion.Value <= 0)
+                .ToList();
+
+            var propuestas = new List<FacturaOperacionPropuestaDto>();
+            foreach (var operacion in sinFactura)
+            {
+                var candidatas = _matchingEngine.ObtenerCandidatos(operacion, facturasSinOperacion).ToList();
+                if (candidatas.Count > 0)
+                {
+                    propuestas.Add(new FacturaOperacionPropuestaDto { Operacion = operacion, Candidatas = candidatas });
+                }
+            }
+
+            return propuestas;
+        }
+
+        /// <summary>
+        /// Vincula, una por una, las propuestas aprobadas. fn_facturas_vincular_operacion ya
+        /// marca la operación como finalizada al vincular, no hace falta un paso extra.
+        /// Si una propuesta falla (p.ej. la factura ya se vinculo desde otra propuesta del mismo
+        /// lote) se sigue con las demas y se reporta el error al final.
+        /// </summary>
+        public async Task<(int Vinculadas, List<string> Errores)> AplicarPropuestasVinculacionAprobadasAsync(
+            IReadOnlyList<FacturaOperacionPropuestaDto> aprobadas)
+        {
+            var vinculadas = 0;
+            var errores = new List<string>();
+
+            foreach (var propuesta in aprobadas)
+            {
+                try
+                {
+                    await _facturaService.VincularFacturaOperacionAsync(
+                        propuesta.FacturaSeleccionada.IdFactura,
+                        propuesta.Operacion.IdOperacion);
+                    vinculadas++;
+                }
+                catch (Exception ex)
+                {
+                    errores.Add($"Operación #{propuesta.Operacion.IdOperacion} ({propuesta.Operacion.RazonSocial}): {ex.Message}");
+                }
+            }
+
+            if (vinculadas > 0)
+            {
+                await CargarAsync();
+            }
+
+            return (vinculadas, errores);
         }
 
         public async Task DesligarFacturaAsync(OperacionFacturadaDto operacion)

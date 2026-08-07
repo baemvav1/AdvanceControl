@@ -40,6 +40,18 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarAsync();
         }
 
+        private async void BtnVincularAutomatico_Click(object sender, RoutedEventArgs e)
+        {
+            var ventana = new Windows.ConfirmacionVinculacionFacturaWindow();
+            ventana.Activate();
+
+            var vinculadas = await ventana.ResultTask;
+            if (vinculadas > 0)
+            {
+                await ViewModel.CargarAsync();
+            }
+        }
+
         private async void BtnCargarXml_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button button || button.Tag is not OperacionSinFacturaDto operacion)
