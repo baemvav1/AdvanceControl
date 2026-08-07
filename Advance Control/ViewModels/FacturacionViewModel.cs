@@ -131,7 +131,9 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Calcula, para cada operación sin factura, las facturas ya cargadas (sin operación)
         /// que coinciden en RFC y monto antes de IVA. Solo devuelve operaciones con al menos
-        /// un candidato -- las que no tienen ninguno no se muestran en el selector.
+        /// un candidato -- las que no tienen ninguno no se muestran en el selector. La factura
+        /// que queda seleccionada por defecto en cada propuesta se saca del pool compartido,
+        /// asi que dos propuestas del mismo lote nunca terminan apuntando a la misma factura.
         /// </summary>
         public async Task<IReadOnlyList<FacturaOperacionPropuestaDto>> CargarPropuestasVinculacionAsync()
         {
@@ -147,7 +149,14 @@ namespace Advance_Control.ViewModels
                 var candidatas = _matchingEngine.ObtenerCandidatos(operacion, facturasSinOperacion).ToList();
                 if (candidatas.Count > 0)
                 {
-                    propuestas.Add(new FacturaOperacionPropuestaDto { Operacion = operacion, Candidatas = candidatas });
+                    var propuesta = new FacturaOperacionPropuestaDto { Operacion = operacion, Candidatas = candidatas };
+                    propuestas.Add(propuesta);
+
+                    // Saca del pool compartido la factura que quedo seleccionada por defecto para
+                    // esta propuesta, para que otras operaciones del mismo lote no la vuelvan a
+                    // proponer (evita que dos propuestas aprobadas intenten vincular la misma
+                    // factura y la segunda falle en fn_facturas_vincular_operacion).
+                    facturasSinOperacion.RemoveAll(factura => factura.IdFactura == propuesta.FacturaSeleccionada.IdFactura);
                 }
             }
 
