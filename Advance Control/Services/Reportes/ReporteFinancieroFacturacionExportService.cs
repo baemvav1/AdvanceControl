@@ -563,8 +563,12 @@ namespace Advance_Control.Services.Reportes
 
             var rutaArchivo = Path.Combine(carpeta, ConstruirNombreArchivoCobranza(receptorRfcFiltro));
             var resumenFiltros = ConstruirResumenFiltros(receptorRfcFiltro, referenciaFiltro, fechaInicioFiltro, fechaFinFiltro, finiquitoFiltro);
-            var totalFacturado = items.Sum(item => item.Total);
-            var totalPagado = items.Where(item => item.Pagada).Sum(item => item.Total);
+            var pendientes = items.Where(item => item.OrdenGrupo == 1).ToList();
+            var sinFacturar = items.Where(item => item.OrdenGrupo == 2).ToList();
+            var pagadas = items.Where(item => item.OrdenGrupo == 3).ToList();
+            var totalPendiente = pendientes.Sum(item => item.Total);
+            var totalSinFacturar = sinFacturar.Sum(item => item.Total);
+            var totalPagado = pagadas.Sum(item => item.Total);
             var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "EstadoCuenta.png");
 
             var documento = Document.Create(container =>
@@ -607,8 +611,19 @@ namespace Advance_Control.Services.Reportes
                             row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(resumen =>
                             {
                                 resumen.Item().Text("Resumen").SemiBold().FontSize(8);
-                                resumen.Item().Text($"{items.Count} factura(s)").FontSize(8);
-                                resumen.Item().Text($"Total facturado: {totalFacturado.ToString("C2", Cultura)}  |  Total pagado: {totalPagado.ToString("C2", Cultura)}").FontSize(8);
+                                resumen.Item().Text(text =>
+                                {
+                                    text.DefaultTextStyle(s => s.FontSize(8));
+                                    text.Span("Pendientes de pago (cliente): ").FontColor(Colors.Red.Darken2);
+                                    text.Span($"{pendientes.Count} factura(s), {totalPendiente.ToString("C2", Cultura)}");
+                                });
+                                resumen.Item().Text(text =>
+                                {
+                                    text.DefaultTextStyle(s => s.FontSize(8));
+                                    text.Span("Finalizadas sin facturar (interno): ").FontColor(Colors.Orange.Darken2);
+                                    text.Span($"{sinFacturar.Count} operación(es), {totalSinFacturar.ToString("C2", Cultura)}");
+                                });
+                                resumen.Item().Text($"Pagadas: {pagadas.Count} factura(s), {totalPagado.ToString("C2", Cultura)}").FontSize(8);
                             });
                         });
                     });
@@ -639,13 +654,17 @@ namespace Advance_Control.Services.Reportes
 
                         foreach (var item in items)
                         {
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.FolioTexto).FontSize(8);
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.FechaFacturaTexto).FontSize(8);
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.TotalTexto).FontSize(8);
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.PagadaTexto).FontSize(8);
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.OperacionTexto).FontSize(8);
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.TecnicoTexto).FontSize(8);
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.MovimientosResumenTexto).FontSize(8);
+                            var estilo = item.EsSinFacturar
+                                ? (Func<IContainer, IContainer>)(c => EstiloCeldaDatosSinFacturar(c))
+                                : c => EstiloCeldaDatos(c, true);
+
+                            tabla.Cell().Element(estilo).Text(item.FolioTexto).FontSize(8);
+                            tabla.Cell().Element(estilo).Text(item.FechaFacturaTexto).FontSize(8);
+                            tabla.Cell().Element(estilo).Text(item.TotalTexto).FontSize(8);
+                            tabla.Cell().Element(estilo).Text(item.EstadoTexto).FontSize(8);
+                            tabla.Cell().Element(estilo).Text(item.OperacionTexto).FontSize(8);
+                            tabla.Cell().Element(estilo).Text(item.TecnicoTexto).FontSize(8);
+                            tabla.Cell().Element(estilo).Text(item.MovimientosResumenTexto).FontSize(8);
                         }
                     });
 
@@ -753,6 +772,17 @@ namespace Advance_Control.Services.Reportes
                 .PaddingVertical(4)
                 .PaddingHorizontal(4)
                 .DefaultTextStyle(x => x.FontSize(9).SemiBold().FontColor(Colors.White));
+        }
+
+        /// <summary>Resalta las filas de "operacion finalizada sin facturar" (responsabilidad interna).</summary>
+        private static IContainer EstiloCeldaDatosSinFacturar(IContainer container)
+        {
+            return container
+                .Border(1)
+                .BorderColor(Colors.Orange.Lighten2)
+                .Background(Colors.Orange.Lighten5)
+                .PaddingVertical(3)
+                .PaddingHorizontal(4);
         }
 
         private static IContainer EstiloCeldaDatos(IContainer container, bool bordeArriba)
