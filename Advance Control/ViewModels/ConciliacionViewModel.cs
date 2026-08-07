@@ -1276,11 +1276,11 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
         }
 
-        private async Task MostrarErrorConciliacionAsync(string mensaje)
+        private Task MostrarErrorConciliacionAsync(string mensaje)
         {
             ErrorMessage = mensaje;
             SuccessMessage = null;
-            await _notificacionService.MostrarAsync("Error de conciliacion", mensaje);
+            return Task.CompletedTask;
         }
 
         private async Task MostrarExitoConciliacionAsync(string mensaje)

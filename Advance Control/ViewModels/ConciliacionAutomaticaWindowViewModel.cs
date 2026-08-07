@@ -70,7 +70,7 @@ namespace Advance_Control.ViewModels
         {
             if (!string.Equals(propuestaDescartada.Tipo, "Abonos", StringComparison.OrdinalIgnoreCase))
             {
-                return await CrearPropuestasAbonosAsync(mostrarMensajeSinResultados: false);
+                return await CrearPropuestasAbonosAsync();
             }
 
             var factura = propuestaDescartada.Facturas.FirstOrDefault();
@@ -80,7 +80,7 @@ namespace Advance_Control.ViewModels
                 _movimientosVetadosPorFacturaAbonos.Remove(factura.IdFactura);
             }
 
-            return await CrearPropuestasAbonosAsync(mostrarMensajeSinResultados: false);
+            return await CrearPropuestasAbonosAsync();
         }
 
         public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> DescartarMovimientoYRecalcularFacturaAbonosAsync(
@@ -96,9 +96,7 @@ namespace Advance_Control.ViewModels
             movimientosVetados.Add(idMovimiento);
             _facturasDescartadasAbonos.Remove(idFactura);
 
-            return await CrearPropuestasAbonosAsync(
-                mostrarMensajeSinResultados: false,
-                prioridadFacturaId: idFactura);
+            return await CrearPropuestasAbonosAsync(prioridadFacturaId: idFactura);
         }
 
         public async Task<bool> AplicarPropuestasAprobadasAsync(
@@ -107,7 +105,6 @@ namespace Advance_Control.ViewModels
         {
             if (aprobadas.Count == 0)
             {
-                await MostrarErrorConciliacionAsync("Selecciona al menos una propuesta para continuar.");
                 return false;
             }
 
@@ -148,7 +145,6 @@ namespace Advance_Control.ViewModels
 
             if (facturasObjetivo.Count == 0)
             {
-                await MostrarErrorConciliacionAsync("No hay facturas con saldo pendiente para conciliacion automatica.");
                 return Array.Empty<ConciliacionMatchPropuestaDto>();
             }
 
@@ -175,11 +171,6 @@ namespace Advance_Control.ViewModels
                     .ToList();
             }
 
-            if (propuestas.Count == 0)
-            {
-                await MostrarErrorConciliacionAsync("No se encontro ningun movimiento compatible para las facturas pendientes.");
-            }
-
             return propuestas;
         }
 
@@ -194,7 +185,6 @@ namespace Advance_Control.ViewModels
 
             if (!_conciliacionMatchingEngine.CanRunCombinacional(facturasObjetivo, _movimientosPendientesBase))
             {
-                await MostrarErrorConciliacionAsync("No hay grupos de facturas pendientes para conciliacion automatica convinacional.");
                 return Array.Empty<ConciliacionMatchPropuestaDto>();
             }
 
@@ -218,16 +208,10 @@ namespace Advance_Control.ViewModels
                     .ToList();
             }
 
-            if (propuestas.Count == 0)
-            {
-                await MostrarErrorConciliacionAsync("No se encontraron combinaciones compatibles para las facturas pendientes.");
-            }
-
             return propuestas;
         }
 
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAbonosAsync(
-            bool mostrarMensajeSinResultados = true,
             int? prioridadFacturaId = null)
         {
             var facturasObjetivo = _facturasPendientesBase
@@ -250,7 +234,6 @@ namespace Advance_Control.ViewModels
 
             if (facturasObjetivo.Count == 0)
             {
-                await MostrarErrorConciliacionAsync("No hay facturas con saldo pendiente para conciliacion automatica de abonos.");
                 return Array.Empty<ConciliacionMatchPropuestaDto>();
             }
 
@@ -264,11 +247,6 @@ namespace Advance_Control.ViewModels
                 .OrderBy(propuesta => propuesta.FacturaPrincipal?.Fecha ?? DateTime.MaxValue)
                 .ThenBy(propuesta => propuesta.FacturaPrincipal?.IdFactura ?? int.MaxValue)
                 .ToList();
-
-            if (propuestas.Count == 0 && mostrarMensajeSinResultados)
-            {
-                await MostrarErrorConciliacionAsync("No se encontraron combinaciones de movimientos para las facturas pendientes.");
-            }
 
             return propuestas;
         }
@@ -644,11 +622,6 @@ namespace Advance_Control.ViewModels
                     break;
                 }
             }
-        }
-
-        private async Task MostrarErrorConciliacionAsync(string mensaje)
-        {
-            await _notificacionService.MostrarAsync("Error de conciliacion", mensaje);
         }
 
         private async Task MostrarResultadoFinalConciliacionAsync(

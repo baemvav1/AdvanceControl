@@ -119,6 +119,10 @@ namespace Advance_Control.Views.Windows
                     if (!aplicadas)
                     {
                         BtnConfirmar.IsEnabled = true;
+                        if (aprobadas.Count == 0)
+                        {
+                            TxtResumen.Text = "Selecciona al menos una propuesta para continuar.";
+                        }
                         return;
                     }
                 }
