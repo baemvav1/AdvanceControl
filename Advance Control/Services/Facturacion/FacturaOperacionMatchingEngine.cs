@@ -54,21 +54,27 @@ namespace Advance_Control.Services.Facturacion
                 .Where(factura => string.Equals(factura.ReceptorRfc?.Trim(), rfcCliente, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
+            // Cada bucket se ordena por separado (fecha/id como desempate) y LUEGO se
+            // concatena -- si se ordenara todo junto, una factura mas vieja que solo
+            // coincide por monto podria colarse antes que la que de verdad menciona el
+            // numero de esta operacion (le paso con clientes que tienen varias facturas
+            // del mismo monto exacto, ej. "OPERACION DE EMERGENCIA #N" repetido).
             var porNumeroCotizacion = facturasDelCliente
                 .Where(factura => ReferenciaContieneOperacion(factura.CondicionesDePago, operacion.IdOperacion))
+                .OrderBy(factura => DistanciaFecha(operacion, factura))
+                .ThenBy(factura => factura.Fecha)
+                .ThenBy(factura => factura.IdFactura)
                 .ToList();
 
             var porMonto = facturasDelCliente
                 .Where(factura => decimal.Round(factura.SubTotal, 2) == montoOperacion)
                 .Except(porNumeroCotizacion)
-                .ToList();
-
-            return porNumeroCotizacion
-                .Concat(porMonto)
                 .OrderBy(factura => DistanciaFecha(operacion, factura))
                 .ThenBy(factura => factura.Fecha)
                 .ThenBy(factura => factura.IdFactura)
                 .ToList();
+
+            return porNumeroCotizacion.Concat(porMonto).ToList();
         }
 
         /// <summary>
