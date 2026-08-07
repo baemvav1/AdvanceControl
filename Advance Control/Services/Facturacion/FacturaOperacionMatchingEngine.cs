@@ -9,12 +9,14 @@ namespace Advance_Control.Services.Facturacion
     /// <summary>
     /// Sugiere facturas ya cargadas (sin operacion) como candidatas para una operacion
     /// sin factura. Dos señales, en orden de confianza:
-    ///   1. Numero de cotizacion/reporte: los PDFs de cotizacion y reporte que genera la
-    ///      app se titulan "Cotizacion No: {IdOperacion}" / "Reporte No: {IdOperacion}"
-    ///      (ver QuoteService), y ese numero termina copiado en condiciones_de_pago de
-    ///      la factura (ej. "COTIZACION NUM. 33" o "Cotizaciones Nums. 831 y 832"). Si el
-    ///      texto de la factura menciona el ID exacto de la operacion (y el RFC coincide),
-    ///      es una referencia directa, mas confiable que el monto.
+    ///   1. Numero de cotizacion/reporte/operacion: los PDFs de cotizacion y reporte que
+    ///      genera la app se titulan "Cotizacion No: {IdOperacion}" / "Reporte No:
+    ///      {IdOperacion}" (ver QuoteService), y ese numero termina copiado en
+    ///      condiciones_de_pago de la factura (ej. "COTIZACION NUM. 33" o "Cotizaciones
+    ///      Nums. 831 y 832"). Tambien se ve como "OPERACION DE EMERGENCIA #23" para
+    ///      trabajos sin cotizacion previa. Si el texto de la factura menciona el ID
+    ///      exacto de la operacion (y el RFC coincide), es una referencia directa, mas
+    ///      confiable que el monto.
     ///   2. RFC + monto: mismo RFC que el cliente de la operacion y mismo monto exacto --
     ///      comparado contra el SUBTOTAL de la factura (sin IVA), porque operacion.Monto
     ///      tampoco incluye IVA.
@@ -70,9 +72,9 @@ namespace Advance_Control.Services.Facturacion
         }
 
         /// <summary>
-        /// True si el texto de condiciones_de_pago de la factura menciona "cotizacion" o
-        /// "reporte" junto con el numero exacto del ID de la operacion. Se usa tambien
-        /// desde la UI para mostrar de donde salio la sugerencia.
+        /// True si el texto de condiciones_de_pago de la factura menciona "cotizacion",
+        /// "reporte" u "operacion" junto con el numero exacto del ID de la operacion.
+        /// Se usa tambien desde la UI para mostrar de donde salio la sugerencia.
         /// </summary>
         public static bool ReferenciaContieneOperacion(string? condicionesDePago, int idOperacion)
         {
@@ -82,7 +84,8 @@ namespace Advance_Control.Services.Facturacion
             }
 
             if (!condicionesDePago.Contains("cotiz", StringComparison.OrdinalIgnoreCase)
-                && !condicionesDePago.Contains("reporte", StringComparison.OrdinalIgnoreCase))
+                && !condicionesDePago.Contains("reporte", StringComparison.OrdinalIgnoreCase)
+                && !condicionesDePago.Contains("operaci", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
