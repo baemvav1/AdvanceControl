@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Advance_Control.Services.Facturacion;
 
 namespace Advance_Control.Models
 {
@@ -17,5 +18,13 @@ namespace Advance_Control.Models
         }
 
         public bool TieneMultiplesCandidatas => Candidatas.Count > 1;
+
+        /// <summary>
+        /// True si la factura seleccionada menciona el numero de esta operacion en
+        /// "condiciones_de_pago" (cotizacion/reporte) -- coincidencia mas confiable que
+        /// solo RFC+monto. Se recalcula sobre la seleccion actual, no queda fija.
+        /// </summary>
+        public bool CoincidePorNumeroCotizacion =>
+            FacturaOperacionMatchingEngine.ReferenciaContieneOperacion(FacturaSeleccionada.CondicionesDePago, Operacion.IdOperacion);
     }
 }

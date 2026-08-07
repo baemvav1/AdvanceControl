@@ -100,7 +100,7 @@
                                 FontWeight="SemiBold"
                                 Text="{Binding Operacion.MontoTexto}" />
 
-                            <Grid Grid.Column="3" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="3" VerticalAlignment="Center" Spacing="2">
                                 <!--  Un solo candidato: texto fijo  -->
                                 <StackPanel
                                     Spacing="2"
@@ -128,7 +128,20 @@
                                         </DataTemplate>
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
-                            </Grid>
+
+                                <!--  Insignia: la factura menciona el numero de esta operacion (cotizacion/reporte), mas confiable que solo monto  -->
+                                <Border
+                                    Padding="6,2"
+                                    HorizontalAlignment="Left"
+                                    Background="{ThemeResource SystemFillColorSuccessBackgroundBrush}"
+                                    CornerRadius="4"
+                                    Visibility="{Binding CoincidePorNumeroCotizacion, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <TextBlock
+                                        FontSize="11"
+                                        Foreground="{ThemeResource SystemFillColorSuccessBrush}"
+                                        Text="Coincide por número de cotización/reporte" />
+                                </Border>
+                            </StackPanel>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
