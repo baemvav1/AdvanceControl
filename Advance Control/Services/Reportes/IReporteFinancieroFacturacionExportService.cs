@@ -30,5 +30,13 @@ namespace Advance_Control.Services.Reportes
             int movimientosNcCount,
             decimal movimientosNcTotal,
             bool mostrarMovimientosNc = true);
+
+        Task<string> GenerarReporteCobranzaPdfAsync(
+            IReadOnlyList<ReporteCobranzaItemDto> items,
+            string? receptorRfcFiltro,
+            string? referenciaFiltro,
+            DateTimeOffset? fechaInicioFiltro,
+            DateTimeOffset? fechaFinFiltro,
+            bool? finiquitoFiltro);
     }
 }

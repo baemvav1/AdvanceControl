@@ -91,6 +91,7 @@
                     <Button Click="BtnLimpiar_Click" Content="Limpiar filtros" />
                     <Button Click="BtnGenerarReporte_Click" Content="Generar Reporte" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" />
                     <Button Click="BtnGenerarReporteSimplificado_Click" Content="Generar Reporte Simplificado" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
+                    <Button Click="BtnGenerarReporteCobranza_Click" Content="Reporte de Cobranza" IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
                     <CheckBox Content="Mostrar mov. no conciliados" IsChecked="{x:Bind ViewModel.MostrarMovimientosNoConciliados, Mode=TwoWay}" />
                     <ProgressRing
                         Width="24"

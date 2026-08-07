@@ -15,5 +15,13 @@ namespace Advance_Control.Services.Reportes
             DateTimeOffset? fechaInicio,
             DateTimeOffset? fechaFin,
             CancellationToken cancellationToken = default);
+
+        Task<List<ReporteCobranzaItemDto>> ObtenerReporteCobranzaAsync(
+            string? receptorRfc,
+            bool? finiquito,
+            string? referencia,
+            DateTimeOffset? fechaInicio,
+            DateTimeOffset? fechaFin,
+            CancellationToken cancellationToken = default);
     }
 }

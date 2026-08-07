@@ -86,6 +86,23 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void BtnGenerarReporteCobranza_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var rutaArchivo = await ViewModel.GenerarReporteCobranzaAsync();
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (System.Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudo generar el reporte de cobranza: {ex.Message}";
+                ViewModel.SuccessMessage = null;
+            }
+        }
+
         private void ProgramarRecargaLive()
         {
             _filtrosLiveCts?.Cancel();

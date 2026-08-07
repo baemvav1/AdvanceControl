@@ -282,6 +282,54 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public async Task<string> GenerarReporteCobranzaAsync()
+        {
+            if (FechaInicioFiltro.HasValue && FechaFinFiltro.HasValue && FechaFinFiltro.Value.Date < FechaInicioFiltro.Value.Date)
+            {
+                throw new InvalidOperationException("La fecha fin no puede ser menor que la fecha inicio.");
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var items = await _reporteService.ObtenerReporteCobranzaAsync(
+                    string.IsNullOrWhiteSpace(ReceptorRfcFiltro) ? null : ReceptorRfcFiltro.Trim().ToUpperInvariant(),
+                    ObtenerFiniquitoFiltro(),
+                    string.IsNullOrWhiteSpace(ReferenciaFiltro) ? null : ReferenciaFiltro.Trim(),
+                    FechaInicioFiltro,
+                    FechaFinFiltro);
+
+                if (items.Count == 0)
+                {
+                    throw new InvalidOperationException("No hay facturas con los filtros actuales para generar el reporte de cobranza.");
+                }
+
+                var rutaArchivo = await _exportService.GenerarReporteCobranzaPdfAsync(
+                    items,
+                    ReceptorRfcFiltro,
+                    ReferenciaFiltro,
+                    FechaInicioFiltro,
+                    FechaFinFiltro,
+                    ObtenerFiniquitoFiltro());
+
+                SuccessMessage = $"Reporte de cobranza generado: {rutaArchivo}";
+                return rutaArchivo;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el reporte de cobranza: {ex.Message}";
+                SuccessMessage = null;
+                throw;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private IEnumerable<ReporteFinancieroFacturacionListadoItemDto> ConstruirListadoVertical()
         {
             foreach (var cabecera in _cabecerasBase)

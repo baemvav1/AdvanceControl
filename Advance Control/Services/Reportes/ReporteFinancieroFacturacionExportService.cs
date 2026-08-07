@@ -544,6 +544,134 @@ namespace Advance_Control.Services.Reportes
         }
 
         /// <summary>
+        /// Genera el PDF del reporte de cobranza: una fila por factura con fecha, monto,
+        /// operación vinculada, técnico que atendió, y los movimientos que la pagaron.
+        /// </summary>
+        public Task<string> GenerarReporteCobranzaPdfAsync(
+            IReadOnlyList<ReporteCobranzaItemDto> items,
+            string? receptorRfcFiltro,
+            string? referenciaFiltro,
+            DateTimeOffset? fechaInicioFiltro,
+            DateTimeOffset? fechaFinFiltro,
+            bool? finiquitoFiltro)
+        {
+            if (items == null) throw new ArgumentNullException(nameof(items));
+            if (items.Count == 0) throw new InvalidOperationException("No hay facturas para generar el reporte de cobranza.");
+
+            var carpeta = ObtenerCarpetaReportes();
+            Directory.CreateDirectory(carpeta);
+
+            var rutaArchivo = Path.Combine(carpeta, ConstruirNombreArchivoCobranza(receptorRfcFiltro));
+            var resumenFiltros = ConstruirResumenFiltros(receptorRfcFiltro, referenciaFiltro, fechaInicioFiltro, fechaFinFiltro, finiquitoFiltro);
+            var totalFacturado = items.Sum(item => item.Total);
+            var totalPagado = items.Where(item => item.Pagada).Sum(item => item.Total);
+            var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "EstadoCuenta.png");
+
+            var documento = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.Letter.Landscape());
+                    page.Margin(1.5f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(9));
+
+                    page.Header().ShowOnce().Column(column =>
+                    {
+                        if (File.Exists(cabeceraPath))
+                        {
+                            column.Item().Image(cabeceraPath).FitWidth();
+                        }
+
+                        column.Item().Text("Reporte de Cobranza")
+                            .FontSize(18)
+                            .SemiBold()
+                            .FontColor(Colors.Blue.Darken2);
+
+                        column.Item().Text($"Generado: {DateTime.Now.ToString("dd/MM/yyyy HH:mm", Cultura)}")
+                            .FontSize(9)
+                            .FontColor(Colors.Grey.Darken1);
+
+                        column.Item().PaddingTop(4).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(filtros =>
+                        {
+                            filtros.Spacing(2);
+                            filtros.Item().Text("Filtros aplicados").SemiBold().FontSize(8);
+                            foreach (var linea in resumenFiltros)
+                            {
+                                filtros.Item().Text(linea).FontSize(8);
+                            }
+                        });
+
+                        column.Item().PaddingTop(4).PaddingBottom(8).Row(row =>
+                        {
+                            row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(resumen =>
+                            {
+                                resumen.Item().Text("Resumen").SemiBold().FontSize(8);
+                                resumen.Item().Text($"{items.Count} factura(s)").FontSize(8);
+                                resumen.Item().Text($"Total facturado: {totalFacturado.ToString("C2", Cultura)}  |  Total pagado: {totalPagado.ToString("C2", Cultura)}").FontSize(8);
+                            });
+                        });
+                    });
+
+                    page.Content().Table(tabla =>
+                    {
+                        tabla.ColumnsDefinition(columnas =>
+                        {
+                            columnas.ConstantColumn(60);   // Folio
+                            columnas.ConstantColumn(65);   // Fecha
+                            columnas.ConstantColumn(75);   // Total
+                            columnas.ConstantColumn(55);   // Estado
+                            columnas.RelativeColumn(2);    // Operación
+                            columnas.ConstantColumn(100);  // Técnico
+                            columnas.RelativeColumn(2);    // Movimientos
+                        });
+
+                        tabla.Header(header =>
+                        {
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Folio");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Fecha");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Total");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Estado");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Operación");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Técnico");
+                            header.Cell().Element(EstiloCeldaEncabezado).Text("Movimientos");
+                        });
+
+                        foreach (var item in items)
+                        {
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.FolioTexto).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.FechaFacturaTexto).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.TotalTexto).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.PagadaTexto).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.OperacionTexto).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.TecnicoTexto).FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c, true)).Text(item.MovimientosResumenTexto).FontSize(8);
+                        }
+                    });
+
+                    page.Footer().AlignRight().Text(text =>
+                    {
+                        text.Span("Página ");
+                        text.CurrentPageNumber();
+                        text.Span(" de ");
+                        text.TotalPages();
+                    });
+                });
+            });
+
+            documento.GeneratePdf(rutaArchivo);
+            return Task.FromResult(rutaArchivo);
+        }
+
+        private static string ConstruirNombreArchivoCobranza(string? receptorRfcFiltro)
+        {
+            var rfc = string.IsNullOrWhiteSpace(receptorRfcFiltro)
+                ? "General"
+                : LimpiarNombreArchivo(receptorRfcFiltro.Trim().ToUpperInvariant());
+            return $"ReporteCobranza_{rfc}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+        }
+
+        /// <summary>
         /// Construye las filas del reporte simplificado a partir de los detalles.
         /// Para facturas con múltiples abonos, duplica la fila con diferente Observación.
         /// </summary>

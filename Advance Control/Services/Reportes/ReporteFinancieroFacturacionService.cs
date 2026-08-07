@@ -64,5 +64,39 @@ namespace Advance_Control.Services.Reportes
                 throw;
             }
         }
+
+        public async Task<List<ReporteCobranzaItemDto>> ObtenerReporteCobranzaAsync(
+            string? receptorRfc,
+            bool? finiquito,
+            string? referencia,
+            DateTimeOffset? fechaInicio,
+            DateTimeOffset? fechaFin,
+            CancellationToken cancellationToken = default)
+        {
+            var url = new ApiQueryBuilder()
+                .Add("receptorRfc", receptorRfc)
+                .Add("finiquito", finiquito)
+                .Add("referencia", referencia)
+                .Add("fechaInicio", fechaInicio?.Date.ToString("O", CultureInfo.InvariantCulture))
+                .Add("fechaFin", fechaFin?.Date.AddDays(1).AddTicks(-1).ToString("O", CultureInfo.InvariantCulture))
+                .Build(_endpoints.GetEndpoint("api", "reportecobranza"));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando reporte de cobranza en: {url}", "ReporteFinancieroFacturacionService", "ObtenerReporteCobranzaAsync");
+                var result = await _http.GetFromJsonAsync<List<ReporteCobranzaItemDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<ReporteCobranzaItemDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar el reporte de cobranza", ex, "ReporteFinancieroFacturacionService", "ObtenerReporteCobranzaAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar el reporte de cobranza.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al consultar el reporte de cobranza", ex, "ReporteFinancieroFacturacionService", "ObtenerReporteCobranzaAsync");
+                throw;
+            }
+        }
     }
 }
