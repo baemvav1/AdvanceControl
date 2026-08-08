@@ -39,6 +39,11 @@ namespace Advance_Control.Models
         public DateTime? FechaUltimoAbono { get; set; }
         public int? IdOperacion { get; set; }
 
+        /// <summary>Solo viene poblado al consultar el detalle de UNA factura, no en el listado.</summary>
+        public string? Sello { get; set; }
+        public string? SelloCfd { get; set; }
+        public string? SelloSat { get; set; }
+
         public string FolioTitulo => $"{Folio}";
 
         public string FechaTexto => Fecha == default ? string.Empty : Fecha.ToString("dd/MM/yyyy HH:mm");

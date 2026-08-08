@@ -579,6 +579,7 @@ namespace Advance_Control
                         return new Services.Quotes.RemoteFirmaService(http, logger);
                     });
                     services.AddSingleton<IQuoteService, QuoteService>();
+                    services.AddSingleton<Services.Facturas.IFacturaPdfService, Services.Facturas.FacturaPdfService>();
                     services.AddSingleton<Services.Reportes.IReporteFinancieroFacturacionExportService, Services.Reportes.ReporteFinancieroFacturacionExportService>();
 
                     // Registrar GoogleMapsConfigService y su HttpClient pipeline con autenticación
