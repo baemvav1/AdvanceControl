@@ -13,6 +13,7 @@ namespace Advance_Control.ViewModels
     {
         private readonly IReporteFinancieroFacturacionService _reporteService;
         private readonly IReporteFinancieroFacturacionExportService _exportService;
+        private readonly IHistorialCobranzaService _historialService;
         private readonly List<ReporteFinancieroFacturacionCabeceraDto> _cabecerasBase = new();
         private readonly List<ReporteFinancieroFacturacionDetalleDto> _detallesBase = new();
         private ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> _listadoItems = new();
@@ -28,13 +29,22 @@ namespace Advance_Control.ViewModels
         private int _movimientosNcCount;
         private decimal _movimientosNcTotal;
         private bool _mostrarMovimientosNoConciliados = true;
+        private ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> _clientesHistorial = new();
+        private ReporteFinancieroFacturacionCabeceraDto? _clienteHistorialSeleccionado;
+        private DateTimeOffset? _fechaInicioHistorial;
+        private DateTimeOffset? _fechaFinHistorial;
+        private bool _isGenerandoHistorial;
+        private string? _historialProgresoTexto;
+        private HistorialCobranzaResultadoDto? _historialResultado;
 
         public RPTFinancieroFacturacionViewModel(
             IReporteFinancieroFacturacionService reporteService,
-            IReporteFinancieroFacturacionExportService exportService)
+            IReporteFinancieroFacturacionExportService exportService,
+            IHistorialCobranzaService historialService)
         {
             _reporteService = reporteService ?? throw new ArgumentNullException(nameof(reporteService));
             _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
+            _historialService = historialService ?? throw new ArgumentNullException(nameof(historialService));
         }
 
         public ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> ListadoItems
@@ -374,6 +384,152 @@ namespace Advance_Control.ViewModels
             }
 
             return null;
+        }
+
+        public ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> ClientesHistorial
+        {
+            get => _clientesHistorial;
+            private set => SetProperty(ref _clientesHistorial, value);
+        }
+
+        public ReporteFinancieroFacturacionCabeceraDto? ClienteHistorialSeleccionado
+        {
+            get => _clienteHistorialSeleccionado;
+            set
+            {
+                if (SetProperty(ref _clienteHistorialSeleccionado, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                }
+            }
+        }
+
+        public DateTimeOffset? FechaInicioHistorial
+        {
+            get => _fechaInicioHistorial;
+            set
+            {
+                if (SetProperty(ref _fechaInicioHistorial, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                }
+            }
+        }
+
+        public DateTimeOffset? FechaFinHistorial
+        {
+            get => _fechaFinHistorial;
+            set
+            {
+                if (SetProperty(ref _fechaFinHistorial, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                }
+            }
+        }
+
+        public bool IsGenerandoHistorial
+        {
+            get => _isGenerandoHistorial;
+            set
+            {
+                if (SetProperty(ref _isGenerandoHistorial, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                }
+            }
+        }
+
+        public string? HistorialProgresoTexto
+        {
+            get => _historialProgresoTexto;
+            set => SetProperty(ref _historialProgresoTexto, value);
+        }
+
+        public HistorialCobranzaResultadoDto? HistorialResultado
+        {
+            get => _historialResultado;
+            private set
+            {
+                if (SetProperty(ref _historialResultado, value))
+                {
+                    OnPropertyChanged(nameof(HistorialResumenTexto));
+                }
+            }
+        }
+
+        public string HistorialResumenTexto => HistorialResultado?.ResumenTexto ?? string.Empty;
+
+        public bool CanGenerarHistorial =>
+            !IsGenerandoHistorial &&
+            ClienteHistorialSeleccionado != null &&
+            FechaInicioHistorial.HasValue &&
+            FechaFinHistorial.HasValue &&
+            FechaFinHistorial.Value.Date >= FechaInicioHistorial.Value.Date;
+
+        /// <summary>
+        /// Carga la lista de clientes con facturas cargadas (sin filtros) para alimentar el
+        /// selector de RFC del historial de cobranza, independiente de los filtros del reporte principal.
+        /// </summary>
+        public async Task CargarClientesHistorialAsync()
+        {
+            try
+            {
+                var resultado = await _reporteService.ObtenerReporteAsync(null, null, null, null, null);
+                ClientesHistorial = new ObservableCollection<ReporteFinancieroFacturacionCabeceraDto>(
+                    resultado.Cabeceras.OrderBy(item => item.ReceptorNombreTexto).ThenBy(item => item.ReceptorRfcTexto));
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al cargar el listado de clientes para historial: {ex.Message}";
+            }
+        }
+
+        public async Task GenerarHistorialAsync(int idCliente, string? dirigidoA)
+        {
+            if (ClienteHistorialSeleccionado == null || !FechaInicioHistorial.HasValue || !FechaFinHistorial.HasValue)
+            {
+                throw new InvalidOperationException("Selecciona un cliente y un rango de fechas para generar el historial.");
+            }
+
+            if (string.IsNullOrWhiteSpace(ClienteHistorialSeleccionado.ReceptorRfc))
+            {
+                throw new InvalidOperationException("El cliente seleccionado no tiene RFC.");
+            }
+
+            try
+            {
+                IsGenerandoHistorial = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+                HistorialResultado = null;
+                HistorialProgresoTexto = "Iniciando...";
+
+                var progreso = new Progress<string>(texto => HistorialProgresoTexto = texto);
+
+                var resultado = await _historialService.GenerarHistorialAsync(
+                    ClienteHistorialSeleccionado.ReceptorRfc,
+                    ClienteHistorialSeleccionado.ReceptorNombreTexto,
+                    idCliente,
+                    FechaInicioHistorial.Value,
+                    FechaFinHistorial.Value,
+                    dirigidoA,
+                    progreso);
+
+                HistorialResultado = resultado;
+                SuccessMessage = $"Historial generado en: {resultado.CarpetaHistorial} ({resultado.ResumenTexto})";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el historial de cobranza: {ex.Message}";
+                SuccessMessage = null;
+                throw;
+            }
+            finally
+            {
+                IsGenerandoHistorial = false;
+                HistorialProgresoTexto = null;
+            }
         }
     }
 }

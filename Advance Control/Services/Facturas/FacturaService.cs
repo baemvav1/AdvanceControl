@@ -155,6 +155,32 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task<string?> ObtenerXmlFacturaAsync(int idFactura, CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", idFactura.ToString(), "xml");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando XML de factura en: {url}", "FacturaService", "ObtenerXmlFacturaAsync");
+                var respuesta = await _http.GetFromJsonAsync<FacturaXmlDto>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return respuesta?.XmlContenido;
+            }
+            catch (HttpRequestException ex) when (ex.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                return null;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar XML de factura", ex, "FacturaService", "ObtenerXmlFacturaAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al consultar el XML de la factura.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al consultar XML de factura", ex, "FacturaService", "ObtenerXmlFacturaAsync");
+                throw;
+            }
+        }
+
         public async Task<RegistrarAbonoFacturaResponseDto> RegistrarAbonoAsync(RegistrarAbonoFacturaRequestDto request, CancellationToken cancellationToken = default)
         {
             if (request == null)
