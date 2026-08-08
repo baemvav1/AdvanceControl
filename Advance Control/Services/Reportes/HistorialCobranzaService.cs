@@ -117,7 +117,9 @@ namespace Advance_Control.Services.Reportes
             }
 
             progreso?.Report("Consultando operaciones del cliente...");
-            var operaciones = await _operacionService.GetOperacionesAsync(new OperacionQueryDto { IdCliente = idCliente }, cancellationToken);
+            var operaciones = await _operacionService.GetOperacionesAsync(
+                new OperacionQueryDto { IdCliente = idCliente, IncluirFinalizadas = true },
+                cancellationToken);
 
             var operacionesFiltradas = (operaciones ?? new List<OperacionDto>())
                 .Where(o =>

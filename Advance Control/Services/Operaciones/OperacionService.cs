@@ -68,7 +68,8 @@ namespace Advance_Control.Services.Operaciones
                         .AddPositive("idAtiende", query.IdAtiende)
                         .Add("nota", query.Nota)
                         .Add("fechainicial", query.FechaInicial?.ToString("yyyy-MM-dd"))
-                        .Add("fechaFinalFiltro", query.FechaFinalFiltro?.ToString("yyyy-MM-dd"));
+                        .Add("fechaFinalFiltro", query.FechaFinalFiltro?.ToString("yyyy-MM-dd"))
+                        .Add("incluirFinalizadas", query.IncluirFinalizadas ? (bool?)true : null);
                 }
                 if (skip > 0) builder.Add("skip", skip.ToString());
                 if (take > 0) builder.Add("take", take.ToString());

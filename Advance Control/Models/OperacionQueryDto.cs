@@ -46,5 +46,11 @@ namespace Advance_Control.Models
         /// Fecha final del rango (fechaFinal <= FechaFinalFiltro). Nulo para no filtrar.
         /// </summary>
         public DateTimeOffset? FechaFinalFiltro { get; set; }
+
+        /// <summary>
+        /// Si es true, incluye operaciones ya cerradas (fecha_final no nulo), que por defecto
+        /// se ocultan del listado normal. Usado por el historial de cobranza.
+        /// </summary>
+        public bool IncluirFinalizadas { get; set; }
     }
 }
