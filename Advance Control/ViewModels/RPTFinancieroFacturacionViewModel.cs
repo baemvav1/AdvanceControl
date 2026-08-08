@@ -454,11 +454,16 @@ namespace Advance_Control.ViewModels
                 if (SetProperty(ref _historialResultado, value))
                 {
                     OnPropertyChanged(nameof(HistorialResumenTexto));
+                    OnPropertyChanged(nameof(HistorialErrores));
                 }
             }
         }
 
         public string HistorialResumenTexto => HistorialResultado?.ResumenTexto ?? string.Empty;
+
+        public ObservableCollection<string> HistorialErrores => HistorialResultado?.Errores.Count > 0
+            ? new ObservableCollection<string>(HistorialResultado.Errores)
+            : new ObservableCollection<string>();
 
         public bool CanGenerarHistorial =>
             !IsGenerandoHistorial &&

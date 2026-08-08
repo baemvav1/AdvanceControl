@@ -215,6 +215,17 @@
                 </Grid>
 
                 <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.HistorialResumenTexto, Mode=OneWay}" />
+
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.HistorialErrores, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Vertical" Spacing="2" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="{Binding}" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
             </StackPanel>
         </Border>
 
