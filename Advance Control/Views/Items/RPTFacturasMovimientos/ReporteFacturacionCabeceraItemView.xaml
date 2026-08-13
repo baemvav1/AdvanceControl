@@ -15,10 +15,23 @@
         BorderThickness="1"
         CornerRadius="8">
         <StackPanel Spacing="10">
-            <StackPanel Spacing="2">
-                <TextBlock FontWeight="SemiBold" Text="{Binding Cabecera.ReceptorNombreTexto, ElementName=Root}" TextWrapping="Wrap" />
-                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Cabecera.ReceptorRfcTexto, ElementName=Root}" />
-            </StackPanel>
+            <Grid ColumnSpacing="8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Spacing="2">
+                    <TextBlock FontWeight="SemiBold" Text="{Binding Cabecera.ReceptorNombreTexto, ElementName=Root}" TextWrapping="Wrap" />
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Cabecera.ReceptorRfcTexto, ElementName=Root}" />
+                </StackPanel>
+
+                <Button
+                    Grid.Column="1"
+                    VerticalAlignment="Top"
+                    Click="BtnEnviarAlerta_Click"
+                    Content="Enviar alerta de cobranza" />
+            </Grid>
 
             <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Cabecera.ResumenTexto, ElementName=Root}" TextWrapping="Wrap" />
 

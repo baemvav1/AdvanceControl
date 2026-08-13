@@ -12,7 +12,6 @@
     <Grid RowSpacing="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -44,11 +43,14 @@
                         Grid.Row="0"
                         Grid.Column="0"
                         Spacing="4">
-                        <TextBlock Text="RFC Receptor" />
-                        <TextBox
-                            PlaceholderText="RFC..."
-                            Text="{x:Bind ViewModel.ReceptorRfcFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            TextChanged="Filtro_TextChanged" />
+                        <TextBlock Text="Cliente (RFC o nombre)" />
+                        <AutoSuggestBox
+                            x:Name="ClienteAutoSuggestBox"
+                            PlaceholderText="RFC o nombre del cliente..."
+                            QueryIcon="Find"
+                            GotFocus="ClienteAutoSuggestBox_GotFocus"
+                            SuggestionChosen="ClienteAutoSuggestBox_SuggestionChosen"
+                            TextChanged="ClienteAutoSuggestBox_TextChanged" />
                     </StackPanel>
 
                     <StackPanel
@@ -93,12 +95,27 @@
                     <Button Click="BtnGenerarReporte_Click" Content="Generar Reporte" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" />
                     <Button Click="BtnGenerarReporteSimplificado_Click" Content="Generar Reporte Simplificado" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
                     <Button Click="BtnGenerarReporteCobranza_Click" Content="Reporte de Cobranza" IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
+                    <Button
+                        Click="BtnGenerarHistorial_Click"
+                        Content="Historial de Cobranza"
+                        IsEnabled="{x:Bind ViewModel.CanGenerarHistorial, Mode=OneWay}"
+                        ToolTipService.ToolTip="Genera cotizaciones, reportes, facturas y el reporte de cobranza del cliente y rango de fechas seleccionados arriba" />
                     <CheckBox Content="Mostrar mov. no conciliados" IsChecked="{x:Bind ViewModel.MostrarMovimientosNoConciliados, Mode=TwoWay}" />
                     <ProgressRing
                         Width="24"
                         Height="24"
                         IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
                         Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <ProgressRing
+                        Width="24"
+                        Height="24"
+                        IsActive="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind ViewModel.HistorialProgresoTexto, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
                 </StackPanel>
 
                 <InfoBar
@@ -112,6 +129,17 @@
                     IsOpen="{x:Bind ViewModel.SuccessMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
                     Message="{x:Bind ViewModel.SuccessMessage, Mode=OneWay}"
                     Severity="Success" />
+
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.HistorialErrores, Mode=OneWay}" Visibility="{x:Bind ViewModel.HistorialTieneErrores, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Orientation="Vertical" Spacing="2" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="x:String">
+                            <TextBlock Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="{Binding}" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
 
                 <StackPanel
                     Grid.Column="0"
@@ -150,87 +178,6 @@
         </Border>
         <Border
             Grid.Row="1"
-            Margin="5"
-            Padding="10"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="2"
-            CornerRadius="8">
-            <StackPanel Spacing="10">
-                <TextBlock FontSize="10" Text="Historial de Cobranza" />
-
-                <Grid ColumnSpacing="12" RowSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="280" />
-                        <ColumnDefinition Width="170" />
-                        <ColumnDefinition Width="170" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel Grid.Column="0" Spacing="4">
-                        <TextBlock Text="Cliente (RFC)" />
-                        <ComboBox
-                            x:Name="CmbClienteHistorial"
-                            HorizontalAlignment="Stretch"
-                            ItemsSource="{x:Bind ViewModel.ClientesHistorial, Mode=OneWay}"
-                            SelectedItem="{x:Bind ViewModel.ClienteHistorialSeleccionado, Mode=TwoWay}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="models:ReporteFinancieroFacturacionCabeceraDto">
-                                    <StackPanel>
-                                        <TextBlock FontWeight="SemiBold" Text="{Binding ReceptorRfcTexto}" />
-                                        <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ReceptorNombreTexto}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="1" Spacing="4">
-                        <TextBlock Text="Desde" />
-                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaInicioHistorial, Mode=TwoWay}" />
-                    </StackPanel>
-
-                    <StackPanel Grid.Column="2" Spacing="4">
-                        <TextBlock Text="Hasta" />
-                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaFinHistorial, Mode=TwoWay}" />
-                    </StackPanel>
-
-                    <StackPanel
-                        Grid.Column="3"
-                        VerticalAlignment="Bottom"
-                        Orientation="Horizontal"
-                        Spacing="8">
-                        <Button
-                            Click="BtnGenerarHistorial_Click"
-                            Content="Generar Historial"
-                            IsEnabled="{x:Bind ViewModel.CanGenerarHistorial, Mode=OneWay}"
-                            Style="{StaticResource AccentButtonStyle}" />
-                        <ProgressRing
-                            Width="24"
-                            Height="24"
-                            IsActive="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay}"
-                            Visibility="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
-                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.HistorialProgresoTexto, Mode=OneWay}" />
-                    </StackPanel>
-                </Grid>
-
-                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.HistorialResumenTexto, Mode=OneWay}" />
-
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.HistorialErrores, Mode=OneWay}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Orientation="Vertical" Spacing="2" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="x:String">
-                            <TextBlock Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="{Binding}" TextWrapping="Wrap" />
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-            </StackPanel>
-        </Border>
-
-        <Border
-            Grid.Row="2"
             Margin="5,0,5,5"
             Padding="10"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
@@ -256,7 +203,7 @@
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="models:ReporteFinancieroFacturacionListadoItemDto">
                                 <Grid>
-                                    <items:ReporteFacturacionCabeceraItemView Cabecera="{Binding Cabecera}" Visibility="{Binding EsCabecera, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                    <items:ReporteFacturacionCabeceraItemView Cabecera="{Binding Cabecera}" EnviarAlertaClick="CabeceraItem_EnviarAlertaClick" Visibility="{Binding EsCabecera, Converter={StaticResource BoolToVisibilityConverter}}" />
                                     <items:ReporteFacturacionDetalleItemView
                                         Margin="20,0,0,0"
                                         Detalle="{Binding Detalle}"

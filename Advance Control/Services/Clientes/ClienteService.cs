@@ -307,5 +307,47 @@ namespace Advance_Control.Services.Clientes
                 throw;
             }
         }
+
+        /// <summary>
+        /// Crea clientes nuevos a partir de facturas cuyo RFC receptor todavía no existe en clientes
+        /// </summary>
+        public async Task<ImportarClientesResponseDto> ImportarClientesDesdeFacturasAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"{_endpoints.GetEndpoint("api", "Clientes")}/importar-de-facturas";
+
+                await _logger.LogInformationAsync($"Importando clientes desde facturas: {url}", "ClienteService", "ImportarClientesDesdeFacturasAsync");
+
+                using var response = await _http.PostAsync(url, null, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al importar clientes desde facturas. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "ClienteService",
+                        "ImportarClientesDesdeFacturasAsync");
+                    return new ImportarClientesResponseDto { Success = false };
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ImportarClientesResponseDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
+
+                await _logger.LogInformationAsync($"Se importaron {result?.Cantidad ?? 0} clientes desde facturas", "ClienteService", "ImportarClientesDesdeFacturasAsync");
+
+                return result ?? new ImportarClientesResponseDto { Success = false };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al importar clientes desde facturas", ex, "ClienteService", "ImportarClientesDesdeFacturasAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al importar clientes desde facturas", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al importar clientes desde facturas", ex, "ClienteService", "ImportarClientesDesdeFacturasAsync");
+                throw;
+            }
+        }
     }
 }

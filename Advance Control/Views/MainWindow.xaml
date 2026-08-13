@@ -212,8 +212,8 @@
                         <!--  Grupo: Direccion  -->
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
-                            Content="Catálogos"
-                            Icon="Library"
+                            Content="Dirección"
+                            Icon="Admin"
                             IsExpanded="True"
                             SelectsOnInvoked="False">
 
@@ -223,9 +223,9 @@
                                     Icon="AllApps"
                                     Tag="VisorMundial" />
                                 <NavigationViewItem
-                                    Content="Dashboard"
-                                    Icon="Setting"
-                                    Tag="Refacciones" />
+                                    Content="Detalle Clientes"
+                                    Icon="ContactInfo"
+                                    Tag="DetalleClientes" />
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
@@ -308,7 +308,7 @@
                                     </NavigationViewItem.Icon>
                                 </NavigationViewItem>
                                 <!--  ReportHacked  -->
-                                <NavigationViewItem Content="Reporte Facturación" Tag="ReporteFinancieroFacturacion">
+                                <NavigationViewItem Content="Cobranza" Tag="ReporteFinancieroFacturacion">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xE9F9;" />
                                     </NavigationViewItem.Icon>

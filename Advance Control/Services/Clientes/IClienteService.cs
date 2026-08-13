@@ -51,5 +51,14 @@ namespace Advance_Control.Services.Clientes
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<ClienteOperationResponse> DeleteClienteAsync(int idCliente, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Crea clientes nuevos a partir de los RFC/nombre de receptor de facturas que
+        /// todavía no existen en el listado de clientes. Idempotente: se puede volver a
+        /// llamar cuando lleguen facturas de clientes nuevos.
+        /// </summary>
+        /// <param name="cancellationToken">Token de cancelación</param>
+        /// <returns>Cantidad y detalle de los clientes importados</returns>
+        Task<ImportarClientesResponseDto> ImportarClientesDesdeFacturasAsync(CancellationToken cancellationToken = default);
     }
 }

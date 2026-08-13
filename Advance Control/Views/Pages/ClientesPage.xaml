@@ -49,6 +49,13 @@
                     x:Name="ToggleFiltrosButton"
                     Click="ToggleFiltros_Click"
                     Content="Filtros" />
+                <Button
+                    Margin="0,8,0,0"
+                    x:Name="SincronizarClientesButton"
+                    VerticalAlignment="Center"
+                    Click="SincronizarClientesButton_Click"
+                    Content="Sincronizar desde facturas"
+                    ToolTipService.ToolTip="Crear clientes nuevos a partir del RFC y nombre de facturas que aún no están dados de alta" />
             </StackPanel>
 
         </StackPanel>

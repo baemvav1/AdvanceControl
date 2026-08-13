@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Email;
 using Advance_Control.Services.Reportes;
 
 namespace Advance_Control.ViewModels
@@ -14,6 +16,7 @@ namespace Advance_Control.ViewModels
         private readonly IReporteFinancieroFacturacionService _reporteService;
         private readonly IReporteFinancieroFacturacionExportService _exportService;
         private readonly IHistorialCobranzaService _historialService;
+        private readonly IEmailService _emailService;
         private readonly List<ReporteFinancieroFacturacionCabeceraDto> _cabecerasBase = new();
         private readonly List<ReporteFinancieroFacturacionDetalleDto> _detallesBase = new();
         private ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> _listadoItems = new();
@@ -29,10 +32,6 @@ namespace Advance_Control.ViewModels
         private int _movimientosNcCount;
         private decimal _movimientosNcTotal;
         private bool _mostrarMovimientosNoConciliados = true;
-        private ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> _clientesHistorial = new();
-        private ReporteFinancieroFacturacionCabeceraDto? _clienteHistorialSeleccionado;
-        private DateTimeOffset? _fechaInicioHistorial;
-        private DateTimeOffset? _fechaFinHistorial;
         private bool _isGenerandoHistorial;
         private string? _historialProgresoTexto;
         private HistorialCobranzaResultadoDto? _historialResultado;
@@ -40,11 +39,13 @@ namespace Advance_Control.ViewModels
         public RPTFinancieroFacturacionViewModel(
             IReporteFinancieroFacturacionService reporteService,
             IReporteFinancieroFacturacionExportService exportService,
-            IHistorialCobranzaService historialService)
+            IHistorialCobranzaService historialService,
+            IEmailService emailService)
         {
             _reporteService = reporteService ?? throw new ArgumentNullException(nameof(reporteService));
             _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
             _historialService = historialService ?? throw new ArgumentNullException(nameof(historialService));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         }
 
         public ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> ListadoItems
@@ -86,7 +87,13 @@ namespace Advance_Control.ViewModels
         public string? ReceptorRfcFiltro
         {
             get => _receptorRfcFiltro;
-            set => SetProperty(ref _receptorRfcFiltro, value);
+            set
+            {
+                if (SetProperty(ref _receptorRfcFiltro, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                }
+            }
         }
 
         public string? ReferenciaFiltro
@@ -98,13 +105,25 @@ namespace Advance_Control.ViewModels
         public DateTimeOffset? FechaInicioFiltro
         {
             get => _fechaInicioFiltro;
-            set => SetProperty(ref _fechaInicioFiltro, value);
+            set
+            {
+                if (SetProperty(ref _fechaInicioFiltro, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                }
+            }
         }
 
         public DateTimeOffset? FechaFinFiltro
         {
             get => _fechaFinFiltro;
-            set => SetProperty(ref _fechaFinFiltro, value);
+            set
+            {
+                if (SetProperty(ref _fechaFinFiltro, value))
+                {
+                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                }
+            }
         }
 
         public bool SoloFiniquitadas
@@ -340,6 +359,66 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        public async Task<string> EnviarAlertaCobranzaAsync(
+            ReporteFinancieroFacturacionCabeceraDto cliente,
+            IReadOnlyList<string> destinatarios)
+        {
+            if (cliente == null || string.IsNullOrWhiteSpace(cliente.ReceptorRfc))
+            {
+                throw new InvalidOperationException("El cliente seleccionado no tiene RFC.");
+            }
+
+            if (destinatarios == null || destinatarios.Count == 0)
+            {
+                throw new InvalidOperationException("Selecciona al menos un contacto con correo para enviar la alerta.");
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var items = await _reporteService.ObtenerReporteCobranzaAsync(cliente.ReceptorRfc, null, null, null, null);
+                if (items.Count == 0)
+                {
+                    throw new InvalidOperationException("El cliente no tiene facturas pendientes para incluir en la alerta de cobranza.");
+                }
+
+                var rutaPdf = await _exportService.GenerarReporteCobranzaPdfAsync(items, cliente.ReceptorRfc, null, null, null, null);
+                var pdfBytes = await File.ReadAllBytesAsync(rutaPdf);
+
+                var mensaje = new EmailMessage
+                {
+                    Para = destinatarios.ToList(),
+                    Asunto = $"Alerta de cobranza - {cliente.ReceptorNombreTexto}",
+                    CuerpoTexto =
+                        $"Estimado(a),{Environment.NewLine}{Environment.NewLine}" +
+                        $"Le compartimos el estado de cuenta de facturación pendiente de {cliente.ReceptorNombreTexto} (RFC {cliente.ReceptorRfcTexto}).{Environment.NewLine}{Environment.NewLine}" +
+                        $"Saldo pendiente: {(cliente.TotalFacturado - cliente.TotalAbonadoMovimientos).ToString("C2", new CultureInfo("es-MX"))}{Environment.NewLine}" +
+                        $"Facturas pendientes: {cliente.NumeroFacturasNoFiniquitadas}{Environment.NewLine}{Environment.NewLine}" +
+                        "Se adjunta el detalle. Quedamos atentos.",
+                    Adjuntos = { (Path.GetFileName(rutaPdf), pdfBytes) },
+                    CarpetaCliente = cliente.ReceptorNombreTexto
+                };
+
+                await _emailService.SendEmailAsync(mensaje);
+
+                SuccessMessage = $"Alerta de cobranza enviada a {destinatarios.Count} contacto(s) de {cliente.ReceptorNombreTexto}.";
+                return rutaPdf;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al enviar la alerta de cobranza: {ex.Message}";
+                SuccessMessage = null;
+                throw;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private IEnumerable<ReporteFinancieroFacturacionListadoItemDto> ConstruirListadoVertical()
         {
             foreach (var cabecera in _cabecerasBase)
@@ -386,48 +465,6 @@ namespace Advance_Control.ViewModels
             return null;
         }
 
-        public ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> ClientesHistorial
-        {
-            get => _clientesHistorial;
-            private set => SetProperty(ref _clientesHistorial, value);
-        }
-
-        public ReporteFinancieroFacturacionCabeceraDto? ClienteHistorialSeleccionado
-        {
-            get => _clienteHistorialSeleccionado;
-            set
-            {
-                if (SetProperty(ref _clienteHistorialSeleccionado, value))
-                {
-                    OnPropertyChanged(nameof(CanGenerarHistorial));
-                }
-            }
-        }
-
-        public DateTimeOffset? FechaInicioHistorial
-        {
-            get => _fechaInicioHistorial;
-            set
-            {
-                if (SetProperty(ref _fechaInicioHistorial, value))
-                {
-                    OnPropertyChanged(nameof(CanGenerarHistorial));
-                }
-            }
-        }
-
-        public DateTimeOffset? FechaFinHistorial
-        {
-            get => _fechaFinHistorial;
-            set
-            {
-                if (SetProperty(ref _fechaFinHistorial, value))
-                {
-                    OnPropertyChanged(nameof(CanGenerarHistorial));
-                }
-            }
-        }
-
         public bool IsGenerandoHistorial
         {
             get => _isGenerandoHistorial;
@@ -455,6 +492,7 @@ namespace Advance_Control.ViewModels
                 {
                     OnPropertyChanged(nameof(HistorialResumenTexto));
                     OnPropertyChanged(nameof(HistorialErrores));
+                    OnPropertyChanged(nameof(HistorialTieneErrores));
                 }
             }
         }
@@ -465,41 +503,35 @@ namespace Advance_Control.ViewModels
             ? new ObservableCollection<string>(HistorialResultado.Errores)
             : new ObservableCollection<string>();
 
+        public bool HistorialTieneErrores => HistorialResultado?.Errores.Count > 0;
+
         public bool CanGenerarHistorial =>
             !IsGenerandoHistorial &&
-            ClienteHistorialSeleccionado != null &&
-            FechaInicioHistorial.HasValue &&
-            FechaFinHistorial.HasValue &&
-            FechaFinHistorial.Value.Date >= FechaInicioHistorial.Value.Date;
+            !string.IsNullOrWhiteSpace(ReceptorRfcFiltro) &&
+            FechaInicioFiltro.HasValue &&
+            FechaFinFiltro.HasValue &&
+            FechaFinFiltro.Value.Date >= FechaInicioFiltro.Value.Date;
 
         /// <summary>
-        /// Carga la lista de clientes con facturas cargadas (sin filtros) para alimentar el
-        /// selector de RFC del historial de cobranza, independiente de los filtros del reporte principal.
+        /// Genera el historial de cobranza del cliente identificado por ReceptorRfcFiltro,
+        /// usando el mismo rango de fechas (FechaInicioFiltro/FechaFinFiltro) que el reporte
+        /// principal. idCliente y nombreCliente se resuelven en la página a partir del RFC.
         /// </summary>
-        public async Task CargarClientesHistorialAsync()
+        public async Task GenerarHistorialAsync(int idCliente, string nombreCliente, string? dirigidoA)
         {
-            try
+            if (string.IsNullOrWhiteSpace(ReceptorRfcFiltro))
             {
-                var resultado = await _reporteService.ObtenerReporteAsync(null, null, null, null, null);
-                ClientesHistorial = new ObservableCollection<ReporteFinancieroFacturacionCabeceraDto>(
-                    resultado.Cabeceras.OrderBy(item => item.ReceptorNombreTexto).ThenBy(item => item.ReceptorRfcTexto));
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error al cargar el listado de clientes para historial: {ex.Message}";
-            }
-        }
-
-        public async Task GenerarHistorialAsync(int idCliente, string? dirigidoA)
-        {
-            if (ClienteHistorialSeleccionado == null || !FechaInicioHistorial.HasValue || !FechaFinHistorial.HasValue)
-            {
-                throw new InvalidOperationException("Selecciona un cliente y un rango de fechas para generar el historial.");
+                throw new InvalidOperationException("Selecciona un cliente (RFC o nombre) para generar el historial.");
             }
 
-            if (string.IsNullOrWhiteSpace(ClienteHistorialSeleccionado.ReceptorRfc))
+            if (!FechaInicioFiltro.HasValue || !FechaFinFiltro.HasValue)
             {
-                throw new InvalidOperationException("El cliente seleccionado no tiene RFC.");
+                throw new InvalidOperationException("Selecciona un rango de fechas para generar el historial.");
+            }
+
+            if (idCliente <= 0)
+            {
+                throw new InvalidOperationException("El cliente seleccionado no es válido.");
             }
 
             try
@@ -513,11 +545,11 @@ namespace Advance_Control.ViewModels
                 var progreso = new Progress<string>(texto => HistorialProgresoTexto = texto);
 
                 var resultado = await _historialService.GenerarHistorialAsync(
-                    ClienteHistorialSeleccionado.ReceptorRfc,
-                    ClienteHistorialSeleccionado.ReceptorNombreTexto,
+                    ReceptorRfcFiltro.Trim().ToUpperInvariant(),
+                    nombreCliente,
                     idCliente,
-                    FechaInicioHistorial.Value,
-                    FechaFinHistorial.Value,
+                    FechaInicioFiltro.Value,
+                    FechaFinFiltro.Value,
                     dirigidoA,
                     progreso);
 

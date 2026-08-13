@@ -17,6 +17,7 @@ using Advance_Control.ViewModels;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Contactos;
+using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Activity;
 using Advance_Control.Models;
 using Advance_Control.Views.Dialogs;
@@ -73,6 +74,38 @@ namespace Advance_Control.Views.Pages
         private async void SearchButton_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.LoadClientesAsync();
+        }
+
+        private async void SincronizarClientesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ViewModel.IsLoading = true;
+
+                var clienteService = AppServices.Get<IClienteService>();
+                var resultado = await clienteService.ImportarClientesDesdeFacturasAsync();
+
+                await ViewModel.LoadClientesAsync();
+
+                var dialog = new ContentDialog
+                {
+                    Title = "Sincronización de clientes",
+                    Content = resultado.Cantidad > 0
+                        ? $"Se importaron {resultado.Cantidad} cliente(s) nuevo(s) desde facturas."
+                        : "No se encontraron clientes nuevos para importar desde facturas.",
+                    CloseButtonText = "Aceptar",
+                    XamlRoot = this.XamlRoot
+                };
+                await dialog.ShowAsync();
+            }
+            catch (Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudo sincronizar clientes desde facturas: {ex.Message}";
+            }
+            finally
+            {
+                ViewModel.IsLoading = false;
+            }
         }
 
         private void ToggleFiltros_Click(object sender, RoutedEventArgs e)

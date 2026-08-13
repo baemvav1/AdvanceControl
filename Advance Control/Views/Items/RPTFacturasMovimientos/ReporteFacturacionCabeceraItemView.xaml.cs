@@ -1,3 +1,4 @@
+using System;
 using Advance_Control.Models;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -12,6 +13,8 @@ namespace Advance_Control.Views.Items.RPTFacturasMovimientos
             typeof(ReporteFacturacionCabeceraItemView),
             new PropertyMetadata(null));
 
+        public event EventHandler<ReporteFinancieroFacturacionCabeceraDto>? EnviarAlertaClick;
+
         public ReporteFacturacionCabeceraItemView()
         {
             InitializeComponent();
@@ -21,6 +24,14 @@ namespace Advance_Control.Views.Items.RPTFacturasMovimientos
         {
             get => (ReporteFinancieroFacturacionCabeceraDto?)GetValue(CabeceraProperty);
             set => SetValue(CabeceraProperty, value);
+        }
+
+        private void BtnEnviarAlerta_Click(object sender, RoutedEventArgs e)
+        {
+            if (Cabecera != null)
+            {
+                EnviarAlertaClick?.Invoke(this, Cabecera);
+            }
         }
     }
 }
