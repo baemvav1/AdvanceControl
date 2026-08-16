@@ -652,6 +652,12 @@ namespace Advance_Control.Views.Pages
             Frame.Navigate(typeof(UbicacionesPage), equipo.IdUbicacion.Value);
         }
 
+        private void ToggleFiltros_Click(object sender, RoutedEventArgs e)
+        {
+            Filtros.Visibility = Filtros.Visibility == Visibility.Visible
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+        }
     }
 }
 

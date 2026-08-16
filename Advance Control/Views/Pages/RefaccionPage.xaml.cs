@@ -71,6 +71,13 @@ namespace Advance_Control.Views.Pages
             await ViewModel.ClearFiltersAsync();
         }
 
+        private void ToggleFiltros_Click(object sender, RoutedEventArgs e)
+        {
+            Filtros.Visibility = Filtros.Visibility == Visibility.Visible
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+        }
+
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
         {
             // Crear los campos del formulario

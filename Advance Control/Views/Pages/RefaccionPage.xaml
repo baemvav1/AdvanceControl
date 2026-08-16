@@ -29,37 +29,29 @@
         <!--  Header  -->
         <StackPanel
             Grid.Row="0"
-            Margin="0,0,0,24"
+            Margin="0,0,0,8"
+            Orientation="Horizontal"
             Spacing="8">
-            <StackPanel Orientation="Horizontal" Spacing="5">
-                <TextBlock
-                    FontSize="32"
-                    FontWeight="Bold"
-                    Text="Refacciones" />
-                <Button
-                    x:Name="Nuevo"
-                    VerticalAlignment="Center"
-                    Background="Transparent"
-                    BorderThickness="0"
-                    Click="NuevoButton_Click"
-                    ToolTipService.ToolTip="Crear nueva refacción">
-                    <StackPanel Orientation="Horizontal" Spacing="4">
-                        <SymbolIcon Symbol="Add" />
-                        <TextBlock VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
-            </StackPanel>
-            <TextBlock
-                FontSize="16"
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Gestión de refacciones del sistema" />
+            <Button
+                x:Name="ToggleFiltrosButton"
+                Click="ToggleFiltros_Click"
+                Content="Filtros" />
+
+            <Button
+                Background="Green"
+                Click="NuevoButton_Click"
+                Content="+"
+                Foreground="White"
+                ToolTipService.ToolTip="Nueva Refacción" />
         </StackPanel>
 
         <!--  Filtros  -->
         <StackPanel
+            x:Name="Filtros"
             Grid.Row="1"
             Margin="0,0,0,16"
-            Spacing="12">
+            Spacing="12"
+            Visibility="Collapsed">
             <TextBlock
                 FontSize="16"
                 FontWeight="SemiBold"

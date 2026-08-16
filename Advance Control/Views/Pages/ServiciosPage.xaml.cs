@@ -66,6 +66,13 @@ namespace Advance_Control.Views.Pages
             await ViewModel.LoadServiciosAsync();
         }
 
+        private void ToggleFiltros_Click(object sender, RoutedEventArgs e)
+        {
+            Filtros.Visibility = Filtros.Visibility == Visibility.Visible
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+        }
+
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.ClearFiltersAsync();
