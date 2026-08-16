@@ -19,7 +19,7 @@ namespace Advance_Control.Views.Pages
     {
         private const string DEFAULT_LATITUDE = "22.1497";
         private const string DEFAULT_LONGITUDE = "-100.975";
-        private const int DEFAULT_ZOOM = 6;
+        private const int DEFAULT_ZOOM = 5;
 
         public VisorMundialViewModel ViewModel { get; }
         private readonly ILoggingService _loggingService;
@@ -171,10 +171,15 @@ namespace Advance_Control.Views.Pages
                 var centerParts = ViewModel.MapsConfig.DefaultCenter?.Split(',') ?? Array.Empty<string>();
                 var centerLat = centerParts.Length > 0 ? centerParts[0].Trim() : DEFAULT_LATITUDE;
                 var centerLng = centerParts.Length > 1 ? centerParts[1].Trim() : DEFAULT_LONGITUDE;
-                var zoom = ViewModel.MapsConfig.DefaultZoom > 0 ? ViewModel.MapsConfig.DefaultZoom : DEFAULT_ZOOM;
+                // Zoom fijo (no el de ViewModel.MapsConfig, que es compartido con otras páginas y
+                // suele estar pensado para acercarse a una ubicación puntual): aquí siempre debe
+                // verse el país completo.
+                var zoom = DEFAULT_ZOOM;
 
-                var ubicacionesJson = PrepareUbicacionesJson();
-                var html = GenerateVisorMundialMapHtml(ViewModel.MapsConfig.ApiKey!, centerLat, centerLng, zoom, ubicacionesJson);
+                var puntosJson = ViewModel.Modo == VisorMundialModo.ColaboradoresPorArea
+                    ? PrepareColaboradoresJson()
+                    : PrepareUbicacionesJson();
+                var html = GenerateVisorMundialMapHtml(ViewModel.MapsConfig.ApiKey!, centerLat, centerLng, zoom, puntosJson);
 
                 var mapCacheDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -192,40 +197,45 @@ namespace Advance_Control.Views.Pages
 
         private string PrepareUbicacionesJson()
         {
-            var ubicaciones = ViewModel.Ubicaciones
+            var puntos = ViewModel.Ubicaciones
                 .Select(u => new
                 {
                     idUbicacion = u.IdUbicacion,
-                    nombre = u.Nombre,
-                    latitud = u.Latitud,
-                    longitud = u.Longitud,
-                    cantidadEquipos = u.CantidadEquipos,
-                    colorOperaciones = ViewModel.ObtenerColorUbicacion(u, "operaciones"),
-                    colorCobranza = ViewModel.ObtenerColorUbicacion(u, "cobranza")
+                    lat = u.Latitud,
+                    lng = u.Longitud,
+                    color = ViewModel.ObtenerColorUbicacion(u),
+                    glyph = (string?)null,
+                    title = u.Nombre + " (" + u.CantidadEquipos + " equipo(s))"
                 })
                 .ToList();
 
-            return JsonSerializer.Serialize(ubicaciones);
+            return JsonSerializer.Serialize(puntos);
         }
 
-        private async void ModoColoreoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private string PrepareColaboradoresJson()
         {
-            if (ModoColoreoComboBox.SelectedItem is not ComboBoxItem item || item.Tag is not string modo)
-            {
-                return;
-            }
+            var puntos = ViewModel.ColaboradoresPuntos
+                .Select(p => new
+                {
+                    idUbicacion = (int?)null,
+                    lat = p.Latitud,
+                    lng = p.Longitud,
+                    color = "#4285F4",
+                    glyph = p.Glyph,
+                    title = p.NombreCompleto + (string.IsNullOrWhiteSpace(p.Cargo) ? "" : $" ({p.Cargo})") + " — " + p.NombreArea
+                })
+                .ToList();
 
-            ViewModel.ModoColoreo = modo;
-
-            if (_isWebView2Initialized && MapWebView.CoreWebView2 != null)
-            {
-                await MapWebView.CoreWebView2.ExecuteScriptAsync($"setModo('{modo}');");
-            }
+            return JsonSerializer.Serialize(puntos);
         }
 
         private async void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.InitializeAsync();
+            if (ViewModel.Modo == VisorMundialModo.ColaboradoresPorArea)
+            {
+                await ViewModel.EnsureColaboradoresDataAsync(forceReload: true);
+            }
             await LoadMapAsync();
         }
 
@@ -234,7 +244,22 @@ namespace Advance_Control.Views.Pages
             ViewModel.IsPanelOpen = !ViewModel.IsPanelOpen;
         }
 
-        private static string GenerateVisorMundialMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string ubicacionesJson)
+        private async void ModoVisorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!_isWebView2Initialized || ViewModel.MapsConfig == null)
+            {
+                return;
+            }
+
+            if (ViewModel.Modo == VisorMundialModo.ColaboradoresPorArea)
+            {
+                await ViewModel.EnsureColaboradoresDataAsync();
+            }
+
+            await LoadMapAsync();
+        }
+
+        private static string GenerateVisorMundialMapHtml(string apiKey, string centerLat, string centerLng, int zoom, string puntosJson)
         {
             return $@"<!DOCTYPE html>
 <html>
@@ -261,36 +286,31 @@ namespace Advance_Control.Views.Pages
         mapId: 'DEMO_MAP_ID'
       }});
 
-      const ubicaciones = {ubicacionesJson};
-      ubicaciones.forEach(function(u) {{
+      const puntos = {puntosJson};
+      puntos.forEach(function(p) {{
         const pin = new PinElement({{
-          background: u.colorOperaciones,
+          background: p.color,
           borderColor: '#202020',
-          glyphColor: '#ffffff'
+          glyphColor: '#ffffff',
+          glyph: p.glyph || undefined
         }});
 
         const marker = new AdvancedMarkerElement({{
           map: map,
-          position: {{ lat: u.latitud, lng: u.longitud }},
-          title: u.nombre + ' (' + u.cantidadEquipos + ' equipo(s))',
+          position: {{ lat: p.lat, lng: p.lng }},
+          title: p.title,
           content: pin.element
         }});
 
-        marker._pin = pin;
-        marker._data = u;
-        marker.addListener('click', function() {{
-          try {{
-            window.chrome.webview.postMessage(JSON.stringify({{ type: 'pinClicked', idUbicacion: u.idUbicacion }}));
-          }} catch(e) {{}}
-        }});
+        if (p.idUbicacion !== undefined && p.idUbicacion !== null) {{
+          marker.addListener('click', function() {{
+            try {{
+              window.chrome.webview.postMessage(JSON.stringify({{ type: 'pinClicked', idUbicacion: p.idUbicacion }}));
+            }} catch(e) {{}}
+          }});
+        }}
 
         markers.push(marker);
-      }});
-    }}
-
-    function setModo(modo) {{
-      markers.forEach(function(m) {{
-        m._pin.background = modo === 'cobranza' ? m._data.colorCobranza : m._data.colorOperaciones;
       }});
     }}
   </script>

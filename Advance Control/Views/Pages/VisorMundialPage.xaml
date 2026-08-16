@@ -26,12 +26,14 @@
                 Text="Visor Mundial" />
 
             <ComboBox
-                x:Name="ModoColoreoComboBox"
-                Header="Colorear pines por"
-                SelectedIndex="0"
-                SelectionChanged="ModoColoreoComboBox_SelectionChanged">
-                <ComboBoxItem Content="Estado de operaciones" Tag="operaciones" />
-                <ComboBoxItem Content="Estado de cobranza" Tag="cobranza" />
+                x:Name="ModoVisorComboBox"
+                VerticalAlignment="Bottom"
+                Header="Mostrar"
+                IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
+                SelectedIndex="{x:Bind ViewModel.ModoIndex, Mode=TwoWay}"
+                SelectionChanged="ModoVisorComboBox_SelectionChanged">
+                <ComboBoxItem Content="Ubicaciones" />
+                <ComboBoxItem Content="Colaboradores por área" />
             </ComboBox>
 
             <Button
