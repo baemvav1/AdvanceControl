@@ -196,12 +196,13 @@ namespace Advance_Control.ViewModels
                         var rfc = g.Key;
                         var facturado = g.Sum(c => c.TotalFacturado);
                         var abonado = g.Sum(c => c.TotalAbonadoMovimientos);
+                        var diasVencidoMax = g.Max(c => c.DiasVencidoMax);
 
                         var cliente = clientesPorRfc.TryGetValue(rfc, out var match)
                             ? match
                             : new CustomerDto { Rfc = rfc, RazonSocial = g.First().ReceptorNombreTexto };
 
-                        return new ClienteSaludCardItem(cliente, ObtenerColorSalud(facturado, abonado), facturado, abonado);
+                        return new ClienteSaludCardItem(cliente, ObtenerColorSalud(facturado, abonado, diasVencidoMax), facturado, abonado, diasVencidoMax);
                     })
                     .OrderBy(item => item.RazonSocial, StringComparer.OrdinalIgnoreCase);
 
@@ -257,7 +258,7 @@ namespace Advance_Control.ViewModels
 
                 var ramaFacturado = ConstruirRamaFacturado(cabecera, _clienteDetalles);
                 var ramaOperaciones = ConstruirRamaOperaciones(_clienteOperaciones);
-                var ramaAdeudo = ConstruirRamaAdeudo(cliente, cabecera, _clienteCobranza);
+                var ramaAdeudo = ConstruirRamaAdeudo(cabecera, _clienteCobranza);
                 var ramaEquipos = ConstruirRamaEquipos(_clienteCobranza, _clienteOperaciones);
 
                 DetalleTreeItems = new ObservableCollection<DetalleClienteTreeItem>
@@ -335,12 +336,12 @@ namespace Advance_Control.ViewModels
             var sanos = _todosLosClientes.Count(c => c.TotalFacturado <= 0 || (c.TotalAbonado / c.TotalFacturado) >= 0.5m);
             var porcentajeSanos = _todosLosClientes.Count > 0 ? (double)sanos / _todosLosClientes.Count * 100 : 0;
 
-            var hoy = DateTime.Today;
-            var vencidas90 = _globalCobranza.Count(c => !c.Pagada && !c.EsSinFacturar && (hoy - c.FechaFactura).TotalDays >= 90);
+            var diasVencidoMaxCartera = _todosLosClientes.Count > 0 ? _todosLosClientes.Max(c => c.DiasVencidoMax) : 0;
+            var vencidas90 = _globalCobranza.Count(c => c.DiasVencido >= 90);
 
             return new ObservableCollection<KpiItem>
             {
-                new KpiItem("Saldo total de cartera", FormatearMoneda(saldo), ObtenerColorSalud(facturadoTotal, abonadoTotal)),
+                new KpiItem("Saldo total de cartera", FormatearMoneda(saldo), ObtenerColorSalud(facturadoTotal, abonadoTotal, diasVencidoMaxCartera)),
                 new KpiItem("Clientes en zona sana", $"{porcentajeSanos:0}%"),
                 new KpiItem("Facturas vencidas +90 días", vencidas90.ToString())
             };
@@ -357,7 +358,7 @@ namespace Advance_Control.ViewModels
             return new ObservableCollection<KpiItem>
             {
                 new KpiItem("Total facturado", FormatearMoneda(facturado)),
-                new KpiItem("Saldo pendiente", FormatearMoneda(saldo), ObtenerColorSalud(facturado, abonado)),
+                new KpiItem("Saldo pendiente", FormatearMoneda(saldo), ObtenerColorSalud(facturado, abonado, _clienteCabecera?.DiasVencidoMax ?? 0)),
                 new KpiItem("% cobrado", $"{porcentajeCobrado:0}%"),
                 new KpiItem("Operaciones abiertas", operacionesAbiertas.ToString())
             };
@@ -388,11 +389,11 @@ namespace Advance_Control.ViewModels
             var pendientes = _clienteCobranza.Where(c => !c.Pagada && !c.EsSinFacturar).ToList();
             var saldo = (_clienteCabecera?.TotalFacturado ?? 0m) - (_clienteCabecera?.TotalAbonadoMovimientos ?? 0m);
             var antiguedadPromedio = pendientes.Count > 0 ? pendientes.Average(c => (hoy - c.FechaFactura).TotalDays) : 0;
-            var monto90 = pendientes.Where(c => (hoy - c.FechaFactura).TotalDays >= 90).Sum(c => c.Total);
+            var monto90 = pendientes.Where(c => c.DiasVencido >= 90).Sum(c => c.Total);
 
             return new ObservableCollection<KpiItem>
             {
-                new KpiItem("Saldo pendiente", FormatearMoneda(saldo), ObtenerColorSalud(_clienteCabecera?.TotalFacturado ?? 0m, _clienteCabecera?.TotalAbonadoMovimientos ?? 0m)),
+                new KpiItem("Saldo pendiente", FormatearMoneda(saldo), ObtenerColorSalud(_clienteCabecera?.TotalFacturado ?? 0m, _clienteCabecera?.TotalAbonadoMovimientos ?? 0m, _clienteCabecera?.DiasVencidoMax ?? 0)),
                 new KpiItem("Facturas pendientes", pendientes.Count.ToString()),
                 new KpiItem("Antigüedad promedio", $"{antiguedadPromedio:0} días"),
                 new KpiItem("Monto +90 días", FormatearMoneda(monto90), monto90 > 0 ? ColorSaludBaja : ColorSaludAlta)
@@ -486,7 +487,6 @@ namespace Advance_Control.ViewModels
         }
 
         private static DetalleClienteTreeItem ConstruirRamaAdeudo(
-            CustomerDto cliente,
             ReporteFinancieroFacturacionCabeceraDto? cabecera,
             List<ReporteCobranzaItemDto> cobranza)
         {
@@ -494,16 +494,13 @@ namespace Advance_Control.ViewModels
             var totalAbonado = cabecera?.TotalAbonadoMovimientos ?? 0m;
             var saldo = totalFacturado - totalAbonado;
 
-            var raiz = new DetalleClienteTreeItem("Adeudo", FormatearMoneda(saldo), ObtenerColorSalud(totalFacturado, totalAbonado));
+            var raiz = new DetalleClienteTreeItem("Adeudo", FormatearMoneda(saldo), ObtenerColorSalud(totalFacturado, totalAbonado, cabecera?.DiasVencidoMax ?? 0));
 
             var pendientes = cobranza.Where(c => !c.Pagada).OrderByDescending(c => c.FechaFactura).ToList();
             var facturasPendientes = new DetalleClienteTreeItem("Facturas sin pagar", pendientes.Count.ToString(), nivel: 1);
             foreach (var factura in pendientes)
             {
-                var vencimiento = cliente.DiasCredito.HasValue && factura.FechaFactura != default
-                    ? $" · vence aprox. {factura.FechaFactura.AddDays(cliente.DiasCredito.Value):dd/MM/yyyy}"
-                    : string.Empty;
-                facturasPendientes.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.FechaFacturaTexto}{vencimiento}", nivel: 2));
+                facturasPendientes.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.FechaFacturaTexto} · {factura.DiasVencidoTexto}", nivel: 2));
             }
             raiz.Hijos.Add(facturasPendientes);
 
@@ -602,7 +599,7 @@ namespace Advance_Control.ViewModels
                     // rojo, que solo aplica a facturas ya emitidas y pendientes de pago.
                     var color = factura.EsSinFacturar
                         ? ColorSaludMedia
-                        : InterpolarColor(ColorSaludAlta, ColorSaludBaja, Math.Clamp((hoy - factura.FechaFactura).TotalDays / 90.0, 0.0, 1.0));
+                        : InterpolarColor(ColorSaludAlta, ColorSaludBaja, Math.Clamp(factura.DiasVencido / 90.0, 0.0, 1.0));
 
                     return new TimelineFila(factura.FolioTexto, HexDe(color), factura.FechaFactura, hoy);
                 });
@@ -661,10 +658,16 @@ namespace Advance_Control.ViewModels
 
         /// <summary>
         /// Color de salud de pago en degradado rojo-amarillo-verde según la proporción abonado/facturado.
-        /// Sin facturación (cero deuda) se considera salud máxima (verde).
+        /// Sin facturación (cero deuda) se considera salud máxima (verde). Si hay alguna factura vencida
+        /// 90+ días, el vencimiento manda y el color va directo a rojo sin importar la proporción.
         /// </summary>
-        private static Color ObtenerColorSalud(decimal totalFacturado, decimal totalAbonado)
+        private static Color ObtenerColorSalud(decimal totalFacturado, decimal totalAbonado, int diasVencidoMax = 0)
         {
+            if (diasVencidoMax > 90)
+            {
+                return ColorSaludBaja;
+            }
+
             var proporcion = totalFacturado <= 0
                 ? 1.0
                 : Math.Clamp((double)(totalAbonado / totalFacturado), 0.0, 1.0);
@@ -688,12 +691,13 @@ namespace Advance_Control.ViewModels
 
     public class ClienteSaludCardItem
     {
-        public ClienteSaludCardItem(CustomerDto cliente, Color colorSalud, decimal totalFacturado, decimal totalAbonado)
+        public ClienteSaludCardItem(CustomerDto cliente, Color colorSalud, decimal totalFacturado, decimal totalAbonado, int diasVencidoMax = 0)
         {
             Cliente = cliente;
             ColorSaludBrush = new SolidColorBrush(colorSalud);
             TotalFacturado = totalFacturado;
             TotalAbonado = totalAbonado;
+            DiasVencidoMax = diasVencidoMax;
         }
 
         public CustomerDto Cliente { get; }
@@ -709,5 +713,7 @@ namespace Advance_Control.ViewModels
         public decimal TotalFacturado { get; }
 
         public decimal TotalAbonado { get; }
+
+        public int DiasVencidoMax { get; }
     }
 }

@@ -17,6 +17,9 @@ namespace Advance_Control.Models
         public string? OperacionCliente { get; set; }
         public string? TecnicoAtiende { get; set; }
         public string? MovimientosTexto { get; set; }
+        public DateTime? FechaVencimiento { get; set; }
+        public int DiasVencido { get; set; }
+        public string? BucketVencimiento { get; set; }
 
         /// <summary>True cuando la fila es una operación finalizada que aún no tiene factura (grupo 2).</summary>
         public bool EsSinFacturar => OrdenGrupo == 2;
@@ -35,5 +38,9 @@ namespace Advance_Control.Models
         public string MovimientosResumenTexto => EsSinFacturar
             ? "No aplica (sin factura)"
             : string.IsNullOrWhiteSpace(MovimientosTexto) ? "Sin movimientos" : MovimientosTexto;
+        public string BucketVencimientoTexto => EsSinFacturar
+            ? "No aplica (sin factura)"
+            : string.IsNullOrWhiteSpace(BucketVencimiento) ? "Sin vencimiento" : BucketVencimiento!;
+        public string DiasVencidoTexto => DiasVencido > 0 ? $"Vencida hace {DiasVencido} día(s)" : BucketVencimientoTexto;
     }
 }

@@ -26,15 +26,27 @@
                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Detalle.ResumenSecundario, ElementName=Root}" TextWrapping="Wrap" />
                 </StackPanel>
 
-                <Border
+                <StackPanel
                     Grid.Column="1"
-                    Padding="10,4"
-                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="12">
-                    <TextBlock Text="{Binding Detalle.EstadoTexto, ElementName=Root}" />
-                </Border>
+                    HorizontalAlignment="Right"
+                    Spacing="4">
+                    <Border
+                        Padding="10,4"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                        <TextBlock Text="{Binding Detalle.EstadoTexto, ElementName=Root}" />
+                    </Border>
+                    <Border
+                        Padding="10,4"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="12">
+                        <TextBlock Text="{Binding Detalle.DiasVencidoTexto, ElementName=Root}" />
+                    </Border>
+                </StackPanel>
             </Grid>
 
             <Grid ColumnSpacing="8">

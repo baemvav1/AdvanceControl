@@ -42,7 +42,7 @@ namespace Advance_Control.ViewModels
         private ObservableCollection<VisorMundialEquipoDto> _equiposUbicacionSeleccionada;
         private ObservableCollection<VisorMundialColaboradorPuntoDto> _colaboradoresPuntos;
         private VisorMundialUbicacionDto? _ubicacionSeleccionada;
-        private Dictionary<string, (decimal Facturado, decimal Abonado)> _cobranzaPorRfc = new(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, (decimal Facturado, decimal Abonado, int DiasVencidoMax)> _cobranzaPorRfc = new(StringComparer.OrdinalIgnoreCase);
         private bool _isLoading;
         private bool _isLoadingDetalle;
         private string? _errorMessage;
@@ -264,7 +264,7 @@ namespace Advance_Control.ViewModels
                 .GroupBy(c => c.ReceptorRfc!, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(
                     g => g.Key,
-                    g => (Facturado: g.Sum(c => c.TotalFacturado), Abonado: g.Sum(c => c.TotalAbonadoMovimientos)),
+                    g => (Facturado: g.Sum(c => c.TotalFacturado), Abonado: g.Sum(c => c.TotalAbonadoMovimientos), DiasVencidoMax: g.Max(c => c.DiasVencidoMax)),
                     StringComparer.OrdinalIgnoreCase);
 
             TotalFacturadoGlobal = cabeceras.Sum(c => c.TotalFacturado);
@@ -419,20 +419,31 @@ namespace Advance_Control.ViewModels
 
             var facturado = 0m;
             var abonado = 0m;
+            var diasVencidoMax = 0;
             foreach (var rfc in rfcs)
             {
                 if (_cobranzaPorRfc.TryGetValue(rfc, out var totales))
                 {
                     facturado += totales.Facturado;
                     abonado += totales.Abonado;
+                    diasVencidoMax = Math.Max(diasVencidoMax, totales.DiasVencidoMax);
                 }
             }
 
-            return ObtenerColorSalud(facturado, abonado);
+            return ObtenerColorSalud(facturado, abonado, diasVencidoMax);
         }
 
-        private static string ObtenerColorSalud(decimal totalFacturado, decimal totalAbonado)
+        /// <summary>
+        /// Mismo criterio que DetalleClientesViewModel.ObtenerColorSalud: si hay alguna factura
+        /// vencida 90+ días, el vencimiento manda y el color va directo a rojo.
+        /// </summary>
+        private static string ObtenerColorSalud(decimal totalFacturado, decimal totalAbonado, int diasVencidoMax = 0)
         {
+            if (diasVencidoMax > 90)
+            {
+                return $"#{ColorSaludBaja.R:X2}{ColorSaludBaja.G:X2}{ColorSaludBaja.B:X2}";
+            }
+
             var proporcion = totalFacturado <= 0
                 ? 1.0
                 : Math.Clamp((double)(totalAbonado / totalFacturado), 0.0, 1.0);

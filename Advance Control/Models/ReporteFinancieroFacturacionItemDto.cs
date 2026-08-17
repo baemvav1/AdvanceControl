@@ -14,6 +14,8 @@ namespace Advance_Control.Models
         public int NumeroFacturasNoFiniquitadas { get; set; }
         public decimal TotalFacturado { get; set; }
         public decimal TotalAbonadoMovimientos { get; set; }
+        public int DiasVencidoMax { get; set; }
+        public decimal TotalVencido { get; set; }
 
         public string ReceptorRfcTexto => string.IsNullOrWhiteSpace(ReceptorRfc) ? "Sin RFC" : ReceptorRfc!;
         public string ReceptorNombreTexto => string.IsNullOrWhiteSpace(ReceptorNombre) ? "Sin nombre" : ReceptorNombre!;
@@ -22,6 +24,8 @@ namespace Advance_Control.Models
         public string NumeroFacturasNoFiniquitadasTexto => NumeroFacturasNoFiniquitadas.ToString(CultureInfo.InvariantCulture);
         public string TotalFacturadoTexto => TotalFacturado.ToString("C2", new CultureInfo("es-MX"));
         public string TotalAbonadoMovimientosTexto => TotalAbonadoMovimientos.ToString("C2", new CultureInfo("es-MX"));
+        public string TotalVencidoTexto => TotalVencido.ToString("C2", new CultureInfo("es-MX"));
+        public string DiasVencidoMaxTexto => DiasVencidoMax > 0 ? $"{DiasVencidoMax} día(s) vencido" : "Al corriente";
         public string ResumenTexto => $"{NumeroFacturas} factura(s) · {NumeroFacturasFiniquitadas} finiquitada(s) · {NumeroFacturasNoFiniquitadas} pendiente(s)";
     }
 
@@ -40,6 +44,9 @@ namespace Advance_Control.Models
         public string? Referencia { get; set; }
         public string? ConceptosTexto { get; set; }
         public List<AbonoFacturaDto> Abonos { get; set; } = new();
+        public DateTime? FechaVencimiento { get; set; }
+        public int DiasVencido { get; set; }
+        public string? BucketVencimiento { get; set; }
 
         public string FolioTexto => string.IsNullOrWhiteSpace(Folio) ? "Sin folio" : Folio!;
         public string FechaTimbradoTexto => FechaTimbrado.HasValue ? FechaTimbrado.Value.ToString("dd/MM/yyyy HH:mm") : "Sin fecha";
@@ -77,6 +84,9 @@ namespace Advance_Control.Models
         }
         public string ResumenSecundario => $"{FechaTimbradoTexto} · {TipoOperacionTexto} · {EstadoTexto}";
         public string ResumenAbonosTitulo => $"Abonos registrados ({Abonos.Count})";
+        public string FechaVencimientoTexto => FechaVencimiento.HasValue ? FechaVencimiento.Value.ToString("dd/MM/yyyy") : "Sin vencimiento";
+        public string BucketVencimientoTexto => string.IsNullOrWhiteSpace(BucketVencimiento) ? "Sin vencimiento" : BucketVencimiento!;
+        public string DiasVencidoTexto => DiasVencido > 0 ? $"Vencida hace {DiasVencido} día(s)" : BucketVencimientoTexto;
     }
 
     public class ReporteFinancieroFacturacionResponseDto

@@ -39,6 +39,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
 
                 <Border
@@ -64,6 +65,20 @@
                     <StackPanel Spacing="4">
                         <TextBlock FontWeight="SemiBold" Text="Abonado finiquitado" />
                         <TextBlock Text="{Binding Cabecera.TotalAbonadoMovimientosTexto, ElementName=Root}" />
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Column="2"
+                    Padding="8"
+                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="6">
+                    <StackPanel Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="Vencido" />
+                        <TextBlock Text="{Binding Cabecera.TotalVencidoTexto, ElementName=Root}" />
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Cabecera.DiasVencidoMaxTexto, ElementName=Root}" />
                     </StackPanel>
                 </Border>
             </Grid>
