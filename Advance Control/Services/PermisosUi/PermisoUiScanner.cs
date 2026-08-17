@@ -188,10 +188,11 @@ namespace Advance_Control.Services.PermisosUi
         private static string? FirstNonEmpty(params string?[] values)
         {
             // Un valor que empieza con '{' es un binding/markup extension sin resolver
-            // (ej. "{x:Bind ViewModel.Foo, Mode=OneWay}") capturado como texto crudo del XML,
-            // no un nombre válido — en runtime ese control nunca calzará con esta clave
-            // (PermisoUiKeyBuilder.ResolveRuntimeControlKey solo usa Content si ya es un string
-            // literal resuelto), así que registrar esta clave solo genera basura inerte.
+            // (ej. "{x:Bind ViewModel.Foo, Mode=OneWay}", "{Binding Foo}", "{StaticResource Foo}")
+            // capturado como texto crudo del XML, no un nombre válido — en runtime ese control
+            // nunca calzará con esta clave (PermisoUiKeyBuilder.ResolveRuntimeControlKey solo usa
+            // Content si ya es un string literal resuelto), así que registrar esta clave solo
+            // genera basura inerte.
             return values
                 .Select(value => value?.Trim())
                 .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value) && !value.StartsWith("{", StringComparison.Ordinal));
