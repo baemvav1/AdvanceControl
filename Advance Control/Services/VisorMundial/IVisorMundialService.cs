@@ -9,5 +9,6 @@ namespace Advance_Control.Services.VisorMundial
     {
         Task<List<VisorMundialUbicacionDto>> ObtenerUbicacionesAsync(CancellationToken cancellationToken = default);
         Task<List<VisorMundialEquipoDto>> ObtenerEquiposPorUbicacionAsync(int idUbicacion, CancellationToken cancellationToken = default);
+        Task<List<VisorMundialEquipoFacturaDto>> ObtenerFacturasPorEquipoAsync(int idEquipo, CancellationToken cancellationToken = default);
     }
 }

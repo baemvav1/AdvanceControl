@@ -47,6 +47,7 @@ namespace Advance_Control.Models
         public DateTime? FechaVencimiento { get; set; }
         public int DiasVencido { get; set; }
         public string? BucketVencimiento { get; set; }
+        public int? IdOperacion { get; set; }
 
         public string FolioTexto => string.IsNullOrWhiteSpace(Folio) ? "Sin folio" : Folio!;
         public string FechaTimbradoTexto => FechaTimbrado.HasValue ? FechaTimbrado.Value.ToString("dd/MM/yyyy HH:mm") : "Sin fecha";

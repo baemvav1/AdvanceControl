@@ -98,5 +98,56 @@ namespace Advance_Control.Services.Reportes
                 throw;
             }
         }
+
+        public async Task<List<CobranzaSeguimientoDto>> ObtenerSeguimientosAsync(
+            string receptorRfc,
+            CancellationToken cancellationToken = default)
+        {
+            var url = new ApiQueryBuilder()
+                .Add("receptorRfc", receptorRfc)
+                .Build(_endpoints.GetEndpoint("api", "cobranza-seguimiento"));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando seguimientos de cobranza en: {url}", "ReporteFinancieroFacturacionService", "ObtenerSeguimientosAsync");
+                var result = await _http.GetFromJsonAsync<List<CobranzaSeguimientoDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<CobranzaSeguimientoDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar seguimientos de cobranza", ex, "ReporteFinancieroFacturacionService", "ObtenerSeguimientosAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar los seguimientos de cobranza.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al consultar seguimientos de cobranza", ex, "ReporteFinancieroFacturacionService", "ObtenerSeguimientosAsync");
+                throw;
+            }
+        }
+
+        public async Task<CobranzaSeguimientoDto?> RegistrarSeguimientoAsync(
+            CobranzaSeguimientoCreateDto dto,
+            CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "cobranza-seguimiento");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Registrando seguimiento de cobranza en: {url}", "ReporteFinancieroFacturacionService", "RegistrarSeguimientoAsync");
+                using var response = await _http.PostAsJsonAsync(url, dto, cancellationToken).ConfigureAwait(false);
+                response.EnsureSuccessStatusCode();
+                return await response.Content.ReadFromJsonAsync<CobranzaSeguimientoDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al registrar seguimiento de cobranza", ex, "ReporteFinancieroFacturacionService", "RegistrarSeguimientoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al registrar el seguimiento de cobranza.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al registrar seguimiento de cobranza", ex, "ReporteFinancieroFacturacionService", "RegistrarSeguimientoAsync");
+                throw;
+            }
+        }
     }
 }

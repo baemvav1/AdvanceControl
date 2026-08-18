@@ -146,7 +146,11 @@
                         <TreeView.ItemTemplate>
                             <DataTemplate x:DataType="models:DetalleClienteTreeItem">
                                 <TreeViewItem IsExpanded="True" ItemsSource="{x:Bind Hijos}">
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <StackPanel
+                                        Orientation="Horizontal"
+                                        Spacing="12"
+                                        RightTapped="NodoFactura_RightTapped"
+                                        Tag="{x:Bind}">
                                         <TextBlock
                                             FontWeight="SemiBold"
                                             Foreground="{x:Bind ColorTextoBrush}"
@@ -175,18 +179,57 @@
                     FontWeight="SemiBold"
                     Text="{x:Bind ViewModel.TimelineTitulo, Mode=OneWay}" />
 
-                <TextBlock
-                    Grid.Row="1"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    Text="Selecciona una rama del árbol de detalle para ver su timeline."
-                    Visibility="{x:Bind ViewModel.TieneTimeline, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=invert}" />
+                <Grid Grid.Row="1" Visibility="{x:Bind ViewModel.MostrandoSeguimiento, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=invert}">
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Selecciona una rama del árbol de detalle para ver su timeline."
+                        Visibility="{x:Bind ViewModel.TieneTimeline, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=invert}" />
 
-                <sp:WinUIPlot
-                    x:Name="GraficoPlot"
-                    Grid.Row="1"
-                    Visibility="{x:Bind ViewModel.TieneTimeline, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                    <sp:WinUIPlot
+                        x:Name="GraficoPlot"
+                        Visibility="{x:Bind ViewModel.TieneTimeline, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
+
+                <Grid Grid.Row="1" Visibility="{x:Bind ViewModel.MostrandoSeguimiento, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Button
+                        Grid.Row="0"
+                        Margin="0,0,0,8"
+                        Click="BtnAgregarSeguimiento_Click"
+                        Content="Agregar seguimiento" />
+
+                    <ScrollViewer Grid.Row="1">
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Seguimientos, Mode=OneWay}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:CobranzaSeguimientoDto">
+                                    <Border
+                                        Margin="0,0,0,8"
+                                        Padding="12"
+                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="6">
+                                        <StackPanel Spacing="4">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock FontWeight="SemiBold" Text="{x:Bind TipoContactoTexto}" />
+                                                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind FechaSeguimientoTexto}" />
+                                            </StackPanel>
+                                            <TextBlock Text="{x:Bind NotaTexto}" TextWrapping="Wrap" />
+                                            <TextBlock FontStyle="Italic" Text="{x:Bind PromesaTexto}" />
+                                            <TextBlock FontSize="11" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="{x:Bind RegistradoPorTexto}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

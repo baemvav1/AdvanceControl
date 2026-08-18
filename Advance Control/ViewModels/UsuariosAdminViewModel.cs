@@ -1,5 +1,6 @@
 using System;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
@@ -20,6 +21,8 @@ namespace Advance_Control.ViewModels
         private ObservableCollection<UsuarioAdminDto> _usuarios = new();
         private ObservableCollection<PermisoModuloDto> _permisosModulo = new();
         private ObservableCollection<TipoUsuarioDto> _tiposUsuarioPermisos = new();
+        private ObservableCollection<PermisoTreeNode> _permisosArbol = new();
+        private TipoUsuarioDto? _rolFiltro;
         private bool _isLoading;
         private bool _isLoadingPermisos;
         private string? _errorMessage;
@@ -59,6 +62,32 @@ namespace Advance_Control.ViewModels
         {
             get => _tiposUsuarioPermisos;
             set => SetProperty(ref _tiposUsuarioPermisos, value);
+        }
+
+        /// <summary>Árbol Grupo → Módulo → Acción construido a partir de <see cref="PermisosModulo"/>.</summary>
+        public ObservableCollection<PermisoTreeNode> PermisosArbol
+        {
+            get => _permisosArbol;
+            private set => SetProperty(ref _permisosArbol, value);
+        }
+
+        /// <summary>
+        /// Rol seleccionado en el combo box de filtro (null = sin filtro, árbol completo a color
+        /// normal). Al cambiar, atenúa en vivo los nodos que ese rol no podría ver.
+        /// </summary>
+        public TipoUsuarioDto? RolFiltro
+        {
+            get => _rolFiltro;
+            set
+            {
+                if (SetProperty(ref _rolFiltro, value))
+                {
+                    foreach (var nodo in PermisosArbol)
+                    {
+                        nodo.ActualizarAccesibilidad(_rolFiltro?.IdTipoUsuario);
+                    }
+                }
+            }
         }
 
         public bool IsLoadingPermisos
@@ -173,6 +202,12 @@ namespace Advance_Control.ViewModels
                 {
                     PermisosModulo.Add(modulo);
                 }
+
+                PermisosArbol = ConstruirArbolPermisos(modulos);
+                foreach (var nodo in PermisosArbol)
+                {
+                    nodo.ActualizarAccesibilidad(RolFiltro?.IdTipoUsuario);
+                }
             }
             catch (Exception ex)
             {
@@ -183,6 +218,36 @@ namespace Advance_Control.ViewModels
             {
                 IsLoadingPermisos = false;
             }
+        }
+
+        private static ObservableCollection<PermisoTreeNode> ConstruirArbolPermisos(System.Collections.Generic.List<PermisoModuloDto> modulos)
+        {
+            var grupos = modulos
+                .GroupBy(m => m.GrupoModulo)
+                .OrderBy(g => g.Min(m => m.OrdenGrupo));
+
+            var arbol = new ObservableCollection<PermisoTreeNode>();
+
+            foreach (var grupo in grupos)
+            {
+                var nodoGrupo = new PermisoTreeNode(grupo.Key, PermisoNodoTipo.Grupo);
+
+                foreach (var modulo in grupo.OrderBy(m => m.OrdenModulo))
+                {
+                    var nodoModulo = new PermisoTreeNode(modulo.NombreModulo, PermisoNodoTipo.Modulo, modulo.NivelRequerido, modulo: modulo);
+
+                    foreach (var accion in modulo.Acciones.OrderBy(a => a.OrdenAccion))
+                    {
+                        nodoModulo.Hijos.Add(new PermisoTreeNode(accion.NombreAccion, PermisoNodoTipo.Accion, accion.NivelRequerido, accion: accion));
+                    }
+
+                    nodoGrupo.Hijos.Add(nodoModulo);
+                }
+
+                arbol.Add(nodoGrupo);
+            }
+
+            return arbol;
         }
 
         public async Task SyncPermisosAsync(CancellationToken cancellationToken = default)

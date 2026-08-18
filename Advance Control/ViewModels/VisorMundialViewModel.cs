@@ -10,9 +10,12 @@ using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Services.GoogleMaps;
+using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.RelacionUsuarioArea;
 using Advance_Control.Services.Reportes;
 using Advance_Control.Services.VisorMundial;
+using Microsoft.UI.Xaml.Media;
+using Windows.UI;
 
 namespace Advance_Control.ViewModels
 {
@@ -20,6 +23,14 @@ namespace Advance_Control.ViewModels
     {
         Ubicaciones = 0,
         ColaboradoresPorArea = 1
+    }
+
+    /// <summary>Qué se está mostrando actualmente en el panel derecho (detalle de un clic de pin).</summary>
+    public enum VisorMundialPanelSeleccion
+    {
+        Ninguno = 0,
+        Ubicacion = 1,
+        Colaborador = 2
     }
 
     public class VisorMundialViewModel : ViewModelBase
@@ -32,6 +43,7 @@ namespace Advance_Control.ViewModels
         private readonly IReporteFinancieroFacturacionService _reporteFinancieroService;
         private readonly IAreasService _areasService;
         private readonly IRelacionUsuarioAreaService _relacionUsuarioAreaService;
+        private readonly IOperacionService _operacionService;
 
         private GoogleMapsConfigDto? _mapsConfig;
         private ObservableCollection<VisorMundialUbicacionDto> _ubicaciones;
@@ -40,8 +52,12 @@ namespace Advance_Control.ViewModels
         private ObservableCollection<ContactoDto> _tecnicos;
         private ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> _topClientesSaldo;
         private ObservableCollection<VisorMundialEquipoDto> _equiposUbicacionSeleccionada;
+        private ObservableCollection<VisorMundialEquipoCardItem> _equipoCards;
         private ObservableCollection<VisorMundialColaboradorPuntoDto> _colaboradoresPuntos;
         private VisorMundialUbicacionDto? _ubicacionSeleccionada;
+        private VisorMundialColaboradorPuntoDto? _colaboradorSeleccionado;
+        private ObservableCollection<DetalleClienteTreeItem> _colaboradorTreeItems;
+        private VisorMundialPanelSeleccion _panelSeleccion;
         private Dictionary<string, (decimal Facturado, decimal Abonado, int DiasVencidoMax)> _cobranzaPorRfc = new(StringComparer.OrdinalIgnoreCase);
         private bool _isLoading;
         private bool _isLoadingDetalle;
@@ -61,7 +77,8 @@ namespace Advance_Control.ViewModels
             IContactoService contactoService,
             IReporteFinancieroFacturacionService reporteFinancieroService,
             IAreasService areasService,
-            IRelacionUsuarioAreaService relacionUsuarioAreaService)
+            IRelacionUsuarioAreaService relacionUsuarioAreaService,
+            IOperacionService operacionService)
         {
             _googleMapsConfigService = googleMapsConfigService ?? throw new ArgumentNullException(nameof(googleMapsConfigService));
             _visorMundialService = visorMundialService ?? throw new ArgumentNullException(nameof(visorMundialService));
@@ -71,6 +88,7 @@ namespace Advance_Control.ViewModels
             _reporteFinancieroService = reporteFinancieroService ?? throw new ArgumentNullException(nameof(reporteFinancieroService));
             _areasService = areasService ?? throw new ArgumentNullException(nameof(areasService));
             _relacionUsuarioAreaService = relacionUsuarioAreaService ?? throw new ArgumentNullException(nameof(relacionUsuarioAreaService));
+            _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
 
             _ubicaciones = new ObservableCollection<VisorMundialUbicacionDto>();
             _clientes = new ObservableCollection<CustomerDto>();
@@ -78,7 +96,9 @@ namespace Advance_Control.ViewModels
             _tecnicos = new ObservableCollection<ContactoDto>();
             _topClientesSaldo = new ObservableCollection<ReporteFinancieroFacturacionCabeceraDto>();
             _equiposUbicacionSeleccionada = new ObservableCollection<VisorMundialEquipoDto>();
+            _equipoCards = new ObservableCollection<VisorMundialEquipoCardItem>();
             _colaboradoresPuntos = new ObservableCollection<VisorMundialColaboradorPuntoDto>();
+            _colaboradorTreeItems = new ObservableCollection<DetalleClienteTreeItem>();
         }
 
         public GoogleMapsConfigDto? MapsConfig
@@ -138,6 +158,42 @@ namespace Advance_Control.ViewModels
 
         public bool HasUbicacionSeleccionada => UbicacionSeleccionada != null;
         public bool NoHayUbicacionSeleccionada => UbicacionSeleccionada == null;
+
+        public ObservableCollection<VisorMundialEquipoCardItem> EquipoCards
+        {
+            get => _equipoCards;
+            set => SetProperty(ref _equipoCards, value);
+        }
+
+        public VisorMundialColaboradorPuntoDto? ColaboradorSeleccionado
+        {
+            get => _colaboradorSeleccionado;
+            set => SetProperty(ref _colaboradorSeleccionado, value);
+        }
+
+        public ObservableCollection<DetalleClienteTreeItem> ColaboradorTreeItems
+        {
+            get => _colaboradorTreeItems;
+            set => SetProperty(ref _colaboradorTreeItems, value);
+        }
+
+        public VisorMundialPanelSeleccion PanelSeleccion
+        {
+            get => _panelSeleccion;
+            set
+            {
+                if (SetProperty(ref _panelSeleccion, value))
+                {
+                    OnPropertyChanged(nameof(MostrandoUbicacion));
+                    OnPropertyChanged(nameof(MostrandoColaborador));
+                    OnPropertyChanged(nameof(SinSeleccion));
+                }
+            }
+        }
+
+        public bool MostrandoUbicacion => PanelSeleccion == VisorMundialPanelSeleccion.Ubicacion;
+        public bool MostrandoColaborador => PanelSeleccion == VisorMundialPanelSeleccion.Colaborador;
+        public bool SinSeleccion => PanelSeleccion == VisorMundialPanelSeleccion.Ninguno;
 
         public bool IsLoading
         {
@@ -470,10 +526,15 @@ namespace Advance_Control.ViewModels
             {
                 IsLoadingDetalle = true;
                 UbicacionSeleccionada = ubicacion;
+                ColaboradorSeleccionado = null;
+                PanelSeleccion = VisorMundialPanelSeleccion.Ubicacion;
                 IsPanelOpen = true;
 
                 var equipos = await _visorMundialService.ObtenerEquiposPorUbicacionAsync(ubicacion.IdUbicacion);
                 EquiposUbicacionSeleccionada = new ObservableCollection<VisorMundialEquipoDto>(equipos);
+
+                var cards = await Task.WhenAll(equipos.Select(ConstruirEquipoCardAsync));
+                EquipoCards = new ObservableCollection<VisorMundialEquipoCardItem>(cards);
             }
             catch (Exception ex)
             {
@@ -484,5 +545,236 @@ namespace Advance_Control.ViewModels
                 IsLoadingDetalle = false;
             }
         }
+
+        /// <summary>
+        /// Arma la tarjeta de un equipo: sus facturas propias (vía operaciones.id_equipo, nunca por
+        /// RFC de cliente porque un mismo equipo puede tener varios clientes ligados), sus operaciones,
+        /// y el color de salud calculado con el mismo criterio que el resto de la app.
+        /// </summary>
+        private async Task<VisorMundialEquipoCardItem> ConstruirEquipoCardAsync(VisorMundialEquipoDto equipo)
+        {
+            List<VisorMundialEquipoFacturaDto> facturas;
+            List<OperacionDto> operaciones;
+            try
+            {
+                var facturasTask = _visorMundialService.ObtenerFacturasPorEquipoAsync(equipo.IdEquipo);
+                var operacionesTask = _operacionService.GetOperacionesAsync(new OperacionQueryDto { IdEquipo = equipo.IdEquipo });
+                await Task.WhenAll(facturasTask, operacionesTask);
+                facturas = facturasTask.Result;
+                operaciones = operacionesTask.Result;
+            }
+            catch (Exception)
+            {
+                facturas = new List<VisorMundialEquipoFacturaDto>();
+                operaciones = new List<OperacionDto>();
+            }
+
+            var totalFacturado = facturas.Sum(f => f.Total);
+            var totalAbonado = facturas.Sum(f => f.Abono);
+            var diasVencidoMax = facturas.Count == 0 ? 0 : facturas.Max(f => f.DiasVencido);
+            var color = ColorFromHex(ObtenerColorSalud(totalFacturado, totalAbonado, diasVencidoMax));
+
+            var treeItems = new ObservableCollection<DetalleClienteTreeItem>
+            {
+                ConstruirRamaFacturadoEquipo(facturas),
+                ConstruirRamaOperacionesEquipo(operaciones),
+                ConstruirRamaAdeudoEquipo(facturas)
+            };
+
+            return new VisorMundialEquipoCardItem(equipo, color, treeItems, totalFacturado, totalAbonado, diasVencidoMax);
+        }
+
+        private static DetalleClienteTreeItem ConstruirRamaFacturadoEquipo(List<VisorMundialEquipoFacturaDto> facturas)
+        {
+            var raiz = new DetalleClienteTreeItem("Facturado", facturas.Count.ToString());
+            foreach (var factura in facturas.OrderByDescending(f => f.FechaTimbrado))
+            {
+                raiz.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.FechaTimbradoTexto} · {factura.EstadoTexto}", nivel: 1)
+                {
+                    IdFactura = factura.IdFactura,
+                    IdOperacion = factura.IdOperacion
+                });
+            }
+            return raiz;
+        }
+
+        private static DetalleClienteTreeItem ConstruirRamaAdeudoEquipo(List<VisorMundialEquipoFacturaDto> facturas)
+        {
+            var pendientes = facturas.Where(f => !f.Finiquito).OrderByDescending(f => f.FechaTimbrado).ToList();
+            var raiz = new DetalleClienteTreeItem("Adeudo", pendientes.Count.ToString());
+            foreach (var factura in pendientes)
+            {
+                raiz.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.DiasVencidoTexto}", nivel: 1)
+                {
+                    IdFactura = factura.IdFactura,
+                    IdOperacion = factura.IdOperacion
+                });
+            }
+            return raiz;
+        }
+
+        private static DetalleClienteTreeItem ConstruirRamaOperacionesEquipo(List<OperacionDto> operaciones)
+        {
+            var abiertas = operaciones.Where(o => o.FechaFinal == null && !o.TFinalizado).ToList();
+            var pendientesCierre = operaciones.Where(o => o.FechaFinal == null && o.TFinalizado).ToList();
+            var finalizadas = operaciones.Where(o => o.FechaFinal != null).ToList();
+
+            var raiz = new DetalleClienteTreeItem("Operaciones", operaciones.Count.ToString());
+            raiz.Hijos.Add(ConstruirGrupoOperacionesEquipo("Abiertas", abiertas));
+            raiz.Hijos.Add(ConstruirGrupoOperacionesEquipo("Trabajo finalizado, pendiente de cierre", pendientesCierre));
+            raiz.Hijos.Add(ConstruirGrupoOperacionesEquipo("Finalizadas", finalizadas));
+            return raiz;
+        }
+
+        private static DetalleClienteTreeItem ConstruirGrupoOperacionesEquipo(string etiqueta, List<OperacionDto> operaciones)
+        {
+            var grupo = new DetalleClienteTreeItem($"{etiqueta}: {operaciones.Count}", null, nivel: 1);
+            foreach (var operacion in operaciones.OrderByDescending(o => o.FechaInicio))
+            {
+                grupo.Hijos.Add(new DetalleClienteTreeItem($"{operacion.TipoMantenimiento} · {operacion.Atiende}", operacion.FechaInicioCorta, nivel: 2)
+                {
+                    IdOperacion = operacion.IdOperacion
+                });
+            }
+            return grupo;
+        }
+
+        private static Color ColorFromHex(string hex)
+        {
+            hex = hex.TrimStart('#');
+            var r = Convert.ToByte(hex.Substring(0, 2), 16);
+            var g = Convert.ToByte(hex.Substring(2, 2), 16);
+            var b = Convert.ToByte(hex.Substring(4, 2), 16);
+            return Color.FromArgb(0xFF, r, g, b);
+        }
+
+        /// <summary>
+        /// Detalle de un colaborador al hacer clic en su pin: área(s) asignada(s), equipos que atiende
+        /// (derivados de sus operaciones, cruzados contra el catálogo de equipos ya cargado), las
+        /// operaciones mismas, y las ubicaciones de esos equipos.
+        /// </summary>
+        public async Task CargarDetalleColaboradorAsync(VisorMundialColaboradorPuntoDto colaborador)
+        {
+            if (colaborador == null)
+            {
+                return;
+            }
+
+            try
+            {
+                IsLoadingDetalle = true;
+                ColaboradorSeleccionado = colaborador;
+                UbicacionSeleccionada = null;
+                PanelSeleccion = VisorMundialPanelSeleccion.Colaborador;
+                IsPanelOpen = true;
+
+                var operacionesTask = _operacionService.GetOperacionesAsync(new OperacionQueryDto { IdAtiende = (int)colaborador.CredencialId });
+                var areasTask = _relacionUsuarioAreaService.GetRelacionesPorUsuarioAsync(colaborador.CredencialId);
+                await Task.WhenAll(operacionesTask, areasTask);
+
+                var operaciones = operacionesTask.Result;
+                var areas = areasTask.Result;
+
+                var identificadoresEquipos = operaciones
+                    .Select(o => o.Identificador)
+                    .Where(id => !string.IsNullOrWhiteSpace(id))
+                    .Select(id => id!.Trim())
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                var equiposAtiende = Equipos
+                    .Where(e => !string.IsNullOrWhiteSpace(e.Identificador) && identificadoresEquipos.Contains(e.Identificador!, StringComparer.OrdinalIgnoreCase))
+                    .ToList();
+
+                var idsUbicacion = equiposAtiende
+                    .Where(e => e.IdUbicacion.HasValue)
+                    .Select(e => e.IdUbicacion!.Value)
+                    .Distinct()
+                    .ToList();
+
+                var ubicacionesAtiende = Ubicaciones.Where(u => idsUbicacion.Contains(u.IdUbicacion)).ToList();
+
+                ColaboradorTreeItems = ConstruirArbolColaborador(areas, equiposAtiende, operaciones, ubicacionesAtiende);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al cargar el detalle del colaborador: {ex.Message}";
+            }
+            finally
+            {
+                IsLoadingDetalle = false;
+            }
+        }
+
+        private static ObservableCollection<DetalleClienteTreeItem> ConstruirArbolColaborador(
+            List<RelacionUsuarioAreaDto> areas,
+            List<EquipoDto> equipos,
+            List<OperacionDto> operaciones,
+            List<VisorMundialUbicacionDto> ubicaciones)
+        {
+            var ramaArea = new DetalleClienteTreeItem("Área asignada", areas.Count.ToString());
+            foreach (var area in areas)
+            {
+                ramaArea.Hijos.Add(new DetalleClienteTreeItem(area.NombreArea ?? "Sin nombre", null, nivel: 1));
+            }
+
+            var ramaEquipos = new DetalleClienteTreeItem("Equipos que atiende", equipos.Count.ToString());
+            foreach (var equipo in equipos.OrderBy(e => e.Identificador, StringComparer.OrdinalIgnoreCase))
+            {
+                ramaEquipos.Hijos.Add(new DetalleClienteTreeItem(equipo.Identificador ?? "Sin identificador", equipo.Marca, nivel: 1));
+            }
+
+            var ramaOperaciones = ConstruirRamaOperacionesEquipo(operaciones);
+
+            var ramaUbicaciones = new DetalleClienteTreeItem("Ubicaciones que atiende", ubicaciones.Count.ToString());
+            foreach (var ubicacion in ubicaciones.OrderBy(u => u.Nombre, StringComparer.OrdinalIgnoreCase))
+            {
+                ramaUbicaciones.Hijos.Add(new DetalleClienteTreeItem(ubicacion.Nombre ?? "Sin nombre", ubicacion.DireccionCompleta, nivel: 1));
+            }
+
+            return new ObservableCollection<DetalleClienteTreeItem>
+            {
+                ramaArea,
+                ramaEquipos,
+                ramaOperaciones,
+                ramaUbicaciones
+            };
+        }
+    }
+
+    /// <summary>
+    /// Tarjeta de un equipo dentro del panel de detalle de una ubicación: color de salud de cobranza
+    /// (propio del equipo, no del cliente) + árbol de facturas/operaciones/adeudo de ese equipo.
+    /// </summary>
+    public class VisorMundialEquipoCardItem
+    {
+        public VisorMundialEquipoCardItem(
+            VisorMundialEquipoDto equipo,
+            Color colorSalud,
+            ObservableCollection<DetalleClienteTreeItem> treeItems,
+            decimal totalFacturado,
+            decimal totalAbonado,
+            int diasVencidoMax)
+        {
+            Equipo = equipo;
+            ColorSaludBrush = new SolidColorBrush(colorSalud);
+            TreeItems = treeItems;
+            TotalFacturado = totalFacturado;
+            TotalAbonado = totalAbonado;
+            DiasVencidoMax = diasVencidoMax;
+        }
+
+        public VisorMundialEquipoDto Equipo { get; }
+        public Brush ColorSaludBrush { get; }
+        public ObservableCollection<DetalleClienteTreeItem> TreeItems { get; }
+        public decimal TotalFacturado { get; }
+        public decimal TotalAbonado { get; }
+        public int DiasVencidoMax { get; }
+
+        public int IdEquipo => Equipo.IdEquipo;
+        public string Identificador => Equipo.Identificador ?? "Sin identificador";
+        public string SubtituloTexto => $"{(string.IsNullOrWhiteSpace(Equipo.Marca) ? "Sin marca" : Equipo.Marca)} · {Equipo.ClientesTexto}";
+        public string SaldoTexto => (TotalFacturado - TotalAbonado).ToString("C2", new CultureInfo("es-MX"));
+        public string EstadoOperacionTexto => Equipo.EstadoTexto;
     }
 }

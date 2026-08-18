@@ -62,5 +62,22 @@ namespace Advance_Control.Services.VisorMundial
                 throw new InvalidOperationException("Error de comunicacion con el servidor al consultar equipos de la ubicacion.", ex);
             }
         }
+
+        public async Task<List<VisorMundialEquipoFacturaDto>> ObtenerFacturasPorEquipoAsync(int idEquipo, CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "visor-mundial", "equipos", idEquipo.ToString(), "facturas");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando facturas del equipo en: {url}", "VisorMundialService", "ObtenerFacturasPorEquipoAsync");
+                var result = await _http.GetFromJsonAsync<List<VisorMundialEquipoFacturaDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<VisorMundialEquipoFacturaDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar facturas del equipo", ex, "VisorMundialService", "ObtenerFacturasPorEquipoAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al consultar facturas del equipo.", ex);
+            }
+        }
     }
 }

@@ -30,10 +30,12 @@ namespace Advance_Control.ViewModels
         private ObservableCollection<DetalleClienteTreeItem> _detalleTreeItems;
         private ObservableCollection<TimelineFila> _timelineFilas;
         private ObservableCollection<KpiItem> _kpisActuales;
+        private ObservableCollection<CobranzaSeguimientoDto> _seguimientos;
         private DetalleClienteTreeItem? _nodoSeleccionado;
         private CustomerDto? _clienteSeleccionado;
         private bool _isLoading;
         private bool _isLoadingDetalle;
+        private bool _mostrandoSeguimiento;
         private string? _errorMessage;
 
         // Datos crudos cacheados del cliente seleccionado, para poder reconstruir cualquier
@@ -65,6 +67,7 @@ namespace Advance_Control.ViewModels
             _detalleTreeItems = new ObservableCollection<DetalleClienteTreeItem>();
             _timelineFilas = new ObservableCollection<TimelineFila>();
             _kpisActuales = new ObservableCollection<KpiItem>();
+            _seguimientos = new ObservableCollection<CobranzaSeguimientoDto>();
         }
 
         public ObservableCollection<ClienteSaludCardItem> Clientes
@@ -149,6 +152,18 @@ namespace Advance_Control.ViewModels
 
         public bool TieneTimeline => TimelineFilas.Count > 0;
 
+        public ObservableCollection<CobranzaSeguimientoDto> Seguimientos
+        {
+            get => _seguimientos;
+            private set => SetProperty(ref _seguimientos, value);
+        }
+
+        public bool MostrandoSeguimiento
+        {
+            get => _mostrandoSeguimiento;
+            private set => SetProperty(ref _mostrandoSeguimiento, value);
+        }
+
         public ObservableCollection<KpiItem> KpisActuales
         {
             get => _kpisActuales;
@@ -162,6 +177,7 @@ namespace Advance_Control.ViewModels
             DetalleNodoTipo.Adeudo => "Adeudo — fecha de factura vs. tiempo transcurrido",
             DetalleNodoTipo.EquiposTodos => "Equipos — fechas de factura por equipo",
             DetalleNodoTipo.Equipo => $"Equipo {NodoSeleccionado?.EquipoIdentificador} — fechas de factura",
+            DetalleNodoTipo.Seguimiento => "Seguimiento — bitácora de contacto y promesas de pago",
             _ => "Selecciona una rama del árbol para ver su timeline"
         };
 
@@ -236,6 +252,10 @@ namespace Advance_Control.ViewModels
 
                 var reporteTask = _reporteFinancieroService.ObtenerReporteAsync(cliente.Rfc, null, null, null, null);
                 var cobranzaTask = _reporteFinancieroService.ObtenerReporteCobranzaAsync(cliente.Rfc, null, null, null, null);
+                // Envuelto aparte (no puede tumbar el Task.WhenAll de abajo): si el endpoint de
+                // seguimientos aún no existe o falla, el resto del detalle del cliente debe seguir
+                // cargando con normalidad — la bitácora es una funcionalidad adicional, no crítica.
+                var seguimientosTask = ObtenerSeguimientosSeguroAsync(cliente.Rfc);
 
                 // IdCliente == 0 significa "sin filtro" para el servicio de operaciones: solo se consulta
                 // cuando el RFC de la factura sí tiene un cliente coincidente en el catálogo.
@@ -247,7 +267,7 @@ namespace Advance_Control.ViewModels
                     })
                     : Task.FromResult(new List<OperacionDto>());
 
-                await Task.WhenAll(reporteTask, cobranzaTask, operacionesTask);
+                await Task.WhenAll(reporteTask, cobranzaTask, seguimientosTask, operacionesTask);
 
                 var cabecera = reporteTask.Result.Cabeceras.FirstOrDefault();
 
@@ -255,6 +275,7 @@ namespace Advance_Control.ViewModels
                 _clienteOperaciones = operacionesTask.Result;
                 _clienteCobranza = cobranzaTask.Result;
                 _clienteCabecera = cabecera;
+                Seguimientos = new ObservableCollection<CobranzaSeguimientoDto>(seguimientosTask.Result);
 
                 var ramaFacturado = ConstruirRamaFacturado(cabecera, _clienteDetalles);
                 var ramaOperaciones = ConstruirRamaOperaciones(_clienteOperaciones);
@@ -283,6 +304,19 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        private async Task<List<CobranzaSeguimientoDto>> ObtenerSeguimientosSeguroAsync(string rfc)
+        {
+            try
+            {
+                return await _reporteFinancieroService.ObtenerSeguimientosAsync(rfc);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync($"No fue posible cargar la bitácora de seguimiento (no bloquea el resto del detalle): {ex.Message}", nameof(DetalleClientesViewModel), nameof(ObtenerSeguimientosSeguroAsync));
+                return new List<CobranzaSeguimientoDto>();
+            }
+        }
+
         /// <summary>
         /// Construye el timeline correspondiente al nodo del árbol seleccionado (sin llamadas HTTP,
         /// usa los datos ya cacheados del cliente actual).
@@ -290,6 +324,7 @@ namespace Advance_Control.ViewModels
         public void SeleccionarNodoDetalle(DetalleClienteTreeItem? nodo)
         {
             NodoSeleccionado = nodo;
+            MostrandoSeguimiento = nodo?.Tipo == DetalleNodoTipo.Seguimiento;
 
             TimelineFilas = nodo?.Tipo switch
             {
@@ -302,6 +337,33 @@ namespace Advance_Control.ViewModels
             };
 
             ActualizarKpis();
+        }
+
+        /// <summary>
+        /// Registra un nuevo seguimiento (contacto/promesa de pago) para el cliente seleccionado
+        /// y refresca la bitácora en pantalla.
+        /// </summary>
+        public async Task AgregarSeguimientoAsync(CobranzaSeguimientoCreateDto dto)
+        {
+            if (ClienteSeleccionado == null)
+            {
+                return;
+            }
+
+            try
+            {
+                dto.ReceptorRfc = ClienteSeleccionado.Rfc;
+                var creado = await _reporteFinancieroService.RegistrarSeguimientoAsync(dto);
+                if (creado != null)
+                {
+                    Seguimientos.Insert(0, creado);
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al registrar el seguimiento: {ex.Message}";
+                await _logger.LogErrorAsync("Error al registrar seguimiento de cobranza", ex, nameof(DetalleClientesViewModel), nameof(AgregarSeguimientoAsync));
+            }
         }
 
         /// <summary>
@@ -451,7 +513,11 @@ namespace Advance_Control.ViewModels
             var historial = new DetalleClienteTreeItem("Historial de facturas", detalles.Count.ToString(), nivel: 1);
             foreach (var factura in detalles.OrderByDescending(f => f.FechaTimbrado))
             {
-                historial.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.FechaTimbradoTexto}", nivel: 2));
+                historial.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.FechaTimbradoTexto}", nivel: 2)
+                {
+                    IdFactura = factura.IdFactura,
+                    IdOperacion = factura.IdOperacion
+                });
             }
             raiz.Hijos.Add(historial);
 
@@ -500,13 +566,27 @@ namespace Advance_Control.ViewModels
             var facturasPendientes = new DetalleClienteTreeItem("Facturas sin pagar", pendientes.Count.ToString(), nivel: 1);
             foreach (var factura in pendientes)
             {
-                facturasPendientes.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.FechaFacturaTexto} · {factura.DiasVencidoTexto}", nivel: 2));
+                // factura.IdFactura es null para las filas "Sin facturar" (operación finalizada sin
+                // factura todavía) — el nodo queda sin "Ver factura" para esos casos, pero sí puede
+                // tener IdOperacion (la operación ya existe, solo falta facturarla).
+                facturasPendientes.Hijos.Add(new DetalleClienteTreeItem(factura.FolioTexto, $"{factura.TotalTexto} · {factura.FechaFacturaTexto} · {factura.DiasVencidoTexto}", nivel: 2)
+                {
+                    IdFactura = factura.IdFactura,
+                    IdOperacion = factura.IdOperacion
+                });
             }
             raiz.Hijos.Add(facturasPendientes);
 
             raiz.Hijos.Add(new DetalleClienteTreeItem("Total abonado", FormatearMoneda(totalAbonado), nivel: 1));
 
             raiz.EtiquetarTipo(DetalleNodoTipo.Adeudo);
+
+            // Se agrega después de EtiquetarTipo (que marca en cascada a todos los hijos con el
+            // mismo tipo Adeudo) para que este nodo conserve su propio tipo Seguimiento y así
+            // SeleccionarNodoDetalle pueda distinguirlo de sus hermanos.
+            var nodoSeguimiento = new DetalleClienteTreeItem("Seguimiento", null, nivel: 1) { Tipo = DetalleNodoTipo.Seguimiento };
+            raiz.Hijos.Add(nodoSeguimiento);
+
             return raiz;
         }
 

@@ -15,7 +15,8 @@ namespace Advance_Control.Models
         Operaciones,
         Adeudo,
         EquiposTodos,
-        Equipo
+        Equipo,
+        Seguimiento
     }
 
     /// <summary>
@@ -77,6 +78,19 @@ namespace Advance_Control.Models
         /// Identificador de equipo, solo presente en los nodos hoja de la rama Equipos.
         /// </summary>
         public string? EquipoIdentificador { get; set; }
+
+        /// <summary>
+        /// Id de la factura, solo presente en los nodos hoja que representan una factura individual
+        /// (Facturado &gt; Historial de facturas, Adeudo &gt; Facturas sin pagar). Habilita el clic derecho
+        /// "Ver factura".
+        /// </summary>
+        public int? IdFactura { get; set; }
+
+        /// <summary>
+        /// Id de la operación ligada a la factura de este nodo (si existe), solo presente en los
+        /// mismos nodos hoja que <see cref="IdFactura"/>. Habilita el clic derecho "Ver operación".
+        /// </summary>
+        public int? IdOperacion { get; set; }
 
         /// <summary>
         /// Marca este nodo y todos sus descendientes con el mismo <see cref="Tipo"/>.

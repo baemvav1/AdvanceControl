@@ -19,5 +19,11 @@ namespace Advance_Control.Utilities
             return AppServices.Get<INavigationService>()
                 .Navigate("OperacionVisor", OperacionVisorNavigationContext.FromMensaje(mensaje));
         }
+
+        public static bool Navigate(int idOperacion)
+        {
+            return AppServices.Get<INavigationService>()
+                .Navigate("OperacionVisor", new OperacionVisorNavigationContext { IdOperacion = idOperacion });
+        }
     }
 }

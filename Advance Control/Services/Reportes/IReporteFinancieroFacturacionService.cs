@@ -23,5 +23,13 @@ namespace Advance_Control.Services.Reportes
             DateTimeOffset? fechaInicio,
             DateTimeOffset? fechaFin,
             CancellationToken cancellationToken = default);
+
+        Task<List<CobranzaSeguimientoDto>> ObtenerSeguimientosAsync(
+            string receptorRfc,
+            CancellationToken cancellationToken = default);
+
+        Task<CobranzaSeguimientoDto?> RegistrarSeguimientoAsync(
+            CobranzaSeguimientoCreateDto dto,
+            CancellationToken cancellationToken = default);
     }
 }

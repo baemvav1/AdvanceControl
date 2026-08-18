@@ -1,8 +1,12 @@
+using Advance_Control.Models;
 using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
+using Advance_Control.Views.Windows;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
@@ -145,6 +149,15 @@ namespace Advance_Control.Views.Pages
                         await ViewModel.CargarEquiposDeUbicacionAsync(ubicacion);
                     }
                 }
+                else if (messageType == "colaboradorClicked" && jsonDoc.TryGetValue("credencialId", out var credencialElement))
+                {
+                    var credencialId = credencialElement.GetInt64();
+                    var colaborador = ViewModel.ColaboradoresPuntos.FirstOrDefault(c => c.CredencialId == credencialId);
+                    if (colaborador != null)
+                    {
+                        await ViewModel.CargarDetalleColaboradorAsync(colaborador);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -218,6 +231,7 @@ namespace Advance_Control.Views.Pages
                 .Select(p => new
                 {
                     idUbicacion = (int?)null,
+                    idColaborador = (long?)p.CredencialId,
                     lat = p.Latitud,
                     lng = p.Longitud,
                     color = "#4285F4",
@@ -242,6 +256,49 @@ namespace Advance_Control.Views.Pages
         private void BtnTogglePanel_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.IsPanelOpen = !ViewModel.IsPanelOpen;
+        }
+
+        /// <summary>
+        /// Clic derecho sobre un nodo de factura dentro del árbol de una tarjeta de equipo o del
+        /// árbol de detalle de un colaborador abre "Ver factura"/"Ver operación", igual que en
+        /// Detalle Clientes. Cada opción solo aparece cuando el nodo la tiene disponible.
+        /// </summary>
+        private void ArbolNodo_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not DetalleClienteTreeItem nodo)
+            {
+                return;
+            }
+
+            if (!nodo.IdFactura.HasValue && !nodo.IdOperacion.HasValue)
+            {
+                return;
+            }
+
+            var menu = new MenuFlyout();
+
+            if (nodo.IdFactura.HasValue)
+            {
+                var verFacturaItem = new MenuFlyoutItem { Text = "Ver factura" };
+                verFacturaItem.Click += (_, _) => AbrirFactura(nodo.IdFactura.Value, nodo.Etiqueta);
+                menu.Items.Add(verFacturaItem);
+            }
+
+            if (nodo.IdOperacion.HasValue)
+            {
+                var verOperacionItem = new MenuFlyoutItem { Text = "Ver operación" };
+                verOperacionItem.Click += (_, _) => OperacionVisorNavigator.Navigate(nodo.IdOperacion.Value);
+                menu.Items.Add(verOperacionItem);
+            }
+
+            menu.ShowAt(element, new FlyoutShowOptions { Position = e.GetPosition(element) });
+        }
+
+        private void AbrirFactura(int idFactura, string folio)
+        {
+            var factura = new FacturaResumenDto { IdFactura = idFactura, Folio = folio };
+            var ventana = new DetailFacturaWindow(factura);
+            ventana.Activate();
         }
 
         private async void ModoVisorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -306,6 +363,12 @@ namespace Advance_Control.Views.Pages
           marker.addListener('click', function() {{
             try {{
               window.chrome.webview.postMessage(JSON.stringify({{ type: 'pinClicked', idUbicacion: p.idUbicacion }}));
+            }} catch(e) {{}}
+          }});
+        }} else if (p.idColaborador !== undefined && p.idColaborador !== null) {{
+          marker.addListener('click', function() {{
+            try {{
+              window.chrome.webview.postMessage(JSON.stringify({{ type: 'colaboradorClicked', credencialId: p.idColaborador }}));
             }} catch(e) {{}}
           }});
         }}

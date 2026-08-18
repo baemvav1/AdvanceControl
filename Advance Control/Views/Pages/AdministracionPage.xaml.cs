@@ -135,47 +135,49 @@ public sealed partial class AdministracionPage : Page
         await _notificacionService.MostrarAsync("Permisos", "Catálogo de permisos sincronizado correctamente.");
     }
 
-    private async void PermisoModuloItemView_NivelModuloEditRequested(object sender, PermisoModuloNivelEditRequestedEventArgs e)
+    private async void CambiarNivelButton_Click(object sender, RoutedEventArgs e)
     {
+        if (sender is not FrameworkElement element || element.Tag is not PermisoTreeNode nodo)
+            return;
+
         if (!await CanAccessAdministracionModuleAsync())
             return;
 
-        var modulo = ViewModel.PermisosModulo.FirstOrDefault(item => item.IdPermisoModulo == e.IdPermisoModulo);
-        if (modulo == null)
-            return;
+        if (nodo.Tipo == PermisoNodoTipo.Modulo && nodo.Modulo != null)
+        {
+            var nivelSeleccionado = await ShowNivelDialogAsync(
+                $"Cambiar nivel de {nodo.Modulo.NombreModulo}",
+                nodo.Modulo.NivelRequerido);
 
-        var nivelSeleccionado = await ShowNivelDialogAsync(
-            $"Cambiar nivel de {modulo.NombreModulo}",
-            modulo.NivelRequerido);
+            if (!nivelSeleccionado.HasValue || nivelSeleccionado.Value == nodo.Modulo.NivelRequerido)
+                return;
 
-        if (!nivelSeleccionado.HasValue || nivelSeleccionado.Value == modulo.NivelRequerido)
-            return;
+            await ViewModel.UpdateNivelModuloAsync(nodo.Modulo.IdPermisoModulo, nivelSeleccionado.Value);
+            await _permisoUiRuntimeService.InitializeAsync(_permisoUiRuntimeService.NivelUsuario, forceSync: false);
+        }
+        else if (nodo.Tipo == PermisoNodoTipo.Accion && nodo.Accion != null)
+        {
+            var nivelSeleccionado = await ShowNivelDialogAsync(
+                $"Cambiar nivel de {nodo.Accion.NombreAccion}",
+                nodo.Accion.NivelRequerido);
 
-        await ViewModel.UpdateNivelModuloAsync(e.IdPermisoModulo, nivelSeleccionado.Value);
-        await _permisoUiRuntimeService.InitializeAsync(_permisoUiRuntimeService.NivelUsuario, forceSync: false);
+            if (!nivelSeleccionado.HasValue || nivelSeleccionado.Value == nodo.Accion.NivelRequerido)
+                return;
+
+            await ViewModel.UpdateNivelAccionAsync(nodo.Accion.IdPermisoAccionModulo, nivelSeleccionado.Value);
+            await _permisoUiRuntimeService.InitializeAsync(_permisoUiRuntimeService.NivelUsuario, forceSync: false);
+        }
     }
 
-    private async void PermisoModuloItemView_NivelAccionEditRequested(object sender, PermisoAccionNivelEditRequestedEventArgs e)
+    private void RolFiltroComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!await CanAccessAdministracionModuleAsync())
-            return;
+        ViewModel.RolFiltro = RolFiltroComboBox.SelectedItem as TipoUsuarioDto;
+    }
 
-        var accion = ViewModel.PermisosModulo
-            .SelectMany(modulo => modulo.Acciones)
-            .FirstOrDefault(item => item.IdPermisoAccionModulo == e.IdPermisoAccionModulo);
-
-        if (accion == null)
-            return;
-
-        var nivelSeleccionado = await ShowNivelDialogAsync(
-            $"Cambiar nivel de {accion.NombreAccion}",
-            accion.NivelRequerido);
-
-        if (!nivelSeleccionado.HasValue || nivelSeleccionado.Value == accion.NivelRequerido)
-            return;
-
-        await ViewModel.UpdateNivelAccionAsync(e.IdPermisoAccionModulo, nivelSeleccionado.Value);
-        await _permisoUiRuntimeService.InitializeAsync(_permisoUiRuntimeService.NivelUsuario, forceSync: false);
+    private void LimpiarRolFiltroButton_Click(object sender, RoutedEventArgs e)
+    {
+        RolFiltroComboBox.SelectedIndex = -1;
+        ViewModel.RolFiltro = null;
     }
 
     private async Task<bool> CanAccessAdministracionModuleAsync()

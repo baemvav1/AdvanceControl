@@ -117,6 +117,8 @@
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" Spacing="4">
@@ -127,19 +129,37 @@
                             <TextBlock
                                 TextWrapping="Wrap"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Sincroniza vistas y botones detectados, y define el nivel requerido por módulo o acción." />
+                                Text="Árbol Grupo → Módulo → Acción. Filtra por rol para ver qué puede acceder." />
                         </StackPanel>
+
+                        <ComboBox
+                            x:Name="RolFiltroComboBox"
+                            Grid.Column="1"
+                            Margin="0,0,4,0"
+                            VerticalAlignment="Bottom"
+                            DisplayMemberPath="TipoUsuario"
+                            ItemsSource="{x:Bind ViewModel.TiposUsuarioPermisos, Mode=OneWay}"
+                            PlaceholderText="Todos los roles"
+                            SelectionChanged="RolFiltroComboBox_SelectionChanged" />
+
+                        <Button
+                            x:Name="LimpiarRolFiltroButton"
+                            Grid.Column="2"
+                            Margin="0,0,8,0"
+                            VerticalAlignment="Bottom"
+                            Click="LimpiarRolFiltroButton_Click"
+                            Content="Todos" />
 
                         <Button
                             x:Name="RecargarPermisosButton"
-                            Grid.Column="1"
+                            Grid.Column="3"
                             Margin="0,0,8,0"
                             Click="RecargarPermisosButton_Click"
                             Content="Recargar" />
 
                         <Button
                             x:Name="SincronizarPermisosButton"
-                            Grid.Column="2"
+                            Grid.Column="4"
                             Click="SincronizarPermisosButton_Click"
                             Content="Sincronizar"
                             Style="{StaticResource AccentButtonStyle}" />
@@ -161,16 +181,42 @@
                             IsActive="{x:Bind ViewModel.IsLoadingPermisos, Mode=OneWay}" />
 
                         <ScrollViewer VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{x:Bind ViewModel.PermisosModulo, Mode=OneWay}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="models:PermisoModuloDto">
-                                        <adminItems:PermisoModuloItemView
-                                            NivelAccionEditRequested="PermisoModuloItemView_NivelAccionEditRequested"
-                                            NivelModuloEditRequested="PermisoModuloItemView_NivelModuloEditRequested"
-                                            Permiso="{x:Bind}" />
+                            <TreeView ItemsSource="{x:Bind ViewModel.PermisosArbol, Mode=OneWay}">
+                                <TreeView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PermisoTreeNode">
+                                        <TreeViewItem IsExpanded="{x:Bind ExpandirPorDefecto}" ItemsSource="{x:Bind Hijos}">
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+
+                                                <TextBlock
+                                                    Grid.Column="0"
+                                                    VerticalAlignment="Center"
+                                                    Foreground="{x:Bind ColorTextoBrush, Mode=OneWay}"
+                                                    Text="{x:Bind Etiqueta}"
+                                                    TextWrapping="WrapWholeWords" />
+
+                                                <TextBlock
+                                                    Grid.Column="1"
+                                                    VerticalAlignment="Center"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{x:Bind NivelTexto}" />
+
+                                                <Button
+                                                    Grid.Column="2"
+                                                    VerticalAlignment="Center"
+                                                    Click="CambiarNivelButton_Click"
+                                                    Content="Cambiar nivel"
+                                                    Tag="{x:Bind}"
+                                                    Visibility="{x:Bind MuestraBotonCambiarNivel, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                            </Grid>
+                                        </TreeViewItem>
                                     </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                                </TreeView.ItemTemplate>
+                            </TreeView>
                         </ScrollViewer>
                     </Grid>
                 </Grid>

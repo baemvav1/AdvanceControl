@@ -5,8 +5,28 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    xmlns:vm="using:Advance_Control.ViewModels"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <DataTemplate x:Key="DetalleTreeItemTemplate" x:DataType="models:DetalleClienteTreeItem">
+            <TreeViewItem IsExpanded="True" ItemsSource="{x:Bind Hijos}">
+                <StackPanel
+                    Orientation="Horizontal"
+                    Spacing="12"
+                    RightTapped="ArbolNodo_RightTapped"
+                    Tag="{x:Bind}">
+                    <TextBlock
+                        FontWeight="SemiBold"
+                        Foreground="{x:Bind ColorTextoBrush}"
+                        Text="{x:Bind Etiqueta}" />
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ValorTexto}" />
+                </StackPanel>
+            </TreeViewItem>
+        </DataTemplate>
+    </Page.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -70,7 +90,90 @@
             OpenPaneLength="380"
             PanePlacement="Right">
             <SplitView.Pane>
-                <Grid Padding="12" />
+                <Grid Padding="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Grid.Row="0" Margin="0,0,0,8">
+                        <StackPanel Spacing="2" Visibility="{x:Bind ViewModel.MostrandoUbicacion, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock
+                                FontSize="18"
+                                FontWeight="SemiBold"
+                                Text="{x:Bind ViewModel.UbicacionSeleccionada.Nombre, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind ViewModel.UbicacionSeleccionada.DireccionCompleta, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="2" Visibility="{x:Bind ViewModel.MostrandoColaborador, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <TextBlock
+                                FontSize="18"
+                                FontWeight="SemiBold"
+                                Text="{x:Bind ViewModel.ColaboradorSeleccionado.NombreCompleto, Mode=OneWay}"
+                                TextWrapping="WrapWholeWords" />
+                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ColaboradorSeleccionado.Cargo, Mode=OneWay}" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <TextBlock
+                        Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Selecciona un pin en el mapa para ver su detalle."
+                        TextAlignment="Center"
+                        TextWrapping="WrapWholeWords"
+                        Visibility="{x:Bind ViewModel.SinSeleccion, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                    <ProgressRing
+                        Grid.Row="1"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        IsActive="{x:Bind ViewModel.IsLoadingDetalle, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.IsLoadingDetalle, Mode=OneWay}" />
+
+                    <ScrollViewer Grid.Row="1" Visibility="{x:Bind ViewModel.MostrandoUbicacion, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.EquipoCards, Mode=OneWay}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:VisorMundialEquipoCardItem">
+                                    <Border
+                                        Margin="0,0,0,12"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8">
+                                        <StackPanel>
+                                            <Border Background="{x:Bind ColorSaludBrush}" CornerRadius="8,8,0,0" Padding="12,8">
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock FontWeight="SemiBold" Foreground="#202020" Text="{x:Bind Identificador}" />
+                                                    <TextBlock Foreground="#202020" Text="{x:Bind SubtituloTexto}" TextWrapping="WrapWholeWords" />
+                                                    <TextBlock FontSize="12" Foreground="#202020" Text="{x:Bind EstadoOperacionTexto}" />
+                                                    <TextBlock FontWeight="SemiBold" Foreground="#202020" Text="{x:Bind SaldoTexto}" />
+                                                </StackPanel>
+                                            </Border>
+                                            <TreeView
+                                                Margin="4"
+                                                ItemsSource="{x:Bind TreeItems}"
+                                                ItemTemplate="{StaticResource DetalleTreeItemTemplate}"
+                                                SelectionMode="None" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <TreeView
+                        Grid.Row="1"
+                        ItemsSource="{x:Bind ViewModel.ColaboradorTreeItems, Mode=OneWay}"
+                        ItemTemplate="{StaticResource DetalleTreeItemTemplate}"
+                        SelectionMode="None"
+                        Visibility="{x:Bind ViewModel.MostrandoColaborador, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                </Grid>
             </SplitView.Pane>
 
             <Grid>
