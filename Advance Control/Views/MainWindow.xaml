@@ -198,10 +198,6 @@
                                         <FontIcon Glyph="&#xE902;" />
                                     </NavigationViewItem.Icon>
                                 </NavigationViewItem>
-                                <NavigationViewItem
-                                    Content="Contactos"
-                                    Icon="Contact"
-                                    Tag="Contactos" />
                                 <NavigationViewItem Content="Entidades" Tag="Entidades">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xE8C7;" />
@@ -246,6 +242,10 @@
                                     Content="Refacciones"
                                     Icon="Setting"
                                     Tag="Refacciones" />
+                                <NavigationViewItem
+                                    Content="Contactos"
+                                    Icon="Contact"
+                                    Tag="Contactos" />
                                 <NavigationViewItem Content="Servicios" Tag="Servicios">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xEC7A;" />

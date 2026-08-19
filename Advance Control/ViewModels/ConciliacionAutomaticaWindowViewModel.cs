@@ -155,9 +155,9 @@ namespace Advance_Control.ViewModels
                 .ToList();
             var facturasRemanentes = new List<FacturaResumenDto>(facturasObjetivo);
 
-            var propuestasUnoAUno = RecolectarPropuestasUnoAUno(facturasUnoAUno, movimientosDisponibles, facturasRemanentes);
-            var propuestasCombinacional = RecolectarPropuestasCombinacional(facturasRemanentes, movimientosDisponibles);
-            var propuestas = propuestasUnoAUno.Concat(propuestasCombinacional).ToList();
+            // "Conciliación" es exclusivamente 1 a 1 -- la combinación varios-a-1 vive
+            // aparte en CrearPropuestasCombinacionalesAsync (botón "Combinación").
+            var propuestas = RecolectarPropuestasUnoAUno(facturasUnoAUno, movimientosDisponibles, facturasRemanentes).ToList();
 
             if (_usarRfcComoRegla)
             {
@@ -582,20 +582,11 @@ namespace Advance_Control.ViewModels
                 case ConciliacionAutomaticaModo.Automatica:
                 {
                     var conciliacionesUnoAUno = aprobadas.Count(propuesta => propuesta.Tipo == "1 a 1");
-                    var conciliacionesCombinacionales = aprobadas
-                        .Where(propuesta => propuesta.Tipo == "Combinacional")
-                        .Sum(propuesta => propuesta.Facturas.Count);
-                    var gruposCombinacionales = aprobadas.Count(propuesta => propuesta.Tipo == "Combinacional");
                     var segmentos = new List<string>();
 
                     if (conciliacionesUnoAUno > 0)
                     {
                         segmentos.Add($"{conciliacionesUnoAUno} factura(s) por relacion 1 a 1");
-                    }
-
-                    if (conciliacionesCombinacionales > 0)
-                    {
-                        segmentos.Add($"{conciliacionesCombinacionales} factura(s) en {gruposCombinacionales} grupo(s) combinacional(es)");
                     }
 
                     await MostrarResultadoFinalConciliacionAsync("Conciliacion automatica", segmentos);

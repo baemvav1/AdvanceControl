@@ -124,9 +124,8 @@ namespace Advance_Control.Tests.ViewModels
             var viewModel = CreateViewModel();
             viewModel.RfcFilter = "RFC-DEMO";
             viewModel.NotasFilter = "Notas demo";
-            viewModel.PrioridadFilter = 3;
-            viewModel.SearchText = "No usado por query";
-            viewModel.CurpFilter = "Tampoco usado";
+            viewModel.PrioridadFilter = "3";
+            viewModel.SearchText = "Razon o comercial";
 
             await viewModel.LoadClientesAsync();
 
@@ -134,6 +133,7 @@ namespace Advance_Control.Tests.ViewModels
             Assert.Equal("RFC-DEMO", capturedQuery!.Rfc);
             Assert.Equal("Notas demo", capturedQuery.Notas);
             Assert.Equal(3, capturedQuery.Prioridad);
+            Assert.Equal("Razon o comercial", capturedQuery.Busqueda);
         }
 
         [Fact]
@@ -146,15 +146,13 @@ namespace Advance_Control.Tests.ViewModels
             var viewModel = CreateViewModel();
             viewModel.SearchText = "Busqueda";
             viewModel.RfcFilter = "RFC";
-            viewModel.CurpFilter = "CURP";
             viewModel.NotasFilter = "Notas";
-            viewModel.PrioridadFilter = 2;
+            viewModel.PrioridadFilter = "2";
 
             await viewModel.ClearFiltersAsync();
 
             Assert.Null(viewModel.SearchText);
             Assert.Null(viewModel.RfcFilter);
-            Assert.Null(viewModel.CurpFilter);
             Assert.Null(viewModel.NotasFilter);
             Assert.Null(viewModel.PrioridadFilter);
             _mockClienteService.Verify(

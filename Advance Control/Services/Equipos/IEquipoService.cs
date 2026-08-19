@@ -50,5 +50,11 @@ namespace Advance_Control.Services.Equipos
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
         Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, int? idUbicacion = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Sugiere el siguiente identificador numérico disponible (4 dígitos), ignorando
+        /// identificadores con letras y evitando colisiones con equipos existentes.
+        /// </summary>
+        Task<string> GetSiguienteIdentificadorAsync(CancellationToken cancellationToken = default);
     }
 }

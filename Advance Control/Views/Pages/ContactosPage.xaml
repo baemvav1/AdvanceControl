@@ -79,6 +79,7 @@
                     Grid.Column="0"
                     Margin="0,0,8,8"
                     Header="Nombre"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Nombre del contacto"
                     Text="{x:Bind ViewModel.NombreFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -87,6 +88,7 @@
                     Grid.Column="1"
                     Margin="0,0,8,8"
                     Header="Apellido"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Apellido del contacto"
                     Text="{x:Bind ViewModel.ApellidoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -95,6 +97,7 @@
                     Grid.Column="2"
                     Margin="0,0,8,8"
                     Header="Correo"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Correo electrónico"
                     Text="{x:Bind ViewModel.CorreoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -103,6 +106,7 @@
                     Grid.Column="0"
                     Margin="0,0,8,8"
                     Header="Teléfono"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Teléfono del contacto"
                     Text="{x:Bind ViewModel.TelefonoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -111,6 +115,7 @@
                     Grid.Column="1"
                     Margin="0,0,8,8"
                     Header="Departamento"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Departamento"
                     Text="{x:Bind ViewModel.DepartamentoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -122,10 +127,6 @@
                     VerticalAlignment="Bottom"
                     Orientation="Horizontal"
                     Spacing="8">
-                    <Button
-                        Click="SearchButton_Click"
-                        Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}" />
                     <Button Click="ClearButton_Click" Content="Limpiar" />
                 </StackPanel>
             </Grid>

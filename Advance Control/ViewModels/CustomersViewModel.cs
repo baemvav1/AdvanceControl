@@ -24,9 +24,8 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private string? _searchText;
         private string? _rfcFilter;
-        private string? _curpFilter;
         private string? _notasFilter;
-        private double? _prioridadFilter;
+        private string? _prioridadFilter;
 
         public CustomersViewModel(IClienteService clienteService, ILoggingService logger, IUserSessionService userSessionService, IActivityService activityService)
         {
@@ -94,19 +93,13 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _rfcFilter, value);
         }
 
-        public string? CurpFilter
-        {
-            get => _curpFilter;
-            set => SetProperty(ref _curpFilter, value);
-        }
-
         public string? NotasFilter
         {
             get => _notasFilter;
             set => SetProperty(ref _notasFilter, value);
         }
 
-        public double? PrioridadFilter
+        public string? PrioridadFilter
         {
             get => _prioridadFilter;
             set => SetProperty(ref _prioridadFilter, value);
@@ -130,7 +123,8 @@ namespace Advance_Control.ViewModels
                 {
                     Rfc = RfcFilter,
                     Notas = NotasFilter,
-                    Prioridad = PrioridadFilter.HasValue ? (int?)PrioridadFilter.Value : null
+                    Prioridad = int.TryParse(PrioridadFilter, out var prioridad) ? prioridad : null,
+                    Busqueda = SearchText
                 };
 
                 var clientes = await _clienteService.GetClientesAsync(query, cancellationToken);
@@ -182,7 +176,6 @@ namespace Advance_Control.ViewModels
             {
                 SearchText = null;
                 RfcFilter = null;
-                CurpFilter = null;
                 NotasFilter = null;
                 PrioridadFilter = null;
                 ErrorMessage = null;

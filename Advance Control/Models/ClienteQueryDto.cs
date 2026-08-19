@@ -21,5 +21,10 @@ namespace Advance_Control.Models
         /// Coincidencia exacta de prioridad
         /// </summary>
         public int? Prioridad { get; set; }
+
+        /// <summary>
+        /// Búsqueda combinada: coincide si razón social O nombre comercial contienen el texto
+        /// </summary>
+        public string? Busqueda { get; set; }
     }
 }

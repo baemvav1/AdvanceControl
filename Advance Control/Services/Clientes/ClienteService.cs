@@ -45,6 +45,7 @@ namespace Advance_Control.Services.Clientes
                         .Add("rfc", query.Rfc)
                         .Add("notas", query.Notas)
                         .Add("prioridad", query.Prioridad)
+                        .Add("busqueda", query.Busqueda)
                         .Build(url);
                 }
 

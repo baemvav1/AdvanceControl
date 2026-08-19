@@ -299,5 +299,43 @@ namespace Advance_Control.Services.Equipos
                 throw;
             }
         }
+
+        /// <summary>
+        /// Sugiere el siguiente identificador numérico disponible
+        /// </summary>
+        public async Task<string> GetSiguienteIdentificadorAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"{_endpoints.GetEndpoint("api", "equipo_crud")}/siguiente-identificador";
+
+                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al obtener siguiente identificador. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "EquipoService",
+                        "GetSiguienteIdentificadorAsync");
+                    throw new InvalidOperationException("No se pudo calcular el siguiente identificador.");
+                }
+
+                var options = new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var resultado = await response.Content.ReadFromJsonAsync<SiguienteIdentificadorResponse>(options, cancellationToken).ConfigureAwait(false);
+                return resultado?.Identificador ?? string.Empty;
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al obtener siguiente identificador", ex, "EquipoService", "GetSiguienteIdentificadorAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al obtener el siguiente identificador", ex);
+            }
+        }
+
+        private class SiguienteIdentificadorResponse
+        {
+            public string? Identificador { get; set; }
+        }
     }
 }

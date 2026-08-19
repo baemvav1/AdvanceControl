@@ -174,12 +174,22 @@
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
                                         </StackPanel>
-                                        <Button
+                                        <StackPanel
                                             Grid.Column="1"
                                             VerticalAlignment="Center"
-                                            Click="BtnCargarXml_Click"
-                                            Content="Cargar XML"
-                                            Tag="{Binding}" />
+                                            Spacing="6">
+                                            <Button
+                                                HorizontalAlignment="Stretch"
+                                                Click="BtnCargarXml_Click"
+                                                Content="Cargar XML"
+                                                Tag="{Binding}" />
+                                            <Button
+                                                HorizontalAlignment="Stretch"
+                                                Click="BtnFacturar_Click"
+                                                Content="Facturar"
+                                                Style="{StaticResource AccentButtonStyle}"
+                                                Tag="{Binding}" />
+                                        </StackPanel>
                                     </Grid>
                                 </Border>
                             </DataTemplate>

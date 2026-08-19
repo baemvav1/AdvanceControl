@@ -75,6 +75,7 @@
                     Grid.Column="0"
                     Margin="0,0,8,8"
                     Header="Marca"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Marca del equipo"
                     Text="{x:Bind ViewModel.MarcaFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -84,6 +85,7 @@
                     Margin="0,0,8,8"
                     Header="Año de Creación"
                     InputScope="Number"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Año de creación"
                     Text="{x:Bind ViewModel.CreadoFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -92,6 +94,7 @@
                     Grid.Column="2"
                     Margin="0,0,8,8"
                     Header="Identificador"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Identificador del equipo"
                     Text="{x:Bind ViewModel.IdentificadorFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -101,6 +104,7 @@
                     Margin="0,0,8,8"
                     Header="Paradas"
                     InputScope="Number"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Número de paradas"
                     Text="{x:Bind ViewModel.ParadasFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -110,6 +114,7 @@
                     Margin="0,0,8,8"
                     Header="Kilogramos"
                     InputScope="Number"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Capacidad en kg"
                     Text="{x:Bind ViewModel.KilogramosFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -119,6 +124,7 @@
                     Margin="0,0,8,8"
                     Header="Personas"
                     InputScope="Number"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Capacidad de personas"
                     Text="{x:Bind ViewModel.PersonasFilterText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -127,6 +133,7 @@
                     Grid.Column="0"
                     Margin="0,0,8,8"
                     Header="Descripción"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Búsqueda en descripción"
                     Text="{x:Bind ViewModel.DescripcionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -171,10 +178,6 @@
                     VerticalAlignment="Bottom"
                     Orientation="Horizontal"
                     Spacing="8">
-                    <Button
-                        Click="SearchButton_Click"
-                        Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}" />
                     <Button Click="ClearButton_Click" Content="Limpiar" />
                 </StackPanel>
             </Grid>

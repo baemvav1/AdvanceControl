@@ -29,6 +29,7 @@ namespace Advance_Control.Views.Dialogs
         public bool SaveSuccessful { get; private set; }
 
         private readonly EquiposViewModel _equiposViewModel;
+        private readonly IEquipoService _equipoService;
 
         /// <summary>
         /// Constructor que recibe el ViewModel por inyección de dependencias
@@ -43,7 +44,8 @@ namespace Advance_Control.Views.Dialogs
 
             ViewModel = viewModel;
             _equiposViewModel = AppServices.Get<EquiposViewModel>();
-            
+            _equipoService = AppServices.Get<IEquipoService>();
+
             this.InitializeComponent();
             
             // Establecer el DataContext para los bindings
@@ -86,6 +88,23 @@ namespace Advance_Control.Views.Dialogs
             catch (Exception ex)
             {
                 ViewModel.ErrorMessage = $"Error al crear el equipo: {ex.Message}";
+            }
+        }
+
+        private async void SugerirIdentificadorButton_Click(object sender, RoutedEventArgs e)
+        {
+            SugerirIdentificadorButton.IsEnabled = false;
+            try
+            {
+                ViewModel.Identificador = await _equipoService.GetSiguienteIdentificadorAsync();
+            }
+            catch (Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudo sugerir un identificador: {ex.Message}";
+            }
+            finally
+            {
+                SugerirIdentificadorButton.IsEnabled = true;
             }
         }
 

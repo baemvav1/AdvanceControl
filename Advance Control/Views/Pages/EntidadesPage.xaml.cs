@@ -46,8 +46,14 @@ namespace Advance_Control.Views.Pages
             await ViewModel.LoadEntidadesAsync();
         }
 
-        private async void SearchButton_Click(object sender, RoutedEventArgs e)
+        private async void FiltroTextBox_KeyDown(object sender, KeyRoutedEventArgs e)
         {
+            if (e.Key != global::Windows.System.VirtualKey.Enter)
+            {
+                return;
+            }
+
+            e.Handled = true;
             await ViewModel.LoadEntidadesAsync();
         }
 

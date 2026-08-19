@@ -60,35 +60,37 @@
 
                 <TextBox
                     Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Nombre Comercial"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Nombre comercial"
                     Text="{x:Bind ViewModel.NombreComercialFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
                     Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Razón Social"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Razón social"
                     Text="{x:Bind ViewModel.RazonSocialFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
                     Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="RFC"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="RFC de la entidad"
                     Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
                     Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="Estado"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Estado"
                     Text="{x:Bind ViewModel.EstadoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
                     Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Ciudad"
+                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Ciudad"
                     Text="{x:Bind ViewModel.CiudadFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <StackPanel
                     Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right"
                     VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
-                    <Button
-                        Click="SearchButton_Click" Content="Buscar"
-                        Style="{StaticResource AccentButtonStyle}"/>
                     <Button Click="ClearButton_Click" Content="Limpiar"/>
                 </StackPanel>
             </Grid>

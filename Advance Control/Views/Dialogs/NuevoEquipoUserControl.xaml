@@ -106,13 +106,23 @@
             Margin="4"
             FontWeight="SemiBold"
             Text="Identificador:" />
-        <TextBox
-            x:Name="IdentificadorTextBox"
+        <StackPanel
             Grid.Row="11"
-            Width="300"
             Margin="4,4,4,12"
-            PlaceholderText="Dejar vacío para auto-generar (0001, 0002...)"
-            Text="{x:Bind ViewModel.Identificador, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            Orientation="Horizontal"
+            Spacing="8">
+            <TextBox
+                x:Name="IdentificadorTextBox"
+                Width="220"
+                PlaceholderText="Dejar vacío para auto-generar (0001, 0002...)"
+                Text="{x:Bind ViewModel.Identificador, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <Button
+                x:Name="SugerirIdentificadorButton"
+                VerticalAlignment="Stretch"
+                Click="SugerirIdentificadorButton_Click"
+                Content="Sugerir"
+                ToolTipService.ToolTip="Buscar el siguiente identificador numérico disponible" />
+        </StackPanel>
 
         <TextBlock
             Grid.Row="12"
