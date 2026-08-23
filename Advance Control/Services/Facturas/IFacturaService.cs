@@ -21,5 +21,8 @@ namespace Advance_Control.Services.Facturas
         Task<CancelarFacturaOperacionResponseDto> CancelarFacturaOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
         Task VincularFacturaOperacionAsync(int idFactura, int idOperacion, CancellationToken cancellationToken = default);
         Task<CancelarFacturaOperacionResponseDto> DesvincularFacturaOperacionAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>Construye, sella y timbra un CFDI 4.0 directamente para una operación vía FEL Bilkon.</summary>
+        Task<TimbrarResultadoDto> TimbrarOperacionAsync(int idOperacion, CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default);
     }
 }

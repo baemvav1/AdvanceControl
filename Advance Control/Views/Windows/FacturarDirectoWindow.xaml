@@ -24,9 +24,16 @@
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
-            <StackPanel Grid.Column="0" VerticalAlignment="Center" Orientation="Horizontal" Spacing="12">
+            <StackPanel
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="12">
                 <SymbolIcon Symbol="Document" />
-                <TextBlock x:Name="TxtTitulo" FontSize="15" FontWeight="SemiBold" />
+                <TextBlock
+                    x:Name="TxtTitulo"
+                    FontSize="15"
+                    FontWeight="SemiBold" />
                 <TextBlock
                     x:Name="TxtSubtitulo"
                     VerticalAlignment="Center"
@@ -44,7 +51,412 @@
         </Grid>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <StackPanel x:Name="ContenidoPanel" Padding="20" Spacing="16" />
+            <StackPanel Padding="20" Spacing="16">
+
+                <!-- Emisor (solo lectura) -->
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid x:Name="Emisor">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Emisor" />
+                            <ProgressRing
+                                x:Name="EmisorProgressRing"
+                                Width="18"
+                                Height="18"
+                                Margin="4,4,0,0"
+                                IsActive="False" />
+                        </StackPanel>
+
+                        <InfoBar
+                            x:Name="EmisorInfoBar"
+                            Grid.Row="1"
+                            Margin="0,8,0,0"
+                            IsClosable="False"
+                            IsOpen="False"
+                            Severity="Warning" />
+
+                        <Grid
+                            x:Name="EmisorDatosGrid"
+                            Grid.Row="2"
+                            Margin="0,12,0,0"
+                            ColumnSpacing="20"
+                            RowSpacing="8"
+                            Visibility="Collapsed">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" FontWeight="SemiBold" Text="RFC:" />
+                            <TextBlock x:Name="TxtEmisorRfc" Grid.Row="0" Grid.Column="1" />
+                            <TextBlock Grid.Row="0" Grid.Column="2" FontWeight="SemiBold" Text="Régimen fiscal:" />
+                            <TextBlock x:Name="TxtEmisorRegimenFiscal" Grid.Row="0" Grid.Column="3" />
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" FontWeight="SemiBold" Text="Razón social:" />
+                            <TextBlock
+                                x:Name="TxtEmisorRazonSocial"
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                TextWrapping="WrapWholeWords" />
+                            <TextBlock Grid.Row="1" Grid.Column="2" FontWeight="SemiBold" Text="Lugar de expedición:" />
+                            <TextBlock x:Name="TxtEmisorLugarExpedicion" Grid.Row="1" Grid.Column="3" />
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- Receptor (editable) -->
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid x:Name="Receptor" RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Receptor" />
+                            <ProgressRing
+                                x:Name="ReceptorProgressRing"
+                                Width="18"
+                                Height="18"
+                                Margin="4,4,0,0"
+                                IsActive="False" />
+                        </StackPanel>
+
+                        <InfoBar
+                            x:Name="ReceptorInfoBar"
+                            Grid.Row="1"
+                            IsClosable="False"
+                            IsOpen="False"
+                            Severity="Informational" />
+
+                        <Grid Grid.Row="2" ColumnSpacing="16" RowSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="RFC:" />
+                                <TextBox x:Name="TxtReceptorRfc" MaxLength="13" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Razón social:" />
+                                <TextBox x:Name="TxtReceptorRazonSocial" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="1" Grid.Column="0">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Código postal:" />
+                                <TextBox x:Name="TxtReceptorCodigoPostal" MaxLength="5" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="1">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Régimen fiscal:" />
+                                <ComboBox
+                                    x:Name="CmbReceptorRegimenFiscal"
+                                    HorizontalAlignment="Stretch"
+                                    PlaceholderText="Selecciona un régimen" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Uso de CFDI:" />
+                                <ComboBox
+                                    x:Name="CmbReceptorUsoCfdi"
+                                    HorizontalAlignment="Stretch"
+                                    PlaceholderText="Selecciona un uso de CFDI" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel
+                            Grid.Row="3"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="8">
+                            <TextBlock
+                                x:Name="TxtReceptorGuardadoStatus"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <Button x:Name="BtnGuardarReceptor" Click="BtnGuardarReceptor_Click" Content="Guardar datos fiscales" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Forma de pago -->
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid x:Name="FormaPago" RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource SubtitleTextBlockStyle}" Text="Forma de pago" />
+
+                        <Grid Grid.Row="1" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Método de pago:" />
+                                <ComboBox x:Name="CmbMetodoPago" HorizontalAlignment="Stretch" SelectionChanged="CmbMetodoPago_SelectionChanged">
+                                    <ComboBoxItem Content="PUE - Pago en una sola exhibición" Tag="PUE" />
+                                    <ComboBoxItem Content="PPD - Pago en parcialidades o diferido" Tag="PPD" />
+                                </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Forma de pago:" />
+                                <ComboBox x:Name="CmbFormaPago" HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="01 - Efectivo" Tag="01" />
+                                    <ComboBoxItem Content="02 - Cheque nominativo" Tag="02" />
+                                    <ComboBoxItem Content="03 - Transferencia electrónica de fondos" Tag="03" />
+                                    <ComboBoxItem Content="04 - Tarjeta de crédito" Tag="04" />
+                                    <ComboBoxItem Content="05 - Monedero electrónico" Tag="05" />
+                                    <ComboBoxItem Content="06 - Dinero electrónico" Tag="06" />
+                                    <ComboBoxItem Content="08 - Vales de despensa" Tag="08" />
+                                    <ComboBoxItem Content="28 - Tarjeta de débito" Tag="28" />
+                                    <ComboBoxItem Content="29 - Tarjeta de servicios" Tag="29" />
+                                    <ComboBoxItem Content="30 - Aplicación de anticipos" Tag="30" />
+                                    <ComboBoxItem Content="99 - Por definir" Tag="99" />
+                                </ComboBox>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2">
+                                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Moneda:" />
+                                <TextBlock VerticalAlignment="Center" Text="MXN - Peso mexicano" />
+                            </StackPanel>
+                        </Grid>
+
+                        <StackPanel Grid.Row="2">
+                            <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Condiciones de pago (opcional):" />
+                            <TextBox x:Name="TxtCondicionesDePago" PlaceholderText="Ej. 30 días" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid x:Name="Conceptos" RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Conceptos" />
+                            <ProgressRing
+                                x:Name="ConceptosProgressRing"
+                                Width="18"
+                                Height="18"
+                                Margin="4,4,0,0"
+                                IsActive="False" />
+                        </StackPanel>
+
+                        <InfoBar
+                            x:Name="ConceptosInfoBar"
+                            Grid.Row="1"
+                            IsClosable="False"
+                            IsOpen="False"
+                            Severity="Warning" />
+
+                        <StackPanel x:Name="ConceptosListPanel" Grid.Row="2" Spacing="10" />
+                    </Grid>
+                </Border>
+
+                <!-- Total -->
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid x:Name="Total" RowSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource SubtitleTextBlockStyle}" Text="Total" />
+
+                        <StackPanel Grid.Row="1" HorizontalAlignment="Right" Spacing="4">
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="Subtotal:" />
+                                <TextBlock x:Name="TxtSubtotal" MinWidth="110" TextAlignment="Right" />
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="12">
+                                <TextBlock Text="IVA:" />
+                                <TextBlock x:Name="TxtIva" MinWidth="110" TextAlignment="Right" />
+                            </StackPanel>
+                            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="12">
+                                <TextBlock FontSize="16" FontWeight="SemiBold" Text="Total:" />
+                                <TextBlock
+                                    x:Name="TxtTotalGeneral"
+                                    MinWidth="110"
+                                    FontSize="16"
+                                    FontWeight="SemiBold"
+                                    Foreground="{ThemeResource SystemAccentColor}"
+                                    TextAlignment="Right" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ControlesEmision -->
+                <Border
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid x:Name="ControlesEmision" RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Style="{StaticResource SubtitleTextBlockStyle}" Text="Emitir CFDI" />
+
+                        <Grid Grid.Row="1" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="2*" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Margin="0,0,0,4" Text="Serie (opcional):" />
+                                <TextBox x:Name="TxtSerie" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock Margin="0,0,0,4" Text="Folio (opcional):" />
+                                <TextBox x:Name="TxtFolio" />
+                            </StackPanel>
+                        </Grid>
+
+                        <InfoBar
+                            x:Name="EmisionInfoBar"
+                            Grid.Row="2"
+                            IsClosable="False"
+                            IsOpen="False" />
+
+                        <StackPanel
+                            Grid.Row="3"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="12">
+                            <ProgressRing
+                                x:Name="EmisionProgressRing"
+                                Width="20"
+                                Height="20"
+                                IsActive="False" />
+                            <Button
+                                x:Name="BtnTimbrar"
+                                Click="BtnTimbrar_Click"
+                                Content="Timbrar"
+                                Style="{StaticResource AccentButtonStyle}" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!--
+                    Depuración: muestra las respuestas crudas del API en esta ventana.
+                    Temporal, se apaga cambiando MostrarPanelDepuracion en el code-behind.
+                -->
+                <Border
+                    x:Name="PanelDepuracion"
+                    Padding="16"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid RowSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Grid.Row="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                Style="{StaticResource SubtitleTextBlockStyle}"
+                                Text="Depuración (respuestas del API)" />
+                            <Button
+                                x:Name="BtnCopiarDebug"
+                                Grid.Column="1"
+                                Margin="0,0,8,0"
+                                Click="BtnCopiarDebug_Click"
+                                Content="Copiar" />
+                            <Button
+                                x:Name="BtnLimpiarDebug"
+                                Grid.Column="2"
+                                Click="BtnLimpiarDebug_Click"
+                                Content="Limpiar" />
+                        </Grid>
+
+                        <ScrollViewer
+                            x:Name="ScrollDebug"
+                            Grid.Row="1"
+                            MaxHeight="280"
+                            Background="{ThemeResource LayerFillColorDefaultBrush}"
+                            VerticalScrollBarVisibility="Auto">
+                            <TextBlock
+                                x:Name="TxtDebug"
+                                Padding="10"
+                                FontFamily="Consolas"
+                                FontSize="12"
+                                IsTextSelectionEnabled="True"
+                                Text="Sin actividad todavía."
+                                TextWrapping="Wrap" />
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </StackPanel>
         </ScrollViewer>
     </Grid>
 </Window>

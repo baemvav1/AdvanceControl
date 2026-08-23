@@ -256,7 +256,7 @@
                                                 Click="BtnDesligar_Click"
                                                 Content="Desligar"
                                                 Tag="{Binding}"
-                                                ToolTipService.ToolTip="Quita el vínculo pero conserva la factura para reasignarla despues" />
+                                                ToolTipService.ToolTip="Quita el vínculo pero conserva la factura para reasignarla después" />
                                             <Button
                                                 HorizontalAlignment="Stretch"
                                                 Click="BtnCancelar_Click"

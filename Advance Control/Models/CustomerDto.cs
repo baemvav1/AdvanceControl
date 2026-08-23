@@ -54,6 +54,9 @@ namespace Advance_Control.Models
         [JsonPropertyName("notas")]
         public string Notas { get; set; } = string.Empty;
 
+        [JsonPropertyName("codigoPostal")]
+        public string? CodigoPostal { get; set; }
+
         [JsonPropertyName("creadoEn")]
         public DateTime CreadoEn { get; set; }
 

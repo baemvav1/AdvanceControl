@@ -103,9 +103,16 @@ namespace Advance_Control.Views.Dialogs
         /// <summary>
         /// Notas (opcional)
         /// </summary>
-        public string? Notas => string.IsNullOrWhiteSpace(NotasTextBox.Text) 
-            ? null 
+        public string? Notas => string.IsNullOrWhiteSpace(NotasTextBox.Text)
+            ? null
             : NotasTextBox.Text.Trim();
+
+        /// <summary>
+        /// Código Postal del domicilio fiscal (opcional)
+        /// </summary>
+        public string? CodigoPostal => string.IsNullOrWhiteSpace(CodigoPostalTextBox.Text)
+            ? null
+            : CodigoPostalTextBox.Text.Trim();
 
         /// <summary>
         /// Estatus del cliente

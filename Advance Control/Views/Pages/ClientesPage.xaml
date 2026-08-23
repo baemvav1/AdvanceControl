@@ -230,6 +230,7 @@
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
 
                                                     <StackPanel
@@ -288,6 +289,21 @@
                                                             FontSize="13"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind IdCliente}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="2"
+                                                        Grid.Column="0"
+                                                        Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Código Postal:" />
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind CodigoPostal}"
+                                                            TextWrapping="Wrap" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>

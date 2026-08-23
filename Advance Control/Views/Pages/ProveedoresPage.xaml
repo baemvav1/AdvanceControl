@@ -187,10 +187,10 @@
                                                         
                                                         <Button
                                                             x:Name="NuevaRelacionRefaccion" VerticalAlignment="Center" Background="WhiteSmoke" BorderThickness="0"
-                                                            Click="NuevaRelacionRefaccion_Click" ToolTipService.ToolTip="Crear nueva relacion con refacción" Foreground="DarkGray"
+                                                            Click="NuevaRelacionRefaccion_Click" ToolTipService.ToolTip="Crear nueva relación con refacción" Foreground="DarkGray"
                                                             Tag="{x:Bind}">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
-                                                                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Nueva Refaccion" VerticalAlignment="Center" />
+                                                                <TextBlock FontSize="14" FontWeight="SemiBold" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="Nueva Refacción" VerticalAlignment="Center" />
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>

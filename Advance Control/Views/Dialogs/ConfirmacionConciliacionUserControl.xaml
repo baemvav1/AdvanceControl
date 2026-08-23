@@ -353,7 +353,7 @@
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                                 Style="{StaticResource CaptionTextBlockStyle}"
-                                                Text="Cliente / metodo" />
+                                                Text="Cliente / método" />
                                             <TextBlock Text="{x:Bind FacturaObjetivoReceptorTexto}" />
                                             <TextBlock
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"

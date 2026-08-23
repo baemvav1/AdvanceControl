@@ -66,6 +66,17 @@
                         PlaceholderText="Uso CFDI (opcional)" />
                 </StackPanel>
 
+                <!-- Código Postal -->
+                <StackPanel>
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        Text="Código Postal:" />
+                    <TextBox
+                        x:Name="CodigoPostalTextBox"
+                        MaxLength="5"
+                        PlaceholderText="Código postal del domicilio fiscal (opcional)" />
+                </StackPanel>
+
                 <!-- Días de Crédito -->
                 <StackPanel>
                     <TextBlock

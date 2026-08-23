@@ -10,8 +10,8 @@ namespace Advance_Control.Views.Pages
 {
     /// <summary>
     /// Página de inicio del sistema.
-    /// Muestra bienvenida personalizada al usuario autenticado y secciones
-    /// placeholder que a futuro mostrarán métricas, tareas y actividad reciente.
+    /// Muestra bienvenida personalizada al usuario autenticado y el grid "Ops"
+    /// con las operaciones/facturas pendientes de resolver.
     /// </summary>
     public sealed partial class DashboardPage : Page
     {
@@ -33,29 +33,14 @@ namespace Advance_Control.Views.Pages
             await ViewModel.LoadAsync();
         }
 
-        private async void RefreshActividad_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-            => await ViewModel.LoadActividadAsync();
-
-        private async void RefreshTareas_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-            => await ViewModel.LoadOperacionesPendientesAsync();
-
-        private void ToggleTodo_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-        {
-            if (sender is Microsoft.UI.Xaml.Controls.Button btn &&
-                btn.Tag is Advance_Control.Models.OperacionTodoItem item)
-            {
-                item.Expand = !item.Expand;
-            }
-        }
-
-        private void IrOperaciones_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+        private void OpsAbiertasPendientes_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
             => _navigationService.Navigate("Operaciones");
 
-        private void IrOrdenServicio_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-            => _navigationService.Navigate("OrdenServicio");
+        private void OpsTFinalizadoPendientes_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+            => _navigationService.Navigate("Operaciones");
 
-        private void IrClientes_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
-            => _navigationService.Navigate("Clientes");
+        private void OpsFinalizadasPendientes_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+            => _navigationService.Navigate("Facturacion");
     }
 }
 

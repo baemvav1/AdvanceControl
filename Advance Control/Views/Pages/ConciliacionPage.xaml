@@ -440,19 +440,19 @@
                                         Height="34"
                                         Margin="5,0,0,0"
                                         Click="BtnConciliacionAutomatica_Click"
-                                        Content="Conciliacion" />
+                                        Content="Conciliación" />
                                     <Button
                                         x:Name="BtnConciliacionAutomaticaConvinacional"
                                         Height="34"
                                         Margin="5,0,0,0"
                                         Click="BtnConciliacionAutomaticaConvinacional_Click"
-                                        Content="Conbinacion" />
+                                        Content="Combinación" />
                                     <Button
                                         x:Name="BtnConciliacionAutomaticaAbonos"
                                         Height="34"
                                         Margin="5,0,0,0"
                                         Click="BtnConciliacionAutomaticaAbonos_Click"
-                                        Content="Conciliacion de Abonos" />
+                                        Content="Conciliación de Abonos" />
 
 
                                     <Border
@@ -525,7 +525,7 @@
                                         x:Name="BtnDeshacerUltimo"
                                         Margin="5,0,0,0"
                                         Click="BtnDeshacerUltimo_Click"
-                                        Content="Deshacer ultimo" />
+                                        Content="Deshacer último" />
                                     <Button
                                         x:Name="BtnDeshacerTodo"
                                         Margin="5,0,0,0"

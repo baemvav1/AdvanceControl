@@ -64,5 +64,10 @@ namespace Advance_Control.Models
         /// Notas adicionales
         /// </summary>
         public string? Notas { get; set; }
+
+        /// <summary>
+        /// Código postal del domicilio fiscal (requerido por CFDI 4.0 como DomicilioFiscalReceptor)
+        /// </summary>
+        public string? CodigoPostal { get; set; }
     }
 }

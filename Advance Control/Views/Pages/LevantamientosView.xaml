@@ -20,7 +20,7 @@
                 Text="Levantamientos" />
             <TextBlock
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Gestion de levantamientos de equipos" />
+                Text="Gestión de levantamientos de equipos" />
         </StackPanel>
 
         <!--  Toolbar + Filtro Área  -->

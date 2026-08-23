@@ -48,6 +48,7 @@ namespace Advance_Control.Services.Entidades
             string? numInt = null,
             string? colonia = null,
             string? apoderado = null,
+            string? regimenFiscal = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -82,6 +83,7 @@ namespace Advance_Control.Services.Entidades
             string? numInt = null,
             string? colonia = null,
             string? apoderado = null,
+            string? regimenFiscal = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>

@@ -84,7 +84,7 @@
                         <TextBlock
                             HorizontalAlignment="Center"
                             FontWeight="SemiBold"
-                            Text="Metodo PAgo" />
+                            Text="Método de Pago" />
                         <TextBlock
                             HorizontalAlignment="Center"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"

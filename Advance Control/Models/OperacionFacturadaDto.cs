@@ -10,6 +10,7 @@ namespace Advance_Control.Models
         public string? RazonSocial { get; set; }
         public string? Identificador { get; set; }
         public string? Atiende { get; set; }
+        public long? IdAtiende { get; set; }
         public double Monto { get; set; }
         public DateTime? FechaFinal { get; set; }
         public int IdFactura { get; set; }

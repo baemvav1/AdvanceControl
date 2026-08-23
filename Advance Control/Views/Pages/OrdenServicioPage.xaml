@@ -103,7 +103,7 @@
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Spacing="20">
                                                 <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
-                                                    <Run Text="Descripcion: " />
+                                                    <Run Text="Descripción: " />
                                                     <Run FontWeight="SemiBold" Text="{x:Bind Descripcion}" />
                                                 </TextBlock>
                                             </StackPanel>
@@ -219,7 +219,7 @@
                                                         <TextBlock
                                                             FontSize="12"
                                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                            Text="Descripcion" />
+                                                            Text="Descripción" />
                                                         <TextBlock
                                                             FontSize="13"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"

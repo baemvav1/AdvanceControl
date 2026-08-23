@@ -190,6 +190,7 @@ namespace Advance_Control.ViewModels
             string? numInt = null,
             string? colonia = null,
             string? apoderado = null,
+            string? regimenFiscal = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -209,12 +210,13 @@ namespace Advance_Control.ViewModels
                     numInt,
                     colonia,
                     apoderado,
+                    regimenFiscal,
                     cancellationToken);
 
                 if (response.Success)
                 {
                     await _logger.LogInformationAsync($"Entidad creada exitosamente: {nombreComercial}", "EntidadesViewModel", "CreateEntidadAsync");
-                    
+
                     // Recargar la lista de entidades
                     await LoadEntidadesAsync(cancellationToken);
                     return true;
@@ -228,6 +230,68 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al crear entidad", ex, "EntidadesViewModel", "CreateEntidadAsync");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Actualiza una entidad existente
+        /// </summary>
+        public async Task<bool> UpdateEntidadAsync(
+            int idEntidad,
+            string nombreComercial,
+            string razonSocial,
+            string? rfc = null,
+            string? cp = null,
+            string? estado = null,
+            string? ciudad = null,
+            string? pais = null,
+            string? calle = null,
+            string? numExt = null,
+            string? numInt = null,
+            string? colonia = null,
+            string? apoderado = null,
+            string? regimenFiscal = null,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Actualizando entidad: {nombreComercial}", "EntidadesViewModel", "UpdateEntidadAsync");
+
+                var response = await _entidadService.UpdateEntidadAsync(
+                    idEntidad,
+                    nombreComercial,
+                    razonSocial,
+                    rfc,
+                    cp,
+                    estado,
+                    ciudad,
+                    pais,
+                    calle,
+                    numExt,
+                    numInt,
+                    colonia,
+                    apoderado,
+                    regimenFiscal,
+                    cancellationToken);
+
+                if (response.Success)
+                {
+                    await _logger.LogInformationAsync($"Entidad actualizada exitosamente: {nombreComercial}", "EntidadesViewModel", "UpdateEntidadAsync");
+
+                    // Recargar la lista de entidades
+                    await LoadEntidadesAsync(cancellationToken);
+                    return true;
+                }
+                else
+                {
+                    await _logger.LogWarningAsync($"No se pudo actualizar la entidad: {response.Message}", "EntidadesViewModel", "UpdateEntidadAsync");
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al actualizar entidad", ex, "EntidadesViewModel", "UpdateEntidadAsync");
                 return false;
             }
         }

@@ -424,7 +424,7 @@
                                                             Click="NuevaRelacion_Click"
                                                             Foreground="DarkGray"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Crear nueva relacion">
+                                                            ToolTipService.ToolTip="Crear nueva relación">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <SymbolIcon Symbol="Add" />
                                                             </StackPanel>
@@ -525,7 +525,7 @@
                                                 </StackPanel>
                                             </PivotItem>
 
-                                            <PivotItem Header="Ubicacion">
+                                            <PivotItem Header="Ubicación">
                                                 <StackPanel Padding="8" Spacing="6">
                                                     <TextBlock
                                                         FontSize="14"

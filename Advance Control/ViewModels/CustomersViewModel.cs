@@ -202,6 +202,7 @@ namespace Advance_Control.ViewModels
             int? prioridad = null,
             string? notas = null,
             bool estatus = true,
+            string? codigoPostal = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -220,7 +221,8 @@ namespace Advance_Control.ViewModels
                     LimiteCredito = limiteCredito,
                     Prioridad = prioridad,
                     Notas = notas,
-                    Estatus = estatus
+                    Estatus = estatus,
+                    CodigoPostal = codigoPostal
                 };
 
                 var response = await _clienteService.CreateClienteAsync(clienteDto, cancellationToken);
@@ -262,6 +264,7 @@ namespace Advance_Control.ViewModels
             int? prioridad = null,
             string? notas = null,
             bool estatus = true,
+            string? codigoPostal = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -281,7 +284,8 @@ namespace Advance_Control.ViewModels
                     LimiteCredito = limiteCredito,
                     Prioridad = prioridad,
                     Notas = notas,
-                    Estatus = estatus
+                    Estatus = estatus,
+                    CodigoPostal = codigoPostal
                 };
 
                 var response = await _clienteService.UpdateClienteAsync(clienteDto, cancellationToken);

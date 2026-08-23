@@ -148,15 +148,31 @@
                                             </StackPanel>
                                         </StackPanel>
 
-                                        <!--  Botón para expandir/colapsar  -->
-                                        <Button
-                                            Grid.Column="1"
-                                            VerticalAlignment="Center"
-                                            Background="Transparent"
-                                            BorderThickness="0"
-                                            Click="ToggleExpandButton_Click"
-                                            Tag="{x:Bind}"
-                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"/>
+                                        <!--  Acciones + botón para expandir/colapsar  -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Orientation="Horizontal" Spacing="4">
+                                            <Button
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="EditarButton_Click"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Editar entidad">
+                                                <SymbolIcon Symbol="Edit" />
+                                            </Button>
+                                            <Button
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="CertificadoButton_Click"
+                                                Tag="{x:Bind}"
+                                                ToolTipService.ToolTip="Certificado de Sello Digital (CSD)">
+                                                <SymbolIcon Symbol="Document" />
+                                            </Button>
+                                            <Button
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="ToggleExpandButton_Click"
+                                                Tag="{x:Bind}"
+                                                Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"/>
+                                        </StackPanel>
                                     </Grid>
                                     <Grid
                                         Grid.Row="1" 
@@ -232,28 +248,43 @@
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
-                                                    
+
                                                     <StackPanel Grid.Row="0" Grid.Column="0" Margin="0,4,8,0">
                                                         <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="RFC:" />
                                                         <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind RFC}" />
                                                     </StackPanel>
-                                                    
+
                                                     <StackPanel Grid.Row="0" Grid.Column="1" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Apoderado:" />
                                                         <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind Apoderado}" TextWrapping="Wrap" />
                                                     </StackPanel>
-                                                    
+
                                                     <StackPanel Grid.Row="1" Grid.Column="0" Margin="0,4,8,0">
-                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Entidad:" />
-                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind IdEntidad}" />
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Régimen Fiscal:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind RegimenFiscal}" />
                                                     </StackPanel>
-                                                    
+
                                                     <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,4,0,0">
                                                         <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Estatus:" />
                                                         <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind Estatus}" />
                                                     </StackPanel>
+
+                                                    <StackPanel Grid.Row="2" Grid.Column="0" Margin="0,4,8,0">
+                                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Entidad:" />
+                                                        <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}" Text="{x:Bind IdEntidad}" />
+                                                    </StackPanel>
                                                 </Grid>
+                                            </PivotItem>
+
+                                            <!-- Configs CFDI: catálogos editables de Régimen Fiscal y Uso de CFDI (SAT, CFDI 4.0) -->
+                                            <PivotItem Header="Configs CFDI">
+                                                <StackPanel
+                                                    x:Name="ConfigsCfdiPanel"
+                                                    Padding="8"
+                                                    Loaded="ConfigsCfdiPanel_Loaded"
+                                                    Spacing="16" />
                                             </PivotItem>
                                         </Pivot>
                                     </Grid>

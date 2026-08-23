@@ -5,7 +5,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:models="using:Advance_Control.Models"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
@@ -13,9 +12,8 @@
         <Grid Padding="32,28,32,32">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="24" />
                 <RowDefinition Height="Auto" />
-                <RowDefinition Height="28" />
+                <RowDefinition Height="24" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="28" />
                 <RowDefinition Height="Auto" />
@@ -26,63 +24,24 @@
                 Hero: Bienvenida al usuario
                 ══════════════════════════════════════════
             -->
-            <Grid Grid.Row="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="20" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-
-                <!--  Avatar con iniciales  -->
-                <Border
-                    Grid.Column="0"
-                    Width="72"
-                    Height="72"
-                    Background="{ThemeResource AccentFillColorDefaultBrush}"
-                    CornerRadius="36">
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        FontSize="26"
+            <StackPanel Grid.Row="0" Spacing="4">
+                <TextBlock
+                    FontSize="13"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind ViewModel.FechaHoy, Mode=OneWay}" />
+                <TextBlock
+                    FontSize="28"
+                    FontWeight="Bold"
+                    Foreground="{ThemeResource TextFillColorPrimaryBrush}">
+                    <Run Text="{x:Bind ViewModel.Saludo, Mode=OneWay}" />
+                    <Run Text=", " />
+                    <Run
                         FontWeight="SemiBold"
-                        Foreground="White"
-                        Text="{x:Bind ViewModel.Iniciales, Mode=OneWay}" />
-                </Border>
-
-                <!--  Saludo y nombre  -->
-                <StackPanel
-                    Grid.Column="2"
-                    VerticalAlignment="Center"
-                    Spacing="4">
-                    <TextBlock
-                        FontSize="13"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind ViewModel.FechaHoy, Mode=OneWay}" />
-                    <TextBlock
-                        FontSize="28"
-                        FontWeight="Bold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}">
-                        <Run Text="{x:Bind ViewModel.Saludo, Mode=OneWay}" />
-                        <Run Text=", " />
-                        <Run
-                            FontWeight="SemiBold"
-                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                            Text="{x:Bind ViewModel.NombreUsuario, Mode=OneWay}" />
-                        <Run Text="." />
-                    </TextBlock>
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Border
-                            Padding="8,3"
-                            Background="{ThemeResource AccentFillColorTertiaryBrush}"
-                            CornerRadius="12">
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                Text="{x:Bind ViewModel.TipoUsuario, Mode=OneWay}" />
-                        </Border>
-                    </StackPanel>
-                </StackPanel>
-            </Grid>
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        Text="{x:Bind ViewModel.NombreUsuario, Mode=OneWay}" />
+                    <Run Text="." />
+                </TextBlock>
+            </StackPanel>
 
             <!--
                 ══════════════════════════════════════════
@@ -97,21 +56,20 @@
 
             <!--
                 ══════════════════════════════════════════
-                Sección: Métricas rápidas (placeholder)
+                Sección: Ops, pendientes por resolver, filtrado según el
+                nivel del usuario (todo / solo su área / solo lo suyo).
                 ══════════════════════════════════════════
             -->
-            <StackPanel Grid.Row="2" Spacing="12"
-                        Visibility="{x:Bind ViewModel.ShowCards, Mode=OneWay}">
+            <StackPanel Grid.Row="3" Spacing="12"
+                        Visibility="{x:Bind ViewModel.ShowOps, Mode=OneWay}">
                 <TextBlock
                     FontSize="16"
                     FontWeight="SemiBold"
                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                    Text="Resumen" />
+                    Text="Ops" />
 
-                <Grid>
+                <Grid x:Name="Ops">
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="12" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="12" />
                         <ColumnDefinition Width="*" />
@@ -119,502 +77,135 @@
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <!--  Tarjeta: Operaciones  -->
-                    <Border
-                        Grid.Column="0"
-                        Padding="20,16"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8">
-                        <StackPanel Spacing="8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon
-                                    FontSize="18"
-                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                    Glyph="&#xE9F9;" />
+                    <!--  Card: operaciones abiertas (no t-Finalizado)  -->
+                    <Grid x:Name="OpsAbiertasPendientes" Grid.Column="0">
+                        <Border
+                            Padding="20,16"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Tapped="OpsAbiertasPendientes_Tapped">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon
+                                        FontSize="18"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Glyph="&#xE9F5;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="Operaciones abiertas" />
+                                </StackPanel>
                                 <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Operaciones" />
+                                    FontSize="32"
+                                    FontWeight="Bold"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    Text="{x:Bind ViewModel.OpsAbiertasPendientesCount, Mode=OneWay}" />
+                                <ProgressBar IsIndeterminate="True"
+                                             Visibility="{x:Bind ViewModel.IsOpsLoading, Mode=OneWay}" />
                             </StackPanel>
-                            <TextBlock
-                                FontSize="32"
-                                FontWeight="Bold"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="{x:Bind ViewModel.TotalOperaciones, Mode=OneWay}" />
-                            <ProgressBar IsIndeterminate="True"
-                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
-                        </StackPanel>
-                    </Border>
+                        </Border>
+                    </Grid>
 
-                    <!--  Tarjeta: Órdenes de Servicio  -->
-                    <Border
-                        Grid.Column="2"
-                        Padding="20,16"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8">
-                        <StackPanel Spacing="8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon
-                                    FontSize="18"
-                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                    Glyph="&#xE90F;" />
+                    <!--  Card: t-Finalizado, todavía sin facturar  -->
+                    <Grid x:Name="OpsTfinalizadoPendientes" Grid.Column="2">
+                        <Border
+                            Padding="20,16"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Tapped="OpsTFinalizadoPendientes_Tapped">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon
+                                        FontSize="18"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Glyph="&#xE7BA;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="Por facturar" />
+                                </StackPanel>
                                 <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Órdenes de Servicio" />
+                                    FontSize="32"
+                                    FontWeight="Bold"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    Text="{x:Bind ViewModel.OpsTFinalizadoPendientesCount, Mode=OneWay}" />
+                                <ProgressBar IsIndeterminate="True"
+                                             Visibility="{x:Bind ViewModel.IsOpsLoading, Mode=OneWay}" />
                             </StackPanel>
-                            <TextBlock
-                                FontSize="32"
-                                FontWeight="Bold"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="{x:Bind ViewModel.TotalOrdenesServicio, Mode=OneWay}" />
-                            <ProgressBar IsIndeterminate="True"
-                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
-                        </StackPanel>
-                    </Border>
+                        </Border>
+                    </Grid>
 
-                    <!--  Tarjeta: Clientes  -->
-                    <Border
-                        Grid.Column="4"
-                        Padding="20,16"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8">
-                        <StackPanel Spacing="8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon
-                                    FontSize="18"
-                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                    Glyph="&#xE716;" />
+                    <!--  Card: facturadas, todavía sin cobrar  -->
+                    <Grid x:Name="OpsFinalizadasPendientes" Grid.Column="4">
+                        <Border
+                            Padding="20,16"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Tapped="OpsFinalizadasPendientes_Tapped">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <FontIcon
+                                        FontSize="18"
+                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                        Glyph="&#xE8C7;" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="Por cobrar" />
+                                </StackPanel>
                                 <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Clientes" />
+                                    FontSize="32"
+                                    FontWeight="Bold"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    Text="{x:Bind ViewModel.OpsFinalizadasPendientesCount, Mode=OneWay}" />
+                                <ProgressBar IsIndeterminate="True"
+                                             Visibility="{x:Bind ViewModel.IsOpsLoading, Mode=OneWay}" />
                             </StackPanel>
-                            <TextBlock
-                                FontSize="32"
-                                FontWeight="Bold"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="{x:Bind ViewModel.TotalClientes, Mode=OneWay}" />
-                            <ProgressBar IsIndeterminate="True"
-                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
-                        </StackPanel>
-                    </Border>
-
-                    <!--  Tarjeta: Equipos  -->
-                    <Border
-                        Grid.Column="6"
-                        Padding="20,16"
-                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8">
-                        <StackPanel Spacing="8">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon
-                                    FontSize="18"
-                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                    Glyph="&#xE7F4;" />
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="13"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Equipos" />
-                            </StackPanel>
-                            <TextBlock
-                                FontSize="32"
-                                FontWeight="Bold"
-                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                Text="{x:Bind ViewModel.TotalEquipos, Mode=OneWay}" />
-                            <ProgressBar IsIndeterminate="True"
-                                         Visibility="{x:Bind ViewModel.IsConteosLoading, Mode=OneWay}" />
-                        </StackPanel>
-                    </Border>
+                        </Border>
+                    </Grid>
                 </Grid>
             </StackPanel>
 
             <!--
                 ══════════════════════════════════════════
-                Sección: Accesos rápidos
+                Sección: Noticias / Tareas / Alarmas (próximamente)
                 ══════════════════════════════════════════
             -->
-            <StackPanel Grid.Row="4" Spacing="12">
-                <TextBlock
-                    FontSize="16"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                    Text="Accesos rápidos" />
-
-                <StackPanel Orientation="Horizontal" Spacing="12">
-                    <Button
-                        x:Name="IrOperaciones"
-                        Click="IrOperaciones_Click"
-                        Style="{StaticResource AccentButtonStyle}">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon FontSize="16" Glyph="&#xE9F9;" />
-                            <TextBlock VerticalAlignment="Center" Text="Operaciones" />
-                        </StackPanel>
-                    </Button>
-                    <Button
-                        x:Name="IrOrdenServicio"
-                        Click="IrOrdenServicio_Click">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon FontSize="16" Glyph="&#xE90F;" />
-                            <TextBlock VerticalAlignment="Center" Text="Orden de Servicio" />
-                        </StackPanel>
-                    </Button>
-                    <Button
-                        x:Name="IrClientes"
-                        Click="IrClientes_Click">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon FontSize="16" Glyph="&#xE716;" />
-                            <TextBlock VerticalAlignment="Center" Text="Clientes" />
-                        </StackPanel>
-                    </Button>
-                </StackPanel>
-            </StackPanel>
-
-            <!--
-                ══════════════════════════════════════════
-                Sección: Área de tareas / actividad (placeholder)
-                ══════════════════════════════════════════
-            -->
-            <Grid Grid.Row="6">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*" />
-                    <ColumnDefinition Width="16" />
-                    <ColumnDefinition Width="1*" />
-                </Grid.ColumnDefinitions>
-
-                <!--  Panel: Actividad reciente  -->
-                <Border
-                    Grid.Column="0"
-                    MinHeight="220"
-                    Padding="20"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="12" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <!--  Header  -->
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon
-                                    FontSize="16"
-                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                    Glyph="&#xE823;" />
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                    Text="Actividad reciente" />
-                            </StackPanel>
-                            <Button
-                                x:Name="RefreshActividad"
-                                Grid.Column="1"
-                                Padding="6"
-                                Click="RefreshActividad_Click"
-                                Style="{StaticResource SubtleButtonStyle}"
-                                ToolTipService.ToolTip="Actualizar">
-                                <FontIcon FontSize="14" Glyph="&#xE72C;" />
-                            </Button>
-                        </Grid>
-
-                        <!--  Lista de actividad  -->
-                        <Grid Grid.Row="2">
-
-                            <!--  Overlay de carga  -->
-                            <ProgressRing
-                                Width="32"
-                                Height="32"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                IsActive="{x:Bind ViewModel.IsActividadLoading, Mode=OneWay}"
-                                Visibility="{x:Bind ViewModel.IsActividadLoading, Mode=OneWay}" />
-
-                            <!--  Estado vacío  -->
-                            <StackPanel
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Spacing="8"
-                                Visibility="{x:Bind ViewModel.IsActividadEmpty, Mode=OneWay}">
-                                <FontIcon
-                                    FontSize="32"
-                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                    Glyph="&#xEA86;" />
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    FontSize="13"
-                                    FontStyle="Italic"
-                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                    Text="Sin actividad reciente" />
-                            </StackPanel>
-
-                            <!--  Lista real  -->
-                            <ScrollViewer MaxHeight="320" VerticalScrollBarVisibility="Auto">
-                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.ActividadReciente, Mode=OneWay}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Spacing="1" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="models:ActivityItem">
-                                            <Border
-                                                Margin="0,0,0,2"
-                                                Padding="10,8"
-                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                                CornerRadius="6">
-                                                <Grid>
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="Auto" />
-                                                        <ColumnDefinition Width="10" />
-                                                        <ColumnDefinition Width="*" />
-                                                        <ColumnDefinition Width="Auto" />
-                                                    </Grid.ColumnDefinitions>
-
-                                                    <!--  Icono del módulo  -->
-                                                    <FontIcon
-                                                        Grid.Column="0"
-                                                        VerticalAlignment="Center"
-                                                        FontSize="14"
-                                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                        Glyph="{x:Bind IconoGlyph}" />
-
-                                                    <!--  Contenido  -->
-                                                    <StackPanel
-                                                        Grid.Column="2"
-                                                        VerticalAlignment="Center"
-                                                        Spacing="2">
-                                                        <TextBlock
-                                                            FontSize="13"
-                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                            Text="{x:Bind Titulo}"
-                                                            TextTrimming="CharacterEllipsis"
-                                                            TextWrapping="NoWrap" />
-                                                        <TextBlock
-                                                            FontSize="11"
-                                                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                            Text="{x:Bind Origen}" />
-                                                    </StackPanel>
-
-                                                    <!--  Fecha  -->
-                                                    <TextBlock
-                                                        Grid.Column="3"
-                                                        VerticalAlignment="Center"
-                                                        FontSize="11"
-                                                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                        Text="{x:Bind HoraLabel}" />
-                                                </Grid>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                            </ScrollViewer>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <!--  Panel: Operaciones pendientes  -->
-                <Border
-                    Grid.Column="2"
-                    MinHeight="220"
-                    Padding="20"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="8">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="12" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-
-                        <!--  Header  -->
-                        <Grid Grid.Row="0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon
-                                    FontSize="16"
-                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                    Glyph="&#xE762;" />
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                    Text="Pendientes" />
-                            </StackPanel>
-                            <Button
-                                x:Name="RefreshTareas"
-                                Grid.Column="1"
-                                Padding="6"
-                                Click="RefreshTareas_Click"
-                                Style="{StaticResource SubtleButtonStyle}"
-                                ToolTipService.ToolTip="Actualizar">
-                                <FontIcon FontSize="14" Glyph="&#xE72C;" />
-                            </Button>
-                        </Grid>
-
-                        <!--  Contenido  -->
-                        <Grid Grid.Row="2">
-
-                            <!--  Overlay carga  -->
-                            <ProgressRing
-                                Width="32"
-                                Height="32"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                IsActive="{x:Bind ViewModel.IsTareasLoading, Mode=OneWay}"
-                                Visibility="{x:Bind ViewModel.IsTareasLoading, Mode=OneWay}" />
-
-                            <!--  Estado vacío  -->
-                            <StackPanel
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                Spacing="8"
-                                Visibility="{x:Bind ViewModel.IsTareasEmpty, Mode=OneWay}">
-                                <FontIcon
-                                    FontSize="32"
-                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                    Glyph="&#xE930;" />
-                                <TextBlock
-                                    HorizontalAlignment="Center"
-                                    FontSize="13"
-                                    FontStyle="Italic"
-                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                    Text="Sin operaciones pendientes" />
-                            </StackPanel>
-
-                            <!--  Lista de operaciones  -->
-                            <ScrollViewer MaxHeight="400" VerticalScrollBarVisibility="Auto">
-                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.OperacionesPendientes, Mode=OneWay}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Spacing="6" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="models:OperacionTodoItem">
-                                            <Border
-                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
-                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                                BorderThickness="1"
-                                                CornerRadius="6">
-                                                <StackPanel>
-
-                                                    <!--  Header colapsable  -->
-                                                    <Button
-                                                        Padding="10,8"
-                                                        HorizontalAlignment="Stretch"
-                                                        Click="ToggleTodo_Click"
-                                                        Style="{StaticResource SubtleButtonStyle}"
-                                                        Tag="{x:Bind}">
-                                                        <Grid HorizontalAlignment="Stretch">
-                                                            <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                                <ColumnDefinition Width="Auto" />
-                                                            </Grid.ColumnDefinitions>
-
-                                                            <!--  Texto  -->
-                                                            <StackPanel Grid.Column="0" Spacing="1">
-                                                                <StackPanel Orientation="Horizontal" Spacing="5">
-                                                                    <TextBlock
-                                                                        FontSize="11"
-                                                                        FontWeight="Bold"
-                                                                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                                                                        Text="{x:Bind IdOperacion}" />
-                                                                    <TextBlock
-                                                                        MaxWidth="110"
-                                                                        FontSize="11"
-                                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                                        Text="{x:Bind RazonSocial}"
-                                                                        TextTrimming="CharacterEllipsis" />
-                                                                </StackPanel>
-                                                                <TextBlock
-                                                                    MaxWidth="150"
-                                                                    FontSize="12"
-                                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                                    Text="{x:Bind Nota}"
-                                                                    TextTrimming="CharacterEllipsis" />
-                                                            </StackPanel>
-
-                                                            <!--  Progreso "3 / 8"  -->
-                                                            <TextBlock
-                                                                Grid.Column="1"
-                                                                Margin="8,0"
-                                                                VerticalAlignment="Center"
-                                                                FontSize="11"
-                                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                                Text="{x:Bind Progreso, Mode=OneWay}" />
-
-                                                            <!--  Chevron  -->
-                                                            <FontIcon
-                                                                Grid.Column="2"
-                                                                VerticalAlignment="Center"
-                                                                FontSize="12"
-                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                                Glyph="{x:Bind ExpandGlyph, Mode=OneWay}" />
-                                                        </Grid>
-                                                    </Button>
-
-                                                    <!--  Cuerpo: lista de pasos (visible al expandir)  -->
-                                                    <ItemsRepeater
-                                                        Margin="12,0,12,10"
-                                                        ItemsSource="{x:Bind Pasos}"
-                                                        Visibility="{x:Bind Expand, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                                                        <ItemsRepeater.Layout>
-                                                            <StackLayout Spacing="5" />
-                                                        </ItemsRepeater.Layout>
-                                                        <ItemsRepeater.ItemTemplate>
-                                                            <DataTemplate x:DataType="models:CheckPasoItem">
-                                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                                    <FontIcon
-                                                                        VerticalAlignment="Center"
-                                                                        FontSize="13"
-                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}"
-                                                                        Glyph="{x:Bind Glyph}" />
-                                                                    <TextBlock
-                                                                        VerticalAlignment="Center"
-                                                                        FontSize="12"
-                                                                        Foreground="{x:Bind Completado, Converter={StaticResource NotificationColorConverter}}"
-                                                                        Text="{x:Bind Nombre}" />
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </ItemsRepeater.ItemTemplate>
-                                                    </ItemsRepeater>
-
-                                                </StackPanel>
-                                            </Border>
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                            </ScrollViewer>
-
-                        </Grid>
-                    </Grid>
-                </Border>
-            </Grid>
+            <Pivot Grid.Row="5" Margin="-12,0,0,0">
+                <PivotItem Header="Noticias">
+                    <TextBlock
+                        Margin="12,24,0,0"
+                        FontSize="13"
+                        FontStyle="Italic"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Próximamente" />
+                </PivotItem>
+                <PivotItem Header="Tareas">
+                    <TextBlock
+                        Margin="12,24,0,0"
+                        FontSize="13"
+                        FontStyle="Italic"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Próximamente" />
+                </PivotItem>
+                <PivotItem Header="Alarmas">
+                    <TextBlock
+                        Margin="12,24,0,0"
+                        FontSize="13"
+                        FontStyle="Italic"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Próximamente" />
+                </PivotItem>
+            </Pivot>
 
         </Grid>
     </ScrollViewer>

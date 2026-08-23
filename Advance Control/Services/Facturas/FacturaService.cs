@@ -438,6 +438,71 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task<TimbrarResultadoDto> TimbrarOperacionAsync(int idOperacion, CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var url = _endpoints.GetEndpoint("api", "factura", "operacion", idOperacion.ToString(), "timbrar");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Timbrando operacion {idOperacion} en: {url}", "FacturaService", "TimbrarOperacionAsync");
+
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                var contenido = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al timbrar operacion {idOperacion}. Status: {response.StatusCode}, Content: {contenido}",
+                        null,
+                        "FacturaService",
+                        "TimbrarOperacionAsync");
+
+                    return ExtraerResultadoError(contenido);
+                }
+
+                var result = JsonSerializer.Deserialize<GuardarFacturaResponseDto>(contenido, _jsonOptions);
+                if (result != null)
+                {
+                    return new TimbrarResultadoDto
+                    {
+                        Success = result.Success,
+                        Message = result.Message,
+                        IdFactura = result.IdFactura
+                    };
+                }
+
+                return new TimbrarResultadoDto { Success = false, Message = "La API devolvió una respuesta vacía al timbrar." };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al timbrar operacion", ex, "FacturaService", "TimbrarOperacionAsync");
+                return new TimbrarResultadoDto { Success = false, Message = "Error de comunicación con el servidor al timbrar." };
+            }
+        }
+
+        private static TimbrarResultadoDto ExtraerResultadoError(string errorContent)
+        {
+            var resultado = new TimbrarResultadoDto { Success = false, Message = errorContent };
+            try
+            {
+                using var doc = JsonDocument.Parse(errorContent);
+                if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                    resultado.Message = messageProp.GetString();
+                if (doc.RootElement.TryGetProperty("observacion", out var observacionProp))
+                    resultado.Observacion = observacionProp.GetString();
+                if (doc.RootElement.TryGetProperty("codigoRespuesta", out var codigoProp))
+                    resultado.CodigoRespuesta = codigoProp.GetString();
+            }
+            catch (JsonException)
+            {
+                // errorContent no es JSON valido; se conserva tal cual en Message.
+            }
+            return resultado;
+        }
+
         private static string ExtraerMensajeError(string errorContent)
         {
             try

@@ -287,14 +287,14 @@
                                                             Click="NuevaRelacionEquipo_Click"
                                                             Foreground="DarkGray"
                                                             Tag="{x:Bind}"
-                                                            ToolTipService.ToolTip="Crear nueva relacion con equipo">
+                                                            ToolTipService.ToolTip="Crear nueva relación con equipo">
                                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                                 <TextBlock
                                                                     VerticalAlignment="Center"
                                                                     FontSize="14"
                                                                     FontWeight="SemiBold"
                                                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                                                                    Text="Nueva Relacion" />
+                                                                    Text="Nueva Relación" />
                                                             </StackPanel>
                                                         </Button>
                                                     </StackPanel>

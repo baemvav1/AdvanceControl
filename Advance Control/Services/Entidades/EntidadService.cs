@@ -104,6 +104,7 @@ namespace Advance_Control.Services.Entidades
             string? numInt = null,
             string? colonia = null,
             string? apoderado = null,
+            string? regimenFiscal = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -124,6 +125,7 @@ namespace Advance_Control.Services.Entidades
                     .Add("numInt", numInt)
                     .Add("colonia", colonia)
                     .Add("apoderado", apoderado)
+                    .Add("regimenFiscal", regimenFiscal)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Creando entidad en: {url}", "EntidadService", "CreateEntidadAsync");
@@ -176,6 +178,7 @@ namespace Advance_Control.Services.Entidades
             string? numInt = null,
             string? colonia = null,
             string? apoderado = null,
+            string? regimenFiscal = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -196,6 +199,7 @@ namespace Advance_Control.Services.Entidades
                     .Add("numInt", numInt)
                     .Add("colonia", colonia)
                     .Add("apoderado", apoderado)
+                    .Add("regimenFiscal", regimenFiscal)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando entidad en: {url}", "EntidadService", "UpdateEntidadAsync");

@@ -167,6 +167,7 @@ namespace Advance_Control.Services.Clientes
                     .Add("limiteCredito", query.LimiteCredito)
                     .Add("prioridad", query.Prioridad)
                     .Add("notas", query.Notas)
+                    .Add("codigoPostal", query.CodigoPostal)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Creando cliente en: {url}", "ClienteService", "CreateClienteAsync");
@@ -228,6 +229,7 @@ namespace Advance_Control.Services.Clientes
                     .Add("limiteCredito", query.LimiteCredito)
                     .Add("prioridad", query.Prioridad)
                     .Add("notas", query.Notas)
+                    .Add("codigoPostal", query.CodigoPostal)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando cliente en: {url}", "ClienteService", "UpdateClienteAsync");

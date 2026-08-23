@@ -58,6 +58,9 @@ namespace Advance_Control.Models
         [JsonPropertyName("estatus")]
         public bool? Estatus { get; set; }
 
+        [JsonPropertyName("regimenFiscal")]
+        public string? RegimenFiscal { get; set; }
+
         private bool _expand = false;
 
         /// <summary>

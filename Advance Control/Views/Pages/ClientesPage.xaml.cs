@@ -164,7 +164,8 @@ namespace Advance_Control.Views.Pages
                         limiteCredito: nuevoClienteControl.LimiteCredito,
                         prioridad: nuevoClienteControl.Prioridad,
                         notas: nuevoClienteControl.Notas,
-                        estatus: nuevoClienteControl.Estatus
+                        estatus: nuevoClienteControl.Estatus,
+                        codigoPostal: nuevoClienteControl.CodigoPostal
                     );
 
                     if (success)
@@ -478,6 +479,14 @@ namespace Advance_Control.Views.Pages
                     Margin = new Thickness(0, 0, 0, 8)
                 };
 
+                var codigoPostalTextBox = new TextBox
+                {
+                    Text = cliente.CodigoPostal ?? "",
+                    PlaceholderText = "Código postal del domicilio fiscal (opcional)",
+                    MaxLength = 5,
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+
                 var diasCreditoNumberBox = new NumberBox
                 {
                     Value = cliente.DiasCredito.HasValue ? cliente.DiasCredito.Value : double.NaN,
@@ -540,6 +549,8 @@ namespace Advance_Control.Views.Pages
                             regimenFiscalTextBox,
                             new TextBlock { Text = "Uso CFDI:" },
                             usoCfdiTextBox,
+                            new TextBlock { Text = "Código Postal:" },
+                            codigoPostalTextBox,
                             new TextBlock { Text = "Días de Crédito:" },
                             diasCreditoNumberBox,
                             new TextBlock { Text = "Límite de Crédito:" },
@@ -617,7 +628,8 @@ namespace Advance_Control.Views.Pages
                         limiteCredito: limiteCredito,
                         prioridad: prioridad,
                         notas: string.IsNullOrWhiteSpace(notasTextBox.Text) ? null : notasTextBox.Text.Trim(),
-                        estatus: estatusCheckBox.IsChecked ?? true
+                        estatus: estatusCheckBox.IsChecked ?? true,
+                        codigoPostal: string.IsNullOrWhiteSpace(codigoPostalTextBox.Text) ? null : codigoPostalTextBox.Text.Trim()
                     );
 
                     if (success)

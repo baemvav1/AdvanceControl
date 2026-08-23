@@ -130,7 +130,7 @@
                                 <TextBox
                                     Grid.Row="0"
                                     Grid.Column="2"
-                                    PlaceholderText="Buscar por metodo de pago"
+                                    PlaceholderText="Buscar por método de pago"
                                     Text="{x:Bind ViewModel.MetodoPagoFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                                 <TextBox
