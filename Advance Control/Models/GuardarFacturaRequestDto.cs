@@ -6,6 +6,7 @@ namespace Advance_Control.Models
     public class GuardarFacturaRequestDto
     {
         public string VersionXml { get; set; } = "4.0";
+        public string? Serie { get; set; }
         public string? Folio { get; set; }
         public DateTime Fecha { get; set; }
         public string? FormaPago { get; set; }

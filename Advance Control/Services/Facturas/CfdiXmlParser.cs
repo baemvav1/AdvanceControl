@@ -41,6 +41,7 @@ namespace Advance_Control.Services.Facturas
             return new GuardarFacturaRequestDto
             {
                 VersionXml = GetStringAttr(comprobante, "Version") ?? "4.0",
+                Serie = GetStringAttr(comprobante, "Serie"),
                 Folio = GetStringAttr(comprobante, "Folio"),
                 Fecha = GetDateTimeAttr(comprobante, "Fecha") ?? DateTime.Now,
                 FormaPago = GetStringAttr(comprobante, "FormaPago"),

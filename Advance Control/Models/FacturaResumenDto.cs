@@ -7,6 +7,7 @@ namespace Advance_Control.Models
     {
         public int IdFactura { get; set; }
         public string VersionXml { get; set; } = "4.0";
+        public string? Serie { get; set; }
         public string? Folio { get; set; }
         public DateTime Fecha { get; set; }
         public string? FormaPago { get; set; }
@@ -44,7 +45,7 @@ namespace Advance_Control.Models
         public string? SelloCfd { get; set; }
         public string? SelloSat { get; set; }
 
-        public string FolioTitulo => $"{Folio}";
+        public string FolioTitulo => string.IsNullOrWhiteSpace(Serie) ? $"{Folio}" : $"{Serie}{Folio}";
 
         public string FechaTexto => Fecha == default ? string.Empty : Fecha.ToString("dd/MM/yyyy HH:mm");
         public string EmisorReceptorTexto => $"{EmisorNombre ?? "Sin emisor"} -> {ReceptorNombre ?? "Sin receptor"}";

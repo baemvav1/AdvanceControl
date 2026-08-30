@@ -9,6 +9,8 @@ namespace Advance_Control.ViewModels
     public class DetailFacturaViewModel : ViewModelBase
     {
         private readonly IFacturaService _facturaService;
+        private readonly IFacturaPdfService _facturaPdfService;
+        private FacturaDetalleDto? _detalleCompleto;
         private FacturaResumenDto? _factura;
         private bool _isLoading;
         private string? _errorMessage;
@@ -18,9 +20,10 @@ namespace Advance_Control.ViewModels
         private string? _referenciaAbono;
         private string? _observacionesAbono;
 
-        public DetailFacturaViewModel(IFacturaService facturaService)
+        public DetailFacturaViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService)
         {
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
+            _facturaPdfService = facturaPdfService ?? throw new ArgumentNullException(nameof(facturaPdfService));
             Conceptos = new ObservableCollection<FacturaConceptoDto>();
             TrasladosGlobales = new ObservableCollection<FacturaTrasladoDto>();
             Abonos = new ObservableCollection<AbonoFacturaDto>();
@@ -117,6 +120,7 @@ namespace Advance_Control.ViewModels
                     return;
                 }
 
+                _detalleCompleto = detalle;
                 Factura = detalle.Factura;
                 ReemplazarColeccion(Conceptos, detalle.Conceptos);
                 ReemplazarColeccion(TrasladosGlobales, detalle.TrasladosGlobales);
@@ -138,6 +142,55 @@ namespace Advance_Control.ViewModels
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>Genera el PDF oficial de la factura (con QR y sellos) y devuelve la ruta del archivo temporal generado.</summary>
+        public async Task<string?> GenerarPdfAsync()
+        {
+            if (_detalleCompleto == null)
+            {
+                ErrorMessage = "No hay una factura cargada para generar el PDF.";
+                return null;
+            }
+
+            try
+            {
+                ErrorMessage = null;
+                return await _facturaPdfService.GenerarFacturaPdfAsync(_detalleCompleto);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el PDF de la factura: {ex.Message}";
+                return null;
+            }
+        }
+
+        /// <summary>Obtiene el XML del CFDI almacenado para esta factura.</summary>
+        public async Task<string?> ObtenerXmlAsync()
+        {
+            if (Factura == null)
+            {
+                ErrorMessage = "No hay una factura cargada para descargar el XML.";
+                return null;
+            }
+
+            try
+            {
+                ErrorMessage = null;
+                var xml = await _facturaService.ObtenerXmlFacturaAsync(Factura.IdFactura);
+                if (string.IsNullOrWhiteSpace(xml))
+                {
+                    ErrorMessage = "Esta factura no tiene un XML almacenado.";
+                    return null;
+                }
+
+                return xml;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al obtener el XML de la factura: {ex.Message}";
+                return null;
             }
         }
 
@@ -206,6 +259,7 @@ namespace Advance_Control.ViewModels
 
         private void LimpiarDatos()
         {
+            _detalleCompleto = null;
             Factura = null;
             Conceptos.Clear();
             TrasladosGlobales.Clear();

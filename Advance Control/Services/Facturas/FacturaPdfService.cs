@@ -65,7 +65,13 @@ namespace Advance_Control.Services.Facturas
                         page.Size(PageSizes.Letter);
                         page.Margin(1.5f, Unit.Centimetre);
                         page.PageColor(Colors.White);
-                        page.DefaultTextStyle(x => x.FontSize(9));
+                        // Fuente explícita: sin esto, QuestPDF puede caer a una fuente del sistema cuya
+                        // tabla de ligaduras se "come" la combinación "ti" (certificado->cerficado,
+                        // timbrado->mbrado) y cuyas métricas de ancho no coinciden con las usadas para
+                        // calcular el layout -- eso recorta los valores monetarios pegados al borde
+                        // derecho de su columna (Subtotal/Impuestos/Total). Segoe UI es fuente estándar
+                        // de Windows, sin este problema.
+                        page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Segoe UI"));
 
                         page.Header().ShowOnce().Column(column =>
                         {
@@ -81,8 +87,9 @@ namespace Advance_Control.Services.Facturas
                                     .SemiBold()
                                     .FontColor(Colors.Blue.Darken2);
 
-                                row.ConstantItem(200).AlignRight().Text(text =>
+                                row.ConstantItem(200).Text(text =>
                                 {
+                                    text.AlignRight();
                                     text.DefaultTextStyle(s => s.FontSize(10));
                                     text.Span("Folio: ").SemiBold();
                                     text.Span(factura.FolioTitulo);
@@ -163,8 +170,8 @@ namespace Advance_Control.Services.Facturas
                                     header.Cell().Element(EstiloEncabezado).Text("Unidad");
                                     header.Cell().Element(EstiloEncabezado).Text("Clave");
                                     header.Cell().Element(EstiloEncabezado).Text("Descripción");
-                                    header.Cell().Element(EstiloEncabezado).AlignRight().Text("P.U.");
-                                    header.Cell().Element(EstiloEncabezado).AlignRight().Text("Importe");
+                                    header.Cell().Element(EstiloEncabezado).Text(t => { t.AlignRight(); t.Span("P.U."); });
+                                    header.Cell().Element(EstiloEncabezado).Text(t => { t.AlignRight(); t.Span("Importe"); });
                                 });
 
                                 foreach (var concepto in detalle.Conceptos.OrderBy(c => c.Orden))
@@ -173,8 +180,8 @@ namespace Advance_Control.Services.Facturas
                                     tabla.Cell().Element(EstiloCelda).Text(concepto.UnidadTexto);
                                     tabla.Cell().Element(EstiloCelda).Text(concepto.ClaveProdServ ?? "-");
                                     tabla.Cell().Element(EstiloCelda).Text(concepto.Descripcion);
-                                    tabla.Cell().Element(EstiloCelda).AlignRight().Text(concepto.ValorUnitarioTexto);
-                                    tabla.Cell().Element(EstiloCelda).AlignRight().Text(concepto.ImporteTexto);
+                                    tabla.Cell().Element(EstiloCelda).Text(t => { t.AlignRight(); t.Span(concepto.ValorUnitarioTexto); });
+                                    tabla.Cell().Element(EstiloCelda).Text(t => { t.AlignRight(); t.Span(concepto.ImporteTexto); });
                                 }
                             });
 
@@ -184,17 +191,22 @@ namespace Advance_Control.Services.Facturas
                                 totales.Item().Row(row =>
                                 {
                                     row.RelativeItem().Text("Subtotal:");
-                                    row.RelativeItem().AlignRight().Text(factura.SubTotalTexto);
+                                    row.RelativeItem().Text(t => { t.AlignRight(); t.Span(factura.SubTotalTexto); });
                                 });
                                 totales.Item().Row(row =>
                                 {
                                     row.RelativeItem().Text("Impuestos trasladados:");
-                                    row.RelativeItem().AlignRight().Text(factura.TotalImpuestosTexto);
+                                    row.RelativeItem().Text(t => { t.AlignRight(); t.Span(factura.TotalImpuestosTexto); });
                                 });
                                 totales.Item().PaddingTop(3).BorderTop(1).BorderColor(Colors.Grey.Lighten1).Row(row =>
                                 {
                                     row.RelativeItem().Text("Total:").SemiBold().FontSize(11);
-                                    row.RelativeItem().AlignRight().Text(factura.TotalTexto).SemiBold().FontSize(11).FontColor(Colors.Blue.Darken2);
+                                    row.RelativeItem().Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.DefaultTextStyle(s => s.SemiBold().FontSize(11).FontColor(Colors.Blue.Darken2));
+                                        t.Span(factura.TotalTexto);
+                                    });
                                 });
                             });
 
@@ -214,17 +226,17 @@ namespace Advance_Control.Services.Facturas
                                     tabla.Header(header =>
                                     {
                                         header.Cell().Element(EstiloEncabezado).Text("Impuesto");
-                                        header.Cell().Element(EstiloEncabezado).AlignRight().Text("Base");
-                                        header.Cell().Element(EstiloEncabezado).AlignRight().Text("Tasa");
-                                        header.Cell().Element(EstiloEncabezado).AlignRight().Text("Importe");
+                                        header.Cell().Element(EstiloEncabezado).Text(t => { t.AlignRight(); t.Span("Base"); });
+                                        header.Cell().Element(EstiloEncabezado).Text(t => { t.AlignRight(); t.Span("Tasa"); });
+                                        header.Cell().Element(EstiloEncabezado).Text(t => { t.AlignRight(); t.Span("Importe"); });
                                     });
 
                                     foreach (var traslado in detalle.TrasladosGlobales)
                                     {
                                         tabla.Cell().Element(EstiloCelda).Text(traslado.ImpuestoResumen);
-                                        tabla.Cell().Element(EstiloCelda).AlignRight().Text(traslado.BaseTexto);
-                                        tabla.Cell().Element(EstiloCelda).AlignRight().Text(traslado.TasaTexto);
-                                        tabla.Cell().Element(EstiloCelda).AlignRight().Text(traslado.ImporteTexto);
+                                        tabla.Cell().Element(EstiloCelda).Text(t => { t.AlignRight(); t.Span(traslado.BaseTexto); });
+                                        tabla.Cell().Element(EstiloCelda).Text(t => { t.AlignRight(); t.Span(traslado.TasaTexto); });
+                                        tabla.Cell().Element(EstiloCelda).Text(t => { t.AlignRight(); t.Span(traslado.ImporteTexto); });
                                     }
                                 });
                             }
@@ -277,8 +289,9 @@ namespace Advance_Control.Services.Facturas
                                 .FontColor(Colors.Grey.Darken1);
                         });
 
-                        page.Footer().AlignRight().Text(text =>
+                        page.Footer().Text(text =>
                         {
+                            text.AlignRight();
                             text.Span("Página ");
                             text.CurrentPageNumber();
                             text.Span(" de ");
@@ -317,12 +330,16 @@ namespace Advance_Control.Services.Facturas
             var fe = factura.Sello!.Length >= 8 ? factura.Sello[^8..] : factura.Sello;
             var totalTexto = factura.Total.ToString("F6", CultureInfo.InvariantCulture);
 
+            // Formato oficial del SAT (Anexo 20): NO se codifica como URL, en particular "fe" -- es
+            // base64 y puede terminar en "=="; si se percent-encodea ("%3D%3D") el portal del SAT no
+            // carga los datos fiscales aunque la página cargue. El "?&id=" (con el "&" pegado al "?")
+            // también es tal cual como lo emite el propio SAT en sus PDFs oficiales.
             var url = $"{SatVerificacionBaseUrl}?" +
-                       $"id={Uri.EscapeDataString(factura.Uuid)}" +
-                       $"&re={Uri.EscapeDataString(factura.EmisorRfc)}" +
-                       $"&rr={Uri.EscapeDataString(factura.ReceptorRfc)}" +
+                       $"&id={factura.Uuid}" +
+                       $"&re={factura.EmisorRfc}" +
+                       $"&rr={factura.ReceptorRfc}" +
                        $"&tt={totalTexto}" +
-                       $"&fe={Uri.EscapeDataString(fe)}";
+                       $"&fe={fe}";
 
             var qrGenerator = new QRCodeGenerator();
             var qrData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.M);
