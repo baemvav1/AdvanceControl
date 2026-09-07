@@ -254,6 +254,7 @@ namespace Advance_Control.Views.Pages
                     : string.Empty;
                 ColorComboBox.SelectedIndex = 0;
                 ActivoCheckBox.IsChecked = true;
+                RubroElevadoresRadioButton.IsChecked = true;
                 AreaForm.Visibility = Visibility.Visible;
                 _isFormVisible = true;
             });
@@ -364,6 +365,7 @@ namespace Advance_Control.Views.Pages
                                 DescripcionTextBox.Text = string.Empty;
                                 ColorComboBox.SelectedIndex = 0;
                                 ActivoCheckBox.IsChecked = true;
+                                RubroElevadoresRadioButton.IsChecked = true;
                                 AreaForm.Visibility = Visibility.Visible;
                                 _isFormVisible = true;
                             }
@@ -937,6 +939,7 @@ namespace Advance_Control.Views.Pages
             DescripcionTextBox.Text = string.Empty;
             ColorComboBox.SelectedIndex = 0;
             ActivoCheckBox.IsChecked = true;
+            RubroElevadoresRadioButton.IsChecked = true;
 
             await _loggingService.LogInformationAsync(
                 $"AddButton_Click - After setting up form: _currentShapeType={_currentShapeType ?? "NULL"}",
@@ -987,6 +990,10 @@ namespace Advance_Control.Views.Pages
                     NombreTextBox.Text = area.Nombre;
                     DescripcionTextBox.Text = area.Descripcion;
                     ActivoCheckBox.IsChecked = area.Activo ?? true;
+                    if (area.IdRubro == 2)
+                        RubroInmueblesRadioButton.IsChecked = true;
+                    else
+                        RubroElevadoresRadioButton.IsChecked = true;
 
                     for (int i = 0; i < ColorComboBox.Items.Count; i++)
                     {
@@ -1148,6 +1155,7 @@ namespace Advance_Control.Views.Pages
                 ColorBorde = selectedColor,
                 AnchoBorde = 2,
                 Activo = ActivoCheckBox.IsChecked,
+                IdRubro = RubroInmueblesRadioButton.IsChecked == true ? 2 : 1,
                 TipoGeometria = _currentShapeType ?? "Polygon",
                 MetadataJSON = isGeoType
                     ? JsonSerializer.Serialize(new

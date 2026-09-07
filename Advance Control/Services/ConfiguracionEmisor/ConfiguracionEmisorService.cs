@@ -132,5 +132,83 @@ namespace Advance_Control.Services.ConfiguracionEmisor
                 return new CsdUploadResultDto { Success = false, Message = "Error de comunicación con el servidor." };
             }
         }
+
+        public async Task<FielEmisorEstadoDto> ObtenerEstadoFielAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "configuracion-emisor", "fiel");
+                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al obtener estado de la FIEL/PFX. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "ConfiguracionEmisorService",
+                        "ObtenerEstadoFielAsync");
+                    return new FielEmisorEstadoDto { Cargado = false, Vigente = false };
+                }
+
+                var estado = await response.Content.ReadFromJsonAsync<FielEmisorEstadoDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                return estado ?? new FielEmisorEstadoDto { Cargado = false, Vigente = false };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al obtener estado de la FIEL/PFX", ex, "ConfiguracionEmisorService", "ObtenerEstadoFielAsync");
+                return new FielEmisorEstadoDto { Cargado = false, Vigente = false };
+            }
+        }
+
+        public async Task<FielUploadResultDto> GuardarFielAsync(byte[] certificado, byte[] llavePrivada, string password, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "configuracion-emisor", "fiel");
+
+                using var form = new MultipartFormDataContent();
+                var certContent = new ByteArrayContent(certificado);
+                certContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/x-x509-ca-cert");
+                form.Add(certContent, "certificado", "fiel.cer");
+
+                var llaveContent = new ByteArrayContent(llavePrivada);
+                llaveContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
+                form.Add(llaveContent, "llavePrivada", "fiel.key");
+
+                form.Add(new StringContent(password), "password");
+
+                var response = await _http.PostAsync(url, form, cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogWarningAsync(
+                        $"API rechazó la carga de la FIEL. Status: {response.StatusCode}, Content: {errorContent}",
+                        "ConfiguracionEmisorService", "GuardarFielAsync");
+
+                    string mensaje = "No se pudo generar el PFX a partir de la FIEL.";
+                    try
+                    {
+                        var errorDoc = System.Text.Json.JsonDocument.Parse(errorContent);
+                        if (errorDoc.RootElement.TryGetProperty("message", out var msgProp))
+                        {
+                            mensaje = msgProp.GetString() ?? mensaje;
+                        }
+                    }
+                    catch (System.Text.Json.JsonException) { /* dejar el mensaje genérico */ }
+
+                    return new FielUploadResultDto { Success = false, Message = mensaje };
+                }
+
+                var estado = await response.Content.ReadFromJsonAsync<FielEmisorEstadoDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
+                return new FielUploadResultDto { Success = true, Estado = estado };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al cargar la FIEL", ex, "ConfiguracionEmisorService", "GuardarFielAsync");
+                return new FielUploadResultDto { Success = false, Message = "Error de comunicación con el servidor." };
+            }
+        }
     }
 }

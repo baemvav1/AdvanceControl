@@ -318,14 +318,14 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Crea una nueva orden de servicio
         /// </summary>
-        public async Task<bool> CreateOrdenServicioAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateOrdenServicioAsync(int idTipoMantenimiento, int idCliente, int? idEquipo = null, int? idInmueble = null, string? nota = null, CancellationToken cancellationToken = default)
         {
             try
             {
                 var credencialId = _userSession.IsLoaded ? _userSession.CredencialId : 0;
                 await _logger.LogInformationAsync($"Creando nueva orden de servicio...", "OrdenServicioViewModel", "CreateOrdenServicioAsync");
 
-                var result = await _ordenServicioService.CreateOrdenServicioAsync(idTipoMantenimiento, idCliente, idEquipo, nota, credencialId, cancellationToken);
+                var result = await _ordenServicioService.CreateOrdenServicioAsync(idTipoMantenimiento, idCliente, idEquipo, idInmueble, nota, credencialId, cancellationToken);
 
                 if (result)
                 {

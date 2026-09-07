@@ -24,5 +24,11 @@ namespace Advance_Control.Services.Facturas
 
         /// <summary>Construye, sella y timbra un CFDI 4.0 directamente para una operación vía FEL Bilkon.</summary>
         Task<TimbrarResultadoDto> TimbrarOperacionAsync(int idOperacion, CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Cancela un CFDI ya timbrado (Serie+Folio) ante el SAT vía FEL Bilkon. Operación
+        /// irreversible y sin ambiente de pruebas -- consume 1 timbre si Bilkon confirma código 201.
+        /// </summary>
+        Task<CancelarCfdiResponseDto> CancelarCfdiAsync(int idFactura, CancelarCfdiRequestDto request, CancellationToken cancellationToken = default);
     }
 }

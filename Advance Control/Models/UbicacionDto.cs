@@ -112,5 +112,6 @@ namespace Advance_Control.Models
         /// </summary>
         public string? UsuarioModificacion { get; set; }
         public int? IdArea { get; set; }
+        public int? IdRubro { get; set; }
     }
 }

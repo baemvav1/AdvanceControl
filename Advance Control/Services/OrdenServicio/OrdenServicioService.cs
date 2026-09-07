@@ -128,7 +128,7 @@ namespace Advance_Control.Services.OrdenServicio
         /// <summary>
         /// Crea una nueva orden de servicio
         /// </summary>
-        public async Task<bool> CreateOrdenServicioAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, int credencialId = 0, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateOrdenServicioAsync(int idTipoMantenimiento, int idCliente, int? idEquipo = null, int? idInmueble = null, string? nota = null, int credencialId = 0, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -137,7 +137,8 @@ namespace Advance_Control.Services.OrdenServicio
                 url = new ApiQueryBuilder()
                     .AddRequired("idTipoMantenimiento", idTipoMantenimiento)
                     .AddRequired("idCliente", idCliente)
-                    .AddRequired("idEquipo", idEquipo)
+                    .Add("idEquipo", idEquipo)
+                    .Add("idInmueble", idInmueble)
                     .AddRequired("credencialId", credencialId)
                     .Add("nota", nota)
                     .Build(url);
@@ -216,12 +217,14 @@ namespace Advance_Control.Services.OrdenServicio
         /// Obtiene los técnicos disponibles para atender una orden de servicio,
         /// filtrados por el área del equipo asociado.
         /// </summary>
-        public async Task<List<TecnicoDisponibleDto>> GetTecnicosDisponiblesAsync(string identificador, CancellationToken cancellationToken = default)
+        public async Task<List<TecnicoDisponibleDto>> GetTecnicosDisponiblesAsync(string identificador, string? tipoObjetivo = null, CancellationToken cancellationToken = default)
         {
             try
             {
                 var baseUrl = _endpoints.GetEndpoint("api", "OrdenServicio");
                 var url = $"{baseUrl}/tecnicos?identificador={Uri.EscapeDataString(identificador)}";
+                if (!string.IsNullOrWhiteSpace(tipoObjetivo))
+                    url += $"&tipoObjetivo={Uri.EscapeDataString(tipoObjetivo)}";
 
                 await _logger.LogInformationAsync(
                     $"Obteniendo técnicos disponibles para equipo {identificador} en: {url}",

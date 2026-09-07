@@ -53,10 +53,16 @@ namespace Advance_Control.Models
         public string? RazonSocial { get; set; }
 
         /// <summary>
-        /// Identificador del equipo
+        /// Identificador del equipo o inmueble asociado
         /// </summary>
         [JsonPropertyName("identificador")]
         public string? Identificador { get; set; }
+
+        /// <summary>
+        /// Indica a qué catálogo pertenece Identificador: "equipo" o "inmueble"
+        /// </summary>
+        [JsonPropertyName("tipoObjetivo")]
+        public string? TipoObjetivo { get; set; }
 
         /// <summary>
         /// Nombre de quien atiende

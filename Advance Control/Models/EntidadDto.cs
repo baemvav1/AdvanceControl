@@ -79,5 +79,72 @@ namespace Advance_Control.Models
                 }
             }
         }
+
+        // --- Indicadores de CSD/PFX, calculados por EntidadesViewModel cruzando el RFC de
+        // esta entidad con el RFC del CSD/FIEL cargado. No se deserializan desde el endpoint. ---
+
+        private bool _csdCargado;
+        public bool CsdCargado
+        {
+            get => _csdCargado;
+            set
+            {
+                if (_csdCargado != value)
+                {
+                    _csdCargado = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(CsdIndicadorTexto));
+                }
+            }
+        }
+
+        private bool _csdVigente;
+        public bool CsdVigente
+        {
+            get => _csdVigente;
+            set
+            {
+                if (_csdVigente != value)
+                {
+                    _csdVigente = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(CsdIndicadorTexto));
+                }
+            }
+        }
+
+        public string CsdIndicadorTexto => !CsdCargado ? "Sin CSD" : (CsdVigente ? "CSD vigente" : "CSD vencido");
+
+        private bool _pfxCargado;
+        public bool PfxCargado
+        {
+            get => _pfxCargado;
+            set
+            {
+                if (_pfxCargado != value)
+                {
+                    _pfxCargado = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(PfxIndicadorTexto));
+                }
+            }
+        }
+
+        private bool _pfxVigente;
+        public bool PfxVigente
+        {
+            get => _pfxVigente;
+            set
+            {
+                if (_pfxVigente != value)
+                {
+                    _pfxVigente = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(PfxIndicadorTexto));
+                }
+            }
+        }
+
+        public string PfxIndicadorTexto => !PfxCargado ? "Sin PFX" : (PfxVigente ? "PFX vigente" : "PFX vencido");
     }
 }

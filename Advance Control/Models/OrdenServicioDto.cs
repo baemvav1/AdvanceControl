@@ -47,10 +47,16 @@ namespace Advance_Control.Models
         public string? Descripcion { get; set; }
 
         /// <summary>
-        /// Identificador del equipo
+        /// Identificador del equipo o inmueble asociado
         /// </summary>
         [JsonPropertyName("identificador")]
         public string? Identificador { get; set; }
+
+        /// <summary>
+        /// Indica a qué catálogo pertenece Identificador: "equipo" o "inmueble"
+        /// </summary>
+        [JsonPropertyName("tipoObjetivo")]
+        public string? TipoObjetivo { get; set; }
 
         /// <summary>
         /// ID de la credencial del usuario que creó la orden de servicio

@@ -483,6 +483,67 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task<CancelarCfdiResponseDto> CancelarCfdiAsync(int idFactura, CancelarCfdiRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var url = _endpoints.GetEndpoint("api", "factura", idFactura.ToString(), "cancelar");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Cancelando CFDI de la factura {idFactura} en: {url}", "FacturaService", "CancelarCfdiAsync");
+
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                var contenido = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al cancelar CFDI de la factura {idFactura}. Status: {response.StatusCode}, Content: {contenido}",
+                        null,
+                        "FacturaService",
+                        "CancelarCfdiAsync");
+
+                    return ExtraerResultadoErrorCancelacion(contenido);
+                }
+
+                var result = JsonSerializer.Deserialize<CancelarCfdiResponseDto>(contenido, _jsonOptions);
+                if (result != null)
+                {
+                    result.Success = true;
+                    return result;
+                }
+
+                return new CancelarCfdiResponseDto { Success = false, Message = "La API devolvió una respuesta vacía al cancelar." };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al cancelar CFDI", ex, "FacturaService", "CancelarCfdiAsync");
+                return new CancelarCfdiResponseDto { Success = false, Message = "Error de comunicación con el servidor al cancelar." };
+            }
+        }
+
+        private static CancelarCfdiResponseDto ExtraerResultadoErrorCancelacion(string errorContent)
+        {
+            var resultado = new CancelarCfdiResponseDto { Success = false, Message = errorContent };
+            try
+            {
+                using var doc = JsonDocument.Parse(errorContent);
+                if (doc.RootElement.TryGetProperty("message", out var messageProp))
+                    resultado.Message = messageProp.GetString();
+                if (doc.RootElement.TryGetProperty("observacion", out var observacionProp))
+                    resultado.Observacion = observacionProp.GetString();
+                if (doc.RootElement.TryGetProperty("codigoRespuesta", out var codigoProp))
+                    resultado.CodigoRespuesta = codigoProp.GetString();
+            }
+            catch (JsonException)
+            {
+                // errorContent no es JSON valido; se conserva tal cual en Message.
+            }
+            return resultado;
+        }
+
         private static TimbrarResultadoDto ExtraerResultadoError(string errorContent)
         {
             var resultado = new TimbrarResultadoDto { Success = false, Message = errorContent };

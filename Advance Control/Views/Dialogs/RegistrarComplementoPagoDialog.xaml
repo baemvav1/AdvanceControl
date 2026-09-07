@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentDialog
+    x:Class="Advance_Control.Views.Dialogs.RegistrarComplementoPagoDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Agregar complemento de pago"
+    PrimaryButtonText="Registrar"
+    CloseButtonText="Cancelar"
+    DefaultButton="Primary">
+
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">640</x:Double>
+    </ContentDialog.Resources>
+
+    <StackPanel Width="480" Spacing="12">
+        <TextBlock
+            x:Name="ResumenFacturaTextBlock"
+            FontWeight="SemiBold"
+            TextWrapping="WrapWholeWords" />
+        <TextBlock
+            x:Name="SaldoPendienteTextBlock"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            TextWrapping="WrapWholeWords" />
+
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBox
+                x:Name="MontoTextBox"
+                Width="200"
+                Header="Monto del pago"
+                PlaceholderText="0.00" />
+            <Button
+                x:Name="BtnUsarSaldoCompleto"
+                VerticalAlignment="Bottom"
+                Click="BtnUsarSaldoCompleto_Click"
+                Content="Usar saldo completo" />
+        </StackPanel>
+
+        <CalendarDatePicker
+            x:Name="FechaDatePicker"
+            Header="Fecha del pago" />
+
+        <TextBox
+            x:Name="ReferenciaTextBox"
+            Header="Referencia (opcional)"
+            PlaceholderText="Núm. de transferencia, cheque, etc." />
+
+        <TextBox
+            x:Name="ObservacionesTextBox"
+            Header="Observaciones (opcional)"
+            AcceptsReturn="True"
+            TextWrapping="Wrap"
+            Height="72" />
+
+        <InfoBar
+            x:Name="EstadoInfoBar"
+            IsClosable="False"
+            IsOpen="False"
+            Severity="Error" />
+    </StackPanel>
+</ContentDialog>

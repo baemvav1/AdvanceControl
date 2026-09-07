@@ -475,7 +475,8 @@ var html = $@"<!DOCTYPE html>
                     Descripcion = DescripcionTextBox.Text,
                     Latitud = lat,
                     Longitud = lng,
-                    Activo = true
+                    Activo = true,
+                    IdRubro = RubroInmueblesRadioButton.IsChecked == true ? 2 : 1
                 };
 
                 ApiResponse response;
@@ -521,6 +522,7 @@ var html = $@"<!DOCTYPE html>
             DescripcionTextBox.Text = string.Empty;
             LatTextBox.Text = string.Empty;
             LngTextBox.Text = string.Empty;
+            RubroElevadoresRadioButton.IsChecked = true;
             _isEditMode = false;
             _editingUbicacionId = null;
         }
@@ -531,6 +533,10 @@ var html = $@"<!DOCTYPE html>
             DescripcionTextBox.Text = ubicacion.Descripcion ?? string.Empty;
             LatTextBox.Text = ubicacion.Latitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             LngTextBox.Text = ubicacion.Longitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+            if (ubicacion.IdRubro == 2)
+                RubroInmueblesRadioButton.IsChecked = true;
+            else
+                RubroElevadoresRadioButton.IsChecked = true;
         }
     }
 }

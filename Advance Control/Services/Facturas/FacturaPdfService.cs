@@ -8,7 +8,9 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Advance_Control.Services.Facturas
 {
@@ -311,6 +313,202 @@ namespace Advance_Control.Services.Facturas
                 throw;
             }
         }
+
+        public Task<string> GenerarAcuseCancelacionPdfAsync(FacturaDetalleDto detalle)
+        {
+            if (detalle == null) throw new ArgumentNullException(nameof(detalle));
+            if (detalle.Factura == null) throw new InvalidOperationException("El detalle de la factura no trae la información de encabezado.");
+
+            var factura = detalle.Factura;
+            if (!factura.Cancelada)
+                throw new InvalidOperationException("Esta factura no está cancelada; no hay acuse de cancelación que generar.");
+
+            try
+            {
+                var carpeta = GetFacturasFolder();
+                Directory.CreateDirectory(carpeta);
+
+                var nombreArchivo = $"AcuseCancelacion_{factura.IdFactura}_{LimpiarNombreArchivo(factura.FolioTitulo)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                var rutaArchivo = Path.Combine(carpeta, nombreArchivo);
+                var cabeceraPath = Path.Combine(GetCabecerasFolder(), "Factura.png");
+
+                var acuse = ParsearAcuseCancelacion(factura.AcuseCancelacionXml);
+                var qrBytes = ConstruirQrVerificacion(factura);
+
+                var documento = Document.Create(container =>
+                {
+                    container.Page(page =>
+                    {
+                        page.Size(PageSizes.Letter);
+                        page.Margin(1.5f, Unit.Centimetre);
+                        page.PageColor(Colors.White);
+                        page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Segoe UI"));
+
+                        page.Header().ShowOnce().Column(column =>
+                        {
+                            if (File.Exists(cabeceraPath))
+                            {
+                                column.Item().Image(cabeceraPath).FitWidth();
+                            }
+
+                            column.Item().Row(row =>
+                            {
+                                row.RelativeItem().Text("Acuse de Cancelación de CFDI")
+                                    .FontSize(18)
+                                    .SemiBold()
+                                    .FontColor(Colors.Red.Darken2);
+
+                                row.ConstantItem(200).Text(text =>
+                                {
+                                    text.AlignRight();
+                                    text.DefaultTextStyle(s => s.FontSize(10));
+                                    text.Span("Folio: ").SemiBold();
+                                    text.Span(factura.FolioTitulo);
+                                });
+                            });
+                        });
+
+                        page.Content().PaddingVertical(0.5f, Unit.Centimetre).Column(column =>
+                        {
+                            column.Spacing(8);
+
+                            // Factura cancelada
+                            column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Column(col =>
+                            {
+                                col.Item().Text("Factura cancelada").SemiBold().FontColor(Colors.Blue.Darken2);
+                                col.Item().Text(t => { t.Span("Folio fiscal (UUID): ").SemiBold(); t.Span(factura.Uuid ?? "-"); });
+                                col.Item().Text(t => { t.Span("Receptor: ").SemiBold(); t.Span($"{factura.ReceptorNombre ?? "-"} (RFC: {factura.ReceptorRfc ?? "-"})"); });
+                                col.Item().Text(t => { t.Span("Total: ").SemiBold(); t.Span(factura.TotalTexto); });
+                                col.Item().Text(t => { t.Span("Fecha de emisión: ").SemiBold(); t.Span(factura.FechaTexto); });
+                                col.Item().Text(t => { t.Span("Fecha de timbrado: ").SemiBold(); t.Span(factura.FechaTimbrado?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-"); });
+                            });
+
+                            // Datos de la cancelación
+                            column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Column(col =>
+                            {
+                                col.Item().Text("Datos de la cancelación").SemiBold().FontColor(Colors.Blue.Darken2);
+                                col.Item().Text(t => { t.Span("Motivo: ").SemiBold(); t.Span(MotivoCancelacionTexto(factura.MotivoCancelacion)); });
+                                if (!string.IsNullOrWhiteSpace(factura.UuidSustitucion))
+                                {
+                                    col.Item().Text(t => { t.Span("Folio que sustituye: ").SemiBold(); t.Span(factura.UuidSustitucion); });
+                                }
+                                col.Item().Text(t => { t.Span("Fecha de cancelación: ").SemiBold(); t.Span(factura.FechaCancelacion?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-"); });
+                            });
+
+                            // Confirmación del SAT (parseada del XML del acuse)
+                            column.Item().Background(Colors.Green.Lighten5).Border(1).BorderColor(Colors.Green.Lighten1).Padding(8).Row(row =>
+                            {
+                                row.RelativeItem(3).Column(col =>
+                                {
+                                    col.Item().Text("Confirmación del SAT").SemiBold().FontColor(Colors.Green.Darken2);
+                                    col.Item().Text(t => { t.Span("Fecha del acuse: ").SemiBold(); t.Span(acuse.Fecha?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-"); });
+                                    col.Item().Text(t => { t.Span("RFC emisor: ").SemiBold(); t.Span(acuse.RfcEmisor ?? factura.EmisorRfc ?? "-"); });
+                                    col.Item().Text(t =>
+                                    {
+                                        t.Span("Estatus: ").SemiBold();
+                                        t.Span(acuse.EstatusUuid == "201" ? "201 · Folio Fiscal Cancelado" : acuse.EstatusUuid ?? "-");
+                                    });
+                                    col.Item().Text(t => { t.Span("No. certificado SAT: ").SemiBold(); t.Span(acuse.NoCertificadoSat ?? "-"); });
+                                });
+
+                                row.ConstantItem(110).AlignCenter().Column(qrCol =>
+                                {
+                                    if (qrBytes != null)
+                                    {
+                                        qrCol.Item().Width(100).Image(qrBytes);
+                                    }
+                                });
+                            });
+
+                            column.Item().PaddingTop(4).Text(
+                                "Este acuse no tiene validez fiscal por sí mismo; es la representación de la confirmación de " +
+                                "cancelación emitida por el SAT. La cancelación del CFDI referido arriba sí es válida y definitiva " +
+                                "ante el SAT. Puede verificar el estatus del folio fiscal en el portal del SAT capturando el UUID, " +
+                                "el RFC del emisor y del receptor.")
+                                .FontSize(7)
+                                .Italic()
+                                .FontColor(Colors.Grey.Darken1);
+                        });
+
+                        page.Footer().Text(text =>
+                        {
+                            text.AlignRight();
+                            text.Span("Página ");
+                            text.CurrentPageNumber();
+                            text.Span(" de ");
+                            text.TotalPages();
+                        });
+                    });
+                });
+
+                documento.GeneratePdf(rutaArchivo);
+                _ = _logger.LogInformationAsync($"Acuse de cancelación PDF generado: {rutaArchivo}", "FacturaPdfService", "GenerarAcuseCancelacionPdfAsync");
+
+                return Task.FromResult(rutaArchivo);
+            }
+            catch (Exception ex)
+            {
+                _ = _logger.LogErrorAsync("Error al generar el PDF del acuse de cancelación", ex, "FacturaPdfService", "GenerarAcuseCancelacionPdfAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// Extrae Fecha/RfcEmisor/EstatusUUID del &lt;Acuse&gt; que regresa Bilkon, y el número de
+        /// serie del certificado del SAT embebido en la firma XML-DSig (Signature/KeyInfo/
+        /// X509Data/X509Certificate) -- mismo patrón que ya usamos para leer certificados X.509 en
+        /// otras partes del proyecto. Si el XML no se puede parsear (o falta algún dato), se
+        /// devuelven los campos en null en vez de lanzar -- el PDF debe poder generarse igual,
+        /// mostrando "-" donde falte información.
+        /// </summary>
+        private static (DateTime? Fecha, string? RfcEmisor, string? EstatusUuid, string? NoCertificadoSat) ParsearAcuseCancelacion(string? xmlAcuse)
+        {
+            if (string.IsNullOrWhiteSpace(xmlAcuse))
+            {
+                return (null, null, null, null);
+            }
+
+            try
+            {
+                var doc = XDocument.Parse(xmlAcuse);
+                var acuseEl = doc.Root;
+
+                DateTime? fecha = DateTime.TryParse(acuseEl?.Attribute("Fecha")?.Value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var f) ? f : null;
+                var rfcEmisor = acuseEl?.Attribute("RfcEmisor")?.Value;
+                var estatusUuid = acuseEl?.Descendants().FirstOrDefault(e => e.Name.LocalName == "EstatusUUID")?.Value;
+
+                string? noCertificadoSat = null;
+                var x509CertEl = acuseEl?.Descendants().FirstOrDefault(e => e.Name.LocalName == "X509Certificate");
+                if (x509CertEl != null)
+                {
+                    try
+                    {
+                        var certBytes = Convert.FromBase64String(x509CertEl.Value.Trim());
+                        using var cert = new X509Certificate2(certBytes);
+                        noCertificadoSat = cert.SerialNumber;
+                    }
+                    catch
+                    {
+                        // Certificado embebido no legible -- se deja el número de certificado en null.
+                    }
+                }
+
+                return (fecha, rfcEmisor, estatusUuid, noCertificadoSat);
+            }
+            catch
+            {
+                return (null, null, null, null);
+            }
+        }
+
+        private static string MotivoCancelacionTexto(string? motivo) => motivo switch
+        {
+            "01" => "01 · Comprobante emitido con errores con relación",
+            "02" => "02 · Comprobante emitido con errores sin relación",
+            "03" => "03 · No se llevó a cabo la operación",
+            "04" => "04 · Operación nominativa relacionada en una factura global",
+            _ => motivo ?? "-"
+        };
 
         /// <summary>
         /// URL de verificación oficial del SAT (id/re/rr/tt/fe), codificada como QR PNG.

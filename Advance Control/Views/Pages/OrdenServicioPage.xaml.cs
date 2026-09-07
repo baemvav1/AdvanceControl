@@ -114,9 +114,9 @@ namespace Advance_Control.Views.Pages
                     return;
                 }
 
-                if (!nuevaOrdenControl.IdEquipo.HasValue)
+                if (!nuevaOrdenControl.IdEquipo.HasValue && !nuevaOrdenControl.IdInmueble.HasValue)
                 {
-                    await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un equipo.");
+                    await _notificacionService.MostrarAsync("Error de validación", "Debe seleccionar un equipo o un inmueble.");
                     return;
                 }
 
@@ -131,7 +131,8 @@ namespace Advance_Control.Views.Pages
                     var success = await ViewModel.CreateOrdenServicioAsync(
                         nuevaOrdenControl.IdTipoMantenimiento.Value,
                         nuevaOrdenControl.IdCliente.Value,
-                        nuevaOrdenControl.IdEquipo.Value,
+                        nuevaOrdenControl.IdEquipo,
+                        nuevaOrdenControl.IdInmueble,
                         nuevaOrdenControl.Nota
                     );
 
@@ -276,15 +277,15 @@ namespace Advance_Control.Views.Pages
                 var identificador = orden.Identificador;
                 if (string.IsNullOrWhiteSpace(identificador))
                 {
-                    await _notificacionService.MostrarAsync("Error", "La orden de servicio no tiene un equipo asociado.");
+                    await _notificacionService.MostrarAsync("Error", "La orden de servicio no tiene equipo ni inmueble asociado.");
                     return;
                 }
 
-                var tecnicos = await _ordenServicioService.GetTecnicosDisponiblesAsync(identificador);
+                var tecnicos = await _ordenServicioService.GetTecnicosDisponiblesAsync(identificador, orden.TipoObjetivo);
 
                 if (tecnicos == null || tecnicos.Count == 0)
                 {
-                    await _notificacionService.MostrarAsync("Sin técnicos", "No hay técnicos disponibles para atender esta orden de servicio en el área del equipo.");
+                    await _notificacionService.MostrarAsync("Sin técnicos", "No hay técnicos disponibles para atender esta orden de servicio en el área correspondiente.");
                     return;
                 }
 
