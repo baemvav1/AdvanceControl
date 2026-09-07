@@ -24,17 +24,22 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
     private readonly IEmailService _emailService;
     private readonly ICorreoUsuarioService _correoUsuarioService;
     private readonly List<CheckBox> _ccCheckboxes = [];
+    private readonly List<(string NombreArchivo, byte[] Contenido)> _adjuntosAdicionales;
 
     /// <summary>
-    /// Crea el diálogo de envío de cotización o reporte.
+    /// Crea el diálogo de envío de cotización, reporte, nota o finiquito.
     /// </summary>
-    /// <param name="pdfPath">Ruta al archivo PDF.</param>
+    /// <param name="pdfPath">Ruta al archivo PDF principal (se adjunta siempre).</param>
     /// <param name="contactoPrincipal">Contacto destinatario principal (puede ser null).</param>
     /// <param name="todosContactos">Lista de contactos del cliente para elegir CC.</param>
     /// <param name="razonSocial">Razón social del cliente (para el asunto).</param>
     /// <param name="xamlRoot">XamlRoot del padre.</param>
-    /// <param name="tipo">Tipo de documento: "Cotización" o "Reporte".</param>
+    /// <param name="tipo">Tipo de documento: "Cotización", "Reporte", "Nota" o "Finiquito".</param>
     /// <param name="idOperacion">ID de la operación (para el cuerpo del correo).</param>
+    /// <param name="adjuntosAdicionales">
+    /// Adjuntos extra ya leídos en memoria (nombre + bytes), usados por "Finiquito" para
+    /// sumar reporte, factura PDF y factura XML junto al <paramref name="pdfPath"/> principal.
+    /// </param>
     public EnviarCotizacionDialog(
         string pdfPath,
         ContactoDto? contactoPrincipal,
@@ -43,10 +48,12 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
         XamlRoot xamlRoot,
         string tipo = "Cotización",
         int? idOperacion = null,
-        bool tFinalizado = false)
+        bool tFinalizado = false,
+        List<(string NombreArchivo, byte[] Contenido)>? adjuntosAdicionales = null)
     {
         _pdfPath = pdfPath ?? throw new ArgumentNullException(nameof(pdfPath));
         _razonSocial = razonSocial;
+        _adjuntosAdicionales = adjuntosAdicionales ?? [];
         _emailService = AppServices.Get<IEmailService>();
         _correoUsuarioService = AppServices.Get<ICorreoUsuarioService>();
 
@@ -56,24 +63,41 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
 
         // Pre-llenar campos
         ParaTextBox.Text = contactoPrincipal?.Correo ?? string.Empty;
-        AsuntoTextBox.Text = tipo switch
+
+        if (tipo == "Finiquito")
         {
-            "Nota" => $"Trabajos Realizados {idOperacion}",
-            "Reporte" when tFinalizado => $"Reporte Trabajos Finalizados {idOperacion}",
-            _ => $"{tipo} {idOperacion}"
-        };
+            AsuntoTextBox.Text = $"Operacion Completada {idOperacion}";
 
-        // Construir saludo con tratamiento + nombre + apellido
-        var partesSaludo = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre, contactoPrincipal?.Apellido }
-            .Where(p => !string.IsNullOrWhiteSpace(p));
-        var nombreDestinatario = string.Join(" ", partesSaludo);
-        if (string.IsNullOrWhiteSpace(nombreDestinatario)) nombreDestinatario = "cliente";
+            var partesFiniquito = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            var destinatarioFiniquito = string.Join(" ", partesFiniquito);
+            if (string.IsNullOrWhiteSpace(destinatarioFiniquito)) destinatarioFiniquito = "cliente";
 
-        var idOpTexto = idOperacion.HasValue ? $" #{idOperacion}" : string.Empty;
-        MensajeTextBox.Text =
-            $"Estimado: {nombreDestinatario}.\n\n" +
-            $"En el siguiente correo, adjuntamos la {tipo.ToLowerInvariant()}{idOpTexto}.\n\n" +
-            "Saludos Cordiales";
+            MensajeTextBox.Text =
+                $"Apreciable {destinatarioFiniquito}, Se adjuntan los documentos relacionados con la operacion {idOperacion}.\n" +
+                "Saludos!";
+        }
+        else
+        {
+            AsuntoTextBox.Text = tipo switch
+            {
+                "Nota" => $"Trabajos Realizados {idOperacion}",
+                "Reporte" when tFinalizado => $"Reporte Trabajos Finalizados {idOperacion}",
+                _ => $"{tipo} {idOperacion}"
+            };
+
+            // Construir saludo con tratamiento + nombre + apellido
+            var partesSaludo = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre, contactoPrincipal?.Apellido }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            var nombreDestinatario = string.Join(" ", partesSaludo);
+            if (string.IsNullOrWhiteSpace(nombreDestinatario)) nombreDestinatario = "cliente";
+
+            var idOpTexto = idOperacion.HasValue ? $" #{idOperacion}" : string.Empty;
+            MensajeTextBox.Text =
+                $"Estimado: {nombreDestinatario}.\n\n" +
+                $"En el siguiente correo, adjuntamos la {tipo.ToLowerInvariant()}{idOpTexto}.\n\n" +
+                "Saludos Cordiales";
+        }
 
         // Poblar checkboxes de CC (todos los contactos excepto el principal)
         foreach (var contacto in todosContactos)
@@ -156,6 +180,12 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
                 : string.Empty;
             var cuerpoHtml = $"<html><body><p>{textoHtml}</p>{firmaCidHtml}</body></html>";
 
+            var adjuntos = new List<(string NombreArchivo, byte[] Contenido)>
+            {
+                (Path.GetFileName(_pdfPath), pdfBytes)
+            };
+            adjuntos.AddRange(_adjuntosAdicionales);
+
             var mensaje = new EmailMessage
             {
                 Para = [paraEmail],
@@ -165,7 +195,7 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
                 CuerpoTexto = textoPlano,
                 CuerpoHtml = cuerpoHtml,
                 FirmaImagePath = firmaPath,
-                Adjuntos = [(Path.GetFileName(_pdfPath), pdfBytes)],
+                Adjuntos = adjuntos,
                 CarpetaCliente = string.IsNullOrWhiteSpace(_razonSocial) ? null : _razonSocial
             };
 

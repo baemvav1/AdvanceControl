@@ -3,6 +3,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.Cargos;
 using Advance_Control.Services.Contactos;
+using Advance_Control.Services.Facturas;
 using Advance_Control.Services.ImageViewer;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Mensajeria;
@@ -54,6 +55,8 @@ namespace Advance_Control.Views.Pages
         private readonly IContactoService _contactoService;
         private readonly IFirmaService _firmaService;
         private readonly IMensajeriaService _mensajeriaService;
+        private readonly IFacturaService _facturaService;
+        private readonly IFacturaPdfService _facturaPdfService;
         private readonly ChatPanelViewModel _chatPanelViewModel;
 
         private XamlRoot? _xamlRoot;
@@ -80,6 +83,8 @@ namespace Advance_Control.Views.Pages
             _contactoService      = AppServices.Get<IContactoService>();
             _firmaService         = AppServices.Get<IFirmaService>();
             _mensajeriaService    = AppServices.Get<IMensajeriaService>();
+            _facturaService       = AppServices.Get<IFacturaService>();
+            _facturaPdfService    = AppServices.Get<IFacturaPdfService>();
             _chatPanelViewModel   = AppServices.Get<ChatPanelViewModel>();
 
             var fmt = new CurrencyFormatter("MXN");
@@ -284,6 +289,7 @@ namespace Advance_Control.Views.Pages
 
             await LoadCargosAsync();
             await RefreshImageIndicatorsAsync();
+            await RefreshFacturaVinculadaAsync();
 
             if (!Operacion.TieneCheck)
             {
@@ -297,6 +303,26 @@ namespace Advance_Control.Views.Pages
             // Suscribir CollectionChanged para actualizar TotalMonto
             Operacion.Cargos.CollectionChanged -= OnCargosCollectionChanged;
             Operacion.Cargos.CollectionChanged += OnCargosCollectionChanged;
+        }
+
+        /// <summary>
+        /// Resuelve si la operación ya tiene una factura CFDI real vinculada
+        /// (facturas.id_operacion), para habilitar "Generar Finiquito". No confundir con
+        /// HasFactura (documento/imagen subida manualmente).
+        /// </summary>
+        private async Task RefreshFacturaVinculadaAsync()
+        {
+            if (!Operacion.IdOperacion.HasValue) return;
+            try
+            {
+                var facturadas = await _facturaService.ObtenerOperacionesFacturadasAsync();
+                var match = facturadas.FirstOrDefault(f => f.IdOperacion == Operacion.IdOperacion.Value);
+                Operacion.IdFacturaVinculada = match?.IdFactura;
+            }
+            catch (Exception ex)
+            {
+                LogDebugError(nameof(RefreshFacturaVinculadaAsync), ex);
+            }
         }
 
         private void OnCargosCollectionChanged(object? s, NotifyCollectionChangedEventArgs e)
@@ -954,6 +980,111 @@ namespace Advance_Control.Views.Pages
                 }
             }
             catch (Exception ex) { LogDebugError(nameof(GenerarReporteButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al generar el reporte."); }
+        }
+
+        /// <summary>
+        /// Genera (o reutiliza) cotización y reporte, genera el PDF de la factura vinculada,
+        /// obtiene su XML, y abre el panel de envío de correo con los 4 documentos adjuntos.
+        /// Solo disponible cuando la operación ya tiene una factura CFDI real vinculada
+        /// (Operacion.EstaFacturada / IdFacturaVinculada) — ver RefreshFacturaVinculadaAsync.
+        /// </summary>
+        private async void GenerarFiniquitoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!Operacion.IdOperacion.HasValue) return;
+            if (!Operacion.EstaFacturada || !Operacion.IdFacturaVinculada.HasValue)
+            {
+                await MostrarErrorAsync("Operación no facturada", "El finiquito solo se puede generar cuando la operación ya tiene una factura vinculada.");
+                return;
+            }
+            if (Operacion.Cargos == null || Operacion.Cargos.Count == 0) { await MostrarErrorAsync("Sin cargos", "No hay cargos para generar el finiquito."); return; }
+
+            try
+            {
+                string? dirigidoA = null;
+                ContactoDto? contactoFiniquito = null;
+                List<ContactoDto> contactosFiniquito = [];
+                if (Operacion.IdCliente.HasValue && Operacion.IdCliente.Value > 0)
+                {
+                    try
+                    {
+                        var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = Operacion.IdCliente.Value });
+                        if (contactos?.Count > 0)
+                        {
+                            contactosFiniquito = contactos;
+                            var lv = new ListView { ItemsSource = contactos, DisplayMemberPath = "NombreCompleto", SelectionMode = ListViewSelectionMode.Single, MaxHeight = 300 };
+                            var sel = new ContentDialog { Title = "¿A quién va dirigido el finiquito?", Content = new ScrollViewer { Content = lv, MaxHeight = 320 }, PrimaryButtonText = "Seleccionar", SecondaryButtonText = "Omitir", DefaultButton = ContentDialogButton.Primary, XamlRoot = _xamlRoot };
+                            if (await sel.ShowAsync() == ContentDialogResult.Primary && lv.SelectedItem is ContactoDto c)
+                            {
+                                contactoFiniquito = c;
+                                dirigidoA = string.Join(" ", new[] { c.Tratamiento, c.Nombre, c.Apellido }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                            }
+                        }
+                    }
+                    catch (Exception ex) { LogDebugError("ContactosFiniquito", ex); }
+                }
+
+                if (!await VerificarFirmasAntesDePdfAsync()) return;
+
+                // Cotización y reporte: reutilizar si ya se generaron, si no generarlos ahora.
+                var cotizacionPath = Operacion.CotizacionPdfPath;
+                if (string.IsNullOrEmpty(cotizacionPath))
+                    cotizacionPath = await _viewModel.GenerateQuoteAsync(Operacion, dirigidoA);
+                if (string.IsNullOrEmpty(cotizacionPath))
+                {
+                    await MostrarErrorAsync("Error", "No se pudo generar la cotización para el finiquito.");
+                    return;
+                }
+                Operacion.CotizacionPdfPath = cotizacionPath;
+
+                var reportePath = Operacion.ReportePdfPath;
+                if (string.IsNullOrEmpty(reportePath))
+                    reportePath = await _viewModel.GenerateReporteAsync(Operacion, dirigidoA);
+                if (string.IsNullOrEmpty(reportePath))
+                {
+                    await MostrarErrorAsync("Error", "No se pudo generar el reporte para el finiquito.");
+                    return;
+                }
+                Operacion.ReportePdfPath = reportePath;
+
+                // Factura: PDF generado localmente a partir del detalle + XML crudo del CFDI.
+                var idFactura = Operacion.IdFacturaVinculada.Value;
+                var detalle = await _facturaService.ObtenerDetalleFacturaAsync(idFactura);
+                if (detalle?.Factura == null)
+                {
+                    await MostrarErrorAsync("Error", "No se pudo obtener el detalle de la factura para el finiquito.");
+                    return;
+                }
+                var facturaPdfPath = await _facturaPdfService.GenerarFacturaPdfAsync(detalle);
+                var xmlContenido = await _facturaService.ObtenerXmlFacturaAsync(idFactura);
+                if (string.IsNullOrEmpty(xmlContenido))
+                {
+                    await MostrarErrorAsync("Error", "No se pudo obtener el XML de la factura para el finiquito.");
+                    return;
+                }
+
+                var nombreBase = !string.IsNullOrWhiteSpace(detalle.Factura.Uuid) ? detalle.Factura.Uuid : detalle.Factura.FolioTitulo;
+                var reporteBytes = await File.ReadAllBytesAsync(reportePath);
+                var facturaPdfBytes = await File.ReadAllBytesAsync(facturaPdfPath);
+                var facturaXmlBytes = System.Text.Encoding.UTF8.GetBytes(xmlContenido);
+
+                var adjuntosAdicionales = new List<(string NombreArchivo, byte[] Contenido)>
+                {
+                    (Path.GetFileName(reportePath), reporteBytes),
+                    (Path.GetFileName(facturaPdfPath), facturaPdfBytes),
+                    ($"{nombreBase}.xml", facturaXmlBytes)
+                };
+
+                var email = new EnviarCotizacionDialog(
+                    cotizacionPath, contactoFiniquito, contactosFiniquito, Operacion.RazonSocial ?? string.Empty, _xamlRoot!,
+                    tipo: "Finiquito", idOperacion: Operacion.IdOperacion, adjuntosAdicionales: adjuntosAdicionales);
+
+                if (await email.ShowAsync() == ContentDialogResult.Primary)
+                {
+                    _activityService.Registrar("Operaciones", "Finiquito enviado");
+                    await _notificacionService.MostrarAsync("Correo enviado", "El finiquito fue enviado correctamente.");
+                }
+            }
+            catch (Exception ex) { LogDebugError(nameof(GenerarFiniquitoButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al generar el finiquito."); }
         }
 
         private async void AbrirCotizacionPdfButton_Click(object sender, RoutedEventArgs e)

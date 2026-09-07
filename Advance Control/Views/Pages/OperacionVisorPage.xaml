@@ -847,6 +847,15 @@
                                             <AppBarSeparator  Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}"/>
 
                                             <AppBarButton
+                                                Click="GenerarFiniquitoButton_Click"
+                                                Icon="MailForward"
+                                                IsEnabled="{x:Bind Operacion.EstaFacturada, Mode=OneWay}"
+                                                Label="Generar Finiquito"
+                                                ToolTipService.ToolTip="Enviar por correo cotización, reporte y factura (requiere que la operación ya esté facturada)" />
+
+                                            <AppBarSeparator />
+
+                                            <AppBarButton
                                                 Click="GenerarNotaButton_Click"
                                                 Icon="Document"
                                                 IsEnabled="{x:Bind Operacion.IsTrabajoFinalizado, Mode=OneWay}"

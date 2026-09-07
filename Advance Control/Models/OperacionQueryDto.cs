@@ -52,5 +52,11 @@ namespace Advance_Control.Models
         /// se ocultan del listado normal. Usado por el historial de cobranza.
         /// </summary>
         public bool IncluirFinalizadas { get; set; }
+
+        /// <summary>
+        /// Si es true, incluye operaciones que ya tienen una factura vinculada, que por
+        /// defecto se ocultan del listado.
+        /// </summary>
+        public bool IncluirFacturadas { get; set; }
     }
 }
