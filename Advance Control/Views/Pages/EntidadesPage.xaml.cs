@@ -588,6 +588,7 @@ namespace Advance_Control.Views.Pages
                 if (resultado.Success)
                 {
                     await _notificacionService.MostrarAsync("CSD cargado", "El certificado de sello digital se cargó correctamente.");
+                    await ViewModel.LoadEntidadesAsync();
                 }
                 else
                 {
@@ -598,6 +599,144 @@ namespace Advance_Control.Views.Pages
             {
                 await _loggingService.LogErrorAsync("Error al cargar el CSD desde la UI", ex, "EntidadesPage", "CertificadoButton_Click");
                 await _notificacionService.MostrarAsync("Error", "Ocurrió un error al cargar el CSD. Por favor, intente nuevamente.");
+            }
+        }
+
+        /// <summary>
+        /// Genera y guarda el PFX de cancelación a partir de la FIEL. La FIEL es más sensible que
+        /// el CSD (firma legal de la empresa, no solo sellado de comprobantes), así que exige que
+        /// ya haya un CSD cargado para esta entidad antes de permitir la carga de la FIEL.
+        /// </summary>
+        private async void PfxButton_Click(object sender, RoutedEventArgs e)
+        {
+            var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync();
+            if (!estadoCsd.Cargado)
+            {
+                await _notificacionService.MostrarAsync(
+                    "CSD requerido",
+                    "Primero carga el CSD de esta entidad. La FIEL solo se usa para generar el PFX de cancelación una vez que el CSD de timbrado ya está cargado.");
+                return;
+            }
+
+            StorageFile? archivoCer = null;
+            StorageFile? archivoKey = null;
+
+            var estadoTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap };
+
+            async Task ActualizarEstadoAsync()
+            {
+                var estado = await _configuracionEmisorService.ObtenerEstadoFielAsync();
+                if (!estado.Cargado)
+                {
+                    estadoTextBlock.Text = "⚠️ No hay PFX generado todavía.";
+                }
+                else
+                {
+                    var vigenciaTexto = estado.FechaVigenciaHasta.HasValue ? estado.FechaVigenciaHasta.Value.ToString("dd/MM/yyyy") : "?";
+                    estadoTextBlock.Text = estado.Vigente
+                        ? $"✅ PFX generado a partir de la FIEL vigente (No. {estado.NumeroCertificado}, vence {vigenciaTexto})"
+                        : $"⚠️ PFX generado a partir de una FIEL vencida (No. {estado.NumeroCertificado}, venció {vigenciaTexto})";
+                }
+            }
+
+            var certTextBlock = new TextBlock { Text = "Sin archivo seleccionado", Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray) };
+            var keyTextBlock = new TextBlock { Text = "Sin archivo seleccionado", Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray) };
+
+            var btnCert = new Button { Content = "Elegir .cer" };
+            btnCert.Click += async (_, _) =>
+            {
+                var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.Downloads };
+                picker.FileTypeFilter.Add(".cer");
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow!);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+                var archivo = await picker.PickSingleFileAsync();
+                if (archivo == null) return;
+                archivoCer = archivo;
+                certTextBlock.Text = $"✅ {archivo.Name}";
+            };
+
+            var btnKey = new Button { Content = "Elegir .key" };
+            btnKey.Click += async (_, _) =>
+            {
+                var picker = new FileOpenPicker { SuggestedStartLocation = PickerLocationId.Downloads };
+                picker.FileTypeFilter.Add(".key");
+                var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow!);
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+                var archivo = await picker.PickSingleFileAsync();
+                if (archivo == null) return;
+                archivoKey = archivo;
+                keyTextBlock.Text = $"✅ {archivo.Name}";
+            };
+
+            var passwordBox = new PasswordBox { PlaceholderText = "Contraseña de la FIEL" };
+
+            var dialogContent = new StackPanel
+            {
+                Spacing = 8,
+                Children =
+                {
+                    new TextBlock { Text = "✅ CSD cargado para esta entidad.", Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray) },
+                    estadoTextBlock,
+                    new TextBlock { Text = "Certificado de la FIEL (.cer):", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 0) },
+                    btnCert,
+                    certTextBlock,
+                    new TextBlock { Text = "Llave privada de la FIEL (.key):", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 0) },
+                    btnKey,
+                    keyTextBlock,
+                    new TextBlock { Text = "Contraseña de la FIEL:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 0) },
+                    passwordBox
+                }
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = "Generar y guardar PFX (FIEL)",
+                Content = dialogContent,
+                PrimaryButtonText = "Generar y guardar",
+                CloseButtonText = "Cerrar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            await ActualizarEstadoAsync();
+            var result = await dialog.ShowAsync();
+
+            if (result != ContentDialogResult.Primary)
+                return;
+
+            if (archivoCer == null || archivoKey == null)
+            {
+                await _notificacionService.MostrarAsync("Validación", "Selecciona el archivo .cer y el archivo .key de la FIEL antes de generar el PFX.");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(passwordBox.Password))
+            {
+                await _notificacionService.MostrarAsync("Validación", "La contraseña de la FIEL es obligatoria.");
+                return;
+            }
+
+            try
+            {
+                var certBytes = await ReadAllBytesAsync(archivoCer);
+                var keyBytes = await ReadAllBytesAsync(archivoKey);
+
+                var resultado = await _configuracionEmisorService.GuardarFielAsync(certBytes, keyBytes, passwordBox.Password);
+
+                if (resultado.Success)
+                {
+                    await _notificacionService.MostrarAsync("PFX generado", "El PFX se generó y guardó correctamente a partir de la FIEL.");
+                    await ViewModel.LoadEntidadesAsync();
+                }
+                else
+                {
+                    await _notificacionService.MostrarAsync("Error", resultado.Message ?? "No se pudo generar el PFX.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al generar el PFX desde la UI", ex, "EntidadesPage", "PfxButton_Click");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al generar el PFX. Por favor, intente nuevamente.");
             }
         }
 

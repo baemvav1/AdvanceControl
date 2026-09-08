@@ -299,7 +299,9 @@ namespace Advance_Control.Services.Ubicaciones
                     MetadataJSON = ubicacion.MetadataJSON,
                     Activo = ubicacion.Activo,
                     UsuarioCreacion = ubicacion.UsuarioCreacion,
-                    UsuarioModificacion = ubicacion.UsuarioModificacion
+                    UsuarioModificacion = ubicacion.UsuarioModificacion,
+                    IdArea = ubicacion.IdArea,
+                    IdRubro = ubicacion.IdRubro
                 };
 
                 var json = JsonSerializer.Serialize(ubicacionToUpdate);

@@ -21,6 +21,8 @@ using Advance_Control.Services.Dialog;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Equipos;
+using Advance_Control.Services.Inmuebles;
+using Advance_Control.Services.RelacionesInmueble;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.UserInfo;
 using Advance_Control.Services.Session;
@@ -32,6 +34,7 @@ using Advance_Control.Services.Proveedores;
 using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Cargos;
 using Advance_Control.Services.Servicios;
+using Advance_Control.Services.Productos;
 using Advance_Control.Services.Quotes;
 using Advance_Control.Services.Reportes;
 using Advance_Control.Services.GoogleMaps;
@@ -320,6 +323,27 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar InmuebleService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IInmuebleService, InmuebleService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar UserInfoService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IUserInfoService, UserInfoService>((sp, client) =>
                     {
@@ -366,8 +390,49 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar RelacionInmuebleService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IRelacionInmuebleService, RelacionInmuebleService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar RelacionUsuarioAreaService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<Services.RelacionUsuarioArea.IRelacionUsuarioAreaService, Services.RelacionUsuarioArea.RelacionUsuarioAreaService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar RelacionUsuarioRubroService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<Services.RelacionUsuarioRubro.IRelacionUsuarioRubroService, Services.RelacionUsuarioRubro.RelacionUsuarioRubroService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
@@ -485,6 +550,27 @@ namespace Advance_Control
 
                     // Registrar ServicioService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IServicioService, ServicioService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        // Configurar timeout según modo desarrollo
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar ProductoService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IProductoService, ProductoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
@@ -892,14 +978,17 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.CustomersViewModel>();
                     services.AddTransient<ViewModels.ProveedoresViewModel>();
                     services.AddTransient<ViewModels.EquiposViewModel>();
+                    services.AddTransient<ViewModels.InmueblesViewModel>();
                     services.AddTransient<ViewModels.OperacionesViewModel>();
                     services.AddTransient<ViewModels.AcesoriaViewModel>();
                     services.AddTransient<ViewModels.OrdenServicioViewModel>();
                     services.AddTransient<ViewModels.LevantamientoViewModel>();
                     services.AddTransient<ViewModels.LevantamientosViewModel>();
                     services.AddTransient<ViewModels.NuevoEquipoViewModel>();
+                    services.AddTransient<ViewModels.NuevoInmuebleViewModel>();
                     services.AddTransient<ViewModels.RefaccionesViewModel>();
                     services.AddTransient<ViewModels.ServiciosViewModel>();
+                    services.AddTransient<ViewModels.ProductosViewModel>();
                     services.AddTransient<ViewModels.UbicacionesViewModel>();
                     services.AddTransient<ViewModels.AreasViewModel>();
                     services.AddTransient<ViewModels.EntidadesViewModel>();

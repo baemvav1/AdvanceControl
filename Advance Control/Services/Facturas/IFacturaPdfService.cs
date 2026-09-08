@@ -17,5 +17,14 @@ namespace Advance_Control.Services.Facturas
         /// </summary>
         /// <returns>La ruta del archivo PDF generado.</returns>
         Task<string> GenerarFacturaPdfAsync(FacturaDetalleDto detalle);
+
+        /// <summary>
+        /// Genera la representación impresa del Acuse de Cancelación del SAT para una factura ya
+        /// cancelada (Cancelada == true). Parsea el XML crudo del acuse (AcuseCancelacionXml,
+        /// solo poblado en el detalle) para mostrar la fecha del acuse, el RFC emisor, el estatus
+        /// del folio y el número de certificado del SAT que firmó el acuse.
+        /// </summary>
+        /// <returns>La ruta del archivo PDF generado.</returns>
+        Task<string> GenerarAcuseCancelacionPdfAsync(FacturaDetalleDto detalle);
     }
 }

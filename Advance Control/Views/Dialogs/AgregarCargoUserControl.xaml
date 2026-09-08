@@ -35,6 +35,7 @@
                             SelectionChanged="TipoCargoComboBox_SelectionChanged">
                             <ComboBoxItem Content="Refacción" Tag="1" />
                             <ComboBoxItem Content="Servicio" Tag="2" />
+                            <ComboBoxItem Content="Producto" Tag="3" />
                         </ComboBox>
                     </StackPanel>
 
@@ -55,6 +56,9 @@
 
                         <!--  ContentControl for Servicio Selector (lazy loaded)  -->
                         <ContentControl x:Name="ServicioSelectorContainer" Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='2'}" />
+
+                        <!--  ContentControl for Producto Selector (lazy loaded)  -->
+                        <ContentControl x:Name="ProductoSelectorContainer" Visibility="{x:Bind SelectedCargoType, Mode=OneWay, Converter={StaticResource CargoTypeToVisibilityConverter}, ConverterParameter='3'}" />
 
                     </StackPanel>
                 </Grid>

@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Advance_Control.Views.Pages.ProductosPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Advance_Control.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:local="using:Advance_Control.Views" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <converters:BooleanToCornerRadiusConverter x:Key="BooleanToCornerRadiusConverter" />
+        <converters:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+        <converters:BooleanToExpandTextConverter x:Key="BooleanToExpandTextConverter" />
+    </Page.Resources>
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Header  -->
+        <StackPanel
+            Grid.Row="0" Margin="0,0,0,8" Orientation="Horizontal" Spacing="8">
+            <Button
+                x:Name="ToggleFiltrosButton"
+                Click="ToggleFiltros_Click"
+                Content="Filtros" />
+
+            <Button
+                Background="Green"
+                Click="NuevoButton_Click"
+                Content="+"
+                Foreground="White"
+                ToolTipService.ToolTip="Nuevo Producto" />
+        </StackPanel>
+
+        <!--  Filtros  -->
+        <StackPanel
+            x:Name="Filtros"
+            Grid.Row="1" Margin="0,0,0,16" Spacing="12"
+            Visibility="Collapsed">
+            <TextBlock
+                FontSize="16" FontWeight="SemiBold" Text="Filtros de búsqueda" />
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Concepto"
+                    KeyDown="FiltroTextBox_KeyDown"
+                    PlaceholderText="Concepto del producto"
+                    Text="{x:Bind ViewModel.ConceptoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Descripción"
+                    KeyDown="FiltroTextBox_KeyDown"
+                    PlaceholderText="Búsqueda en descripción"
+                    Text="{x:Bind ViewModel.DescripcionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <TextBox
+                    Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="Costo directo"
+                    KeyDown="FiltroTextBox_KeyDown"
+                    PlaceholderText="Costo directo del producto"
+                    Text="{x:Bind ViewModel.CostoDirectoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <StackPanel
+                    Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2" HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom" Orientation="Horizontal" Spacing="8">
+                    <Button Click="ClearButton_Click" Content="Limpiar"/>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+
+        <!--  Lista de productos  -->
+        <Grid Grid.Row="2">
+            <!--  Loading indicator  -->
+            <ProgressRing
+                Width="50" Height="50" HorizontalAlignment="Center" VerticalAlignment="Center"
+                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+
+            <!--  ItemsRepeater con ScrollViewer  -->
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Productos, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="0" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate xmlns:local="using:Advance_Control.Models" x:DataType="local:ProductoDto">
+                            <Grid Margin="0,5,20,5">
+                                <StackPanel Orientation="Vertical">
+                                    <Grid
+                                        x:Name="Head" Grid.Row="0" MinHeight="90" Padding="16"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="0,0,0,1"
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
+                                        Tag="{x:Bind}"
+                                        Tapped="HeadGrid_Tapped">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <!--  Información principal del producto  -->
+                                        <StackPanel Grid.Column="0" Spacing="6">
+                                            <TextBlock
+                                                FontSize="16" FontWeight="SemiBold"
+                                                Text="{x:Bind Concepto}" />
+                                            <TextBlock
+                                                FontSize="14"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Text="{x:Bind Descripcion}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <StackPanel Orientation="Horizontal" Spacing="20">
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Directo: $" />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind CostoDirecto}" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Utilidad: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind PorcentajeUtilidad}" />
+                                                    <Run Text="%" />
+                                                </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Final: $" />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind CostoFinal}" />
+                                                </TextBlock>
+                                            </StackPanel>
+                                        </StackPanel>
+
+                                        <!--  Botón para expandir/colapsar  -->
+                                        <Button
+                                            Grid.Column="1" VerticalAlignment="Center" Background="Transparent" BorderThickness="0"
+                                            Click="ToggleExpandButton_Click"
+                                            Content="{x:Bind Expand, Converter={StaticResource BooleanToExpandTextConverter}, Mode=OneWay}"
+                                            Tag="{x:Bind}"/>
+                                    </Grid>
+                                    <Grid
+                                        x:Name="Body" Grid.Row="1" Padding="8" Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                        CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='0,0,8,8|0', Mode=OneWay}"
+                                        Visibility="{x:Bind Expand, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                        <Pivot>
+                                            <!--  Información del Producto  -->
+                                            <PivotItem Header="Información">
+                                                <Grid Padding="8">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                    </Grid.RowDefinitions>
+
+                                                    <StackPanel
+                                                        Grid.Row="0" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="ID Producto:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind IdProducto}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="0" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Concepto:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Concepto}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="1" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Costo directo:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind CostoDirecto}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="1" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="% Utilidad:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind PorcentajeUtilidad}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="2" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Costo final (cliente):" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind CostoFinal}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="2" Grid.Column="1" Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Estatus:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Estatus}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,16,0,0" Orientation="Horizontal" Spacing="8">
+                                                        <Button
+                                                            Background="DarkOrange" BorderThickness="0"
+                                                            Click="EditarButton_Click" Content="Editar" Foreground="White"
+                                                            Tag="{x:Bind}"/>
+                                                        <Button
+                                                            Background="DarkRed" BorderThickness="0"
+                                                            Click="EliminarButton_Click" Content="Eliminar" Foreground="White"
+                                                            Tag="{x:Bind}"/>
+                                                    </StackPanel>
+                                                </Grid>
+                                            </PivotItem>
+
+                                            <!--  Descripción completa  -->
+                                            <PivotItem Header="Descripción">
+                                                <StackPanel Padding="8">
+                                                    <TextBlock
+                                                        FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                        Text="{x:Bind Descripcion}"
+                                                        TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </PivotItem>
+                                        </Pivot>
+                                    </Grid>
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

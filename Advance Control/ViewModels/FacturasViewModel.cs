@@ -17,59 +17,48 @@ namespace Advance_Control.ViewModels
 {
     public class FacturasViewModel : ViewModelBase
     {
+        private const int TamanoPagina = 8;
+
         private readonly IFacturaService _facturaService;
-        private readonly List<FacturaResumenDto> _facturasExistentesBase = new();
-        private GuardarFacturaRequestDto? _facturaActualRequest;
-        private FacturaResumenDto? _facturaActual;
-        private ObservableCollection<FacturaConceptoDto> _conceptosFactura;
-        private ObservableCollection<FacturaTrasladoDto> _trasladosGlobales;
-        private ObservableCollection<FacturaResumenDto> _facturasExistentes;
+        private readonly IFacturaPdfService _facturaPdfService;
+
+        private readonly List<FacturaResumenDto> _todasLasFacturas = new();
+        private List<FacturaResumenDto> _facturasFiltradas = new();
+
+        private ObservableCollection<FacturaResumenDto> _facturasPagina;
+        private ObservableCollection<FacturaResumenDto> _sugerencias;
+
         private bool _isLoading;
         private string? _errorMessage;
         private string? _successMessage;
-        private DateTimeOffset? _fechaFiltroDesde;
-        private DateTimeOffset? _fechaFiltroHasta;
-        private string? _folioFiltro;
-        private string? _receptorFiltro;
-        private string? _metodoPagoFiltro;
-        private string? _totalFiltro;
 
-        public FacturasViewModel(IFacturaService facturaService)
+        private string? _textoBusqueda;
+        private bool _incluirConSerie = true;
+        private bool _incluirSinSerie = true;
+        private bool _incluirComplementosPago = true;
+        private DateTimeOffset? _fechaDesde;
+        private DateTimeOffset? _fechaHasta;
+
+        private int _paginaActual = 1;
+
+        public FacturasViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService)
         {
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
-            _conceptosFactura = new ObservableCollection<FacturaConceptoDto>();
-            _trasladosGlobales = new ObservableCollection<FacturaTrasladoDto>();
-            _facturasExistentes = new ObservableCollection<FacturaResumenDto>();
+            _facturaPdfService = facturaPdfService ?? throw new ArgumentNullException(nameof(facturaPdfService));
+            _facturasPagina = new ObservableCollection<FacturaResumenDto>();
+            _sugerencias = new ObservableCollection<FacturaResumenDto>();
         }
 
-        public FacturaResumenDto? FacturaActual
+        public ObservableCollection<FacturaResumenDto> FacturasPagina
         {
-            get => _facturaActual;
-            set
-            {
-                if (SetProperty(ref _facturaActual, value))
-                {
-                    OnPropertyChanged(nameof(CanSave));
-                }
-            }
+            get => _facturasPagina;
+            private set => SetProperty(ref _facturasPagina, value);
         }
 
-        public ObservableCollection<FacturaConceptoDto> ConceptosFactura
+        public ObservableCollection<FacturaResumenDto> Sugerencias
         {
-            get => _conceptosFactura;
-            set => SetProperty(ref _conceptosFactura, value);
-        }
-
-        public ObservableCollection<FacturaTrasladoDto> TrasladosGlobales
-        {
-            get => _trasladosGlobales;
-            set => SetProperty(ref _trasladosGlobales, value);
-        }
-
-        public ObservableCollection<FacturaResumenDto> FacturasExistentes
-        {
-            get => _facturasExistentes;
-            set => SetProperty(ref _facturasExistentes, value);
+            get => _sugerencias;
+            private set => SetProperty(ref _sugerencias, value);
         }
 
         public bool IsLoading
@@ -79,7 +68,9 @@ namespace Advance_Control.ViewModels
             {
                 if (SetProperty(ref _isLoading, value))
                 {
-                    OnPropertyChanged(nameof(CanSave));
+                    OnPropertyChanged(nameof(PuedeIrAnterior));
+                    OnPropertyChanged(nameof(PuedeIrSiguiente));
+                    OnPropertyChanged(nameof(SinResultados));
                 }
             }
         }
@@ -96,81 +87,103 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _successMessage, value);
         }
 
-        public DateTimeOffset? FechaFiltroDesde
+        public string? TextoBusqueda
         {
-            get => _fechaFiltroDesde;
-            set
+            get => _textoBusqueda;
+            set => SetProperty(ref _textoBusqueda, value);
+        }
+
+        public bool IncluirConSerie
+        {
+            get => _incluirConSerie;
+            set => SetProperty(ref _incluirConSerie, value);
+        }
+
+        public bool IncluirSinSerie
+        {
+            get => _incluirSinSerie;
+            set => SetProperty(ref _incluirSinSerie, value);
+        }
+
+        public bool IncluirComplementosPago
+        {
+            get => _incluirComplementosPago;
+            set => SetProperty(ref _incluirComplementosPago, value);
+        }
+
+        public DateTimeOffset? FechaDesde
+        {
+            get => _fechaDesde;
+            set => SetProperty(ref _fechaDesde, value);
+        }
+
+        public DateTimeOffset? FechaHasta
+        {
+            get => _fechaHasta;
+            set => SetProperty(ref _fechaHasta, value);
+        }
+
+        public int PaginaActual
+        {
+            get => _paginaActual;
+            private set => SetProperty(ref _paginaActual, value);
+        }
+
+        public int TotalPaginas => Math.Max(1, (int)Math.Ceiling(_facturasFiltradas.Count / (double)TamanoPagina));
+        public int TotalFacturasSistema => _todasLasFacturas.Count;
+        public int TotalFacturasFiltradas => _facturasFiltradas.Count;
+        public bool PuedeIrAnterior => PaginaActual > 1 && !IsLoading;
+        public bool PuedeIrSiguiente => PaginaActual < TotalPaginas && !IsLoading;
+        public bool SinResultados => !IsLoading && FacturasPagina.Count == 0;
+
+        public string ResumenPaginacionTexto
+        {
+            get
             {
-                if (SetProperty(ref _fechaFiltroDesde, value))
+                if (_facturasFiltradas.Count == 0)
                 {
-                    AplicarFiltrosFacturasExistentes();
+                    return TotalFacturasSistema == 0
+                        ? "No hay facturas registradas todavía."
+                        : $"0 de {TotalFacturasSistema} facturas (sin coincidencias con los filtros aplicados).";
                 }
+
+                var inicio = ((PaginaActual - 1) * TamanoPagina) + 1;
+                var fin = Math.Min(PaginaActual * TamanoPagina, _facturasFiltradas.Count);
+                return $"Mostrando {inicio}–{fin} de {TotalFacturasFiltradas} facturas encontradas · {TotalFacturasSistema} en total";
             }
         }
 
-        public DateTimeOffset? FechaFiltroHasta
+        public string PaginaTexto => $"Página {PaginaActual} de {TotalPaginas}";
+
+        public async Task CargarFacturasAsync()
         {
-            get => _fechaFiltroHasta;
-            set
+            try
             {
-                if (SetProperty(ref _fechaFiltroHasta, value))
-                {
-                    AplicarFiltrosFacturasExistentes();
-                }
+                IsLoading = true;
+                ErrorMessage = null;
+
+                var facturas = await _facturaService.ObtenerFacturasAsync();
+                _todasLasFacturas.Clear();
+                _todasLasFacturas.AddRange(facturas.OrderByDescending(f => f.Fecha).ThenByDescending(f => f.IdFactura));
+
+                Buscar();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al consultar las facturas: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
             }
         }
 
-        public string? FolioFiltro
-        {
-            get => _folioFiltro;
-            set
-            {
-                if (SetProperty(ref _folioFiltro, value))
-                {
-                    AplicarFiltrosFacturasExistentes();
-                }
-            }
-        }
-
-        public string? ReceptorFiltro
-        {
-            get => _receptorFiltro;
-            set
-            {
-                if (SetProperty(ref _receptorFiltro, value))
-                {
-                    AplicarFiltrosFacturasExistentes();
-                }
-            }
-        }
-
-        public string? MetodoPagoFiltro
-        {
-            get => _metodoPagoFiltro;
-            set
-            {
-                if (SetProperty(ref _metodoPagoFiltro, value))
-                {
-                    AplicarFiltrosFacturasExistentes();
-                }
-            }
-        }
-
-        public string? TotalFiltro
-        {
-            get => _totalFiltro;
-            set
-            {
-                if (SetProperty(ref _totalFiltro, value))
-                {
-                    AplicarFiltrosFacturasExistentes();
-                }
-            }
-        }
-
-        public bool CanSave => _facturaActualRequest != null && ConceptosFactura.Count > 0 && !IsLoading;
-        public string ResumenFacturasExistentes => $"{FacturasExistentes.Count} facturas mostradas";
-
+        /// <summary>
+        /// Carga un XML de factura ya timbrada externamente (folio suelto del portal de Bilkon,
+        /// sin Serie) y la guarda. Las facturas con Serie+Folio se generan solo por timbrado
+        /// directo (TimbrarOperacionDirectoAsync); esto es exclusivamente para las que se siguen
+        /// emitiendo manualmente en el sistema web del proveedor.
+        /// </summary>
         public async Task CargarArchivoXmlAsync(nint windowHandle, XamlRoot xamlRoot)
         {
             try
@@ -201,7 +214,6 @@ namespace Advance_Control.ViewModels
                     }
 
                     var result = await ValidarYGuardarFacturaAsync(requestPreparado);
-                    AplicarFacturaActual(requestPreparado);
 
                     if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
                     {
@@ -212,7 +224,7 @@ namespace Advance_Control.ViewModels
                         return;
                     }
 
-                    await ActualizarFacturasExistentesAsync();
+                    await CargarFacturasAsync();
                     SuccessMessage = string.IsNullOrWhiteSpace(result.Message)
                         ? $"Archivo {file.Name} cargado y guardado exitosamente."
                         : $"{file.Name}: {result.Message}";
@@ -228,6 +240,7 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        /// <summary>Igual que CargarArchivoXmlAsync pero para varios XML en lote (mismo origen: portal de Bilkon).</summary>
         public async Task CargarYGuardarMultiplesFacturasAsync(nint windowHandle, XamlRoot xamlRoot)
         {
             try
@@ -255,7 +268,6 @@ namespace Advance_Control.ViewModels
                 var descartadas = 0;
                 var fallidas = 0;
                 var errores = new List<string>();
-                GuardarFacturaRequestDto? ultimaFacturaValida = null;
 
                 foreach (var file in files)
                 {
@@ -293,7 +305,6 @@ namespace Advance_Control.ViewModels
                         }
 
                         var result = await ValidarYGuardarFacturaAsync(requestPreparado);
-                        ultimaFacturaValida = requestPreparado;
 
                         if (result.Success)
                         {
@@ -317,12 +328,7 @@ namespace Advance_Control.ViewModels
                     }
                 }
 
-                if (ultimaFacturaValida != null)
-                {
-                    AplicarFacturaActual(ultimaFacturaValida);
-                }
-
-                await ActualizarFacturasExistentesAsync();
+                await CargarFacturasAsync();
 
                 SuccessMessage = $"Carga masiva finalizada. Nuevas: {cargadas}. Duplicadas: {duplicadas}. Descartadas: {descartadas}. Fallidas: {fallidas}.";
                 ErrorMessage = errores.Count > 0
@@ -337,182 +343,6 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
-        }
-
-        public async Task GuardarFacturaAsync()
-        {
-            if (_facturaActualRequest == null)
-            {
-                ErrorMessage = "Primero debes cargar una factura XML.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(_facturaActualRequest.Folio))
-            {
-                ErrorMessage = "La factura debe incluir un folio para poder guardarse.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(_facturaActualRequest.EmisorRfc))
-            {
-                ErrorMessage = "La factura debe incluir el RFC del emisor.";
-                return;
-            }
-
-            try
-            {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var result = await _facturaService.GuardarFacturaAsync(_facturaActualRequest);
-                if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
-                {
-                    ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
-                        ? "No se pudo guardar la factura."
-                        : result.Message;
-                    return;
-                }
-
-                if (FacturaActual != null)
-                {
-                    FacturaActual.IdFactura = result.IdFactura;
-                }
-
-                await ActualizarFacturasExistentesAsync();
-                SuccessMessage = string.IsNullOrWhiteSpace(result.Message)
-                    ? "Factura guardada correctamente."
-                    : $"{result.Message} Conceptos procesados: {result.ConceptosProcesados}.";
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error al guardar la factura: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        public async Task CargarFacturasExistentesAsync()
-        {
-            try
-            {
-                IsLoading = true;
-                ErrorMessage = null;
-
-                await ActualizarFacturasExistentesAsync();
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error al consultar las facturas existentes: {ex.Message}";
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        public void LimpiarFiltrosFacturas()
-        {
-            FechaFiltroDesde = null;
-            FechaFiltroHasta = null;
-            FolioFiltro = null;
-            ReceptorFiltro = null;
-            MetodoPagoFiltro = null;
-            TotalFiltro = null;
-            AplicarFiltrosFacturasExistentes();
-        }
-
-        private void AplicarFacturaActual(GuardarFacturaRequestDto request)
-        {
-            _facturaActualRequest = request;
-            FacturaActual = CrearResumen(request);
-            ReemplazarColeccion(ConceptosFactura, request.Conceptos);
-            ReemplazarColeccion(TrasladosGlobales, request.TrasladosGlobales);
-            OnPropertyChanged(nameof(CanSave));
-        }
-
-        private async Task ActualizarFacturasExistentesAsync()
-        {
-            var facturas = await _facturaService.ObtenerFacturasAsync();
-            _facturasExistentesBase.Clear();
-            _facturasExistentesBase.AddRange(facturas.OrderByDescending(f => f.Fecha).ThenByDescending(f => f.IdFactura));
-            AplicarFiltrosFacturasExistentes();
-        }
-
-        private static FacturaResumenDto CrearResumen(GuardarFacturaRequestDto request)
-        {
-            return new FacturaResumenDto
-            {
-                VersionXml = request.VersionXml,
-                Folio = request.Folio,
-                Fecha = request.Fecha,
-                FormaPago = request.FormaPago,
-                NoCertificado = request.NoCertificado,
-                CondicionesDePago = request.CondicionesDePago,
-                SubTotal = request.SubTotal,
-                Moneda = request.Moneda,
-                Total = request.Total,
-                TipoDeComprobante = request.TipoDeComprobante,
-                Exportacion = request.Exportacion,
-                MetodoPago = request.MetodoPago,
-                LugarExpedicion = request.LugarExpedicion,
-                TotalImpuestosTrasladados = request.TotalImpuestosTrasladados,
-                EmisorRfc = request.EmisorRfc,
-                EmisorNombre = request.EmisorNombre,
-                EmisorRegimenFiscal = request.EmisorRegimenFiscal,
-                ReceptorRfc = request.ReceptorRfc,
-                ReceptorNombre = request.ReceptorNombre,
-                ReceptorDomicilioFiscal = request.ReceptorDomicilioFiscal,
-                ReceptorRegimenFiscal = request.ReceptorRegimenFiscal,
-                ReceptorUsoCfdi = request.ReceptorUsoCfdi,
-                Uuid = request.Uuid,
-                FechaTimbrado = request.FechaTimbrado,
-                RfcProvCertif = request.RfcProvCertif,
-                NoCertificadoSat = request.NoCertificadoSat
-            };
-        }
-
-        private void AplicarFiltrosFacturasExistentes()
-        {
-            var fechaDesde = FechaFiltroDesde?.Date;
-            var fechaHasta = FechaFiltroHasta?.Date;
-            var folioFiltro = FolioFiltro?.Trim();
-            var receptorFiltro = ReceptorFiltro?.Trim();
-            var metodoPagoFiltro = MetodoPagoFiltro?.Trim();
-            var totalFiltro = TotalFiltro?.Trim();
-            var totalBuscado = decimal.TryParse(totalFiltro, NumberStyles.Any, new CultureInfo("es-MX"), out var totalValor)
-                ? totalValor
-                : decimal.TryParse(totalFiltro, NumberStyles.Any, CultureInfo.InvariantCulture, out totalValor)
-                    ? totalValor
-                    : (decimal?)null;
-
-            if (fechaDesde.HasValue && fechaHasta.HasValue && fechaDesde.Value > fechaHasta.Value)
-            {
-                (fechaDesde, fechaHasta) = (fechaHasta, fechaDesde);
-            }
-
-            var filtradas = _facturasExistentesBase
-                .Where(f => !fechaDesde.HasValue || f.Fecha.Date >= fechaDesde.Value.Date)
-                .Where(f => !fechaHasta.HasValue || f.Fecha.Date <= fechaHasta.Value.Date)
-                .Where(f => string.IsNullOrWhiteSpace(folioFiltro)
-                    || string.Equals(f.Folio?.Trim(), folioFiltro, StringComparison.OrdinalIgnoreCase))
-                .Where(f => string.IsNullOrWhiteSpace(receptorFiltro)
-                    || (!string.IsNullOrWhiteSpace(f.ReceptorNombre) && f.ReceptorNombre.Contains(receptorFiltro, StringComparison.OrdinalIgnoreCase))
-                    || (!string.IsNullOrWhiteSpace(f.ReceptorRfc) && f.ReceptorRfc.Contains(receptorFiltro, StringComparison.OrdinalIgnoreCase)))
-                .Where(f => string.IsNullOrWhiteSpace(metodoPagoFiltro)
-                    || (!string.IsNullOrWhiteSpace(f.MetodoPago) && f.MetodoPago.Contains(metodoPagoFiltro, StringComparison.OrdinalIgnoreCase))
-                    || (!string.IsNullOrWhiteSpace(f.FormaPago) && f.FormaPago.Contains(metodoPagoFiltro, StringComparison.OrdinalIgnoreCase)))
-                .Where(f => string.IsNullOrWhiteSpace(totalFiltro)
-                    || (totalBuscado.HasValue && f.Total == totalBuscado.Value)
-                    || f.TotalTexto.Contains(totalFiltro, StringComparison.OrdinalIgnoreCase))
-                .OrderByDescending(f => f.Fecha)
-                .ThenByDescending(f => f.IdFactura)
-                .ToList();
-
-            ReemplazarColeccion(FacturasExistentes, filtradas);
-            OnPropertyChanged(nameof(ResumenFacturasExistentes));
         }
 
         private static void ValidarFacturaParaGuardado(GuardarFacturaRequestDto request)
@@ -853,6 +683,334 @@ namespace Advance_Control.ViewModels
         private static string FormatearTasa(decimal value)
             => value.ToString("0.000000", CultureInfo.InvariantCulture);
 
+        public void ActualizarSugerencias(string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                Sugerencias.Clear();
+                return;
+            }
+
+            var coincidencias = _todasLasFacturas
+                .Where(f => Coincide(f, texto))
+                .Take(8)
+                .ToList();
+
+            ReemplazarColeccion(Sugerencias, coincidencias);
+        }
+
+        public void Buscar()
+        {
+            var texto = TextoBusqueda?.Trim();
+            var desde = FechaDesde?.Date;
+            var hasta = FechaHasta?.Date;
+
+            if (desde.HasValue && hasta.HasValue && desde.Value > hasta.Value)
+            {
+                (desde, hasta) = (hasta, desde);
+            }
+
+            _facturasFiltradas = _todasLasFacturas
+                .Where(f => Coincide(f, texto))
+                .Where(f => !desde.HasValue || f.Fecha.Date >= desde.Value)
+                .Where(f => !hasta.HasValue || f.Fecha.Date <= hasta.Value)
+                .Where(f => (IncluirConSerie && f.EsConSerie)
+                    || (IncluirSinSerie && f.EsSinSerie)
+                    || (IncluirComplementosPago && f.EsComplementoPago))
+                .ToList();
+
+            PaginaActual = 1;
+            ActualizarPagina();
+        }
+
+        public void LimpiarFiltros()
+        {
+            TextoBusqueda = null;
+            FechaDesde = null;
+            FechaHasta = null;
+            IncluirConSerie = true;
+            IncluirSinSerie = true;
+            IncluirComplementosPago = true;
+            Sugerencias.Clear();
+            Buscar();
+        }
+
+        public void IrAPaginaAnterior()
+        {
+            if (!PuedeIrAnterior)
+            {
+                return;
+            }
+
+            PaginaActual--;
+            ActualizarPagina();
+        }
+
+        public void IrAPaginaSiguiente()
+        {
+            if (!PuedeIrSiguiente)
+            {
+                return;
+            }
+
+            PaginaActual++;
+            ActualizarPagina();
+        }
+
+        private void ActualizarPagina()
+        {
+            var pagina = _facturasFiltradas
+                .Skip((PaginaActual - 1) * TamanoPagina)
+                .Take(TamanoPagina)
+                .ToList();
+
+            ReemplazarColeccion(FacturasPagina, pagina);
+            NotificarCambiosPaginacion();
+        }
+
+        private void NotificarCambiosPaginacion()
+        {
+            OnPropertyChanged(nameof(TotalPaginas));
+            OnPropertyChanged(nameof(TotalFacturasSistema));
+            OnPropertyChanged(nameof(TotalFacturasFiltradas));
+            OnPropertyChanged(nameof(PuedeIrAnterior));
+            OnPropertyChanged(nameof(PuedeIrSiguiente));
+            OnPropertyChanged(nameof(SinResultados));
+            OnPropertyChanged(nameof(ResumenPaginacionTexto));
+            OnPropertyChanged(nameof(PaginaTexto));
+        }
+
+        private static bool Coincide(FacturaResumenDto f, string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return true;
+            }
+
+            return Contiene(f.ReceptorNombre, texto)
+                || Contiene(f.ReceptorRfc, texto)
+                || Contiene(f.Uuid, texto)
+                || Contiene(f.Folio, texto)
+                || Contiene(f.FolioTitulo, texto)
+                || Contiene(f.Serie, texto);
+        }
+
+        private static bool Contiene(string? valor, string texto)
+            => !string.IsNullOrWhiteSpace(valor) && valor.Contains(texto, StringComparison.OrdinalIgnoreCase);
+
+        // --- Acciones por factura ---
+
+        public async Task<string?> GenerarPdfAsync(FacturaResumenDto factura)
+        {
+            try
+            {
+                ErrorMessage = null;
+                var detalle = await _facturaService.ObtenerDetalleFacturaAsync(factura.IdFactura);
+                if (detalle == null)
+                {
+                    ErrorMessage = "No se encontró el detalle de la factura seleccionada.";
+                    return null;
+                }
+
+                return await _facturaPdfService.GenerarFacturaPdfAsync(detalle);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el PDF de la factura: {ex.Message}";
+                return null;
+            }
+        }
+
+        /// <summary>Genera el PDF del acuse de cancelación del SAT. Solo aplica a facturas con Cancelada == true.</summary>
+        public async Task<string?> GenerarAcuseCancelacionPdfAsync(FacturaResumenDto factura)
+        {
+            try
+            {
+                ErrorMessage = null;
+
+                if (!factura.Cancelada)
+                {
+                    ErrorMessage = "Esta factura no está cancelada; no hay acuse de cancelación que generar.";
+                    return null;
+                }
+
+                var detalle = await _facturaService.ObtenerDetalleFacturaAsync(factura.IdFactura);
+                if (detalle == null)
+                {
+                    ErrorMessage = "No se encontró el detalle de la factura seleccionada.";
+                    return null;
+                }
+
+                return await _facturaPdfService.GenerarAcuseCancelacionPdfAsync(detalle);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el PDF del acuse de cancelación: {ex.Message}";
+                return null;
+            }
+        }
+
+        public async Task<string?> ObtenerXmlAsync(FacturaResumenDto factura)
+        {
+            try
+            {
+                ErrorMessage = null;
+                var xml = await _facturaService.ObtenerXmlFacturaAsync(factura.IdFactura);
+                if (string.IsNullOrWhiteSpace(xml))
+                {
+                    ErrorMessage = "Esta factura no tiene un XML almacenado.";
+                    return null;
+                }
+
+                return xml;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al obtener el XML de la factura: {ex.Message}";
+                return null;
+            }
+        }
+
+        public async Task<bool> CancelarAsync(FacturaResumenDto factura)
+        {
+            if (!factura.PermiteGestionInterna)
+            {
+                ErrorMessage = "Esta factura no fue generada por el software; cancélala desde el portal de Bilkon.";
+                return false;
+            }
+
+            if (factura.IdOperacion is not int idOperacion)
+            {
+                ErrorMessage = "Esta factura no está vinculada a una operación; no se puede cancelar desde aquí.";
+                return false;
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var resultado = await _facturaService.CancelarFacturaOperacionAsync(idOperacion);
+                SuccessMessage = string.IsNullOrWhiteSpace(resultado.Mensaje)
+                    ? "Factura cancelada correctamente."
+                    : resultado.Mensaje;
+
+                await CargarFacturasAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al cancelar la factura: {ex.Message}";
+                return false;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Cancela un CFDI ya timbrado (Serie+Folio) ante el SAT vía FEL Bilkon. Solo si Bilkon
+        /// confirma código 201 la operación vinculada queda desvinculada automáticamente en el
+        /// backend (nunca antes, nunca por separado) -- ver CancelarCfdiResponseDto.OperacionDesvinculada.
+        /// </summary>
+        public async Task<CancelarCfdiResponseDto?> CancelarCfdiAsync(FacturaResumenDto factura, CancelarCfdiRequestDto request)
+        {
+            if (!factura.PuedeCancelarCfdi)
+            {
+                ErrorMessage = "Esta factura no se puede cancelar desde aquí.";
+                return null;
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var resultado = await _facturaService.CancelarCfdiAsync(factura.IdFactura, request);
+                if (resultado.Success && resultado.Cancelada)
+                {
+                    SuccessMessage = resultado.OperacionDesvinculada
+                        ? $"Factura {factura.FolioTitulo} cancelada ante el SAT. La operación queda disponible para volver a facturarse."
+                        : $"Factura {factura.FolioTitulo} cancelada ante el SAT.";
+                    await CargarFacturasAsync();
+                }
+                else
+                {
+                    ErrorMessage = resultado.MensajeResultado
+                        ?? resultado.Message
+                        ?? "Bilkon no confirmó la cancelación del CFDI.";
+                }
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al cancelar el CFDI: {ex.Message}";
+                return null;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>Candidatas a "factura que sustituye" para motivo 01: propias (Serie+Folio), vigentes, excluyendo la que se está cancelando.</summary>
+        public IReadOnlyList<FacturaResumenDto> ObtenerCandidatasSustitucion(FacturaResumenDto facturaExcluir, string? texto)
+        {
+            return _todasLasFacturas
+                .Where(f => f.IdFactura != facturaExcluir.IdFactura)
+                .Where(f => f.PermiteGestionInterna && !f.Cancelada)
+                .Where(f => Coincide(f, texto))
+                .Take(8)
+                .ToList();
+        }
+
+        public async Task<RegistrarAbonoFacturaResponseDto> RegistrarComplementoPagoAsync(RegistrarAbonoFacturaRequestDto request)
+        {
+            var factura = _todasLasFacturas.FirstOrDefault(f => f.IdFactura == request.IdFactura);
+            if (factura != null && !factura.PermiteGestionInterna)
+            {
+                ErrorMessage = "Esta factura no fue generada por el software; captura su pago desde el portal de Bilkon.";
+                return new RegistrarAbonoFacturaResponseDto { Success = false, Message = ErrorMessage };
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var resultado = await _facturaService.RegistrarAbonoAsync(request);
+                if (resultado.Success)
+                {
+                    SuccessMessage = string.IsNullOrWhiteSpace(resultado.Message)
+                        ? "Complemento de pago registrado correctamente."
+                        : resultado.Message;
+                    await CargarFacturasAsync();
+                }
+                else
+                {
+                    ErrorMessage = string.IsNullOrWhiteSpace(resultado.Message)
+                        ? "No se pudo registrar el complemento de pago."
+                        : resultado.Message;
+                }
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al registrar el complemento de pago: {ex.Message}";
+                return new RegistrarAbonoFacturaResponseDto { Success = false, Message = ex.Message };
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
         private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T>? origen)
         {
             destino.Clear();
@@ -866,6 +1024,5 @@ namespace Advance_Control.ViewModels
                 destino.Add(item);
             }
         }
-
     }
 }

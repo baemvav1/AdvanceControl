@@ -202,6 +202,17 @@
 
                     <StackPanel
                         Grid.Row="2"
+                        Grid.Column="1"
+                        VerticalAlignment="Center">
+                        <ToggleSwitch
+                            x:Name="MostrarFacturadasToggle"
+                            Header="Mostrar ya facturadas"
+                            IsOn="{x:Bind ViewModel.MostrarFacturadas, Mode=TwoWay}"
+                            Toggled="MostrarFacturadasToggle_Toggled" />
+                    </StackPanel>
+
+                    <StackPanel
+                        Grid.Row="2"
                         Grid.Column="2"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Center"

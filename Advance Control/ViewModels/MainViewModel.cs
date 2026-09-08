@@ -138,9 +138,11 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.EntidadesPage>("Entidades");
             _navigationService.Configure<Views.Pages.ContactosPage>("Contactos");
             _navigationService.Configure<Views.Pages.EquiposPage>("Equipos");
+            _navigationService.Configure<Views.Pages.InmueblesPage>("Inmuebles");
             _navigationService.Configure<Views.Pages.RefaccionPage>("Refacciones");
             _navigationService.Configure<Views.Pages.ProveedoresPage>("Proveedores");
             _navigationService.Configure<Views.Pages.ServiciosPage>("Servicios");
+            _navigationService.Configure<Views.Pages.ProductosPage>("Productos");
             _navigationService.Configure<Views.Pages.UbicacionesPage>("Ubicaciones");
             _navigationService.Configure<Views.Pages.AreasPage>("Areas");
             _navigationService.Configure<Views.Pages.EstadoCuentaPage>("EstadoCuenta");

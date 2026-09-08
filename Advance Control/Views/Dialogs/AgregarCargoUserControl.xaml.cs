@@ -15,12 +15,14 @@ namespace Advance_Control.Views.Dialogs
         // Constantes para los tipos de cargo
         private const int TIPO_CARGO_REFACCION = 1;
         private const int TIPO_CARGO_SERVICIO = 2;
+        private const int TIPO_CARGO_PRODUCTO = 3;
 
         private int _idOperacion;
         private int? _idProveedor;
         private int _selectedCargoType = 0;
         private SeleccionarRefaccionUserControl? _refaccionSelector;
         private SeleccionarServicioUserControl? _servicioSelector;
+        private SeleccionarProductoUserControl? _productoSelector;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -46,6 +48,10 @@ namespace Advance_Control.Views.Dialogs
             {
                 _refaccionSelector.CostoChanged -= OnRefaccionCostoChanged;
                 _refaccionSelector.ViewRefaccionRequested -= OnViewRefaccionRequested;
+            }
+            if (_productoSelector != null)
+            {
+                _productoSelector.CostoChanged -= OnProductoCostoChanged;
             }
         }
 
@@ -95,6 +101,27 @@ namespace Advance_Control.Views.Dialogs
                 _servicioSelector = new SeleccionarServicioUserControl();
                 ServicioSelectorContainer.Content = _servicioSelector;
             }
+            else if (cargoType == TIPO_CARGO_PRODUCTO && _productoSelector == null)
+            {
+                _productoSelector = new SeleccionarProductoUserControl();
+                _productoSelector.CostoChanged += OnProductoCostoChanged;
+                ProductoSelectorContainer.Content = _productoSelector;
+            }
+        }
+
+        /// <summary>
+        /// Maneja el cambio del costo final del producto seleccionado
+        /// </summary>
+        private void OnProductoCostoChanged(object? sender, double? costo)
+        {
+            if (costo.HasValue && costo.Value >= 0)
+            {
+                UnitarioNumberBox.Value = costo.Value;
+            }
+            else
+            {
+                UnitarioNumberBox.Value = 0;
+            }
         }
 
         /// <summary>
@@ -135,6 +162,10 @@ namespace Advance_Control.Views.Dialogs
                 {
                     return _servicioSelector?.HasSelection == true;
                 }
+                else if (SelectedCargoType == TIPO_CARGO_PRODUCTO)
+                {
+                    return _productoSelector?.HasSelection == true;
+                }
 
                 return false;
             }
@@ -170,6 +201,10 @@ namespace Advance_Control.Views.Dialogs
                 idProveedor = _idProveedor;
                 // For Servicio, cantidad is always 1
                 cantidad = 1;
+            }
+            else if (idTipoCargo == TIPO_CARGO_PRODUCTO && _productoSelector?.HasSelection == true)
+            {
+                idRelacionCargo = _productoSelector.SelectedProducto?.IdProducto ?? 0;
             }
 
             double unitario = UnitarioNumberBox.Value;

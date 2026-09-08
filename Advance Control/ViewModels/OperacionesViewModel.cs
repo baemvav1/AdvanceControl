@@ -61,6 +61,7 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaInicialFilter;
         private DateTimeOffset? _fechaFinalFilter;
         private AreaDto? _selectedAreaFilter;
+        private bool _mostrarFacturadas;
 
         // Paginación
         private int _currentPage = 1;
@@ -258,6 +259,17 @@ namespace Advance_Control.ViewModels
         {
             get => _fechaFinalFilter;
             set => SetProperty(ref _fechaFinalFilter, value);
+        }
+
+        /// <summary>
+        /// Si es true, incluye en el listado las operaciones que ya tienen una factura
+        /// vinculada (por defecto se ocultan). Compone con el resto de filtros porque se
+        /// aplica en la misma consulta a la API (fn_operaciones_gestionar).
+        /// </summary>
+        public bool MostrarFacturadas
+        {
+            get => _mostrarFacturadas;
+            set => SetProperty(ref _mostrarFacturadas, value);
         }
 
         /// <summary>
@@ -465,7 +477,8 @@ namespace Advance_Control.ViewModels
                     IdAtiende = IdAtiendeFilter,
                     Nota = NotaFilter,
                     FechaInicial = FechaInicialFilter,
-                    FechaFinalFiltro = FechaFinalFilter
+                    FechaFinalFiltro = FechaFinalFilter,
+                    IncluirFacturadas = MostrarFacturadas
                 };
 
                 List<OperacionDto> filtrados;
@@ -572,6 +585,7 @@ namespace Advance_Control.ViewModels
                 FechaInicialFilter = null;
                 FechaFinalFilter = null;
                 SelectedAreaFilter = null;
+                MostrarFacturadas = false;
                 _clienteSugerencias.Clear();
                 _equipoSugerencias.Clear();
                 _areaSugerencias.Clear();

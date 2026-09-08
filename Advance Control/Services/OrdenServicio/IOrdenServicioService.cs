@@ -31,12 +31,13 @@ namespace Advance_Control.Services.OrdenServicio
         /// </summary>
         /// <param name="idTipoMantenimiento">ID del tipo de mantenimiento (obligatorio)</param>
         /// <param name="idCliente">ID del cliente (obligatorio)</param>
-        /// <param name="idEquipo">ID del equipo (obligatorio)</param>
+        /// <param name="idEquipo">ID del equipo (exactamente uno de idEquipo/idInmueble)</param>
+        /// <param name="idInmueble">ID del inmueble (exactamente uno de idEquipo/idInmueble)</param>
         /// <param name="nota">Nota asociada a la orden de servicio (opcional)</param>
         /// <param name="credencialId">ID de credencial del usuario que crea la orden</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Resultado de la operación</returns>
-        Task<bool> CreateOrdenServicioAsync(int idTipoMantenimiento, int idCliente, int idEquipo, string? nota = null, int credencialId = 0, CancellationToken cancellationToken = default);
+        Task<bool> CreateOrdenServicioAsync(int idTipoMantenimiento, int idCliente, int? idEquipo = null, int? idInmueble = null, string? nota = null, int credencialId = 0, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Actualiza el estado de atendido de una orden de servicio
@@ -49,11 +50,13 @@ namespace Advance_Control.Services.OrdenServicio
 
         /// <summary>
         /// Obtiene los técnicos disponibles para atender una orden de servicio,
-        /// filtrados por el área del equipo asociado
+        /// filtrados por el área del equipo o inmueble asociado
         /// </summary>
-        /// <param name="identificador">Identificador del equipo</param>
+        /// <param name="identificador">Identificador del equipo o inmueble</param>
+        /// <param name="tipoObjetivo">"equipo" o "inmueble" — desambigua identificadores
+        /// coincidentes entre catálogos. Opcional.</param>
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>Lista de técnicos disponibles (nivel TecSup o Tecnico)</returns>
-        Task<List<TecnicoDisponibleDto>> GetTecnicosDisponiblesAsync(string identificador, CancellationToken cancellationToken = default);
+        Task<List<TecnicoDisponibleDto>> GetTecnicosDisponiblesAsync(string identificador, string? tipoObjetivo = null, CancellationToken cancellationToken = default);
     }
 }

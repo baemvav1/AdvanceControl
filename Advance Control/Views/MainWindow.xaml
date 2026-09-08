@@ -239,6 +239,10 @@
                                     Icon="AllApps"
                                     Tag="Equipos" />
                                 <NavigationViewItem
+                                    Content="Inmuebles"
+                                    Icon="Home"
+                                    Tag="Inmuebles" />
+                                <NavigationViewItem
                                     Content="Refacciones"
                                     Icon="Setting"
                                     Tag="Refacciones" />
@@ -251,6 +255,10 @@
                                         <FontIcon Glyph="&#xEC7A;" />
                                     </NavigationViewItem.Icon>
                                 </NavigationViewItem>
+                                <NavigationViewItem
+                                    Content="Productos"
+                                    Icon="Shop"
+                                    Tag="Productos" />
                                 <NavigationViewItem
                                     Content="Proveedores"
                                     Icon="Contact"

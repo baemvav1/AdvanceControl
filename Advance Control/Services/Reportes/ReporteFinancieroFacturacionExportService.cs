@@ -290,8 +290,11 @@ namespace Advance_Control.Services.Reportes
                     });
 
                     // Pie de página con numeración.
-                    page.Footer().AlignRight().Text(text =>
+                    // AlignRight() en el contenedor antes de Text() deja el texto vacío en esta versión
+                    // de QuestPDF (ver FacturaPdfService.cs) -- hay que alinear DENTRO del TextDescriptor.
+                    page.Footer().Text(text =>
                     {
+                        text.AlignRight();
                         text.Span("Pagina ");
                         text.CurrentPageNumber();
                         text.Span(" de ");
@@ -529,8 +532,11 @@ namespace Advance_Control.Services.Reportes
                         }
                     });
 
-                    page.Footer().AlignRight().Text(text =>
+                    // AlignRight() en el contenedor antes de Text() deja el texto vacío en esta versión
+                    // de QuestPDF (ver FacturaPdfService.cs) -- hay que alinear DENTRO del TextDescriptor.
+                    page.Footer().Text(text =>
                     {
+                        text.AlignRight();
                         text.Span("Página ");
                         text.CurrentPageNumber();
                         text.Span(" de ");
@@ -668,8 +674,11 @@ namespace Advance_Control.Services.Reportes
                         }
                     });
 
-                    page.Footer().AlignRight().Text(text =>
+                    // AlignRight() en el contenedor antes de Text() deja el texto vacío en esta versión
+                    // de QuestPDF (ver FacturaPdfService.cs) -- hay que alinear DENTRO del TextDescriptor.
+                    page.Footer().Text(text =>
                     {
+                        text.AlignRight();
                         text.Span("Página ");
                         text.CurrentPageNumber();
                         text.Span(" de ");

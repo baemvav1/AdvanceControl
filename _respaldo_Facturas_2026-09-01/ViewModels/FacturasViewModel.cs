@@ -1,0 +1,871 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Xml.Linq;
+using Advance_Control.Models;
+using Advance_Control.Services.Facturas;
+using Advance_Control.Views.Dialogs;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Windows.Storage;
+using Windows.Storage.Pickers;
+
+namespace Advance_Control.ViewModels
+{
+    public class FacturasViewModel : ViewModelBase
+    {
+        private readonly IFacturaService _facturaService;
+        private readonly List<FacturaResumenDto> _facturasExistentesBase = new();
+        private GuardarFacturaRequestDto? _facturaActualRequest;
+        private FacturaResumenDto? _facturaActual;
+        private ObservableCollection<FacturaConceptoDto> _conceptosFactura;
+        private ObservableCollection<FacturaTrasladoDto> _trasladosGlobales;
+        private ObservableCollection<FacturaResumenDto> _facturasExistentes;
+        private bool _isLoading;
+        private string? _errorMessage;
+        private string? _successMessage;
+        private DateTimeOffset? _fechaFiltroDesde;
+        private DateTimeOffset? _fechaFiltroHasta;
+        private string? _folioFiltro;
+        private string? _receptorFiltro;
+        private string? _metodoPagoFiltro;
+        private string? _totalFiltro;
+
+        public FacturasViewModel(IFacturaService facturaService)
+        {
+            _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
+            _conceptosFactura = new ObservableCollection<FacturaConceptoDto>();
+            _trasladosGlobales = new ObservableCollection<FacturaTrasladoDto>();
+            _facturasExistentes = new ObservableCollection<FacturaResumenDto>();
+        }
+
+        public FacturaResumenDto? FacturaActual
+        {
+            get => _facturaActual;
+            set
+            {
+                if (SetProperty(ref _facturaActual, value))
+                {
+                    OnPropertyChanged(nameof(CanSave));
+                }
+            }
+        }
+
+        public ObservableCollection<FacturaConceptoDto> ConceptosFactura
+        {
+            get => _conceptosFactura;
+            set => SetProperty(ref _conceptosFactura, value);
+        }
+
+        public ObservableCollection<FacturaTrasladoDto> TrasladosGlobales
+        {
+            get => _trasladosGlobales;
+            set => SetProperty(ref _trasladosGlobales, value);
+        }
+
+        public ObservableCollection<FacturaResumenDto> FacturasExistentes
+        {
+            get => _facturasExistentes;
+            set => SetProperty(ref _facturasExistentes, value);
+        }
+
+        public bool IsLoading
+        {
+            get => _isLoading;
+            set
+            {
+                if (SetProperty(ref _isLoading, value))
+                {
+                    OnPropertyChanged(nameof(CanSave));
+                }
+            }
+        }
+
+        public string? ErrorMessage
+        {
+            get => _errorMessage;
+            set => SetProperty(ref _errorMessage, value);
+        }
+
+        public string? SuccessMessage
+        {
+            get => _successMessage;
+            set => SetProperty(ref _successMessage, value);
+        }
+
+        public DateTimeOffset? FechaFiltroDesde
+        {
+            get => _fechaFiltroDesde;
+            set
+            {
+                if (SetProperty(ref _fechaFiltroDesde, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public DateTimeOffset? FechaFiltroHasta
+        {
+            get => _fechaFiltroHasta;
+            set
+            {
+                if (SetProperty(ref _fechaFiltroHasta, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public string? FolioFiltro
+        {
+            get => _folioFiltro;
+            set
+            {
+                if (SetProperty(ref _folioFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public string? ReceptorFiltro
+        {
+            get => _receptorFiltro;
+            set
+            {
+                if (SetProperty(ref _receptorFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public string? MetodoPagoFiltro
+        {
+            get => _metodoPagoFiltro;
+            set
+            {
+                if (SetProperty(ref _metodoPagoFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public string? TotalFiltro
+        {
+            get => _totalFiltro;
+            set
+            {
+                if (SetProperty(ref _totalFiltro, value))
+                {
+                    AplicarFiltrosFacturasExistentes();
+                }
+            }
+        }
+
+        public bool CanSave => _facturaActualRequest != null && ConceptosFactura.Count > 0 && !IsLoading;
+        public string ResumenFacturasExistentes => $"{FacturasExistentes.Count} facturas mostradas";
+
+        public async Task CargarArchivoXmlAsync(nint windowHandle, XamlRoot xamlRoot)
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var picker = new FileOpenPicker
+                {
+                    ViewMode = PickerViewMode.List,
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+                };
+                picker.FileTypeFilter.Add(".xml");
+
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
+                var file = await picker.PickSingleFileAsync();
+                if (file != null)
+                {
+                    var xmlContent = await FileIO.ReadTextAsync(file);
+                    var request = CfdiXmlParser.ParseXmlToRequest(xmlContent);
+                    var requestPreparado = await PrepararFacturaParaGuardadoAsync(request, xamlRoot);
+                    if (requestPreparado == null)
+                    {
+                        ErrorMessage = $"{file.Name}: la factura fue descartada porque se canceló la normalización.";
+                        SuccessMessage = null;
+                        return;
+                    }
+
+                    var result = await ValidarYGuardarFacturaAsync(requestPreparado);
+                    AplicarFacturaActual(requestPreparado);
+
+                    if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
+                    {
+                        ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                            ? $"No se pudo guardar la factura {file.Name}."
+                            : $"{file.Name}: {result.Message}";
+                        SuccessMessage = null;
+                        return;
+                    }
+
+                    await ActualizarFacturasExistentesAsync();
+                    SuccessMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? $"Archivo {file.Name} cargado y guardado exitosamente."
+                        : $"{file.Name}: {result.Message}";
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al cargar la factura XML: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        public async Task CargarYGuardarMultiplesFacturasAsync(nint windowHandle, XamlRoot xamlRoot)
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var picker = new FileOpenPicker
+                {
+                    ViewMode = PickerViewMode.List,
+                    SuggestedStartLocation = PickerLocationId.DocumentsLibrary
+                };
+                picker.FileTypeFilter.Add(".xml");
+
+                WinRT.Interop.InitializeWithWindow.Initialize(picker, windowHandle);
+                var files = await picker.PickMultipleFilesAsync();
+                if (files == null || files.Count == 0)
+                {
+                    return;
+                }
+
+                var cargadas = 0;
+                var duplicadas = 0;
+                var descartadas = 0;
+                var fallidas = 0;
+                var errores = new List<string>();
+                GuardarFacturaRequestDto? ultimaFacturaValida = null;
+
+                foreach (var file in files)
+                {
+                    try
+                    {
+                        var xmlContent = await FileIO.ReadTextAsync(file);
+                        var request = CfdiXmlParser.ParseXmlToRequest(xmlContent);
+
+                        if (string.IsNullOrWhiteSpace(request.Folio))
+                        {
+                            fallidas++;
+                            errores.Add($"{file.Name}: no contiene folio.");
+                            continue;
+                        }
+
+                        if (string.IsNullOrWhiteSpace(request.EmisorRfc))
+                        {
+                            fallidas++;
+                            errores.Add($"{file.Name}: no contiene RFC del emisor.");
+                            continue;
+                        }
+
+                        if (request.Conceptos.Count == 0)
+                        {
+                            fallidas++;
+                            errores.Add($"{file.Name}: no contiene conceptos.");
+                            continue;
+                        }
+
+                        var requestPreparado = await PrepararFacturaParaGuardadoAsync(request, xamlRoot);
+                        if (requestPreparado == null)
+                        {
+                            descartadas++;
+                            continue;
+                        }
+
+                        var result = await ValidarYGuardarFacturaAsync(requestPreparado);
+                        ultimaFacturaValida = requestPreparado;
+
+                        if (result.Success)
+                        {
+                            cargadas++;
+                            continue;
+                        }
+
+                        if (string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
+                        {
+                            duplicadas++;
+                            continue;
+                        }
+
+                        fallidas++;
+                        errores.Add($"{file.Name}: {result.Message}");
+                    }
+                    catch (Exception ex)
+                    {
+                        fallidas++;
+                        errores.Add($"{file.Name}: {ex.Message}");
+                    }
+                }
+
+                if (ultimaFacturaValida != null)
+                {
+                    AplicarFacturaActual(ultimaFacturaValida);
+                }
+
+                await ActualizarFacturasExistentesAsync();
+
+                SuccessMessage = $"Carga masiva finalizada. Nuevas: {cargadas}. Duplicadas: {duplicadas}. Descartadas: {descartadas}. Fallidas: {fallidas}.";
+                ErrorMessage = errores.Count > 0
+                    ? string.Join(" | ", errores.Take(3)) + (errores.Count > 3 ? $" | Y {errores.Count - 3} error(es) adicional(es)." : string.Empty)
+                    : null;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al cargar varias facturas XML: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        public async Task GuardarFacturaAsync()
+        {
+            if (_facturaActualRequest == null)
+            {
+                ErrorMessage = "Primero debes cargar una factura XML.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_facturaActualRequest.Folio))
+            {
+                ErrorMessage = "La factura debe incluir un folio para poder guardarse.";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_facturaActualRequest.EmisorRfc))
+            {
+                ErrorMessage = "La factura debe incluir el RFC del emisor.";
+                return;
+            }
+
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var result = await _facturaService.GuardarFacturaAsync(_facturaActualRequest);
+                if (!result.Success && !string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
+                {
+                    ErrorMessage = string.IsNullOrWhiteSpace(result.Message)
+                        ? "No se pudo guardar la factura."
+                        : result.Message;
+                    return;
+                }
+
+                if (FacturaActual != null)
+                {
+                    FacturaActual.IdFactura = result.IdFactura;
+                }
+
+                await ActualizarFacturasExistentesAsync();
+                SuccessMessage = string.IsNullOrWhiteSpace(result.Message)
+                    ? "Factura guardada correctamente."
+                    : $"{result.Message} Conceptos procesados: {result.ConceptosProcesados}.";
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al guardar la factura: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        public async Task CargarFacturasExistentesAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+
+                await ActualizarFacturasExistentesAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al consultar las facturas existentes: {ex.Message}";
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        public void LimpiarFiltrosFacturas()
+        {
+            FechaFiltroDesde = null;
+            FechaFiltroHasta = null;
+            FolioFiltro = null;
+            ReceptorFiltro = null;
+            MetodoPagoFiltro = null;
+            TotalFiltro = null;
+            AplicarFiltrosFacturasExistentes();
+        }
+
+        private void AplicarFacturaActual(GuardarFacturaRequestDto request)
+        {
+            _facturaActualRequest = request;
+            FacturaActual = CrearResumen(request);
+            ReemplazarColeccion(ConceptosFactura, request.Conceptos);
+            ReemplazarColeccion(TrasladosGlobales, request.TrasladosGlobales);
+            OnPropertyChanged(nameof(CanSave));
+        }
+
+        private async Task ActualizarFacturasExistentesAsync()
+        {
+            var facturas = await _facturaService.ObtenerFacturasAsync();
+            _facturasExistentesBase.Clear();
+            _facturasExistentesBase.AddRange(facturas.OrderByDescending(f => f.Fecha).ThenByDescending(f => f.IdFactura));
+            AplicarFiltrosFacturasExistentes();
+        }
+
+        private static FacturaResumenDto CrearResumen(GuardarFacturaRequestDto request)
+        {
+            return new FacturaResumenDto
+            {
+                VersionXml = request.VersionXml,
+                Folio = request.Folio,
+                Fecha = request.Fecha,
+                FormaPago = request.FormaPago,
+                NoCertificado = request.NoCertificado,
+                CondicionesDePago = request.CondicionesDePago,
+                SubTotal = request.SubTotal,
+                Moneda = request.Moneda,
+                Total = request.Total,
+                TipoDeComprobante = request.TipoDeComprobante,
+                Exportacion = request.Exportacion,
+                MetodoPago = request.MetodoPago,
+                LugarExpedicion = request.LugarExpedicion,
+                TotalImpuestosTrasladados = request.TotalImpuestosTrasladados,
+                EmisorRfc = request.EmisorRfc,
+                EmisorNombre = request.EmisorNombre,
+                EmisorRegimenFiscal = request.EmisorRegimenFiscal,
+                ReceptorRfc = request.ReceptorRfc,
+                ReceptorNombre = request.ReceptorNombre,
+                ReceptorDomicilioFiscal = request.ReceptorDomicilioFiscal,
+                ReceptorRegimenFiscal = request.ReceptorRegimenFiscal,
+                ReceptorUsoCfdi = request.ReceptorUsoCfdi,
+                Uuid = request.Uuid,
+                FechaTimbrado = request.FechaTimbrado,
+                RfcProvCertif = request.RfcProvCertif,
+                NoCertificadoSat = request.NoCertificadoSat
+            };
+        }
+
+        private void AplicarFiltrosFacturasExistentes()
+        {
+            var fechaDesde = FechaFiltroDesde?.Date;
+            var fechaHasta = FechaFiltroHasta?.Date;
+            var folioFiltro = FolioFiltro?.Trim();
+            var receptorFiltro = ReceptorFiltro?.Trim();
+            var metodoPagoFiltro = MetodoPagoFiltro?.Trim();
+            var totalFiltro = TotalFiltro?.Trim();
+            var totalBuscado = decimal.TryParse(totalFiltro, NumberStyles.Any, new CultureInfo("es-MX"), out var totalValor)
+                ? totalValor
+                : decimal.TryParse(totalFiltro, NumberStyles.Any, CultureInfo.InvariantCulture, out totalValor)
+                    ? totalValor
+                    : (decimal?)null;
+
+            if (fechaDesde.HasValue && fechaHasta.HasValue && fechaDesde.Value > fechaHasta.Value)
+            {
+                (fechaDesde, fechaHasta) = (fechaHasta, fechaDesde);
+            }
+
+            var filtradas = _facturasExistentesBase
+                .Where(f => !fechaDesde.HasValue || f.Fecha.Date >= fechaDesde.Value.Date)
+                .Where(f => !fechaHasta.HasValue || f.Fecha.Date <= fechaHasta.Value.Date)
+                .Where(f => string.IsNullOrWhiteSpace(folioFiltro)
+                    || string.Equals(f.Folio?.Trim(), folioFiltro, StringComparison.OrdinalIgnoreCase))
+                .Where(f => string.IsNullOrWhiteSpace(receptorFiltro)
+                    || (!string.IsNullOrWhiteSpace(f.ReceptorNombre) && f.ReceptorNombre.Contains(receptorFiltro, StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrWhiteSpace(f.ReceptorRfc) && f.ReceptorRfc.Contains(receptorFiltro, StringComparison.OrdinalIgnoreCase)))
+                .Where(f => string.IsNullOrWhiteSpace(metodoPagoFiltro)
+                    || (!string.IsNullOrWhiteSpace(f.MetodoPago) && f.MetodoPago.Contains(metodoPagoFiltro, StringComparison.OrdinalIgnoreCase))
+                    || (!string.IsNullOrWhiteSpace(f.FormaPago) && f.FormaPago.Contains(metodoPagoFiltro, StringComparison.OrdinalIgnoreCase)))
+                .Where(f => string.IsNullOrWhiteSpace(totalFiltro)
+                    || (totalBuscado.HasValue && f.Total == totalBuscado.Value)
+                    || f.TotalTexto.Contains(totalFiltro, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(f => f.Fecha)
+                .ThenByDescending(f => f.IdFactura)
+                .ToList();
+
+            ReemplazarColeccion(FacturasExistentes, filtradas);
+            OnPropertyChanged(nameof(ResumenFacturasExistentes));
+        }
+
+        private static void ValidarFacturaParaGuardado(GuardarFacturaRequestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Folio))
+            {
+                throw new InvalidOperationException("La factura debe incluir un folio para poder guardarse.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.EmisorRfc))
+            {
+                throw new InvalidOperationException("La factura debe incluir el RFC del emisor.");
+            }
+
+            if (request.Conceptos.Count == 0)
+            {
+                throw new InvalidOperationException("La factura no contiene conceptos.");
+            }
+        }
+
+        private async Task<GuardarFacturaResponseDto> ValidarYGuardarFacturaAsync(GuardarFacturaRequestDto request)
+        {
+            ValidarFacturaParaGuardado(request);
+            return await _facturaService.GuardarFacturaAsync(request);
+        }
+
+        private static bool EsFacturaEnUsd(GuardarFacturaRequestDto request)
+            => string.Equals(request.Moneda?.Trim(), "USD", StringComparison.OrdinalIgnoreCase);
+
+        private async Task<GuardarFacturaRequestDto?> PrepararFacturaParaGuardadoAsync(GuardarFacturaRequestDto request, XamlRoot xamlRoot)
+        {
+            if (!EsFacturaEnUsd(request))
+            {
+                return request;
+            }
+
+            var tipoCambioInicial = ObtenerTipoCambioInicial(request);
+            var dialog = new NormalizarFacturaUsdDialog(
+                request.Folio,
+                request.Total,
+                tipoCambioInicial,
+                xamlRoot);
+
+            var resultado = await dialog.ShowAsync();
+            if (resultado != ContentDialogResult.Primary)
+            {
+                return null;
+            }
+
+            return NormalizarFacturaUsd(request, dialog.TipoCambioCapturado);
+        }
+
+        private static decimal ObtenerTipoCambioInicial(GuardarFacturaRequestDto request)
+        {
+            if (string.IsNullOrWhiteSpace(request.XmlContenido))
+            {
+                return 1m;
+            }
+
+            try
+            {
+                var document = XDocument.Parse(request.XmlContenido, LoadOptions.PreserveWhitespace);
+                var comprobante = document.Root;
+                var tipoCambio = CfdiXmlParser.GetDecimalAttr(comprobante, "TipoCambio");
+                return tipoCambio > 0m ? tipoCambio : 1m;
+            }
+            catch
+            {
+                return 1m;
+            }
+        }
+
+        private static GuardarFacturaRequestDto NormalizarFacturaUsd(GuardarFacturaRequestDto original, decimal tipoCambio)
+        {
+            if (tipoCambio <= 0m)
+            {
+                throw new InvalidOperationException("El tipo de cambio debe ser mayor a cero para normalizar la factura.");
+            }
+
+            if (original.Conceptos.Count == 0)
+            {
+                throw new InvalidOperationException("La factura no contiene conceptos para normalizar.");
+            }
+
+            var tipoCambioRedondeado = decimal.Round(tipoCambio, 6, MidpointRounding.AwayFromZero);
+            var totalObjetivoMx = RedondearImporte(original.Total * tipoCambioRedondeado);
+            var conceptosNormalizados = new List<FacturaConceptoDto>(original.Conceptos.Count);
+            decimal subtotalNormalizado = 0m;
+            decimal impuestosNormalizados = 0m;
+            decimal totalAcumulado = 0m;
+
+            for (var index = 0; index < original.Conceptos.Count; index++)
+            {
+                var conceptoOriginal = original.Conceptos[index];
+                var totalConceptoOriginal = ObtenerTotalConcepto(conceptoOriginal);
+                var totalConceptoNormalizado = index == original.Conceptos.Count - 1
+                    ? totalObjetivoMx - totalAcumulado
+                    : RedondearImporte(totalConceptoOriginal * tipoCambioRedondeado);
+
+                if (totalConceptoNormalizado < 0m)
+                {
+                    throw new InvalidOperationException($"La normalización del concepto \"{conceptoOriginal.Descripcion}\" generó un importe negativo.");
+                }
+
+                var baseNormalizada = RedondearImporte(totalConceptoNormalizado / 1.16m);
+                var ivaNormalizado = totalConceptoNormalizado - baseNormalizada;
+                var cantidad = conceptoOriginal.Cantidad;
+                var valorUnitario = cantidad > 0m
+                    ? decimal.Round(baseNormalizada / cantidad, 6, MidpointRounding.AwayFromZero)
+                    : baseNormalizada;
+
+                var trasladoNormalizado = new FacturaTrasladoDto
+                {
+                    Orden = 1,
+                    Base = baseNormalizada,
+                    Impuesto = conceptoOriginal.Traslados.FirstOrDefault()?.Impuesto ?? "002",
+                    TipoFactor = conceptoOriginal.Traslados.FirstOrDefault()?.TipoFactor ?? "Tasa",
+                    TasaOCuota = 0.16m,
+                    Importe = ivaNormalizado
+                };
+
+                conceptosNormalizados.Add(new FacturaConceptoDto
+                {
+                    IdFacturaConcepto = conceptoOriginal.IdFacturaConcepto,
+                    Orden = conceptoOriginal.Orden,
+                    ClaveProdServ = conceptoOriginal.ClaveProdServ,
+                    Cantidad = cantidad,
+                    ClaveUnidad = conceptoOriginal.ClaveUnidad,
+                    Unidad = conceptoOriginal.Unidad,
+                    Descripcion = conceptoOriginal.Descripcion,
+                    ValorUnitario = valorUnitario,
+                    Importe = baseNormalizada,
+                    ObjetoImp = conceptoOriginal.ObjetoImp,
+                    Traslados = new List<FacturaTrasladoDto> { trasladoNormalizado }
+                });
+
+                subtotalNormalizado += baseNormalizada;
+                impuestosNormalizados += ivaNormalizado;
+                totalAcumulado += totalConceptoNormalizado;
+            }
+
+            subtotalNormalizado = RedondearImporte(subtotalNormalizado);
+            impuestosNormalizados = RedondearImporte(impuestosNormalizados);
+
+            var totalNormalizado = subtotalNormalizado + impuestosNormalizados;
+            var diferenciaTotal = totalObjetivoMx - totalNormalizado;
+            if (diferenciaTotal != 0m)
+            {
+                AjustarUltimoConcepto(conceptosNormalizados, diferenciaTotal);
+                subtotalNormalizado = RedondearImporte(conceptosNormalizados.Sum(concepto => concepto.Importe));
+                impuestosNormalizados = RedondearImporte(conceptosNormalizados.Sum(concepto => concepto.Traslados.Sum(traslado => traslado.Importe)));
+                totalNormalizado = subtotalNormalizado + impuestosNormalizados;
+            }
+
+            if (totalNormalizado != totalObjetivoMx)
+            {
+                throw new InvalidOperationException("No fue posible cuadrar el total normalizado con el total en USD por el tipo de cambio capturado.");
+            }
+
+            var trasladosGlobales = new List<FacturaTrasladoDto>
+            {
+                new FacturaTrasladoDto
+                {
+                    Orden = 1,
+                    Base = subtotalNormalizado,
+                    Impuesto = original.TrasladosGlobales.FirstOrDefault()?.Impuesto
+                        ?? conceptosNormalizados.First().Traslados.First().Impuesto
+                        ?? "002",
+                    TipoFactor = original.TrasladosGlobales.FirstOrDefault()?.TipoFactor
+                        ?? conceptosNormalizados.First().Traslados.First().TipoFactor
+                        ?? "Tasa",
+                    TasaOCuota = 0.16m,
+                    Importe = impuestosNormalizados
+                }
+            };
+
+            return new GuardarFacturaRequestDto
+            {
+                VersionXml = original.VersionXml,
+                Folio = original.Folio,
+                Fecha = original.Fecha,
+                FormaPago = original.FormaPago,
+                NoCertificado = original.NoCertificado,
+                Certificado = original.Certificado,
+                Sello = original.Sello,
+                CondicionesDePago = original.CondicionesDePago,
+                SubTotal = subtotalNormalizado,
+                Moneda = "MXN",
+                Total = totalNormalizado,
+                TipoDeComprobante = original.TipoDeComprobante,
+                Exportacion = original.Exportacion,
+                MetodoPago = original.MetodoPago,
+                LugarExpedicion = original.LugarExpedicion,
+                TotalImpuestosTrasladados = impuestosNormalizados,
+                EmisorRfc = original.EmisorRfc,
+                EmisorNombre = original.EmisorNombre,
+                EmisorRegimenFiscal = original.EmisorRegimenFiscal,
+                ReceptorRfc = original.ReceptorRfc,
+                ReceptorNombre = original.ReceptorNombre,
+                ReceptorDomicilioFiscal = original.ReceptorDomicilioFiscal,
+                ReceptorRegimenFiscal = original.ReceptorRegimenFiscal,
+                ReceptorUsoCfdi = original.ReceptorUsoCfdi,
+                Uuid = original.Uuid,
+                FechaTimbrado = original.FechaTimbrado,
+                RfcProvCertif = original.RfcProvCertif,
+                NoCertificadoSat = original.NoCertificadoSat,
+                SelloCfd = original.SelloCfd,
+                SelloSat = original.SelloSat,
+                XmlContenido = NormalizarXmlContenido(original.XmlContenido, conceptosNormalizados, subtotalNormalizado, impuestosNormalizados, totalNormalizado, tipoCambioRedondeado),
+                Conceptos = conceptosNormalizados,
+                TrasladosGlobales = trasladosGlobales
+            };
+        }
+
+        private static decimal ObtenerTotalConcepto(FacturaConceptoDto concepto)
+            => RedondearImporte(concepto.Importe + concepto.Traslados.Sum(traslado => traslado.Importe));
+
+        private static void AjustarUltimoConcepto(IList<FacturaConceptoDto> conceptos, decimal diferenciaTotal)
+        {
+            if (conceptos.Count == 0 || diferenciaTotal == 0m)
+            {
+                return;
+            }
+
+            var ultimoConcepto = conceptos[^1];
+            var ultimoTraslado = ultimoConcepto.Traslados.FirstOrDefault();
+            if (ultimoTraslado == null)
+            {
+                throw new InvalidOperationException("El último concepto no contiene traslado para aplicar el ajuste de redondeo.");
+            }
+
+            ultimoTraslado.Importe = RedondearImporte(ultimoTraslado.Importe + diferenciaTotal);
+            var totalConceptoAjustado = ultimoConcepto.Importe + ultimoTraslado.Importe;
+            ultimoConcepto.Importe = RedondearImporte(totalConceptoAjustado / 1.16m);
+            ultimoTraslado.Base = ultimoConcepto.Importe;
+            ultimoTraslado.Importe = totalConceptoAjustado - ultimoConcepto.Importe;
+            ultimoConcepto.ValorUnitario = ultimoConcepto.Cantidad > 0m
+                ? decimal.Round(ultimoConcepto.Importe / ultimoConcepto.Cantidad, 6, MidpointRounding.AwayFromZero)
+                : ultimoConcepto.Importe;
+        }
+
+        private static string? NormalizarXmlContenido(
+            string? xmlContenidoOriginal,
+            IReadOnlyList<FacturaConceptoDto> conceptosNormalizados,
+            decimal subtotalNormalizado,
+            decimal impuestosNormalizados,
+            decimal totalNormalizado,
+            decimal tipoCambioOriginal)
+        {
+            if (string.IsNullOrWhiteSpace(xmlContenidoOriginal))
+            {
+                return xmlContenidoOriginal;
+            }
+
+            var document = XDocument.Parse(xmlContenidoOriginal, LoadOptions.PreserveWhitespace);
+            var comprobante = document.Root
+                ?? throw new InvalidOperationException("El XML de la factura no contiene el nodo Comprobante para alinear la normalización.");
+
+            EstablecerAtributo(comprobante, "SubTotal", FormatearImporte(subtotalNormalizado));
+            EstablecerAtributo(comprobante, "Moneda", "MXN");
+            EstablecerAtributo(comprobante, "Total", FormatearImporte(totalNormalizado));
+            EstablecerAtributo(comprobante, "TipoCambio", "1");
+
+            var conceptosNodo = CfdiXmlParser.ElementByLocalName(comprobante, "Conceptos")
+                ?? throw new InvalidOperationException("El XML de la factura no contiene el nodo Conceptos para alinear la normalización.");
+
+            var conceptosXml = conceptosNodo
+                .Elements()
+                .Where(element => string.Equals(element.Name.LocalName, "Concepto", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (conceptosXml.Count != conceptosNormalizados.Count)
+            {
+                throw new InvalidOperationException("El XML de la factura no coincide con la cantidad de conceptos normalizados.");
+            }
+
+            for (var index = 0; index < conceptosXml.Count; index++)
+            {
+                var conceptoXml = conceptosXml[index];
+                var conceptoNormalizado = conceptosNormalizados[index];
+                var trasladoNormalizado = conceptoNormalizado.Traslados.First();
+
+                EstablecerAtributo(conceptoXml, "ValorUnitario", FormatearImporteAmpliado(conceptoNormalizado.ValorUnitario));
+                EstablecerAtributo(conceptoXml, "Importe", FormatearImporte(conceptoNormalizado.Importe));
+
+                var impuestosNodo = CfdiXmlParser.ElementByLocalName(conceptoXml, "Impuestos") ?? CrearHijo(conceptoXml, "Impuestos");
+                var trasladosNodo = CfdiXmlParser.ElementByLocalName(impuestosNodo, "Traslados") ?? CrearHijo(impuestosNodo, "Traslados");
+                trasladosNodo.RemoveNodes();
+
+                var trasladoNodo = new XElement(
+                    XName.Get("Traslado", trasladosNodo.Name.NamespaceName),
+                    new XAttribute("Base", FormatearImporte(trasladoNormalizado.Base)),
+                    new XAttribute("Impuesto", trasladoNormalizado.Impuesto ?? "002"),
+                    new XAttribute("TipoFactor", trasladoNormalizado.TipoFactor ?? "Tasa"),
+                    new XAttribute("TasaOCuota", FormatearTasa(trasladoNormalizado.TasaOCuota)),
+                    new XAttribute("Importe", FormatearImporte(trasladoNormalizado.Importe)));
+
+                trasladosNodo.Add(trasladoNodo);
+            }
+
+            var impuestosGlobalesNodo = CfdiXmlParser.ElementByLocalName(comprobante, "Impuestos") ?? CrearHijo(comprobante, "Impuestos");
+            EstablecerAtributo(impuestosGlobalesNodo, "TotalImpuestosTrasladados", FormatearImporte(impuestosNormalizados));
+
+            var trasladosGlobalesNodo = CfdiXmlParser.ElementByLocalName(impuestosGlobalesNodo, "Traslados") ?? CrearHijo(impuestosGlobalesNodo, "Traslados");
+            trasladosGlobalesNodo.RemoveNodes();
+            trasladosGlobalesNodo.Add(
+                new XElement(
+                    XName.Get("Traslado", trasladosGlobalesNodo.Name.NamespaceName),
+                    new XAttribute("Base", FormatearImporte(subtotalNormalizado)),
+                    new XAttribute("Impuesto", "002"),
+                    new XAttribute("TipoFactor", "Tasa"),
+                    new XAttribute("TasaOCuota", FormatearTasa(0.16m)),
+                    new XAttribute("Importe", FormatearImporte(impuestosNormalizados))));
+
+            document.AddFirst(new XComment($" NormalizadoAdvanceControl MonedaOriginal=USD TipoCambioOriginal={tipoCambioOriginal.ToString("0.######", CultureInfo.InvariantCulture)} "));
+            return document.ToString(SaveOptions.DisableFormatting);
+        }
+
+        private static XElement CrearHijo(XElement parent, string localName)
+        {
+            var child = new XElement(XName.Get(localName, parent.Name.NamespaceName));
+            parent.Add(child);
+            return child;
+        }
+
+        private static void EstablecerAtributo(XElement element, string attributeName, string value)
+            => element.SetAttributeValue(attributeName, value);
+
+        private static decimal RedondearImporte(decimal value)
+            => decimal.Round(value, 2, MidpointRounding.AwayFromZero);
+
+        private static string FormatearImporte(decimal value)
+            => value.ToString("0.00", CultureInfo.InvariantCulture);
+
+        private static string FormatearImporteAmpliado(decimal value)
+            => value.ToString("0.######", CultureInfo.InvariantCulture);
+
+        private static string FormatearTasa(decimal value)
+            => value.ToString("0.000000", CultureInfo.InvariantCulture);
+
+        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, IReadOnlyCollection<T>? origen)
+        {
+            destino.Clear();
+            if (origen == null)
+            {
+                return;
+            }
+
+            foreach (var item in origen)
+            {
+                destino.Add(item);
+            }
+        }
+
+    }
+}

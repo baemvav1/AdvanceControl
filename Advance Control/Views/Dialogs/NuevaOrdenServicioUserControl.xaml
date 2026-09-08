@@ -15,6 +15,8 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Tipo de Mantenimiento (ComboBox) -->
@@ -29,8 +31,23 @@
                 PlaceholderText="Seleccione el tipo de mantenimiento" />
         </StackPanel>
 
+        <!-- Selector Equipo / Inmueble -->
+        <StackPanel Grid.Row="1" Margin="0,0,0,12" Orientation="Horizontal" Spacing="16">
+            <TextBlock Text="Buscar por:" FontWeight="SemiBold" VerticalAlignment="Center" />
+            <RadioButton
+                x:Name="BuscarPorEquipoRadio"
+                Content="Equipo"
+                GroupName="BuscarPorGroup"
+                Checked="BuscarPorEquipoRadio_Checked" />
+            <RadioButton
+                x:Name="BuscarPorInmuebleRadio"
+                Content="Inmueble"
+                GroupName="BuscarPorGroup"
+                Checked="BuscarPorInmuebleRadio_Checked" />
+        </StackPanel>
+
         <!-- Equipo (Searchable dropdown) -->
-        <StackPanel Grid.Row="1" Margin="0,0,0,12">
+        <StackPanel x:Name="EquipoPanel" Grid.Row="2" Margin="0,0,0,12">
             <TextBlock
                 Text="Equipo"
                 FontWeight="SemiBold"
@@ -42,7 +59,7 @@
                 TextChanged="EquipoAutoSuggestBox_TextChanged"
                 SuggestionChosen="EquipoAutoSuggestBox_SuggestionChosen"
                 GotFocus="EquipoAutoSuggestBox_GotFocus" />
-            
+
             <!-- Loading indicator for equipment -->
             <ProgressRing
                 x:Name="EquipoLoadingRing"
@@ -51,7 +68,7 @@
                 HorizontalAlignment="Left"
                 IsActive="False"
                 Margin="0,4,0,0" />
-            
+
             <!-- Selected equipment info -->
             <Border
                 x:Name="SelectedEquipoInfo"
@@ -86,13 +103,70 @@
             </Border>
         </StackPanel>
 
-        <!-- Cliente (filtered by equipment) -->
-        <StackPanel Grid.Row="2" Margin="0,0,0,12">
+        <!-- Inmueble (Searchable dropdown) -->
+        <StackPanel x:Name="InmueblePanel" Grid.Row="3" Margin="0,0,0,12" Visibility="Collapsed">
+            <TextBlock
+                Text="Inmueble"
+                FontWeight="SemiBold"
+                Margin="0,0,0,4" />
+            <AutoSuggestBox
+                x:Name="InmuebleAutoSuggestBox"
+                PlaceholderText="Buscar inmueble por identificador, tipo..."
+                QueryIcon="Find"
+                TextChanged="InmuebleAutoSuggestBox_TextChanged"
+                SuggestionChosen="InmuebleAutoSuggestBox_SuggestionChosen"
+                GotFocus="InmuebleAutoSuggestBox_GotFocus" />
+
+            <!-- Loading indicator for inmuebles -->
+            <ProgressRing
+                x:Name="InmuebleLoadingRing"
+                Width="20"
+                Height="20"
+                HorizontalAlignment="Left"
+                IsActive="False"
+                Margin="0,4,0,0" />
+
+            <!-- Selected inmueble info -->
+            <Border
+                x:Name="SelectedInmuebleInfo"
+                Visibility="Collapsed"
+                Margin="0,8,0,0"
+                Padding="12"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                CornerRadius="4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Spacing="2">
+                        <TextBlock
+                            x:Name="SelectedInmuebleIdentificador"
+                            FontWeight="SemiBold"
+                            FontSize="14" />
+                        <TextBlock
+                            x:Name="SelectedInmuebleTipo"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            FontSize="12" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        Content="✕"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="ClearInmuebleSelection_Click"
+                        ToolTipService.ToolTip="Limpiar selección"/>
+                </Grid>
+            </Border>
+        </StackPanel>
+
+        <!-- Cliente (filtered by equipment/inmueble) -->
+        <StackPanel Grid.Row="4" Margin="0,0,0,12">
             <TextBlock
                 Text="Cliente"
                 FontWeight="SemiBold"
                 Margin="0,0,0,4" />
-            
+
             <!-- Loading indicator for clients -->
             <ProgressRing
                 x:Name="ClienteLoadingRing"
@@ -100,15 +174,15 @@
                 Height="20"
                 HorizontalAlignment="Left"
                 IsActive="False" />
-            
-            <!-- Message when no equipment selected -->
+
+            <!-- Message when no equipment/inmueble selected -->
             <TextBlock
                 x:Name="NoEquipoSelectedMessage"
-                Text="Seleccione un equipo para ver los clientes relacionados"
+                Text="Seleccione un equipo o inmueble para ver los clientes relacionados"
                 FontStyle="Italic"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 FontSize="12" />
-            
+
             <!-- Client list -->
             <ListView
                 x:Name="ClientesListView"
@@ -166,11 +240,11 @@
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
-            
+
             <!-- Message when no clients found -->
             <TextBlock
                 x:Name="NoClientesMessage"
-                Text="No hay clientes relacionados con este equipo"
+                Text="No hay clientes relacionados"
                 FontStyle="Italic"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 FontSize="12"
@@ -178,7 +252,7 @@
         </StackPanel>
 
         <!-- Nota -->
-        <StackPanel Grid.Row="3">
+        <StackPanel Grid.Row="5">
             <TextBlock
                 Text="Nota (opcional)"
                 FontWeight="SemiBold"

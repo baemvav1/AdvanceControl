@@ -217,9 +217,13 @@ namespace Advance_Control.Services.Quotes
                                     column.Item().Image(cotizacionImagePath).FitWidth();
                                 }
 
-                                column.Item().AlignRight().Text(quotationTitle)
+                                // AlignRight() en el contenedor ANTES de Text() deja el texto vacío en esta
+                                // versión de QuestPDF (ver misma corrección en FacturaPdfService.cs) --
+                                // encadenar AlignRight() DESPUÉS de Text() sí funciona.
+                                column.Item().Text(quotationTitle)
                                     .FontSize(16)
-                                    .FontColor(Colors.Blue.Darken2);
+                                    .FontColor(Colors.Blue.Darken2)
+                                    .AlignRight();
 
                                 
                             });
@@ -477,9 +481,12 @@ namespace Advance_Control.Services.Quotes
                                     column.Item().Image(notaImagePath).FitWidth();
                                 }
 
-                                column.Item().AlignRight().Text(notaTitle)
+                                // AlignRight() antes de Text() deja el texto vacío (ver FacturaPdfService.cs) --
+                                // encadenarlo DESPUÉS de Text() funciona.
+                                column.Item().Text(notaTitle)
                                     .FontSize(16)
-                                    .FontColor(Colors.Blue.Darken2);
+                                    .FontColor(Colors.Blue.Darken2)
+                                    .AlignRight();
                             });
 
                         page.Content()
@@ -753,10 +760,13 @@ namespace Advance_Control.Services.Quotes
                                 if (File.Exists(reporteImagePath))
                                     column.Item().Image(reporteImagePath).FitWidth();
 
-                                column.Item().AlignRight().Text(reportTitle)
+                                // AlignRight() antes de Text() deja el texto vacío (ver FacturaPdfService.cs) --
+                                // encadenarlo DESPUÉS de Text() funciona.
+                                column.Item().Text(reportTitle)
                                     .FontSize(16)
                                     .Bold()
-                                    .FontColor(Colors.Blue.Darken2);
+                                    .FontColor(Colors.Blue.Darken2)
+                                    .AlignRight();
                             });
 
                         // ── Contenido ───────────────────────────────────────────────

@@ -486,7 +486,7 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                var ubicacionWindow = new Views.Windows.UbicacionWindow();
+                var ubicacionWindow = new Views.Windows.UbicacionWindow(idRubroDefault: 1);
                 ubicacionWindow.Activate();
 
                 // Esperar a que se cierre la ventana
@@ -548,9 +548,11 @@ namespace Advance_Control.Views.Pages
                 // Cargar las ubicaciones
                 seleccionarUbicacionControl.IsLoading = true;
                 var ubicaciones = await _ubicacionService.GetUbicacionesAsync();
-                
+
                 seleccionarUbicacionControl.Ubicaciones.Clear();
-                foreach (var ubicacion in ubicaciones)
+                // Equipos es siempre rubro Elevadores (1) — no se debe poder asignar una
+                // ubicación de rubro Inmuebles a un equipo.
+                foreach (var ubicacion in ubicaciones.Where(u => (u.IdRubro ?? 1) == 1))
                 {
                     seleccionarUbicacionControl.Ubicaciones.Add(ubicacion);
                 }

@@ -444,6 +444,7 @@ namespace Advance_Control.Services.Areas
                 .Add("etiquetaMostrar", area.EtiquetaMostrar)
                 .Add("etiquetaTexto", area.EtiquetaTexto)
                 .Add("nivelZoom", area.NivelZoom)
+                .Add("idRubro", area.IdRubro)
                 // metadataJSON va en el body (PostAsJsonAsync/PutAsJsonAsync) — no en la URI
                 .Add(isCreate ? "usuarioCreacion" : "usuarioModificacion",
                      isCreate ? area.UsuarioCreacion : area.UsuarioModificacion)

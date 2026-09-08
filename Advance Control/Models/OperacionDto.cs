@@ -53,10 +53,16 @@ namespace Advance_Control.Models
         public string? RazonSocial { get; set; }
 
         /// <summary>
-        /// Identificador del equipo
+        /// Identificador del equipo o inmueble asociado
         /// </summary>
         [JsonPropertyName("identificador")]
         public string? Identificador { get; set; }
+
+        /// <summary>
+        /// Indica a qué catálogo pertenece Identificador: "equipo" o "inmueble"
+        /// </summary>
+        [JsonPropertyName("tipoObjetivo")]
+        public string? TipoObjetivo { get; set; }
 
         /// <summary>
         /// Nombre de quien atiende
@@ -340,6 +346,36 @@ namespace Advance_Control.Models
 
         [JsonIgnore]
         public Visibility FacturaVisibility => _hasFactura ? Visibility.Visible : Visibility.Collapsed;
+
+        private int? _idFacturaVinculada;
+
+        /// <summary>
+        /// ID de la factura CFDI real vinculada a esta operación (facturas.id_operacion).
+        /// Null si la operación no está facturada. Se resuelve aparte (vía
+        /// IFacturaService.ObtenerOperacionesFacturadasAsync) porque fn_operaciones_gestionar
+        /// no expone este dato. No confundir con <see cref="HasFactura"/> (documento/imagen
+        /// subida manualmente) ni con <see cref="CkFacturaCargada"/> (checklist manual).
+        /// </summary>
+        [JsonIgnore]
+        public int? IdFacturaVinculada
+        {
+            get => _idFacturaVinculada;
+            set
+            {
+                if (_idFacturaVinculada != value)
+                {
+                    _idFacturaVinculada = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(EstaFacturada));
+                }
+            }
+        }
+
+        /// <summary>
+        /// True si la operación ya tiene una factura CFDI real vinculada.
+        /// </summary>
+        [JsonIgnore]
+        public bool EstaFacturada => _idFacturaVinculada.HasValue;
 
         private bool _expand = false;
 

@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.ConfiguracionEmisor;
 using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Logging;
 
@@ -12,6 +13,7 @@ namespace Advance_Control.ViewModels
     public class EntidadesViewModel : ViewModelBase
     {
         private readonly IEntidadService _entidadService;
+        private readonly IConfiguracionEmisorService _configuracionEmisorService;
         private readonly ILoggingService _logger;
         private ObservableCollection<EntidadDto> _entidades;
         private bool _isLoading;
@@ -22,9 +24,10 @@ namespace Advance_Control.ViewModels
         private string? _estadoFilter;
         private string? _ciudadFilter;
 
-        public EntidadesViewModel(IEntidadService entidadService, ILoggingService logger)
+        public EntidadesViewModel(IEntidadService entidadService, IConfiguracionEmisorService configuracionEmisorService, ILoggingService logger)
         {
             _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
+            _configuracionEmisorService = configuracionEmisorService ?? throw new ArgumentNullException(nameof(configuracionEmisorService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _entidades = new ObservableCollection<EntidadDto>();
         }
@@ -130,6 +133,8 @@ namespace Advance_Control.ViewModels
                 }
 
                 await _logger.LogInformationAsync($"Se cargaron {entidades.Count} entidades exitosamente", "EntidadesViewModel", "LoadEntidadesAsync");
+
+                await AplicarEstadoCsdFielAsync(cancellationToken);
             }
             catch (OperationCanceledException)
             {
@@ -149,6 +154,41 @@ namespace Advance_Control.ViewModels
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// Marca en cada <see cref="EntidadDto"/> si tiene CSD/PFX cargado, cruzando por RFC contra
+        /// el CSD/FIEL activo (la API no liga estos endpoints a un id_entidad, solo a un RFC -- ver
+        /// ConfiguracionEmisorService en el API). Si ninguna entidad coincide con el RFC del CSD/FIEL
+        /// cargado (por ejemplo, si aún no hay ninguno), todas quedan sin marcar.
+        /// </summary>
+        private async Task AplicarEstadoCsdFielAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync(cancellationToken);
+                var estadoFiel = await _configuracionEmisorService.ObtenerEstadoFielAsync(cancellationToken);
+
+                foreach (var entidad in Entidades)
+                {
+                    var rfcEntidad = entidad.RFC?.Trim();
+
+                    var coincideCsd = estadoCsd.Cargado && !string.IsNullOrWhiteSpace(rfcEntidad)
+                        && string.Equals(rfcEntidad, estadoCsd.Rfc?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    entidad.CsdCargado = coincideCsd;
+                    entidad.CsdVigente = coincideCsd && estadoCsd.Vigente;
+
+                    var coincideFiel = estadoFiel.Cargado && !string.IsNullOrWhiteSpace(rfcEntidad)
+                        && string.Equals(rfcEntidad, estadoFiel.Rfc?.Trim(), StringComparison.OrdinalIgnoreCase);
+                    entidad.PfxCargado = coincideFiel;
+                    entidad.PfxVigente = coincideFiel && estadoFiel.Vigente;
+                }
+            }
+            catch (Exception ex)
+            {
+                // No es crítico para mostrar el listado -- solo se pierde el indicador visual.
+                await _logger.LogWarningAsync($"No se pudo consultar el estado de CSD/FIEL: {ex.Message}", "EntidadesViewModel", "AplicarEstadoCsdFielAsync");
             }
         }
 

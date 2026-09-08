@@ -39,13 +39,62 @@ namespace Advance_Control.Models
         public int NumeroAbonos { get; set; }
         public DateTime? FechaUltimoAbono { get; set; }
         public int? IdOperacion { get; set; }
+        public bool Cancelada { get; set; }
+        public DateTime? FechaCancelacion { get; set; }
+        public string? MotivoCancelacion { get; set; }
+        public string? UuidSustitucion { get; set; }
 
         /// <summary>Solo viene poblado al consultar el detalle de UNA factura, no en el listado.</summary>
         public string? Sello { get; set; }
         public string? SelloCfd { get; set; }
         public string? SelloSat { get; set; }
+        public string? AcuseCancelacionXml { get; set; }
 
         public string FolioTitulo => string.IsNullOrWhiteSpace(Serie) ? $"{Folio}" : $"{Serie}{Folio}";
+
+        public bool EsComplementoPago => string.Equals(TipoDeComprobante, "P", StringComparison.OrdinalIgnoreCase);
+        public bool EsConSerie => !EsComplementoPago && !string.IsNullOrWhiteSpace(Serie);
+        public bool EsSinSerie => !EsComplementoPago && string.IsNullOrWhiteSpace(Serie);
+        public string TipoFacturaTexto => EsComplementoPago
+            ? "Complemento de pago"
+            : EsConSerie
+                ? "Serie + folio"
+                : "Folio";
+
+        /// <summary>
+        /// Solo las facturas generadas por el software (Serie A + folio propio) se gestionan aquí.
+        /// Las de folio suelto y los complementos de pago se hicieron/hacen desde el portal de Bilkon;
+        /// se cancelan y se les capturan pagos allá, para no perder el hilo de esos movimientos.
+        /// </summary>
+        public bool PermiteGestionInterna => EsConSerie;
+
+        public string TooltipCapturarPagoTexto => PermiteGestionInterna
+            ? "Agregar complemento de pago"
+            : "Esta factura no fue generada por el software; captura su pago desde el portal de Bilkon";
+
+        /// <summary>Solo se puede cancelar una factura propia (Serie+Folio), con UUID timbrado y que no esté ya cancelada.</summary>
+        public bool PuedeCancelarCfdi => PermiteGestionInterna && !Cancelada && !string.IsNullOrWhiteSpace(Uuid);
+
+        public string TooltipCancelarTexto => Cancelada
+            ? "Esta factura ya está cancelada"
+            : PermiteGestionInterna
+                ? "Cancelar CFDI ante el SAT"
+                : "Esta factura no fue generada por el software; cancélala desde el portal de Bilkon";
+
+        public string EstadoCancelacionTexto => Cancelada
+            ? $"Cancelada ({FechaCancelacion:dd/MM/yyyy})"
+            : "Vigente";
+
+        public string SugerenciaTexto
+        {
+            get
+            {
+                var uuidCorto = string.IsNullOrWhiteSpace(Uuid)
+                    ? "sin UUID"
+                    : (Uuid.Length > 8 ? Uuid[..8] + "…" : Uuid);
+                return $"{FolioTitulo} · {ReceptorNombre ?? "Sin receptor"} · {uuidCorto}";
+            }
+        }
 
         public string FechaTexto => Fecha == default ? string.Empty : Fecha.ToString("dd/MM/yyyy HH:mm");
         public string EmisorReceptorTexto => $"{EmisorNombre ?? "Sin emisor"} -> {ReceptorNombre ?? "Sin receptor"}";

@@ -155,6 +155,12 @@ namespace Advance_Control.Views.Pages
             await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 
+        private async void MostrarFacturadasToggle_Toggled(object sender, RoutedEventArgs e)
+        {
+            if (ViewModel == null || _isNavigating) return;
+            await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
+        }
+
         private async void FechaFinalPicker_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
         {
             if (ViewModel == null || _isNavigating) return;

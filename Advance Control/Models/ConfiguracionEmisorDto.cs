@@ -61,4 +61,40 @@ namespace Advance_Control.Models
         public string? Message { get; set; }
         public CsdEmisorEstadoDto? Estado { get; set; }
     }
+
+    /// <summary>
+    /// Estado de la FIEL/PFX cargado, sin exponer el PFX ni su password. El PFX generado a partir
+    /// de la FIEL se usa para la cancelación de CFDI ante Bilkon, no para timbrar (eso usa el CSD).
+    /// </summary>
+    public class FielEmisorEstadoDto
+    {
+        [JsonPropertyName("cargado")]
+        public bool Cargado { get; set; }
+
+        [JsonPropertyName("numeroCertificado")]
+        public string? NumeroCertificado { get; set; }
+
+        [JsonPropertyName("rfc")]
+        public string? Rfc { get; set; }
+
+        [JsonPropertyName("fechaVigenciaDesde")]
+        public DateTime? FechaVigenciaDesde { get; set; }
+
+        [JsonPropertyName("fechaVigenciaHasta")]
+        public DateTime? FechaVigenciaHasta { get; set; }
+
+        [JsonPropertyName("vigente")]
+        public bool Vigente { get; set; }
+
+        [JsonPropertyName("cargadoEn")]
+        public DateTime? CargadoEn { get; set; }
+    }
+
+    /// <summary>Resultado de intentar generar y guardar un PFX nuevo a partir de la FIEL.</summary>
+    public class FielUploadResultDto
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public FielEmisorEstadoDto? Estado { get; set; }
+    }
 }

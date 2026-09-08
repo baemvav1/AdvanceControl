@@ -33,5 +33,6 @@ namespace Advance_Control.Models
         public string? UsuarioModificacion { get; set; }
         public int? TotalCoordenadas { get; set; }
         public int? TotalMarcadores { get; set; }
+        public int? IdRubro { get; set; }
     }
 }
