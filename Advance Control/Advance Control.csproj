@@ -53,8 +53,13 @@
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Assets\Images\ImagenHotSpotElevadorDeTraccion.jpg" />
-    <Content Include="Assets\geo\estados.json" CopyToOutputDirectory="PreserveNewest" />
-    <Content Include="Assets\geo\municipios.json" CopyToOutputDirectory="PreserveNewest" />
+    <!--
+      Embebidos (no Content): los archivos sueltos junto al .exe no siempre
+      sobreviven la instalación/actualización de MSIX en todos los equipos.
+      Se extraen a LocalApplicationData en tiempo de ejecución (ver AreasPage).
+    -->
+    <EmbeddedResource Include="Assets\geo\estados.json" LogicalName="Advance_Control.Geo.estados.json" />
+    <EmbeddedResource Include="Assets\geo\municipios.json" LogicalName="Advance_Control.Geo.municipios.json" />
     <Content Include="Assets\Cabeceras\Cotizacion.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Cabeceras\Reporte.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Cabeceras\Nota.png" CopyToOutputDirectory="PreserveNewest" />

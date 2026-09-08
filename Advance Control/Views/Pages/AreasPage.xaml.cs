@@ -173,9 +173,13 @@ namespace Advance_Control.Views.Pages
                     "ac-maps-local", mapCacheDir,
                     Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
 
-                // Virtual host para servir GeoJSON localmente sin peticiones de red
-                var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
-                if (Directory.Exists(geoFolder))
+                // Virtual host para servir GeoJSON localmente sin peticiones de red.
+                // Los archivos van embebidos en el ensamblado (no como Content junto al
+                // .exe) porque el empaquetado MSIX no garantiza que la carpeta Assets/geo
+                // llegue intacta a todas las instalaciones; se extraen aquí a un folder
+                // local que siempre podemos regenerar.
+                var geoFolder = await EnsureGeoAssetsExtractedAsync();
+                if (geoFolder != null)
                 {
                     coreWebView2.SetVirtualHostNameToFolderMapping(
                         "geo-assets", geoFolder,
@@ -184,9 +188,9 @@ namespace Advance_Control.Views.Pages
                 else
                 {
                     ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning,
-                        "No se encontró la carpeta de límites estatales/municipales junto al ejecutable. Los botones de Estado/Municipio no funcionarán hasta reinstalar la aplicación.");
+                        "No se pudieron preparar los límites estatales/municipales. Los botones de Estado/Municipio no funcionarán en esta sesión.");
                     await _loggingService.LogWarningAsync(
-                        $"Carpeta de GeoJSON no encontrada en '{geoFolder}'. El host virtual 'geo-assets' no se registró; los fetch a estados.json/municipios.json fallarán.",
+                        "No se pudo extraer el GeoJSON embebido. El host virtual 'geo-assets' no se registró; los fetch a estados.json/municipios.json fallarán.",
                         "AreasPage", "EnsureWebView2InitializedAsync");
                 }
 
@@ -202,6 +206,58 @@ namespace Advance_Control.Views.Pages
             finally
             {
                 _webView2InitLock.Release();
+            }
+        }
+
+        private static readonly (string ResourceLogicalName, string FileName)[] GeoEmbeddedResources =
+        {
+            ("Advance_Control.Geo.estados.json", "estados.json"),
+            ("Advance_Control.Geo.municipios.json", "municipios.json"),
+        };
+
+        /// <summary>
+        /// Extrae los GeoJSON de estados/municipios (embebidos en el ensamblado) a una
+        /// carpeta en LocalApplicationData, regenerándolos si faltan o cambiaron de tamaño.
+        /// Devuelve null si no se pudieron preparar.
+        /// </summary>
+        private async Task<string?> EnsureGeoAssetsExtractedAsync()
+        {
+            try
+            {
+                var geoFolder = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "Advance Control", "geo");
+                Directory.CreateDirectory(geoFolder);
+
+                var assembly = GetType().Assembly;
+                foreach (var (resourceLogicalName, fileName) in GeoEmbeddedResources)
+                {
+                    using var resourceStream = assembly.GetManifestResourceStream(resourceLogicalName);
+                    if (resourceStream == null)
+                    {
+                        await _loggingService.LogErrorAsync(
+                            $"Recurso embebido '{resourceLogicalName}' no encontrado en el ensamblado.",
+                            new FileNotFoundException(resourceLogicalName),
+                            "AreasPage", "EnsureGeoAssetsExtractedAsync");
+                        return null;
+                    }
+
+                    var destPath = Path.Combine(geoFolder, fileName);
+                    if (!File.Exists(destPath) || new FileInfo(destPath).Length != resourceStream.Length)
+                    {
+                        using var fileStream = File.Create(destPath);
+                        await resourceStream.CopyToAsync(fileStream);
+                    }
+                }
+
+                return geoFolder;
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync(
+                    "No se pudieron extraer los GeoJSON embebidos a disco",
+                    ex, "AreasPage", "EnsureGeoAssetsExtractedAsync");
+                return null;
             }
         }
 
