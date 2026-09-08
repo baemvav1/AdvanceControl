@@ -176,9 +176,19 @@ namespace Advance_Control.Views.Pages
                 // Virtual host para servir GeoJSON localmente sin peticiones de red
                 var geoFolder = Path.Combine(AppContext.BaseDirectory, "Assets", "geo");
                 if (Directory.Exists(geoFolder))
+                {
                     coreWebView2.SetVirtualHostNameToFolderMapping(
                         "geo-assets", geoFolder,
                         Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+                }
+                else
+                {
+                    ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning,
+                        "No se encontró la carpeta de límites estatales/municipales junto al ejecutable. Los botones de Estado/Municipio no funcionarán hasta reinstalar la aplicación.");
+                    await _loggingService.LogWarningAsync(
+                        $"Carpeta de GeoJSON no encontrada en '{geoFolder}'. El host virtual 'geo-assets' no se registró; los fetch a estados.json/municipios.json fallarán.",
+                        "AreasPage", "EnsureWebView2InitializedAsync");
+                }
 
                 _isWebView2Initialized = true;
 
