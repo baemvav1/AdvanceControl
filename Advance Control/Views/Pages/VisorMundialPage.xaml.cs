@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,6 +32,8 @@ namespace Advance_Control.Views.Pages
         private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
+        private Microsoft.Web.WebView2.Core.CoreWebView2Environment? _webView2Environment;
+        private string? _currentVisorMundialHtml;
 
         public VisorMundialPage()
         {
@@ -94,6 +97,7 @@ namespace Advance_Control.Views.Pages
                 }
 
                 var env = await Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateAsync();
+                _webView2Environment = env;
                 await MapWebView.EnsureCoreWebView2Async(env);
 
                 if (_isDisposed || MapWebView.CoreWebView2 == null)
@@ -104,13 +108,14 @@ namespace Advance_Control.Views.Pages
                 var coreWebView2 = MapWebView.CoreWebView2;
                 coreWebView2.WebMessageReceived += CoreWebView2_WebMessageReceived;
 
-                var mapCacheDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Advance Control", "map_cache");
-                Directory.CreateDirectory(mapCacheDir);
-                coreWebView2.SetVirtualHostNameToFolderMapping(
-                    "ac-visor-mundial-local", mapCacheDir,
-                    Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+                // El HTML se sirve desde memoria (no desde disco/carpeta virtual) — ver
+                // CoreWebView2_VisorMundialHtmlRequested. SetVirtualHostNameToFolderMapping
+                // con un archivo regenerado en cada carga producía ERR_CONNECTION_ABORTED de
+                // forma consistente en algunos equipos (mismo problema resuelto en AreasPage).
+                coreWebView2.AddWebResourceRequestedFilter(
+                    "https://ac-visor-mundial-local/visor_mundial.html",
+                    Microsoft.Web.WebView2.Core.CoreWebView2WebResourceContext.Document);
+                coreWebView2.WebResourceRequested += CoreWebView2_VisorMundialHtmlRequested;
 
                 _isWebView2Initialized = true;
             }
@@ -122,6 +127,22 @@ namespace Advance_Control.Views.Pages
             {
                 _webView2InitLock.Release();
             }
+        }
+
+        private void CoreWebView2_VisorMundialHtmlRequested(
+            object sender,
+            Microsoft.Web.WebView2.Core.CoreWebView2WebResourceRequestedEventArgs args)
+        {
+            if (_webView2Environment == null || _currentVisorMundialHtml == null
+                || args.Request.Uri != "https://ac-visor-mundial-local/visor_mundial.html")
+            {
+                return;
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(_currentVisorMundialHtml);
+            var stream = new MemoryStream(bytes).AsRandomAccessStream();
+            args.Response = _webView2Environment.CreateWebResourceResponse(
+                stream, 200, "OK", "Content-Type: text/html; charset=utf-8");
         }
 
         private async void CoreWebView2_WebMessageReceived(
@@ -194,12 +215,7 @@ namespace Advance_Control.Views.Pages
                     : PrepareUbicacionesJson();
                 var html = GenerateVisorMundialMapHtml(ViewModel.MapsConfig.ApiKey!, centerLat, centerLng, zoom, puntosJson);
 
-                var mapCacheDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Advance Control", "map_cache");
-                Directory.CreateDirectory(mapCacheDir);
-                var mapFile = Path.Combine(mapCacheDir, "visor_mundial.html");
-                await File.WriteAllTextAsync(mapFile, html, System.Text.Encoding.UTF8);
+                _currentVisorMundialHtml = html;
                 MapWebView.CoreWebView2.Navigate("https://ac-visor-mundial-local/visor_mundial.html");
             }
             catch (Exception ex)

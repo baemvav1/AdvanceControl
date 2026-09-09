@@ -6,7 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:Advance_Control.Models"
-    xmlns:windows="using:Advance_Control.Views.Windows"
     mc:Ignorable="d">
 
     <Grid x:Name="RootGrid" Padding="16">
@@ -41,7 +40,6 @@
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
@@ -86,27 +84,6 @@
                                 Grid.Column="0"
                                 Content="Credencial activa"
                                 IsChecked="True" />
-
-                            <StackPanel
-                                Grid.Row="2"
-                                Grid.Column="0"
-                                Grid.ColumnSpan="3"
-                                Spacing="8">
-                                <TextBlock FontWeight="SemiBold" Text="Rubros de negocio" />
-                                <TextBlock
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="Determina qué operaciones, ubicaciones, áreas, clientes y contactos puede ver este usuario." />
-                                <ItemsRepeater x:Name="RubrosItemsRepeater" ItemsSource="{x:Bind RubrosSeleccionables}">
-                                    <ItemsRepeater.Layout>
-                                        <StackLayout Orientation="Horizontal" Spacing="24" />
-                                    </ItemsRepeater.Layout>
-                                    <ItemsRepeater.ItemTemplate>
-                                        <DataTemplate x:DataType="windows:RubroSeleccionable">
-                                            <CheckBox Content="{x:Bind Nombre}" IsChecked="{x:Bind IsSelected, Mode=TwoWay}" />
-                                        </DataTemplate>
-                                    </ItemsRepeater.ItemTemplate>
-                                </ItemsRepeater>
-                            </StackPanel>
                         </Grid>
                     </StackPanel>
                 </Border>

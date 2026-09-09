@@ -76,19 +76,6 @@
                     IsReadOnly="True"
                     PlaceholderText="Se detecta automáticamente al hacer clic en el mapa" />
 
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                    <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="Rubro:" />
-                    <RadioButton
-                        x:Name="RubroElevadoresRadioButton"
-                        Content="Elevadores"
-                        GroupName="RubroUbicacionWindow"
-                        IsChecked="True" />
-                    <RadioButton
-                        x:Name="RubroInmueblesRadioButton"
-                        Content="Inmuebles"
-                        GroupName="RubroUbicacionWindow" />
-                </StackPanel>
-
                 <InfoBar
                     x:Name="StatusInfoBar"
                     IsClosable="False"

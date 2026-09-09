@@ -6,7 +6,9 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Globalization;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Advance_Control.ViewModels;
@@ -33,6 +35,12 @@ namespace Advance_Control.Views.Pages
         private double? _pendingLng;
         private string _pendingName = string.Empty;
 
+        private CoreWebView2Environment? _webView2Environment;
+        private string? _currentUbicacionesMapHtml;
+        private bool _mapLoadStarted = false;
+        private readonly SemaphoreSlim _loadMapLock = new SemaphoreSlim(1, 1);
+        private bool _navigationCompletedSubscribed = false;
+
         public UbicacionesPage()
         {
             ViewModel = AppServices.Get<UbicacionesViewModel>();
@@ -51,6 +59,7 @@ namespace Advance_Control.Views.Pages
             try
             {
                 var env = await CoreWebView2Environment.CreateAsync();
+                _webView2Environment = env;
                 await MapWebView.EnsureCoreWebView2Async(env);
 
                 if (MapWebView.CoreWebView2 == null)
@@ -73,26 +82,47 @@ namespace Advance_Control.Views.Pages
 
         private async Task LoadMapAsync(CoreWebView2 core)
         {
-            var apiKey = ViewModel.MapsConfig?.ApiKey ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(apiKey))
+            // OnPageLoaded y OnNavigatedTo pueden llamar a este método casi
+            // simultáneamente (cada uno intentando cubrir el caso en que el otro aún no
+            // esté listo) — sin este guard, ambos navegan el mismo WebView2 casi a la vez,
+            // lo que aborta la primera navegación (mismo patrón visto y corregido en
+            // AreasPage: ver docs/salvandolosmapas-recovery.md).
+            await _loadMapLock.WaitAsync();
+            try
             {
-                SetStatus(InfoBarSeverity.Error, "ApiKey de Google Maps no disponible — revisa /api/GoogleMapsConfig");
-                return;
-            }
+                if (_mapLoadStarted)
+                {
+                    return;
+                }
 
-            var cacheDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Advance Control", "map_cache");
-            Directory.CreateDirectory(cacheDir);
+                var apiKey = ViewModel.MapsConfig?.ApiKey ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(apiKey))
+                {
+                    SetStatus(InfoBarSeverity.Error, "ApiKey de Google Maps no disponible — revisa /api/GoogleMapsConfig");
+                    return;
+                }
 
-            core.SetVirtualHostNameToFolderMapping(
-                "ac-maps-local", cacheDir,
-                CoreWebView2HostResourceAccessKind.Allow);
+                _mapLoadStarted = true;
 
-            core.WebMessageReceived -= OnMapWebMessageReceived;
-            core.WebMessageReceived += OnMapWebMessageReceived;
+                // El HTML se sirve desde memoria (no desde disco/carpeta virtual) — ver
+                // CoreWebView2_MapHtmlRequested. SetVirtualHostNameToFolderMapping con un
+                // archivo regenerado en cada carga producía ERR_CONNECTION_ABORTED de forma
+                // consistente en algunos equipos (mismo problema resuelto en AreasPage).
+                core.AddWebResourceRequestedFilter(
+                    "https://ac-maps-local/map.html",
+                    CoreWebView2WebResourceContext.Document);
+                core.WebResourceRequested += CoreWebView2_MapHtmlRequested;
 
-            
+                core.WebMessageReceived -= OnMapWebMessageReceived;
+                core.WebMessageReceived += OnMapWebMessageReceived;
+
+                if (!_navigationCompletedSubscribed)
+                {
+                    _navigationCompletedSubscribed = true;
+                    MapWebView.NavigationCompleted += MapWebView_NavigationCompleted;
+                }
+
+
 var html = $@"<!DOCTYPE html>
 <html>
 <head>
@@ -268,17 +298,34 @@ var html = $@"<!DOCTYPE html>
 </body>
 </html>";
 
-            var mapFile = Path.Combine(cacheDir, "map.html");
-            await File.WriteAllTextAsync(mapFile, html, Encoding.UTF8);
-
-            MapWebView.NavigationCompleted += (s, a) =>
+                _currentUbicacionesMapHtml = html;
+                core.Navigate("https://ac-maps-local/map.html");
+                SetStatus(InfoBarSeverity.Informational, "Cargando mapa…");
+            }
+            finally
             {
-                SetStatus(a.IsSuccess ? InfoBarSeverity.Success : InfoBarSeverity.Error,
-                    a.IsSuccess ? "Mapa listo" : $"Error al cargar mapa: {a.WebErrorStatus}");
-            };
+                _loadMapLock.Release();
+            }
+        }
 
-            core.Navigate("https://ac-maps-local/map.html");
-            SetStatus(InfoBarSeverity.Informational, "Cargando mapa…");
+        private void MapWebView_NavigationCompleted(object sender, CoreWebView2NavigationCompletedEventArgs args)
+        {
+            SetStatus(args.IsSuccess ? InfoBarSeverity.Success : InfoBarSeverity.Error,
+                args.IsSuccess ? "Mapa listo" : $"Error al cargar mapa: {args.WebErrorStatus}");
+        }
+
+        private void CoreWebView2_MapHtmlRequested(object sender, CoreWebView2WebResourceRequestedEventArgs args)
+        {
+            if (_webView2Environment == null || _currentUbicacionesMapHtml == null
+                || args.Request.Uri != "https://ac-maps-local/map.html")
+            {
+                return;
+            }
+
+            var bytes = Encoding.UTF8.GetBytes(_currentUbicacionesMapHtml);
+            var stream = new MemoryStream(bytes).AsRandomAccessStream();
+            args.Response = _webView2Environment.CreateWebResourceResponse(
+                stream, 200, "OK", "Content-Type: text/html; charset=utf-8");
         }
 
         private void OnMapWebMessageReceived(CoreWebView2 sender, CoreWebView2WebMessageReceivedEventArgs args)
@@ -475,8 +522,7 @@ var html = $@"<!DOCTYPE html>
                     Descripcion = DescripcionTextBox.Text,
                     Latitud = lat,
                     Longitud = lng,
-                    Activo = true,
-                    IdRubro = RubroInmueblesRadioButton.IsChecked == true ? 2 : 1
+                    Activo = true
                 };
 
                 ApiResponse response;
@@ -522,7 +568,6 @@ var html = $@"<!DOCTYPE html>
             DescripcionTextBox.Text = string.Empty;
             LatTextBox.Text = string.Empty;
             LngTextBox.Text = string.Empty;
-            RubroElevadoresRadioButton.IsChecked = true;
             _isEditMode = false;
             _editingUbicacionId = null;
         }
@@ -533,10 +578,6 @@ var html = $@"<!DOCTYPE html>
             DescripcionTextBox.Text = ubicacion.Descripcion ?? string.Empty;
             LatTextBox.Text = ubicacion.Latitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
             LngTextBox.Text = ubicacion.Longitud?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
-            if (ubicacion.IdRubro == 2)
-                RubroInmueblesRadioButton.IsChecked = true;
-            else
-                RubroElevadoresRadioButton.IsChecked = true;
         }
     }
 }

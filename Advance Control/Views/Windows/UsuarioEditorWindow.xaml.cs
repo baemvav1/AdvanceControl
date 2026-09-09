@@ -6,7 +6,6 @@ using Advance_Control.Services.Email;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Services.Proveedores;
-using Advance_Control.Services.RelacionUsuarioRubro;
 using Advance_Control.Services.TipoUsuario;
 using Advance_Control.Services.UsuariosAdmin;
 using Advance_Control.Utilities;
@@ -30,7 +29,6 @@ namespace Advance_Control.Views.Windows
         private readonly IClienteService _clienteService;
         private readonly IProveedorService _proveedorService;
         private readonly ITipoUsuarioService _tipoUsuarioService;
-        private readonly IRelacionUsuarioRubroService _relacionUsuarioRubroService;
         private readonly IEmailService _emailService;
         private readonly INotificacionService _notificacionService;
         private readonly ILoggingService _loggingService;
@@ -46,7 +44,6 @@ namespace Advance_Control.Views.Windows
         public ObservableCollection<CustomerDto> Clientes { get; } = new();
         public ObservableCollection<ProveedorDto> Proveedores { get; } = new();
         public ObservableCollection<TipoUsuarioDto> TiposUsuario { get; } = new();
-        public ObservableCollection<RubroSeleccionable> RubrosSeleccionables { get; } = new();
 
         public bool SavedChanges { get; private set; }
 
@@ -58,7 +55,6 @@ namespace Advance_Control.Views.Windows
             _clienteService = AppServices.Get<IClienteService>();
             _proveedorService = AppServices.Get<IProveedorService>();
             _tipoUsuarioService = AppServices.Get<ITipoUsuarioService>();
-            _relacionUsuarioRubroService = AppServices.Get<IRelacionUsuarioRubroService>();
             _emailService = AppServices.Get<IEmailService>();
             _notificacionService = AppServices.Get<INotificacionService>();
             _loggingService = AppServices.Get<ILoggingService>();
@@ -117,8 +113,7 @@ namespace Advance_Control.Views.Windows
                 CargarTiposUsuarioAsync(),
                 CargarContactosAsync(),
                 CargarClientesAsync(),
-                CargarProveedoresAsync(),
-                CargarRubrosAsync());
+                CargarProveedoresAsync());
 
             await CargarCorreoUsuarioAsync();
         }
@@ -213,57 +208,6 @@ namespace Advance_Control.Views.Windows
             {
                 await _loggingService.LogErrorAsync("Error al cargar proveedores en UsuarioEditorWindow", ex, nameof(UsuarioEditorWindow), nameof(CargarProveedoresAsync));
                 await _notificacionService.MostrarAsync("Error", "No fue posible cargar los proveedores.");
-            }
-        }
-
-        private async Task CargarRubrosAsync()
-        {
-            try
-            {
-                var rubros = await _relacionUsuarioRubroService.GetRubrosAsync();
-                var asignados = _usuario != null
-                    ? await _relacionUsuarioRubroService.GetRelacionesPorUsuarioAsync(_usuario.CredencialId)
-                    : new List<RelacionUsuarioRubroDto>();
-
-                RubrosSeleccionables.Clear();
-                foreach (var rubro in rubros.OrderBy(r => r.Id))
-                {
-                    // Usuario nuevo: Elevadores (id=1) viene premarcado por defecto.
-                    var seleccionado = _usuario == null
-                        ? rubro.Id == 1
-                        : asignados.Any(a => a.IdRubro == rubro.Id && a.Activo);
-
-                    RubrosSeleccionables.Add(new RubroSeleccionable
-                    {
-                        Id = rubro.Id,
-                        Nombre = rubro.Nombre,
-                        IsSelected = seleccionado
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                await _loggingService.LogErrorAsync("Error al cargar rubros en UsuarioEditorWindow", ex, nameof(UsuarioEditorWindow), nameof(CargarRubrosAsync));
-                await _notificacionService.MostrarAsync("Error", "No fue posible cargar los rubros de negocio.");
-            }
-        }
-
-        private async Task GuardarRubrosUsuarioAsync(long credencialId)
-        {
-            var actuales = await _relacionUsuarioRubroService.GetRelacionesPorUsuarioAsync(credencialId);
-
-            foreach (var rubro in RubrosSeleccionables)
-            {
-                var existente = actuales.FirstOrDefault(a => a.IdRubro == rubro.Id);
-
-                if (rubro.IsSelected && existente == null)
-                {
-                    await _relacionUsuarioRubroService.CreateRelacionAsync(credencialId, rubro.Id);
-                }
-                else if (!rubro.IsSelected && existente != null)
-                {
-                    await _relacionUsuarioRubroService.DeleteRelacionAsync(existente.Id);
-                }
             }
         }
 
@@ -372,7 +316,6 @@ namespace Advance_Control.Views.Windows
                 }
 
                 await GuardarCorreoUsuarioAsync(result.CredencialId);
-                await GuardarRubrosUsuarioAsync(result.CredencialId);
 
                 await _notificacionService.MostrarAsync("Usuario guardado", result.Message);
 
@@ -535,15 +478,5 @@ namespace Advance_Control.Views.Windows
             CorreoInfoBar.Severity = severity;
             CorreoInfoBar.IsOpen = true;
         }
-    }
-
-    /// <summary>
-    /// Item de UI para el checkbox de un rubro dentro de UsuarioEditorWindow.
-    /// </summary>
-    public class RubroSeleccionable
-    {
-        public int Id { get; set; }
-        public string Nombre { get; set; } = string.Empty;
-        public bool IsSelected { get; set; }
     }
 }

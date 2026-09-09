@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using System.Linq;
 using System.Threading;
 using System.Globalization;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 namespace Advance_Control.Views.Pages
 {
@@ -55,6 +56,10 @@ namespace Advance_Control.Views.Pages
         private volatile bool _isWebView2Initialized = false;
         private readonly SemaphoreSlim _webView2InitLock = new SemaphoreSlim(1, 1);
         private bool _isDisposed = false;
+        private Microsoft.Web.WebView2.Core.CoreWebView2Environment? _webView2Environment;
+        private string? _currentAreasMapHtml;
+        private byte[]? _estadosGeoJsonBytes;
+        private byte[]? _municipiosGeoJsonBytes;
         
         // Flag to prevent multiple simultaneous map centering operations (0 = not centering, 1 = centering)
         private int _isCenteringMapInt = 0;
@@ -136,6 +141,7 @@ namespace Advance_Control.Views.Pages
                 }
 
                 var env = await Microsoft.Web.WebView2.Core.CoreWebView2Environment.CreateAsync();
+                _webView2Environment = env;
                 await MapWebView.EnsureCoreWebView2Async(env);
 
                 if (_isDisposed)
@@ -164,26 +170,31 @@ namespace Advance_Control.Views.Pages
                 // Capturar errores JS y de Google Maps Auth y reenviarlos al log .NET
                 await coreWebView2.AddScriptToExecuteOnDocumentCreatedAsync(WebView2DiagnosticsScript.JS);
 
-                // Virtual host para servir el HTML del mapa — da origen https:// a Google Maps
-                var mapCacheDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Advance Control", "map_cache");
-                Directory.CreateDirectory(mapCacheDir);
-                coreWebView2.SetVirtualHostNameToFolderMapping(
-                    "ac-maps-local", mapCacheDir,
-                    Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+                // El HTML del mapa se sirve directamente desde memoria (no desde disco/carpeta
+                // virtual) para dar origen https:// real a Google Maps sin depender del
+                // sistema de archivos ni del sandboxing del paquete MSIX — ver
+                // CoreWebView2_AreasHtmlRequested. SetVirtualHostNameToFolderMapping con un
+                // archivo regenerado en cada carga producía ERR_CONNECTION_ABORTED de forma
+                // consistente en algunos equipos.
+                coreWebView2.AddWebResourceRequestedFilter(
+                    "https://ac-maps-local/areas.html",
+                    Microsoft.Web.WebView2.Core.CoreWebView2WebResourceContext.Document);
+                coreWebView2.WebResourceRequested += CoreWebView2_AreasHtmlRequested;
 
-                // Virtual host para servir GeoJSON localmente sin peticiones de red.
-                // Los archivos van embebidos en el ensamblado (no como Content junto al
-                // .exe) porque el empaquetado MSIX no garantiza que la carpeta Assets/geo
-                // llegue intacta a todas las instalaciones; se extraen aquí a un folder
-                // local que siempre podemos regenerar.
-                var geoFolder = await EnsureGeoAssetsExtractedAsync();
-                if (geoFolder != null)
+                // GeoJSON de estados/municipios: igual que areas.html, se sirve desde
+                // memoria vía WebResourceRequested en vez de SetVirtualHostNameToFolderMapping
+                // — ese mecanismo basado en disco/carpeta virtual resultó no ser confiable en
+                // algunos equipos (ver CoreWebView2_AreasHtmlRequested). Los JSON siguen
+                // embebidos en el ensamblado (no como Content junto al .exe, porque el
+                // empaquetado MSIX no garantiza que Assets/geo llegue intacto a todas las
+                // instalaciones); ahora se leen directo a memoria, sin pasar por disco.
+                var geoAssetsLoaded = LoadGeoAssetsIntoMemory();
+                if (geoAssetsLoaded)
                 {
-                    coreWebView2.SetVirtualHostNameToFolderMapping(
-                        "geo-assets", geoFolder,
-                        Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind.Allow);
+                    coreWebView2.AddWebResourceRequestedFilter(
+                        "https://geo-assets/*",
+                        Microsoft.Web.WebView2.Core.CoreWebView2WebResourceContext.All);
+                    coreWebView2.WebResourceRequested += CoreWebView2_GeoAssetsRequested;
                 }
                 else
                 {
@@ -216,48 +227,43 @@ namespace Advance_Control.Views.Pages
         };
 
         /// <summary>
-        /// Extrae los GeoJSON de estados/municipios (embebidos en el ensamblado) a una
-        /// carpeta en LocalApplicationData, regenerándolos si faltan o cambiaron de tamaño.
-        /// Devuelve null si no se pudieron preparar.
+        /// Lee los GeoJSON de estados/municipios (embebidos en el ensamblado) directo a
+        /// memoria (_estadosGeoJsonBytes/_municipiosGeoJsonBytes), sin pasar por disco.
+        /// Devuelve false si no se pudieron preparar.
         /// </summary>
-        private async Task<string?> EnsureGeoAssetsExtractedAsync()
+        private bool LoadGeoAssetsIntoMemory()
         {
             try
             {
-                var geoFolder = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Advance Control", "geo");
-                Directory.CreateDirectory(geoFolder);
-
                 var assembly = GetType().Assembly;
-                foreach (var (resourceLogicalName, fileName) in GeoEmbeddedResources)
-                {
-                    using var resourceStream = assembly.GetManifestResourceStream(resourceLogicalName);
-                    if (resourceStream == null)
-                    {
-                        await _loggingService.LogErrorAsync(
-                            $"Recurso embebido '{resourceLogicalName}' no encontrado en el ensamblado.",
-                            new FileNotFoundException(resourceLogicalName),
-                            "AreasPage", "EnsureGeoAssetsExtractedAsync");
-                        return null;
-                    }
 
-                    var destPath = Path.Combine(geoFolder, fileName);
-                    if (!File.Exists(destPath) || new FileInfo(destPath).Length != resourceStream.Length)
-                    {
-                        using var fileStream = File.Create(destPath);
-                        await resourceStream.CopyToAsync(fileStream);
-                    }
+                using var estadosStream = assembly.GetManifestResourceStream(GeoEmbeddedResources[0].ResourceLogicalName);
+                using var municipiosStream = assembly.GetManifestResourceStream(GeoEmbeddedResources[1].ResourceLogicalName);
+                if (estadosStream == null || municipiosStream == null)
+                {
+                    _ = _loggingService.LogErrorAsync(
+                        "Recurso embebido de GeoJSON no encontrado en el ensamblado.",
+                        new FileNotFoundException("Advance_Control.Geo.estados.json / municipios.json"),
+                        "AreasPage", "LoadGeoAssetsIntoMemory");
+                    return false;
                 }
 
-                return geoFolder;
+                using var estadosMs = new MemoryStream();
+                estadosStream.CopyTo(estadosMs);
+                _estadosGeoJsonBytes = estadosMs.ToArray();
+
+                using var municipiosMs = new MemoryStream();
+                municipiosStream.CopyTo(municipiosMs);
+                _municipiosGeoJsonBytes = municipiosMs.ToArray();
+
+                return true;
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync(
-                    "No se pudieron extraer los GeoJSON embebidos a disco",
-                    ex, "AreasPage", "EnsureGeoAssetsExtractedAsync");
-                return null;
+                _ = _loggingService.LogErrorAsync(
+                    "No se pudieron cargar los GeoJSON embebidos a memoria",
+                    ex, "AreasPage", "LoadGeoAssetsIntoMemory");
+                return false;
             }
         }
 
@@ -320,7 +326,6 @@ namespace Advance_Control.Views.Pages
                     : string.Empty;
                 ColorComboBox.SelectedIndex = 0;
                 ActivoCheckBox.IsChecked = true;
-                RubroElevadoresRadioButton.IsChecked = true;
                 AreaForm.Visibility = Visibility.Visible;
                 _isFormVisible = true;
             });
@@ -344,6 +349,53 @@ namespace Advance_Control.Views.Pages
                 else this.DispatcherQueue.TryEnqueue(Apply);
             }
             catch { /* nunca debe romper el flujo del mapa */ }
+        }
+
+        private void CoreWebView2_AreasHtmlRequested(object sender, Microsoft.Web.WebView2.Core.CoreWebView2WebResourceRequestedEventArgs args)
+        {
+            // WebResourceRequested se dispara para TODOS los handlers suscritos en cuanto
+            // CUALQUIER filtro registrado matchea (los filtros no aíslan por handler), así
+            // que hay que revisar la URI explícitamente para no responder a peticiones de
+            // otros virtual hosts (p.ej. geo-assets).
+            if (_webView2Environment == null || _currentAreasMapHtml == null
+                || args.Request.Uri != "https://ac-maps-local/areas.html")
+            {
+                return;
+            }
+
+            var bytes = System.Text.Encoding.UTF8.GetBytes(_currentAreasMapHtml);
+            var stream = new MemoryStream(bytes).AsRandomAccessStream();
+            args.Response = _webView2Environment.CreateWebResourceResponse(
+                stream, 200, "OK", "Content-Type: text/html; charset=utf-8");
+        }
+
+        private void CoreWebView2_GeoAssetsRequested(object sender, Microsoft.Web.WebView2.Core.CoreWebView2WebResourceRequestedEventArgs args)
+        {
+            if (_webView2Environment == null)
+            {
+                return;
+            }
+
+            byte[]? bytes = args.Request.Uri switch
+            {
+                "https://geo-assets/estados.json" => _estadosGeoJsonBytes,
+                "https://geo-assets/municipios.json" => _municipiosGeoJsonBytes,
+                _ => null,
+            };
+
+            if (bytes == null)
+            {
+                return;
+            }
+
+            var stream = new MemoryStream(bytes).AsRandomAccessStream();
+            // SetVirtualHostNameToFolderMapping permitía CORS entre virtual hosts vía
+            // CoreWebView2HostResourceAccessKind.Allow; al construir la respuesta a mano hay
+            // que agregar el header explícitamente, si no el fetch() desde ac-maps-local
+            // (otro origen) es bloqueado por CORS sin avisar en pantalla.
+            args.Response = _webView2Environment.CreateWebResourceResponse(
+                stream, 200, "OK",
+                "Content-Type: application/json\r\nAccess-Control-Allow-Origin: *");
         }
 
         private async void CoreWebView2_WebMessageReceived(Microsoft.Web.WebView2.Core.CoreWebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2WebMessageReceivedEventArgs args)
@@ -431,7 +483,6 @@ namespace Advance_Control.Views.Pages
                                 DescripcionTextBox.Text = string.Empty;
                                 ColorComboBox.SelectedIndex = 0;
                                 ActivoCheckBox.IsChecked = true;
-                                RubroElevadoresRadioButton.IsChecked = true;
                                 AreaForm.Visibility = Visibility.Visible;
                                 _isFormVisible = true;
                             }
@@ -475,8 +526,10 @@ namespace Advance_Control.Views.Pages
                     {
                         if (jsonDoc.TryGetValue("message", out var errMsgElement))
                         {
+                            var geoErrMsg = errMsgElement.GetString();
+                            ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error, $"Error en capa Estado/Municipio: {geoErrMsg}");
                             await _loggingService.LogErrorAsync(
-                                $"Error JS en click de capa geo: {errMsgElement.GetString()}",
+                                $"Error JS en click de capa geo: {geoErrMsg}",
                                 null!, "AreasPage", "CoreWebView2_WebMessageReceived");
                         }
                     }
@@ -538,16 +591,11 @@ namespace Advance_Control.Views.Pages
                 var html = GenerateAreasMapHtml(ViewModel.MapsConfig.ApiKey, centerLat, centerLng, zoom, areasJson);
                 await _loggingService.LogInformationAsync($"HTML generado: {html.Length} chars ({html.Length / 1024} KB)", "AreasPage", "LoadMapAsync");
 
-                // Escribir a disco y navegar con origen https:// real.
-                // NavigateToString crea origen null que Google Maps rechaza.
-                var mapCacheDir = Path.Combine(
-                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                    "Advance Control", "map_cache");
-                Directory.CreateDirectory(mapCacheDir);
-                var mapFile = Path.Combine(mapCacheDir, "areas.html");
-                await System.IO.File.WriteAllTextAsync(mapFile, html, System.Text.Encoding.UTF8);
+                // Se sirve desde memoria vía CoreWebView2_AreasHtmlRequested (no desde disco)
+                // para dar origen https:// real a Google Maps sin depender del sistema de
+                // archivos. NavigateToString crea origen null que Google Maps rechaza.
+                _currentAreasMapHtml = html;
                 MapWebView.CoreWebView2.Navigate("https://ac-maps-local/areas.html");
-                ViewModel.IsMapInitialized = true;
 
                 await _loggingService.LogInformationAsync("Mapa cargado: https://ac-maps-local/areas.html", "AreasPage", "LoadMapAsync");
             }
@@ -1005,7 +1053,6 @@ namespace Advance_Control.Views.Pages
             DescripcionTextBox.Text = string.Empty;
             ColorComboBox.SelectedIndex = 0;
             ActivoCheckBox.IsChecked = true;
-            RubroElevadoresRadioButton.IsChecked = true;
 
             await _loggingService.LogInformationAsync(
                 $"AddButton_Click - After setting up form: _currentShapeType={_currentShapeType ?? "NULL"}",
@@ -1056,10 +1103,6 @@ namespace Advance_Control.Views.Pages
                     NombreTextBox.Text = area.Nombre;
                     DescripcionTextBox.Text = area.Descripcion;
                     ActivoCheckBox.IsChecked = area.Activo ?? true;
-                    if (area.IdRubro == 2)
-                        RubroInmueblesRadioButton.IsChecked = true;
-                    else
-                        RubroElevadoresRadioButton.IsChecked = true;
 
                     for (int i = 0; i < ColorComboBox.Items.Count; i++)
                     {
@@ -1221,7 +1264,6 @@ namespace Advance_Control.Views.Pages
                 ColorBorde = selectedColor,
                 AnchoBorde = 2,
                 Activo = ActivoCheckBox.IsChecked,
-                IdRubro = RubroInmueblesRadioButton.IsChecked == true ? 2 : 1,
                 TipoGeometria = _currentShapeType ?? "Polygon",
                 MetadataJSON = isGeoType
                     ? JsonSerializer.Serialize(new
@@ -1341,12 +1383,20 @@ namespace Advance_Control.Views.Pages
 
         private async void MapWebView_NavigationCompleted(WebView2 sender, Microsoft.Web.WebView2.Core.CoreWebView2NavigationCompletedEventArgs args)
         {
+            // La navegación ya terminó (éxito o fallo) en este punto, así que hacer
+            // visible el WebView2 aquí -en vez de justo tras Navigate()- nunca puede
+            // interrumpirla: alternar Visibility mientras la navegación seguía en
+            // vuelo era lo que causaba ERR_CONNECTION_ABORTED en el 100% de las cargas.
+            ViewModel.IsMapInitialized = true;
+
             if (args.IsSuccess)
             {
                 await _loggingService.LogInformationAsync("WebView2 navegación completada exitosamente", "AreasPage", "MapWebView_NavigationCompleted");
             }
             else
             {
+                ShowDiag(Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error,
+                    $"El mapa no cargó. WebErrorStatus: {args.WebErrorStatus}");
                 await _loggingService.LogErrorAsync($"WebView2 navegación falló. Status: {args.WebErrorStatus}", null, "AreasPage", "MapWebView_NavigationCompleted");
             }
         }

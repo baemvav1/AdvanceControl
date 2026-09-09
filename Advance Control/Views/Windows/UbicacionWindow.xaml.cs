@@ -42,8 +42,7 @@ namespace Advance_Control.Views.Windows
         /// </summary>
         public UbicacionDto? UbicacionCreada { get; private set; }
 
-        /// <param name="idRubroDefault">Rubro preseleccionado según el catálogo que abre la ventana (1=Elevadores, 2=Inmuebles).</param>
-        public UbicacionWindow(int idRubroDefault = 1)
+        public UbicacionWindow()
         {
             this.InitializeComponent();
 
@@ -51,11 +50,6 @@ namespace Advance_Control.Views.Windows
             _areasService = AppServices.Get<IAreasService>();
             _mapsConfigService = AppServices.Get<IGoogleMapsConfigService>();
             _loggingService = AppServices.Get<ILoggingService>();
-
-            if (idRubroDefault == 2)
-                RubroInmueblesRadioButton.IsChecked = true;
-            else
-                RubroElevadoresRadioButton.IsChecked = true;
 
             // Configurar tamaño de la ventana
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
@@ -218,8 +212,7 @@ namespace Advance_Control.Views.Windows
                     Estado = _estado,
                     Pais = _pais,
                     PlaceId = _placeId,
-                    Activo = true,
-                    IdRubro = RubroInmueblesRadioButton.IsChecked == true ? 2 : 1
+                    Activo = true
                 };
 
                 var response = await _ubicacionService.CreateUbicacionAsync(ubicacion);
