@@ -19,6 +19,7 @@ using Advance_Control.Services.Logging;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Activity;
+using Advance_Control.Services.SatCatalogo;
 using Advance_Control.Models;
 using Advance_Control.Views.Dialogs;
 using Advance_Control.Utilities;
@@ -465,19 +466,23 @@ namespace Advance_Control.Views.Pages
                     Margin = new Thickness(0, 0, 0, 8)
                 };
 
-                var regimenFiscalTextBox = new TextBox
-                {
-                    Text = cliente.RegimenFiscal ?? "",
-                    PlaceholderText = "Régimen fiscal (opcional)",
-                    Margin = new Thickness(0, 0, 0, 8)
-                };
+                var satCatalogoService = AppServices.Get<ISatCatalogoService>();
 
-                var usoCfdiTextBox = new TextBox
+                var regimenFiscalAutoSuggestBox = new AutoSuggestBox
                 {
-                    Text = cliente.UsoCfdi ?? "",
-                    PlaceholderText = "Uso CFDI (opcional)",
+                    PlaceholderText = "Buscar régimen fiscal (opcional)",
                     Margin = new Thickness(0, 0, 0, 8)
                 };
+                var regimenes = await satCatalogoService.ListarRegimenFiscalAsync();
+                SatCatalogoAutoSuggestHelper.Configurar(regimenFiscalAutoSuggestBox, regimenes, cliente.RegimenFiscal);
+
+                var usoCfdiAutoSuggestBox = new AutoSuggestBox
+                {
+                    PlaceholderText = "Buscar uso de CFDI (opcional)",
+                    Margin = new Thickness(0, 0, 0, 8)
+                };
+                var usos = await satCatalogoService.ListarUsoCfdiAsync();
+                SatCatalogoAutoSuggestHelper.Configurar(usoCfdiAutoSuggestBox, usos, cliente.UsoCfdi);
 
                 var codigoPostalTextBox = new TextBox
                 {
@@ -546,9 +551,9 @@ namespace Advance_Control.Views.Pages
                             new TextBlock { Text = "Nombre Comercial:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold },
                             nombreComercialTextBox,
                             new TextBlock { Text = "Régimen Fiscal:" },
-                            regimenFiscalTextBox,
+                            regimenFiscalAutoSuggestBox,
                             new TextBlock { Text = "Uso CFDI:" },
-                            usoCfdiTextBox,
+                            usoCfdiAutoSuggestBox,
                             new TextBlock { Text = "Código Postal:" },
                             codigoPostalTextBox,
                             new TextBlock { Text = "Días de Crédito:" },
@@ -622,8 +627,8 @@ namespace Advance_Control.Views.Pages
                         rfc: rfcTextBox.Text.Trim(),
                         razonSocial: razonSocialTextBox.Text.Trim(),
                         nombreComercial: nombreComercialTextBox.Text.Trim(),
-                        regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim(),
-                        usoCfdi: string.IsNullOrWhiteSpace(usoCfdiTextBox.Text) ? null : usoCfdiTextBox.Text.Trim(),
+                        regimenFiscal: string.IsNullOrWhiteSpace(SatCatalogoAutoSuggestHelper.ExtraerClave(regimenFiscalAutoSuggestBox.Text)) ? null : SatCatalogoAutoSuggestHelper.ExtraerClave(regimenFiscalAutoSuggestBox.Text),
+                        usoCfdi: string.IsNullOrWhiteSpace(SatCatalogoAutoSuggestHelper.ExtraerClave(usoCfdiAutoSuggestBox.Text)) ? null : SatCatalogoAutoSuggestHelper.ExtraerClave(usoCfdiAutoSuggestBox.Text),
                         diasCredito: diasCredito,
                         limiteCredito: limiteCredito,
                         prioridad: prioridad,

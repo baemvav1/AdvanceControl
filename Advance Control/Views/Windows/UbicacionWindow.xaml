@@ -76,11 +76,13 @@
                     IsReadOnly="True"
                     PlaceholderText="Se detecta automáticamente al hacer clic en el mapa" />
 
+                <!--  Alerta de mapa deshabilitada para el usuario final: para reactivarla, quitar Visibility="Collapsed"  -->
                 <InfoBar
                     x:Name="StatusInfoBar"
                     IsClosable="False"
                     IsOpen="False"
-                    Severity="Informational" />
+                    Severity="Informational"
+                    Visibility="Collapsed" />
             </StackPanel>
         </Border>
 

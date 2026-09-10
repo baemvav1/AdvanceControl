@@ -71,11 +71,13 @@
         </StackPanel>
 
         <StackPanel Grid.Row="1" Padding="20,0,20,8">
+            <!--  Alerta de mapa deshabilitada para el usuario final. Para reactivarla, quitar el comentario que envuelve el InfoBar:
             <InfoBar
                 IsClosable="True"
                 IsOpen="{x:Bind ViewModel.ErrorMessage, Mode=OneWay, Converter={StaticResource NullToBoolConverter}}"
                 Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                 Severity="Error" />
+            -->
             <TextBlock
                 Margin="0,4,0,0"
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"

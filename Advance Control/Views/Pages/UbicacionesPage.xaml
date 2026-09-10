@@ -24,12 +24,14 @@
         <!--  Header  -->
         <StackPanel Grid.Row="0" Margin="20,20,20,12" Spacing="8">
             <TextBlock FontSize="32" FontWeight="Bold" Text="Ubicaciones" />
+            <!--  Alerta de mapa deshabilitada para el usuario final: para reactivarla, quitar Visibility="Collapsed"  -->
             <InfoBar
                 x:Name="StatusBar"
                 IsClosable="False"
                 IsOpen="False"
                 Severity="Informational"
-                Title="Red" />
+                Title="Red"
+                Visibility="Collapsed" />
         </StackPanel>
 
         <!--  Content  -->

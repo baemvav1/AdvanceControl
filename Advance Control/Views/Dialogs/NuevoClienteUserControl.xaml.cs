@@ -1,5 +1,8 @@
 using System;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Advance_Control.Services.SatCatalogo;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Views.Dialogs
 {
@@ -8,9 +11,22 @@ namespace Advance_Control.Views.Dialogs
     /// </summary>
     public sealed partial class NuevoClienteUserControl : UserControl
     {
+        private readonly ISatCatalogoService _satCatalogoService;
+
         public NuevoClienteUserControl()
         {
             this.InitializeComponent();
+            _satCatalogoService = AppServices.Get<ISatCatalogoService>();
+            this.Loaded += NuevoClienteUserControl_Loaded;
+        }
+
+        private async void NuevoClienteUserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            var regimenes = await _satCatalogoService.ListarRegimenFiscalAsync();
+            SatCatalogoAutoSuggestHelper.Configurar(RegimenFiscalAutoSuggestBox, regimenes);
+
+            var usos = await _satCatalogoService.ListarUsoCfdiAsync();
+            SatCatalogoAutoSuggestHelper.Configurar(UsoCfdiAutoSuggestBox, usos);
         }
 
         /// <summary>
@@ -44,16 +60,26 @@ namespace Advance_Control.Views.Dialogs
         /// <summary>
         /// Régimen Fiscal (opcional)
         /// </summary>
-        public string? RegimenFiscal => string.IsNullOrWhiteSpace(RegimenFiscalTextBox.Text) 
-            ? null 
-            : RegimenFiscalTextBox.Text.Trim();
+        public string? RegimenFiscal
+        {
+            get
+            {
+                var clave = SatCatalogoAutoSuggestHelper.ExtraerClave(RegimenFiscalAutoSuggestBox.Text);
+                return string.IsNullOrWhiteSpace(clave) ? null : clave;
+            }
+        }
 
         /// <summary>
         /// Uso CFDI (opcional)
         /// </summary>
-        public string? UsoCfdi => string.IsNullOrWhiteSpace(UsoCfdiTextBox.Text) 
-            ? null 
-            : UsoCfdiTextBox.Text.Trim();
+        public string? UsoCfdi
+        {
+            get
+            {
+                var clave = SatCatalogoAutoSuggestHelper.ExtraerClave(UsoCfdiAutoSuggestBox.Text);
+                return string.IsNullOrWhiteSpace(clave) ? null : clave;
+            }
+        }
 
         /// <summary>
         /// Días de Crédito (opcional)

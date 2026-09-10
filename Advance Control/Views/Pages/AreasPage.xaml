@@ -32,14 +32,15 @@
                 FontWeight="Bold"
                 Text="Áreas" />
 
-            <!--  Diagnóstico visible (no depende del logger ni del notificador)  -->
+            <!--  Diagnóstico deshabilitado para el usuario final: para reactivarlo, quitar Visibility="Collapsed"  -->
             <InfoBar
                 x:Name="DiagInfoBar"
                 IsClosable="True"
                 IsOpen="False"
                 Severity="Informational"
                 Message=""
-                Title="Estado del mapa" />
+                Title="Estado del mapa"
+                Visibility="Collapsed" />
 
             <!--  Map Search Bar  -->
             <Grid
@@ -83,13 +84,15 @@
                         Text="Cargando mapa..." />
                 </StackPanel>
 
-                <!--  Error Message  -->
+                <!--  Error Message deshabilitado para el usuario final. Para reactivarlo, quitar el comentario que envuelve el InfoBar:
                 <InfoBar
                     Margin="0,0,0,12"
                     VerticalAlignment="Top"
                     IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
                     Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                     Severity="Error" />
+                -->
+
 
                 <!--  WebView2 for Google Maps  -->
                 <WebView2
