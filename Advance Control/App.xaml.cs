@@ -645,6 +645,7 @@ namespace Advance_Control
                         return new Services.Quotes.RemoteFirmaService(http, logger);
                     });
                     services.AddSingleton<IQuoteService, QuoteService>();
+                    services.AddSingleton<Services.Quotes.IMantenimientoPreventivoPdfService, Services.Quotes.MantenimientoPreventivoPdfService>();
                     services.AddSingleton<Services.Facturas.IFacturaPdfService, Services.Facturas.FacturaPdfService>();
                     services.AddSingleton<Services.Reportes.IReporteFinancieroFacturacionExportService, Services.Reportes.ReporteFinancieroFacturacionExportService>();
                     services.AddSingleton<Services.Reportes.IHistorialCobranzaService, Services.Reportes.HistorialCobranzaService>();

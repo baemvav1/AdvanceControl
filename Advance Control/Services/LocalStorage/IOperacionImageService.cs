@@ -48,6 +48,13 @@ namespace Advance_Control.Services.LocalStorage
         Task<OperacionImageDto?> UploadLevantamientoAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Sube un PDF de mantenimiento preventivo para una operación específica.
+        /// A diferencia de Cotización/Reporte/Nota (que solo se guardan localmente), este
+        /// PDF se sube y queda listado en el VPS junto con el resto de documentos de la operación.
+        /// </summary>
+        Task<OperacionImageDto?> UploadMantenimientoPreventivoAsync(int idOperacion, Stream pdfStream, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Obtiene todas las imágenes de prefacturas de una operación
         /// </summary>
         /// <param name="idOperacion">ID de la operación</param>
@@ -72,6 +79,11 @@ namespace Advance_Control.Services.LocalStorage
         /// Obtiene todas las imágenes/PDFs de levantamiento de una operación
         /// </summary>
         Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene todos los PDFs de mantenimiento preventivo ya generados y subidos al VPS para una operación
+        /// </summary>
+        Task<List<OperacionImageDto>> GetMantenimientoPreventivosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Sube un archivo PDF de factura para una operación (solo se permite uno)

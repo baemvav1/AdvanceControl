@@ -81,6 +81,55 @@ namespace Advance_Control.Services.LocalStorage
         }
 
         /// <summary>
+        /// Sube un PDF de mantenimiento preventivo para una operación específica.
+        /// Igual que UploadFacturaAsync, pero permite varios archivos (uno por visita), numerados
+        /// como {idOperacion}_MttoPreventivo_{N}.pdf en vez de reemplazar el anterior.
+        /// </summary>
+        public async Task<OperacionImageDto?> UploadMantenimientoPreventivoAsync(int idOperacion, Stream pdfStream, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                await _logger.LogInformationAsync($"Guardando PDF de mantenimiento preventivo para operación {idOperacion}", "LocalOperacionImageService", "UploadMantenimientoPreventivoAsync");
+
+                var operacionFolder = GetOperacionFolder(idOperacion);
+                var existing = await GetMantenimientoPreventivosAsync(idOperacion, cancellationToken: cancellationToken);
+                var nextNumber = existing.Count > 0 ? existing.Max(i => i.ImageNumber) + 1 : 1;
+
+                var fileName = $"{idOperacion}_MttoPreventivo_{nextNumber}.pdf";
+                var fullPath = Path.Combine(operacionFolder, fileName);
+
+                cancellationToken.ThrowIfCancellationRequested();
+
+                await using (var fileStream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
+                {
+                    await pdfStream.CopyToAsync(fileStream, cancellationToken);
+                }
+
+                var result = new OperacionImageDto
+                {
+                    FileName = fileName,
+                    Url = fullPath,
+                    IdOperacion = idOperacion,
+                    ImageNumber = nextNumber,
+                    Tipo = "MttoPreventivo"
+                };
+
+                await _logger.LogInformationAsync($"PDF de mantenimiento preventivo guardado exitosamente: {fileName}", "LocalOperacionImageService", "UploadMantenimientoPreventivoAsync");
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                await _logger.LogWarningAsync("Operación cancelada al guardar PDF de mantenimiento preventivo", "LocalOperacionImageService", "UploadMantenimientoPreventivoAsync");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al guardar PDF de mantenimiento preventivo", ex, "LocalOperacionImageService", "UploadMantenimientoPreventivoAsync");
+                throw;
+            }
+        }
+
+        /// <summary>
         /// Sube una imagen para una operación específica
         /// </summary>
         private async Task<OperacionImageDto?> UploadImageAsync(int idOperacion, Stream imageStream, string contentType, string tipo, CancellationToken cancellationToken = default)
@@ -260,6 +309,14 @@ namespace Advance_Control.Services.LocalStorage
         public async Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
         {
             return await GetImagesAsync(idOperacion, "Levantamiento", cancellationToken);
+        }
+
+        /// <summary>
+        /// Obtiene todos los PDFs de mantenimiento preventivo de una operación
+        /// </summary>
+        public async Task<List<OperacionImageDto>> GetMantenimientoPreventivosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)
+        {
+            return await GetImagesAsync(idOperacion, "MttoPreventivo", cancellationToken);
         }
 
         /// <summary>

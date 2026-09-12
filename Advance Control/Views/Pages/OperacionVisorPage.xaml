@@ -807,108 +807,105 @@
                                         <CommandBar.PrimaryCommands>
 
                                             <AppBarButton
-                                                Click="GenerarCotizacionButton_Click"
                                                 Icon="Document"
-                                                IsEnabled="True"
-                                                Label="Generar Cotizacion"
-                                                ToolTipService.ToolTip="Generar cotización PDF" />
+                                                Label="Generar"
+                                                ToolTipService.ToolTip="Generar y abrir documentos (cotización, reporte, nota, finiquito)">
+                                                <AppBarButton.Flyout>
+                                                    <MenuFlyout Placement="Bottom">
+                                                        <MenuFlyoutItem
+                                                            Click="GenerarCotizacionButton_Click"
+                                                            Icon="Document"
+                                                            Text="Generar Cotización" />
+                                                        <MenuFlyoutItem
+                                                            Click="AbrirCotizacionPdfButton_Click"
+                                                            Text="Abrir Cotización PDF"
+                                                            Visibility="{x:Bind ToTextVisibility(Operacion.CotizacionPdfPath), Mode=OneWay}">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon FontSize="14" Glyph="&#xEA90;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
 
-                                            <AppBarSeparator />
+                                                        <MenuFlyoutSeparator />
 
-                                            <AppBarButton
-                                                Click="AbrirCotizacionPdfButton_Click"
-                                                IsEnabled="True"
-                                                ToolTipService.ToolTip="Abrir cotización PDF"
-                                                Visibility="{x:Bind ToTextVisibility(Operacion.CotizacionPdfPath), Mode=OneWay}">
-                                                <AppBarButton.Icon>
-                                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
-                                                </AppBarButton.Icon>
+                                                        <MenuFlyoutItem
+                                                            Click="GenerarReporteButton_Click"
+                                                            Icon="Document"
+                                                            Text="Generar Reporte" />
+                                                        <MenuFlyoutItem
+                                                            Click="AbrirReportePdfButton_Click"
+                                                            Text="Abrir Reporte PDF"
+                                                            Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon FontSize="14" Glyph="&#xEA90;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
+
+                                                        <MenuFlyoutSeparator />
+
+                                                        <MenuFlyoutItem
+                                                            Click="GenerarNotaButton_Click"
+                                                            Icon="Document"
+                                                            IsEnabled="{x:Bind Operacion.IsTrabajoFinalizado, Mode=OneWay}"
+                                                            Text="Generar Nota"
+                                                            ToolTipService.ToolTip="Requiere trabajo finalizado" />
+                                                        <MenuFlyoutItem
+                                                            Click="AbrirNotaPdfButton_Click"
+                                                            IsEnabled="{x:Bind Operacion.IsTrabajoFinalizado, Mode=OneWay}"
+                                                            Text="Abrir Nota PDF"
+                                                            Visibility="{x:Bind ToTextVisibility(Operacion.NotaPdfPath), Mode=OneWay}">
+                                                            <MenuFlyoutItem.Icon>
+                                                                <FontIcon FontSize="14" Glyph="&#xEA90;" />
+                                                            </MenuFlyoutItem.Icon>
+                                                        </MenuFlyoutItem>
+
+                                                        <MenuFlyoutSeparator />
+
+                                                        <MenuFlyoutItem
+                                                            Click="GenerarFiniquitoButton_Click"
+                                                            Icon="MailForward"
+                                                            IsEnabled="{x:Bind Operacion.EstaFacturada, Mode=OneWay}"
+                                                            Text="Generar Finiquito"
+                                                            ToolTipService.ToolTip="Enviar por correo cotización, reporte y factura (requiere que la operación ya esté facturada)" />
+                                                    </MenuFlyout>
+                                                </AppBarButton.Flyout>
                                             </AppBarButton>
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="GenerarReporteButton_Click"
-                                                Icon="Document"
-                                                IsEnabled="True"
-                                                Label="Generar Reporte"
-                                                ToolTipService.ToolTip="Generar reporte PDF" />
 
                                             <AppBarSeparator />
 
                                             <AppBarButton
-                                                Click="AbrirReportePdfButton_Click"
-                                                IsEnabled="True"
-                                                ToolTipService.ToolTip="Abrir reporte PDF"
-                                                Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}">
-                                                <AppBarButton.Icon>
-                                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
-                                                </AppBarButton.Icon>
+                                                Icon="Attach"
+                                                Label="Cargar"
+                                                ToolTipService.ToolTip="Cargar documentos (prefactura, hoja de servicio, orden de compra, levantamiento)">
+                                                <AppBarButton.Flyout>
+                                                    <MenuFlyout Placement="Bottom">
+                                                        <MenuFlyoutItem
+                                                            Click="UploadPrefacturaButton_Click"
+                                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
+                                                            Text="Cargar Prefactura" />
+                                                        <MenuFlyoutItem
+                                                            Click="UploadHojaServicioButton_Click"
+                                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
+                                                            Text="Cargar Hoja de Servicio" />
+                                                        <MenuFlyoutItem
+                                                            Click="UploadOrdenCompraButton_Click"
+                                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
+                                                            Text="Cargar Orden de Compra" />
+                                                        <MenuFlyoutItem
+                                                            Click="UploadLevantamientoButton_Click"
+                                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
+                                                            Text="Cargar Levantamiento" />
+                                                    </MenuFlyout>
+                                                </AppBarButton.Flyout>
                                             </AppBarButton>
-                                            <AppBarSeparator  Visibility="{x:Bind ToTextVisibility(Operacion.ReportePdfPath), Mode=OneWay}"/>
-
-                                            <AppBarButton
-                                                Click="GenerarFiniquitoButton_Click"
-                                                Icon="MailForward"
-                                                IsEnabled="{x:Bind Operacion.EstaFacturada, Mode=OneWay}"
-                                                Label="Generar Finiquito"
-                                                ToolTipService.ToolTip="Enviar por correo cotización, reporte y factura (requiere que la operación ya esté facturada)" />
 
                                             <AppBarSeparator />
 
                                             <AppBarButton
-                                                Click="GenerarNotaButton_Click"
-                                                Icon="Document"
-                                                IsEnabled="{x:Bind Operacion.IsTrabajoFinalizado, Mode=OneWay}"
-                                                Label="Generar Nota"
-                                                ToolTipService.ToolTip="Generar nota PDF (requiere trabajo finalizado)" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="AbrirNotaPdfButton_Click"
-                                                IsEnabled="{x:Bind Operacion.IsTrabajoFinalizado, Mode=OneWay}"
-                                                ToolTipService.ToolTip="Abrir nota PDF"
-                                                Visibility="{x:Bind ToTextVisibility(Operacion.NotaPdfPath), Mode=OneWay}">
-                                                <AppBarButton.Icon>
-                                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
-                                                </AppBarButton.Icon>
-                                            </AppBarButton>
-                                            <AppBarSeparator  Visibility="{x:Bind ToTextVisibility(Operacion.NotaPdfPath), Mode=OneWay}"/>
-
-
-                                            <AppBarButton
-                                                Click="UploadPrefacturaButton_Click"
-                                                Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
-                                                Label="Prefactura"
-                                                ToolTipService.ToolTip="Cargar prefactura" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="UploadHojaServicioButton_Click"
-                                                Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
-                                                Label="Hoja Serv."
-                                                ToolTipService.ToolTip="Cargar hoja de servicio" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="UploadOrdenCompraButton_Click"
-                                                Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
-                                                Label="Orden C."
-                                                ToolTipService.ToolTip="Cargar orden de compra" />
-
-                                            <AppBarSeparator />
-
-                                            <AppBarButton
-                                                Click="UploadLevantamientoButton_Click"
-                                                Icon="Attach"
-                                                IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
-                                                Label="Levantamiento"
-                                                ToolTipService.ToolTip="Cargar documento de levantamiento" />
+                                                Click="MttoPrevButton_Click"
+                                                Icon="Edit"
+                                                IsEnabled="True"
+                                                Label="Mtto Prev."
+                                                ToolTipService.ToolTip="Abrir formulario de mantenimiento preventivo" />
 
                                             <AppBarSeparator />
 

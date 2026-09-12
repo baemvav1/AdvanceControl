@@ -49,6 +49,9 @@ namespace Advance_Control.Services.LocalStorage
         public Task<OperacionImageDto?> UploadLevantamientoAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken ct = default)
             => UploadAsync(idOperacion, imageStream, contentType, "levantamiento", ct);
 
+        public Task<OperacionImageDto?> UploadMantenimientoPreventivoAsync(int idOperacion, Stream pdfStream, CancellationToken ct = default)
+            => UploadAsync(idOperacion, pdfStream, "application/pdf", "mtto_preventivo", ct);
+
         public async Task<OperacionImageDto?> UploadFacturaAsync(int idOperacion, Stream pdfStream, CancellationToken ct = default)
         {
             try
@@ -89,6 +92,9 @@ namespace Advance_Control.Services.LocalStorage
 
         public Task<List<OperacionImageDto>> GetLevantamientosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
             => GetListAsync(idOperacion, "levantamiento", mensajeReferenciaId, ct);
+
+        public Task<List<OperacionImageDto>> GetMantenimientoPreventivosAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
+            => GetListAsync(idOperacion, "mtto_preventivo", mensajeReferenciaId, ct);
 
         public async Task<OperacionImageDto?> GetFacturaAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken ct = default)
         {
@@ -180,12 +186,13 @@ namespace Advance_Control.Services.LocalStorage
                 var folder = GetOperacionFolder(idOperacion);
                 var localPattern = tipo switch
                 {
-                    "prefactura"     => $"{idOperacion}_Prefactura_*.*",
-                    "hoja_servicio"  => $"{idOperacion}_HojaServicio_*.*",
-                    "orden_compra"   => $"{idOperacion}_*_OrdenCompra.*",
-                    "levantamiento"  => $"{idOperacion}_Levantamiento_*.*",
-                    "factura"        => $"{idOperacion}_Factura.*",
-                    _                => null
+                    "prefactura"      => $"{idOperacion}_Prefactura_*.*",
+                    "hoja_servicio"   => $"{idOperacion}_HojaServicio_*.*",
+                    "orden_compra"    => $"{idOperacion}_*_OrdenCompra.*",
+                    "levantamiento"   => $"{idOperacion}_Levantamiento_*.*",
+                    "mtto_preventivo" => $"{idOperacion}_MttoPreventivo_*.*",
+                    "factura"         => $"{idOperacion}_Factura.*",
+                    _                 => null
                 };
 
                 // Fallback defensivo: si el VPS regresa lista vacía pero existen archivos en
@@ -331,6 +338,10 @@ namespace Advance_Control.Services.LocalStorage
             // Levantamiento: {idOp}_Levantamiento_{N}
             m = Regex.Match(nameNoExt, $@"^{idOp}_Levantamiento_(\d+)$", RegexOptions.IgnoreCase);
             if (m.Success) return ("Levantamiento", int.Parse(m.Groups[1].Value));
+
+            // MantenimientoPreventivo: {idOp}_MttoPreventivo_{N}
+            m = Regex.Match(nameNoExt, $@"^{idOp}_MttoPreventivo_(\d+)$", RegexOptions.IgnoreCase);
+            if (m.Success) return ("MttoPreventivo", int.Parse(m.Groups[1].Value));
 
             // OrdenCompra: {idOp}_{N}_OrdenCompra
             m = Regex.Match(nameNoExt, $@"^{idOp}_(\d+)_OrdenCompra$", RegexOptions.IgnoreCase);

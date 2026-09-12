@@ -1168,6 +1168,100 @@ namespace Advance_Control.Views.Pages
             catch (Exception ex) { LogDebugError(nameof(GenerarNotaButton_Click), ex); await MostrarErrorAsync("Error", "Ocurrió un error al generar la nota."); }
         }
 
+        private async void MttoPrevButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (!Operacion.IdOperacion.HasValue) return;
+
+                List<OperacionImageDto> existentes = [];
+                try
+                {
+                    existentes = await _operacionImageService.GetMantenimientoPreventivosAsync(Operacion.IdOperacion.Value);
+                }
+                catch (Exception ex) { LogDebugError("ListarMttoPrev", ex); }
+
+                if (existentes == null || existentes.Count == 0)
+                {
+                    await AbrirNuevoMantenimientoPreventivoAsync();
+                    return;
+                }
+
+                var flyout = new MenuFlyout();
+                foreach (var doc in existentes.OrderBy(d => d.ImageNumber))
+                {
+                    var fecha = !string.IsNullOrEmpty(doc.Url) && File.Exists(doc.Url)
+                        ? File.GetLastWriteTime(doc.Url).ToString("dd/MM/yyyy HH:mm")
+                        : null;
+                    var texto = fecha != null ? $"Mtto Prev. #{doc.ImageNumber} — {fecha}" : $"Mtto Prev. #{doc.ImageNumber}";
+
+                    var item = new MenuFlyoutItem { Text = texto, Tag = doc };
+                    item.Click += async (_, _) => await AbrirMantenimientoPreventivoExistenteAsync(doc);
+                    flyout.Items.Add(item);
+                }
+
+                flyout.Items.Add(new MenuFlyoutSeparator());
+                var nuevoItem = new MenuFlyoutItem { Text = "Nuevo" };
+                nuevoItem.Click += async (_, _) => await AbrirNuevoMantenimientoPreventivoAsync();
+                flyout.Items.Add(nuevoItem);
+
+                flyout.ShowAt((FrameworkElement)sender);
+            }
+            catch (Exception ex) { LogDebugError(nameof(MttoPrevButton_Click), ex); }
+        }
+
+        /// <summary>Abre el visor (mismo de cotización/reporte/nota) para un PDF de mantenimiento preventivo ya generado.</summary>
+        private async System.Threading.Tasks.Task AbrirMantenimientoPreventivoExistenteAsync(OperacionImageDto doc)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(doc.Url)) return;
+
+                var visor = new CotizacionVisorDialog(doc.Url, null, [], Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Mantenimiento Preventivo");
+                visor.NotificarResultado(await visor.ShowAsync());
+
+                if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
+                {
+                    var email = new EnviarCotizacionDialog(doc.Url, null, [], Operacion.RazonSocial ?? string.Empty, _xamlRoot!, tipo: "Mantenimiento Preventivo", idOperacion: Operacion.IdOperacion);
+                    await email.ShowAsync();
+                }
+                else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
+                {
+                    var file = await WinStorage.StorageFile.GetFileFromPathAsync(doc.Url);
+                    await WinSystem.Launcher.LaunchFileAsync(file);
+                }
+            }
+            catch (Exception ex) { LogDebugError(nameof(AbrirMantenimientoPreventivoExistenteAsync), ex); }
+        }
+
+        /// <summary>Diálogo "¿A quién va dirigido...?" (mismo patrón que cotización) y apertura del formulario en blanco.</summary>
+        private async System.Threading.Tasks.Task AbrirNuevoMantenimientoPreventivoAsync()
+        {
+            try
+            {
+                ContactoDto? contactoSeleccionado = null;
+                if (Operacion.IdCliente.HasValue && Operacion.IdCliente.Value > 0)
+                {
+                    try
+                    {
+                        var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = Operacion.IdCliente.Value });
+                        if (contactos?.Count > 0)
+                        {
+                            var lv = new ListView { ItemsSource = contactos, DisplayMemberPath = "NombreCompleto", SelectionMode = ListViewSelectionMode.Single, MaxHeight = 300 };
+                            var sel = new ContentDialog { Title = "¿A quién va dirigido el mantenimiento preventivo?", Content = new ScrollViewer { Content = lv, MaxHeight = 320 }, PrimaryButtonText = "Seleccionar", SecondaryButtonText = "Omitir", DefaultButton = ContentDialogButton.Primary, XamlRoot = _xamlRoot };
+                            if (await sel.ShowAsync() == ContentDialogResult.Primary && lv.SelectedItem is ContactoDto c)
+                                contactoSeleccionado = c;
+                        }
+                    }
+                    catch (Exception ex) { LogDebugError("ContactosMttoPrev", ex); }
+                }
+
+                var mttoPrevWindow = new Views.Formularios.MantenimientoPreventivoWindow(Operacion, contactoSeleccionado);
+                mttoPrevWindow.Activate();
+            }
+            catch (Exception ex) { LogDebugError(nameof(AbrirNuevoMantenimientoPreventivoAsync), ex); }
+        }
+
         private async void AbrirNotaPdfButton_Click(object sender, RoutedEventArgs e)
         {
             var path = Operacion.NotaPdfPath;
