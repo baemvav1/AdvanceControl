@@ -54,6 +54,7 @@ namespace Advance_Control.Services.LocalStorage
 
         public async Task<OperacionImageDto?> UploadFacturaAsync(int idOperacion, Stream pdfStream, CancellationToken ct = default)
         {
+            UploadFileResponseDto? dto;
             try
             {
                 // Bufferear para poder guardar localmente después
@@ -61,13 +62,26 @@ namespace Advance_Control.Services.LocalStorage
                 await pdfStream.CopyToAsync(ms, ct);
 
                 ms.Position = 0;
-                var dto = await PostFileAsync(idOperacion, ms, "application/pdf", "factura", 0, ct);
+                dto = await PostFileAsync(idOperacion, ms, "application/pdf", "factura", 0, ct);
                 if (dto == null) return null;
 
-                // Guardar caché local
-                ms.Position = 0;
-                var localPath = Path.Combine(GetOperacionFolder(idOperacion), dto.FileName);
-                await SaveLocalAsync(localPath, ms, ct);
+                // Cachear localmente en un try aparte: si el VPS ya confirmó la subida
+                // (dto != null), esta es la fuente de verdad. Un fallo al guardar la
+                // copia local (OneDrive bloqueando el archivo, antivirus, disco lleno,
+                // etc.) NO debe reportarse como "no se pudo guardar la factura" cuando
+                // en realidad sí se guardó — solo se pierde la copia de caché.
+                try
+                {
+                    ms.Position = 0;
+                    var localPath = Path.Combine(GetOperacionFolder(idOperacion), dto.FileName);
+                    await SaveLocalAsync(localPath, ms, ct);
+                }
+                catch (Exception cacheEx)
+                {
+                    await _logger.LogWarningAsync(
+                        $"Factura subida al VPS pero no se pudo cachear localmente: {cacheEx.Message}",
+                        nameof(RemoteOperacionImageService), nameof(UploadFacturaAsync));
+                }
 
                 return BuildDto(idOperacion, dto);
             }
@@ -137,18 +151,36 @@ namespace Advance_Control.Services.LocalStorage
         private async Task<OperacionImageDto?> UploadAsync(int idOperacion, Stream imageStream,
             string contentType, string tipo, CancellationToken ct)
         {
+            UploadFileResponseDto? dto;
             try
             {
                 using var ms = new MemoryStream();
                 await imageStream.CopyToAsync(ms, ct);
 
                 ms.Position = 0;
-                var dto = await PostFileAsync(idOperacion, ms, contentType, tipo, 0, ct);
+                dto = await PostFileAsync(idOperacion, ms, contentType, tipo, 0, ct);
                 if (dto == null) return null;
 
-                ms.Position = 0;
-                var localPath = Path.Combine(GetOperacionFolder(idOperacion), dto.FileName);
-                await SaveLocalAsync(localPath, ms, ct);
+                // Cachear localmente en un try aparte: si el VPS ya confirmó la subida
+                // (dto != null), esa es la fuente de verdad -- el archivo YA está
+                // guardado. Un fallo al escribir la copia local (OneDrive bloqueando el
+                // archivo recién creado, antivirus, disco lleno, etc.) no debe hacer que
+                // se reporte "no se pudo guardar" cuando en realidad sí se guardó; antes
+                // este fallo local tumbaba todo el método y devolvía null, causando el
+                // error falso reportado por los usuarios (el archivo ya aparecía al
+                // recargar la operación, porque esa recarga lee del VPS, no de la caché).
+                try
+                {
+                    ms.Position = 0;
+                    var localPath = Path.Combine(GetOperacionFolder(idOperacion), dto.FileName);
+                    await SaveLocalAsync(localPath, ms, ct);
+                }
+                catch (Exception cacheEx)
+                {
+                    await _logger.LogWarningAsync(
+                        $"{tipo} subida al VPS pero no se pudo cachear localmente: {cacheEx.Message}",
+                        nameof(RemoteOperacionImageService), nameof(UploadAsync));
+                }
 
                 return BuildDto(idOperacion, dto);
             }
