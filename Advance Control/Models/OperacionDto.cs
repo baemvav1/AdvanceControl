@@ -218,10 +218,15 @@ namespace Advance_Control.Models
         public bool IsTrabajoFinalizado => TFinalizado;
 
         /// <summary>
-        /// Color de la barra lateral de estado: Amarillo=TFinalizado, Verde=Activa, Gris=Cerrada
+        /// Color de la barra lateral de estado. Si ya está facturada, el color lo
+        /// decide el pago (Rojo=sin pagar, Azul=pagada) por encima de cualquier otro
+        /// estado; si no está facturada: Amarillo=TFinalizado, Verde=Activa, Gris=Cerrada.
         /// </summary>
         [JsonIgnore]
-        public string BarraEstadoColor => TFinalizado ? "Gold" : (IsEditable ? "MediumSeaGreen" : "DimGray");
+        public string BarraEstadoColor =>
+            EstaFacturada
+                ? (EstaPagada ? "DodgerBlue" : "Crimson")
+                : TFinalizado ? "Gold" : (IsEditable ? "MediumSeaGreen" : "DimGray");
 
         // Campos del check integrados desde el endpoint de operaciones (LEFT JOIN)
         [JsonPropertyName("ckCotizacionGenerada")]
@@ -367,6 +372,7 @@ namespace Advance_Control.Models
                     _idFacturaVinculada = value;
                     OnPropertyChanged();
                     OnPropertyChanged(nameof(EstaFacturada));
+                    OnPropertyChanged(nameof(BarraEstadoColor));
                 }
             }
         }
@@ -376,6 +382,29 @@ namespace Advance_Control.Models
         /// </summary>
         [JsonIgnore]
         public bool EstaFacturada => _idFacturaVinculada.HasValue;
+
+        private bool _estaPagada;
+
+        /// <summary>
+        /// True si la factura vinculada ya está totalmente abonada (TotalAbonado >= Total).
+        /// Se resuelve junto con <see cref="IdFacturaVinculada"/> (vía
+        /// IFacturaService.ObtenerOperacionesFacturadasAsync); sin sentido si
+        /// <see cref="EstaFacturada"/> es false.
+        /// </summary>
+        [JsonIgnore]
+        public bool EstaPagada
+        {
+            get => _estaPagada;
+            set
+            {
+                if (_estaPagada != value)
+                {
+                    _estaPagada = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(BarraEstadoColor));
+                }
+            }
+        }
 
         private bool _expand = false;
 

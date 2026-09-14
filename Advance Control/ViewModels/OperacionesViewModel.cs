@@ -41,6 +41,7 @@ namespace Advance_Control.ViewModels
         private readonly IActivityService _activityService;
         private readonly ICheckOperacionService _checkService;
         private readonly IAreasService _areasService;
+        private readonly Services.Facturas.IFacturaService _facturaService;
         private ObservableCollection<OperacionDto> _operaciones;
         private ObservableCollection<AreaDto> _areas;
         private ObservableCollection<string> _clienteSugerencias;
@@ -78,7 +79,7 @@ namespace Advance_Control.ViewModels
         // más reciente de los filtros, apenas termine la que está en curso.
         private bool _reloadPending;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService, Services.Facturas.IFacturaService facturaService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
             _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
@@ -90,6 +91,7 @@ namespace Advance_Control.ViewModels
             _activityService   = activityService   ?? throw new ArgumentNullException(nameof(activityService));
             _checkService      = checkService      ?? throw new ArgumentNullException(nameof(checkService));
             _areasService      = areasService      ?? throw new ArgumentNullException(nameof(areasService));
+            _facturaService    = facturaService    ?? throw new ArgumentNullException(nameof(facturaService));
             _operaciones         = new ObservableCollection<OperacionDto>();
             _areas               = new ObservableCollection<AreaDto>();
             _clienteSugerencias  = new ObservableCollection<string>();
@@ -472,6 +474,37 @@ namespace Advance_Control.ViewModels
             await LoadOperacionesAsync(cancellationToken: cancellationToken);
         }
 
+        /// <summary>
+        /// Cruza la página de operaciones cargada contra
+        /// IFacturaService.ObtenerOperacionesFacturadasAsync (fn_operaciones_gestionar no
+        /// expone si una operación está facturada/pagada) para pintar la barra lateral:
+        /// rojo si está facturada y no pagada, azul si está facturada y pagada. No crítico:
+        /// si falla, la lista se sigue mostrando con el color de estado normal.
+        /// </summary>
+        private async Task AplicarEstadoFacturacionAsync(List<OperacionDto> operaciones, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var facturadas = await _facturaService.ObtenerOperacionesFacturadasAsync(cancellationToken);
+                var porOperacion = facturadas
+                    .GroupBy(f => f.IdOperacion)
+                    .ToDictionary(g => g.Key, g => g.First());
+
+                foreach (var operacion in operaciones)
+                {
+                    if (operacion.IdOperacion.HasValue && porOperacion.TryGetValue(operacion.IdOperacion.Value, out var factura))
+                    {
+                        operacion.IdFacturaVinculada = factura.IdFactura;
+                        operacion.EstaPagada = factura.TotalAbonado >= factura.Total;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogWarningAsync($"No se pudo resolver el estado de facturación de la página actual: {ex.Message}", "OperacionesViewModel", nameof(AplicarEstadoFacturacionAsync));
+            }
+        }
+
         // ==================== Carga ====================
 
         /// <summary>
@@ -551,6 +584,8 @@ namespace Advance_Control.ViewModels
 
                 foreach (var operacion in filtrados)
                     operacion.BuildCheckFromInlineFields();
+
+                await AplicarEstadoFacturacionAsync(filtrados, cancellationToken);
 
                 if (onBeforeCommit != null)
                     await onBeforeCommit(filtrados);
