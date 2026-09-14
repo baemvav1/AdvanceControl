@@ -53,6 +53,9 @@
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
     <Content Include="Assets\Images\ImagenHotSpotElevadorDeTraccion.jpg" />
+    <Content Include="Assets\Images\MttoPrevTipoHidraulico.jpg" />
+    <Content Include="Assets\Images\MttoPrevTipoConCuartoMaquinas.jpg" />
+    <Content Include="Assets\Images\MttoPrevTipoSinCuartoMaquinas.jpg" />
     <!--
       Embebidos (no Content): los archivos sueltos junto al .exe no siempre
       sobreviven la instalación/actualización de MSIX en todos los equipos.
@@ -98,7 +101,7 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.6901" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.251003001" />
     <PackageReference Include="QRCoder" Version="1.8.0" />
-    <PackageReference Include="QuestPDF" Version="2025.1.0" />
+    <PackageReference Include="QuestPDF" Version="2025.7.2" />
     <PackageReference Include="ScottPlot.WinUI" Version="5.0.53" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.10" />

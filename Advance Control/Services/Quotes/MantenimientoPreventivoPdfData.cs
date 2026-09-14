@@ -11,14 +11,15 @@ namespace Advance_Control.Services.Quotes
     {
         public int IdOperacion { get; set; }
 
-        public string? Proyecto { get; set; }
+        public string? NombreCliente { get; set; }
         public string? Direccion { get; set; }
-        public string? Ruta { get; set; }
-        public string? NoEquipo { get; set; }
-        public string? RefeEquipo { get; set; }
+        public string? Equipo { get; set; }
         public string? Fecha { get; set; }
         public string? HoraEntrada { get; set; }
         public string? HoraSalida { get; set; }
+
+        /// <summary>"Hidráulico", "Con cuarto de máquinas" o "Sin cuarto de máquinas (MRL)".</summary>
+        public string? TipoMaquina { get; set; }
 
         /// <summary>"Dirigido a: Nombre — correo" o null si no se seleccionó contacto.</summary>
         public string? DirigidoA { get; set; }

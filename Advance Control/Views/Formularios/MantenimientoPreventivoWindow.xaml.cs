@@ -8,6 +8,7 @@ using Advance_Control.Utilities;
 using Advance_Control.Views.Dialogs;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
@@ -35,6 +36,9 @@ namespace Advance_Control.Views.Formularios
         private readonly IUbicacionService _ubicacionService;
         private readonly IOperacionImageService _operacionImageService;
         private readonly IMantenimientoPreventivoPdfService _pdfService;
+
+        /// <summary>"Hidraulico", "ConCuartoMaquinas" o "SinCuartoMaquinas"; null si no se eligió ninguna.</summary>
+        private string? _tipoMaquinaSeleccionado;
 
         // ---- Mantenimiento preventivo: Cabina ----
         public ObservableCollection<ChecklistItem> CabinaChecklist { get; } = BuildChecklist(
@@ -133,18 +137,23 @@ namespace Advance_Control.Views.Formularios
 
             PrellenarDatosBasicos();
             _ = CargarDatosRelacionadosAsync();
+
+            WireProgreso(CabinaChecklist, CabinaProgresoTextBlock);
+            WireProgreso(CuartoMaquinasChecklist, CuartoMaquinasProgresoTextBlock);
+            WireProgreso(FosoChecklist, FosoProgresoTextBlock);
+            WireProgreso(PasilloChecklist, PasilloProgresoTextBlock);
+            WireProgreso(TechoCabinaChecklist, TechoCabinaProgresoTextBlock);
         }
 
         /// <summary>Datos que ya vienen en <see cref="OperacionDto"/>, sin llamadas a servicios.</summary>
         private void PrellenarDatosBasicos()
         {
-            ProyectoTextBox.Text = _operacion.RazonSocial ?? string.Empty;
-            NoEquipoTextBox.Text = _operacion.Identificador ?? string.Empty;
-            FechaTextBox.Text = _operacion.FechaInicio?.ToString("dd/MM/yyyy") ?? string.Empty;
+            NombreClienteTextBlock.Text = _operacion.RazonSocial ?? string.Empty;
+            EquipoTextBlock.Text = _operacion.Identificador ?? string.Empty;
+            FechaTextBlock.Text = _operacion.FechaInicio?.ToString("dd/MM/yyyy") ?? string.Empty;
 
-            // "Refe. Equipo" y "Ruta" no tienen una fuente de datos propia en OperacionDto/EquipoDto:
-            // se dejan en blanco para que el técnico las complete a mano. Hora de entrada/salida
-            // también quedan en blanco a propósito: las registra el técnico al llegar/salir de la visita.
+            // Hora de entrada/salida quedan en blanco a propósito: las registra el técnico
+            // al llegar/salir de la visita.
 
             TecnicoNombreTextBlock.Text = !string.IsNullOrWhiteSpace(_operacion.Atiende)
                 ? $"Atiende: {_operacion.Atiende}"
@@ -194,7 +203,7 @@ namespace Advance_Control.Views.Formularios
                 {
                     var ubicacion = await _ubicacionService.GetUbicacionByIdAsync(idUbicacion.Value);
                     if (ubicacion != null)
-                        DireccionTextBox.Text = ubicacion.DireccionCompleta ?? string.Empty;
+                        DireccionTextBlock.Text = ubicacion.DireccionCompleta ?? string.Empty;
                 }
             }
             catch (Exception ex)
@@ -236,9 +245,90 @@ namespace Advance_Control.Views.Formularios
             return lista;
         }
 
+        private static string FormatearHora(TimeSpan? hora) =>
+            hora.HasValue ? DateTime.Today.Add(hora.Value).ToString("HH:mm") : string.Empty;
+
         private void CerrarButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        /// <summary>
+        /// Botones "Marcar toda la sección" del encabezado de cada tabla. El Tag trae
+        /// "{Seccion}:{Columna}" (p.ej. "Cabina:NoAplica"); "Limpiar" no coincide con
+        /// ninguna columna y por lo tanto desmarca todo el renglón.
+        /// </summary>
+        private void MarcarSeccionButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement boton || boton.Tag is not string tag) return;
+
+            var partes = tag.Split(':');
+            if (partes.Length != 2) return;
+
+            var lista = ObtenerChecklist(partes[0]);
+            if (lista == null) return;
+
+            AplicarColumna(lista, partes[1]);
+        }
+
+        /// <summary>
+        /// "Tipo de Máquina" es un carrusel (FlipView): la página que queda a la vista
+        /// (0=Hidráulico, 1=Con cuarto de máquinas, 2=Sin cuarto de máquinas) es la
+        /// selección — no hace falta un control de selección aparte.
+        /// </summary>
+        private void TipoMaquinaFlipView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            _tipoMaquinaSeleccionado = TipoMaquinaFlipView.SelectedIndex switch
+            {
+                0 => "Hidraulico",
+                1 => "ConCuartoMaquinas",
+                2 => "SinCuartoMaquinas",
+                _ => null
+            };
+
+            // Un elevador "Sin cuarto de máquinas" (MRL), por definición, no tiene esa sala:
+            // toda la sección deja de aplicar automáticamente al elegir este tipo.
+            if (_tipoMaquinaSeleccionado == "SinCuartoMaquinas")
+                AplicarColumna(CuartoMaquinasChecklist, "NoAplica");
+        }
+
+        private static void AplicarColumna(ObservableCollection<ChecklistItem> lista, string columna)
+        {
+            foreach (var item in lista)
+            {
+                item.NoAplica = columna == "NoAplica";
+                item.Verificacion = columna == "Verificacion";
+                item.Ajuste = columna == "Ajuste";
+                item.Limpieza = columna == "Limpieza";
+                item.Lubricacion = columna == "Lubricacion";
+                item.Recorrido = columna == "Recorrido";
+            }
+        }
+
+        private ObservableCollection<ChecklistItem>? ObtenerChecklist(string seccion) => seccion switch
+        {
+            "Cabina" => CabinaChecklist,
+            "CuartoMaquinas" => CuartoMaquinasChecklist,
+            "Foso" => FosoChecklist,
+            "Pasillo" => PasilloChecklist,
+            "TechoCabina" => TechoCabinaChecklist,
+            _ => null
+        };
+
+        private static bool EstaMarcado(ChecklistItem item) =>
+            item.NoAplica || item.Verificacion || item.Ajuste || item.Limpieza || item.Lubricacion || item.Recorrido;
+
+        /// <summary>
+        /// Badge "X/N" en el header de cada Expander: se recalcula cada vez que cambia
+        /// cualquier renglón de esa sección (por eso <see cref="ChecklistItem"/> necesita
+        /// INotifyPropertyChanged, tanto para los RadioButton como para estos botones).
+        /// </summary>
+        private static void WireProgreso(ObservableCollection<ChecklistItem> lista, TextBlock badge)
+        {
+            void Actualizar() => badge.Text = $"{lista.Count(EstaMarcado)}/{lista.Count}";
+            foreach (var item in lista)
+                item.PropertyChanged += (_, _) => Actualizar();
+            Actualizar();
         }
 
         /// <summary>
@@ -250,6 +340,30 @@ namespace Advance_Control.Views.Formularios
         {
             if (!_operacion.IdOperacion.HasValue)
                 return;
+
+            var seccionesSinMarcar = new (string Nombre, ObservableCollection<ChecklistItem> Lista)[]
+            {
+                ("Cabina", CabinaChecklist),
+                ("Cuarto de Máquinas", CuartoMaquinasChecklist),
+                ("Foso", FosoChecklist),
+                ("Pasillo", PasilloChecklist),
+                ("Techo de Cabina", TechoCabinaChecklist),
+            }.Where(s => s.Lista.Count > 0 && s.Lista.All(i => !EstaMarcado(i))).Select(s => s.Nombre).ToList();
+
+            if (seccionesSinMarcar.Count > 0)
+            {
+                var confirmar = new ContentDialog
+                {
+                    Title = "Secciones sin marcar",
+                    Content = $"No marcaste ningún renglón en: {string.Join(", ", seccionesSinMarcar)}. ¿Generar el PDF de todas formas?",
+                    PrimaryButtonText = "Generar de todas formas",
+                    SecondaryButtonText = "Cancelar",
+                    DefaultButton = ContentDialogButton.Secondary,
+                    XamlRoot = this.Content.XamlRoot
+                };
+                if (await confirmar.ShowAsync() != ContentDialogResult.Primary)
+                    return;
+            }
 
             FinalizarButton.IsEnabled = false;
             EstadoFinalizarTextBlock.Text = "Generando PDF...";
@@ -311,17 +425,24 @@ namespace Advance_Control.Views.Formularios
                     ? "Detenido"
                     : null;
 
+            string? tipoMaquina = _tipoMaquinaSeleccionado switch
+            {
+                "Hidraulico" => "Hidráulico",
+                "ConCuartoMaquinas" => "Con cuarto de máquinas",
+                "SinCuartoMaquinas" => "Sin cuarto de máquinas (MRL)",
+                _ => null
+            };
+
             return new MantenimientoPreventivoPdfData
             {
                 IdOperacion = _operacion.IdOperacion ?? 0,
-                Proyecto = ProyectoTextBox.Text,
-                Direccion = DireccionTextBox.Text,
-                Ruta = RutaTextBox.Text,
-                NoEquipo = NoEquipoTextBox.Text,
-                RefeEquipo = RefeEquipoTextBox.Text,
-                Fecha = FechaTextBox.Text,
-                HoraEntrada = HoraEntradaTextBox.Text,
-                HoraSalida = HoraSalidaTextBox.Text,
+                NombreCliente = NombreClienteTextBlock.Text,
+                Direccion = DireccionTextBlock.Text,
+                Equipo = EquipoTextBlock.Text,
+                Fecha = FechaTextBlock.Text,
+                HoraEntrada = FormatearHora(HoraEntradaTimePicker.SelectedTime),
+                HoraSalida = FormatearHora(HoraSalidaTimePicker.SelectedTime),
+                TipoMaquina = tipoMaquina,
                 DirigidoA = DirigidoATextBlock.Visibility == Visibility.Visible ? DirigidoATextBlock.Text : null,
                 Secciones = secciones,
                 Observaciones = ObservacionesTextBox.Text,

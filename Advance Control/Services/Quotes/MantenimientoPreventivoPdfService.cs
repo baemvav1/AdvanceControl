@@ -4,6 +4,7 @@ using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Advance_Control.Services.Quotes
@@ -129,14 +130,13 @@ namespace Advance_Control.Services.Quotes
                     });
                 }
 
-                Celda("Proyecto", d.Proyecto);
+                Celda("Nombre del cliente", d.NombreCliente);
                 Celda("Dirección", d.Direccion);
-                Celda("Ruta", d.Ruta);
-                Celda("No. Equipo", d.NoEquipo);
-                Celda("Refe. Equipo", d.RefeEquipo);
+                Celda("Equipo", d.Equipo);
                 Celda("Fecha", d.Fecha);
                 Celda("Hora de entrada", d.HoraEntrada);
                 Celda("Hora de salida", d.HoraSalida);
+                Celda("Tipo de Máquina", d.TipoMaquina);
             });
         }
 
@@ -145,6 +145,16 @@ namespace Advance_Control.Services.Quotes
             container.Column(col =>
             {
                 col.Item().Text(seccion.Nombre).FontSize(12).SemiBold();
+
+                // Si el técnico marcó "No aplica" en todos los renglones (p.ej. Cuarto de
+                // Máquinas en un equipo hidráulico), no tiene caso imprimir la tabla completa
+                // repitiendo "X" fila por fila: se colapsa a una sola línea.
+                if (seccion.Items.Count > 0 && seccion.Items.All(i => i.NoAplica))
+                {
+                    col.Item().PaddingTop(4).Text("No aplica").FontSize(9).Italic().FontColor(Colors.Grey.Darken1);
+                    return;
+                }
+
                 col.Item().PaddingTop(4).Table(table =>
                 {
                     table.ColumnsDefinition(columns =>
