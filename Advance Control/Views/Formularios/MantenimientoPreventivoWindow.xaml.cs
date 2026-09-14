@@ -2,6 +2,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Inmuebles;
 using Advance_Control.Services.LocalStorage;
+using Advance_Control.Services.MantenimientoPreventivo;
 using Advance_Control.Services.Quotes;
 using Advance_Control.Services.Ubicaciones;
 using Advance_Control.Utilities;
@@ -15,6 +16,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Windows.Graphics;
 
@@ -36,9 +38,13 @@ namespace Advance_Control.Views.Formularios
         private readonly IUbicacionService _ubicacionService;
         private readonly IOperacionImageService _operacionImageService;
         private readonly IMantenimientoPreventivoPdfService _pdfService;
+        private readonly IHojaMantenimientoService _hojaMantenimientoService;
 
         /// <summary>"Hidraulico", "ConCuartoMaquinas" o "SinCuartoMaquinas"; null si no se eligió ninguna.</summary>
         private string? _tipoMaquinaSeleccionado;
+
+        /// <summary>Hoja persistida más reciente para esta operación (Borrador/Completada/Firmada), o null si aún no existe.</summary>
+        private MantenimientoPreventivoHojaDto? _hojaActual;
 
         // ---- Mantenimiento preventivo: Cabina ----
         public ObservableCollection<ChecklistItem> CabinaChecklist { get; } = BuildChecklist(
@@ -122,6 +128,7 @@ namespace Advance_Control.Views.Formularios
             _ubicacionService = AppServices.Get<IUbicacionService>();
             _operacionImageService = AppServices.Get<IOperacionImageService>();
             _pdfService = AppServices.Get<IMantenimientoPreventivoPdfService>();
+            _hojaMantenimientoService = AppServices.Get<IHojaMantenimientoService>();
 
             var hWnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
             var windowId = Microsoft.UI.Win32Interop.GetWindowIdFromWindow(hWnd);
@@ -172,11 +179,131 @@ namespace Advance_Control.Views.Formularios
             }
         }
 
-        /// <summary>Dirección del equipo/inmueble y firma del técnico.</summary>
+        /// <summary>Dirección del equipo/inmueble, firma del técnico y el Borrador persistido (si existe).</summary>
         private async System.Threading.Tasks.Task CargarDatosRelacionadosAsync()
         {
             await CargarDireccionAsync();
             CargarFirmaTecnico();
+            await CargarHojaExistenteAsync();
+        }
+
+        /// <summary>
+        /// Recupera la hoja más reciente de esta operación (si existe) y rehidrata
+        /// el formulario, para que cerrar/reabrir la ventana no pierda lo capturado.
+        /// </summary>
+        private async System.Threading.Tasks.Task CargarHojaExistenteAsync()
+        {
+            if (!_operacion.IdOperacion.HasValue)
+                return;
+
+            var hojas = await _hojaMantenimientoService.ObtenerPorOperacionAsync(_operacion.IdOperacion.Value);
+            var hoja = hojas?.FirstOrDefault();
+            if (hoja == null)
+                return;
+
+            _hojaActual = hoja;
+
+            _tipoMaquinaSeleccionado = hoja.TipoMaquina;
+            TipoMaquinaFlipView.SelectedIndex = hoja.TipoMaquina switch
+            {
+                "Hidraulico" => 0,
+                "ConCuartoMaquinas" => 1,
+                "SinCuartoMaquinas" => 2,
+                _ => TipoMaquinaFlipView.SelectedIndex
+            };
+
+            if (hoja.SituacionFinal == "Operativo")
+                SituacionOperativoRadioButton.IsChecked = true;
+            else if (hoja.SituacionFinal == "Detenido")
+                SituacionDetenidoRadioButton.IsChecked = true;
+
+            if (hoja.HoraEntrada.HasValue)
+                HoraEntradaTimePicker.SelectedTime = hoja.HoraEntrada.Value;
+            if (hoja.HoraSalida.HasValue)
+                HoraSalidaTimePicker.SelectedTime = hoja.HoraSalida.Value;
+
+            ObservacionesTextBox.Text = hoja.Observaciones ?? string.Empty;
+
+            RehidratarChecklist(hoja.ChecklistJson);
+
+            EstadoFinalizarTextBlock.Text = hoja.Estado switch
+            {
+                "Firmada" => "Esta hoja ya fue firmada por el cliente y no puede modificarse.",
+                "Completada" => "Esta hoja ya fue completada. Puedes volver a generarla si es necesario.",
+                _ => "Se recuperó un borrador guardado previamente."
+            };
+
+            if (hoja.Estado == "Firmada")
+                FinalizarButton.IsEnabled = false;
+        }
+
+        /// <summary>"NoAplica"/"Verificacion"/"Ajuste"/"Limpieza"/"Lubricacion"/"Recorrido", o null si no está marcado.</summary>
+        private static string? MarcaDe(ChecklistItem item) =>
+            item.NoAplica ? "NoAplica" :
+            item.Verificacion ? "Verificacion" :
+            item.Ajuste ? "Ajuste" :
+            item.Limpieza ? "Limpieza" :
+            item.Lubricacion ? "Lubricacion" :
+            item.Recorrido ? "Recorrido" : null;
+
+        /// <summary>Serializa las 5 secciones a la forma JSON que espera la API (ver migración 115).</summary>
+        private string SerializarChecklist()
+        {
+            var secciones = new Dictionary<string, List<object>>
+            {
+                ["Cabina"] = CabinaChecklist.Select(i => (object)new { texto = i.Texto, marca = MarcaDe(i) }).ToList(),
+                ["CuartoMaquinas"] = CuartoMaquinasChecklist.Select(i => (object)new { texto = i.Texto, marca = MarcaDe(i) }).ToList(),
+                ["Foso"] = FosoChecklist.Select(i => (object)new { texto = i.Texto, marca = MarcaDe(i) }).ToList(),
+                ["Pasillo"] = PasilloChecklist.Select(i => (object)new { texto = i.Texto, marca = MarcaDe(i) }).ToList(),
+                ["TechoCabina"] = TechoCabinaChecklist.Select(i => (object)new { texto = i.Texto, marca = MarcaDe(i) }).ToList(),
+            };
+            return JsonSerializer.Serialize(secciones);
+        }
+
+        /// <summary>Aplica un checklist guardado previamente sobre las listas actuales, emparejando por Texto.</summary>
+        private void RehidratarChecklist(string checklistJson)
+        {
+            if (string.IsNullOrWhiteSpace(checklistJson))
+                return;
+
+            try
+            {
+                using var documento = JsonDocument.Parse(checklistJson);
+                RehidratarSeccion(documento, "Cabina", CabinaChecklist);
+                RehidratarSeccion(documento, "CuartoMaquinas", CuartoMaquinasChecklist);
+                RehidratarSeccion(documento, "Foso", FosoChecklist);
+                RehidratarSeccion(documento, "Pasillo", PasilloChecklist);
+                RehidratarSeccion(documento, "TechoCabina", TechoCabinaChecklist);
+            }
+            catch (JsonException ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error al rehidratar checklist de mantenimiento preventivo: {ex.Message}");
+            }
+        }
+
+        private static void RehidratarSeccion(JsonDocument documento, string seccion, ObservableCollection<ChecklistItem> lista)
+        {
+            if (!documento.RootElement.TryGetProperty(seccion, out var arreglo) || arreglo.ValueKind != JsonValueKind.Array)
+                return;
+
+            foreach (var elemento in arreglo.EnumerateArray())
+            {
+                var texto = elemento.TryGetProperty("texto", out var textoElemento) ? textoElemento.GetString() : null;
+                var marca = elemento.TryGetProperty("marca", out var marcaElemento) && marcaElemento.ValueKind == JsonValueKind.String
+                    ? marcaElemento.GetString()
+                    : null;
+
+                var item = lista.FirstOrDefault(i => i.Texto == texto);
+                if (item == null)
+                    continue;
+
+                item.NoAplica = marca == "NoAplica";
+                item.Verificacion = marca == "Verificacion";
+                item.Ajuste = marca == "Ajuste";
+                item.Limpieza = marca == "Limpieza";
+                item.Lubricacion = marca == "Lubricacion";
+                item.Recorrido = marca == "Recorrido";
+            }
         }
 
         private async System.Threading.Tasks.Task CargarDireccionAsync()
@@ -341,6 +468,12 @@ namespace Advance_Control.Views.Formularios
             if (!_operacion.IdOperacion.HasValue)
                 return;
 
+            if (_hojaActual?.Estado == "Firmada")
+            {
+                EstadoFinalizarTextBlock.Text = "Esta hoja ya fue firmada por el cliente y no puede modificarse.";
+                return;
+            }
+
             var seccionesSinMarcar = new (string Nombre, ObservableCollection<ChecklistItem> Lista)[]
             {
                 ("Cabina", CabinaChecklist),
@@ -366,9 +499,18 @@ namespace Advance_Control.Views.Formularios
             }
 
             FinalizarButton.IsEnabled = false;
-            EstadoFinalizarTextBlock.Text = "Generando PDF...";
+            EstadoFinalizarTextBlock.Text = "Guardando avance...";
             try
             {
+                var guardado = await GuardarHojaAsync("Completada");
+                if (guardado == null)
+                {
+                    EstadoFinalizarTextBlock.Text = "No fue posible guardar el mantenimiento en el servidor. Intenta de nuevo.";
+                    return;
+                }
+                _hojaActual = guardado;
+
+                EstadoFinalizarTextBlock.Text = "Generando PDF...";
                 var datos = BuildPdfData();
                 var localPath = await _pdfService.GeneratePdfAsync(datos);
 
@@ -378,6 +520,14 @@ namespace Advance_Control.Views.Formularios
 
                 var rutaParaVisor = !string.IsNullOrWhiteSpace(subido?.Url) ? subido!.Url! : localPath;
                 var contactosCliente = _contactoCliente != null ? new List<ContactoDto> { _contactoCliente } : new List<ContactoDto>();
+
+                if (!string.IsNullOrWhiteSpace(subido?.Url))
+                {
+                    // Best-effort: la hoja ya quedó Completada aunque esto falle.
+                    var actualizado = await GuardarHojaAsync("Completada", pdfUrl: subido!.Url);
+                    if (actualizado != null)
+                        _hojaActual = actualizado;
+                }
 
                 EstadoFinalizarTextBlock.Text = subido != null
                     ? "PDF generado y guardado en el servidor."
@@ -406,6 +556,36 @@ namespace Advance_Control.Views.Formularios
             {
                 FinalizarButton.IsEnabled = true;
             }
+        }
+
+        /// <summary>
+        /// Persiste el estado actual del formulario (crea la hoja si aún no existe, o
+        /// actualiza la existente). Es la fuente de verdad; el PDF es un subproducto.
+        /// </summary>
+        private async Task<MantenimientoPreventivoHojaDto?> GuardarHojaAsync(string estado, string? pdfUrl = null)
+        {
+            var request = new MantenimientoPreventivoGuardarRequestDto
+            {
+                IdOperacion = _operacion.IdOperacion!.Value,
+                TipoMaquina = _tipoMaquinaSeleccionado,
+                SituacionFinal = SituacionOperativoRadioButton.IsChecked == true
+                    ? "Operativo"
+                    : SituacionDetenidoRadioButton.IsChecked == true
+                        ? "Detenido"
+                        : null,
+                HoraEntrada = HoraEntradaTimePicker.SelectedTime,
+                HoraSalida = HoraSalidaTimePicker.SelectedTime,
+                Observaciones = ObservacionesTextBox.Text,
+                ChecklistJson = SerializarChecklist(),
+                IdAtiende = _operacion.IdAtiende,
+                IdContactoDirigido = _contactoCliente?.ContactoId,
+                Estado = estado,
+                PdfUrl = pdfUrl
+            };
+
+            return _hojaActual == null
+                ? await _hojaMantenimientoService.CrearAsync(request)
+                : await _hojaMantenimientoService.ActualizarAsync(_hojaActual.Id, request);
         }
 
         private MantenimientoPreventivoPdfData BuildPdfData()
