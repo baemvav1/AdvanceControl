@@ -218,15 +218,18 @@ namespace Advance_Control.Models
         public bool IsTrabajoFinalizado => TFinalizado;
 
         /// <summary>
-        /// Color de la barra lateral de estado. Si ya está facturada, el color lo
-        /// decide el pago (Rojo=sin pagar, Azul=pagada) por encima de cualquier otro
-        /// estado; si no está facturada: Amarillo=TFinalizado, Verde=Activa, Gris=Cerrada.
+        /// Color de la barra lateral de estado, en orden de prioridad:
+        /// 1) Facturada: Rojo=sin pagar, Azul=pagada.
+        /// 2) Abierta + orden de compra cargada: Morado — todo listo para finalizarse.
+        /// 3) Amarillo=TFinalizado, Verde=Abierta sin lo anterior, Gris=Cerrada.
         /// </summary>
         [JsonIgnore]
         public string BarraEstadoColor =>
             EstaFacturada
                 ? (EstaPagada ? "DodgerBlue" : "Crimson")
-                : TFinalizado ? "Gold" : (IsEditable ? "MediumSeaGreen" : "DimGray");
+                : (IsEditable && CkOrdenCompraCargada)
+                    ? "Purple"
+                    : TFinalizado ? "Gold" : (IsEditable ? "MediumSeaGreen" : "DimGray");
 
         // Campos del check integrados desde el endpoint de operaciones (LEFT JOIN)
         [JsonPropertyName("ckCotizacionGenerada")]
@@ -711,6 +714,7 @@ namespace Advance_Control.Models
                     OnPropertyChanged(nameof(CkFacturaCargada));
                     OnPropertyChanged(nameof(CkStepsCompletados));
                     OnPropertyChanged(nameof(CkPasos));
+                    OnPropertyChanged(nameof(BarraEstadoColor));
                 }
             }
         }
