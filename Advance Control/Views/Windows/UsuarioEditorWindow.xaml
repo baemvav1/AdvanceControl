@@ -63,7 +63,8 @@
                                 Grid.Row="0"
                                 Grid.Column="2"
                                 Header="Nivel / tipo de usuario"
-                                PlaceholderText="Selecciona un tipo de usuario">
+                                PlaceholderText="Selecciona un tipo de usuario"
+                                SelectionChanged="NivelComboBox_SelectionChanged">
                                 <ComboBox.ItemTemplate>
                                     <DataTemplate x:DataType="models:TipoUsuarioDto">
                                         <StackPanel Spacing="2">
@@ -203,14 +204,28 @@
                                 </StackPanel>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="3" Grid.Column="1" Spacing="8">
-                                <ComboBox
-                                    x:Name="ClienteComboBox"
-                                    Header="Cliente"
-                                    PlaceholderText="Selecciona un cliente"
-                                    SelectionChanged="ClienteComboBox_SelectionChanged">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="models:CustomerDto">
+                            <StackPanel
+                                x:Name="EmpresasPortalPanel"
+                                Grid.Row="3"
+                                Grid.Column="1"
+                                Spacing="8"
+                                Visibility="Collapsed">
+                                <TextBlock Text="Empresas (Portal de Cliente)" />
+                                <TextBlock
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    FontSize="12"
+                                    Text="Empresas ya vinculadas a este contacto (vincúlalas desde Clientes). Selecciona las que este login debe ver en su panel."
+                                    TextWrapping="Wrap" />
+
+                                <ListView
+                                    x:Name="EmpresasPortalListView"
+                                    MaxHeight="180"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    SelectionMode="Multiple">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="models:ClientePortalSeleccionDto">
                                             <StackPanel Spacing="2">
                                                 <TextBlock Text="{x:Bind NombreComercial}" />
                                                 <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
@@ -220,13 +235,17 @@
                                                 </TextBlock>
                                             </StackPanel>
                                         </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+                                    </ListView.ItemTemplate>
+                                </ListView>
 
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <Button Click="RecargarClientesButton_Click" Content="Recargar clientes" />
-                                    <Button Click="QuitarClienteButton_Click" Content="Quitar cliente" />
-                                </StackPanel>
+                                <TextBlock
+                                    x:Name="EmpresasPortalMensajeTextBlock"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Este contacto no tiene empresas vinculadas todavía. Vincúlalo primero desde la pantalla de Clientes."
+                                    TextWrapping="Wrap"
+                                    Visibility="Collapsed" />
+
+                                <Button Click="RecargarEmpresasPortalButton_Click" Content="Recargar empresas" />
                             </StackPanel>
 
                             <TextBox x:Name="TratamientoTextBox" Grid.Row="4" Grid.Column="0" Header="Tratamiento" />

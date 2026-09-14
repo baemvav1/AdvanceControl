@@ -1,6 +1,5 @@
 using Advance_Control.Models;
 using Advance_Control.Services.CorreoUsuario;
-using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Email;
 using Advance_Control.Services.Logging;
@@ -23,10 +22,11 @@ namespace Advance_Control.Views.Windows
 {
     public sealed partial class UsuarioEditorWindow : Window
     {
+        private const int NivelClienteId = 10;
+
         private readonly IUsuarioAdminService _usuarioAdminService;
         private readonly ICorreoUsuarioService _correoUsuarioService;
         private readonly IContactoService _contactoService;
-        private readonly IClienteService _clienteService;
         private readonly IProveedorService _proveedorService;
         private readonly ITipoUsuarioService _tipoUsuarioService;
         private readonly IEmailService _emailService;
@@ -36,12 +36,11 @@ namespace Advance_Control.Views.Windows
         private bool _contactosCargados;
         private bool _cargandoDesdeContacto;
         private bool _limpiarIdProveedor;
-        private bool _limpiarIdCliente;
         private bool _limpiarCorreoUsuario;
         private bool _tieneCorreoConfigurado;
 
         public ObservableCollection<ContactoDto> Contactos { get; } = new();
-        public ObservableCollection<CustomerDto> Clientes { get; } = new();
+        public ObservableCollection<ClientePortalSeleccionDto> EmpresasPortal { get; } = new();
         public ObservableCollection<ProveedorDto> Proveedores { get; } = new();
         public ObservableCollection<TipoUsuarioDto> TiposUsuario { get; } = new();
 
@@ -52,7 +51,6 @@ namespace Advance_Control.Views.Windows
             _usuarioAdminService = AppServices.Get<IUsuarioAdminService>();
             _correoUsuarioService = AppServices.Get<ICorreoUsuarioService>();
             _contactoService = AppServices.Get<IContactoService>();
-            _clienteService = AppServices.Get<IClienteService>();
             _proveedorService = AppServices.Get<IProveedorService>();
             _tipoUsuarioService = AppServices.Get<ITipoUsuarioService>();
             _emailService = AppServices.Get<IEmailService>();
@@ -112,7 +110,6 @@ namespace Advance_Control.Views.Windows
             await Task.WhenAll(
                 CargarTiposUsuarioAsync(),
                 CargarContactosAsync(),
-                CargarClientesAsync(),
                 CargarProveedoresAsync());
 
             await CargarCorreoUsuarioAsync();
@@ -133,6 +130,7 @@ namespace Advance_Control.Views.Windows
                 var nivelSeleccionado = _usuario?.Nivel ?? 1;
                 NivelComboBox.SelectedItem = TiposUsuario.FirstOrDefault(t => t.IdTipoUsuario == nivelSeleccionado)
                     ?? TiposUsuario.FirstOrDefault();
+                ActualizarVisibilidadEmpresasPortal();
             }
             catch (Exception ex)
             {
@@ -169,25 +167,51 @@ namespace Advance_Control.Views.Windows
             }
         }
 
-        private async Task CargarClientesAsync()
+        /// <summary>
+        /// Carga las empresas (Cliente) ya vinculadas al contacto elegido, para
+        /// que el admin seleccione cuáles ve este login en su Portal de Cliente.
+        /// </summary>
+        private async Task CargarEmpresasPortalParaContactoAsync(long? contactoId)
         {
+            EmpresasPortal.Clear();
+            EmpresasPortalListView.ItemsSource = null;
+            EmpresasPortalMensajeTextBlock.Visibility = Visibility.Collapsed;
+
+            if (contactoId is not long id || id <= 0)
+                return;
+
             try
             {
-                var clientes = await _clienteService.GetClientesAsync();
-                Clientes.Clear();
-                foreach (var cliente in clientes.OrderBy(c => c.NombreComercial).ThenBy(c => c.RazonSocial))
+                var empresas = await _contactoService.ObtenerClientesVinculadosAsync(id);
+                foreach (var empresa in empresas.Where(emp => emp.Activo).OrderBy(emp => emp.NombreComercial))
                 {
-                    Clientes.Add(cliente);
+                    EmpresasPortal.Add(empresa);
                 }
 
-                ClienteComboBox.ItemsSource = Clientes;
-                SeleccionarCliente(_usuario?.IdCliente);
+                EmpresasPortalListView.ItemsSource = EmpresasPortal;
+
+                if (EmpresasPortal.Count == 0)
+                {
+                    EmpresasPortalMensajeTextBlock.Visibility = Visibility.Visible;
+                    return;
+                }
+
+                foreach (var empresa in EmpresasPortal.Where(emp => emp.VisiblePortal))
+                {
+                    EmpresasPortalListView.SelectedItems.Add(empresa);
+                }
             }
             catch (Exception ex)
             {
-                await _loggingService.LogErrorAsync("Error al cargar clientes en UsuarioEditorWindow", ex, nameof(UsuarioEditorWindow), nameof(CargarClientesAsync));
-                await _notificacionService.MostrarAsync("Error", "No fue posible cargar los clientes.");
+                await _loggingService.LogErrorAsync("Error al cargar empresas del portal para el contacto", ex, nameof(UsuarioEditorWindow), nameof(CargarEmpresasPortalParaContactoAsync));
+                await _notificacionService.MostrarAsync("Error", "No fue posible cargar las empresas vinculadas al contacto.");
             }
+        }
+
+        private void ActualizarVisibilidadEmpresasPortal()
+        {
+            var esNivelCliente = (NivelComboBox.SelectedItem as TipoUsuarioDto)?.IdTipoUsuario == NivelClienteId;
+            EmpresasPortalPanel.Visibility = esNivelCliente ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private async Task CargarProveedoresAsync()
@@ -216,9 +240,10 @@ namespace Advance_Control.Views.Windows
             await CargarContactosAsync();
         }
 
-        private void QuitarContactoButton_Click(object sender, RoutedEventArgs e)
+        private async void QuitarContactoButton_Click(object sender, RoutedEventArgs e)
         {
             ContactoComboBox.SelectedItem = null;
+            await CargarEmpresasPortalParaContactoAsync(null);
         }
 
         private async void RecargarProveedoresButton_Click(object sender, RoutedEventArgs e)
@@ -232,18 +257,13 @@ namespace Advance_Control.Views.Windows
             _limpiarIdProveedor = true;
         }
 
-        private async void RecargarClientesButton_Click(object sender, RoutedEventArgs e)
+        private async void RecargarEmpresasPortalButton_Click(object sender, RoutedEventArgs e)
         {
-            await CargarClientesAsync();
+            var contactoId = (ContactoComboBox.SelectedItem as ContactoDto)?.ContactoId;
+            await CargarEmpresasPortalParaContactoAsync(contactoId);
         }
 
-        private void QuitarClienteButton_Click(object sender, RoutedEventArgs e)
-        {
-            ClienteComboBox.SelectedItem = null;
-            _limpiarIdCliente = true;
-        }
-
-        private void ContactoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private async void ContactoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (!_contactosCargados || _cargandoDesdeContacto)
                 return;
@@ -261,7 +281,6 @@ namespace Advance_Control.Views.Windows
                 DepartamentoTextBox.Text = contacto.Departamento ?? string.Empty;
                 CargoTextBox.Text = contacto.Cargo ?? string.Empty;
                 SeleccionarProveedor(contacto.IdProveedor);
-                SeleccionarCliente(contacto.IdCliente);
                 TratamientoTextBox.Text = contacto.Tratamiento ?? string.Empty;
                 CodigoInternoTextBox.Text = contacto.CodigoInterno ?? string.Empty;
                 NotasTextBox.Text = contacto.Notas ?? string.Empty;
@@ -270,6 +289,8 @@ namespace Advance_Control.Views.Windows
             {
                 _cargandoDesdeContacto = false;
             }
+
+            await CargarEmpresasPortalParaContactoAsync(contacto.ContactoId);
         }
 
         private void ProveedorComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -280,12 +301,9 @@ namespace Advance_Control.Views.Windows
             _limpiarIdProveedor = ProveedorComboBox.SelectedItem is null;
         }
 
-        private void ClienteComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void NivelComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_cargandoDesdeContacto)
-                return;
-
-            _limpiarIdCliente = ClienteComboBox.SelectedItem is null;
+            ActualizarVisibilidadEmpresasPortal();
         }
 
         private async void GuardarButton_Click(object sender, RoutedEventArgs e)
@@ -336,6 +354,8 @@ namespace Advance_Control.Views.Windows
 
         private UsuarioAdminEditDto BuildRequest()
         {
+            var esNivelCliente = (NivelComboBox.SelectedItem as TipoUsuarioDto)?.IdTipoUsuario == NivelClienteId;
+
             return new UsuarioAdminEditDto
             {
                 Usuario = Normalize(UsuarioTextBox.Text),
@@ -352,8 +372,9 @@ namespace Advance_Control.Views.Windows
                 Cargo = Normalize(CargoTextBox.Text),
                 IdProveedor = (ProveedorComboBox.SelectedItem as ProveedorDto)?.IdProveedor,
                 LimpiarIdProveedor = _limpiarIdProveedor,
-                IdCliente = (ClienteComboBox.SelectedItem as CustomerDto)?.IdCliente,
-                LimpiarIdCliente = _limpiarIdCliente,
+                IdsClientePortal = esNivelCliente
+                    ? EmpresasPortalListView.SelectedItems.Cast<ClientePortalSeleccionDto>().Select(c => c.IdCliente).ToList()
+                    : null,
                 Tratamiento = Normalize(TratamientoTextBox.Text),
                 Notas = Normalize(NotasTextBox.Text)
             };
@@ -365,14 +386,6 @@ namespace Advance_Control.Views.Windows
                 ? Proveedores.FirstOrDefault(p => p.IdProveedor == idProveedor.Value)
                 : null;
             _limpiarIdProveedor = !idProveedor.HasValue;
-        }
-
-        private void SeleccionarCliente(int? idCliente)
-        {
-            ClienteComboBox.SelectedItem = idCliente.HasValue
-                ? Clientes.FirstOrDefault(c => c.IdCliente == idCliente.Value)
-                : null;
-            _limpiarIdCliente = !idCliente.HasValue;
         }
 
         private bool ContactoDisponibleParaUsuario(ContactoDto contacto)

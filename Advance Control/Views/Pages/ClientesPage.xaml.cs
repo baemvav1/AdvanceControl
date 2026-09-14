@@ -245,12 +245,18 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                // Obtener contactos sin cliente asignado (IdCliente = 0 o null)
-                var contactosSinCliente = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = 0 });
-                
-                if (contactosSinCliente == null || contactosSinCliente.Count == 0)
+                // Un contacto puede estar vinculado a varias empresas: se listan
+                // todos los contactos y se excluyen los que YA están vinculados
+                // a este cliente en particular (relacion_contacto_cliente).
+                var todosLosContactos = await _contactoService.GetContactosAsync(new ContactoQueryDto());
+                var idsYaVinculados = cliente.Contactos.Select(c => c.ContactoId).ToHashSet();
+                var contactosDisponibles = todosLosContactos
+                    .Where(c => !idsYaVinculados.Contains(c.ContactoId))
+                    .ToList();
+
+                if (contactosDisponibles.Count == 0)
                 {
-                    await _notificacionService.MostrarAsync("Sin contactos disponibles", "No hay contactos sin cliente asignado disponibles para agregar.");
+                    await _notificacionService.MostrarAsync("Sin contactos disponibles", "No hay más contactos disponibles para vincular a este cliente.");
                     return;
                 }
 
@@ -261,7 +267,7 @@ namespace Advance_Control.Views.Pages
                     MaxHeight = 300
                 };
 
-                foreach (var contacto in contactosSinCliente)
+                foreach (var contacto in contactosDisponibles)
                 {
                     var itemContent = new StackPanel
                     {
@@ -320,28 +326,12 @@ namespace Advance_Control.Views.Pages
 
                 var result = await dialog.ShowAsync();
 
-                if (result == ContentDialogResult.Primary && contactoListView.SelectedItem is ListViewItem selectedItem 
+                if (result == ContentDialogResult.Primary && contactoListView.SelectedItem is ListViewItem selectedItem
                     && selectedItem.Tag is ContactoDto selectedContacto)
                 {
-                    // Actualizar el idCliente del contacto
-                    var updateDto = new ContactoEditDto
-                    {
-                        ContactoId = selectedContacto.ContactoId,
-                        IdCliente = cliente.IdCliente,
-                        // Mantener los demás campos
-                        Nombre = selectedContacto.Nombre,
-                        Apellido = selectedContacto.Apellido,
-                        Correo = selectedContacto.Correo,
-                        Telefono = selectedContacto.Telefono,
-                        Departamento = selectedContacto.Departamento,
-                        CodigoInterno = selectedContacto.CodigoInterno,
-                        Activo = selectedContacto.Activo,
-                        Notas = selectedContacto.Notas,
-                        IdProveedor = selectedContacto.IdProveedor,
-                        Cargo = selectedContacto.Cargo
-                    };
-
-                    var updateResult = await _contactoService.UpdateContactoAsync(updateDto);
+                    // Vincula el contacto a este cliente sin afectar sus demás
+                    // vínculos (relacion_contacto_cliente es muchos-a-muchos).
+                    var updateResult = await _contactoService.VincularClienteAsync(selectedContacto.ContactoId, cliente.IdCliente);
 
                     if (updateResult.Success)
                     {
@@ -393,25 +383,10 @@ namespace Advance_Control.Views.Pages
             {
                 try
                 {
-                    // Actualizar el idCliente del contacto a 0 (sin cliente)
-                    var updateDto = new ContactoEditDto
-                    {
-                        ContactoId = contacto.ContactoId,
-                        IdCliente = 0,
-                        // Mantener los demás campos
-                        Nombre = contacto.Nombre,
-                        Apellido = contacto.Apellido,
-                        Correo = contacto.Correo,
-                        Telefono = contacto.Telefono,
-                        Departamento = contacto.Departamento,
-                        CodigoInterno = contacto.CodigoInterno,
-                        Activo = contacto.Activo,
-                        Notas = contacto.Notas,
-                        IdProveedor = contacto.IdProveedor,
-                        Cargo = contacto.Cargo
-                    };
-
-                    var updateResult = await _contactoService.UpdateContactoAsync(updateDto);
+                    // Desvincula el contacto SOLO de este cliente; sigue
+                    // apareciendo en cualquier otra empresa a la que esté
+                    // vinculado.
+                    var updateResult = await _contactoService.DesvincularClienteAsync(contacto.ContactoId, cliente.IdCliente);
 
                     if (updateResult.Success)
                     {

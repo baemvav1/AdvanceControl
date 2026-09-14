@@ -176,8 +176,13 @@ namespace Advance_Control.Models
         public string? Cargo { get; set; }
         public int? IdProveedor { get; set; }
         public bool LimpiarIdProveedor { get; set; }
-        public int? IdCliente { get; set; }
-        public bool LimpiarIdCliente { get; set; }
+
+        /// <summary>
+        /// Empresas (Cliente) que este login debe ver en su Portal de Cliente,
+        /// de entre las ya vinculadas al contacto. null = no tocar la
+        /// selección actual; lista vacía = quitar todas.
+        /// </summary>
+        public List<int>? IdsClientePortal { get; set; }
         public string? Tratamiento { get; set; }
         public string? Notas { get; set; }
     }
