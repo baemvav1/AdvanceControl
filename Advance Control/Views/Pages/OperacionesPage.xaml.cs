@@ -158,6 +158,22 @@ namespace Advance_Control.Views.Pages
         private async void EstadoCheckBox_Changed(object sender, RoutedEventArgs e)
         {
             if (ViewModel == null || _isNavigating) return;
+
+            // Se lee IsChecked directo del control (bool?) en vez de depender del
+            // round-trip de x:Bind Mode=TwoWay (bool? del CheckBox contra el bool
+            // del ViewModel), para no arriesgar que el reload dispare con el valor
+            // viejo si el binding no alcanzó a escribir antes de este handler.
+            if (sender is CheckBox checkBox)
+            {
+                var isChecked = checkBox.IsChecked == true;
+                if (checkBox == MostrarAbiertasCheckBox)
+                    ViewModel.MostrarAbiertas = isChecked;
+                else if (checkBox == MostrarTFinalizadasCheckBox)
+                    ViewModel.MostrarTFinalizadas = isChecked;
+                else if (checkBox == MostrarFacturadasCheckBox)
+                    ViewModel.MostrarFacturadas = isChecked;
+            }
+
             await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);
         }
 

@@ -71,6 +71,13 @@ namespace Advance_Control.ViewModels
         private long _totalItems;
         private List<OperacionDto>? _allFilteredOperaciones;
 
+        // Evita que dos o tres cambios de filtro seguidos y rápidos (ej. marcar
+        // varios checkboxes de estado uno tras otro) se pisen: si llega una
+        // solicitud de recarga mientras otra sigue en curso, en vez de
+        // descartarla silenciosamente se encola UNA recarga más con el estado
+        // más reciente de los filtros, apenas termine la que está en curso.
+        private bool _reloadPending;
+
         public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
@@ -473,7 +480,13 @@ namespace Advance_Control.ViewModels
         public async Task LoadOperacionesAsync(Func<List<OperacionDto>, Task>? onBeforeCommit = null, CancellationToken cancellationToken = default, bool resetPage = false)
         {
             if (IsLoading)
+            {
+                // No se descarta: se atiende apenas termine la carga en curso,
+                // releyendo los filtros (que para entonces ya reflejan el último
+                // cambio del usuario). Ver comentario de _reloadPending arriba.
+                _reloadPending = true;
                 return;
+            }
 
             if (resetPage) CurrentPage = 1;
 
@@ -576,6 +589,14 @@ namespace Advance_Control.ViewModels
             finally
             {
                 IsLoading = false;
+
+                if (_reloadPending)
+                {
+                    _reloadPending = false;
+                    // Fire-and-forget intencional: encola la recarga pendiente sin
+                    // bloquear el finally; usa los filtros actuales (ya actualizados).
+                    _ = LoadOperacionesAsync(onBeforeCommit, cancellationToken);
+                }
             }
         }
 
