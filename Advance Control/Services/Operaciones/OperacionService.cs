@@ -70,7 +70,10 @@ namespace Advance_Control.Services.Operaciones
                         .Add("fechainicial", query.FechaInicial?.ToString("yyyy-MM-dd"))
                         .Add("fechaFinalFiltro", query.FechaFinalFiltro?.ToString("yyyy-MM-dd"))
                         .Add("incluirFinalizadas", query.IncluirFinalizadas ? (bool?)true : null)
-                        .Add("incluirFacturadas", query.IncluirFacturadas ? (bool?)true : null);
+                        .Add("incluirFacturadas", query.IncluirFacturadas ? (bool?)true : null)
+                        .Add("estadoAbierta", query.EstadoAbierta)
+                        .Add("estadoTFinalizado", query.EstadoTFinalizado)
+                        .Add("estadoFacturada", query.EstadoFacturada);
                 }
                 if (skip > 0) builder.Add("skip", skip.ToString());
                 if (take > 0) builder.Add("take", take.ToString());

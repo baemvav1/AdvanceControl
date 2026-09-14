@@ -58,5 +58,16 @@ namespace Advance_Control.Models
         /// defecto se ocultan del listado.
         /// </summary>
         public bool IncluirFacturadas { get; set; }
+
+        /// <summary>
+        /// Filtro de estado tipo OR (checkboxes T-Finalizado/Facturadas/Abiertas de
+        /// OperacionesPage): si alguno de los 3 viene no-nulo, reemplaza por completo
+        /// el filtro IncluirFinalizadas/IncluirFacturadas de arriba — una operación se
+        /// muestra si cumple CUALQUIERA de los estados marcados en true (no son
+        /// excluyentes: puede estar abierta y a la vez t-finalizada).
+        /// </summary>
+        public bool? EstadoAbierta { get; set; }
+        public bool? EstadoTFinalizado { get; set; }
+        public bool? EstadoFacturada { get; set; }
     }
 }

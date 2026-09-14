@@ -61,6 +61,8 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaInicialFilter;
         private DateTimeOffset? _fechaFinalFilter;
         private AreaDto? _selectedAreaFilter;
+        private bool _mostrarAbiertas = true;
+        private bool _mostrarTFinalizadas;
         private bool _mostrarFacturadas;
 
         // Paginación
@@ -262,10 +264,23 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Si es true, incluye en el listado las operaciones que ya tienen una factura
-        /// vinculada (por defecto se ocultan). Compone con el resto de filtros porque se
-        /// aplica en la misma consulta a la API (fn_operaciones_gestionar).
+        /// Filtro de estado tipo OR (checkboxes): una operación se muestra si cumple
+        /// CUALQUIERA de los 3 marcados en true (no son excluyentes entre sí — puede
+        /// estar abierta y a la vez t-finalizada). Reemplaza el switch único que solo
+        /// controlaba "facturadas".
         /// </summary>
+        public bool MostrarAbiertas
+        {
+            get => _mostrarAbiertas;
+            set => SetProperty(ref _mostrarAbiertas, value);
+        }
+
+        public bool MostrarTFinalizadas
+        {
+            get => _mostrarTFinalizadas;
+            set => SetProperty(ref _mostrarTFinalizadas, value);
+        }
+
         public bool MostrarFacturadas
         {
             get => _mostrarFacturadas;
@@ -478,7 +493,9 @@ namespace Advance_Control.ViewModels
                     Nota = NotaFilter,
                     FechaInicial = FechaInicialFilter,
                     FechaFinalFiltro = FechaFinalFilter,
-                    IncluirFacturadas = MostrarFacturadas
+                    EstadoAbierta = MostrarAbiertas,
+                    EstadoTFinalizado = MostrarTFinalizadas,
+                    EstadoFacturada = MostrarFacturadas
                 };
 
                 List<OperacionDto> filtrados;
@@ -585,6 +602,8 @@ namespace Advance_Control.ViewModels
                 FechaInicialFilter = null;
                 FechaFinalFilter = null;
                 SelectedAreaFilter = null;
+                MostrarAbiertas = true;
+                MostrarTFinalizadas = false;
                 MostrarFacturadas = false;
                 _clienteSugerencias.Clear();
                 _equipoSugerencias.Clear();

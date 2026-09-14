@@ -204,11 +204,27 @@
                         Grid.Row="2"
                         Grid.Column="1"
                         VerticalAlignment="Center">
-                        <ToggleSwitch
-                            x:Name="MostrarFacturadasToggle"
-                            Header="Mostrar ya facturadas"
-                            IsOn="{x:Bind ViewModel.MostrarFacturadas, Mode=TwoWay}"
-                            Toggled="MostrarFacturadasToggle_Toggled" />
+                        <TextBlock Margin="0,0,0,4" Text="Mostrar" />
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <CheckBox
+                                x:Name="MostrarAbiertasCheckBox"
+                                Content="Abiertas"
+                                IsChecked="{x:Bind ViewModel.MostrarAbiertas, Mode=TwoWay}"
+                                Checked="EstadoCheckBox_Changed"
+                                Unchecked="EstadoCheckBox_Changed" />
+                            <CheckBox
+                                x:Name="MostrarTFinalizadasCheckBox"
+                                Content="T-Finalizado"
+                                IsChecked="{x:Bind ViewModel.MostrarTFinalizadas, Mode=TwoWay}"
+                                Checked="EstadoCheckBox_Changed"
+                                Unchecked="EstadoCheckBox_Changed" />
+                            <CheckBox
+                                x:Name="MostrarFacturadasCheckBox"
+                                Content="Facturadas"
+                                IsChecked="{x:Bind ViewModel.MostrarFacturadas, Mode=TwoWay}"
+                                Checked="EstadoCheckBox_Changed"
+                                Unchecked="EstadoCheckBox_Changed" />
+                        </StackPanel>
                     </StackPanel>
 
                     <StackPanel
