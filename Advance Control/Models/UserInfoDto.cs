@@ -6,7 +6,10 @@ namespace Advance_Control.Models
     {
         [JsonPropertyName("credencialId")]
         public int CredencialId { get; set; }
-        
+
+        [JsonPropertyName("contactoId")]
+        public long ContactoId { get; set; }
+
         [JsonPropertyName("nombreCompleto")]
         public string? NombreCompleto { get; set; }
         

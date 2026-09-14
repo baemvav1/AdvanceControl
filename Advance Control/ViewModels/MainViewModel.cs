@@ -618,6 +618,14 @@ namespace Advance_Control.ViewModels
             try
             {
                 await EnsureSessionContextAsync();
+
+                var sessionService = _serviceProvider.GetService<Services.Session.IUserSessionService>();
+                if (sessionService?.EsUsuarioCliente == true)
+                {
+                    await AbrirPortalClienteAsync();
+                    return true;
+                }
+
                 await LoadUserInfoAsync();
                 await TryConnectMensajeriaAsync();
 
@@ -660,6 +668,25 @@ namespace Advance_Control.ViewModels
             {
                 _loginStateLock.Release();
             }
+        }
+
+        /// <summary>
+        /// Bifurcación para usuarios-cliente (Nivel=10): abre el shell restringido
+        /// (ClientePortalWindow) en vez del MainWindow normal, y oculta este.
+        /// No se cierra MainWindow (cerrarlo tumbaría el Host/DI del que depende
+        /// la ventana nueva) — se oculta con Win32 y ambas comparten el mismo
+        /// shutdown al cerrarse cualquiera de las dos.
+        /// </summary>
+        private async Task AbrirPortalClienteAsync()
+        {
+            var portalWindow = _serviceProvider.GetRequiredService<Views.Portal.ClientePortalWindow>();
+            if (Microsoft.UI.Xaml.Application.Current is App app)
+            {
+                app.RegisterWindowForShutdown(portalWindow);
+            }
+            portalWindow.Activate();
+            App.HideMainWindow();
+            await Task.CompletedTask;
         }
 
         private async Task ResetBootstrapStateAsync()
@@ -707,6 +734,7 @@ namespace Advance_Control.ViewModels
             }
 
             if (sessionService.Nivel > 0
+                && !sessionService.EsUsuarioCliente
                 && !_permisoUiRuntimeService.IsInitialized)
             {
                 await _permisoUiRuntimeService.InitializeAsync(sessionService.Nivel);

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Page
+    x:Class="Advance_Control.Views.Portal.ClienteOperacionDetallePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    mc:Ignorable="d">
+
+    <Grid Padding="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Button
+            Grid.Row="0"
+            Margin="0,0,0,12"
+            HorizontalAlignment="Left"
+            Click="VolverButton_Click"
+            Content="&lt; Volver a mis operaciones" />
+
+        <Border
+            Grid.Row="1"
+            Margin="0,0,0,16"
+            Padding="16"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <StackPanel Spacing="4">
+                <TextBlock x:Name="IdentificadorTextBlock" FontSize="18" FontWeight="SemiBold" />
+                <TextBlock x:Name="NotaTextBlock" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                <TextBlock x:Name="FechaTextBlock" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            </StackPanel>
+        </Border>
+
+        <TextBlock Grid.Row="2" Margin="0,0,0,8" FontSize="16" FontWeight="SemiBold" Text="Hojas de mantenimiento preventivo" />
+
+        <TextBlock
+            x:Name="SinHojasTextBlock"
+            Grid.Row="3"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Top"
+            Margin="0,24,0,0"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Todavía no hay hojas de mantenimiento para esta operación."
+            Visibility="Collapsed" />
+
+        <ListView
+            x:Name="HojasListView"
+            Grid.Row="3"
+            SelectionMode="None"
+            IsItemClickEnabled="True"
+            ItemClick="HojasListView_ItemClick">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="models:MantenimientoPreventivoHojaDto">
+                    <Border
+                        Margin="0,0,0,8"
+                        Padding="16"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock FontWeight="SemiBold">
+                                    <Run Text="Hoja del " />
+                                    <Run Text="{x:Bind CreadoEnTexto}" />
+                                </TextBlock>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind TipoMaquina}" />
+                            </StackPanel>
+
+                            <Border
+                                Grid.Column="1"
+                                Padding="8,3"
+                                VerticalAlignment="Top"
+                                Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                CornerRadius="4">
+                                <TextBlock FontSize="11" Foreground="White" Text="{x:Bind Estado}" />
+                            </Border>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</Page>

@@ -12,6 +12,9 @@ namespace Advance_Control.Services.Session
         /// <summary>ID de credencial del usuario autenticado</summary>
         int CredencialId { get; }
 
+        /// <summary>ID del contacto ligado a esta credencial (1:1)</summary>
+        long ContactoId { get; }
+
         /// <summary>ID del proveedor asociado al usuario</summary>
         int IdProveedor { get; }
 
@@ -32,6 +35,12 @@ namespace Advance_Control.Services.Session
 
         /// <summary>Indica si la sesión ya fue cargada desde el API</summary>
         bool IsLoaded { get; }
+
+        /// <summary>
+        /// true si este login es de un "usuario cliente" (Nivel/TipoUsuario = 10,
+        /// "Cliente") y debe ver el Portal de Cliente en vez del MainWindow normal.
+        /// </summary>
+        bool EsUsuarioCliente { get; }
 
         /// <summary>
         /// Carga la información del usuario desde el API.

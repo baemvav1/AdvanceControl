@@ -63,6 +63,15 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("firmadoIp")]
         public string? FirmadoIp { get; set; }
+
+        [JsonIgnore]
+        public string CreadoEnTexto => CreadoEn.ToString("dd/MM/yyyy HH:mm");
+
+        [JsonIgnore]
+        public bool PuedeFirmarse => Estado == "Completada";
+
+        [JsonIgnore]
+        public bool YaFirmada => Estado == "Firmada";
     }
 
     /// <summary>Datos para crear/actualizar una hoja (guardar avance o completar).</summary>

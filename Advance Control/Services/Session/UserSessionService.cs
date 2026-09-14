@@ -20,7 +20,10 @@ namespace Advance_Control.Services.Session
         private readonly IPermisoUiRuntimeService _permisoUiRuntimeService;
         private readonly SemaphoreSlim _loadLock = new(1, 1);
 
+        private const int NivelClienteId = 10;
+
         public int CredencialId { get; private set; }
+        public long ContactoId { get; private set; }
         public int IdProveedor { get; private set; }
         public string? NombreCompleto { get; private set; }
         public string? Correo { get; private set; }
@@ -28,6 +31,7 @@ namespace Advance_Control.Services.Session
         public int Nivel { get; private set; }
         public string? TipoUsuario { get; private set; }
         public bool IsLoaded { get; private set; }
+        public bool EsUsuarioCliente => Nivel == NivelClienteId;
 
         public UserSessionService(IUserInfoService userInfoService, ILoggingService logger, IPermisoUiRuntimeService permisoUiRuntimeService)
         {
@@ -58,6 +62,7 @@ namespace Advance_Control.Services.Session
                     throw new InvalidOperationException("La API devolvió una sesión sin credencial válida.");
 
                 var credencialId = userInfo.CredencialId;
+                var contactoId = userInfo.ContactoId;
                 var idProveedor = userInfo.IdProveedor;
                 var nombreCompleto = userInfo.NombreCompleto;
                 var correo = userInfo.Correo;
@@ -65,13 +70,16 @@ namespace Advance_Control.Services.Session
                 var nivel = userInfo.Nivel;
                 var tipoUsuario = userInfo.TipoUsuario;
 
-                // Solo cargamos el catálogo (rápido). El SCAN+SYNC pesado de XAML
-                // se dispara en background fire-and-forget porque el catálogo en
-                // servidor sólo cambia cuando se publica una versión nueva del
-                // cliente; no necesita re-sincronizarse en cada login.
-                await _permisoUiRuntimeService.InitializeAsync(nivel, cancellationToken: cancellationToken);
+                // Un usuario-cliente (Nivel=10) no tiene permisos de empleado que
+                // sincronizar: el catálogo de PermisoUi es exclusivamente para el
+                // menú/acciones del MainWindow normal, que este login nunca ve.
+                if (nivel != NivelClienteId)
+                {
+                    await _permisoUiRuntimeService.InitializeAsync(nivel, cancellationToken: cancellationToken);
+                }
 
                 CredencialId = credencialId;
+                ContactoId = contactoId;
                 IdProveedor = idProveedor;
                 NombreCompleto = nombreCompleto;
                 Correo = correo;
@@ -110,6 +118,7 @@ namespace Advance_Control.Services.Session
         public void Clear()
         {
             CredencialId = 0;
+            ContactoId = 0;
             IdProveedor = 0;
             NombreCompleto = null;
             Correo = null;

@@ -81,6 +81,9 @@ namespace Advance_Control
         // Almacena la referencia a la ventana principal para acceder a XamlRoot
         public static Window? MainWindow { get; private set; }
 
+        private bool _hostShutdownStarted;
+        private readonly System.Threading.SemaphoreSlim _hostShutdownLock = new(1, 1);
+
         private static void EnsureExternalConfigurationFile()
         {
             Directory.CreateDirectory(ExternalConfigurationDirectory);
@@ -770,6 +773,26 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Registrar PortalClienteService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<Services.Portal.IPortalClienteService, Services.Portal.PortalClienteService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        if (devMode?.Enabled == true && devMode.DisableHttpTimeouts)
+                        {
+                            client.Timeout = System.Threading.Timeout.InfiniteTimeSpan;
+                        }
+                        else
+                        {
+                            client.Timeout = TimeSpan.FromSeconds(30);
+                        }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     services.AddHttpClient<Services.EstadoCuenta.IEstadoCuentaXmlService, Services.EstadoCuenta.EstadoCuentaXmlService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
@@ -1178,6 +1201,9 @@ namespace Advance_Control
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
 
+                    // Registrar ClientePortalWindow (shell restringido para usuarios-cliente, Nivel=10)
+                    services.AddTransient<Views.Portal.ClientePortalWindow>();
+
                     // Auto-updater: HttpClient sin autenticación, apunta a /client-dist/ del VPS
                     services.AddHttpClient("AutoUpdate", (sp, client) =>
                     {
@@ -1220,23 +1246,7 @@ namespace Advance_Control
 
             // Suscribirse al evento Closed de la ventana principal para detener y disponer el Host
             // Esto evita intentar sobrescribir OnExit (no disponible en WinUI 3).
-            window.Closed += async (s, e) =>
-            {
-                try
-                {
-                    AppNotificationManager.Default.Unregister();
-                    // Intentar detener el host de forma ordenada (timeout 5s)
-                    await Host.StopAsync(TimeSpan.FromSeconds(5));
-                }
-                catch
-                {
-                    // Ignorar errores durante el cierre para no bloquear la salida de la app
-                }
-                finally
-                {
-                    Host.Dispose();
-                }
-            };
+            RegisterWindowForShutdown(window);
 
             // Capturar excepciones no controladas para diagnóstico (muestra el error real en vez de crash silencioso)
             this.UnhandledException += async (sender, args) =>
@@ -1316,6 +1326,58 @@ namespace Advance_Control
                 }
                 catch { }
             });
+        }
+
+        /// <summary>
+        /// Suscribe el evento Closed de una ventana (MainWindow o ClientePortalWindow) para
+        /// que, al cerrarse, se detenga y disponga el Host de forma ordenada. Idempotente:
+        /// si el usuario cierra ambas ventanas (o la misma dos veces), el host solo se
+        /// detiene una vez.
+        /// </summary>
+        public void RegisterWindowForShutdown(Window window)
+        {
+            window.Closed += async (s, e) => await ShutdownHostAsync();
+        }
+
+        /// <summary>
+        /// Oculta (no cierra) el MainWindow con Win32 en vez de Close(): cerrarlo dispararía
+        /// el shutdown del Host (DI) del que depende ClientePortalWindow. Se usa al bifurcar
+        /// hacia el Portal de Cliente tras un login exitoso.
+        /// </summary>
+        public static void HideMainWindow()
+        {
+            if (MainWindow is null) return;
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
+            ShowWindow(hwnd, 0); // SW_HIDE
+        }
+
+        private async Task ShutdownHostAsync()
+        {
+            await _hostShutdownLock.WaitAsync();
+            try
+            {
+                if (_hostShutdownStarted) return;
+                _hostShutdownStarted = true;
+
+                try
+                {
+                    AppNotificationManager.Default.Unregister();
+                    // Intentar detener el host de forma ordenada (timeout 5s)
+                    await Host.StopAsync(TimeSpan.FromSeconds(5));
+                }
+                catch
+                {
+                    // Ignorar errores durante el cierre para no bloquear la salida de la app
+                }
+                finally
+                {
+                    Host.Dispose();
+                }
+            }
+            finally
+            {
+                _hostShutdownLock.Release();
+            }
         }
 
         /// <summary>Escribe un log de crash al archivo %TEMP%\advancecontrol_crash.log para diagnóstico cuando el diálogo falla.</summary>
