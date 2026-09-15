@@ -73,7 +73,8 @@ namespace Advance_Control.Services.Operaciones
                         .Add("incluirFacturadas", query.IncluirFacturadas ? (bool?)true : null)
                         .Add("estadoAbierta", query.EstadoAbierta)
                         .Add("estadoTFinalizado", query.EstadoTFinalizado)
-                        .Add("estadoFacturada", query.EstadoFacturada);
+                        .Add("estadoFacturada", query.EstadoFacturada)
+                        .Add("estadoAbiertasConOc", query.EstadoAbiertasConOc);
                 }
                 if (skip > 0) builder.Add("skip", skip.ToString());
                 if (take > 0) builder.Add("take", take.ToString());

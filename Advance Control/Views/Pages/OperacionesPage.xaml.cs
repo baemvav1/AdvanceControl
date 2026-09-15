@@ -199,6 +199,8 @@ namespace Advance_Control.Views.Pages
                     ViewModel.MostrarTFinalizadas = isChecked;
                 else if (checkBox == MostrarFacturadasCheckBox)
                     ViewModel.MostrarFacturadas = isChecked;
+                else if (checkBox == MostrarAbiertasConOcCheckBox)
+                    ViewModel.MostrarAbiertasConOc = isChecked;
             }
 
             await ViewModel.ApplyFiltersAsync(null /* preload eliminado: TotalMonto viene del backend */);

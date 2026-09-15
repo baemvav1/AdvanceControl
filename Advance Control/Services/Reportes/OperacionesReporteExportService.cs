@@ -231,7 +231,7 @@ namespace Advance_Control.Services.Reportes
                 $"Nota: {(string.IsNullOrWhiteSpace(filtros.NotaFiltro) ? "Sin filtro" : filtros.NotaFiltro)}",
                 $"Fecha inicio: {(filtros.FechaInicialFiltro.HasValue ? filtros.FechaInicialFiltro.Value.ToString("dd/MM/yyyy", Cultura) : "Sin límite")}",
                 $"Fecha fin: {(filtros.FechaFinalFiltro.HasValue ? filtros.FechaFinalFiltro.Value.ToString("dd/MM/yyyy", Cultura) : "Sin límite")}",
-                $"Mostrar: Abiertas={(filtros.MostrarAbiertas ? "Sí" : "No")}, T-Finalizado={(filtros.MostrarTFinalizadas ? "Sí" : "No")}, Facturadas={(filtros.MostrarFacturadas ? "Sí" : "No")}"
+                $"Mostrar: Abiertas={(filtros.MostrarAbiertas ? "Sí" : "No")}, T-Finalizado={(filtros.MostrarTFinalizadas ? "Sí" : "No")}, Facturadas={(filtros.MostrarFacturadas ? "Sí" : "No")}, Abiertas con OC={(filtros.MostrarAbiertasConOc ? "Sí" : "No")}"
             };
         }
 

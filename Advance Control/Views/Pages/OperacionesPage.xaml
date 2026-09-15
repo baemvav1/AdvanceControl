@@ -223,6 +223,12 @@
                                 IsChecked="{x:Bind ViewModel.MostrarFacturadas, Mode=TwoWay}"
                                 Checked="EstadoCheckBox_Changed"
                                 Unchecked="EstadoCheckBox_Changed" />
+                            <CheckBox
+                                x:Name="MostrarAbiertasConOcCheckBox"
+                                Content="Abiertas con OC"
+                                IsChecked="{x:Bind ViewModel.MostrarAbiertasConOc, Mode=TwoWay}"
+                                Checked="EstadoCheckBox_Changed"
+                                Unchecked="EstadoCheckBox_Changed" />
                         </StackPanel>
                     </StackPanel>
 

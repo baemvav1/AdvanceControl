@@ -69,6 +69,7 @@ namespace Advance_Control.ViewModels
         private bool _mostrarAbiertas = true;
         private bool _mostrarTFinalizadas;
         private bool _mostrarFacturadas;
+        private bool _mostrarAbiertasConOc;
 
         // Paginación
         private int _currentPage = 1;
@@ -300,6 +301,16 @@ namespace Advance_Control.ViewModels
         {
             get => _mostrarFacturadas;
             set => SetProperty(ref _mostrarFacturadas, value);
+        }
+
+        /// <summary>
+        /// 4to estado del filtro OR: operaciones abiertas, sin t-finalizado y sin
+        /// factura, que ya tienen orden de compra cargada ("listas para finalizar").
+        /// </summary>
+        public bool MostrarAbiertasConOc
+        {
+            get => _mostrarAbiertasConOc;
+            set => SetProperty(ref _mostrarAbiertasConOc, value);
         }
 
         /// <summary>
@@ -547,7 +558,8 @@ namespace Advance_Control.ViewModels
                     FechaFinalFiltro = FechaFinalFilter,
                     EstadoAbierta = MostrarAbiertas,
                     EstadoTFinalizado = MostrarTFinalizadas,
-                    EstadoFacturada = MostrarFacturadas
+                    EstadoFacturada = MostrarFacturadas,
+                    EstadoAbiertasConOc = MostrarAbiertasConOc
                 };
 
                 List<OperacionDto> filtrados;
@@ -660,7 +672,8 @@ namespace Advance_Control.ViewModels
                 FechaFinalFiltro = FechaFinalFilter,
                 EstadoAbierta = MostrarAbiertas,
                 EstadoTFinalizado = MostrarTFinalizadas,
-                EstadoFacturada = MostrarFacturadas
+                EstadoFacturada = MostrarFacturadas,
+                EstadoAbiertasConOc = MostrarAbiertasConOc
             };
 
             var todas = await _operacionService.GetOperacionesAsync(query, cancellationToken);
@@ -693,6 +706,7 @@ namespace Advance_Control.ViewModels
                 MostrarAbiertas = MostrarAbiertas,
                 MostrarTFinalizadas = MostrarTFinalizadas,
                 MostrarFacturadas = MostrarFacturadas,
+                MostrarAbiertasConOc = MostrarAbiertasConOc,
                 GeneradoPor = _userSessionService.NombreCompleto
             };
 
@@ -725,6 +739,7 @@ namespace Advance_Control.ViewModels
                 MostrarAbiertas = true;
                 MostrarTFinalizadas = false;
                 MostrarFacturadas = false;
+                MostrarAbiertasConOc = false;
                 _clienteSugerencias.Clear();
                 _equipoSugerencias.Clear();
                 _areaSugerencias.Clear();

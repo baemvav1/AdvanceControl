@@ -20,6 +20,7 @@ namespace Advance_Control.Services.Reportes
         public bool MostrarAbiertas { get; set; }
         public bool MostrarTFinalizadas { get; set; }
         public bool MostrarFacturadas { get; set; }
+        public bool MostrarAbiertasConOc { get; set; }
         public string? GeneradoPor { get; set; }
     }
 }

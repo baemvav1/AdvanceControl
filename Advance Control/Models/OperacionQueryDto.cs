@@ -69,5 +69,11 @@ namespace Advance_Control.Models
         public bool? EstadoAbierta { get; set; }
         public bool? EstadoTFinalizado { get; set; }
         public bool? EstadoFacturada { get; set; }
+
+        /// <summary>
+        /// 4to estado del filtro OR ("Abiertas con OC"): operaciones abiertas, sin
+        /// t_finalizado y sin factura, que ya tienen orden de compra cargada.
+        /// </summary>
+        public bool? EstadoAbiertasConOc { get; set; }
     }
 }
