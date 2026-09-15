@@ -16,6 +16,8 @@ using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.CheckOperacion;
+using Advance_Control.Services.Reportes;
+using Advance_Control.Services.Session;
 
 namespace Advance_Control.ViewModels
 {
@@ -42,6 +44,8 @@ namespace Advance_Control.ViewModels
         private readonly ICheckOperacionService _checkService;
         private readonly IAreasService _areasService;
         private readonly Services.Facturas.IFacturaService _facturaService;
+        private readonly IOperacionesReporteExportService _reporteOperacionesService;
+        private readonly IUserSessionService _userSessionService;
         private ObservableCollection<OperacionDto> _operaciones;
         private ObservableCollection<AreaDto> _areas;
         private ObservableCollection<string> _clienteSugerencias;
@@ -79,7 +83,7 @@ namespace Advance_Control.ViewModels
         // más reciente de los filtros, apenas termine la que está en curso.
         private bool _reloadPending;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService, Services.Facturas.IFacturaService facturaService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService, Services.Facturas.IFacturaService facturaService, IOperacionesReporteExportService reporteOperacionesService, IUserSessionService userSessionService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
             _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
@@ -92,6 +96,8 @@ namespace Advance_Control.ViewModels
             _checkService      = checkService      ?? throw new ArgumentNullException(nameof(checkService));
             _areasService      = areasService      ?? throw new ArgumentNullException(nameof(areasService));
             _facturaService    = facturaService    ?? throw new ArgumentNullException(nameof(facturaService));
+            _reporteOperacionesService = reporteOperacionesService ?? throw new ArgumentNullException(nameof(reporteOperacionesService));
+            _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             _operaciones         = new ObservableCollection<OperacionDto>();
             _areas               = new ObservableCollection<AreaDto>();
             _clienteSugerencias  = new ObservableCollection<string>();
@@ -633,6 +639,64 @@ namespace Advance_Control.ViewModels
                     _ = LoadOperacionesAsync(onBeforeCommit, cancellationToken);
                 }
             }
+        }
+
+        /// <summary>
+        /// Genera el PDF de "Reporte General de Operaciones" con TODO el conjunto
+        /// filtrado (no solo la página en pantalla) y los checks de checks_operacion
+        /// de cada una, para exigir resultados al operador. Devuelve la ruta del PDF.
+        /// </summary>
+        public async Task<string> GenerarReporteOperacionesAsync(CancellationToken cancellationToken = default)
+        {
+            var query = new OperacionQueryDto
+            {
+                IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+                IdTipo = IdTipoFilter,
+                IdCliente = IdClienteFilter,
+                IdEquipo = IdEquipoFilter,
+                IdAtiende = IdAtiendeFilter,
+                Nota = NotaFilter,
+                FechaInicial = FechaInicialFilter,
+                FechaFinalFiltro = FechaFinalFilter,
+                EstadoAbierta = MostrarAbiertas,
+                EstadoTFinalizado = MostrarTFinalizadas,
+                EstadoFacturada = MostrarFacturadas
+            };
+
+            var todas = await _operacionService.GetOperacionesAsync(query, cancellationToken);
+
+            if (SelectedAreaFilter != null)
+            {
+                // Mismo filtrado client-side por área que usa LoadOperacionesAsync.
+                var ids = await _areasService.GetIdentificadoresEnAreaAsync(SelectedAreaFilter.IdArea, cancellationToken);
+                var set = new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+                todas = todas
+                    .Where(o => !string.IsNullOrEmpty(o.Identificador) && set.Contains(o.Identificador))
+                    .ToList();
+            }
+
+            foreach (var operacion in todas)
+                operacion.BuildCheckFromInlineFields();
+
+            await AplicarEstadoFacturacionAsync(todas, cancellationToken);
+
+            var filtros = new OperacionesReporteFiltrosDto
+            {
+                IdOperacionFiltro = IdOperacionFilter,
+                TipoFiltro = IdTipoFilter switch { 1 => "Correctivo", 2 => "Preventivo", _ => "Todos" },
+                ClienteFiltro = SelectedClienteText,
+                EquipoFiltro = SelectedEquipoText,
+                AreaFiltro = SelectedAreaFilter?.Nombre,
+                NotaFiltro = NotaFilter,
+                FechaInicialFiltro = FechaInicialFilter,
+                FechaFinalFiltro = FechaFinalFilter,
+                MostrarAbiertas = MostrarAbiertas,
+                MostrarTFinalizadas = MostrarTFinalizadas,
+                MostrarFacturadas = MostrarFacturadas,
+                GeneradoPor = _userSessionService.NombreCompleto
+            };
+
+            return await _reporteOperacionesService.GenerarReporteOperacionesPdfAsync(todas, filtros);
         }
 
         public async Task<OperacionVisorAccessDto?> GetOperacionVisorAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)

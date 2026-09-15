@@ -42,12 +42,11 @@
                 x:Name="ToggleFiltrosButton"
                 Click="ToggleFiltros_Click"
                 Content="Filtros" />
-            <!--
-                Button
+            <Button
                 x:Name="ReporteGeneralButton"
                 Click="ReporteGeneral_Click"
-                Content="Reporte General" /
-            -->
+                Content="Generar Reporte"
+                ToolTipService.ToolTip="Genera un PDF con todas las operaciones que cumplen los filtros actuales y qué checks tiene marcados cada una" />
         </StackPanel>
 
         <!--  Filtros  -->

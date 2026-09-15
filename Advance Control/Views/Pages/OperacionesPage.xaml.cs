@@ -96,6 +96,33 @@ namespace Advance_Control.Views.Pages
                 : Visibility.Visible;
         }
 
+        private async void ReporteGeneral_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button boton) return;
+
+            try
+            {
+                boton.IsEnabled = false;
+                var rutaArchivo = await ViewModel.GenerarReporteOperacionesAsync();
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _notificacionService.MostrarAsync("Sin operaciones", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await _notificacionService.MostrarAsync("Error al generar reporte", $"No se pudo generar el reporte: {ex.Message}");
+            }
+            finally
+            {
+                boton.IsEnabled = true;
+            }
+        }
+
         // --- Handlers AutoSuggestBox Cliente ---
         private void ClienteASB_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
