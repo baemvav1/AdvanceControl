@@ -49,7 +49,7 @@ namespace Advance_Control.Services.Reportes
             var totalAbiertas = filas.Count(o => !o.IsFinalized);
             var totalTFinalizado = filas.Count(o => o.TFinalizado);
             var totalFacturadas = filas.Count(o => o.EstaFacturada);
-            var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "EstadoCuenta.png");
+            var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "Reporte.png");
 
             var documento = Document.Create(container =>
             {
