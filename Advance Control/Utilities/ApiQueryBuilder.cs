@@ -45,6 +45,17 @@ namespace Advance_Control.Utilities
             return this;
         }
 
+        /// <summary>Agrega un parámetro repetido por cada elemento (key=1&amp;key=2&amp;...), para binding de arrays en ASP.NET Core.</summary>
+        public ApiQueryBuilder Add(string key, IEnumerable<int>? values)
+        {
+            if (values != null)
+            {
+                foreach (var v in values)
+                    _params.Add($"{key}={v}");
+            }
+            return this;
+        }
+
         // ── Numéricos con decimales (siempre InvariantCulture) ────────────────
         public ApiQueryBuilder Add(string key, double? value)
         {

@@ -59,9 +59,7 @@ namespace Advance_Control.Views.Pages
             if (string.IsNullOrWhiteSpace(e.PropertyName)
                 || e.PropertyName == nameof(ConciliacionViewModel.IsConciliacionAutomaticaEnProceso)
                 || e.PropertyName == nameof(ConciliacionViewModel.ConciliacionPanelHabilitado)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomatica)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaConvinacional)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanEjecutarConciliacionAutomaticaAbonos)
+                || e.PropertyName == nameof(ConciliacionViewModel.CanIniciarConciliacionAutomatica)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerUltimaOperacionConciliacion)
                 || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerTodasOperacionesConciliacion))
             {
@@ -71,9 +69,11 @@ namespace Advance_Control.Views.Pages
 
         private void ActualizarEstadoConciliacionAutomatica()
         {
-            BtnConciliacionAutomatica.IsEnabled = ViewModel.CanEjecutarConciliacionAutomatica;
-            BtnConciliacionAutomaticaConvinacional.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaConvinacional;
-            BtnConciliacionAutomaticaAbonos.IsEnabled = ViewModel.CanEjecutarConciliacionAutomaticaAbonos;
+            var puedeIniciar = ViewModel.CanIniciarConciliacionAutomatica;
+            BtnCheques.IsEnabled = puedeIniciar;
+            BtnConciliacion.IsEnabled = puedeIniciar;
+            BtnCombinacion.IsEnabled = puedeIniciar;
+            BtnAbonos.IsEnabled = puedeIniciar;
             BtnDeshacerUltimo.IsEnabled = ViewModel.CanDeshacerUltimaOperacionConciliacion;
             BtnDeshacerTodo.IsEnabled = ViewModel.CanDeshacerTodasOperacionesConciliacion;
             ConciliacionPanelGrid.IsHitTestVisible = ViewModel.ConciliacionPanelHabilitado;
@@ -225,9 +225,46 @@ namespace Advance_Control.Views.Pages
             await ViewModel.AbonarMovimientoCargadoAsync();
         }
 
-        private async void BtnConciliacionAutomatica_Click(object sender, RoutedEventArgs e)
+        // Botón del motor completo (recorre los 9 pasos en una sola secuencia automática)
+        // deshabilitado temporalmente en el XAML: se trababa la UI. Handler comentado para
+        // retomarlo más adelante -- el resto del código (EjecutarConciliacionAutomaticaAsync,
+        // ConfirmacionConciliacionWindow sin parámetros) sigue intacto.
+        // private async void BtnConciliacionAutomatica_Click(object sender, RoutedEventArgs e)
+        // {
+        //     await EjecutarConciliacionAutomaticaAsync();
+        // }
+
+        private async void BtnCheques_Click(object sender, RoutedEventArgs e) =>
+            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Cheques);
+
+        private async void BtnConciliacion_Click(object sender, RoutedEventArgs e) =>
+            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Automatica);
+
+        private async void BtnCombinacion_Click(object sender, RoutedEventArgs e) =>
+            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Combinacional);
+
+        private async void BtnAbonos_Click(object sender, RoutedEventArgs e) =>
+            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Abonos);
+
+        /// <summary>Abre el visor para un único paso/modo, usando los toggles actuales de la página.</summary>
+        private async Task AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo modo)
         {
-            await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.Automatica);
+            ViewModel.IsConciliacionAutomaticaEnProceso = true;
+            try
+            {
+                var ventana = new ConfirmacionConciliacionWindow(modo, ViewModel.AplicarReglaPueMismoMes, ViewModel.UsarRfcComoRegla);
+                ventana.Activate();
+
+                var aprobadas = await ventana.ResultTask;
+                if (aprobadas is { Count: > 0 })
+                {
+                    await ViewModel.CargarDatosAsync();
+                }
+            }
+            finally
+            {
+                ViewModel.IsConciliacionAutomaticaEnProceso = false;
+            }
         }
 
         private void BtnLimpiarFiltrosMovimientos_Click(object sender, RoutedEventArgs e)
@@ -240,16 +277,6 @@ namespace Advance_Control.Views.Pages
             ViewModel.LimpiarFiltrosFacturas();
         }
 
-        private async void BtnConciliacionAutomaticaConvinacional_Click(object sender, RoutedEventArgs e)
-        {
-            await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.Combinacional);
-        }
-
-        private async void BtnConciliacionAutomaticaAbonos_Click(object sender, RoutedEventArgs e)
-        {
-            await AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo.Abonos);
-        }
-
         private async void BtnDeshacerUltimo_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.DeshacerUltimaOperacionConciliacionAsync();
@@ -260,19 +287,26 @@ namespace Advance_Control.Views.Pages
             await ViewModel.DeshacerTodasOperacionesConciliacionAsync();
         }
 
-        private async Task AbrirVentanaConciliacionAutomaticaAsync(ConciliacionAutomaticaModo modo)
-        {
-            var ventana = new ConfirmacionConciliacionWindow(
-                modo,
-                ViewModel.AplicarReglaPueMismoMes,
-                ViewModel.UsarRfcComoRegla);
-            ventana.Activate();
-
-            var aprobadas = await ventana.ResultTask;
-            if (aprobadas is { Count: > 0 })
-            {
-                await ViewModel.CargarDatosAsync();
-            }
-        }
+        // Motor completo (los 9 pasos en una sola secuencia automática) -- comentado junto con
+        // BtnConciliacionAutomatica_Click de arriba mientras se investiga por qué trababa la UI.
+        // private async Task EjecutarConciliacionAutomaticaAsync()
+        // {
+        //     ViewModel.IsConciliacionAutomaticaEnProceso = true;
+        //     try
+        //     {
+        //         var ventana = new ConfirmacionConciliacionWindow();
+        //         ventana.Activate();
+        //
+        //         var aprobadas = await ventana.ResultTask;
+        //         if (aprobadas is { Count: > 0 })
+        //         {
+        //             await ViewModel.CargarDatosAsync();
+        //         }
+        //     }
+        //     finally
+        //     {
+        //         ViewModel.IsConciliacionAutomaticaEnProceso = false;
+        //     }
+        // }
     }
 }

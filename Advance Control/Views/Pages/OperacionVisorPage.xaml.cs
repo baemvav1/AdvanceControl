@@ -36,7 +36,7 @@ namespace Advance_Control.Views.Pages
     /// <summary>
     /// Página visor para gestionar una operación con tres paneles:
     /// información + acciones/documentos (izquierdo), cargos (central) y tareas (derecho).
-    /// Reemplaza a OperacionVisorWindow para funcionar dentro del frame de navegación principal.
+    /// Se aloja en su propia ventana (ver OperacionVisorWindow / OperacionVisorNavigator).
     /// </summary>
     public sealed partial class OperacionVisorPage : Microsoft.UI.Xaml.Controls.Page
     {
@@ -66,6 +66,12 @@ namespace Advance_Control.Views.Pages
 
         /// <summary>La operación que se visualiza en esta página.</summary>
         public OperacionDto Operacion { get; private set; } = null!;
+
+        /// <summary>
+        /// Ventana propia que hospeda esta página (ver OperacionVisorWindow). Al no haber
+        /// pila de navegación (Frame.CanGoBack = false), "Volver" cierra esta ventana.
+        /// </summary>
+        internal Window? HostWindow { get; set; }
 
         /// <summary>Formateador de moneda MXN para el NumberBox de total.</summary>
         public INumberFormatter2 CurrencyFormatter { get; }
@@ -142,8 +148,7 @@ namespace Advance_Control.Views.Pages
                         await MostrarErrorAsync("Acceso no disponible", ex is UnauthorizedAccessException
                             ? ex.Message
                             : "No se pudo abrir la operación solicitada.");
-                        if (Frame.CanGoBack)
-                            Frame.GoBack();
+                        CerrarVisor();
                     }
                 }
             };
@@ -198,11 +203,15 @@ namespace Advance_Control.Views.Pages
             return false;
         }
 
-        /// <summary>Navega de vuelta a la lista de operaciones.</summary>
-        private void VolverButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>Cierra el visor: vuelve atrás si hay pila de navegación, o cierra la ventana.</summary>
+        private void VolverButton_Click(object sender, RoutedEventArgs e) => CerrarVisor();
+
+        private void CerrarVisor()
         {
             if (Frame.CanGoBack)
                 Frame.GoBack();
+            else
+                HostWindow?.Close();
         }
 
         private async void CompartirOperacionButton_Click(object sender, RoutedEventArgs e)

@@ -26,7 +26,8 @@ namespace Advance_Control.Views.Dialogs
         // Referencia al HyperlinkButton del folio cuyo Flyout está abierto actualmente
         private HyperlinkButton? _btnFolioActivo;
 
-        public event Action<ConciliacionMatchPropuestaDto>? PropuestaAbonosDescartada;
+        /// <summary>Se dispara al desmarcar cualquier propuesta (1 a 1, combinacional o abonos).</summary>
+        public event Action<ConciliacionMatchPropuestaDto>? PropuestaDescartada;
         public event Action<ConciliacionAbonoMovimientoItemDto>? MovimientoAbonosDescartado;
 
         public bool EsModoAbonos => _modoAbonos;
@@ -90,20 +91,24 @@ namespace Advance_Control.Views.Dialogs
 
         private void PropuestaCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (_suspendiendoEventos || !_modoAbonos)
+            if (_suspendiendoEventos)
             {
                 return;
             }
 
             if (sender is CheckBox { DataContext: ConciliacionMatchPropuestaDto propuesta })
             {
-                PropuestaAbonosDescartada?.Invoke(propuesta);
+                PropuestaDescartada?.Invoke(propuesta);
             }
         }
 
         private void BtnDescartarMovimientoAbono_Click(object sender, RoutedEventArgs e)
         {
-            if (_suspendiendoEventos || !_modoAbonos)
+            // Este boton solo existe en la plantilla visual de filas tipo "Abonos"
+            // (Visibility={x:Bind EsAbonos...}), asi que no hace falta condicionar por
+            // el modo del paso completo -- un paso combinado (Cheques) puede mostrar
+            // filas de otros tipos junto a filas de Abonos.
+            if (_suspendiendoEventos)
             {
                 return;
             }

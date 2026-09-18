@@ -20,6 +20,7 @@ using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Activity;
 using Advance_Control.Services.SatCatalogo;
+using Advance_Control.Services.Suscripciones;
 using Advance_Control.Models;
 using Advance_Control.Views.Dialogs;
 using Advance_Control.Utilities;
@@ -39,6 +40,7 @@ namespace Advance_Control.Views.Pages
         private readonly ILoggingService _loggingService;
         private readonly IContactoService _contactoService;
         private readonly IActivityService _activityService;
+        private readonly IContratoSuscripcionService _contratoSuscripcionService;
 
         public ClientesPage()
         {
@@ -56,6 +58,9 @@ namespace Advance_Control.Views.Pages
 
             // Resolver el servicio de actividades desde DI
             _activityService = AppServices.Get<IActivityService>();
+
+            // Resolver el servicio de contratos de suscripción desde DI
+            _contratoSuscripcionService = AppServices.Get<IContratoSuscripcionService>();
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(ClientesPage));
@@ -194,12 +199,177 @@ namespace Advance_Control.Views.Pages
             if (sender is FrameworkElement element && element.Tag is Models.CustomerDto customer)
             {
                 customer.Expand = !customer.Expand;
-                
+
                 // Load contactos when expanding if not already loaded
                 if (customer.Expand && !customer.ContactosLoaded)
                 {
                     await LoadContactosForClienteAsync(customer);
                 }
+
+                // Load suscripcion when expanding if not already loaded
+                if (customer.Expand && !customer.SuscripcionCargada)
+                {
+                    await LoadSuscripcionForClienteAsync(customer);
+                }
+            }
+        }
+
+        private async System.Threading.Tasks.Task LoadSuscripcionForClienteAsync(Models.CustomerDto cliente)
+        {
+            if (cliente.IsLoadingSuscripcion)
+                return;
+
+            try
+            {
+                cliente.IsLoadingSuscripcion = true;
+
+                var contratos = await _contratoSuscripcionService.GetContratosAsync(cliente.IdCliente);
+                cliente.Suscripcion = contratos.OrderByDescending(c => c.Id).FirstOrDefault();
+                cliente.SuscripcionCargada = true;
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al cargar la suscripción del cliente", ex, "ClientesPage", "LoadSuscripcionForClienteAsync");
+                cliente.SuscripcionCargada = true;
+            }
+            finally
+            {
+                cliente.IsLoadingSuscripcion = false;
+            }
+        }
+
+        private async void GenerarContratoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.CustomerDto cliente)
+                return;
+
+            var seleccionarNivelControl = new SeleccionarNivelSuscripcionUserControl();
+            var seleccionarDialog = new ContentDialog
+            {
+                Title = "Generar contrato de suscripción",
+                Content = seleccionarNivelControl,
+                PrimaryButtonText = "Continuar",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var seleccionarResult = await seleccionarDialog.ShowAsync();
+            if (seleccionarResult != ContentDialogResult.Primary || string.IsNullOrEmpty(seleccionarNivelControl.NivelSeleccionado))
+                return;
+
+            var generarControl = new GenerarContratoUserControl(seleccionarNivelControl.NivelSeleccionado, cliente.IdCliente, cliente.RazonSocial, null);
+            var generarDialog = new ContentDialog
+            {
+                Title = $"Contrato {seleccionarNivelControl.NivelSeleccionado} — {cliente.RazonSocial}",
+                Content = generarControl,
+                CloseButtonText = "Cerrar",
+                XamlRoot = this.XamlRoot
+            };
+            generarControl.CloseDialogAction = () => generarDialog.Hide();
+
+            await generarDialog.ShowAsync();
+
+            if (generarControl.GeneradoExitosamente)
+            {
+                cliente.SuscripcionCargada = false;
+                await LoadSuscripcionForClienteAsync(cliente);
+                await _notificacionService.MostrarAsync("Contrato generado", "El contrato de suscripción se generó y guardó correctamente.");
+            }
+        }
+
+        private async void CargarDocumentoFirmadoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.CustomerDto cliente || cliente.Suscripcion == null)
+                return;
+
+            var picker = new global::Windows.Storage.Pickers.FileOpenPicker();
+            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(App.MainWindow);
+            WinRT.Interop.InitializeWithWindow.Initialize(picker, hwnd);
+            picker.FileTypeFilter.Add(".pdf");
+            picker.FileTypeFilter.Add(".jpg");
+            picker.FileTypeFilter.Add(".jpeg");
+            picker.FileTypeFilter.Add(".png");
+
+            var file = await picker.PickSingleFileAsync();
+            if (file == null) return;
+
+            try
+            {
+                var contratoDocumentoService = AppServices.Get<Services.LocalStorage.IContratoDocumentoService>();
+                var contentType = file.FileType.ToLowerInvariant() switch
+                {
+                    ".pdf" => "application/pdf",
+                    ".png" => "image/png",
+                    _ => "image/jpeg"
+                };
+
+                await using var stream = await file.OpenStreamForReadAsync();
+                var url = await contratoDocumentoService.SubirFirmadoAsync(cliente.Suscripcion.Id, stream, contentType);
+
+                if (string.IsNullOrWhiteSpace(url))
+                {
+                    await _notificacionService.MostrarAsync("Error", "No se pudo subir el documento firmado.");
+                    return;
+                }
+
+                var marcado = await _contratoSuscripcionService.MarcarFirmadoAsync(cliente.Suscripcion.Id, url);
+                if (marcado)
+                {
+                    cliente.SuscripcionCargada = false;
+                    await LoadSuscripcionForClienteAsync(cliente);
+                    await _notificacionService.MostrarAsync("Documento cargado", "El documento firmado se cargó correctamente y el contrato quedó marcado como firmado.");
+                }
+                else
+                {
+                    await _notificacionService.MostrarAsync("Error", "El documento se subió pero no se pudo marcar el contrato como firmado.");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync("Error al cargar documento firmado", ex, "ClientesPage", "CargarDocumentoFirmadoButton_Click");
+                await _notificacionService.MostrarAsync("Error", "Ocurrió un error al cargar el documento firmado.");
+            }
+        }
+
+        private async void VerPdfGeneradoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.Tag is Models.CustomerDto cliente && cliente.Suscripcion?.PdfGeneradoUrl != null)
+            {
+                await AbrirUrlAsync(cliente.Suscripcion.PdfGeneradoUrl);
+            }
+        }
+
+        private async void VerDocumentoFirmadoButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement element && element.Tag is Models.CustomerDto cliente && cliente.Suscripcion?.PdfFirmadoUrl != null)
+            {
+                await AbrirUrlAsync(cliente.Suscripcion.PdfFirmadoUrl);
+            }
+        }
+
+        private void GenerarFacturaIgualaButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.CustomerDto cliente || cliente.Suscripcion == null)
+                return;
+
+            var periodo = DateTime.Now.ToString("yyyy-MM");
+            var ventana = new Views.Windows.TimbrarIgualaWindow(cliente.Suscripcion, cliente, periodo);
+            ventana.Activate();
+        }
+
+        private async System.Threading.Tasks.Task AbrirUrlAsync(string url)
+        {
+            try
+            {
+                if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                {
+                    await global::Windows.System.Launcher.LaunchUriAsync(uri);
+                }
+            }
+            catch (Exception ex)
+            {
+                await _loggingService.LogErrorAsync($"No se pudo abrir la URL {url}", ex, "ClientesPage", "AbrirUrlAsync");
             }
         }
 

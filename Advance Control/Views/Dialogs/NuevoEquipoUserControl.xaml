@@ -30,6 +30,13 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <TextBlock
@@ -140,17 +147,82 @@
             Text="{x:Bind ViewModel.Descripcion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
             TextWrapping="Wrap" />
 
+        <TextBlock
+            Grid.Row="14"
+            Margin="4"
+            FontWeight="SemiBold"
+            Text="Controlador:" />
+        <TextBox
+            x:Name="ControladorTextBox"
+            Grid.Row="15"
+            Width="300"
+            Margin="4,4,4,12"
+            PlaceholderText="Controlador del equipo (opcional)"
+            Text="{x:Bind ViewModel.Controlador, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="16"
+            Margin="4"
+            FontWeight="SemiBold"
+            Text="Tipo de Puerta:" />
+        <TextBox
+            x:Name="TipoPuertaTextBox"
+            Grid.Row="17"
+            Width="300"
+            Margin="4,4,4,12"
+            PlaceholderText="Tipo de puerta (opcional)"
+            Text="{x:Bind ViewModel.TipoPuerta, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="18"
+            Margin="4"
+            FontWeight="SemiBold"
+            Text="Velocidad:" />
+        <TextBox
+            x:Name="VelocidadTextBox"
+            Grid.Row="19"
+            Width="300"
+            Margin="4,4,4,12"
+            PlaceholderText="Velocidad del equipo (opcional)"
+            Text="{x:Bind ViewModel.Velocidad, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="20"
+            Margin="4"
+            FontWeight="SemiBold"
+            Text="Tipo de Máquina:" />
+        <TextBox
+            x:Name="TipoMaquinaTextBox"
+            Grid.Row="21"
+            Width="300"
+            Margin="4,4,4,12"
+            PlaceholderText="Tipo de máquina (opcional)"
+            Text="{x:Bind ViewModel.TipoMaquina, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+        <TextBlock
+            Grid.Row="22"
+            Margin="4"
+            FontWeight="SemiBold"
+            Text="Operador:" />
+        <TextBox
+            x:Name="OperadorTextBox"
+            Grid.Row="23"
+            Width="300"
+            Margin="4,4,4,12"
+            PlaceholderText="Operador del equipo (opcional)"
+            Text="{x:Bind ViewModel.Operador, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
         <!--  Error Message Display  -->
         <InfoBar
             x:Name="ErrorInfoBar"
-            Grid.Row="14"
+            Grid.Row="24"
             Margin="4,0,4,12"
             IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
             Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
             Severity="Error" />
 
         <StackPanel
-            Grid.Row="15"
+            Grid.Row="25"
             Margin="4"
             HorizontalAlignment="Right"
             Orientation="Horizontal"

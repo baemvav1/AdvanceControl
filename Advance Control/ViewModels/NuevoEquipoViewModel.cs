@@ -20,6 +20,11 @@ namespace Advance_Control.ViewModels
         private string _identificador = string.Empty;
         private bool _estatus = true;
         private int? _idUbicacion = null;
+        private string _controlador = string.Empty;
+        private string _tipoPuerta = string.Empty;
+        private string _velocidad = string.Empty;
+        private string _tipoMaquina = string.Empty;
+        private string _operador = string.Empty;
         private string _errorMessage = string.Empty;
 
         public NuevoEquipoViewModel(ILoggingService logger)
@@ -187,6 +192,51 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Controlador del equipo
+        /// </summary>
+        public string Controlador
+        {
+            get => _controlador;
+            set => SetProperty(ref _controlador, value);
+        }
+
+        /// <summary>
+        /// Tipo de puerta del equipo
+        /// </summary>
+        public string TipoPuerta
+        {
+            get => _tipoPuerta;
+            set => SetProperty(ref _tipoPuerta, value);
+        }
+
+        /// <summary>
+        /// Velocidad del equipo
+        /// </summary>
+        public string Velocidad
+        {
+            get => _velocidad;
+            set => SetProperty(ref _velocidad, value);
+        }
+
+        /// <summary>
+        /// Tipo de máquina del equipo
+        /// </summary>
+        public string TipoMaquina
+        {
+            get => _tipoMaquina;
+            set => SetProperty(ref _tipoMaquina, value);
+        }
+
+        /// <summary>
+        /// Operador del equipo
+        /// </summary>
+        public string Operador
+        {
+            get => _operador;
+            set => SetProperty(ref _operador, value);
+        }
+
+        /// <summary>
         /// Mensaje de error para mostrar al usuario
         /// </summary>
         public string ErrorMessage
@@ -267,6 +317,11 @@ namespace Advance_Control.ViewModels
             Identificador = string.Empty;
             Estatus = true;
             IdUbicacion = null;
+            Controlador = string.Empty;
+            TipoPuerta = string.Empty;
+            Velocidad = string.Empty;
+            TipoMaquina = string.Empty;
+            Operador = string.Empty;
             ErrorMessage = string.Empty;
         }
     }

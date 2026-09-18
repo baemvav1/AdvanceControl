@@ -49,6 +49,11 @@ namespace Advance_Control.Services.Equipos
                         .Add("descripcion", query.Descripcion)
                         .Add("identificador", query.Identificador)
                         .Add("idUbicacion", query.IdUbicacion)
+                        .Add("controlador", query.Controlador)
+                        .Add("tipoPuerta", query.TipoPuerta)
+                        .Add("velocidad", query.Velocidad)
+                        .Add("tipoMaquina", query.TipoMaquina)
+                        .Add("operador", query.Operador)
                         .Build(url);
                 }
 
@@ -180,6 +185,11 @@ namespace Advance_Control.Services.Equipos
                     .Add("descripcion", query.Descripcion)
                     .Add("identificador", query.Identificador)
                     .Add("idUbicacion", query.IdUbicacion)
+                    .Add("controlador", query.Controlador)
+                    .Add("tipoPuerta", query.TipoPuerta)
+                    .Add("velocidad", query.Velocidad)
+                    .Add("tipoMaquina", query.TipoMaquina)
+                    .Add("operador", query.Operador)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando equipo {id} en: {url}", "EquipoService", "UpdateEquipoAsync");
@@ -232,7 +242,7 @@ namespace Advance_Control.Services.Equipos
         /// <summary>
         /// Crea un nuevo equipo
         /// </summary>
-        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, int? idUbicacion = null, CancellationToken cancellationToken = default)
+        public async Task<bool> CreateEquipoAsync(string marca, int creado = 0, int paradas = 0, int kilogramos = 0, int personas = 0, string? descripcion = null, string identificador = "", bool estatus = true, int? idUbicacion = null, string? controlador = null, string? tipoPuerta = null, string? velocidad = null, string? tipoMaquina = null, string? operador = null, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -250,6 +260,11 @@ namespace Advance_Control.Services.Equipos
                     .AddRequired("estatus", estatus)
                     .Add("descripcion", descripcion)
                     .Add("idUbicacion", idUbicacion)
+                    .Add("controlador", controlador)
+                    .Add("tipoPuerta", tipoPuerta)
+                    .Add("velocidad", velocidad)
+                    .Add("tipoMaquina", tipoMaquina)
+                    .Add("operador", operador)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Creando equipo en: {url}", "EquipoService", "CreateEquipoAsync");

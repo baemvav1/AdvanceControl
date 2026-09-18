@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Rules;
 
@@ -9,6 +11,8 @@ namespace Advance_Control.Services.Conciliacion
     public sealed class ConciliacionMatchingEngine
     {
         private readonly ConciliacionRules _rules;
+
+        public int TiempoLimitePorFacturaSegundos => _rules.Abonos.TiempoLimitePorFacturaSegundos;
 
         public ConciliacionMatchingEngine(IConciliacionRulesProvider rulesProvider)
             : this(rulesProvider?.GetCurrentRules() ?? throw new ArgumentNullException(nameof(rulesProvider)))
@@ -124,49 +128,177 @@ namespace Advance_Control.Services.Conciliacion
             IReadOnlyList<ConciliacionMovimientoResumenDto> movimientosDisponibles,
             FacturaResumenDto facturaObjetivo,
             decimal saldoFactura,
-            bool aplicarReglaPueMismoMes = true,
-            bool limitarCandidatos = true)
+            bool aplicarReglaPueMismoMes = true)
         {
-            var query = movimientosDisponibles
+            // Sin tope: el motor (BuscarCombinacionMovimientosParaFactura) decide internamente
+            // si usa backtracking exacto o meet-in-the-middle segun cuantos candidatos haya,
+            // en vez de descartar candidatos legitimos de antemano.
+            return movimientosDisponibles
                 .Where(movimiento =>
                     decimal.Round(movimiento.Abono, 2) > 0
                     && decimal.Round(movimiento.Abono, 2) <= decimal.Round(saldoFactura, 2)
                     && EsMovimientoCompatibleSegunMetodoPago(facturaObjetivo, movimiento.Fecha, aplicarReglaPueMismoMes))
                 .OrderBy(movimiento => Math.Abs((movimiento.Fecha - facturaObjetivo.Fecha).Ticks))
                 .ThenBy(movimiento => movimiento.Fecha)
-                .ThenBy(movimiento => movimiento.IdMovimiento);
-
-            return limitarCandidatos
-                ? query.Take(_rules.Abonos.MaximoMovimientosCandidatos).ToList()
-                : query.ToList();
+                .ThenBy(movimiento => movimiento.IdMovimiento)
+                .ToList();
         }
 
+        /// <summary>
+        /// Busca la mejor combinacion exacta de movimientos que sume el monto objetivo
+        /// (fecha mas cercana a la factura, luego menos movimientos). Hasta
+        /// <see cref="ConciliacionAbonosRules.UmbralBusquedaExhaustiva"/> candidatos usa
+        /// backtracking exhaustivo de un solo hilo; por encima usa busqueda
+        /// "meet-in-the-middle" en paralelo para no truncar candidatos ni colgar la UI.
+        /// </summary>
         public List<ConciliacionMovimientoResumenDto>? BuscarCombinacionMovimientosParaFactura(
             IReadOnlyList<ConciliacionMovimientoResumenDto> movimientos,
             decimal montoObjetivo,
-            DateTime fechaFactura)
+            DateTime fechaFactura,
+            CancellationToken ct = default)
         {
             if (movimientos.Count < _rules.Abonos.MinimoMovimientosPorCombinacion || montoObjetivo <= 0)
             {
                 return null;
             }
 
-            var combinacionActual = new List<ConciliacionMovimientoResumenDto>();
+            if (movimientos.Count <= _rules.Abonos.UmbralBusquedaExhaustiva)
+            {
+                var combinacionActual = new List<ConciliacionMovimientoResumenDto>();
+                List<ConciliacionMovimientoResumenDto>? mejorCombinacion = null;
+                long mejorScore = long.MaxValue;
+                long iteraciones = 0;
+
+                BuscarCombinacionMovimientosRecursiva(
+                    movimientos,
+                    montoObjetivo,
+                    fechaFactura,
+                    0,
+                    0m,
+                    combinacionActual,
+                    ref mejorCombinacion,
+                    ref mejorScore,
+                    ref iteraciones,
+                    ct);
+
+                return mejorCombinacion;
+            }
+
+            return BuscarCombinacionMovimientosMeetInTheMiddle(movimientos, montoObjetivo, fechaFactura, ct);
+        }
+
+        /// <summary>
+        /// Divide los candidatos en dos mitades, enumera todos los subconjuntos de cada una
+        /// en paralelo (con poda: descarta en cuanto la suma parcial supera el objetivo) y
+        /// combina los resultados buscando el complemento exacto. Como el score de cercania
+        /// de fecha es aditivo por movimiento, conservar solo la mejor combinacion por cada
+        /// suma alcanzable en cada mitad es exacto (no una aproximacion): para una suma total
+        /// fija, minimizar el score de cada mitad por separado minimiza el score combinado.
+        /// </summary>
+        private List<ConciliacionMovimientoResumenDto>? BuscarCombinacionMovimientosMeetInTheMiddle(
+            IReadOnlyList<ConciliacionMovimientoResumenDto> movimientos,
+            decimal montoObjetivo,
+            DateTime fechaFactura,
+            CancellationToken ct)
+        {
+            var objetivoCentavos = MontoACentavos(montoObjetivo);
+            var mitadIndice = movimientos.Count / 2;
+            var mitadA = movimientos.Take(mitadIndice).ToList();
+            var mitadB = movimientos.Skip(mitadIndice).ToList();
+
+            var tareaA = Task.Run(() => EnumerarSubconjuntosPorSuma(mitadA, objetivoCentavos, fechaFactura, ct), ct);
+            var tareaB = Task.Run(() => EnumerarSubconjuntosPorSuma(mitadB, objetivoCentavos, fechaFactura, ct), ct);
+            Task.WaitAll(new Task[] { tareaA, tareaB }, ct);
+
+            var sumasA = tareaA.Result;
+            var sumasB = tareaB.Result;
+
             List<ConciliacionMovimientoResumenDto>? mejorCombinacion = null;
             long mejorScore = long.MaxValue;
 
-            BuscarCombinacionMovimientosRecursiva(
-                movimientos,
-                montoObjetivo,
-                fechaFactura,
-                0,
-                0m,
-                combinacionActual,
-                ref mejorCombinacion,
-                ref mejorScore);
+            foreach (var (sumaB, datoB) in sumasB)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var complemento = objetivoCentavos - sumaB;
+                if (complemento < 0 || !sumasA.TryGetValue(complemento, out var datoA))
+                {
+                    continue;
+                }
+
+                var totalMovimientos = datoA.Combinacion.Count + datoB.Combinacion.Count;
+                if (totalMovimientos < _rules.Abonos.MinimoMovimientosPorCombinacion)
+                {
+                    continue;
+                }
+
+                var scoreCombinado = datoA.Score + datoB.Score;
+                if (mejorCombinacion != null
+                    && (scoreCombinado > mejorScore
+                        || (scoreCombinado == mejorScore && totalMovimientos >= mejorCombinacion.Count)))
+                {
+                    continue;
+                }
+
+                var combinacion = new List<ConciliacionMovimientoResumenDto>(datoA.Combinacion);
+                combinacion.AddRange(datoB.Combinacion);
+                mejorScore = scoreCombinado;
+                mejorCombinacion = combinacion;
+            }
 
             return mejorCombinacion;
         }
+
+        /// <summary>
+        /// Enumera todos los subconjuntos de <paramref name="mitad"/> cuya suma no excede el
+        /// objetivo, y devuelve para cada suma en centavos alcanzada la mejor combinacion vista
+        /// (menor score de cercania, luego menos movimientos).
+        /// </summary>
+        private Dictionary<long, (List<ConciliacionMovimientoResumenDto> Combinacion, long Score)> EnumerarSubconjuntosPorSuma(
+            IReadOnlyList<ConciliacionMovimientoResumenDto> mitad,
+            long objetivoCentavos,
+            DateTime fechaFactura,
+            CancellationToken ct)
+        {
+            var mejoresPorSuma = new Dictionary<long, (List<ConciliacionMovimientoResumenDto> Combinacion, long Score)>();
+            var combinacionActual = new List<ConciliacionMovimientoResumenDto>();
+            long iteraciones = 0;
+
+            void Enumerar(int indice, long sumaActual)
+            {
+                if (++iteraciones % 4096 == 0)
+                {
+                    ct.ThrowIfCancellationRequested();
+                }
+
+                var score = CalcularScoreCercania(combinacionActual, fechaFactura);
+                if (!mejoresPorSuma.TryGetValue(sumaActual, out var existente)
+                    || score < existente.Score
+                    || (score == existente.Score && combinacionActual.Count < existente.Combinacion.Count))
+                {
+                    mejoresPorSuma[sumaActual] = (new List<ConciliacionMovimientoResumenDto>(combinacionActual), score);
+                }
+
+                for (var i = indice; i < mitad.Count; i++)
+                {
+                    var montoCentavos = MontoACentavos(mitad[i].Abono);
+                    var nuevaSuma = sumaActual + montoCentavos;
+                    if (nuevaSuma > objetivoCentavos)
+                    {
+                        continue;
+                    }
+
+                    combinacionActual.Add(mitad[i]);
+                    Enumerar(i + 1, nuevaSuma);
+                    combinacionActual.RemoveAt(combinacionActual.Count - 1);
+                }
+            }
+
+            Enumerar(0, 0L);
+            return mejoresPorSuma;
+        }
+
+        private static long MontoACentavos(decimal monto) => (long)decimal.Round(monto * 100m, 0);
 
         public List<FacturaResumenDto>? BuscarCombinacionFacturasCompatible(
             IReadOnlyList<FacturaResumenDto> facturas,
@@ -269,8 +401,15 @@ namespace Advance_Control.Services.Conciliacion
             decimal sumaActual,
             List<ConciliacionMovimientoResumenDto> combinacionActual,
             ref List<ConciliacionMovimientoResumenDto>? mejorCombinacion,
-            ref long mejorScore)
+            ref long mejorScore,
+            ref long iteraciones,
+            CancellationToken ct)
         {
+            if (++iteraciones % 4096 == 0)
+            {
+                ct.ThrowIfCancellationRequested();
+            }
+
             var sumaRedondeada = decimal.Round(sumaActual, 2);
             var objetivoRedondeado = decimal.Round(montoObjetivo, 2);
 
@@ -312,7 +451,9 @@ namespace Advance_Control.Services.Conciliacion
                     nuevaSuma,
                     combinacionActual,
                     ref mejorCombinacion,
-                    ref mejorScore);
+                    ref mejorScore,
+                    ref iteraciones,
+                    ct);
                 combinacionActual.RemoveAt(combinacionActual.Count - 1);
             }
         }

@@ -483,6 +483,53 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task<TimbrarResultadoDto> TimbrarIgualaMensualAsync(int idContrato, string periodo, CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var url = new ApiQueryBuilder()
+                .Add("periodo", periodo)
+                .Build(_endpoints.GetEndpoint("api", "factura", "contrato-suscripcion", idContrato.ToString(), "timbrar-iguala"));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Timbrando iguala mensual del contrato {idContrato} ({periodo}) en: {url}", "FacturaService", "TimbrarIgualaMensualAsync");
+
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                var contenido = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al timbrar iguala del contrato {idContrato}. Status: {response.StatusCode}, Content: {contenido}",
+                        null,
+                        "FacturaService",
+                        "TimbrarIgualaMensualAsync");
+
+                    return ExtraerResultadoError(contenido);
+                }
+
+                var result = JsonSerializer.Deserialize<GuardarFacturaResponseDto>(contenido, _jsonOptions);
+                if (result != null)
+                {
+                    return new TimbrarResultadoDto
+                    {
+                        Success = result.Success,
+                        Message = result.Message,
+                        IdFactura = result.IdFactura
+                    };
+                }
+
+                return new TimbrarResultadoDto { Success = false, Message = "La API devolvió una respuesta vacía al timbrar la iguala." };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al timbrar la iguala mensual", ex, "FacturaService", "TimbrarIgualaMensualAsync");
+                return new TimbrarResultadoDto { Success = false, Message = "Error de comunicación con el servidor al timbrar." };
+            }
+        }
+
         public async Task<CancelarCfdiResponseDto> CancelarCfdiAsync(int idFactura, CancelarCfdiRequestDto request, CancellationToken cancellationToken = default)
         {
             if (request == null)

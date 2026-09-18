@@ -20,7 +20,10 @@ namespace Advance_Control.ViewModels
         private readonly ConciliacionMatchingEngine _conciliacionMatchingEngine;
         private readonly List<ConciliacionMovimientoResumenDto> _movimientosPendientesBase = new();
         private readonly List<FacturaResumenDto> _facturasPendientesBase = new();
-        private readonly HashSet<int> _facturasDescartadasAbonos = new();
+        // Persisten durante toda la corrida del asistente (esta instancia es transient, una
+        // por ventana): una factura descartada por el usuario en cualquier paso ya no se
+        // vuelve a proponer en los pasos restantes del mismo asistente.
+        private readonly HashSet<int> _facturasDescartadas = new();
         private readonly Dictionary<int, HashSet<int>> _movimientosVetadosPorFacturaAbonos = new();
         private bool _bitacoraConciliacionInicializada;
         private bool _aplicarReglaPueMismoMes = true;
@@ -46,11 +49,6 @@ namespace Advance_Control.ViewModels
         {
             _aplicarReglaPueMismoMes = aplicarReglaPueMismoMes;
             _usarRfcComoRegla = usarRfcComoRegla;
-            if (modo == ConciliacionAutomaticaModo.Abonos)
-            {
-                _facturasDescartadasAbonos.Clear();
-                _movimientosVetadosPorFacturaAbonos.Clear();
-            }
 
             await CargarDatosBaseAsync(ct);
 
@@ -60,32 +58,49 @@ namespace Advance_Control.ViewModels
             {
                 ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
                 ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
-                ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(),
+                ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
+                ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
 
-        public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> DescartarYRecalcularPropuestasAbonosAsync(
-            ConciliacionMatchPropuestaDto propuestaDescartada)
+        /// <summary>
+        /// Descarta una propuesta (de cualquier modo) y recalcula el paso actual: las facturas
+        /// involucradas quedan vetadas para el resto del asistente ("evitar proponerlas de
+        /// nuevo"); sus movimientos regresan al pool porque simplemente dejan de reservarse
+        /// para esa propuesta al recalcular.
+        /// </summary>
+        public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> DescartarYRecalcularPropuestaAsync(
+            ConciliacionAutomaticaModo modo,
+            ConciliacionMatchPropuestaDto propuestaDescartada,
+            CancellationToken ct = default)
         {
-            if (!string.Equals(propuestaDescartada.Tipo, "Abonos", StringComparison.OrdinalIgnoreCase))
+            foreach (var factura in propuestaDescartada.Facturas)
             {
-                return await CrearPropuestasAbonosAsync();
-            }
-
-            var factura = propuestaDescartada.Facturas.FirstOrDefault();
-            if (factura != null)
-            {
-                _facturasDescartadasAbonos.Add(factura.IdFactura);
+                _facturasDescartadas.Add(factura.IdFactura);
                 _movimientosVetadosPorFacturaAbonos.Remove(factura.IdFactura);
             }
 
-            return await CrearPropuestasAbonosAsync();
+            return modo switch
+            {
+                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
+                ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
+                ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
+                ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
+                _ => Array.Empty<ConciliacionMatchPropuestaDto>()
+            };
         }
 
+        /// <summary>
+        /// Veta un movimiento puntual para una factura (Abonos) y recalcula. Si el paso activo
+        /// es el combinado de Cheques, recalcula todo el paso (no solo Abonos) para no perder
+        /// las propuestas 1 a 1 / combinacionales de cheque ya encontradas en el mismo paso.
+        /// </summary>
         public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> DescartarMovimientoYRecalcularFacturaAbonosAsync(
+            ConciliacionAutomaticaModo modo,
             int idFactura,
-            int idMovimiento)
+            int idMovimiento,
+            CancellationToken ct = default)
         {
             if (!_movimientosVetadosPorFacturaAbonos.TryGetValue(idFactura, out var movimientosVetados))
             {
@@ -94,9 +109,11 @@ namespace Advance_Control.ViewModels
             }
 
             movimientosVetados.Add(idMovimiento);
-            _facturasDescartadasAbonos.Remove(idFactura);
+            _facturasDescartadas.Remove(idFactura);
 
-            return await CrearPropuestasAbonosAsync(prioridadFacturaId: idFactura);
+            return modo == ConciliacionAutomaticaModo.Cheques
+                ? await CrearPropuestasChequesAsync(ct)
+                : await CrearPropuestasAbonosAsync(prioridadFacturaId: idFactura, ct: ct);
         }
 
         public async Task<bool> AplicarPropuestasAprobadasAsync(
@@ -129,11 +146,15 @@ namespace Advance_Control.ViewModels
             return true;
         }
 
-        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAutomaticasAsync()
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAutomaticasAsync(
+            Func<ConciliacionMovimientoResumenDto, bool>? filtroMovimientoExtra = null,
+            Func<FacturaResumenDto, bool>? filtroFacturaExtra = null)
         {
             var facturasObjetivo = _facturasPendientesBase
                 .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
+                .Where(factura => !_facturasDescartadas.Contains(factura.IdFactura))
                 .Where(factura => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
+                .Where(factura => filtroFacturaExtra == null || filtroFacturaExtra(factura))
                 .OrderBy(factura => factura.Fecha)
                 .ThenBy(factura => factura.IdFactura)
                 .ToList();
@@ -150,6 +171,7 @@ namespace Advance_Control.ViewModels
 
             var movimientosDisponibles = _movimientosPendientesBase
                 .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
+                .Where(movimiento => filtroMovimientoExtra == null || filtroMovimientoExtra(movimiento))
                 .OrderBy(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
                 .ToList();
@@ -174,21 +196,29 @@ namespace Advance_Control.ViewModels
             return propuestas;
         }
 
-        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasCombinacionalesAsync()
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasCombinacionalesAsync(
+            Func<ConciliacionMovimientoResumenDto, bool>? filtroMovimientoExtra = null,
+            Func<FacturaResumenDto, bool>? filtroFacturaExtra = null)
         {
             var facturasObjetivo = _facturasPendientesBase
                 .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
+                .Where(factura => !_facturasDescartadas.Contains(factura.IdFactura))
                 .Where(factura => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
+                .Where(factura => filtroFacturaExtra == null || filtroFacturaExtra(factura))
                 .OrderBy(factura => factura.Fecha)
                 .ThenBy(factura => factura.IdFactura)
                 .ToList();
 
-            if (!_conciliacionMatchingEngine.CanRunCombinacional(facturasObjetivo, _movimientosPendientesBase))
+            var movimientosBase = filtroMovimientoExtra == null
+                ? _movimientosPendientesBase
+                : _movimientosPendientesBase.Where(filtroMovimientoExtra).ToList();
+
+            if (!_conciliacionMatchingEngine.CanRunCombinacional(facturasObjetivo, movimientosBase))
             {
                 return Array.Empty<ConciliacionMatchPropuestaDto>();
             }
 
-            var movimientosDisponibles = _movimientosPendientesBase
+            var movimientosDisponibles = movimientosBase
                 .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
                 .OrderBy(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
@@ -212,13 +242,17 @@ namespace Advance_Control.ViewModels
         }
 
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAbonosAsync(
-            int? prioridadFacturaId = null)
+            int? prioridadFacturaId = null,
+            Func<ConciliacionMovimientoResumenDto, bool>? filtroMovimientoExtra = null,
+            Func<FacturaResumenDto, bool>? filtroFacturaExtra = null,
+            CancellationToken ct = default)
         {
             var facturasObjetivo = _facturasPendientesBase
                 .Where(factura =>
                     _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0
-                    && !_facturasDescartadasAbonos.Contains(factura.IdFactura))
+                    && !_facturasDescartadas.Contains(factura.IdFactura))
                 .Where(factura => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
+                .Where(factura => filtroFacturaExtra == null || filtroFacturaExtra(factura))
                 .ToList();
 
             facturasObjetivo = prioridadFacturaId.HasValue
@@ -239,17 +273,75 @@ namespace Advance_Control.ViewModels
 
             var movimientosDisponibles = _movimientosPendientesBase
                 .Where(movimiento => decimal.Round(movimiento.Abono, 2) > 0)
+                .Where(movimiento => filtroMovimientoExtra == null || filtroMovimientoExtra(movimiento))
                 .OrderBy(movimiento => movimiento.Fecha)
                 .ThenBy(movimiento => movimiento.IdMovimiento)
                 .ToList();
 
-            var propuestas = RecolectarPropuestasAbonos(facturasObjetivo, movimientosDisponibles, _usarRfcComoRegla)
+            var propuestasEncontradas = await RecolectarPropuestasAbonosAsync(facturasObjetivo, movimientosDisponibles, _usarRfcComoRegla, ct);
+            var propuestas = propuestasEncontradas
                 .OrderBy(propuesta => propuesta.FacturaPrincipal?.Fecha ?? DateTime.MaxValue)
                 .ThenBy(propuesta => propuesta.FacturaPrincipal?.IdFactura ?? int.MaxValue)
                 .ToList();
 
             return propuestas;
         }
+
+        /// <summary>
+        /// Paso combinado exclusivo para movimientos de cheque: corre, en orden, 1 a 1
+        /// (Automatica), 1 a varios (Combinacional) y varios a 1 (Abonos), todas restringidas
+        /// a movimientos cuya descripcion contiene "CHEQUE" (el banco no clasifica cheques con
+        /// un tipo_operacion propio, asi que se identifican por texto). Cada sub-busqueda
+        /// excluye las facturas y movimientos que ya uso una sub-busqueda anterior, para que la
+        /// misma factura o el mismo movimiento no aparezcan en dos propuestas del mismo paso.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasChequesAsync(CancellationToken ct)
+        {
+            var movimientosUsados = new HashSet<int>();
+            var facturasUsadas = new HashSet<int>();
+
+            bool ChequeDisponible(ConciliacionMovimientoResumenDto movimiento) =>
+                EsMovimientoCheque(movimiento) && !movimientosUsados.Contains(movimiento.IdMovimiento);
+            bool FacturaDisponible(FacturaResumenDto factura) => !facturasUsadas.Contains(factura.IdFactura);
+
+            var unoAUno = await CrearPropuestasAutomaticasAsync(ChequeDisponible, FacturaDisponible);
+            RegistrarUsados(unoAUno, movimientosUsados, facturasUsadas);
+            ct.ThrowIfCancellationRequested();
+
+            var combinacional = await CrearPropuestasCombinacionalesAsync(ChequeDisponible, FacturaDisponible);
+            RegistrarUsados(combinacional, movimientosUsados, facturasUsadas);
+            ct.ThrowIfCancellationRequested();
+
+            var abonos = await CrearPropuestasAbonosAsync(filtroMovimientoExtra: ChequeDisponible, filtroFacturaExtra: FacturaDisponible, ct: ct);
+            RegistrarUsados(abonos, movimientosUsados, facturasUsadas);
+
+            return unoAUno.Concat(combinacional).Concat(abonos).ToList();
+        }
+
+        private static void RegistrarUsados(
+            IEnumerable<ConciliacionMatchPropuestaDto> propuestas,
+            HashSet<int> movimientosUsados,
+            HashSet<int> facturasUsadas)
+        {
+            foreach (var propuesta in propuestas)
+            {
+                foreach (var movimiento in propuesta.TodosLosMovimientos)
+                {
+                    movimientosUsados.Add(movimiento.IdMovimiento);
+                }
+
+                foreach (var factura in propuesta.Facturas)
+                {
+                    facturasUsadas.Add(factura.IdFactura);
+                }
+            }
+        }
+
+        // En este banco los cheques se clasifican como "DEPOSITO_SBC" (no hay un tipo_operacion
+        // propio de "cheque" -- confirmado en producción: casi ningún movimiento trae "CHEQUE"
+        // en la descripción, pero sí hay 13 pendientes con tipo_operacion = DEPOSITO_SBC).
+        private static bool EsMovimientoCheque(ConciliacionMovimientoResumenDto movimiento) =>
+            string.Equals(movimiento.TipoOperacion, "DEPOSITO_SBC", StringComparison.OrdinalIgnoreCase);
 
         private async Task CargarDatosBaseAsync(CancellationToken ct = default)
         {
@@ -382,22 +474,33 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        private List<ConciliacionMatchPropuestaDto> RecolectarPropuestasAbonos(
+        /// <summary>
+        /// Para cada factura, busca en un hilo aparte (<see cref="Task.Run(Action)"/>) la mejor
+        /// combinacion exacta de movimientos que la liquide, sin bloquear el hilo de UI. Cada
+        /// factura tiene su propio limite de tiempo (<see cref="ConciliacionMatchingEngine.TiempoLimitePorFacturaSegundos"/>):
+        /// si se agota, esa factura se omite y se continua con el resto del lote en vez de
+        /// congelar toda la corrida. Cancelar <paramref name="ct"/> (p. ej. el usuario le da
+        /// "Cancelar" al asistente) sí aborta el lote completo.
+        /// </summary>
+        private async Task<List<ConciliacionMatchPropuestaDto>> RecolectarPropuestasAbonosAsync(
             List<FacturaResumenDto> facturasObjetivo,
             List<ConciliacionMovimientoResumenDto> movimientosDisponibles,
-            bool usarRfcComoRegla = false)
+            bool usarRfcComoRegla,
+            CancellationToken ct)
         {
             var propuestas = new List<ConciliacionMatchPropuestaDto>();
+            var tiempoLimite = TimeSpan.FromSeconds(_conciliacionMatchingEngine.TiempoLimitePorFacturaSegundos);
 
             foreach (var facturaObjetivo in facturasObjetivo)
             {
+                ct.ThrowIfCancellationRequested();
+
                 var saldoFactura = _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(facturaObjetivo);
                 var candidatos = _conciliacionMatchingEngine.ObtenerMovimientosCandidatosParaFactura(
                     movimientosDisponibles,
                     facturaObjetivo,
                     saldoFactura,
-                    aplicarReglaPueMismoMes: _aplicarReglaPueMismoMes,
-                    limitarCandidatos: false)
+                    aplicarReglaPueMismoMes: _aplicarReglaPueMismoMes)
                     .Where(movimiento => !EsMovimientoVetadoParaFactura(facturaObjetivo.IdFactura, movimiento.IdMovimiento))
                     .Where(movimiento => !usarRfcComoRegla
                         || string.Equals(
@@ -411,10 +514,23 @@ namespace Advance_Control.ViewModels
                     continue;
                 }
 
-                var combinacion = _conciliacionMatchingEngine.BuscarCombinacionMovimientosParaFactura(
-                    candidatos,
-                    saldoFactura,
-                    facturaObjetivo.Fecha);
+                List<ConciliacionMovimientoResumenDto>? combinacion;
+                using (var ctsFactura = CancellationTokenSource.CreateLinkedTokenSource(ct))
+                {
+                    ctsFactura.CancelAfter(tiempoLimite);
+                    try
+                    {
+                        combinacion = await Task.Run(
+                            () => _conciliacionMatchingEngine.BuscarCombinacionMovimientosParaFactura(
+                                candidatos, saldoFactura, facturaObjetivo.Fecha, ctsFactura.Token),
+                            ctsFactura.Token);
+                    }
+                    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+                    {
+                        // Se agoto el tiempo para esta factura puntual: se omite y se sigue con el resto.
+                        continue;
+                    }
+                }
 
                 if (combinacion == null || combinacion.Count == 0)
                 {
@@ -610,6 +726,15 @@ namespace Advance_Control.ViewModels
                     await MostrarResultadoFinalConciliacionAsync(
                         "Conciliacion automatica de abonos",
                         new[] { $"{facturasConciliadas} factura(s) conciliada(s) con {movimientosAplicados} movimiento(s)" });
+                    break;
+                }
+
+                case ConciliacionAutomaticaModo.Cheques:
+                {
+                    var facturasConciliadas = aprobadas.Sum(propuesta => propuesta.Facturas.Count);
+                    await MostrarResultadoFinalConciliacionAsync(
+                        "Conciliacion de cheques",
+                        new[] { $"{facturasConciliadas} factura(s) conciliada(s) con movimientos de cheque" });
                     break;
                 }
             }

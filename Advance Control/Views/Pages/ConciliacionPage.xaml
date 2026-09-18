@@ -435,25 +435,43 @@
                             </Grid.ColumnDefinitions>
                             <Grid Grid.Column="0">
                                 <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
+                                    <!--
+                                    Botón del motor completo (recorre los 9 pasos: cheques + 8 combinando
+                                    modo/filtros, en una sola secuencia automática). Deshabilitado
+                                    temporalmente: se trababa la UI. Ver ConfirmacionConciliacionWindow()
+                                    (constructor sin parámetros) para retomarlo más adelante.
                                     <Button
                                         x:Name="BtnConciliacionAutomatica"
                                         Height="34"
                                         Margin="5,0,0,0"
                                         Click="BtnConciliacionAutomatica_Click"
+                                        Content="Conciliación automática"
+                                        ToolTipService.ToolTip="Recorre automáticamente los 9 pasos de conciliación (modo × filtros) pausando solo cuando hay propuestas por revisar." />
+                                    -->
+                                    <Button
+                                        x:Name="BtnCheques"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnCheques_Click"
+                                        Content="Cheques" />
+                                    <Button
+                                        x:Name="BtnConciliacion"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnConciliacion_Click"
                                         Content="Conciliación" />
                                     <Button
-                                        x:Name="BtnConciliacionAutomaticaConvinacional"
+                                        x:Name="BtnCombinacion"
                                         Height="34"
                                         Margin="5,0,0,0"
-                                        Click="BtnConciliacionAutomaticaConvinacional_Click"
+                                        Click="BtnCombinacion_Click"
                                         Content="Combinación" />
                                     <Button
-                                        x:Name="BtnConciliacionAutomaticaAbonos"
+                                        x:Name="BtnAbonos"
                                         Height="34"
                                         Margin="5,0,0,0"
-                                        Click="BtnConciliacionAutomaticaAbonos_Click"
+                                        Click="BtnAbonos_Click"
                                         Content="Conciliación de Abonos" />
-
 
                                     <Border
                                         Padding="0"

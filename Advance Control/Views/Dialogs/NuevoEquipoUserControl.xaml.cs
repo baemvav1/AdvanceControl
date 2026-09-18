@@ -70,7 +70,12 @@ namespace Advance_Control.Views.Dialogs
                     string.IsNullOrWhiteSpace(ViewModel.Descripcion) ? null : ViewModel.Descripcion,
                     string.IsNullOrWhiteSpace(ViewModel.Identificador) ? "" : ViewModel.Identificador,
                     ViewModel.Estatus,
-                    ViewModel.IdUbicacion
+                    ViewModel.IdUbicacion,
+                    string.IsNullOrWhiteSpace(ViewModel.Controlador) ? null : ViewModel.Controlador,
+                    string.IsNullOrWhiteSpace(ViewModel.TipoPuerta) ? null : ViewModel.TipoPuerta,
+                    string.IsNullOrWhiteSpace(ViewModel.Velocidad) ? null : ViewModel.Velocidad,
+                    string.IsNullOrWhiteSpace(ViewModel.TipoMaquina) ? null : ViewModel.TipoMaquina,
+                    string.IsNullOrWhiteSpace(ViewModel.Operador) ? null : ViewModel.Operador
                 );
 
                 if (success)

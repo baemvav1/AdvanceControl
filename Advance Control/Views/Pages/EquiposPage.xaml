@@ -280,6 +280,9 @@
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
+                                                        <RowDefinition Height="Auto" />
                                                     </Grid.RowDefinitions>
 
                                                     <StackPanel
@@ -392,6 +395,76 @@
                                                             FontSize="13"
                                                             Foreground="{ThemeResource TextFillColorPrimaryBrush}"
                                                             Text="{x:Bind Estatus}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="4"
+                                                        Grid.Column="0"
+                                                        Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Controlador:" />
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Controlador}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="4"
+                                                        Grid.Column="1"
+                                                        Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Tipo de Puerta:" />
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind TipoPuerta}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="5"
+                                                        Grid.Column="0"
+                                                        Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Velocidad:" />
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Velocidad}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="5"
+                                                        Grid.Column="1"
+                                                        Margin="0,4,8,0">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Tipo de Máquina:" />
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind TipoMaquina}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="6"
+                                                        Grid.Column="0"
+                                                        Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Operador:" />
+                                                        <TextBlock
+                                                            FontSize="13"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind Operador}" />
                                                     </StackPanel>
                                                 </Grid>
                                             </PivotItem>

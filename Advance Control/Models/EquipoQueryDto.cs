@@ -44,5 +44,30 @@ namespace Advance_Control.Models
         /// Filtro exacto por ID de ubicación
         /// </summary>
         public int? IdUbicacion { get; set; }
+
+        /// <summary>
+        /// Controlador del equipo
+        /// </summary>
+        public string? Controlador { get; set; }
+
+        /// <summary>
+        /// Tipo de puerta del equipo
+        /// </summary>
+        public string? TipoPuerta { get; set; }
+
+        /// <summary>
+        /// Velocidad del equipo
+        /// </summary>
+        public string? Velocidad { get; set; }
+
+        /// <summary>
+        /// Tipo de máquina del equipo
+        /// </summary>
+        public string? TipoMaquina { get; set; }
+
+        /// <summary>
+        /// Operador del equipo
+        /// </summary>
+        public string? Operador { get; set; }
     }
 }

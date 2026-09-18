@@ -64,9 +64,10 @@
                         Click="BtnCancelar_Click"
                         Content="Cancelar" />
                     <Button
-                        x:Name="BtnConfirmar"
-                        Click="BtnConfirmar_Click"
-                        Content="Confirmar seleccionadas"
+                        x:Name="BtnContinuar"
+                        Click="BtnContinuar_Click"
+                        Content="Continuar"
+                        ToolTipService.ToolTip="Concilia las propuestas marcadas (si hay alguna) e ignora el resto; sin ninguna marcada, pasa al siguiente paso sin conciliar nada de este."
                         Style="{StaticResource AccentButtonStyle}" />
                 </StackPanel>
             </Grid>

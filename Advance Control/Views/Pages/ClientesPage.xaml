@@ -469,6 +469,82 @@
                                                         Visibility="{x:Bind ShowNoContactosMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
                                                 </StackPanel>
                                             </PivotItem>
+
+                                            <!--  Suscripción (contrato de mantenimiento Oro/Plata/Bronce)  -->
+                                            <PivotItem Header="Suscripción">
+                                                <StackPanel Padding="8" Spacing="8">
+                                                    <ProgressRing
+                                                        Width="20"
+                                                        Height="20"
+                                                        HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingSuscripcion, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingSuscripcion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Sin contrato  -->
+                                                    <StackPanel Spacing="8" Visibility="{x:Bind TieneSuscripcion, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert, Mode=OneWay}">
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            FontStyle="Italic"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Este cliente no tiene un contrato de suscripción registrado."
+                                                            Visibility="{x:Bind SuscripcionCargada, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                        <Button
+                                                            x:Name="GenerarContratoButton"
+                                                            Click="GenerarContratoButton_Click"
+                                                            Content="Generar contrato"
+                                                            Style="{StaticResource AccentButtonStyle}"
+                                                            Tag="{x:Bind}" />
+                                                    </StackPanel>
+
+                                                    <!--  Con contrato  -->
+                                                    <StackPanel Spacing="6" Visibility="{x:Bind TieneSuscripcion, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}">
+                                                        <TextBlock Text="{x:Bind Suscripcion.Nivel, Mode=OneWay}" FontWeight="SemiBold" FontSize="14" />
+                                                        <TextBlock>
+                                                            <Run Text="Número de contrato: " FontWeight="SemiBold" />
+                                                            <Run Text="{x:Bind Suscripcion.NumeroContrato, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                        <TextBlock>
+                                                            <Run Text="Monto mensual: " FontWeight="SemiBold" />
+                                                            <Run Text="{x:Bind Suscripcion.MontoMensualTexto, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                        <TextBlock>
+                                                            <Run Text="Vigencia: " FontWeight="SemiBold" />
+                                                            <Run Text="{x:Bind Suscripcion.VigenciaInicioTexto, Mode=OneWay}" />
+                                                            <Run Text=" al " />
+                                                            <Run Text="{x:Bind Suscripcion.VigenciaFinTexto, Mode=OneWay}" />
+                                                        </TextBlock>
+                                                        <TextBlock>
+                                                            <Run Text="Estatus: " FontWeight="SemiBold" />
+                                                            <Run Text="{x:Bind Suscripcion.Estatus, Mode=OneWay}" />
+                                                        </TextBlock>
+
+                                                        <Button
+                                                            Click="VerPdfGeneradoButton_Click"
+                                                            Content="Ver PDF generado"
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Suscripcion.PdfGeneradoUrl, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}" />
+                                                        <Button
+                                                            Click="VerDocumentoFirmadoButton_Click"
+                                                            Content="Ver documento firmado"
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Suscripcion.PdfFirmadoUrl, Converter={StaticResource NullToVisibilityConverter}, Mode=OneWay}" />
+
+                                                        <Button
+                                                            x:Name="CargarDocumentoFirmadoButton"
+                                                            Click="CargarDocumentoFirmadoButton_Click"
+                                                            Content="Cargar documento firmado"
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Suscripcion.EstaFirmado, Converter={StaticResource BooleanToVisibilityConverter}, ConverterParameter=invert, Mode=OneWay}" />
+                                                        <Button
+                                                            x:Name="GenerarFacturaIgualaButton"
+                                                            Click="GenerarFacturaIgualaButton_Click"
+                                                            Content="Generar factura de iguala del mes"
+                                                            Style="{StaticResource AccentButtonStyle}"
+                                                            Tag="{x:Bind}"
+                                                            Visibility="{x:Bind Suscripcion.EstaFirmado, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </PivotItem>
                                         </Pivot>
                                     </Grid>
                                 </StackPanel>

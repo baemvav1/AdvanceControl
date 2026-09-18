@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:Advance_Control.Models"
-    MinWidth="820"
+    MinWidth="980"
     mc:Ignorable="d">
 
     <UserControl.Resources>
@@ -56,10 +56,12 @@
                             <ColumnDefinition Width="40" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="100" />
-                            <ColumnDefinition Width="120" />
-                            <ColumnDefinition Width="250" />
+                            <ColumnDefinition Width="85" />
+                            <ColumnDefinition Width="110" />
+                            <ColumnDefinition Width="220" />
                             <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="120" />
+                            <ColumnDefinition Width="85" />
+                            <ColumnDefinition Width="110" />
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="" />
                         <TextBlock
@@ -76,19 +78,29 @@
                             Grid.Column="3"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Style="{StaticResource CaptionTextBlockStyle}"
-                            Text="Total factura" />
+                            Text="Fecha factura" />
                         <TextBlock
                             Grid.Column="4"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Style="{StaticResource CaptionTextBlockStyle}"
-                            Text="Receptor" />
+                            Text="Total factura" />
                         <TextBlock
                             Grid.Column="5"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Style="{StaticResource CaptionTextBlockStyle}"
-                            Text="Metadato movimiento" />
+                            Text="Receptor" />
                         <TextBlock
                             Grid.Column="6"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Metadato movimiento" />
+                        <TextBlock
+                            Grid.Column="7"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            Text="Fecha movimiento" />
+                        <TextBlock
+                            Grid.Column="8"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                             Style="{StaticResource CaptionTextBlockStyle}"
                             Text="Abono" />
@@ -147,10 +159,12 @@
                                 <ColumnDefinition Width="40" />
                                 <ColumnDefinition Width="90" />
                                 <ColumnDefinition Width="100" />
-                                <ColumnDefinition Width="120" />
-                                <ColumnDefinition Width="250" />
+                                <ColumnDefinition Width="85" />
+                                <ColumnDefinition Width="110" />
+                                <ColumnDefinition Width="220" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="120" />
+                                <ColumnDefinition Width="85" />
+                                <ColumnDefinition Width="110" />
                             </Grid.ColumnDefinitions>
 
                             <CheckBox
@@ -244,11 +258,16 @@
                             <TextBlock
                                 Grid.Column="3"
                                 VerticalAlignment="Center"
+                                Text="{x:Bind FacturaObjetivoFechaTexto}" />
+
+                            <TextBlock
+                                Grid.Column="4"
+                                VerticalAlignment="Center"
                                 FontSize="18"
                                 Text="{x:Bind TotalFacturas, Converter={StaticResource CurrencyConverter}}" />
 
                             <TextBlock
-                                Grid.Column="4"
+                                Grid.Column="5"
                                 VerticalAlignment="Center"
                                 Text="{x:Bind ReceptorNombre}"
                                 TextTrimming="CharacterEllipsis">
@@ -258,7 +277,7 @@
                             </TextBlock>
 
                             <Grid
-                                Grid.Column="5"
+                                Grid.Column="6"
                                 MaxHeight="110"
                                 Margin="5,0,5,0"
                                 Padding="10,5,5,5"
@@ -277,7 +296,12 @@
                             </Grid>
 
                             <TextBlock
-                                Grid.Column="6"
+                                Grid.Column="7"
+                                VerticalAlignment="Center"
+                                Text="{x:Bind Movimiento.FechaTexto}" />
+
+                            <TextBlock
+                                Grid.Column="8"
                                 VerticalAlignment="Center"
                                 FontSize="18"
                                 FontWeight="SemiBold"

@@ -108,9 +108,7 @@ namespace Advance_Control.ViewModels
                 if (SetProperty(ref _isLoading, value))
                 {
                     OnPropertyChanged(nameof(CanAbonarMovimiento));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+                    OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
                     OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
                 }
@@ -132,29 +130,13 @@ namespace Advance_Control.ViewModels
         public bool AplicarReglaPueMismoMes
         {
             get => _aplicarReglaPueMismoMes;
-            set
-            {
-                if (SetProperty(ref _aplicarReglaPueMismoMes, value))
-                {
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-                }
-            }
+            set => SetProperty(ref _aplicarReglaPueMismoMes, value);
         }
 
         public bool UsarRfcComoRegla
         {
             get => _usarRfcComoRegla;
-            set
-            {
-                if (SetProperty(ref _usarRfcComoRegla, value))
-                {
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
-                }
-            }
+            set => SetProperty(ref _usarRfcComoRegla, value);
         }
 
         public string? MovimientoMetadatoBusquedaTexto
@@ -301,9 +283,7 @@ namespace Advance_Control.ViewModels
                 if (SetProperty(ref _isConciliacionAutomaticaEnProceso, value))
                 {
                     OnPropertyChanged(nameof(ConciliacionPanelHabilitado));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-                    OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+                    OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
                     OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
                     OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
                     OnPropertyChanged(nameof(OpacidadIndicadorConciliacion));
@@ -331,15 +311,11 @@ namespace Advance_Control.ViewModels
             && MovimientoCargado != null
             && MovimientoCargado.MontoRestante > 0
             && FacturaCargada.SaldoPendiente > 0;
-        public bool CanEjecutarConciliacionAutomatica => !IsLoading
+        public bool CanIniciarConciliacionAutomatica => !IsLoading
             && !IsConciliacionAutomaticaEnProceso
-            && _conciliacionMatchingEngine.CanRunUnoAUno(_facturasPendientesBase, _movimientosPendientesBase);
-        public bool CanEjecutarConciliacionAutomaticaConvinacional => !IsLoading
-            && !IsConciliacionAutomaticaEnProceso
-            && _conciliacionMatchingEngine.CanRunCombinacional(_facturasPendientesBase, _movimientosPendientesBase);
-        public bool CanEjecutarConciliacionAutomaticaAbonos => !IsLoading
-            && !IsConciliacionAutomaticaEnProceso
-            && _conciliacionMatchingEngine.CanRunAbonos(_facturasPendientesBase, _movimientosPendientesBase);
+            && (_conciliacionMatchingEngine.CanRunUnoAUno(_facturasPendientesBase, _movimientosPendientesBase)
+                || _conciliacionMatchingEngine.CanRunCombinacional(_facturasPendientesBase, _movimientosPendientesBase)
+                || _conciliacionMatchingEngine.CanRunAbonos(_facturasPendientesBase, _movimientosPendientesBase));
         public bool CanDeshacerUltimaOperacionConciliacion => !IsLoading
             && !IsConciliacionAutomaticaEnProceso
             && OperacionesConciliacionPendientes > 0;
@@ -434,9 +410,7 @@ namespace Advance_Control.ViewModels
                     SuccessMessage = null;
                 }
 
-                OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-                OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-                OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+                OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
             }
             catch (Exception ex)
             {
@@ -590,243 +564,6 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        public async Task EjecutarConciliacionAutomaticaAsync()
-        {
-            var facturasObjetivo = _facturasPendientesBase
-                .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
-                .ToList();
-            var facturasUnoAUno = facturasObjetivo
-                .Where(_conciliacionMatchingEngine.EsFacturaElegibleParaConciliacionUnoAUno)
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
-                .ToList();
-
-            if (facturasObjetivo.Count == 0)
-            {
-                await MostrarErrorConciliacionAsync("No hay facturas con saldo pendiente para conciliacion automatica.");
-                return;
-            }
-
-            try
-            {
-                IsConciliacionAutomaticaEnProceso = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var movimientosDisponibles = _movimientosPendientesBase
-                    .OrderBy(movimiento => movimiento.Fecha)
-                    .ThenBy(movimiento => movimiento.IdMovimiento)
-                    .ToList();
-                var facturasRemanentes = new List<FacturaResumenDto>(facturasObjetivo);
-
-                // Recolectar propuestas 1 a 1 (sin aplicar)
-                var propuestasUnoAUno = RecolectarPropuestasUnoAUno(facturasUnoAUno, movimientosDisponibles, facturasRemanentes);
-
-                // Recolectar propuestas combinacionales del pool restante (sin aplicar)
-                var propuestasCombinacional = RecolectarPropuestasCombinacional(facturasRemanentes, movimientosDisponibles);
-
-                var todasLasPropuestas = propuestasUnoAUno.Concat(propuestasCombinacional).ToList();
-
-                if (todasLasPropuestas.Count == 0)
-                {
-                    await MostrarErrorConciliacionAsync("No se encontro ningun movimiento compatible para las facturas pendientes.");
-                    return;
-                }
-
-                // Mostrar diálogo de confirmación y aplicar solo las aprobadas
-                var (aprobadas, cancelado) = await MostrarDialogoYAplicarPropuestasAsync(todasLasPropuestas);
-                if (cancelado)
-                {
-                    return;
-                }
-
-                await CargarDatosAsync();
-
-                var ultimaFactura = aprobadas.LastOrDefault()?.Facturas.LastOrDefault();
-                var ultimoMovimiento = aprobadas.LastOrDefault()?.Movimiento;
-                await ActualizarDetallePostConciliacionAsync(ultimaFactura, ultimoMovimiento);
-
-                var conciliacionesUnoAUno = aprobadas.Count(p => p.Tipo == "1 a 1");
-                var conciliacionesCombinacionales = aprobadas.Where(p => p.Tipo == "Combinacional").Sum(p => p.Facturas.Count);
-                var gruposCombinacionales = aprobadas.Count(p => p.Tipo == "Combinacional");
-                var totalConciliadas = conciliacionesUnoAUno + conciliacionesCombinacionales;
-                var facturasFallidas = facturasObjetivo.Count - totalConciliadas;
-
-                var segmentosResumen = new List<string>();
-                if (conciliacionesUnoAUno > 0)
-                {
-                    segmentosResumen.Add($"{conciliacionesUnoAUno} factura(s) por relacion 1 a 1");
-                }
-
-                if (conciliacionesCombinacionales > 0)
-                {
-                    segmentosResumen.Add($"{conciliacionesCombinacionales} factura(s) en {gruposCombinacionales} grupo(s) combinacional(es)");
-                }
-
-                if (facturasFallidas > 0)
-                {
-                    segmentosResumen.Add($"{facturasFallidas} factura(s) fallida(s)");
-                }
-
-                await MostrarResultadoFinalConciliacionAsync("Conciliacion automatica", segmentosResumen, facturasFallidas);
-            }
-            catch (Exception ex)
-            {
-                await MostrarErrorConciliacionAsync($"Error al ejecutar la conciliacion automatica: {ex.Message}");
-            }
-            finally
-            {
-                IsConciliacionAutomaticaEnProceso = false;
-            }
-        }
-
-        public async Task EjecutarConciliacionAutomaticaConvinacionalAsync()
-        {
-            var facturasObjetivo = _facturasPendientesBase
-                .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
-                .ToList();
-
-            if (!_conciliacionMatchingEngine.CanRunCombinacional(facturasObjetivo, _movimientosPendientesBase))
-            {
-                await MostrarErrorConciliacionAsync("No hay grupos de facturas pendientes para conciliacion automatica convinacional.");
-                return;
-            }
-
-            try
-            {
-                IsConciliacionAutomaticaEnProceso = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var movimientosDisponibles = _movimientosPendientesBase
-                    .OrderBy(movimiento => movimiento.Fecha)
-                    .ThenBy(movimiento => movimiento.IdMovimiento)
-                    .ToList();
-
-                var facturasRemanentes = new List<FacturaResumenDto>(facturasObjetivo);
-                var propuestas = RecolectarPropuestasCombinacional(facturasRemanentes, movimientosDisponibles);
-
-                if (propuestas.Count == 0)
-                {
-                    await MostrarErrorConciliacionAsync("No se encontraron combinaciones compatibles para las facturas pendientes.");
-                    return;
-                }
-
-                var (aprobadas, cancelado) = await MostrarDialogoYAplicarPropuestasAsync(propuestas);
-                if (cancelado)
-                {
-                    return;
-                }
-
-                await CargarDatosAsync();
-
-                var ultimaFactura = aprobadas.LastOrDefault()?.Facturas.LastOrDefault();
-                var ultimoMovimiento = aprobadas.LastOrDefault()?.Movimiento;
-                await ActualizarDetallePostConciliacionAsync(ultimaFactura, ultimoMovimiento);
-
-                var facturasConciliadas = aprobadas.Sum(p => p.Facturas.Count);
-                var gruposConciliados = aprobadas.Count;
-                var facturasFallidas = facturasObjetivo.Count - facturasConciliadas;
-
-                var segmentosResumen = new List<string>
-                {
-                    $"{facturasConciliadas} factura(s) en {gruposConciliados} grupo(s) combinacional(es)"
-                };
-
-                if (facturasFallidas > 0)
-                {
-                    segmentosResumen.Add($"{facturasFallidas} factura(s) fallida(s)");
-                }
-
-                await MostrarResultadoFinalConciliacionAsync("Conciliacion automatica convinacional", segmentosResumen, facturasFallidas);
-            }
-            catch (Exception ex)
-            {
-                await MostrarErrorConciliacionAsync($"Error al ejecutar la conciliacion automatica convinacional: {ex.Message}");
-            }
-            finally
-            {
-                IsConciliacionAutomaticaEnProceso = false;
-            }
-        }
-
-        public async Task EjecutarConciliacionAutomaticaAbonosAsync()
-        {
-            var facturasObjetivo = _facturasPendientesBase
-                .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
-                .ToList();
-
-            if (facturasObjetivo.Count == 0)
-            {
-                await MostrarErrorConciliacionAsync("No hay facturas con saldo pendiente para conciliacion automatica de abonos.");
-                return;
-            }
-
-            try
-            {
-                IsConciliacionAutomaticaEnProceso = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var movimientosDisponibles = _movimientosPendientesBase
-                    .Where(movimiento => decimal.Round(movimiento.Abono, 2) > 0)
-                    .OrderBy(movimiento => movimiento.Fecha)
-                    .ThenBy(movimiento => movimiento.IdMovimiento)
-                    .ToList();
-
-                // Recolectar propuestas sin aplicar
-                var propuestas = RecolectarPropuestasAbonos(facturasObjetivo, movimientosDisponibles);
-
-                if (propuestas.Count == 0)
-                {
-                    await MostrarErrorConciliacionAsync("No se encontraron combinaciones de movimientos para las facturas pendientes.");
-                    return;
-                }
-
-                var (aprobadas, cancelado) = await MostrarDialogoYAplicarPropuestasAsync(propuestas);
-                if (cancelado)
-                {
-                    return;
-                }
-
-                await CargarDatosAsync();
-
-                var ultimaFactura = aprobadas.LastOrDefault()?.Facturas.FirstOrDefault();
-                var ultimoMovimiento = aprobadas.LastOrDefault()?.Movimiento;
-                await ActualizarDetallePostConciliacionAsync(ultimaFactura, ultimoMovimiento);
-
-                var facturasConciliadas = aprobadas.Count;
-                var movimientosAplicados = aprobadas.Sum(p => p.TodosLosMovimientos.Count);
-                var facturasFallidas = facturasObjetivo.Count - facturasConciliadas;
-
-                var segmentosResumen = new List<string>
-                {
-                    $"{facturasConciliadas} factura(s) conciliada(s) con {movimientosAplicados} movimiento(s)"
-                };
-
-                if (facturasFallidas > 0)
-                {
-                    segmentosResumen.Add($"{facturasFallidas} factura(s) fallida(s)");
-                }
-
-                await MostrarResultadoFinalConciliacionAsync("Conciliacion automatica de abonos", segmentosResumen, facturasFallidas);
-            }
-            catch (Exception ex)
-            {
-                await MostrarErrorConciliacionAsync($"Error al ejecutar la conciliacion automatica de abonos: {ex.Message}");
-            }
-            finally
-            {
-                IsConciliacionAutomaticaEnProceso = false;
-            }
-        }
-
         public async Task DeshacerUltimaOperacionConciliacionAsync()
         {
             if (!CanDeshacerUltimaOperacionConciliacion)
@@ -907,277 +644,6 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        private List<ConciliacionMatchPropuestaDto> RecolectarPropuestasAbonos(
-            List<FacturaResumenDto> facturasObjetivo,
-            List<ConciliacionMovimientoResumenDto> movimientosDisponibles)
-        {
-            var propuestas = new List<ConciliacionMatchPropuestaDto>();
-
-            foreach (var facturaObjetivo in facturasObjetivo)
-            {
-                var saldoFactura = _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(facturaObjetivo);
-                var candidatos = _conciliacionMatchingEngine.ObtenerMovimientosCandidatosParaFactura(
-                    movimientosDisponibles,
-                    facturaObjetivo,
-                    saldoFactura,
-                    aplicarReglaPueMismoMes: AplicarReglaPueMismoMes,
-                    limitarCandidatos: false);
-
-                if (candidatos.Count < 2)
-                {
-                    continue;
-                }
-
-                var combinacion = _conciliacionMatchingEngine.BuscarCombinacionMovimientosParaFactura(
-                    candidatos, saldoFactura, facturaObjetivo.Fecha);
-
-                if (combinacion == null || combinacion.Count == 0)
-                {
-                    continue;
-                }
-
-                var movimientoPrincipal = combinacion
-                    .OrderBy(m => Math.Abs((m.Fecha - facturaObjetivo.Fecha).Ticks))
-                    .ThenBy(m => m.Fecha)
-                    .ThenBy(m => m.IdMovimiento)
-                    .First();
-                var adicionales = combinacion.Where(m => m.IdMovimiento != movimientoPrincipal.IdMovimiento).ToList();
-
-                propuestas.Add(new ConciliacionMatchPropuestaDto
-                {
-                    Tipo = "Abonos",
-                    Facturas = new List<FacturaResumenDto> { facturaObjetivo },
-                    Movimiento = movimientoPrincipal,
-                    MovimientosAdicionales = adicionales,
-                    Observaciones = $"Conciliacion automatica de abonos para factura {facturaObjetivo.Folio}."
-                });
-
-                // Retirar del pool
-                foreach (var movimiento in combinacion)
-                {
-                    movimientosDisponibles.RemoveAll(item => item.IdMovimiento == movimiento.IdMovimiento);
-                }
-            }
-
-            return propuestas;
-        }
-
-
-        private List<ConciliacionMatchPropuestaDto> RecolectarPropuestasUnoAUno(
-            List<FacturaResumenDto> facturasUnoAUno,
-            List<ConciliacionMovimientoResumenDto> movimientosDisponibles,
-            List<FacturaResumenDto> facturasRemanentes)
-        {
-            var propuestas = new List<ConciliacionMatchPropuestaDto>();
-
-            foreach (var facturaObjetivo in facturasUnoAUno)
-            {
-                var totalFactura = _conciliacionMatchingEngine.ObtenerTotalFactura(facturaObjetivo);
-                var movimientoObjetivo = _conciliacionMatchingEngine.BuscarMovimientoCoincidente(
-                    movimientosDisponibles,
-                    totalFactura,
-                    new[] { facturaObjetivo },
-                    facturaObjetivo.Fecha,
-                    AplicarReglaPueMismoMes);
-
-                if (movimientoObjetivo == null)
-                {
-                    continue;
-                }
-
-                propuestas.Add(new ConciliacionMatchPropuestaDto
-                {
-                    Tipo = "1 a 1",
-                    Facturas = new List<FacturaResumenDto> { facturaObjetivo },
-                    Movimiento = movimientoObjetivo,
-                    Observaciones = $"Conciliacion automatica 1 a 1 con movimiento {movimientoObjetivo.GrupoId}."
-                });
-
-                // Retirar del pool para que no se usen en combinacionales
-                movimientosDisponibles.Remove(movimientoObjetivo);
-                facturasRemanentes.RemoveAll(f => f.IdFactura == facturaObjetivo.IdFactura);
-            }
-
-            return propuestas;
-        }
-
-        private List<ConciliacionMatchPropuestaDto> RecolectarPropuestasCombinacional(
-            List<FacturaResumenDto> facturasRemanentes,
-            List<ConciliacionMovimientoResumenDto> movimientosDisponibles)
-        {
-            var propuestas = new List<ConciliacionMatchPropuestaDto>();
-
-            var gruposPorRfc = facturasRemanentes
-                .Where(factura => !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
-                .GroupBy(factura => factura.ReceptorRfc!.Trim(), StringComparer.OrdinalIgnoreCase)
-                .OrderBy(grupo => grupo.Min(factura => factura.Fecha))
-                .ThenBy(grupo => grupo.Key, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            foreach (var grupoRfc in gruposPorRfc)
-            {
-                var facturasRfc = facturasRemanentes
-                    .Where(factura => string.Equals(factura.ReceptorRfc?.Trim(), grupoRfc.Key, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(factura => factura.Fecha)
-                    .ThenBy(factura => factura.IdFactura)
-                    .ToList();
-
-                if (facturasRfc.Count < 2)
-                {
-                    continue;
-                }
-
-                while (facturasRfc.Count >= 2 && movimientosDisponibles.Count > 0)
-                {
-                    var maximoAbonoDisponible = movimientosDisponibles.Max(movimiento => movimiento.Abono);
-                    if (maximoAbonoDisponible <= 0)
-                    {
-                        break;
-                    }
-
-                    var combinacion = _conciliacionMatchingEngine.BuscarCombinacionFacturasCompatible(
-                        facturasRfc,
-                        movimientosDisponibles,
-                        maximoAbonoDisponible,
-                        out var movimientoObjetivo,
-                        AplicarReglaPueMismoMes);
-
-                    if (combinacion == null || movimientoObjetivo == null)
-                    {
-                        break;
-                    }
-
-                    propuestas.Add(new ConciliacionMatchPropuestaDto
-                    {
-                        Tipo = "Combinacional",
-                        Facturas = combinacion,
-                        Movimiento = movimientoObjetivo,
-                        Observaciones = $"Conciliacion automatica combinacional con movimiento {movimientoObjetivo.GrupoId} para RFC {grupoRfc.Key}."
-                    });
-
-                    // Retirar del pool para buscar siguientes combinaciones
-                    var idsConciliados = combinacion.Select(factura => factura.IdFactura).ToHashSet();
-                    facturasRemanentes.RemoveAll(factura => idsConciliados.Contains(factura.IdFactura));
-                    facturasRfc.RemoveAll(factura => idsConciliados.Contains(factura.IdFactura));
-                    movimientosDisponibles.RemoveAll(movimiento => movimiento.IdMovimiento == movimientoObjetivo.IdMovimiento);
-                }
-            }
-
-            return propuestas;
-        }
-
-        private async Task<(IReadOnlyList<ConciliacionMatchPropuestaDto> Aprobadas, bool Cancelado)> MostrarDialogoYAplicarPropuestasAsync(
-            IReadOnlyList<ConciliacionMatchPropuestaDto> propuestas)
-        {
-            var ventana = new ConfirmacionConciliacionWindow(propuestas);
-            ventana.Activate();
-
-            var aprobadas = await ventana.ResultTask;
-
-            if (aprobadas == null)
-            {
-                return (Array.Empty<ConciliacionMatchPropuestaDto>(), true);
-            }
-
-            foreach (var propuesta in aprobadas)
-            {
-                if (propuesta.MovimientosAdicionales.Count > 0)
-                {
-                    // Tipo "Abonos": N movimientos → 1 factura
-                    await AplicarMovimientosSobreFacturaAsync(
-                        propuesta.Facturas[0],
-                        propuesta.TodosLosMovimientos);
-                }
-                else
-                {
-                    // Tipo "1 a 1" o "Combinacional": 1 movimiento → N facturas
-                    await ConciliarMovimientoConFacturasAsync(propuesta.Movimiento, propuesta.Facturas, propuesta.Observaciones);
-                }
-            }
-
-            return (aprobadas, false);
-        }
-
-        private async Task ConciliarMovimientoConFacturasAsync(
-            ConciliacionMovimientoResumenDto movimiento,
-            IReadOnlyList<FacturaResumenDto> facturas,
-            string observaciones)
-        {
-            var montoAplicado = decimal.Round(facturas.Sum(_conciliacionMatchingEngine.ObtenerMontoPendienteFactura), 2);
-            var request = new ConciliacionAutomaticaRequestDto
-            {
-                IdFactura = facturas.Count == 1 ? facturas[0].IdFactura : 0,
-                Facturas = facturas
-                    .Select(factura => new ConciliacionAutomaticaFacturaDto
-                    {
-                        IdFactura = factura.IdFactura,
-                        MontoAbono = _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura)
-                    })
-                    .ToList(),
-                IdMovimiento = movimiento.IdMovimiento,
-                FechaAbono = movimiento.Fecha,
-                MontoAbono = montoAplicado,
-                Referencia = movimiento.Referencia,
-                Observaciones = observaciones,
-                RegistrarEnBitacoraConciliacion = true,
-                TipoOperacionBitacoraConciliacion = "automatica"
-            };
-
-            var response = await _estadoCuentaXmlService.ConciliarAutomaticamenteAsync(request);
-            if (!response.Success)
-            {
-                throw new InvalidOperationException(string.IsNullOrWhiteSpace(response.Message)
-                    ? "No fue posible completar la conciliacion automatica."
-                    : response.Message);
-            }
-
-            OperacionesConciliacionPendientes = response.OperacionesConciliacionPendientes;
-        }
-
-        private async Task AplicarMovimientosSobreFacturaAsync(
-            FacturaResumenDto factura,
-            IReadOnlyList<ConciliacionMovimientoResumenDto> movimientos)
-        {
-            foreach (var movimiento in movimientos
-                .OrderBy(item => item.Fecha)
-                .ThenBy(item => item.IdMovimiento))
-            {
-                var resultado = await _facturaService.RegistrarAbonoAsync(new RegistrarAbonoFacturaRequestDto
-                {
-                    IdFactura = factura.IdFactura,
-                    IdMovimiento = movimiento.IdMovimiento,
-                    FechaAbono = movimiento.Fecha,
-                    MontoAbono = movimiento.Abono,
-                    Referencia = movimiento.Referencia,
-                    Observaciones = $"Abono generado desde conciliacion automatica de abonos con movimiento {movimiento.GrupoId}.",
-                    RegistrarEnBitacoraConciliacion = true,
-                    TipoOperacionBitacoraConciliacion = "automatica_abonos"
-                });
-
-                if (!resultado.Success)
-                {
-                    throw new InvalidOperationException(string.IsNullOrWhiteSpace(resultado.Message)
-                        ? "No fue posible registrar uno de los abonos combinados."
-                        : resultado.Message);
-                }
-
-                OperacionesConciliacionPendientes = resultado.OperacionesConciliacionPendientes;
-            }
-        }
-
-        private async Task ActualizarDetallePostConciliacionAsync(
-            FacturaResumenDto? ultimaFacturaConciliada,
-            ConciliacionMovimientoResumenDto? ultimoMovimientoConciliado)
-        {
-            if (ultimaFacturaConciliada == null)
-            {
-                return;
-            }
-
-            await CargarDetalleFacturaAsync(ultimaFacturaConciliada.IdFactura);
-            MovimientoCargado = _movimientosPendientesBase.FirstOrDefault(movimiento => movimiento.IdMovimiento == ultimoMovimientoConciliado?.IdMovimiento);
-        }
-
         private async Task InicializarBitacoraConciliacionSiEsNecesarioAsync()
         {
             if (_bitacoraConciliacionInicializada)
@@ -1223,9 +689,7 @@ namespace Advance_Control.ViewModels
             _facturasPendientesBase.Clear();
             _facturasPendientesBase.AddRange(facturasPendientes);
             AplicarFiltrosVisibles();
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+            OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
         }
 
         private void LimpiarFacturaCargada()
@@ -1251,9 +715,7 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(FacturaCargadaTotalAbonadoTexto));
             OnPropertyChanged(nameof(FacturaCargadaSaldoPendienteTexto));
             OnPropertyChanged(nameof(CanAbonarMovimiento));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+            OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
         }
 
         private void NotificarCambioMovimientoCargado()
@@ -1271,9 +733,7 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(MovimientoCargadoRelacionadosTexto));
             OnPropertyChanged(nameof(MovimientoCargadoMetadatosTexto));
             OnPropertyChanged(nameof(CanAbonarMovimiento));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomatica));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaConvinacional));
-            OnPropertyChanged(nameof(CanEjecutarConciliacionAutomaticaAbonos));
+            OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
         }
 
         private Task MostrarErrorConciliacionAsync(string mensaje)
@@ -1288,21 +748,6 @@ namespace Advance_Control.ViewModels
             SuccessMessage = mensaje;
             ErrorMessage = null;
             await _notificacionService.MostrarAsync("Conciliacion", mensaje);
-        }
-
-        private async Task MostrarResultadoFinalConciliacionAsync(
-            string proceso,
-            IReadOnlyCollection<string> segmentosResumen,
-            int facturasFallidas)
-        {
-            var mensaje = $"{proceso} completada. {string.Join("; ", segmentosResumen)}.";
-            if (facturasFallidas > 0)
-            {
-                await MostrarErrorConciliacionAsync(mensaje);
-                return;
-            }
-
-            await MostrarExitoConciliacionAsync(mensaje);
         }
 
         private async Task<(EstadoCuentaDetalleDto? Detalle, string? Error)> CargarDetalleEstadoSeguroAsync(EstadoCuentaResumenDto estado)

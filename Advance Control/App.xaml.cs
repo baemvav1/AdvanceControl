@@ -48,6 +48,8 @@ using Advance_Control.Services.CorreoUsuario;
 using Advance_Control.Services.TipoUsuario;
 using Advance_Control.Services.PermisosUi;
 using Advance_Control.Services.UsuariosAdmin;
+using Advance_Control.Services.Suscripciones;
+using Advance_Control.Services.Contratos;
 using Windows.ApplicationModel.DataTransfer;
 
 namespace Advance_Control
@@ -325,6 +327,44 @@ namespace Advance_Control
                         }
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar ContratoSuscripcionService y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<IContratoSuscripcionService, ContratoSuscripcionService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Registrar RemoteContratoDocumentoService para subir los PDFs de contratos de suscripción
+                    services.AddHttpClient("RemoteContratos", (sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
+                        client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
+                            ? System.Threading.Timeout.InfiniteTimeSpan
+                            : TimeSpan.FromSeconds(120);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    services.AddSingleton<IContratoDocumentoService>(sp =>
+                    {
+                        var factory = sp.GetRequiredService<IHttpClientFactory>();
+                        var http = factory.CreateClient("RemoteContratos");
+                        var logger = sp.GetRequiredService<ILoggingService>();
+                        return new Services.LocalStorage.RemoteContratoDocumentoService(http, logger);
+                    });
+
+                    services.AddSingleton<IContratoPdfService, ContratoPdfService>();
 
                     // Registrar InmuebleService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IInmuebleService, InmuebleService>((sp, client) =>

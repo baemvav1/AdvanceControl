@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Advance_Control.Views.Dialogs.GenerarContratoUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Advance_Control.Views.Dialogs"
+    xmlns:vm="using:Advance_Control.ViewModels"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    MinWidth="620"
+    MaxHeight="640">
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="4" Padding="4">
+            <TextBlock
+                Margin="0,0,0,8"
+                FontSize="16"
+                FontWeight="SemiBold"
+                Text="{x:Bind ViewModel.Nivel, Mode=OneWay}" />
+
+            <TextBlock FontWeight="SemiBold" Text="Número de contrato:" />
+            <TextBox
+                x:Name="NumeroContratoTextBox"
+                Margin="0,0,0,10"
+                PlaceholderText="Número de contrato"
+                Text="{x:Bind ViewModel.NumeroContrato, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <TextBlock FontWeight="SemiBold" Text="Dirección de instalación:" />
+            <TextBox
+                x:Name="DireccionInstalacionTextBox"
+                Margin="0,0,0,10"
+                AcceptsReturn="True"
+                Height="60"
+                PlaceholderText="Calle, colonia, ciudad"
+                Text="{x:Bind ViewModel.DireccionInstalacion, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                TextWrapping="Wrap" />
+
+            <TextBlock FontWeight="SemiBold" Text="Equipos cubiertos: *" />
+            <TextBox
+                x:Name="FiltroEquiposTextBox"
+                Margin="0,0,0,4"
+                PlaceholderText="Buscar equipo por identificador o marca..."
+                Text="{x:Bind ViewModel.FiltroEquipos, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                TextChanged="FiltroEquiposTextBox_TextChanged" />
+            <ProgressRing
+                Width="20"
+                Height="20"
+                HorizontalAlignment="Left"
+                IsActive="{x:Bind IsLoadingEquipos, Mode=OneWay}"
+                Visibility="{x:Bind IsLoadingEquipos, Mode=OneWay}" />
+            <Border
+                Margin="0,0,0,10"
+                Padding="8"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="4">
+                <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <ItemsRepeater x:Name="EquiposRepeater" ItemsSource="{x:Bind EquiposVista, Mode=OneWay}">
+                        <ItemsRepeater.Layout>
+                            <StackLayout Spacing="2" />
+                        </ItemsRepeater.Layout>
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate x:DataType="vm:EquipoSeleccionableDto">
+                                <CheckBox
+                                    Content="{x:Bind EtiquetaDisplay}"
+                                    IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
+                                    Checked="EquipoCheckBox_Changed"
+                                    Unchecked="EquipoCheckBox_Changed" />
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </ScrollViewer>
+            </Border>
+
+            <Grid Margin="0,0,0,10" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock FontWeight="SemiBold" Text="Monto mensual: *" />
+                    <TextBox
+                        x:Name="MontoMensualTextBox"
+                        InputScope="Number"
+                        PlaceholderText="Ej: 46906.99"
+                        Text="{x:Bind ViewModel.MontoMensualText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock FontWeight="SemiBold" Text="Número de unidades: *" />
+                    <TextBox
+                        x:Name="NumeroUnidadesTextBox"
+                        InputScope="Number"
+                        PlaceholderText="Autocalculado"
+                        Text="{x:Bind ViewModel.NumeroUnidadesText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Margin="0,0,0,10" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock FontWeight="SemiBold" Text="Vigencia inicio:" />
+                    <DatePicker x:Name="VigenciaInicioPicker" Date="{x:Bind ViewModel.VigenciaInicio, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock FontWeight="SemiBold" Text="Vigencia fin:" />
+                    <DatePicker x:Name="VigenciaFinPicker" Date="{x:Bind ViewModel.VigenciaFin, Mode=TwoWay}" HorizontalAlignment="Stretch" />
+                </StackPanel>
+            </Grid>
+
+            <Grid Margin="0,0,0,10" ColumnSpacing="16">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <StackPanel Grid.Column="0">
+                    <TextBlock FontWeight="SemiBold" Text="Nombre del firmante:" />
+                    <TextBox x:Name="NombreFirmanteTextBox" Text="{x:Bind ViewModel.NombreFirmante, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+                <StackPanel Grid.Column="1">
+                    <TextBlock FontWeight="SemiBold" Text="Teléfono del firmante:" />
+                    <TextBox x:Name="TelefonoFirmanteTextBox" InputScope="TelephoneNumber" Text="{x:Bind ViewModel.TelefonoFirmante, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock FontWeight="SemiBold" Text="Fecha de firma:" />
+            <DatePicker
+                x:Name="FechaFirmaPicker"
+                Margin="0,0,0,10"
+                Date="{x:Bind ViewModel.FechaFirma, Mode=TwoWay}"
+                HorizontalAlignment="Left" />
+
+            <InfoBar
+                x:Name="ErrorInfoBar"
+                Margin="0,0,0,10"
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                Severity="Error" />
+
+            <StackPanel
+                Margin="0,4,0,0"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="8">
+                <ProgressRing
+                    Width="20"
+                    Height="20"
+                    IsActive="{x:Bind IsGuardando, Mode=OneWay}"
+                    Visibility="{x:Bind IsGuardando, Mode=OneWay}" />
+                <Button
+                    x:Name="FinalizarButton"
+                    Click="FinalizarButton_Click"
+                    Content="Finalizar"
+                    IsEnabled="{x:Bind ViewModel.CanFinalizar, Mode=OneWay}"
+                    Style="{StaticResource AccentButtonStyle}" />
+                <Button x:Name="CancelarButton" Click="CancelarButton_Click" Content="Cancelar" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

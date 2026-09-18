@@ -1,5 +1,5 @@
 using Advance_Control.Models;
-using Advance_Control.Navigation;
+using Advance_Control.Views.Windows;
 
 namespace Advance_Control.Utilities
 {
@@ -7,23 +7,19 @@ namespace Advance_Control.Utilities
     {
         public static bool Navigate(OperacionDto operacion)
         {
-            return AppServices.Get<INavigationService>()
-                .Navigate("OperacionVisor", OperacionVisorNavigationContext.FromOperacion(operacion));
+            OperacionVisorWindow.Open(operacion);
+            return true;
         }
 
         public static bool Navigate(MensajeDto mensaje)
         {
-            if (!mensaje.IdReferencia.HasValue)
-                return false;
-
-            return AppServices.Get<INavigationService>()
-                .Navigate("OperacionVisor", OperacionVisorNavigationContext.FromMensaje(mensaje));
+            return OperacionVisorWindow.Open(mensaje) != null;
         }
 
         public static bool Navigate(int idOperacion)
         {
-            return AppServices.Get<INavigationService>()
-                .Navigate("OperacionVisor", new OperacionVisorNavigationContext { IdOperacion = idOperacion });
+            OperacionVisorWindow.Open(idOperacion);
+            return true;
         }
     }
 }

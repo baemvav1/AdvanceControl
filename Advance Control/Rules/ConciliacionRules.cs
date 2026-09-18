@@ -22,7 +22,17 @@ namespace Advance_Control.Rules
 
     public sealed class ConciliacionAbonosRules
     {
-        public int MaximoMovimientosCandidatos { get; init; } = 15;
+        /// <summary>
+        /// Hasta este numero de candidatos se usa backtracking exacto de un solo hilo
+        /// (rapido y ya probado en produccion). Por encima se usa busqueda "meet-in-the-middle"
+        /// en paralelo (ver ConciliacionMatchingEngine.BuscarCombinacionMovimientosMeetInTheMiddle),
+        /// para no truncar candidatos legitimos ni bloquear la UI con 2^n combinaciones.
+        /// </summary>
+        public int UmbralBusquedaExhaustiva { get; init; } = 22;
+
+        /// <summary>Tiempo maximo por factura antes de omitirla y continuar con el resto del lote.</summary>
+        public int TiempoLimitePorFacturaSegundos { get; init; } = 8;
+
         public int MinimoMovimientosPorCombinacion { get; init; } = 2;
     }
 

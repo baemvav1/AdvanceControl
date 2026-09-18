@@ -47,6 +47,21 @@ namespace Advance_Control.Models
         [JsonPropertyName("idUbicacion")]
         public int? IdUbicacion { get; set; }
 
+        [JsonPropertyName("controlador")]
+        public string? Controlador { get; set; }
+
+        [JsonPropertyName("tipoPuerta")]
+        public string? TipoPuerta { get; set; }
+
+        [JsonPropertyName("velocidad")]
+        public string? Velocidad { get; set; }
+
+        [JsonPropertyName("tipoMaquina")]
+        public string? TipoMaquina { get; set; }
+
+        [JsonPropertyName("operador")]
+        public string? Operador { get; set; }
+
         private bool _expand = false;
 
         /// <summary>

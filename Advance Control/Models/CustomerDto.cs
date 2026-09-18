@@ -157,5 +157,65 @@ namespace Advance_Control.Models
         {
             OnPropertyChanged(nameof(ShowNoContactosMessage));
         }
+
+        private ContratoSuscripcionDto? _suscripcion;
+
+        /// <summary>
+        /// Contrato de suscripción vigente del cliente (Oro/Plata/Bronce), si existe.
+        /// Se carga desde el endpoint de contratos cuando se expande el item.
+        /// </summary>
+        [JsonIgnore]
+        public ContratoSuscripcionDto? Suscripcion
+        {
+            get => _suscripcion;
+            set
+            {
+                if (_suscripcion != value)
+                {
+                    _suscripcion = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(TieneSuscripcion));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indica si el cliente tiene un contrato de suscripción registrado
+        /// </summary>
+        [JsonIgnore]
+        public bool TieneSuscripcion => Suscripcion != null;
+
+        private bool _suscripcionCargada = false;
+
+        /// <summary>
+        /// Indica si la suscripción ya ha sido cargada para este cliente.
+        /// </summary>
+        [JsonIgnore]
+        public bool SuscripcionCargada
+        {
+            get => _suscripcionCargada;
+            set => SetIfChanged(ref _suscripcionCargada, value);
+        }
+
+        private bool _isLoadingSuscripcion = false;
+
+        /// <summary>
+        /// Indica si la suscripción está siendo cargada.
+        /// </summary>
+        [JsonIgnore]
+        public bool IsLoadingSuscripcion
+        {
+            get => _isLoadingSuscripcion;
+            set => SetIfChanged(ref _isLoadingSuscripcion, value);
+        }
+
+        private void SetIfChanged(ref bool field, bool value, [CallerMemberName] string? propertyName = null)
+        {
+            if (field != value)
+            {
+                field = value;
+                OnPropertyChanged(propertyName);
+            }
+        }
     }
 }
