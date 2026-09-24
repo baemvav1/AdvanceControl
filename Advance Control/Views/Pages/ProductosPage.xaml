@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="Advance_Control.Views.Pages.ProductosPage" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:converters="using:Advance_Control.Converters"
+    xmlns:controls="using:Advance_Control.Views.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:local="using:Advance_Control.Views" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
@@ -16,6 +17,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!--  Header  -->
@@ -53,16 +55,18 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="ConceptoAutoSuggestBox"
                     Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Concepto"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Concepto del producto"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.ConceptoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="DescripcionAutoSuggestBox"
                     Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Descripción"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Búsqueda en descripción"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.DescripcionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <TextBox
@@ -88,7 +92,7 @@
 
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Productos, Mode=OneWay}">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Paginacion.PageItems, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="0" />
                     </ItemsRepeater.Layout>
@@ -102,8 +106,7 @@
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="0,0,0,1"
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
-                                        Tag="{x:Bind}"
-                                        Tapped="HeadGrid_Tapped">
+                                        Tag="{x:Bind}">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
@@ -248,5 +251,7 @@
                 </ItemsRepeater>
             </ScrollViewer>
         </Grid>
+
+        <controls:PaginacionFooterControl Grid.Row="3" Paginador="{x:Bind ViewModel.Paginacion, Mode=OneWay}" />
     </Grid>
 </Page>

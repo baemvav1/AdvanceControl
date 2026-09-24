@@ -40,6 +40,9 @@ namespace Advance_Control.Views.Pages
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(InmueblesPage));
 
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(IdentificadorAutoSuggestBox, () => ViewModel.ValoresIdentificador, () => _ = ViewModel.LoadInmueblesAsync());
+            AutoSuggestHelper.Conectar(DescripcionAutoSuggestBox, () => ViewModel.ValoresDescripcion, () => _ = ViewModel.LoadInmueblesAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -109,24 +112,6 @@ namespace Advance_Control.Views.Pages
             };
 
             await dialog.ShowAsync();
-        }
-
-        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is FrameworkElement element && element.Tag is Models.InmuebleDto inmueble)
-            {
-                inmueble.Expand = !inmueble.Expand;
-
-                if (inmueble.Expand && !inmueble.RelacionesLoaded && !string.IsNullOrWhiteSpace(inmueble.Identificador))
-                {
-                    await LoadRelacionesForInmuebleAsync(inmueble);
-                }
-
-                if (inmueble.Expand && inmueble.HasUbicacion && inmueble.Ubicacion == null)
-                {
-                    await LoadUbicacionForInmuebleAsync(inmueble);
-                }
-            }
         }
 
         private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)

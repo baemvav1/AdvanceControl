@@ -60,6 +60,23 @@ namespace Advance_Control.Views.Windows
             await GuardarArchivoAsync(rutaPdf, nombreSugerido, "Documento PDF", ".pdf");
         }
 
+        private async void BtnDescargarComplementoPdf_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is not ComplementoPagoRelacionadoDto complemento)
+            {
+                return;
+            }
+
+            var rutaPdf = await ViewModel.GenerarPdfComplementoAsync(complemento.IdFacturaComplemento);
+            if (rutaPdf == null)
+            {
+                return;
+            }
+
+            var nombreSugerido = $"ComplementoPago_{complemento.FolioTitulo}".Replace(" ", "_");
+            await GuardarArchivoAsync(rutaPdf, nombreSugerido, "Documento PDF", ".pdf");
+        }
+
         private async void BtnDescargarXml_Click(object sender, RoutedEventArgs e)
         {
             var xml = await ViewModel.ObtenerXmlAsync();

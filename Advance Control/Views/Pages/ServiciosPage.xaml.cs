@@ -51,6 +51,9 @@ namespace Advance_Control.Views.Pages
 
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(ConceptoAutoSuggestBox, () => ViewModel.ValoresConcepto, () => _ = ViewModel.LoadServiciosAsync());
+            AutoSuggestHelper.Conectar(DescripcionAutoSuggestBox, () => ViewModel.ValoresDescripcion, () => _ = ViewModel.LoadServiciosAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -182,14 +185,6 @@ namespace Advance_Control.Views.Pages
                 {
                     await _notificacionService.MostrarAsync("Error", $"Error al crear servicio: {ex.Message}");
                 }
-            }
-        }
-
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is Grid grid && grid.Tag is ServicioDto servicio)
-            {
-                servicio.Expand = !servicio.Expand;
             }
         }
 

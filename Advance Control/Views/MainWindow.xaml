@@ -180,31 +180,14 @@
                                         <FontIcon Glyph="&#xE8FF;" />
                                     </NavigationViewItem.Icon>
                                 </NavigationViewItem>
+                                <NavigationViewItem Content="Prototipo" Tag="ProOperaciones">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
-                        <!--  Grupo: Clientes  -->
-                        <NavigationViewItem
-                            Background="{ThemeResource ControlElevationBorderBrush}"
-                            Content="Clientes"
-                            IsExpanded="True"
-                            SelectsOnInvoked="False">
-                            <NavigationViewItem.Icon>
-                                <FontIcon Glyph="&#xE716;" />
-                            </NavigationViewItem.Icon>
-                            <NavigationViewItem.MenuItems>
-                                <NavigationViewItem Content="Clientes" Tag="Clientes">
-                                    <NavigationViewItem.Icon>
-                                        <FontIcon Glyph="&#xE902;" />
-                                    </NavigationViewItem.Icon>
-                                </NavigationViewItem>
-                                <NavigationViewItem Content="Entidades" Tag="Entidades">
-                                    <NavigationViewItem.Icon>
-                                        <FontIcon Glyph="&#xE8C7;" />
-                                    </NavigationViewItem.Icon>
-                                </NavigationViewItem>
-                            </NavigationViewItem.MenuItems>
-                        </NavigationViewItem>
                         <!--  Grupo: Direccion  -->
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
@@ -222,6 +205,11 @@
                                     Content="Detalle Clientes"
                                     Icon="ContactInfo"
                                     Tag="DetalleClientes" />
+                                <NavigationViewItem Content="Prototipo" Tag="ProDireccion">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
@@ -234,6 +222,11 @@
                             SelectsOnInvoked="False">
 
                             <NavigationViewItem.MenuItems>
+                                <NavigationViewItem Content="Clientes" Tag="Clientes">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE902;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                                 <NavigationViewItem
                                     Content="Equipos"
                                     Icon="AllApps"
@@ -263,6 +256,11 @@
                                     Content="Proveedores"
                                     Icon="Contact"
                                     Tag="Proveedores" />
+                                <NavigationViewItem Content="Prototipo" Tag="ProCatalogos">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
@@ -284,6 +282,11 @@
                                     Content="Áreas"
                                     Icon="Map"
                                     Tag="Areas" />
+                                <NavigationViewItem Content="Prototipo" Tag="ProUbicaciones">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
@@ -297,6 +300,11 @@
                                 <FontIcon Glyph="&#xE825;" />
                             </NavigationViewItem.Icon>
                             <NavigationViewItem.MenuItems>
+                                <NavigationViewItem Content="Entidades" Tag="Entidades">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE8C7;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                                 <NavigationViewItem Content="Estado de Cuenta" Tag="EstadoCuenta">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xEAFC;" />
@@ -310,6 +318,11 @@
                                     Content="Facturas"
                                     Icon="Document"
                                     Tag="Facturas" />
+                                <NavigationViewItem Content="Complementos de Pago" Tag="ComplementosPagoAuditoria">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE9D9;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                                 <NavigationViewItem Content="Facturación" Tag="Facturacion">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xE8A5;" />
@@ -319,6 +332,11 @@
                                 <NavigationViewItem Content="Cobranza" Tag="ReporteFinancieroFacturacion">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xE9F9;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
+                                <NavigationViewItem Content="Prototipo" Tag="ProFinanciero">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
                                     </NavigationViewItem.Icon>
                                 </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
@@ -343,6 +361,11 @@
                                     Content="Configuración Correo"
                                     Icon="Setting"
                                     Tag="Correo" />
+                                <NavigationViewItem Content="Prototipo" Tag="ProComunicacion">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
@@ -360,6 +383,11 @@
                                     Content="Administración"
                                     Icon="Setting"
                                     Tag="Administracion" />
+                                <NavigationViewItem Content="Prototipo" Tag="ProAdministracion">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
@@ -375,6 +403,11 @@
                                     Icon="Repair"
                                     SelectsOnInvoked="False"
                                     Tag="DevOps" />
+                                <NavigationViewItem Content="Prototipo" Tag="ProDevOps">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 

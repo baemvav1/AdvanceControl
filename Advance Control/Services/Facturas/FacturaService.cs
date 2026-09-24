@@ -108,7 +108,7 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
-        public async Task<FacturaResumenDto?> BuscarFacturaPorFolioAsync(string folio, CancellationToken cancellationToken = default)
+        public async Task<FacturaResumenDto?> BuscarFacturaPorFolioAsync(string folio, string? serie = null, CancellationToken cancellationToken = default)
         {
             var url = new ApiQueryBuilder()
                 .Add("folio", folio)
@@ -118,7 +118,16 @@ namespace Advance_Control.Services.Facturas
             {
                 await _logger.LogInformationAsync($"Buscando factura por folio en: {url}", "FacturaService", "BuscarFacturaPorFolioAsync");
                 var result = await _http.GetFromJsonAsync<List<FacturaResumenDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
-                return result?.FirstOrDefault();
+                if (result == null)
+                {
+                    return null;
+                }
+
+                // El filtro de la API solo compara contra la columna folio (LIKE parcial); si se pide
+                // una serie especifica, se acota en memoria porque el mismo folio puede repetirse entre series.
+                return string.IsNullOrWhiteSpace(serie)
+                    ? result.FirstOrDefault()
+                    : result.FirstOrDefault(f => string.Equals(f.Serie, serie, StringComparison.OrdinalIgnoreCase));
             }
             catch (HttpRequestException ex)
             {
@@ -568,6 +577,189 @@ namespace Advance_Control.Services.Facturas
             {
                 await _logger.LogErrorAsync("Error de red al cancelar CFDI", ex, "FacturaService", "CancelarCfdiAsync");
                 return new CancelarCfdiResponseDto { Success = false, Message = "Error de comunicación con el servidor al cancelar." };
+            }
+        }
+
+        public async Task<List<AbonoPendienteComplementoDto>> ObtenerAbonosPendientesComplementoAsync(string receptorRfc, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(receptorRfc))
+                throw new ArgumentException("El RFC del receptor es requerido.", nameof(receptorRfc));
+
+            var url = new ApiQueryBuilder()
+                .Add("receptorRfc", receptorRfc)
+                .Build(_endpoints.GetEndpoint("api", "factura", "abonos-pendientes-complemento"));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando abonos pendientes de complemento en: {url}", "FacturaService", "ObtenerAbonosPendientesComplementoAsync");
+                var result = await _http.GetFromJsonAsync<List<AbonoPendienteComplementoDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<AbonoPendienteComplementoDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar abonos pendientes de complemento", ex, "FacturaService", "ObtenerAbonosPendientesComplementoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar abonos pendientes de complemento.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al consultar abonos pendientes de complemento", ex, "FacturaService", "ObtenerAbonosPendientesComplementoAsync");
+                throw;
+            }
+        }
+
+        public async Task<TimbrarResultadoDto> GenerarComplementoPagoAsync(GenerarComplementoPagoRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var url = _endpoints.GetEndpoint("api", "factura", "complemento-pago");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Generando complemento de pago en: {url}", "FacturaService", "GenerarComplementoPagoAsync");
+
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                var contenido = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al generar complemento de pago. Status: {response.StatusCode}, Content: {contenido}",
+                        null,
+                        "FacturaService",
+                        "GenerarComplementoPagoAsync");
+
+                    return ExtraerResultadoError(contenido);
+                }
+
+                var result = JsonSerializer.Deserialize<GenerarComplementoPagoResponseDto>(contenido, _jsonOptions);
+                if (result != null)
+                {
+                    return new TimbrarResultadoDto
+                    {
+                        Success = result.Success,
+                        Message = result.Message,
+                        IdFactura = result.IdFacturaComplemento
+                    };
+                }
+
+                return new TimbrarResultadoDto { Success = false, Message = "La API devolvió una respuesta vacía al generar el complemento de pago." };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al generar complemento de pago", ex, "FacturaService", "GenerarComplementoPagoAsync");
+                return new TimbrarResultadoDto { Success = false, Message = "Error de comunicación con el servidor al generar el complemento de pago." };
+            }
+        }
+
+        public async Task<List<ComplementoPagoResumenDto>> ObtenerComplementosPagoAsync(bool soloHuerfanos = false, CancellationToken cancellationToken = default)
+        {
+            var url = new ApiQueryBuilder()
+                .Add("soloHuerfanos", soloHuerfanos)
+                .Build(_endpoints.GetEndpoint("api", "factura", "complementos-pago"));
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando complementos de pago en: {url}", "FacturaService", "ObtenerComplementosPagoAsync");
+                var result = await _http.GetFromJsonAsync<List<ComplementoPagoResumenDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<ComplementoPagoResumenDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar complementos de pago", ex, "FacturaService", "ObtenerComplementosPagoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar complementos de pago.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al consultar complementos de pago", ex, "FacturaService", "ObtenerComplementosPagoAsync");
+                throw;
+            }
+        }
+
+        public async Task<ComplementoPagoDetalleDto?> ObtenerComplementoPagoDetalleAsync(int idFacturaComplemento, CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", idFacturaComplemento.ToString(), "complemento-pago-detalle");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando detalle de complemento de pago en: {url}", "FacturaService", "ObtenerComplementoPagoDetalleAsync");
+                return await _http.GetFromJsonAsync<ComplementoPagoDetalleDto>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar detalle de complemento de pago", ex, "FacturaService", "ObtenerComplementoPagoDetalleAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar el complemento de pago.", ex);
+            }
+        }
+
+        public async Task<List<ComplementoPagoPendienteMovimientoDto>> ObtenerComplementosSinMovimientoAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "complementos-pago", "pendientes-movimiento");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando complementos de pago sin movimiento en: {url}", "FacturaService", "ObtenerComplementosSinMovimientoAsync");
+                var result = await _http.GetFromJsonAsync<List<ComplementoPagoPendienteMovimientoDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<ComplementoPagoPendienteMovimientoDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar complementos de pago sin movimiento", ex, "FacturaService", "ObtenerComplementosSinMovimientoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar complementos de pago sin movimiento.", ex);
+            }
+        }
+
+        public async Task<RegistrarAbonoFacturaResponseDto> VincularComplementoMovimientoAsync(VincularComplementoMovimientoRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            var url = _endpoints.GetEndpoint("api", "factura", "complemento-pago", "vincular-movimiento");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Vinculando complemento de pago a movimiento en: {url}", "FacturaService", "VincularComplementoMovimientoAsync");
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al vincular complemento de pago a movimiento. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        "VincularComplementoMovimientoAsync");
+
+                    return new RegistrarAbonoFacturaResponseDto
+                    {
+                        Success = false,
+                        Message = errorContent
+                    };
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<RegistrarAbonoFacturaResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                if (result != null)
+                {
+                    return result;
+                }
+
+                await _logger.LogErrorAsync("La API devolvio una respuesta vacia al vincular el complemento de pago", null, "FacturaService", "VincularComplementoMovimientoAsync");
+                return new RegistrarAbonoFacturaResponseDto
+                {
+                    Success = false,
+                    Message = "La API devolvio una respuesta vacia al vincular el complemento de pago."
+                };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al vincular complemento de pago a movimiento", ex, "FacturaService", "VincularComplementoMovimientoAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al vincular el complemento de pago.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al vincular complemento de pago a movimiento", ex, "FacturaService", "VincularComplementoMovimientoAsync");
+                throw;
             }
         }
 

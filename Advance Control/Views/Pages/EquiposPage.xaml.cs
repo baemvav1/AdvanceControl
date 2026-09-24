@@ -59,9 +59,13 @@ namespace Advance_Control.Views.Pages
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(EquiposPage));
-            
+
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(MarcaAutoSuggestBox, () => ViewModel.ValoresMarca, () => _ = ViewModel.LoadEquiposAsync());
+            AutoSuggestHelper.Conectar(IdentificadorAutoSuggestBox, () => ViewModel.ValoresIdentificador, () => _ = ViewModel.LoadEquiposAsync());
+            AutoSuggestHelper.Conectar(DescripcionAutoSuggestBox, () => ViewModel.ValoresDescripcion, () => _ = ViewModel.LoadEquiposAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -137,25 +141,53 @@ namespace Advance_Control.Views.Pages
             await dialog.ShowAsync();
         }
 
-        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
+        private async void EditarEquipoButton_Click(object sender, RoutedEventArgs e)
         {
-            // Get the EquipoDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.EquipoDto equipo)
-            {
-                equipo.Expand = !equipo.Expand;
-                
-                // Load relaciones when expanding if not already loaded
-                if (equipo.Expand && !equipo.RelacionesLoaded && !string.IsNullOrWhiteSpace(equipo.Identificador))
-                {
-                    await LoadRelacionesForEquipoAsync(equipo);
-                }
+            if (sender is not FrameworkElement element || element.Tag is not Models.EquipoDto equipo)
+                return;
 
-                // Load ubicacion when expanding if not already loaded
-                if (equipo.Expand && equipo.HasUbicacion && equipo.Ubicacion == null)
+            // Resolver el ViewModel desde DI y precargarlo con los datos del equipo
+            var editarEquipoViewModel = AppServices.Get<NuevoEquipoViewModel>();
+            var editarEquipoView = new NuevoEquipoUserControl(editarEquipoViewModel, equipo);
+
+            var dialog = new ContentDialog
+            {
+                Title = "Editar Equipo",
+                Content = editarEquipoView,
+                XamlRoot = this.XamlRoot
+            };
+
+            editarEquipoView.CloseDialogAction = () =>
+            {
+                try
                 {
-                    await LoadUbicacionForEquipoAsync(equipo);
+                    var dispatcherQueue = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+                    if (dispatcherQueue != null)
+                    {
+                        _ = dispatcherQueue.TryEnqueue(() =>
+                        {
+                            try
+                            {
+                                dialog.Hide();
+                            }
+                            catch
+                            {
+                                // El diálogo ya puede estar cerrado
+                            }
+                        });
+                    }
+                    else
+                    {
+                        dialog.Hide();
+                    }
                 }
-            }
+                catch
+                {
+                    // El diálogo ya puede estar cerrado
+                }
+            };
+
+            await dialog.ShowAsync();
         }
 
         private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)

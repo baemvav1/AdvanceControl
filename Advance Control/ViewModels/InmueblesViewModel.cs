@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,11 +9,22 @@ using Advance_Control.Models;
 using Advance_Control.Services.Inmuebles;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Ubicaciones;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class InmueblesViewModel : ViewModelBase
     {
+        public PaginadorViewModel<InmuebleDto> Paginacion { get; } = new();
+
+        private List<InmuebleDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(DescripcionFilter) || !string.IsNullOrWhiteSpace(IdentificadorFilter) ||
+            SelectedUbicacionFilter != null;
+
+        public IEnumerable<string?> ValoresIdentificador => _catalogoSugerencias.Select(i => i.Identificador);
+        public IEnumerable<string?> ValoresDescripcion => _catalogoSugerencias.Select(i => i.Descripcion);
+
         private readonly IInmuebleService _inmuebleService;
         private readonly IUbicacionService _ubicacionService;
         private readonly ILoggingService _logger;
@@ -135,6 +147,10 @@ namespace Advance_Control.ViewModels
                 {
                     Inmuebles.Add(inmueble);
                 }
+                Paginacion.EstablecerElementos(inmuebles);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = inmuebles.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {inmuebles.Count} inmuebles exitosamente", "InmueblesViewModel", "LoadInmueblesAsync");
             }

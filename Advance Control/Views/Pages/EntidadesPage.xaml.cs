@@ -50,9 +50,15 @@ namespace Advance_Control.Views.Pages
 
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(EntidadesPage));
-            
+
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(NombreComercialAutoSuggestBox, () => ViewModel.ValoresNombreComercial, () => _ = ViewModel.LoadEntidadesAsync());
+            AutoSuggestHelper.Conectar(RazonSocialAutoSuggestBox, () => ViewModel.ValoresRazonSocial, () => _ = ViewModel.LoadEntidadesAsync());
+            AutoSuggestHelper.Conectar(RfcAutoSuggestBox, () => ViewModel.ValoresRfc, () => _ = ViewModel.LoadEntidadesAsync());
+            AutoSuggestHelper.Conectar(EstadoAutoSuggestBox, () => ViewModel.ValoresEstado, () => _ = ViewModel.LoadEntidadesAsync());
+            AutoSuggestHelper.Conectar(CiudadAutoSuggestBox, () => ViewModel.ValoresCiudad, () => _ = ViewModel.LoadEntidadesAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -263,14 +269,6 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            // Get the EntidadDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.EntidadDto entidad)
-            {
-                entidad.Expand = !entidad.Expand;
-            }
-        }
 
         private void ToggleExpandButton_Click(object sender, RoutedEventArgs e)
         {

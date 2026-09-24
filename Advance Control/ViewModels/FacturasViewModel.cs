@@ -987,14 +987,14 @@ namespace Advance_Control.ViewModels
                 if (resultado.Success)
                 {
                     SuccessMessage = string.IsNullOrWhiteSpace(resultado.Message)
-                        ? "Complemento de pago registrado correctamente."
+                        ? "Abono registrado correctamente."
                         : resultado.Message;
                     await CargarFacturasAsync();
                 }
                 else
                 {
                     ErrorMessage = string.IsNullOrWhiteSpace(resultado.Message)
-                        ? "No se pudo registrar el complemento de pago."
+                        ? "No se pudo registrar el abono."
                         : resultado.Message;
                 }
 
@@ -1002,8 +1002,49 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error al registrar el complemento de pago: {ex.Message}";
+                ErrorMessage = $"Error al registrar el abono: {ex.Message}";
                 return new RegistrarAbonoFacturaResponseDto { Success = false, Message = ex.Message };
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>Abonos de facturas PPD propias de un receptor que todavía no entraron a ningún Complemento de Pago real.</summary>
+        public Task<List<AbonoPendienteComplementoDto>> ObtenerAbonosPendientesComplementoAsync(string receptorRfc)
+            => _facturaService.ObtenerAbonosPendientesComplementoAsync(receptorRfc);
+
+        /// <summary>Arma, sella y timbra vía FEL Bilkon un Complemento de Pago real a partir de abonos ya registrados.</summary>
+        public async Task<TimbrarResultadoDto> GenerarComplementoPagoAsync(GenerarComplementoPagoRequestDto request)
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                var resultado = await _facturaService.GenerarComplementoPagoAsync(request);
+                if (resultado.Success)
+                {
+                    SuccessMessage = string.IsNullOrWhiteSpace(resultado.Message)
+                        ? "Complemento de pago generado y timbrado correctamente."
+                        : resultado.Message;
+                    await CargarFacturasAsync();
+                }
+                else
+                {
+                    ErrorMessage = string.IsNullOrWhiteSpace(resultado.Message)
+                        ? "No se pudo generar el complemento de pago."
+                        : resultado.Message;
+                }
+
+                return resultado;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el complemento de pago: {ex.Message}";
+                return new TimbrarResultadoDto { Success = false, Message = ex.Message };
             }
             finally
             {

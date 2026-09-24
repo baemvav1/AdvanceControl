@@ -3,6 +3,7 @@
     x:Class="Advance_Control.Views.Pages.ContactosPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Advance_Control.Views.Controls"
     xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Advance_Control.Views.Pages"
@@ -21,6 +22,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!--  Header  -->
@@ -74,49 +76,54 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="NombreAutoSuggestBox"
                     Grid.Row="0"
                     Grid.Column="0"
                     Margin="0,0,8,8"
                     Header="Nombre"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Nombre del contacto"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.NombreFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="ApellidoAutoSuggestBox"
                     Grid.Row="0"
                     Grid.Column="1"
                     Margin="0,0,8,8"
                     Header="Apellido"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Apellido del contacto"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.ApellidoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="CorreoAutoSuggestBox"
                     Grid.Row="0"
                     Grid.Column="2"
                     Margin="0,0,8,8"
                     Header="Correo"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Correo electrónico"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.CorreoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="TelefonoAutoSuggestBox"
                     Grid.Row="1"
                     Grid.Column="0"
                     Margin="0,0,8,8"
                     Header="Teléfono"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Teléfono del contacto"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.TelefonoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="DepartamentoAutoSuggestBox"
                     Grid.Row="1"
                     Grid.Column="1"
                     Margin="0,0,8,8"
                     Header="Departamento"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Departamento"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.DepartamentoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <StackPanel
@@ -144,7 +151,7 @@
 
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Contactos, Mode=OneWay}">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Paginacion.PageItems, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="0" />
                     </ItemsRepeater.Layout>
@@ -519,5 +526,7 @@
                 </ItemsRepeater>
             </ScrollViewer>
         </Grid>
+
+        <controls:PaginacionFooterControl Grid.Row="3" Paginador="{x:Bind ViewModel.Paginacion, Mode=OneWay}" />
     </Grid>
 </Page>

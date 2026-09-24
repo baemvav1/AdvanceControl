@@ -194,7 +194,8 @@
                             </Border>
 
                             <!--  Folio(s): clickeable solo en propuestas 1 a 1  -->
-                            <Grid Grid.Column="2" VerticalAlignment="Center">
+                            <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
+                            <Grid>
 
                                 <!--  Texto plano para propuestas no 1-a-1 (combinacional)  -->
                                 <TextBlock
@@ -254,6 +255,13 @@
                                 </HyperlinkButton>
 
                             </Grid>
+
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="{x:Bind ComplementoFolioTexto}"
+                                Visibility="{x:Bind EsComplemento, Converter={StaticResource BoolToVisibility}}" />
+                            </StackPanel>
 
                             <TextBlock
                                 Grid.Column="3"

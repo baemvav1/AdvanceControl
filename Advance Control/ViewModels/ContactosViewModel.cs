@@ -1,16 +1,34 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Logging;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class ContactosViewModel : ViewModelBase
     {
+        public PaginadorViewModel<ContactoDto> Paginacion { get; } = new();
+
+        private List<ContactoDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(NombreFilter) || !string.IsNullOrWhiteSpace(ApellidoFilter) ||
+            !string.IsNullOrWhiteSpace(CorreoFilter) || !string.IsNullOrWhiteSpace(TelefonoFilter) ||
+            !string.IsNullOrWhiteSpace(DepartamentoFilter) || !string.IsNullOrWhiteSpace(CargoFilter);
+
+        public IEnumerable<string?> ValoresNombre => _catalogoSugerencias.Select(c => c.Nombre);
+        public IEnumerable<string?> ValoresApellido => _catalogoSugerencias.Select(c => c.Apellido);
+        public IEnumerable<string?> ValoresCorreo => _catalogoSugerencias.Select(c => c.Correo);
+        public IEnumerable<string?> ValoresTelefono => _catalogoSugerencias.Select(c => c.Telefono);
+        public IEnumerable<string?> ValoresDepartamento => _catalogoSugerencias.Select(c => c.Departamento);
+        public IEnumerable<string?> ValoresCargo => _catalogoSugerencias.Select(c => c.Cargo);
+
         private readonly IContactoService _contactoService;
         private readonly ILoggingService _logger;
         private ObservableCollection<ContactoDto> _contactos;
@@ -136,6 +154,10 @@ namespace Advance_Control.ViewModels
                 {
                     Contactos.Add(contacto);
                 }
+                Paginacion.EstablecerElementos(contactos);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = contactos.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {contactos.Count} contactos exitosamente", "ContactosViewModel", "LoadContactosAsync");
             }

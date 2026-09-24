@@ -10,11 +10,14 @@ using Advance_Control.Services.Areas;
 using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Ubicaciones;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class EquiposViewModel : ViewModelBase
     {
+        public PaginadorViewModel<EquipoDto> Paginacion { get; } = new();
+
         private readonly IEquipoService _equipoService;
         private readonly IUbicacionService _ubicacionService;
         private readonly IAreasService _areasService;
@@ -50,6 +53,24 @@ namespace Advance_Control.ViewModels
             get => _equipos;
             set => SetProperty(ref _equipos, value);
         }
+
+        /// <summary>
+        /// Copia sin filtrar del catálogo, tomada la primera vez que se carga sin
+        /// ningún filtro activo. Sirve como fuente de sugerencias para los
+        /// AutoSuggestBox de filtro, para que no se reduzcan a medida que el
+        /// usuario va escribiendo.
+        /// </summary>
+        private List<EquipoDto> _catalogoSugerencias = new();
+
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(MarcaFilter) || !string.IsNullOrWhiteSpace(CreadoFilterText) ||
+            !string.IsNullOrWhiteSpace(ParadasFilterText) || !string.IsNullOrWhiteSpace(KilogramosFilterText) ||
+            !string.IsNullOrWhiteSpace(PersonasFilterText) || !string.IsNullOrWhiteSpace(DescripcionFilter) ||
+            !string.IsNullOrWhiteSpace(IdentificadorFilter) || SelectedUbicacionFilter != null || SelectedAreaFilter != null;
+
+        public IEnumerable<string?> ValoresMarca => _catalogoSugerencias.Select(e => e.Marca);
+        public IEnumerable<string?> ValoresIdentificador => _catalogoSugerencias.Select(e => e.Identificador);
+        public IEnumerable<string?> ValoresDescripcion => _catalogoSugerencias.Select(e => e.Descripcion);
 
         public ObservableCollection<UbicacionDto> Ubicaciones
         {
@@ -273,6 +294,10 @@ namespace Advance_Control.ViewModels
                 {
                     Equipos.Add(equipo);
                 }
+                Paginacion.EstablecerElementos(filtrados);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = filtrados.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {equipos.Count} equipos exitosamente", "EquiposViewModel", "LoadEquiposAsync");
             }

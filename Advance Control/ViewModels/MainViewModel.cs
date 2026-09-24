@@ -148,6 +148,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.EstadoCuentaPage>("EstadoCuenta");
             _navigationService.Configure<Views.Pages.ConciliacionPage>("Conciliacion");
             _navigationService.Configure<Views.Pages.FacturasPage>("Facturas");
+            _navigationService.Configure<Views.Pages.ComplementosPagoAuditoriaPage>("ComplementosPagoAuditoria");
             _navigationService.Configure<Views.Pages.FacturacionPage>("Facturacion");
             _navigationService.Configure<Views.Pages.VisorMundialPage>("VisorMundial");
             _navigationService.Configure<Views.Pages.DetalleClientesView>("DetalleClientes");
@@ -157,6 +158,16 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.AdministracionPage>("Administracion");
             _navigationService.Configure<Views.Pages.DevOpsPage>("DevOps");
             _navigationService.Configure<Views.Pages.SettingsPage>("Settings");
+
+            // Lienzos de prototipos por grupo de navegación (nivel 1 / devs, gestionado manualmente por permisos UI)
+            _navigationService.Configure<Views.Pages.ProOperacionesPage>("ProOperaciones");
+            _navigationService.Configure<Views.Pages.ProDireccionPage>("ProDireccion");
+            _navigationService.Configure<Views.Pages.ProCatalogosPage>("ProCatalogos");
+            _navigationService.Configure<Views.Pages.ProUbicacionesPage>("ProUbicaciones");
+            _navigationService.Configure<Views.Pages.ProFinancieroPage>("ProFinanciero");
+            _navigationService.Configure<Views.Pages.ProComunicacionPage>("ProComunicacion");
+            _navigationService.Configure<Views.Pages.ProAdministracionPage>("ProAdministracion");
+            _navigationService.Configure<Views.Pages.ProDevOpsPage>("ProDevOps");
 
             // Subscribe to Frame navigation events
             contentFrame.Navigated += OnFrameNavigated;

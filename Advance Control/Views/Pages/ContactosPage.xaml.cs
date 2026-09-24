@@ -39,9 +39,15 @@ namespace Advance_Control.Views.Pages
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(ContactosPage));
-            
+
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(NombreAutoSuggestBox, () => ViewModel.ValoresNombre, () => _ = ViewModel.LoadContactosAsync());
+            AutoSuggestHelper.Conectar(ApellidoAutoSuggestBox, () => ViewModel.ValoresApellido, () => _ = ViewModel.LoadContactosAsync());
+            AutoSuggestHelper.Conectar(CorreoAutoSuggestBox, () => ViewModel.ValoresCorreo, () => _ = ViewModel.LoadContactosAsync());
+            AutoSuggestHelper.Conectar(TelefonoAutoSuggestBox, () => ViewModel.ValoresTelefono, () => _ = ViewModel.LoadContactosAsync());
+            AutoSuggestHelper.Conectar(DepartamentoAutoSuggestBox, () => ViewModel.ValoresDepartamento, () => _ = ViewModel.LoadContactosAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)

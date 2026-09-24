@@ -10,11 +10,22 @@ using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Session;
 using Advance_Control.Services.Activity;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class CustomersViewModel : ViewModelBase
     {
+        public PaginadorViewModel<CustomerDto> Paginacion { get; } = new();
+
+        private List<CustomerDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(SearchText) || !string.IsNullOrWhiteSpace(RfcFilter) ||
+            !string.IsNullOrWhiteSpace(NotasFilter) || !string.IsNullOrWhiteSpace(PrioridadFilter);
+
+        public IEnumerable<string?> ValoresRazonSocial => _catalogoSugerencias.Select(c => c.RazonSocial);
+        public IEnumerable<string?> ValoresRfc => _catalogoSugerencias.Select(c => c.Rfc);
+
         private readonly IClienteService _clienteService;
         private readonly ILoggingService _logger;
         private readonly IUserSessionService _userSessionService;
@@ -142,6 +153,10 @@ namespace Advance_Control.ViewModels
                     Customers.Add(cliente);
                 }
                 OnPropertyChanged(nameof(IsEmpty));
+                Paginacion.EstablecerElementos(clientes);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = clientes.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {clientes.Count} clientes exitosamente", "CustomersViewModel", "LoadClientesAsync");
             }

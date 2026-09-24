@@ -9,7 +9,7 @@ namespace Advance_Control.Services.Facturas
     {
         Task<GuardarFacturaResponseDto> GuardarFacturaAsync(GuardarFacturaRequestDto request, CancellationToken cancellationToken = default);
         Task<List<FacturaResumenDto>> ObtenerFacturasAsync(CancellationToken cancellationToken = default);
-        Task<FacturaResumenDto?> BuscarFacturaPorFolioAsync(string folio, CancellationToken cancellationToken = default);
+        Task<FacturaResumenDto?> BuscarFacturaPorFolioAsync(string folio, string? serie = null, CancellationToken cancellationToken = default);
         Task<FacturaDetalleDto?> ObtenerDetalleFacturaAsync(int idFactura, CancellationToken cancellationToken = default);
         Task<string?> ObtenerXmlFacturaAsync(int idFactura, CancellationToken cancellationToken = default);
         Task<RegistrarAbonoFacturaResponseDto> RegistrarAbonoAsync(RegistrarAbonoFacturaRequestDto request, CancellationToken cancellationToken = default);
@@ -36,5 +36,23 @@ namespace Advance_Control.Services.Facturas
         /// irreversible y sin ambiente de pruebas -- consume 1 timbre si Bilkon confirma código 201.
         /// </summary>
         Task<CancelarCfdiResponseDto> CancelarCfdiAsync(int idFactura, CancelarCfdiRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>Abonos de facturas PPD propias de un receptor que todavía no entraron a ningún Complemento de Pago.</summary>
+        Task<List<AbonoPendienteComplementoDto>> ObtenerAbonosPendientesComplementoAsync(string receptorRfc, CancellationToken cancellationToken = default);
+
+        /// <summary>Arma, sella y timbra vía FEL Bilkon un Complemento de Pago real a partir de abonos ya registrados.</summary>
+        Task<TimbrarResultadoDto> GenerarComplementoPagoAsync(GenerarComplementoPagoRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>Lista Complementos de Pago (un renglón por documento relacionado), opcionalmente solo los huérfanos.</summary>
+        Task<List<ComplementoPagoResumenDto>> ObtenerComplementosPagoAsync(bool soloHuerfanos = false, CancellationToken cancellationToken = default);
+
+        /// <summary>Detalle completo de un Complemento de Pago (para armar su PDF).</summary>
+        Task<ComplementoPagoDetalleDto?> ObtenerComplementoPagoDetalleAsync(int idFacturaComplemento, CancellationToken cancellationToken = default);
+
+        /// <summary>Doctos de Complemento de Pago que ya citan una factura propia pero sin ningún abono interno todavía (candidatos a ligar a un movimiento en Conciliación).</summary>
+        Task<List<ComplementoPagoPendienteMovimientoDto>> ObtenerComplementosSinMovimientoAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Registra el abono real a partir de un docto de Complemento de Pago y un movimiento bancario, y deja el docto ligado a ese abono.</summary>
+        Task<RegistrarAbonoFacturaResponseDto> VincularComplementoMovimientoAsync(VincularComplementoMovimientoRequestDto request, CancellationToken cancellationToken = default);
     }
 }

@@ -10,6 +10,7 @@ namespace Advance_Control.ViewModels
     {
         private readonly IFacturaService _facturaService;
         private readonly IFacturaPdfService _facturaPdfService;
+        private readonly IComplementoPagoPdfService _complementoPagoPdfService;
         private FacturaDetalleDto? _detalleCompleto;
         private FacturaResumenDto? _factura;
         private bool _isLoading;
@@ -20,13 +21,15 @@ namespace Advance_Control.ViewModels
         private string? _referenciaAbono;
         private string? _observacionesAbono;
 
-        public DetailFacturaViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService)
+        public DetailFacturaViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IComplementoPagoPdfService complementoPagoPdfService)
         {
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _facturaPdfService = facturaPdfService ?? throw new ArgumentNullException(nameof(facturaPdfService));
+            _complementoPagoPdfService = complementoPagoPdfService ?? throw new ArgumentNullException(nameof(complementoPagoPdfService));
             Conceptos = new ObservableCollection<FacturaConceptoDto>();
             TrasladosGlobales = new ObservableCollection<FacturaTrasladoDto>();
             Abonos = new ObservableCollection<AbonoFacturaDto>();
+            ComplementosRelacionados = new ObservableCollection<ComplementoPagoRelacionadoDto>();
         }
 
         public FacturaResumenDto? Factura
@@ -44,6 +47,7 @@ namespace Advance_Control.ViewModels
         public ObservableCollection<FacturaConceptoDto> Conceptos { get; }
         public ObservableCollection<FacturaTrasladoDto> TrasladosGlobales { get; }
         public ObservableCollection<AbonoFacturaDto> Abonos { get; }
+        public ObservableCollection<ComplementoPagoRelacionadoDto> ComplementosRelacionados { get; }
 
         public bool IsLoading
         {
@@ -102,6 +106,7 @@ namespace Advance_Control.ViewModels
         public string ResumenConceptos => $"Conceptos ({Conceptos.Count})";
         public string ResumenTraslados => $"Traslados globales ({TrasladosGlobales.Count})";
         public string ResumenAbonos => $"Abonos registrados ({Abonos.Count})";
+        public string ResumenComplementos => $"Complementos de pago relacionados ({ComplementosRelacionados.Count})";
         public bool CanRegistrarAbono => Factura != null && !IsLoading && Factura.SaldoPendiente > 0 && MontoAbono > 0;
 
         public async Task CargarDetalleAsync(int idFactura)
@@ -125,6 +130,7 @@ namespace Advance_Control.ViewModels
                 ReemplazarColeccion(Conceptos, detalle.Conceptos);
                 ReemplazarColeccion(TrasladosGlobales, detalle.TrasladosGlobales);
                 ReemplazarColeccion(Abonos, detalle.Abonos);
+                ReemplazarColeccion(ComplementosRelacionados, detalle.ComplementosRelacionados);
                 FechaAbono = DateTimeOffset.Now;
                 MontoAbono = Factura.SaldoPendiente > 0 ? (double)Factura.SaldoPendiente : 0;
                 ReferenciaAbono = null;
@@ -132,6 +138,7 @@ namespace Advance_Control.ViewModels
                 OnPropertyChanged(nameof(ResumenConceptos));
                 OnPropertyChanged(nameof(ResumenTraslados));
                 OnPropertyChanged(nameof(ResumenAbonos));
+                OnPropertyChanged(nameof(ResumenComplementos));
                 OnPropertyChanged(nameof(CanRegistrarAbono));
             }
             catch (Exception ex)
@@ -162,6 +169,28 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 ErrorMessage = $"Error al generar el PDF de la factura: {ex.Message}";
+                return null;
+            }
+        }
+
+        /// <summary>Genera el PDF de uno de los complementos de pago relacionados con esta factura.</summary>
+        public async Task<string?> GenerarPdfComplementoAsync(int idFacturaComplemento)
+        {
+            try
+            {
+                ErrorMessage = null;
+                var detalle = await _facturaService.ObtenerComplementoPagoDetalleAsync(idFacturaComplemento);
+                if (detalle?.Factura == null)
+                {
+                    ErrorMessage = "No se encontró el complemento de pago seleccionado.";
+                    return null;
+                }
+
+                return await _complementoPagoPdfService.GenerarComplementoPagoPdfAsync(detalle);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el PDF del complemento de pago: {ex.Message}";
                 return null;
             }
         }
@@ -264,6 +293,7 @@ namespace Advance_Control.ViewModels
             Conceptos.Clear();
             TrasladosGlobales.Clear();
             Abonos.Clear();
+            ComplementosRelacionados.Clear();
             MontoAbono = 0;
             FechaAbono = DateTimeOffset.Now;
             ReferenciaAbono = null;
@@ -271,6 +301,7 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(ResumenConceptos));
             OnPropertyChanged(nameof(ResumenTraslados));
             OnPropertyChanged(nameof(ResumenAbonos));
+            OnPropertyChanged(nameof(ResumenComplementos));
             OnPropertyChanged(nameof(CanRegistrarAbono));
         }
 

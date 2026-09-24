@@ -1,16 +1,38 @@
 using System;
+using Advance_Control.Models;
 using Advance_Control.Services.Logging;
 
 namespace Advance_Control.ViewModels
 {
     /// <summary>
-    /// ViewModel para el formulario de nuevo equipo.
+    /// ViewModel para el formulario de nuevo equipo (también reutilizado para editar
+    /// uno existente, ver <see cref="CargarDesde"/>).
     /// Gestiona los datos del equipo y la validación del formulario.
     /// </summary>
     public class NuevoEquipoViewModel : ViewModelBase
     {
         private readonly ILoggingService _logger;
-        
+
+        private int? _idEquipoEditando;
+        /// <summary>
+        /// Id del equipo que se está editando. Null cuando el formulario está en
+        /// modo de creación (comportamiento por defecto).
+        /// </summary>
+        public int? IdEquipoEditando
+        {
+            get => _idEquipoEditando;
+            set
+            {
+                if (SetProperty(ref _idEquipoEditando, value))
+                    OnPropertyChanged(nameof(IsEditMode));
+            }
+        }
+
+        /// <summary>
+        /// True cuando el formulario está editando un equipo existente en vez de crear uno nuevo.
+        /// </summary>
+        public bool IsEditMode => IdEquipoEditando.HasValue;
+
         private string _marca = string.Empty;
         private string _creadoText = string.Empty;
         private string _paradasText = string.Empty;
@@ -308,6 +330,7 @@ namespace Advance_Control.ViewModels
         /// </summary>
         public void ClearForm()
         {
+            IdEquipoEditando = null;
             Marca = string.Empty;
             CreadoText = string.Empty;
             ParadasText = string.Empty;
@@ -322,6 +345,30 @@ namespace Advance_Control.ViewModels
             Velocidad = string.Empty;
             TipoMaquina = string.Empty;
             Operador = string.Empty;
+            ErrorMessage = string.Empty;
+        }
+
+        /// <summary>
+        /// Carga los datos de un equipo existente en el formulario para editarlo.
+        /// El identificador se conserva pero no puede sugerirse de nuevo (ya está asignado).
+        /// </summary>
+        public void CargarDesde(EquipoDto equipo)
+        {
+            IdEquipoEditando = equipo.IdEquipo;
+            Marca = equipo.Marca ?? string.Empty;
+            CreadoText = equipo.Creado?.ToString() ?? string.Empty;
+            ParadasText = equipo.Paradas?.ToString() ?? string.Empty;
+            KilogramosText = equipo.Kilogramos?.ToString() ?? string.Empty;
+            PersonasText = equipo.Personas?.ToString() ?? string.Empty;
+            Descripcion = equipo.Descripcion ?? string.Empty;
+            Identificador = equipo.Identificador ?? string.Empty;
+            Estatus = equipo.Estatus ?? true;
+            IdUbicacion = equipo.IdUbicacion;
+            Controlador = equipo.Controlador ?? string.Empty;
+            TipoPuerta = equipo.TipoPuerta ?? string.Empty;
+            Velocidad = equipo.Velocidad ?? string.Empty;
+            TipoMaquina = equipo.TipoMaquina ?? string.Empty;
+            Operador = equipo.Operador ?? string.Empty;
             ErrorMessage = string.Empty;
         }
     }

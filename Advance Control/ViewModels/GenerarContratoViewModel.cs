@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -18,6 +19,36 @@ namespace Advance_Control.ViewModels
         public EquipoDto Equipo { get; }
 
         public string EtiquetaDisplay => $"{Equipo.Identificador} — {Equipo.Marca}";
+
+        /// <summary>
+        /// Características técnicas que se plasman en la tabla del contrato
+        /// (ver ContratoPdfService.GenerarContratoPdfAsync), para que el usuario
+        /// vea de qué equipo se trata antes de incluirlo en la suscripción.
+        /// </summary>
+        public string DetalleTecnico
+        {
+            get
+            {
+                var partes = new List<string>();
+
+                if (Equipo.Paradas.HasValue)
+                    partes.Add($"Par/Des: {Equipo.Paradas}");
+                if (!string.IsNullOrWhiteSpace(Equipo.Controlador))
+                    partes.Add($"Controlador: {Equipo.Controlador}");
+                if (!string.IsNullOrWhiteSpace(Equipo.TipoPuerta))
+                    partes.Add($"Tipo Puerta: {Equipo.TipoPuerta}");
+                if (!string.IsNullOrWhiteSpace(Equipo.Velocidad))
+                    partes.Add($"Velocidad: {Equipo.Velocidad}");
+                if (!string.IsNullOrWhiteSpace(Equipo.TipoMaquina))
+                    partes.Add($"Tipo Máquina: {Equipo.TipoMaquina}");
+                if (!string.IsNullOrWhiteSpace(Equipo.Operador))
+                    partes.Add($"Operador: {Equipo.Operador}");
+
+                return partes.Count > 0
+                    ? string.Join("  ·  ", partes)
+                    : "Sin datos técnicos capturados";
+            }
+        }
 
         private bool _isSelected;
         public bool IsSelected

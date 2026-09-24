@@ -472,6 +472,13 @@
                                         Margin="5,0,0,0"
                                         Click="BtnAbonos_Click"
                                         Content="Conciliación de Abonos" />
+                                    <Button
+                                        x:Name="BtnComplementos"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnComplementos_Click"
+                                        Content="Complementos"
+                                        ToolTipService.ToolTip="Liga Complementos de Pago (CFDI) ya timbrados, sin abono interno todavía, a movimientos bancarios por monto y fecha." />
 
                                     <Border
                                         Padding="0"

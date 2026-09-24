@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentDialog
+    x:Class="Advance_Control.Views.Dialogs.GenerarComplementoPagoDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Advance_Control.Views.Dialogs"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="Generar complemento de pago"
+    PrimaryButtonText="Timbrar complemento"
+    CloseButtonText="Cancelar"
+    DefaultButton="Primary">
+
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">640</x:Double>
+    </ContentDialog.Resources>
+
+    <StackPanel Width="560" Spacing="12">
+        <TextBlock
+            x:Name="ResumenTextBlock"
+            FontWeight="SemiBold"
+            TextWrapping="WrapWholeWords" />
+        <TextBlock
+            FontSize="12"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Marca los abonos que corresponden a este pago. Si un mismo depósito cubrió varias facturas de este cliente, aparecen todas abajo -- marca las que correspondan."
+            TextWrapping="WrapWholeWords" />
+
+        <Border
+            MaxHeight="220"
+            Padding="8"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="4">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsRepeater x:Name="AbonosRepeater">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="4" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="local:AbonoSeleccionableDto">
+                            <CheckBox
+                                Content="{x:Bind Abono.DescripcionTexto}"
+                                IsChecked="{x:Bind IsSelected, Mode=TwoWay}" />
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </Border>
+
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Forma de pago:" />
+                <ComboBox x:Name="CmbFormaPago" HorizontalAlignment="Stretch">
+                    <ComboBoxItem Content="01 - Efectivo" Tag="01" />
+                    <ComboBoxItem Content="02 - Cheque nominativo" Tag="02" />
+                    <ComboBoxItem Content="03 - Transferencia electrónica de fondos" Tag="03" />
+                    <ComboBoxItem Content="04 - Tarjeta de crédito" Tag="04" />
+                    <ComboBoxItem Content="05 - Monedero electrónico" Tag="05" />
+                    <ComboBoxItem Content="06 - Dinero electrónico" Tag="06" />
+                    <ComboBoxItem Content="08 - Vales de despensa" Tag="08" />
+                    <ComboBoxItem Content="28 - Tarjeta de débito" Tag="28" />
+                    <ComboBoxItem Content="29 - Tarjeta de servicios" Tag="29" />
+                    <ComboBoxItem Content="30 - Aplicación de anticipos" Tag="30" />
+                </ComboBox>
+            </StackPanel>
+            <StackPanel Grid.Column="1">
+                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Núm. de operación (opcional):" />
+                <TextBox x:Name="NumOperacionTextBox" PlaceholderText="Referencia bancaria" />
+            </StackPanel>
+        </Grid>
+
+        <TextBlock
+            FontSize="12"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Los abonos con la misma fecha se agrupan en un solo pago del complemento; los de fechas distintas se separan automáticamente." />
+
+        <InfoBar
+            x:Name="EstadoInfoBar"
+            IsClosable="False"
+            IsOpen="False"
+            Severity="Error" />
+    </StackPanel>
+</ContentDialog>

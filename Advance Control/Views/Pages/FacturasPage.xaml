@@ -288,7 +288,20 @@
                                             ToolTipService.ToolTip="{Binding TooltipCapturarPagoTexto}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <FontIcon FontSize="14" Glyph="&#xE710;" />
-                                                <TextBlock Text="Pago" />
+                                                <TextBlock Text="Registrar abono" />
+                                            </StackPanel>
+                                        </Button>
+
+                                        <Button
+                                            Click="BtnGenerarComplementoPago_Click"
+                                            IsEnabled="{Binding PuedeGenerarComplementoPago}"
+                                            Style="{StaticResource AccentButtonStyle}"
+                                            Tag="{Binding}"
+                                            ToolTipService.ToolTip="{Binding TooltipGenerarComplementoTexto}"
+                                            Visibility="{Binding PuedeGenerarComplementoPago, Converter={StaticResource BoolToVisibilityConverter}}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon FontSize="14" Glyph="&#xE9F5;" />
+                                                <TextBlock Text="Generar complemento de pago" />
                                             </StackPanel>
                                         </Button>
 

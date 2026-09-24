@@ -1,16 +1,30 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Proveedores;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class ProveedoresViewModel : ViewModelBase
     {
+        public PaginadorViewModel<ProveedorDto> Paginacion { get; } = new();
+
+        private List<ProveedorDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(RfcFilter) || !string.IsNullOrWhiteSpace(RazonSocialFilter) ||
+            !string.IsNullOrWhiteSpace(NombreComercialFilter) || !string.IsNullOrWhiteSpace(NotaFilter);
+
+        public IEnumerable<string?> ValoresRfc => _catalogoSugerencias.Select(p => p.Rfc);
+        public IEnumerable<string?> ValoresRazonSocial => _catalogoSugerencias.Select(p => p.RazonSocial);
+        public IEnumerable<string?> ValoresNombreComercial => _catalogoSugerencias.Select(p => p.NombreComercial);
+
         private readonly IProveedorService _proveedorService;
         private readonly ILoggingService _logger;
         private ObservableCollection<ProveedorDto> _proveedores;
@@ -120,6 +134,10 @@ namespace Advance_Control.ViewModels
                 {
                     Proveedores.Add(proveedor);
                 }
+                Paginacion.EstablecerElementos(proveedores);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = proveedores.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {proveedores.Count} proveedores exitosamente", "ProveedoresViewModel", "LoadProveedoresAsync");
             }

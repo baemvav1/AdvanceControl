@@ -1,16 +1,30 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Refacciones;
 using Advance_Control.Services.Logging;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class RefaccionesViewModel : ViewModelBase
     {
+        public PaginadorViewModel<RefaccionDto> Paginacion { get; } = new();
+
+        private List<RefaccionDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(MarcaFilter) || !string.IsNullOrWhiteSpace(SerieFilter) ||
+            !string.IsNullOrWhiteSpace(DescripcionFilter);
+
+        public IEnumerable<string?> ValoresMarca => _catalogoSugerencias.Select(r => r.Marca);
+        public IEnumerable<string?> ValoresSerie => _catalogoSugerencias.Select(r => r.Serie);
+        public IEnumerable<string?> ValoresDescripcion => _catalogoSugerencias.Select(r => r.Descripcion);
+
         private readonly IRefaccionService _refaccionService;
         private readonly ILoggingService _logger;
         private ObservableCollection<RefaccionDto> _refacciones;
@@ -105,6 +119,10 @@ namespace Advance_Control.ViewModels
                 {
                     Refacciones.Add(refaccion);
                 }
+                Paginacion.EstablecerElementos(refacciones);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = refacciones.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {refacciones.Count} refacciones exitosamente", "RefaccionesViewModel", "LoadRefaccionesAsync");
             }

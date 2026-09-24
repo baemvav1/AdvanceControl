@@ -68,6 +68,7 @@
     <Content Include="Assets\Cabeceras\Nota.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Cabeceras\EstadoCuenta.png" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\Cabeceras\Factura.png" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Assets\Logos\AdvanceElevadoresLogo.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

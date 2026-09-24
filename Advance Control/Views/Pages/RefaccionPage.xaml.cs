@@ -48,9 +48,13 @@ namespace Advance_Control.Views.Pages
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(RefaccionPage));
-            
+
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(MarcaAutoSuggestBox, () => ViewModel.ValoresMarca, () => _ = ViewModel.LoadRefaccionesAsync());
+            AutoSuggestHelper.Conectar(SerieAutoSuggestBox, () => ViewModel.ValoresSerie, () => _ = ViewModel.LoadRefaccionesAsync());
+            AutoSuggestHelper.Conectar(DescripcionAutoSuggestBox, () => ViewModel.ValoresDescripcion, () => _ = ViewModel.LoadRefaccionesAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -179,21 +183,6 @@ namespace Advance_Control.Views.Pages
                     System.Diagnostics.Debug.WriteLine($"Error al crear refacción: {ex.GetType().Name} - {ex.Message}");
                     
                     await _notificacionService.MostrarAsync("Error", "Ocurrió un error al crear la refacción. Por favor, intente nuevamente.");
-                }
-            }
-        }
-
-        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            // Get the RefaccionDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is RefaccionDto refaccion)
-            {
-                refaccion.Expand = !refaccion.Expand;
-                
-                // Load relaciones equipo when expanding if not already loaded
-                if (refaccion.Expand && !refaccion.RelacionesEquipoLoaded)
-                {
-                    await LoadRelacionesEquipoForRefaccionAsync(refaccion);
                 }
             }
         }

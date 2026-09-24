@@ -63,10 +63,19 @@
                         <ItemsRepeater.ItemTemplate>
                             <DataTemplate x:DataType="vm:EquipoSeleccionableDto">
                                 <CheckBox
-                                    Content="{x:Bind EtiquetaDisplay}"
+                                    Padding="8,4"
                                     IsChecked="{x:Bind IsSelected, Mode=TwoWay}"
                                     Checked="EquipoCheckBox_Changed"
-                                    Unchecked="EquipoCheckBox_Changed" />
+                                    Unchecked="EquipoCheckBox_Changed">
+                                    <StackPanel Spacing="1">
+                                        <TextBlock FontWeight="SemiBold" Text="{x:Bind EtiquetaDisplay}" TextWrapping="Wrap" />
+                                        <TextBlock
+                                            FontSize="11"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind DetalleTecnico}"
+                                            TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </CheckBox>
                             </DataTemplate>
                         </ItemsRepeater.ItemTemplate>
                     </ItemsRepeater>

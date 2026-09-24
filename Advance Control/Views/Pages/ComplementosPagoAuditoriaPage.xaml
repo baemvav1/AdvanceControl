@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Advance_Control.Views.Pages.ComplementosPagoAuditoriaPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    xmlns:converters="using:Advance_Control.Converters"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <converters:BooleanToSystemColorBrushConverter x:Key="RenglonFondoConverter" TrueColorName="WhiteSmoke" FalseColorName="MistyRose" />
+        <converters:BooleanToSystemColorBrushConverter x:Key="BadgeFondoConverter" TrueColorName="SeaGreen" FalseColorName="Crimson" />
+    </Page.Resources>
+
+    <Grid Padding="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Grid.Row="0" Margin="0,0,0,12" Spacing="4">
+            <TextBlock FontSize="28" FontWeight="Bold" Text="Complementos de Pago" />
+            <TextBlock
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="Auditoría de todos los Complementos de Pago del sistema (generados por la app e importados del portal de Bilkon) y a qué factura corresponde cada uno." />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Margin="0,0,0,12" Orientation="Horizontal" Spacing="16">
+            <ToggleSwitch Header="Mostrar solo huérfanos" IsOn="{x:Bind ViewModel.SoloHuerfanos, Mode=TwoWay}" />
+            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Text="{x:Bind ViewModel.ResumenTexto, Mode=OneWay}" />
+        </StackPanel>
+
+        <Grid Grid.Row="2">
+            <ProgressRing
+                Width="50"
+                Height="50"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+
+            <InfoBar
+                Margin="0,0,0,12"
+                VerticalAlignment="Top"
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                Severity="Error" />
+
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Renglones, Mode=OneWay}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="6" />
+                    </ItemsRepeater.Layout>
+                    <ItemsRepeater.ItemTemplate>
+                        <DataTemplate x:DataType="models:ComplementoPagoResumenDto">
+                            <Border
+                                Padding="12"
+                                Background="{x:Bind Matched, Converter={StaticResource RenglonFondoConverter}, Mode=OneWay}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <StackPanel Grid.Column="0" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold">
+                                            <Run Text="Complemento " />
+                                            <Run Text="{x:Bind ComplementoFolioTitulo}" />
+                                            <Run Text=" — paga: " />
+                                            <Run Text="{x:Bind FacturaPagadaTexto}" />
+                                        </TextBlock>
+                                        <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                            <Run Text="Receptor: " />
+                                            <Run Text="{x:Bind ComplementoReceptorNombre}" />
+                                            <Run Text=" · Parcialidad " />
+                                            <Run Text="{x:Bind NumParcialidad}" />
+                                            <Run Text=" · Pagado: " />
+                                            <Run Text="{x:Bind ImpPagadoTexto}" />
+                                        </TextBlock>
+                                    </StackPanel>
+
+                                    <Border
+                                        Grid.Column="1"
+                                        Padding="8,2"
+                                        VerticalAlignment="Center"
+                                        Background="{x:Bind Matched, Converter={StaticResource BadgeFondoConverter}, Mode=OneWay}"
+                                        CornerRadius="4">
+                                        <TextBlock FontSize="11" FontWeight="SemiBold" Foreground="White" Text="{x:Bind EstadoTexto}" />
+                                    </Border>
+
+                                    <Button
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Click="BtnDescargarPdf_Click"
+                                        Content="PDF"
+                                        Tag="{x:Bind}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsRepeater.ItemTemplate>
+                </ItemsRepeater>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

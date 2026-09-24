@@ -178,6 +178,32 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void BtnGenerarComplementoPago_Click(object sender, RoutedEventArgs e)
+        {
+            if (ObtenerFactura(sender) is not FacturaResumenDto factura || !factura.PuedeGenerarComplementoPago)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(factura.ReceptorRfc))
+            {
+                return;
+            }
+
+            var abonosPendientes = await ViewModel.ObtenerAbonosPendientesComplementoAsync(factura.ReceptorRfc);
+            if (abonosPendientes.Count == 0)
+            {
+                return;
+            }
+
+            var dialog = new GenerarComplementoPagoDialog(factura, abonosPendientes, XamlRoot);
+            var resultado = await dialog.ShowAsync();
+            if (resultado == ContentDialogResult.Primary && dialog.ResultadoRequest != null)
+            {
+                await ViewModel.GenerarComplementoPagoAsync(dialog.ResultadoRequest);
+            }
+        }
+
         private async void BtnCancelar_Click(object sender, RoutedEventArgs e)
         {
             if (ObtenerFactura(sender) is not FacturaResumenDto factura || !factura.PuedeCancelarCfdi)

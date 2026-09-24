@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Models
 {
@@ -43,6 +44,8 @@ namespace Advance_Control.Models
         public DateTime? FechaCancelacion { get; set; }
         public string? MotivoCancelacion { get; set; }
         public string? UuidSustitucion { get; set; }
+        public int NumeroAbonosSinComplementar { get; set; }
+        public decimal MontoSinComplementar { get; set; }
 
         /// <summary>Solo viene poblado al consultar el detalle de UNA factura, no en el listado.</summary>
         public string? Sello { get; set; }
@@ -69,8 +72,22 @@ namespace Advance_Control.Models
         public bool PermiteGestionInterna => EsConSerie;
 
         public string TooltipCapturarPagoTexto => PermiteGestionInterna
-            ? "Agregar complemento de pago"
+            ? "Registrar abono (control interno, no genera CFDI)"
             : "Esta factura no fue generada por el software; captura su pago desde el portal de Bilkon";
+
+        /// <summary>
+        /// Solo facturas propias (Serie+Folio) con MetodoPago PPD, no canceladas, que tienen al
+        /// menos un abono registrado sin incluir todavía en un Complemento de Pago timbrado.
+        /// </summary>
+        public bool PuedeGenerarComplementoPago =>
+            PermiteGestionInterna
+            && !Cancelada
+            && string.Equals(MetodoPago, "PPD", StringComparison.OrdinalIgnoreCase)
+            && NumeroAbonosSinComplementar > 0;
+
+        public string TooltipGenerarComplementoTexto => PuedeGenerarComplementoPago
+            ? $"Generar complemento de pago real (timbrado) por {MontoSinComplementar.ToString("C2", new CultureInfo("es-MX"))}"
+            : "No hay abonos PPD pendientes de complementar";
 
         /// <summary>Solo se puede cancelar una factura propia (Serie+Folio), con UUID timbrado y que no esté ya cancelada.</summary>
         public bool PuedeCancelarCfdi => PermiteGestionInterna && !Cancelada && !string.IsNullOrWhiteSpace(Uuid);
@@ -100,7 +117,8 @@ namespace Advance_Control.Models
         public string EmisorReceptorTexto => $"{EmisorNombre ?? "Sin emisor"} -> {ReceptorNombre ?? "Sin receptor"}";
         public string RfcTexto => $"{ReceptorRfc ?? "Sin RFC"}";
         public string TotalesTexto => $"Subtotal {SubTotalTexto} · IVA/Impuestos {TotalImpuestosTexto} · Total {TotalTexto}";
-        public string MetodoFormaPagoTexto => $"{MetodoPago ?? "Sin metodo"} · {FormaPago ?? "Sin forma"}";
+        public string FormaPagoTexto => SatFormaPagoCatalogo.Describir(FormaPago);
+        public string MetodoFormaPagoTexto => $"{MetodoPago ?? "Sin metodo"} · {FormaPagoTexto}";
         public string UuidTexto => string.IsNullOrWhiteSpace(Uuid) ? "Sin UUID" : $"UUID: {Uuid}";
         public string SubTotalTexto => SubTotal.ToString("C2", new CultureInfo("es-MX"));
         public string TotalTexto => Total.ToString("C2", new CultureInfo("es-MX"));

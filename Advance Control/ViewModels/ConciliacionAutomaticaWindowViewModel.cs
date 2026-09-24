@@ -60,6 +60,7 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
+                ConciliacionAutomaticaModo.Complementos => await CrearPropuestasComplementosAsync(ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -87,6 +88,7 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
+                ConciliacionAutomaticaModo.Complementos => await CrearPropuestasComplementosAsync(ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -132,6 +134,10 @@ namespace Advance_Control.ViewModels
                     await AplicarMovimientosSobreFacturaAsync(
                         propuesta.Facturas[0],
                         propuesta.TodosLosMovimientos);
+                }
+                else if (propuesta.EsComplemento)
+                {
+                    await AplicarComplementoAsync(propuesta);
                 }
                 else
                 {
@@ -318,6 +324,86 @@ namespace Advance_Control.ViewModels
             return unoAUno.Concat(combinacional).Concat(abonos).ToList();
         }
 
+        /// <summary>
+        /// Liga Complementos de Pago (CFDI Pagos 2.0) ya timbrados -- que citan una factura propia
+        /// pero todavía no tienen ningún abono interno registrado -- contra movimientos bancarios,
+        /// por monto + fecha de pago del complemento. Reusa BuscarMovimientoCoincidente tal cual
+        /// (misma regla PPD "mismo mes o posterior" que los demás modos); solo se le pasa la fecha
+        /// de pago del complemento en vez de la fecha de la factura, como señal de desempate entre
+        /// candidatos igualmente válidos -- la compatibilidad por método de pago sigue evaluándose
+        /// contra la fecha/método de la factura, igual que en cualquier otro modo.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasComplementosAsync(CancellationToken ct = default)
+        {
+            var complementosPendientes = await _facturaService.ObtenerComplementosSinMovimientoAsync(ct);
+            ct.ThrowIfCancellationRequested();
+
+            if (complementosPendientes.Count == 0)
+            {
+                return Array.Empty<ConciliacionMatchPropuestaDto>();
+            }
+
+            var facturasPorId = _facturasPendientesBase.ToDictionary(factura => factura.IdFactura);
+
+            var movimientosDisponibles = _movimientosPendientesBase
+                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
+                .OrderBy(movimiento => movimiento.Fecha)
+                .ThenBy(movimiento => movimiento.IdMovimiento)
+                .ToList();
+
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var docto in complementosPendientes
+                .Where(docto => !_facturasDescartadas.Contains(docto.IdFacturaPagada))
+                .OrderBy(docto => docto.IdFacturaPagada)
+                .ThenBy(docto => docto.NumParcialidad))
+            {
+                if (!facturasPorId.TryGetValue(docto.IdFacturaPagada, out var facturaPagada))
+                {
+                    continue; // la factura pagada ya no está en el pool activo (ej. cancelada)
+                }
+
+                if (_usarRfcComoRegla && string.IsNullOrWhiteSpace(facturaPagada.ReceptorRfc))
+                {
+                    continue;
+                }
+
+                var movimientoObjetivo = _conciliacionMatchingEngine.BuscarMovimientoCoincidente(
+                    movimientosDisponibles,
+                    docto.ImpPagado,
+                    new[] { facturaPagada },
+                    docto.FechaPago,
+                    _aplicarReglaPueMismoMes);
+
+                if (movimientoObjetivo == null)
+                {
+                    continue;
+                }
+
+                if (_usarRfcComoRegla && !string.Equals(
+                        movimientoObjetivo.RfcEmisor?.Trim(),
+                        facturaPagada.ReceptorRfc?.Trim(),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = "Complemento",
+                    Facturas = new List<FacturaResumenDto> { facturaPagada },
+                    Movimiento = movimientoObjetivo,
+                    Observaciones = $"Complemento de pago {docto.ComplementoFolioTitulo} (parcialidad {docto.NumParcialidad}) contra movimiento {movimientoObjetivo.GrupoId}.",
+                    IdComplementoPagoDocto = docto.IdDocto,
+                    ComplementoFolioTexto = docto.ComplementoFolioTitulo
+                });
+
+                movimientosDisponibles.Remove(movimientoObjetivo);
+            }
+
+            return propuestas;
+        }
+
         private static void RegistrarUsados(
             IEnumerable<ConciliacionMatchPropuestaDto> propuestas,
             HashSet<int> movimientosUsados,
@@ -471,6 +557,27 @@ namespace Advance_Control.ViewModels
                         ? "No fue posible registrar uno de los abonos combinados."
                         : resultado.Message);
                 }
+            }
+        }
+
+        private async Task AplicarComplementoAsync(ConciliacionMatchPropuestaDto propuesta)
+        {
+            if (propuesta.IdComplementoPagoDocto is not int idDocto)
+            {
+                return;
+            }
+
+            var resultado = await _facturaService.VincularComplementoMovimientoAsync(new VincularComplementoMovimientoRequestDto
+            {
+                IdDocto = idDocto,
+                IdMovimiento = propuesta.Movimiento.IdMovimiento
+            });
+
+            if (!resultado.Success)
+            {
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(resultado.Message)
+                    ? "No fue posible ligar el complemento de pago al movimiento."
+                    : resultado.Message);
             }
         }
 
@@ -735,6 +842,15 @@ namespace Advance_Control.ViewModels
                     await MostrarResultadoFinalConciliacionAsync(
                         "Conciliacion de cheques",
                         new[] { $"{facturasConciliadas} factura(s) conciliada(s) con movimientos de cheque" });
+                    break;
+                }
+
+                case ConciliacionAutomaticaModo.Complementos:
+                {
+                    var complementosLigados = aprobadas.Count;
+                    await MostrarResultadoFinalConciliacionAsync(
+                        "Vinculacion de Complementos de Pago",
+                        new[] { $"{complementosLigados} complemento(s) de pago ligado(s) a movimientos bancarios" });
                     break;
                 }
             }

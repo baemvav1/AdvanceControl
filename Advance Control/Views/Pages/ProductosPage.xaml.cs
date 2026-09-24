@@ -35,6 +35,9 @@ namespace Advance_Control.Views.Pages
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(ProductosPage));
 
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(ConceptoAutoSuggestBox, () => ViewModel.ValoresConcepto, () => _ = ViewModel.LoadProductosAsync());
+            AutoSuggestHelper.Conectar(DescripcionAutoSuggestBox, () => ViewModel.ValoresDescripcion, () => _ = ViewModel.LoadProductosAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -188,14 +191,6 @@ namespace Advance_Control.Views.Pages
                 {
                     await _notificacionService.MostrarAsync("Error", $"Error al crear producto: {ex.Message}");
                 }
-            }
-        }
-
-        private void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is Grid grid && grid.Tag is ProductoDto producto)
-            {
-                producto.Expand = !producto.Expand;
             }
         }
 

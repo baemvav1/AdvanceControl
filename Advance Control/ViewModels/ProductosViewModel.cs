@@ -1,16 +1,29 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Productos;
 using Advance_Control.Services.Logging;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class ProductosViewModel : ViewModelBase
     {
+        public PaginadorViewModel<ProductoDto> Paginacion { get; } = new();
+
+        private List<ProductoDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(ConceptoFilter) || !string.IsNullOrWhiteSpace(DescripcionFilter) ||
+            !string.IsNullOrWhiteSpace(CostoDirectoFilter);
+
+        public IEnumerable<string?> ValoresConcepto => _catalogoSugerencias.Select(p => p.Concepto);
+        public IEnumerable<string?> ValoresDescripcion => _catalogoSugerencias.Select(p => p.Descripcion);
+
         private readonly IProductoService _productoService;
         private readonly ILoggingService _logger;
         private ObservableCollection<ProductoDto> _productos;
@@ -108,6 +121,10 @@ namespace Advance_Control.ViewModels
                 {
                     Productos.Add(producto);
                 }
+                Paginacion.EstablecerElementos(productos);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = productos.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {productos.Count} productos exitosamente", "ProductosViewModel", "LoadProductosAsync");
             }

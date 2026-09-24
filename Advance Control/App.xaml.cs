@@ -690,6 +690,7 @@ namespace Advance_Control
                     services.AddSingleton<IQuoteService, QuoteService>();
                     services.AddSingleton<Services.Quotes.IMantenimientoPreventivoPdfService, Services.Quotes.MantenimientoPreventivoPdfService>();
                     services.AddSingleton<Services.Facturas.IFacturaPdfService, Services.Facturas.FacturaPdfService>();
+                    services.AddSingleton<Services.Facturas.IComplementoPagoPdfService, Services.Facturas.ComplementoPagoPdfService>();
                     services.AddSingleton<Services.Reportes.IReporteFinancieroFacturacionExportService, Services.Reportes.ReporteFinancieroFacturacionExportService>();
                     services.AddSingleton<Services.Reportes.IOperacionesReporteExportService, Services.Reportes.OperacionesReporteExportService>();
                     services.AddSingleton<Services.Reportes.IHistorialCobranzaService, Services.Reportes.HistorialCobranzaService>();
@@ -1065,12 +1066,14 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.ConciliacionAutomaticaWindowViewModel>();
                     services.AddTransient<ViewModels.UsuariosAdminViewModel>();
                     services.AddTransient<ViewModels.FacturasViewModel>();
+                    services.AddTransient<ViewModels.ComplementosPagoAuditoriaViewModel>();
                     services.AddTransient<ViewModels.DetailFacturaViewModel>();
                     services.AddTransient<ViewModels.FacturacionViewModel>();
                     services.AddTransient<ViewModels.VisorMundialViewModel>();
                     services.AddTransient<ViewModels.DetalleClientesViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();
                     services.AddTransient<ViewModels.DevOpsViewModel>();
+                    services.AddTransient<ViewModels.ProFinancieroViewModel>();
 
                     services.AddHttpClient<ICorreoUsuarioService, CorreoUsuarioService>((sp, client) =>
                     {

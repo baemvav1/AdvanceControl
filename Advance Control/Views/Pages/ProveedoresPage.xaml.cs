@@ -48,9 +48,13 @@ namespace Advance_Control.Views.Pages
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, AppServices.Get<ILoggingService>(), nameof(ProveedoresPage));
-            
+
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(RfcAutoSuggestBox, () => ViewModel.ValoresRfc, () => _ = ViewModel.LoadProveedoresAsync());
+            AutoSuggestHelper.Conectar(RazonSocialAutoSuggestBox, () => ViewModel.ValoresRazonSocial, () => _ = ViewModel.LoadProveedoresAsync());
+            AutoSuggestHelper.Conectar(NombreComercialAutoSuggestBox, () => ViewModel.ValoresNombreComercial, () => _ = ViewModel.LoadProveedoresAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -82,21 +86,6 @@ namespace Advance_Control.Views.Pages
         private async void ClearButton_Click(object sender, RoutedEventArgs e)
         {
             await ViewModel.ClearFiltersAsync();
-        }
-
-        private async void HeadGrid_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            // Get the ProveedorDto from the sender's Tag property
-            if (sender is FrameworkElement element && element.Tag is Models.ProveedorDto proveedor)
-            {
-                proveedor.Expand = !proveedor.Expand;
-                
-                // Load relaciones refaccion when expanding if not already loaded
-                if (proveedor.Expand && !proveedor.RelacionesRefaccionLoaded)
-                {
-                    await LoadRelacionesRefaccionForProveedorAsync(proveedor);
-                }
-            }
         }
 
         private async void ToggleExpandButton_Click(object sender, RoutedEventArgs e)

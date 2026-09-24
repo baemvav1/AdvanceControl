@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,11 +9,26 @@ using Advance_Control.Models;
 using Advance_Control.Services.ConfiguracionEmisor;
 using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Logging;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class EntidadesViewModel : ViewModelBase
     {
+        public PaginadorViewModel<EntidadDto> Paginacion { get; } = new();
+
+        private List<EntidadDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(NombreComercialFilter) || !string.IsNullOrWhiteSpace(RazonSocialFilter) ||
+            !string.IsNullOrWhiteSpace(RfcFilter) || !string.IsNullOrWhiteSpace(EstadoFilter) ||
+            !string.IsNullOrWhiteSpace(CiudadFilter);
+
+        public IEnumerable<string?> ValoresNombreComercial => _catalogoSugerencias.Select(e => e.NombreComercial);
+        public IEnumerable<string?> ValoresRazonSocial => _catalogoSugerencias.Select(e => e.RazonSocial);
+        public IEnumerable<string?> ValoresRfc => _catalogoSugerencias.Select(e => e.RFC);
+        public IEnumerable<string?> ValoresEstado => _catalogoSugerencias.Select(e => e.Estado);
+        public IEnumerable<string?> ValoresCiudad => _catalogoSugerencias.Select(e => e.Ciudad);
+
         private readonly IEntidadService _entidadService;
         private readonly IConfiguracionEmisorService _configuracionEmisorService;
         private readonly ILoggingService _logger;
@@ -131,6 +148,10 @@ namespace Advance_Control.ViewModels
                 {
                     Entidades.Add(entidad);
                 }
+                Paginacion.EstablecerElementos(entidades);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = entidades.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {entidades.Count} entidades exitosamente", "EntidadesViewModel", "LoadEntidadesAsync");
 

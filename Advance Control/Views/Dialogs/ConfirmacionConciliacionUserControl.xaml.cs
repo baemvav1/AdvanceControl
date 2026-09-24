@@ -210,7 +210,7 @@ namespace Advance_Control.Views.Dialogs
             {
                 var facturaService = AppServices.Get<IFacturaService>();
                 var facturaEncontrada = await facturaService
-                    .BuscarFacturaPorFolioAsync(folioNuevo, CancellationToken.None)
+                    .BuscarFacturaPorFolioAsync(folioNuevo, cancellationToken: CancellationToken.None)
                     .ConfigureAwait(true);
 
                 if (facturaEncontrada is null)

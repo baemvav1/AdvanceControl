@@ -1,16 +1,29 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Servicios;
 using Advance_Control.Services.Logging;
+using Advance_Control.ViewModels.Common;
 
 namespace Advance_Control.ViewModels
 {
     public class ServiciosViewModel : ViewModelBase
     {
+        public PaginadorViewModel<ServicioDto> Paginacion { get; } = new();
+
+        private List<ServicioDto> _catalogoSugerencias = new();
+        private bool HayFiltrosActivos =>
+            !string.IsNullOrWhiteSpace(ConceptoFilter) || !string.IsNullOrWhiteSpace(DescripcionFilter) ||
+            !string.IsNullOrWhiteSpace(CostoFilter);
+
+        public IEnumerable<string?> ValoresConcepto => _catalogoSugerencias.Select(s => s.Concepto);
+        public IEnumerable<string?> ValoresDescripcion => _catalogoSugerencias.Select(s => s.Descripcion);
+
         private readonly IServicioService _servicioService;
         private readonly ILoggingService _logger;
         private ObservableCollection<ServicioDto> _servicios;
@@ -115,6 +128,10 @@ namespace Advance_Control.ViewModels
                 {
                     Servicios.Add(servicio);
                 }
+                Paginacion.EstablecerElementos(servicios);
+
+                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                    _catalogoSugerencias = servicios.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {servicios.Count} servicios exitosamente", "ServiciosViewModel", "LoadServiciosAsync");
             }

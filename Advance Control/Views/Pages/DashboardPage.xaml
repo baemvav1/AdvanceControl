@@ -182,12 +182,102 @@
             -->
             <Pivot Grid.Row="5" Margin="-12,0,0,0">
                 <PivotItem Header="Noticias">
-                    <TextBlock
-                        Margin="12,24,0,0"
+                    <RichTextBlock
+                        Margin="12,20,0,0"
+                        MaxWidth="820"
+                        HorizontalAlignment="Left"
                         FontSize="13"
-                        FontStyle="Italic"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="Próximamente" />
+                        LineHeight="20">
+                        <RichTextBlock.Blocks>
+
+                            <Paragraph Margin="0,0,0,4">
+                                <Run FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="Novedades de las últimas semanas" />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,12,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Suscripciones y contratos de mantenimiento" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Ya se pueden generar contratos de suscripción (Oro/Plata/Bronce) desde la ficha del cliente: se elige el nivel, se seleccionan los equipos cubiertos y se genera el PDF del contrato con su firma." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• A los clientes con un contrato de suscripción vigente ahora se les puede generar la factura mensual de iguala directamente desde la app." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se corrigió un error que impedía ver la lista de equipos disponibles al crear una suscripción nueva." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Facturación" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Ya es posible cancelar facturas (CFDI) directamente desde la app." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se agregó la carga del certificado necesario para poder cancelar facturas." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se corrigieron folios duplicados y problemas de numeración que afectaban a algunas facturas." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Operaciones" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo Reporte General de Operaciones, con casillas de verificación por operación." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo filtro para ver solo las operaciones abiertas que ya tienen orden de compra cargada." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Las operaciones con orden de compra, o con factura pagada/pendiente, ahora se distinguen con una barra de color en la lista." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se corrigió que las casillas de filtro por estado no actualizaban la lista de operaciones." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se corrigió un error que avisaba &quot;no se pudo guardar&quot; al subir fotos o documentos a una operación, aunque sí quedaban guardados." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Mantenimiento preventivo" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• El mantenimiento preventivo ahora queda registrado en el sistema, ya no se genera solo como PDF." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo formulario para capturar y generar el reporte de mantenimiento preventivo." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Catálogos" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo catálogo de Inmuebles." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se corrigió un error que mostraba &quot;no se pudo eliminar&quot; en Clientes, Entidades, Contactos, Operaciones, Órdenes de Servicio, Productos, Proveedores, Refacciones, Servicios, Cargos, Áreas y Ubicaciones, aunque el registro sí se había borrado." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Los campos de Régimen Fiscal y Uso de CFDI ahora sugieren valores mientras escribes." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Mapas" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se corrigieron problemas al mostrar los mapas y ahora se avisa si falta información geográfica necesaria." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,2">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="En camino" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Estamos preparando las bases para un futuro Portal de Clientes, donde podrán consultar su información directamente." />
+                            </Paragraph>
+
+                        </RichTextBlock.Blocks>
+                    </RichTextBlock>
                 </PivotItem>
                 <PivotItem Header="Tareas">
                     <TextBlock

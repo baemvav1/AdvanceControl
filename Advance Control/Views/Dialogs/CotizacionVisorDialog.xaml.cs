@@ -87,7 +87,7 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
             for (uint i = 0; i < pdfDocument.PageCount; i++)
             {
                 using var page = pdfDocument.GetPage(i);
-                var pageView = await RenderizarPaginaAsync(page, i + 1, pdfDocument.PageCount);
+                var pageView = await RenderizarPaginaAsync(page);
                 PdfPagesPanel.Children.Add(pageView);
             }
 
@@ -123,7 +123,7 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
         return await StorageFile.GetFileFromPathAsync(fullPath);
     }
 
-    private static async Task<FrameworkElement> RenderizarPaginaAsync(PdfPage page, uint numeroPagina, uint totalPaginas)
+    private static async Task<FrameworkElement> RenderizarPaginaAsync(PdfPage page)
     {
         using var renderStream = new InMemoryRandomAccessStream();
         var renderOptions = new PdfPageRenderOptions
@@ -137,13 +137,6 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
         var imageSource = new BitmapImage();
         await imageSource.SetSourceAsync(renderStream);
 
-        var pageTitle = new TextBlock
-        {
-            Text = $"Página {numeroPagina} de {totalPaginas}",
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Foreground = (Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
-        };
-
         var pageImage = new Image
         {
             Source = imageSource,
@@ -151,7 +144,7 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
             HorizontalAlignment = HorizontalAlignment.Center
         };
 
-        var pageBorder = new Border
+        return new Border
         {
             Padding = new Thickness(8),
             Background = (Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
@@ -160,15 +153,6 @@ public sealed partial class CotizacionVisorDialog : ContentDialog
             CornerRadius = new CornerRadius(8),
             Child = pageImage
         };
-
-        var pagePanel = new StackPanel
-        {
-            Spacing = 6
-        };
-        pagePanel.Children.Add(pageTitle);
-        pagePanel.Children.Add(pageBorder);
-
-        return pagePanel;
     }
 
     /// <summary>

@@ -1,5 +1,7 @@
 using Advance_Control.Models;
+using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.SatCatalogo;
 using QRCoder;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -24,16 +26,51 @@ namespace Advance_Control.Services.Facturas
         private const string SatVerificacionBaseUrl = "https://verificacfdi.facturaelectronica.sat.gob.mx/default.aspx";
 
         private readonly ILoggingService _logger;
+        private readonly IEntidadService _entidadService;
+        private readonly ISatCatalogoService _satCatalogoService;
 
-        public FacturaPdfService(ILoggingService logger)
+        public FacturaPdfService(ILoggingService logger, IEntidadService entidadService, ISatCatalogoService satCatalogoService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
+            _satCatalogoService = satCatalogoService ?? throw new ArgumentNullException(nameof(satCatalogoService));
 
             QuestPDF.Settings.License = LicenseType.Community;
         }
 
+        /// <summary>Arma "Av. Calle, Num, Colonia, CP, Ciudad, Estado, País" con las partes disponibles de la entidad; null si no hay ninguna.</summary>
+        private static string? FormatearDireccion(EntidadDto? entidad)
+        {
+            if (entidad == null)
+            {
+                return null;
+            }
+
+            var numero = string.IsNullOrWhiteSpace(entidad.NumInt) ? entidad.NumExt : $"{entidad.NumExt}/{entidad.NumInt}";
+            var partes = new[] { entidad.Calle, numero, entidad.Colonia, entidad.CP, entidad.Ciudad, entidad.Estado, entidad.Pais }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+
+            var direccion = string.Join(", ", partes);
+            return string.IsNullOrWhiteSpace(direccion) ? null : direccion;
+        }
+
+        /// <summary>Busca la clave en el catálogo SAT y arma "601 - General de Ley Personas Morales"; si no la encuentra, deja la clave sola.</summary>
+        private static string DescribirClaveSat(System.Collections.Generic.List<SatCatalogoItemDto> catalogo, string? clave)
+        {
+            if (string.IsNullOrWhiteSpace(clave))
+            {
+                return "-";
+            }
+
+            var item = catalogo.FirstOrDefault(c => string.Equals(c.Clave, clave, StringComparison.OrdinalIgnoreCase));
+            return item?.ToString() ?? clave;
+        }
+
         private static string GetCabecerasFolder()
             => Path.Combine(AppContext.BaseDirectory, "Assets", "Cabeceras");
+
+        private static string GetLogoPath()
+            => Path.Combine(AppContext.BaseDirectory, "Assets", "Logos", "AdvanceElevadoresLogo.png");
 
         private static string GetFacturasFolder()
         {
@@ -41,7 +78,7 @@ namespace Advance_Control.Services.Facturas
             return Path.Combine(documentos, "Advance Control", "Facturas");
         }
 
-        public Task<string> GenerarFacturaPdfAsync(FacturaDetalleDto detalle)
+        public async Task<string> GenerarFacturaPdfAsync(FacturaDetalleDto detalle)
         {
             if (detalle == null) throw new ArgumentNullException(nameof(detalle));
             if (detalle.Factura == null) throw new InvalidOperationException("El detalle de la factura no trae la información de encabezado.");
@@ -55,10 +92,24 @@ namespace Advance_Control.Services.Facturas
 
                 var nombreArchivo = $"Factura_{factura.IdFactura}_{LimpiarNombreArchivo(factura.FolioTitulo)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
                 var rutaArchivo = Path.Combine(carpeta, nombreArchivo);
-                var cabeceraPath = Path.Combine(GetCabecerasFolder(), "Factura.png");
+                var logoPath = GetLogoPath();
 
                 var qrBytes = ConstruirQrVerificacion(factura);
                 var cadenaOriginal = ConstruirCadenaOriginal(factura);
+
+                // Domicilios completos (no vienen en el CFDI -- el XML solo trae el CP de cada uno)
+                // y descripciones de catálogo SAT, para replicar el formato del portal web.
+                var entidadEmisor = await _entidadService.GetActiveEntidadAsync();
+                var entidadesReceptor = await _entidadService.GetEntidadesAsync(new EntidadQueryDto { RFC = factura.ReceptorRfc });
+                var entidadReceptor = entidadesReceptor.FirstOrDefault(e => string.Equals(e.RFC, factura.ReceptorRfc, StringComparison.OrdinalIgnoreCase));
+                var regimenesFiscales = await _satCatalogoService.ListarRegimenFiscalAsync(incluirInactivos: true);
+                var usosCfdi = await _satCatalogoService.ListarUsoCfdiAsync(incluirInactivos: true);
+
+                var direccionEmisor = FormatearDireccion(entidadEmisor);
+                var direccionReceptor = FormatearDireccion(entidadReceptor);
+                var regimenEmisorTexto = DescribirClaveSat(regimenesFiscales, factura.EmisorRegimenFiscal);
+                var regimenReceptorTexto = DescribirClaveSat(regimenesFiscales, factura.ReceptorRegimenFiscal);
+                var usoCfdiTexto = DescribirClaveSat(usosCfdi, factura.ReceptorUsoCfdi);
 
                 var documento = Document.Create(container =>
                 {
@@ -75,27 +126,35 @@ namespace Advance_Control.Services.Facturas
                         // de Windows, sin este problema.
                         page.DefaultTextStyle(x => x.FontSize(9).FontFamily("Segoe UI"));
 
-                        page.Header().ShowOnce().Column(column =>
+                        page.Header().ShowOnce().Row(row =>
                         {
-                            if (File.Exists(cabeceraPath))
+                            if (File.Exists(logoPath))
                             {
-                                column.Item().Image(cabeceraPath).FitWidth();
+                                row.ConstantItem(230).Height(72).AlignMiddle().Image(logoPath).FitArea();
                             }
 
-                            column.Item().Row(row =>
+                            row.RelativeItem().PaddingLeft(12).Column(datos =>
                             {
-                                row.RelativeItem().Text("Factura")
-                                    .FontSize(18)
-                                    .SemiBold()
-                                    .FontColor(Colors.Blue.Darken2);
+                                datos.Spacing(1);
 
-                                row.ConstantItem(200).Text(text =>
+                                void Renglon(string etiqueta, string valor)
                                 {
-                                    text.AlignRight();
-                                    text.DefaultTextStyle(s => s.FontSize(10));
-                                    text.Span("Folio: ").SemiBold();
-                                    text.Span(factura.FolioTitulo);
-                                });
+                                    datos.Item().Text(t =>
+                                    {
+                                        t.AlignRight();
+                                        t.DefaultTextStyle(s => s.FontSize(7.5f));
+                                        t.Span($"{etiqueta}: ").SemiBold().FontColor(Colors.Blue.Darken2);
+                                        t.Span(valor);
+                                    });
+                                }
+
+                                Renglon("Folio", factura.FolioTitulo);
+                                Renglon("Folio fiscal (UUID)", factura.Uuid ?? "Sin timbrar");
+                                Renglon("No. de serie del certificado del SAT", factura.NoCertificadoSat ?? "-");
+                                Renglon("No. de serie del certificado del emisor", factura.NoCertificado ?? "-");
+                                Renglon("Fecha y hora de certificación", factura.FechaTimbrado?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-");
+                                Renglon("Fecha y hora de emisión de CFDI", factura.FechaTexto);
+                                Renglon("Lugar de expedición", factura.LugarExpedicionTexto);
                             });
                         });
 
@@ -110,47 +169,27 @@ namespace Advance_Control.Services.Facturas
                                 {
                                     emisor.Item().Text("Emisor").SemiBold().FontColor(Colors.Blue.Darken2);
                                     emisor.Item().Text(factura.EmisorNombre ?? "-");
-                                    emisor.Item().Text($"RFC: {factura.EmisorRfc ?? "-"}");
-                                    emisor.Item().Text($"Régimen fiscal: {factura.EmisorRegimenFiscal ?? "-"}");
-                                    emisor.Item().Text(factura.LugarExpedicionTexto);
+                                    emisor.Item().Text(factura.EmisorRfc ?? "-");
+                                    emisor.Item().Text($"Régimen fiscal: {regimenEmisorTexto}");
+                                    if (direccionEmisor != null)
+                                    {
+                                        emisor.Item().Text(direccionEmisor);
+                                    }
                                 });
 
                                 row.RelativeItem().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Column(receptor =>
                                 {
                                     receptor.Item().Text("Receptor").SemiBold().FontColor(Colors.Blue.Darken2);
                                     receptor.Item().Text(factura.ReceptorNombre ?? "-");
-                                    receptor.Item().Text($"RFC: {factura.ReceptorRfc ?? "-"}");
-                                    receptor.Item().Text($"Régimen fiscal: {factura.ReceptorRegimenFiscal ?? "-"}");
-                                    receptor.Item().Text($"Uso CFDI: {factura.ReceptorUsoCfdi ?? "-"}");
-                                    receptor.Item().Text($"Domicilio fiscal (CP): {factura.ReceptorDomicilioFiscal ?? "-"}");
+                                    receptor.Item().Text(factura.ReceptorRfc ?? "-");
+                                    receptor.Item().Text($"Uso CFDI: {usoCfdiTexto}");
+                                    receptor.Item().Text($"Domicilio fiscal: {factura.ReceptorDomicilioFiscal ?? "-"}");
+                                    receptor.Item().Text($"Régimen fiscal: {regimenReceptorTexto}");
+                                    if (direccionReceptor != null)
+                                    {
+                                        receptor.Item().Text(direccionReceptor);
+                                    }
                                 });
-                            });
-
-                            // Datos generales del comprobante
-                            column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Row(row =>
-                            {
-                                row.RelativeItem().Column(col =>
-                                {
-                                    col.Item().Text(t => { t.Span("Fecha de emisión: ").SemiBold(); t.Span(factura.FechaTexto); });
-                                    col.Item().Text(t => { t.Span("Fecha de timbrado: ").SemiBold(); t.Span(factura.FechaTimbrado?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-"); });
-                                    col.Item().Text(t => { t.Span("Método de pago: ").SemiBold(); t.Span(factura.MetodoPago ?? "-"); });
-                                    col.Item().Text(t => { t.Span("Forma de pago: ").SemiBold(); t.Span(factura.FormaPago ?? "-"); });
-                                });
-                                row.RelativeItem().Column(col =>
-                                {
-                                    col.Item().Text(t => { t.Span("Moneda: ").SemiBold(); t.Span(factura.Moneda); });
-                                    col.Item().Text(t => { t.Span("Condiciones de pago: ").SemiBold(); t.Span(factura.CondicionesDePago ?? "-"); });
-                                    col.Item().Text(t => { t.Span("Tipo de comprobante: ").SemiBold(); t.Span(factura.TipoDeComprobante ?? "-"); });
-                                    col.Item().Text(t => { t.Span("No. de certificado: ").SemiBold(); t.Span(factura.NoCertificado ?? "-"); });
-                                });
-                            });
-
-                            // Folio fiscal (UUID) destacado
-                            column.Item().Background(Colors.Blue.Lighten5).Padding(6).Text(t =>
-                            {
-                                t.AlignCenter();
-                                t.Span("Folio fiscal (UUID): ").SemiBold();
-                                t.Span(factura.Uuid ?? "Sin timbrar");
                             });
 
                             // Conceptos
@@ -243,6 +282,21 @@ namespace Advance_Control.Services.Facturas
                                 });
                             }
 
+                            // Datos generales del comprobante
+                            column.Item().Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Row(row =>
+                            {
+                                row.RelativeItem().Column(col =>
+                                {
+                                    col.Item().Text(t => { t.Span("Método de pago: ").SemiBold(); t.Span(factura.MetodoPago ?? "-"); });
+                                    col.Item().Text(t => { t.Span("Forma de pago: ").SemiBold(); t.Span(factura.FormaPagoTexto); });
+                                });
+                                row.RelativeItem().Column(col =>
+                                {
+                                    col.Item().Text(t => { t.Span("Moneda: ").SemiBold(); t.Span(factura.Moneda); });
+                                    col.Item().Text(t => { t.Span("Condiciones de pago: ").SemiBold(); t.Span(factura.CondicionesDePago ?? "-"); });
+                                });
+                            });
+
                             // Timbre fiscal: sellos + cadena original + QR
                             column.Item().PaddingTop(6).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Row(row =>
                             {
@@ -250,18 +304,6 @@ namespace Advance_Control.Services.Facturas
                                 {
                                     sellos.Spacing(4);
                                     sellos.Item().Text("Datos del comprobante fiscal digital").SemiBold().FontSize(8);
-                                    sellos.Item().Text(t =>
-                                    {
-                                        t.DefaultTextStyle(s => s.FontSize(7));
-                                        t.Span("RFC proveedor de certificación: ").SemiBold();
-                                        t.Span(factura.RfcProvCertif ?? "-");
-                                    });
-                                    sellos.Item().Text(t =>
-                                    {
-                                        t.DefaultTextStyle(s => s.FontSize(7));
-                                        t.Span("No. certificado SAT: ").SemiBold();
-                                        t.Span(factura.NoCertificadoSat ?? "-");
-                                    });
                                     sellos.Item().Text("Cadena original del complemento de certificación:").SemiBold().FontSize(7);
                                     sellos.Item().Text(cadenaOriginal).FontSize(6).FontFamily("Consolas");
                                     sellos.Item().Text("Sello digital del CFDI:").SemiBold().FontSize(7);
@@ -305,7 +347,7 @@ namespace Advance_Control.Services.Facturas
                 documento.GeneratePdf(rutaArchivo);
                 _ = _logger.LogInformationAsync($"Factura PDF generada: {rutaArchivo}", "FacturaPdfService", "GenerarFacturaPdfAsync");
 
-                return Task.FromResult(rutaArchivo);
+                return rutaArchivo;
             }
             catch (Exception ex)
             {

@@ -3,6 +3,7 @@
     x:Class="Advance_Control.Views.Pages.EntidadesPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Advance_Control.Views.Controls"
     xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:Advance_Control.Views.Pages"
@@ -21,6 +22,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!--  Header  -->
@@ -58,34 +60,39 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="NombreComercialAutoSuggestBox"
                     Grid.Row="0" Grid.Column="0" Margin="0,0,8,8" Header="Nombre Comercial"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Nombre comercial"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.NombreComercialFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="RazonSocialAutoSuggestBox"
                     Grid.Row="0" Grid.Column="1" Margin="0,0,8,8" Header="Razón Social"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Razón social"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.RazonSocialFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="RfcAutoSuggestBox"
                     Grid.Row="0" Grid.Column="2" Margin="0,0,8,8" Header="RFC"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="RFC de la entidad"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.RfcFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="EstadoAutoSuggestBox"
                     Grid.Row="1" Grid.Column="0" Margin="0,0,8,8" Header="Estado"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Estado"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.EstadoFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-                <TextBox
+                <AutoSuggestBox
+                    x:Name="CiudadAutoSuggestBox"
                     Grid.Row="1" Grid.Column="1" Margin="0,0,8,8" Header="Ciudad"
-                    KeyDown="FiltroTextBox_KeyDown"
                     PlaceholderText="Ciudad"
+                    QueryIcon="Find"
                     Text="{x:Bind ViewModel.CiudadFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
                 <StackPanel
@@ -105,7 +112,7 @@
 
             <!--  ItemsRepeater con ScrollViewer  -->
             <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Entidades, Mode=OneWay}">
+                <ItemsRepeater ItemsSource="{x:Bind ViewModel.Paginacion.PageItems, Mode=OneWay}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="0" />
                     </ItemsRepeater.Layout>
@@ -119,7 +126,6 @@
                                         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                         BorderThickness="0,0,0,1" 
                                         CornerRadius="{x:Bind Expand, Converter={StaticResource BooleanToCornerRadiusConverter}, ConverterParameter='8,8,0,0|8', Mode=OneWay}"
-                                        Tapped="HeadGrid_Tapped"
                                         Tag="{x:Bind}"
                                         x:Name="Head">
                                         <Grid.ColumnDefinitions>
@@ -330,5 +336,7 @@
                 </ItemsRepeater>
             </ScrollViewer>
         </Grid>
+
+        <controls:PaginacionFooterControl Grid.Row="3" Paginador="{x:Bind ViewModel.Paginacion, Mode=OneWay}" />
     </Grid>
 </Page>

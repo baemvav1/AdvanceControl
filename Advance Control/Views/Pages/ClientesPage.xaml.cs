@@ -64,9 +64,12 @@ namespace Advance_Control.Views.Pages
             
             this.InitializeComponent();
             ButtonClickLogger.Attach(this, _loggingService, nameof(ClientesPage));
-            
+
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
+
+            AutoSuggestHelper.Conectar(BusquedaAutoSuggestBox, () => ViewModel.ValoresRazonSocial, () => _ = ViewModel.LoadClientesAsync());
+            AutoSuggestHelper.Conectar(RfcAutoSuggestBox, () => ViewModel.ValoresRfc, () => _ = ViewModel.LoadClientesAsync());
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
