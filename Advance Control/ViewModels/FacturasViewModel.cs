@@ -179,6 +179,34 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Primer paso de "Consolidar Complementos": pide a la API que detecte complementos de
+        /// pago que llegaron sin parsear (timbrados a mano en el portal de Bilkon, o traídos por
+        /// una recarga de FEL) y los vincule a la factura que pagan por UUID. El segundo paso
+        /// (ligar a movimiento bancario) lo maneja el code-behind abriendo el mismo asistente que
+        /// usa el botón "Complementos" de Conciliación.
+        /// </summary>
+        public async Task<ComplementoPagoConsolidarResultDto?> ConsolidarBackfillComplementosAsync()
+        {
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = null;
+
+                return await _facturaService.ConsolidarComplementosPagoAsync();
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al consolidar complementos de pago: {ex.Message}";
+                return null;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>
         /// Carga un XML de factura ya timbrada externamente (folio suelto del portal de Bilkon,
         /// sin Serie) y la guarda. Las facturas con Serie+Folio se generan solo por timbrado
         /// directo (TimbrarOperacionDirectoAsync); esto es exclusivamente para las que se siguen

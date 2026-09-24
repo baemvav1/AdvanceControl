@@ -54,5 +54,12 @@ namespace Advance_Control.Services.Facturas
 
         /// <summary>Registra el abono real a partir de un docto de Complemento de Pago y un movimiento bancario, y deja el docto ligado a ese abono.</summary>
         Task<RegistrarAbonoFacturaResponseDto> VincularComplementoMovimientoAsync(VincularComplementoMovimientoRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// "Consolidar Complementos": pide a la API que detecte complementos de pago que llegaron
+        /// sin parsear (timbrados a mano en el portal de Bilkon, o traídos por una recarga de FEL)
+        /// y los vincule a la factura que pagan por UUID.
+        /// </summary>
+        Task<ComplementoPagoConsolidarResultDto> ConsolidarComplementosPagoAsync(CancellationToken cancellationToken = default);
     }
 }

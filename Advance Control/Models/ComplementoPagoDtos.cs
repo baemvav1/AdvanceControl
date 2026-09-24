@@ -139,4 +139,18 @@ namespace Advance_Control.Models
         public int IdDocto { get; set; }
         public int IdMovimiento { get; set; }
     }
+
+    /// <summary>
+    /// Resultado de "Consolidar Complementos": parsea el XML de las facturas tipo Complemento de
+    /// Pago que llegaron sin pasar por el flujo de generación en la app (timbradas a mano en el
+    /// portal de Bilkon, o traídas por una recarga de FEL) y las vincula a la factura que pagan.
+    /// </summary>
+    public class ComplementoPagoConsolidarResultDto
+    {
+        public int FacturasEncontradas { get; set; }
+        public int FacturasParseadas { get; set; }
+        public int PagosProcesados { get; set; }
+        public int DoctosProcesados { get; set; }
+        public List<string> Errores { get; set; } = new();
+    }
 }

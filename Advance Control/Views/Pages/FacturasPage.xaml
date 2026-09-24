@@ -46,6 +46,11 @@
                         Content="Subir varios XML"
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
                         ToolTipService.ToolTip="Cargar en lote varias facturas ya timbradas en el sistema web del proveedor" />
+                    <Button
+                        Click="BtnConsolidarComplementos_Click"
+                        Content="Consolidar Complementos"
+                        IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
+                        ToolTipService.ToolTip="Detecta Complementos de Pago sin procesar, los vincula a su factura y propone ligarlos a su movimiento bancario -- todo el proceso que antes se hacía a mano" />
                 </StackPanel>
 
                 <!--  Renglón 1: buscador + tipo de factura  -->

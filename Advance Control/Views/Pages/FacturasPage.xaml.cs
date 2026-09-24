@@ -45,6 +45,44 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarYGuardarMultiplesFacturasAsync(hwnd, XamlRoot);
         }
 
+        /// <summary>
+        /// "Consolidar Complementos": corre en un solo clic todo el proceso que antes se hacía a
+        /// mano -- (1) detectar Complementos de Pago que llegaron sin parsear y vincularlos a su
+        /// factura por UUID, (2) proponer ligarlos a su movimiento bancario real, reusando el
+        /// mismo asistente que el botón "Complementos" de Conciliación.
+        /// </summary>
+        private async void BtnConsolidarComplementos_Click(object sender, RoutedEventArgs e)
+        {
+            var backfill = await ViewModel.ConsolidarBackfillComplementosAsync();
+            if (backfill == null)
+            {
+                // ViewModel.ErrorMessage ya quedó establecido.
+                return;
+            }
+
+            var ventana = new ConfirmacionConciliacionWindow(
+                ConciliacionAutomaticaModo.Complementos,
+                aplicarReglaPueMismoMes: true,
+                usarRfcComoRegla: false);
+            ventana.Activate();
+
+            var aprobadas = await ventana.ResultTask;
+
+            if (backfill.FacturasParseadas > 0 || aprobadas is { Count: > 0 })
+            {
+                await ViewModel.CargarFacturasAsync();
+            }
+
+            ViewModel.SuccessMessage =
+                $"Consolidación completada: {backfill.FacturasParseadas} complemento(s) nuevo(s) vinculado(s) a su factura, " +
+                $"{aprobadas?.Count ?? 0} vinculado(s) a movimiento bancario.";
+
+            if (backfill.Errores.Count > 0)
+            {
+                ViewModel.ErrorMessage = string.Join(" | ", backfill.Errores);
+            }
+        }
+
         // --- Buscador ---
 
         private void BusquedaAutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)

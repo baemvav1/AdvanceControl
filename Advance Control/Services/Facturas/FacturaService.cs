@@ -763,6 +763,39 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task<ComplementoPagoConsolidarResultDto> ConsolidarComplementosPagoAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "complementos-pago", "consolidar");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consolidando complementos de pago en: {url}", "FacturaService", "ConsolidarComplementosPagoAsync");
+                using var response = await _http.PostAsync(url, content: null, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al consolidar complementos de pago. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        "ConsolidarComplementosPagoAsync");
+
+                    return new ComplementoPagoConsolidarResultDto
+                    {
+                        Errores = { errorContent }
+                    };
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<ComplementoPagoConsolidarResultDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new ComplementoPagoConsolidarResultDto();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consolidar complementos de pago", ex, "FacturaService", "ConsolidarComplementosPagoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consolidar complementos de pago.", ex);
+            }
+        }
+
         private static CancelarCfdiResponseDto ExtraerResultadoErrorCancelacion(string errorContent)
         {
             var resultado = new CancelarCfdiResponseDto { Success = false, Message = errorContent };
