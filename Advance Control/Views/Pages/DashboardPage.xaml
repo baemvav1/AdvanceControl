@@ -194,7 +194,56 @@
                                 <Run FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="Novedades de las últimas semanas" />
                             </Paragraph>
 
-                            <Paragraph Margin="0,12,0,4">
+                            <Paragraph Margin="0,4,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="⚠️ Modo de pruebas en producción" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Las funciones de esta actualización (Complementos de Pago, Ingresos Manuales y el nuevo visor de factura) se acaban de liberar y siguen en observación directamente en producción." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Si ves algo raro, un botón que no responde como esperabas o un dato que no cuadra, repórtalo -- nos ayuda a corregirlo rápido." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Complementos de pago" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Ya se pueden generar Complementos de Pago reales (timbrados ante el SAT) directamente desde Facturas, a partir de los abonos ya registrados." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nueva pantalla de auditoría de Complementos de Pago, para revisar cuáles ya quedaron ligados a su factura y cuáles no." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo botón &quot;Consolidar Complementos&quot; en Facturas: detecta complementos que llegaron sin procesar y los vincula a su factura y a su movimiento bancario." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Se corrigió un error que impedía generar el complemento de pago en facturas capturadas sin serie (folio suelto del portal de Bilkon)." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Ingresos manuales" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Al registrar un abono a mano ahora se pide indicar cómo llegó el pago (efectivo, transferencia, SPEI o cheque)." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo botón &quot;Consolidar Ingresos Manuales&quot; en Facturas: detecta abonos capturados a mano sin movimiento bancario y propone ligarlos a su movimiento real." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Visor de factura" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nueva pantalla para abrir una factura desde Facturas, con vista previa del PDF, datos de pago y acciones (registrar abono, generar complemento, cancelar) en un solo lugar." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Ya se puede enviar la factura por correo directamente a los contactos del cliente." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Registrar abonos y generar complementos de pago ya no requiere que la factura haya sido generada por el software -- funciona para cualquier factura vigente." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
                                 <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Suscripciones y contratos de mantenimiento" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
