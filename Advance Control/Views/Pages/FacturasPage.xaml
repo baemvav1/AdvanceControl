@@ -51,6 +51,11 @@
                         Content="Consolidar Complementos"
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
                         ToolTipService.ToolTip="Detecta Complementos de Pago sin procesar, los vincula a su factura y propone ligarlos a su movimiento bancario -- todo el proceso que antes se hacía a mano" />
+                    <Button
+                        Click="BtnConsolidarIngresosManuales_Click"
+                        Content="Consolidar Ingresos Manuales"
+                        IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
+                        ToolTipService.ToolTip="Detecta abonos capturados a mano (Registrar abono) sin movimiento bancario y propone ligarlos a su movimiento real. Excluye pagos en efectivo." />
                 </StackPanel>
 
                 <!--  Renglón 1: buscador + tipo de factura  -->

@@ -261,6 +261,11 @@
                                 Style="{StaticResource CaptionTextBlockStyle}"
                                 Text="{x:Bind ComplementoFolioTexto}"
                                 Visibility="{x:Bind EsComplemento, Converter={StaticResource BoolToVisibility}}" />
+                            <TextBlock
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Style="{StaticResource CaptionTextBlockStyle}"
+                                Text="{x:Bind IngresoManualReferenciaTexto}"
+                                Visibility="{x:Bind EsIngresoManual, Converter={StaticResource BoolToVisibility}}" />
                             </StackPanel>
 
                             <TextBlock

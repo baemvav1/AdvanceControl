@@ -61,5 +61,17 @@ namespace Advance_Control.Services.Facturas
         /// y los vincule a la factura que pagan por UUID.
         /// </summary>
         Task<ComplementoPagoConsolidarResultDto> ConsolidarComplementosPagoAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Abonos manuales (capturados a mano vía "Registrar abono") que todavía no tienen ningún
+        /// movimiento bancario real vinculado.
+        /// </summary>
+        Task<List<IngresoManualPendienteMovimientoDto>> ObtenerIngresosManualesSinMovimientoAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Liga un abono manual ya existente a un movimiento bancario real (match hecho en el
+        /// cliente por monto+fecha).
+        /// </summary>
+        Task<RegistrarAbonoFacturaResponseDto> VincularIngresoManualMovimientoAsync(VincularIngresoManualMovimientoRequestDto request, CancellationToken cancellationToken = default);
     }
 }

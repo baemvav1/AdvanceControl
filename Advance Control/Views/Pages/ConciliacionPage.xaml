@@ -479,6 +479,13 @@
                                         Click="BtnComplementos_Click"
                                         Content="Complementos"
                                         ToolTipService.ToolTip="Liga Complementos de Pago (CFDI) ya timbrados, sin abono interno todavía, a movimientos bancarios por monto y fecha." />
+                                    <Button
+                                        x:Name="BtnIngresosManuales"
+                                        Height="34"
+                                        Margin="5,0,0,0"
+                                        Click="BtnIngresosManuales_Click"
+                                        Content="Ingresos Manuales"
+                                        ToolTipService.ToolTip="Liga abonos capturados a mano (sin movimiento bancario) a su movimiento real, por monto y fecha. Excluye pagos en efectivo." />
 
                                     <Border
                                         Padding="0"

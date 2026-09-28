@@ -20,6 +20,10 @@ namespace Advance_Control.ViewModels
         private readonly ConciliacionMatchingEngine _conciliacionMatchingEngine;
         private readonly List<ConciliacionMovimientoResumenDto> _movimientosPendientesBase = new();
         private readonly List<FacturaResumenDto> _facturasPendientesBase = new();
+        // A diferencia de _facturasPendientesBase (excluye Finiquito == true), IngresosManuales
+        // necesita encontrar la factura de un abono manual aunque ya haya quedado finiquitada --
+        // un abono manual pudo haber cubierto el 100% del saldo desde que se capturo.
+        private readonly List<FacturaResumenDto> _facturasTodasBase = new();
         // Persisten durante toda la corrida del asistente (esta instancia es transient, una
         // por ventana): una factura descartada por el usuario en cualquier paso ya no se
         // vuelve a proponer en los pasos restantes del mismo asistente.
@@ -61,6 +65,7 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
                 ConciliacionAutomaticaModo.Complementos => await CrearPropuestasComplementosAsync(ct),
+                ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasIngresosManualesAsync(ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -89,6 +94,7 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
                 ConciliacionAutomaticaModo.Complementos => await CrearPropuestasComplementosAsync(ct),
+                ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasIngresosManualesAsync(ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -138,6 +144,10 @@ namespace Advance_Control.ViewModels
                 else if (propuesta.EsComplemento)
                 {
                     await AplicarComplementoAsync(propuesta);
+                }
+                else if (propuesta.EsIngresoManual)
+                {
+                    await AplicarIngresoManualAsync(propuesta);
                 }
                 else
                 {
@@ -404,6 +414,85 @@ namespace Advance_Control.ViewModels
             return propuestas;
         }
 
+        /// <summary>
+        /// Liga abonos capturados a mano ("Registrar abono") -- que ya descontaron el saldo de su
+        /// factura pero todavia no tienen ningun movimiento bancario real vinculado -- contra
+        /// movimientos bancarios, por monto + fecha del abono. Calco de
+        /// <see cref="CrearPropuestasComplementosAsync"/>, con dos diferencias: usa
+        /// _facturasTodasBase (no _facturasPendientesBase) porque la factura del abono pudo haber
+        /// quedado finiquitada, y el backend ya excluyo los abonos en efectivo.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasIngresosManualesAsync(CancellationToken ct = default)
+        {
+            var ingresosPendientes = await _facturaService.ObtenerIngresosManualesSinMovimientoAsync(ct);
+            ct.ThrowIfCancellationRequested();
+
+            if (ingresosPendientes.Count == 0)
+            {
+                return Array.Empty<ConciliacionMatchPropuestaDto>();
+            }
+
+            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
+
+            var movimientosDisponibles = _movimientosPendientesBase
+                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
+                .OrderBy(movimiento => movimiento.Fecha)
+                .ThenBy(movimiento => movimiento.IdMovimiento)
+                .ToList();
+
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var ingreso in ingresosPendientes
+                .Where(ingreso => !_facturasDescartadas.Contains(ingreso.IdFactura))
+                .OrderBy(ingreso => ingreso.IdFactura)
+                .ThenBy(ingreso => ingreso.FechaAbono))
+            {
+                if (!facturasPorId.TryGetValue(ingreso.IdFactura, out var factura))
+                {
+                    continue; // la factura ya no esta en el pool activo (ej. cancelada)
+                }
+
+                if (_usarRfcComoRegla && string.IsNullOrWhiteSpace(factura.ReceptorRfc))
+                {
+                    continue;
+                }
+
+                var movimientoObjetivo = _conciliacionMatchingEngine.BuscarMovimientoCoincidente(
+                    movimientosDisponibles,
+                    ingreso.MontoAbono,
+                    new[] { factura },
+                    ingreso.FechaAbono,
+                    _aplicarReglaPueMismoMes);
+
+                if (movimientoObjetivo == null)
+                {
+                    continue;
+                }
+
+                if (_usarRfcComoRegla && !string.Equals(
+                        movimientoObjetivo.RfcEmisor?.Trim(),
+                        factura.ReceptorRfc?.Trim(),
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = "IngresoManual",
+                    Facturas = new List<FacturaResumenDto> { factura },
+                    Movimiento = movimientoObjetivo,
+                    Observaciones = $"Ingreso manual ({ingreso.FormaPagoTexto}) de {ingreso.MontoAbonoTexto} contra movimiento {movimientoObjetivo.GrupoId}.",
+                    IdAbonoFacturaIngresoManual = ingreso.IdAbonoFactura,
+                    IngresoManualReferenciaTexto = ingreso.ReferenciaTexto
+                });
+
+                movimientosDisponibles.Remove(movimientoObjetivo);
+            }
+
+            return propuestas;
+        }
+
         private static void RegistrarUsados(
             IEnumerable<ConciliacionMatchPropuestaDto> propuestas,
             HashSet<int> movimientosUsados,
@@ -495,6 +584,8 @@ namespace Advance_Control.ViewModels
             _movimientosPendientesBase.AddRange(movimientosPendientes);
             _facturasPendientesBase.Clear();
             _facturasPendientesBase.AddRange(FiltrarFacturasConciliables(facturas));
+            _facturasTodasBase.Clear();
+            _facturasTodasBase.AddRange(facturas.Where(factura => _conciliacionMatchingEngine.ObtenerTotalFactura(factura) > 0));
         }
 
         private async Task ConciliarMovimientoConFacturasAsync(
@@ -577,6 +668,27 @@ namespace Advance_Control.ViewModels
             {
                 throw new InvalidOperationException(string.IsNullOrWhiteSpace(resultado.Message)
                     ? "No fue posible ligar el complemento de pago al movimiento."
+                    : resultado.Message);
+            }
+        }
+
+        private async Task AplicarIngresoManualAsync(ConciliacionMatchPropuestaDto propuesta)
+        {
+            if (propuesta.IdAbonoFacturaIngresoManual is not int idAbonoFactura)
+            {
+                return;
+            }
+
+            var resultado = await _facturaService.VincularIngresoManualMovimientoAsync(new VincularIngresoManualMovimientoRequestDto
+            {
+                IdAbonoFactura = idAbonoFactura,
+                IdMovimiento = propuesta.Movimiento.IdMovimiento
+            });
+
+            if (!resultado.Success)
+            {
+                throw new InvalidOperationException(string.IsNullOrWhiteSpace(resultado.Message)
+                    ? "No fue posible ligar el ingreso manual al movimiento."
                     : resultado.Message);
             }
         }
@@ -851,6 +963,15 @@ namespace Advance_Control.ViewModels
                     await MostrarResultadoFinalConciliacionAsync(
                         "Vinculacion de Complementos de Pago",
                         new[] { $"{complementosLigados} complemento(s) de pago ligado(s) a movimientos bancarios" });
+                    break;
+                }
+
+                case ConciliacionAutomaticaModo.IngresosManuales:
+                {
+                    var ingresosLigados = aprobadas.Count;
+                    await MostrarResultadoFinalConciliacionAsync(
+                        "Vinculacion de Ingresos Manuales",
+                        new[] { $"{ingresosLigados} ingreso(s) manual(es) ligado(s) a movimientos bancarios" });
                     break;
                 }
             }

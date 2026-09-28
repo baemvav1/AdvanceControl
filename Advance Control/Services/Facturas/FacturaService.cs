@@ -763,6 +763,77 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task<List<IngresoManualPendienteMovimientoDto>> ObtenerIngresosManualesSinMovimientoAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "ingresos-manuales", "pendientes-movimiento");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Consultando ingresos manuales sin movimiento en: {url}", "FacturaService", "ObtenerIngresosManualesSinMovimientoAsync");
+                var result = await _http.GetFromJsonAsync<List<IngresoManualPendienteMovimientoDto>>(url, _jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? new List<IngresoManualPendienteMovimientoDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar ingresos manuales sin movimiento", ex, "FacturaService", "ObtenerIngresosManualesSinMovimientoAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar ingresos manuales sin movimiento.", ex);
+            }
+        }
+
+        public async Task<RegistrarAbonoFacturaResponseDto> VincularIngresoManualMovimientoAsync(VincularIngresoManualMovimientoRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
+            var url = _endpoints.GetEndpoint("api", "factura", "ingreso-manual", "vincular-movimiento");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Vinculando ingreso manual a movimiento en: {url}", "FacturaService", "VincularIngresoManualMovimientoAsync");
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error al vincular ingreso manual a movimiento. Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        "VincularIngresoManualMovimientoAsync");
+
+                    return new RegistrarAbonoFacturaResponseDto
+                    {
+                        Success = false,
+                        Message = errorContent
+                    };
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<RegistrarAbonoFacturaResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                if (result != null)
+                {
+                    return result;
+                }
+
+                await _logger.LogErrorAsync("La API devolvio una respuesta vacia al vincular el ingreso manual", null, "FacturaService", "VincularIngresoManualMovimientoAsync");
+                return new RegistrarAbonoFacturaResponseDto
+                {
+                    Success = false,
+                    Message = "La API devolvio una respuesta vacia al vincular el ingreso manual."
+                };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al vincular ingreso manual a movimiento", ex, "FacturaService", "VincularIngresoManualMovimientoAsync");
+                throw new InvalidOperationException("Error de comunicacion con el servidor al vincular el ingreso manual.", ex);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error inesperado al vincular ingreso manual a movimiento", ex, "FacturaService", "VincularIngresoManualMovimientoAsync");
+                throw;
+            }
+        }
+
         public async Task<ComplementoPagoConsolidarResultDto> ConsolidarComplementosPagoAsync(CancellationToken cancellationToken = default)
         {
             var url = _endpoints.GetEndpoint("api", "factura", "complementos-pago", "consolidar");

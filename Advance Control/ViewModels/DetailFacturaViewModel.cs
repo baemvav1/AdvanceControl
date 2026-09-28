@@ -20,6 +20,7 @@ namespace Advance_Control.ViewModels
         private DateTimeOffset? _fechaAbono = DateTimeOffset.Now;
         private string? _referenciaAbono;
         private string? _observacionesAbono;
+        private string? _formaPagoAbono;
 
         public DetailFacturaViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IComplementoPagoPdfService complementoPagoPdfService)
         {
@@ -103,11 +104,25 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _observacionesAbono, value);
         }
 
+        /// <summary>Cómo llegó el pago: efectivo/transferencia/spei/cheque (ver <see cref="FormaPagoAbonoManualCatalogo"/>).</summary>
+        public string? FormaPagoAbono
+        {
+            get => _formaPagoAbono;
+            set
+            {
+                if (SetProperty(ref _formaPagoAbono, value))
+                {
+                    OnPropertyChanged(nameof(CanRegistrarAbono));
+                }
+            }
+        }
+
         public string ResumenConceptos => $"Conceptos ({Conceptos.Count})";
         public string ResumenTraslados => $"Traslados globales ({TrasladosGlobales.Count})";
         public string ResumenAbonos => $"Abonos registrados ({Abonos.Count})";
         public string ResumenComplementos => $"Complementos de pago relacionados ({ComplementosRelacionados.Count})";
-        public bool CanRegistrarAbono => Factura != null && !IsLoading && Factura.SaldoPendiente > 0 && MontoAbono > 0;
+        public bool CanRegistrarAbono => Factura != null && !IsLoading && Factura.SaldoPendiente > 0
+            && MontoAbono > 0 && !string.IsNullOrWhiteSpace(FormaPagoAbono);
 
         public async Task CargarDetalleAsync(int idFactura)
         {
@@ -135,6 +150,7 @@ namespace Advance_Control.ViewModels
                 MontoAbono = Factura.SaldoPendiente > 0 ? (double)Factura.SaldoPendiente : 0;
                 ReferenciaAbono = null;
                 ObservacionesAbono = null;
+                FormaPagoAbono = null;
                 OnPropertyChanged(nameof(ResumenConceptos));
                 OnPropertyChanged(nameof(ResumenTraslados));
                 OnPropertyChanged(nameof(ResumenAbonos));
@@ -247,6 +263,12 @@ namespace Advance_Control.ViewModels
                 return;
             }
 
+            if (string.IsNullOrWhiteSpace(FormaPagoAbono))
+            {
+                ErrorMessage = "Selecciona cómo llegó el pago (efectivo, transferencia, SPEI o cheque).";
+                return;
+            }
+
             try
             {
                 IsLoading = true;
@@ -260,7 +282,8 @@ namespace Advance_Control.ViewModels
                     FechaAbono = FechaAbono?.DateTime ?? DateTime.Now,
                     MontoAbono = Convert.ToDecimal(MontoAbono),
                     Referencia = ReferenciaAbono,
-                    Observaciones = ObservacionesAbono
+                    Observaciones = ObservacionesAbono,
+                    FormaPago = FormaPagoAbono
                 });
 
                 if (!result.Success)
@@ -298,6 +321,7 @@ namespace Advance_Control.ViewModels
             FechaAbono = DateTimeOffset.Now;
             ReferenciaAbono = null;
             ObservacionesAbono = null;
+            FormaPagoAbono = null;
             OnPropertyChanged(nameof(ResumenConceptos));
             OnPropertyChanged(nameof(ResumenTraslados));
             OnPropertyChanged(nameof(ResumenAbonos));

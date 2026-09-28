@@ -206,6 +206,19 @@
                             <TextBox Grid.Row="1" Grid.Column="0" Header="Referencia (opcional)" Text="{Binding ViewModel.ReferenciaAbono, Mode=TwoWay}" />
                             <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Header="Observaciones" Text="{Binding ViewModel.ObservacionesAbono, Mode=TwoWay}" />
 
+                            <ComboBox
+                                Grid.Row="2"
+                                Grid.Column="0"
+                                Header="Forma de pago"
+                                PlaceholderText="Selecciona cómo llegó el pago"
+                                SelectedValuePath="Tag"
+                                SelectedValue="{Binding ViewModel.FormaPagoAbono, Mode=TwoWay}">
+                                <ComboBoxItem Content="Transferencia" Tag="transferencia" />
+                                <ComboBoxItem Content="SPEI" Tag="spei" />
+                                <ComboBoxItem Content="Cheque" Tag="cheque" />
+                                <ComboBoxItem Content="Efectivo" Tag="efectivo" />
+                            </ComboBox>
+
                             <Button
                                 Grid.Row="2"
                                 Grid.Column="2"

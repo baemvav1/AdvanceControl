@@ -12,5 +12,8 @@ namespace Advance_Control.Models
         public string? Observaciones { get; set; }
         public bool RegistrarEnBitacoraConciliacion { get; set; }
         public string? TipoOperacionBitacoraConciliacion { get; set; }
+
+        /// <summary>Cómo llegó el pago: efectivo/transferencia/spei/cheque.</summary>
+        public string? FormaPago { get; set; }
     }
 }

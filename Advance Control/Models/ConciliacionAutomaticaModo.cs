@@ -17,6 +17,17 @@ namespace Advance_Control.Models
         /// pero todavia no tienen ningun abono interno registrado, contra movimientos bancarios
         /// por monto + fecha.
         /// </summary>
-        Complementos = 4
+        Complementos = 4,
+
+        /// <summary>
+        /// Liga abonos capturados a mano ("Registrar abono", sin pasar por Complementos de Pago
+        /// ni por conciliacion bancaria) contra movimientos bancarios por monto + fecha. El abono
+        /// ya existe y ya descuenta el saldo de la factura -- esto solo le adjunta la procedencia
+        /// bancaria real, nunca crea un abono nuevo. Excluye a proposito los abonos en efectivo
+        /// (nunca van a tener un movimiento bancario real). No confundir con el modo Abonos, que
+        /// combina varios movimientos para cubrir el saldo total de una factura sin mirar
+        /// abonos_factura.
+        /// </summary>
+        IngresosManuales = 5
     }
 }

@@ -18,13 +18,18 @@ namespace Advance_Control.Models
         public int? IdComplementoPagoDocto { get; init; }
         public string? ComplementoFolioTexto { get; init; }
 
+        /// <summary>PK de abonos_factura -- solo se llena cuando Tipo == "IngresoManual".</summary>
+        public int? IdAbonoFacturaIngresoManual { get; init; }
+        public string? IngresoManualReferenciaTexto { get; init; }
+
         // Helpers para display en diálogo
         public bool EsAbonos => string.Equals(Tipo, "Abonos", StringComparison.OrdinalIgnoreCase);
         public bool EsUnoAUno => string.Equals(Tipo, "1 a 1", StringComparison.OrdinalIgnoreCase);
         public bool EsComplemento => string.Equals(Tipo, "Complemento", StringComparison.OrdinalIgnoreCase);
-        // La propuesta "Complemento" reusa el layout genérico (1 a 1/combinacional) tal cual;
-        // EsComplemento solo se usa para intercambiar la columna de Folio(s) por el folio del
-        // complemento (ver ConfirmacionConciliacionUserControl.xaml).
+        public bool EsIngresoManual => string.Equals(Tipo, "IngresoManual", StringComparison.OrdinalIgnoreCase);
+        // Las propuestas "Complemento"/"IngresoManual" reusan el layout genérico (1 a 1/
+        // combinacional) tal cual; solo se usan para intercambiar la columna de Folio(s) por su
+        // propio texto (ver ConfirmacionConciliacionUserControl.xaml).
         public bool EsGenerica => !EsAbonos;
         public FacturaResumenDto? FacturaPrincipal => Facturas.FirstOrDefault();
         public string FoliosTexto => string.Join(", ", Facturas.Select(f => f.Folio ?? "-"));

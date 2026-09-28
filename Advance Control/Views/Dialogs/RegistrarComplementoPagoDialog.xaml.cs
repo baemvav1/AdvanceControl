@@ -1,6 +1,8 @@
 using System;
 using System.Globalization;
+using System.Linq;
 using Advance_Control.Models;
+using Advance_Control.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -8,6 +10,8 @@ namespace Advance_Control.Views.Dialogs;
 
 public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
 {
+    private sealed record FormaPagoOpcion(string Clave, string Texto);
+
     private readonly FacturaResumenDto _factura;
 
     public RegistrarAbonoFacturaRequestDto? ResultadoRequest { get; private set; }
@@ -21,6 +25,10 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
         ResumenFacturaTextBlock.Text = $"Factura {factura.FolioTitulo} · {factura.ReceptorNombre ?? "Sin receptor"}";
         SaldoPendienteTextBlock.Text = $"Saldo pendiente: {factura.SaldoPendienteTexto}";
         FechaDatePicker.Date = DateTimeOffset.Now;
+
+        FormaPagoComboBox.ItemsSource = FormaPagoAbonoManualCatalogo.Claves
+            .Select(clave => new FormaPagoOpcion(clave, FormaPagoAbonoManualCatalogo.Describir(clave)))
+            .ToList();
 
         if (factura.SaldoPendiente > 0)
         {
@@ -55,13 +63,22 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
             return;
         }
 
+        if (FormaPagoComboBox.SelectedItem is not FormaPagoOpcion formaPago)
+        {
+            EstadoInfoBar.Message = "Selecciona cómo llegó el pago (efectivo, transferencia, SPEI o cheque).";
+            EstadoInfoBar.IsOpen = true;
+            args.Cancel = true;
+            return;
+        }
+
         ResultadoRequest = new RegistrarAbonoFacturaRequestDto
         {
             IdFactura = _factura.IdFactura,
             FechaAbono = FechaDatePicker.Date.Value.DateTime,
             MontoAbono = monto,
             Referencia = string.IsNullOrWhiteSpace(ReferenciaTextBox.Text) ? null : ReferenciaTextBox.Text.Trim(),
-            Observaciones = string.IsNullOrWhiteSpace(ObservacionesTextBox.Text) ? null : ObservacionesTextBox.Text.Trim()
+            Observaciones = string.IsNullOrWhiteSpace(ObservacionesTextBox.Text) ? null : ObservacionesTextBox.Text.Trim(),
+            FormaPago = formaPago.Clave
         };
     }
 

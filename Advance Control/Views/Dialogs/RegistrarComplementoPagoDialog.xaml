@@ -42,6 +42,13 @@
             x:Name="FechaDatePicker"
             Header="Fecha del pago" />
 
+        <ComboBox
+            x:Name="FormaPagoComboBox"
+            Header="Forma de pago"
+            PlaceholderText="Selecciona cómo llegó el pago"
+            DisplayMemberPath="Texto"
+            HorizontalAlignment="Stretch" />
+
         <TextBox
             x:Name="ReferenciaTextBox"
             Header="Referencia (opcional)"

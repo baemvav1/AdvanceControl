@@ -83,6 +83,32 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        /// <summary>
+        /// "Consolidar Ingresos Manuales": detecta abonos capturados a mano ("Registrar abono")
+        /// sin movimiento bancario y propone ligarlos a su movimiento real, reusando el mismo
+        /// asistente que el botón "Ingresos Manuales" de Conciliación. A diferencia de
+        /// "Consolidar Complementos", aquí no hace falta ningún paso previo de backfill -- el
+        /// abono ya existe en cuanto se captura.
+        /// </summary>
+        private async void BtnConsolidarIngresosManuales_Click(object sender, RoutedEventArgs e)
+        {
+            var ventana = new ConfirmacionConciliacionWindow(
+                ConciliacionAutomaticaModo.IngresosManuales,
+                aplicarReglaPueMismoMes: true,
+                usarRfcComoRegla: false);
+            ventana.Activate();
+
+            var aprobadas = await ventana.ResultTask;
+
+            if (aprobadas is { Count: > 0 })
+            {
+                await ViewModel.CargarFacturasAsync();
+            }
+
+            ViewModel.SuccessMessage =
+                $"Consolidación completada: {aprobadas?.Count ?? 0} ingreso(s) manual(es) vinculado(s) a movimiento bancario.";
+        }
+
         // --- Buscador ---
 
         private void BusquedaAutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)

@@ -249,6 +249,9 @@ namespace Advance_Control.Views.Pages
         private async void BtnComplementos_Click(object sender, RoutedEventArgs e) =>
             await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Complementos);
 
+        private async void BtnIngresosManuales_Click(object sender, RoutedEventArgs e) =>
+            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.IngresosManuales);
+
         /// <summary>Abre el visor para un único paso/modo, usando los toggles actuales de la página.</summary>
         private async Task AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo modo)
         {
