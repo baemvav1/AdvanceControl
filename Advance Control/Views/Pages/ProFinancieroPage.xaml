@@ -116,9 +116,10 @@
                                         x:Name="EnvioCorreo"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Center"
-                                        IsEnabled="False"
+                                        Click="EnviarHistorial_Click"
+                                        IsEnabled="{x:Bind ViewModel.HasPdf, Mode=OneWay}"
                                         Style="{StaticResource AccentButtonStyle}"
-                                        ToolTipService.ToolTip="Enviar por correo (pendiente de diseñar, no existe hoy en el sistema)">
+                                        ToolTipService.ToolTip="Enviar la factura por correo">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
                                             <!--  Ícono estándar de descarga (Segoe Fluent Icons)  -->
                                             <FontIcon FontSize="14" Glyph="&#xE724;" />
@@ -305,9 +306,10 @@
                                 Margin="10,0,5,0"
                                 HorizontalAlignment="Stretch"
                                 Background="{ThemeResource AccentAAFillColorDefaultBrush}"
+                                Click="EnviarHistorial_Click"
                                 Content="Enviar Historial"
-                                IsEnabled="False"
-                                ToolTipService.ToolTip="Pendiente de diseñar, no existe hoy en el sistema" />
+                                IsEnabled="{x:Bind ViewModel.HasPdf, Mode=OneWay}"
+                                ToolTipService.ToolTip="Enviar la factura por correo a los contactos del cliente" />
                             <Button
                                 x:Name="BtnCancelarFactura"
                                 Grid.Row="1"

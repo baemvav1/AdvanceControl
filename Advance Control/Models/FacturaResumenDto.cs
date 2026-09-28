@@ -65,23 +65,34 @@ namespace Advance_Control.Models
                 : "Folio";
 
         /// <summary>
-        /// Solo las facturas generadas por el software (Serie A + folio propio) se gestionan aquí.
-        /// Las de folio suelto y los complementos de pago se hicieron/hacen desde el portal de Bilkon;
-        /// se cancelan y se les capturan pagos allá, para no perder el hilo de esos movimientos.
+        /// Cancelar ante el SAT (acción irreversible) sigue restringido a facturas propias
+        /// (Serie A + folio propio) -- las de folio suelto (portal de Bilkon) se cancelan allá.
+        /// Ya NO gobierna captura de pagos (ver <see cref="PuedeCapturarPagoManual"/>): antes se
+        /// restringía junto con cancelación "para no perder el hilo de esos movimientos", pero se
+        /// abrió a cualquier factura vigente para que la consolidación de pagos (Ingresos
+        /// Manuales/Complementos) opere parejo sobre todo el universo de facturas.
         /// </summary>
         public bool PermiteGestionInterna => EsConSerie;
 
-        public string TooltipCapturarPagoTexto => PermiteGestionInterna
+        /// <summary>
+        /// Registrar un abono manual (control interno, no genera CFDI) ya no requiere que la
+        /// factura sea propia -- cualquier factura vigente (con o sin Serie, venga o no del
+        /// software) puede recibir pagos capturados a mano.
+        /// </summary>
+        public bool PuedeCapturarPagoManual => !Cancelada;
+
+        public string TooltipCapturarPagoTexto => PuedeCapturarPagoManual
             ? "Registrar abono (control interno, no genera CFDI)"
-            : "Esta factura no fue generada por el software; captura su pago desde el portal de Bilkon";
+            : "Esta factura está cancelada; no se le pueden registrar abonos";
 
         /// <summary>
-        /// Solo facturas propias (Serie+Folio) con MetodoPago PPD, no canceladas, que tienen al
-        /// menos un abono registrado sin incluir todavía en un Complemento de Pago timbrado.
+        /// Con MetodoPago PPD, no cancelada, que tenga al menos un abono registrado sin incluir
+        /// todavía en un Complemento de Pago timbrado. Ya no requiere ser factura propia (Serie):
+        /// el complemento real se arma a partir del UUID de la factura, que existe igual venga o
+        /// no del software.
         /// </summary>
         public bool PuedeGenerarComplementoPago =>
-            PermiteGestionInterna
-            && !Cancelada
+            !Cancelada
             && string.Equals(MetodoPago, "PPD", StringComparison.OrdinalIgnoreCase)
             && NumeroAbonosSinComplementar > 0;
 

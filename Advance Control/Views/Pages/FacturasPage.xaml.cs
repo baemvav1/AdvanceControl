@@ -162,8 +162,8 @@ namespace Advance_Control.Views.Pages
                 return;
             }
 
-            var detalleWindow = new DetailFacturaWindow(factura);
-            detalleWindow.Activate();
+            var visor = new FacturaVisorWindow(factura);
+            visor.Activate();
         }
 
         private async void BtnDescargarPdf_Click(object sender, RoutedEventArgs e)
@@ -229,7 +229,7 @@ namespace Advance_Control.Views.Pages
 
         private async void BtnComplementoPago_Click(object sender, RoutedEventArgs e)
         {
-            if (ObtenerFactura(sender) is not FacturaResumenDto factura || !factura.PermiteGestionInterna)
+            if (ObtenerFactura(sender) is not FacturaResumenDto factura || !factura.PuedeCapturarPagoManual)
             {
                 return;
             }

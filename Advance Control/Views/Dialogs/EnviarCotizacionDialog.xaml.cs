@@ -49,7 +49,9 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
         string tipo = "Cotización",
         int? idOperacion = null,
         bool tFinalizado = false,
-        List<(string NombreArchivo, byte[] Contenido)>? adjuntosAdicionales = null)
+        List<(string NombreArchivo, byte[] Contenido)>? adjuntosAdicionales = null,
+        string? asuntoPersonalizado = null,
+        string? mensajePersonalizado = null)
     {
         _pdfPath = pdfPath ?? throw new ArgumentNullException(nameof(pdfPath));
         _razonSocial = razonSocial;
@@ -97,6 +99,19 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
                 $"Estimado: {nombreDestinatario}.\n\n" +
                 $"En el siguiente correo, adjuntamos la {tipo.ToLowerInvariant()}{idOpTexto}.\n\n" +
                 "Saludos Cordiales";
+        }
+
+        // Overrides opcionales (ej. "Factura {folio}") para tipos que no encajan en el switch de
+        // arriba, pensado para operaciones (idOperacion) -- no cambia nada para los llamadores
+        // existentes, que nunca los pasan.
+        if (!string.IsNullOrWhiteSpace(asuntoPersonalizado))
+        {
+            AsuntoTextBox.Text = asuntoPersonalizado;
+        }
+
+        if (!string.IsNullOrWhiteSpace(mensajePersonalizado))
+        {
+            MensajeTextBox.Text = mensajePersonalizado;
         }
 
         // Poblar checkboxes de CC (todos los contactos excepto el principal)

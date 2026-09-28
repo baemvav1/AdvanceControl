@@ -11,23 +11,19 @@ using Advance_Control.Services.Facturas;
 namespace Advance_Control.ViewModels
 {
     /// <summary>
-    /// ViewModel del prototipo "Visor de factura" (grupo Financiero). El mecanismo de carga es
-    /// genérico (recibe serie + folio), pero de momento este prototipo siempre apunta a la
-    /// factura 962 (sin serie) mientras se valida el diseño. Candidato a sustituir el visor
-    /// actual de Facturas (FacturasPage/DetailFacturaWindow) una vez aprobado.
+    /// ViewModel del visor de factura (grupo Financiero) -- reemplaza a FacturasPage/
+    /// DetailFacturaWindow como pantalla de detalle de una factura, abierto desde
+    /// <see cref="Views.Windows.FacturaVisorWindow"/>. Nacio como prototipo hardcodeado a la
+    /// factura 962; el mecanismo de carga siempre fue generico (por id de factura), solo faltaba
+    /// que algo distinto de Page_Loaded se lo pasara.
     /// </summary>
     public class ProFinancieroViewModel : INotifyPropertyChanged
     {
-        /// <summary>Serie objetivo mientras el visor está en prototipo (de momento hardcodeada a la factura 962, sin serie).</summary>
-        public const string SeriePrototipo = "";
-
-        /// <summary>Folio objetivo mientras el visor está en prototipo (de momento hardcodeada a la factura 962).</summary>
-        public const string FolioPrototipo = "962";
-
         private readonly IFacturaService _facturaService;
         private readonly IFacturaPdfService _facturaPdfService;
         private readonly IComplementoPagoPdfService _complementoPagoPdfService;
 
+        private int? _idFacturaActual;
         private bool _isLoading;
         private string? _errorMessage;
         private string? _successMessage;
@@ -185,12 +181,18 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Mecanismo genérico: resuelve la factura por serie + folio, trae su detalle completo
-        /// y genera su PDF. Cualquier pantalla futura que reemplace el visor actual puede llamar
-        /// esto con la serie/folio real que el usuario seleccione.
+        /// Se usa cuando la página se navega sin una factura (ej. entrando directo por el navbar
+        /// de prototipos, sin pasar por el botón "Abrir" de Facturas).
         /// </summary>
-        public async Task CargarFacturaAsync(string serie, string folio)
+        public void MostrarMensajeSinFactura()
         {
+            ErrorMessage = "Abre esta pantalla desde Facturas seleccionando una factura.";
+        }
+
+        /// <summary>Trae el detalle completo de la factura por su id y genera su PDF.</summary>
+        public async Task CargarFacturaAsync(int idFactura)
+        {
+            _idFacturaActual = idFactura;
             IsLoading = true;
             ErrorMessage = null;
             PdfPath = null;
@@ -199,14 +201,7 @@ namespace Advance_Control.ViewModels
 
             try
             {
-                var resumen = await _facturaService.BuscarFacturaPorFolioAsync(folio, serie);
-                if (resumen == null)
-                {
-                    ErrorMessage = $"No se encontró ninguna factura con serie \"{serie}\" y folio \"{folio}\".";
-                    return;
-                }
-
-                var detalle = await _facturaService.ObtenerDetalleFacturaAsync(resumen.IdFactura);
+                var detalle = await _facturaService.ObtenerDetalleFacturaAsync(idFactura);
                 if (detalle?.Factura == null)
                 {
                     ErrorMessage = "No se pudo consultar el detalle completo de la factura.";
@@ -235,8 +230,8 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        /// <summary>Recarga la misma factura del prototipo (A7) -- se usa tras cualquier acción que cambie su estado.</summary>
-        private Task RecargarAsync() => CargarFacturaAsync(SeriePrototipo, FolioPrototipo);
+        /// <summary>Recarga la misma factura -- se usa tras cualquier acción que cambie su estado.</summary>
+        private Task RecargarAsync() => _idFacturaActual.HasValue ? CargarFacturaAsync(_idFacturaActual.Value) : Task.CompletedTask;
 
         public Task<string?> ObtenerXmlAsync()
         {

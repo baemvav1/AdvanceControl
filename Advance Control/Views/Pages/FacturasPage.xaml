@@ -293,7 +293,7 @@
 
                                         <Button
                                             Click="BtnComplementoPago_Click"
-                                            IsEnabled="{Binding PermiteGestionInterna}"
+                                            IsEnabled="{Binding PuedeCapturarPagoManual}"
                                             Tag="{Binding}"
                                             ToolTipService.ToolTip="{Binding TooltipCapturarPagoTexto}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">

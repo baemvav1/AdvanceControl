@@ -999,9 +999,9 @@ namespace Advance_Control.ViewModels
         public async Task<RegistrarAbonoFacturaResponseDto> RegistrarComplementoPagoAsync(RegistrarAbonoFacturaRequestDto request)
         {
             var factura = _todasLasFacturas.FirstOrDefault(f => f.IdFactura == request.IdFactura);
-            if (factura != null && !factura.PermiteGestionInterna)
+            if (factura != null && !factura.PuedeCapturarPagoManual)
             {
-                ErrorMessage = "Esta factura no fue generada por el software; captura su pago desde el portal de Bilkon.";
+                ErrorMessage = "Esta factura está cancelada; no se le pueden registrar abonos.";
                 return new RegistrarAbonoFacturaResponseDto { Success = false, Message = ErrorMessage };
             }
 

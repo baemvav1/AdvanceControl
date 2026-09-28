@@ -1,36 +1,64 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Clientes;
+using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Facturas;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Dialogs;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Navigation;
 using Windows.Storage.Pickers;
 
 namespace Advance_Control.Views.Pages
 {
     /// <summary>
-    /// Lienzo de prototipos del grupo Financiero. Visible solo para nivel 1 (devs)
-    /// vía el sistema de permisos UI. Primer experimento: visor de factura (candidato a
-    /// sustituir FacturasPage/DetailFacturaWindow), de momento hardcodeado a la factura 962.
+    /// Visor de factura del grupo Financiero -- reemplaza a DetailFacturaWindow como pantalla de
+    /// detalle abierta desde el botón "Abrir" de Facturas (vía <see cref="Views.Windows.FacturaVisorWindow"/>).
+    /// Sigue registrada también como página "ProFinanciero" en el navbar de prototipos (solo
+    /// nivel 1/devs) para poder navegar a ella sin una factura seleccionada durante desarrollo.
     /// </summary>
     public sealed partial class ProFinancieroPage : Page
     {
+        private readonly IClienteService _clienteService;
+        private readonly IContactoService _contactoService;
+        private int? _idFacturaPendiente;
+
         public ProFinancieroViewModel ViewModel { get; }
 
         public ProFinancieroPage()
         {
             ViewModel = AppServices.Get<ProFinancieroViewModel>();
+            _clienteService = AppServices.Get<IClienteService>();
+            _contactoService = AppServices.Get<IContactoService>();
             InitializeComponent();
+        }
+
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            _idFacturaPendiente = e.Parameter switch
+            {
+                FacturaResumenDto factura => factura.IdFactura,
+                int idFactura => idFactura,
+                _ => null
+            };
         }
 
         private async void Page_Loaded(object sender, RoutedEventArgs e)
         {
-            await ViewModel.CargarFacturaAsync(ProFinancieroViewModel.SeriePrototipo, ProFinancieroViewModel.FolioPrototipo);
+            if (_idFacturaPendiente is not int idFactura)
+            {
+                ViewModel.MostrarMensajeSinFactura();
+                return;
+            }
+
+            await ViewModel.CargarFacturaAsync(idFactura);
             await ActualizarVisorPdfAsync();
         }
 
@@ -105,7 +133,7 @@ namespace Advance_Control.Views.Pages
                 return;
             }
 
-            if (!factura.PermiteGestionInterna)
+            if (!factura.PuedeCapturarPagoManual)
             {
                 await MostrarMensajeAsync("Registrar abono", factura.TooltipCapturarPagoTexto);
                 return;
@@ -173,6 +201,112 @@ namespace Advance_Control.Views.Pages
             {
                 await ViewModel.CancelarCfdiAsync(factura.IdFactura, dialog.ResultadoRequest);
                 await ActualizarVisorPdfAsync();
+            }
+        }
+
+        /// <summary>
+        /// Envía la factura por correo, calcado del flujo de EnviarCotizacionDialog usado por
+        /// Cotización/Reporte: matchea contactos por el RFC del receptor y, si hay más de uno,
+        /// deja elegir a cuál dirigirlo.
+        /// </summary>
+        private async void EnviarHistorial_Click(object sender, RoutedEventArgs e)
+        {
+            var factura = ViewModel.Factura;
+            if (factura == null || !ViewModel.HasPdf)
+            {
+                return;
+            }
+
+            var (contactoPrincipal, contactos) = await ObtenerContactosClienteAsync(factura.ReceptorRfc);
+
+            var partesSaludo = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre, contactoPrincipal?.Apellido }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            var destinatario = string.Join(" ", partesSaludo);
+            if (string.IsNullOrWhiteSpace(destinatario))
+            {
+                destinatario = "cliente";
+            }
+
+            var mensaje =
+                $"Estimado: {destinatario}.\n\n" +
+                $"En el siguiente correo, adjuntamos la factura {factura.FolioTitulo}.\n\n" +
+                "Saludos Cordiales";
+
+            var email = new EnviarCotizacionDialog(
+                ViewModel.PdfPath!,
+                contactoPrincipal,
+                contactos,
+                factura.ReceptorNombre ?? string.Empty,
+                XamlRoot,
+                tipo: "Factura",
+                asuntoPersonalizado: $"Factura {factura.FolioTitulo}",
+                mensajePersonalizado: mensaje);
+
+            if (await email.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await MostrarMensajeAsync("Enviar por correo", "La factura fue enviada correctamente.");
+            }
+        }
+
+        /// <summary>
+        /// Resuelve el cliente por RFC del receptor y trae sus contactos, igual que hacen los
+        /// botones de enviar cotización/reporte por operación. Si hay más de un contacto, deja
+        /// elegir a cuál dirigir el correo (o continuar sin destinatario preseleccionado).
+        /// </summary>
+        private async Task<(ContactoDto? Principal, List<ContactoDto> Todos)> ObtenerContactosClienteAsync(string? receptorRfc)
+        {
+            if (string.IsNullOrWhiteSpace(receptorRfc))
+            {
+                return (null, new List<ContactoDto>());
+            }
+
+            try
+            {
+                var clientes = await _clienteService.GetClientesAsync(new ClienteQueryDto { Rfc = receptorRfc });
+                var cliente = clientes.FirstOrDefault(c => string.Equals(c.Rfc, receptorRfc, StringComparison.OrdinalIgnoreCase));
+                if (cliente == null)
+                {
+                    return (null, new List<ContactoDto>());
+                }
+
+                var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = cliente.IdCliente });
+                if (contactos.Count == 0)
+                {
+                    return (null, contactos);
+                }
+
+                if (contactos.Count == 1)
+                {
+                    return (contactos[0], contactos);
+                }
+
+                var lv = new ListView
+                {
+                    ItemsSource = contactos,
+                    DisplayMemberPath = "NombreCompleto",
+                    SelectionMode = ListViewSelectionMode.Single,
+                    MaxHeight = 300
+                };
+                var seleccion = new ContentDialog
+                {
+                    Title = "¿A quién va dirigido el correo?",
+                    Content = new ScrollViewer { Content = lv, MaxHeight = 320 },
+                    PrimaryButtonText = "Seleccionar",
+                    SecondaryButtonText = "Omitir",
+                    DefaultButton = ContentDialogButton.Primary,
+                    XamlRoot = XamlRoot
+                };
+
+                var principal = await seleccion.ShowAsync() == ContentDialogResult.Primary && lv.SelectedItem is ContactoDto elegido
+                    ? elegido
+                    : null;
+
+                return (principal, contactos);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"ProFinancieroPage::ObtenerContactosClienteAsync: {ex.GetType().Name} - {ex.Message}");
+                return (null, new List<ContactoDto>());
             }
         }
 
