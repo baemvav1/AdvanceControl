@@ -328,125 +328,213 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="45" />
-                            <RowDefinition Height="36" />
-                            <RowDefinition Height="1*" />
-                        </Grid.RowDefinitions>
-                        <Grid Grid.Row="0">
-                            <TextBlock
-                                Margin="10,0,0,0"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center"
-                                FontSize="24"
-                                Text="Complementos de pago" />
-                        </Grid>
+                    <Pivot>
+                        <PivotItem Header="Complementos">
+                            <Grid RowSpacing="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="36" />
+                                    <RowDefinition Height="1*" />
+                                </Grid.RowDefinitions>
 
-                        <!--  Cabecera fija (se muestra siempre, aunque no haya complementos registrados)  -->
-                        <Grid
-                            Grid.Row="1"
-                            Margin="10,0,10,0"
-                            ColumnSpacing="8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="1*" />
-                                <ColumnDefinition Width="36" />
-                                <ColumnDefinition Width="36" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontWeight="SemiBold"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="Folio Pago" />
-                            <TextBlock
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                FontWeight="SemiBold"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="Fecha Pago" />
-                            <TextBlock
-                                Grid.Column="2"
-                                VerticalAlignment="Center"
-                                FontWeight="SemiBold"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="Monto Aplicado" />
-                            <TextBlock
-                                Grid.Column="3"
-                                VerticalAlignment="Center"
-                                FontWeight="SemiBold"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Style="{StaticResource CaptionTextBlockStyle}"
-                                Text="Forma de pago" />
-                        </Grid>
+                                <!--  Cabecera fija (se muestra siempre, aunque no haya complementos registrados)  -->
+                                <Grid
+                                    Grid.Row="0"
+                                    Margin="10,0,10,0"
+                                    ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="36" />
+                                        <ColumnDefinition Width="36" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Folio Pago" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Fecha Pago" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Monto Aplicado" />
+                                    <TextBlock
+                                        Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Forma de pago" />
+                                </Grid>
 
-                        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-                            <ItemsRepeater x:Name="ComplementosRepeater" Margin="10,4,10,10" ItemsSource="{x:Bind ViewModel.ComplementosRelacionados, Mode=OneWay}">
-                                <ItemsRepeater.Layout>
-                                    <StackLayout Spacing="6" />
-                                </ItemsRepeater.Layout>
-                                <ItemsRepeater.ItemTemplate>
-                                    <DataTemplate x:DataType="models:ComplementoPagoRelacionadoDto">
-                                        <Border
-                                            Padding="8"
-                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                            BorderThickness="1"
-                                            CornerRadius="6">
-                                            <Grid ColumnSpacing="8">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="1*" />
-                                                    <ColumnDefinition Width="1*" />
-                                                    <ColumnDefinition Width="1*" />
-                                                    <ColumnDefinition Width="1*" />
-                                                    <ColumnDefinition Width="36" />
-                                                    <ColumnDefinition Width="36" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock
-                                                    Grid.Column="0"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind FolioTitulo}" />
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind FechaPagoTexto}" />
-                                                <TextBlock
-                                                    Grid.Column="2"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind ImpPagadoTexto}" />
-                                                <TextBlock
-                                                    Grid.Column="3"
-                                                    VerticalAlignment="Center"
-                                                    Text="{x:Bind FormaPagoTexto}" />
-                                                <Button
-                                                    Grid.Column="4"
-                                                    Padding="6"
-                                                    Click="ComplementoPdf_Click"
-                                                    Tag="{x:Bind}"
-                                                    ToolTipService.ToolTip="Descargar PDF">
-                                                    <FontIcon FontSize="14" Glyph="&#xEA90;" />
-                                                </Button>
-                                                <Button
-                                                    Grid.Column="5"
-                                                    Padding="6"
-                                                    Click="ComplementoEliminar_Click"
-                                                    Tag="{x:Bind}"
-                                                    ToolTipService.ToolTip="Cancelar este Complemento de Pago ante el SAT">
-                                                    <FontIcon FontSize="14" Glyph="&#xE74D;" />
-                                                </Button>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsRepeater.ItemTemplate>
-                            </ItemsRepeater>
-                        </ScrollViewer>
-                    </Grid>
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsRepeater x:Name="ComplementosRepeater" Margin="10,4,10,10" ItemsSource="{x:Bind ViewModel.ComplementosRelacionados, Mode=OneWay}">
+                                        <ItemsRepeater.Layout>
+                                            <StackLayout Spacing="6" />
+                                        </ItemsRepeater.Layout>
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate x:DataType="models:ComplementoPagoRelacionadoDto">
+                                                <Border
+                                                    Padding="8"
+                                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6">
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="36" />
+                                                            <ColumnDefinition Width="36" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock
+                                                            Grid.Column="0"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind FolioTitulo}" />
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind FechaPagoTexto}" />
+                                                        <TextBlock
+                                                            Grid.Column="2"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind ImpPagadoTexto}" />
+                                                        <TextBlock
+                                                            Grid.Column="3"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind FormaPagoTexto}" />
+                                                        <Button
+                                                            Grid.Column="4"
+                                                            Padding="6"
+                                                            Click="ComplementoPdf_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Descargar PDF">
+                                                            <FontIcon FontSize="14" Glyph="&#xEA90;" />
+                                                        </Button>
+                                                        <Button
+                                                            Grid.Column="5"
+                                                            Padding="6"
+                                                            Click="ComplementoEliminar_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Cancelar este Complemento de Pago ante el SAT">
+                                                            <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                                                        </Button>
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+                                </ScrollViewer>
+                            </Grid>
+                        </PivotItem>
+
+                        <PivotItem Header="Pagos">
+                            <Grid RowSpacing="0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="36" />
+                                    <RowDefinition Height="1*" />
+                                </Grid.RowDefinitions>
+
+                                <!--  Cabecera fija: abonos ya ligados a un movimiento bancario real  -->
+                                <Grid
+                                    Grid.Row="0"
+                                    Margin="10,0,10,0"
+                                    ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                        <ColumnDefinition Width="1*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Fecha" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Monto" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Movimiento bancario" />
+                                    <TextBlock
+                                        Grid.Column="3"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Style="{StaticResource CaptionTextBlockStyle}"
+                                        Text="Forma de pago" />
+                                </Grid>
+
+                                <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                                    <ItemsRepeater x:Name="PagosRepeater" Margin="10,4,10,10" ItemsSource="{x:Bind ViewModel.PagosVinculados, Mode=OneWay}">
+                                        <ItemsRepeater.Layout>
+                                            <StackLayout Spacing="6" />
+                                        </ItemsRepeater.Layout>
+                                        <ItemsRepeater.ItemTemplate>
+                                            <DataTemplate x:DataType="models:AbonoFacturaDto">
+                                                <Border
+                                                    Padding="8"
+                                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    BorderThickness="1"
+                                                    CornerRadius="6">
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                            <ColumnDefinition Width="1*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock
+                                                            Grid.Column="0"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind FechaAbonoTexto}" />
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind MontoAbonoTexto}" />
+                                                        <TextBlock
+                                                            Grid.Column="2"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind MovimientoTexto}" />
+                                                        <TextBlock
+                                                            Grid.Column="3"
+                                                            VerticalAlignment="Center"
+                                                            Text="{x:Bind FormaPagoTexto}" />
+                                                    </Grid>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsRepeater.ItemTemplate>
+                                    </ItemsRepeater>
+                                </ScrollViewer>
+                            </Grid>
+                        </PivotItem>
+                    </Pivot>
                 </Border>
 
             </Grid>

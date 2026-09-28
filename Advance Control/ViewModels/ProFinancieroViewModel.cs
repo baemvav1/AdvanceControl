@@ -103,6 +103,12 @@ namespace Advance_Control.ViewModels
         /// <summary>Complementos de pago (CFDI) ya timbrados que documentan abonos de esta factura.</summary>
         public ObservableCollection<ComplementoPagoRelacionadoDto> ComplementosRelacionados { get; } = new();
 
+        /// <summary>
+        /// Abonos de esta factura ya ligados a un movimiento bancario real (pestaña "Pagos") --
+        /// excluye los abonos sin movimiento (manuales sin vincular, o en efectivo).
+        /// </summary>
+        public ObservableCollection<AbonoFacturaDto> PagosVinculados { get; } = new();
+
         public string ClienteTexto => Factura?.ReceptorNombre ?? "Sin cliente";
 
         public string FolioTexto => Factura?.FolioTitulo ?? string.Empty;
@@ -198,6 +204,7 @@ namespace Advance_Control.ViewModels
             PdfPath = null;
             Factura = null;
             ComplementosRelacionados.Clear();
+            PagosVinculados.Clear();
 
             try
             {
@@ -214,6 +221,11 @@ namespace Advance_Control.ViewModels
                 foreach (var complemento in detalle.ComplementosRelacionados)
                 {
                     ComplementosRelacionados.Add(complemento);
+                }
+
+                foreach (var abono in detalle.Abonos.Where(a => a.IdMovimiento.HasValue))
+                {
+                    PagosVinculados.Add(abono);
                 }
 
                 OnPropertyChanged(nameof(PagadoTexto));
