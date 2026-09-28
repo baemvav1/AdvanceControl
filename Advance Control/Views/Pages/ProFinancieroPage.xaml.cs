@@ -163,13 +163,14 @@ namespace Advance_Control.Views.Pages
             }
 
             var abonosPendientes = await ViewModel.ObtenerAbonosPendientesComplementoAsync(factura.ReceptorRfc);
-            if (abonosPendientes.Count == 0)
+            var abonosRelevantes = AbonosComplementoHelper.FiltrarRelevantes(abonosPendientes, factura.IdFactura);
+            if (abonosRelevantes.Count == 0)
             {
                 await MostrarMensajeAsync("Generar complemento de pago", "No hay abonos PPD pendientes de complementar.");
                 return;
             }
 
-            var dialog = new GenerarComplementoPagoDialog(factura, abonosPendientes, XamlRoot);
+            var dialog = new GenerarComplementoPagoDialog(factura, abonosRelevantes, XamlRoot);
             var resultado = await dialog.ShowAsync();
             if (resultado == ContentDialogResult.Primary && dialog.ResultadoRequest != null)
             {
