@@ -150,7 +150,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(entidades);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = entidades.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {entidades.Count} entidades exitosamente", "EntidadesViewModel", "LoadEntidadesAsync");

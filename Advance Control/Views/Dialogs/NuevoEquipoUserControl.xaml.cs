@@ -36,7 +36,7 @@ namespace Advance_Control.Views.Dialogs
         /// <summary>
         /// Constructor que recibe el ViewModel por inyección de dependencias
         /// </summary>
-        public NuevoEquipoUserControl(NuevoEquipoViewModel viewModel) : this(viewModel, null)
+        public NuevoEquipoUserControl(NuevoEquipoViewModel viewModel, EquiposViewModel equiposViewModel) : this(viewModel, equiposViewModel, null)
         {
         }
 
@@ -44,7 +44,7 @@ namespace Advance_Control.Views.Dialogs
         /// Constructor para editar un equipo existente: precarga el formulario
         /// con sus datos actuales y, al guardar, actualiza en vez de crear.
         /// </summary>
-        public NuevoEquipoUserControl(NuevoEquipoViewModel viewModel, EquipoDto? equipoAEditar)
+        public NuevoEquipoUserControl(NuevoEquipoViewModel viewModel, EquiposViewModel equiposViewModel, EquipoDto? equipoAEditar)
         {
             if (viewModel == null)
             {
@@ -53,7 +53,9 @@ namespace Advance_Control.Views.Dialogs
             }
 
             ViewModel = viewModel;
-            _equiposViewModel = AppServices.Get<EquiposViewModel>();
+            // Debe ser la instancia de la página: EquiposViewModel es Transient, y una instancia
+            // resuelta aquí recargaría una lista que nadie está mostrando.
+            _equiposViewModel = equiposViewModel ?? throw new ArgumentNullException(nameof(equiposViewModel));
             _equipoService = AppServices.Get<IEquipoService>();
 
             if (equipoAEditar != null)

@@ -123,7 +123,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(productos);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = productos.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {productos.Count} productos exitosamente", "ProductosViewModel", "LoadProductosAsync");

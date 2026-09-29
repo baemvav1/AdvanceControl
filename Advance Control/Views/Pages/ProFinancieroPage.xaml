@@ -148,12 +148,65 @@
                             TextWrapping="Wrap"
                             Visibility="{x:Bind ViewModel.HasError, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
 
-                        <ScrollViewer VerticalScrollBarVisibility="Auto" Visibility="{x:Bind ViewModel.HasPdf, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                        <!--  Zoom: Ctrl+rueda / pellizco nativos del ScrollViewer, más los botones flotantes de abajo.
+                              El ancho de PdfPagesPanel se fija al del viewport (SizeChanged), así que zoom 100 % = ajustar al ancho.  -->
+                        <ScrollViewer
+                            x:Name="PdfScrollViewer"
+                            HorizontalScrollBarVisibility="Auto"
+                            HorizontalScrollMode="Auto"
+                            MaxZoomFactor="4"
+                            MinZoomFactor="0.5"
+                            SizeChanged="PdfScrollViewer_SizeChanged"
+                            VerticalScrollBarVisibility="Auto"
+                            ViewChanged="PdfScrollViewer_ViewChanged"
+                            Visibility="{x:Bind ViewModel.HasPdf, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}"
+                            ZoomMode="Enabled">
                             <StackPanel
                                 x:Name="PdfPagesPanel"
                                 Padding="12"
                                 Spacing="12" />
                         </ScrollViewer>
+
+                        <Border
+                            Margin="0,0,24,16"
+                            Padding="4"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Bottom"
+                            Background="{ThemeResource AcrylicBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Visibility="{x:Bind ViewModel.HasPdf, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                            <StackPanel Orientation="Horizontal" Spacing="2">
+                                <Button
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Click="ZoomAlejar_Click"
+                                    ToolTipService.ToolTip="Alejar (Ctrl + rueda)">
+                                    <FontIcon FontSize="14" Glyph="&#xE71F;" />
+                                </Button>
+                                <TextBlock
+                                    x:Name="ZoomTexto"
+                                    MinWidth="48"
+                                    VerticalAlignment="Center"
+                                    Text="100 %"
+                                    TextAlignment="Center" />
+                                <Button
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Click="ZoomAcercar_Click"
+                                    ToolTipService.ToolTip="Acercar (Ctrl + rueda)">
+                                    <FontIcon FontSize="14" Glyph="&#xE8A3;" />
+                                </Button>
+                                <Button
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Click="ZoomAjustar_Click"
+                                    ToolTipService.ToolTip="Ajustar al ancho">
+                                    <FontIcon FontSize="14" Glyph="&#xE9A6;" />
+                                </Button>
+                            </StackPanel>
+                        </Border>
                     </Grid>
                     <Border
                         Grid.Row="2"

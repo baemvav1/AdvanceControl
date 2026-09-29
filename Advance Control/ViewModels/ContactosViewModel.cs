@@ -156,7 +156,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(contactos);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = contactos.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {contactos.Count} contactos exitosamente", "ContactosViewModel", "LoadContactosAsync");

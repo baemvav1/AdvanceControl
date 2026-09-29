@@ -34,7 +34,7 @@ namespace Advance_Control.Views.Dialogs
         /// <summary>
         /// Constructor que recibe el ViewModel por inyección de dependencias
         /// </summary>
-        public NuevoInmuebleUserControl(NuevoInmuebleViewModel viewModel)
+        public NuevoInmuebleUserControl(NuevoInmuebleViewModel viewModel, InmueblesViewModel inmueblesViewModel)
         {
             if (viewModel == null)
             {
@@ -43,7 +43,9 @@ namespace Advance_Control.Views.Dialogs
             }
 
             ViewModel = viewModel;
-            _inmueblesViewModel = AppServices.Get<InmueblesViewModel>();
+            // Debe ser la instancia de la página: InmueblesViewModel es Transient, y una instancia
+            // resuelta aquí recargaría una lista que nadie está mostrando.
+            _inmueblesViewModel = inmueblesViewModel ?? throw new ArgumentNullException(nameof(inmueblesViewModel));
             _inmuebleService = AppServices.Get<IInmuebleService>();
 
             this.InitializeComponent();

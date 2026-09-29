@@ -97,7 +97,7 @@ namespace Advance_Control.Views.Pages
         {
             // Resolver el ViewModel desde DI
             var nuevoEquipoViewModel = AppServices.Get<NuevoEquipoViewModel>();
-            var nuevoEquipoView = new NuevoEquipoUserControl(nuevoEquipoViewModel);
+            var nuevoEquipoView = new NuevoEquipoUserControl(nuevoEquipoViewModel, ViewModel);
             
             // Crear el diálogo similar a como lo hace el Login
             var dialog = new ContentDialog
@@ -148,7 +148,7 @@ namespace Advance_Control.Views.Pages
 
             // Resolver el ViewModel desde DI y precargarlo con los datos del equipo
             var editarEquipoViewModel = AppServices.Get<NuevoEquipoViewModel>();
-            var editarEquipoView = new NuevoEquipoUserControl(editarEquipoViewModel, equipo);
+            var editarEquipoView = new NuevoEquipoUserControl(editarEquipoViewModel, ViewModel, equipo);
 
             var dialog = new ContentDialog
             {

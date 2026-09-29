@@ -72,7 +72,7 @@ namespace Advance_Control.Views.Pages
         private async void NuevoButton_Click(object sender, RoutedEventArgs e)
         {
             var nuevoInmuebleViewModel = AppServices.Get<NuevoInmuebleViewModel>();
-            var nuevoInmuebleView = new NuevoInmuebleUserControl(nuevoInmuebleViewModel);
+            var nuevoInmuebleView = new NuevoInmuebleUserControl(nuevoInmuebleViewModel, ViewModel);
 
             var dialog = new ContentDialog
             {

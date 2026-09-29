@@ -136,7 +136,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(proveedores);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = proveedores.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {proveedores.Count} proveedores exitosamente", "ProveedoresViewModel", "LoadProveedoresAsync");

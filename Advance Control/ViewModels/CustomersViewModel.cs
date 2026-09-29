@@ -155,7 +155,7 @@ namespace Advance_Control.ViewModels
                 OnPropertyChanged(nameof(IsEmpty));
                 Paginacion.EstablecerElementos(clientes);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = clientes.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {clientes.Count} clientes exitosamente", "CustomersViewModel", "LoadClientesAsync");

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -55,8 +55,8 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Copia sin filtrar del catálogo, tomada la primera vez que se carga sin
-        /// ningún filtro activo. Sirve como fuente de sugerencias para los
+        /// Copia sin filtrar del catálogo, refrescada cada vez que se carga sin
+        /// ningún filtro activo (p. ej. tras crear o editar un equipo). Sirve como fuente de sugerencias para los
         /// AutoSuggestBox de filtro, para que no se reduzcan a medida que el
         /// usuario va escribiendo.
         /// </summary>
@@ -296,7 +296,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(filtrados);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = filtrados.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {equipos.Count} equipos exitosamente", "EquiposViewModel", "LoadEquiposAsync");

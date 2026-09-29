@@ -21,7 +21,8 @@ namespace Advance_Control.Utilities
     public static class PdfPreviewRenderer
     {
         /// <summary>Renderiza todas las páginas del PDF en <paramref name="pdfPath"/> como controles listos para insertar en un panel.</summary>
-        public static async Task<List<FrameworkElement>> RenderizarTodasLasPaginasAsync(string pdfPath)
+        /// <param name="anchoPixeles">Ancho de render de cada página; subirlo cuando el visor permite zoom, para que el texto siga nítido al acercar.</param>
+        public static async Task<List<FrameworkElement>> RenderizarTodasLasPaginasAsync(string pdfPath, uint anchoPixeles = 1400)
         {
             var archivo = await ObtenerArchivoPdfAsync(pdfPath);
             var documento = await PdfDocument.LoadFromFileAsync(archivo);
@@ -30,7 +31,7 @@ namespace Advance_Control.Utilities
             for (uint i = 0; i < documento.PageCount; i++)
             {
                 using var pagina = documento.GetPage(i);
-                paginas.Add(await RenderizarPaginaAsync(pagina));
+                paginas.Add(await RenderizarPaginaAsync(pagina, anchoPixeles));
             }
 
             return paginas;
@@ -50,10 +51,10 @@ namespace Advance_Control.Utilities
             return await StorageFile.GetFileFromPathAsync(fullPath);
         }
 
-        private static async Task<FrameworkElement> RenderizarPaginaAsync(PdfPage pagina)
+        private static async Task<FrameworkElement> RenderizarPaginaAsync(PdfPage pagina, uint anchoPixeles)
         {
             using var renderStream = new InMemoryRandomAccessStream();
-            var opciones = new PdfPageRenderOptions { DestinationWidth = 1400 };
+            var opciones = new PdfPageRenderOptions { DestinationWidth = anchoPixeles };
 
             await pagina.RenderToStreamAsync(renderStream, opciones);
             renderStream.Seek(0);

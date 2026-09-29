@@ -130,7 +130,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(servicios);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = servicios.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {servicios.Count} servicios exitosamente", "ServiciosViewModel", "LoadServiciosAsync");

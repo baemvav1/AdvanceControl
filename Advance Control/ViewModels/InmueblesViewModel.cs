@@ -149,7 +149,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(inmuebles);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = inmuebles.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {inmuebles.Count} inmuebles exitosamente", "InmueblesViewModel", "LoadInmueblesAsync");

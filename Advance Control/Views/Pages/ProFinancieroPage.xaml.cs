@@ -75,10 +75,12 @@ namespace Advance_Control.Views.Pages
         private async Task RenderizarPdfEnVisorAsync()
         {
             PdfPagesPanel.Children.Clear();
+            PdfScrollViewer.ChangeView(0, 0, 1f, disableAnimation: true);
 
             try
             {
-                var paginas = await PdfPreviewRenderer.RenderizarTodasLasPaginasAsync(ViewModel.PdfPath!);
+                // Render a mayor resolución que el default para que el texto siga nítido con zoom.
+                var paginas = await PdfPreviewRenderer.RenderizarTodasLasPaginasAsync(ViewModel.PdfPath!, anchoPixeles: 2400);
                 foreach (var pagina in paginas)
                 {
                     PdfPagesPanel.Children.Add(pagina);
@@ -88,6 +90,42 @@ namespace Advance_Control.Views.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"ProFinancieroPage::RenderizarPdfEnVisorAsync: {ex.GetType().Name} - {ex.Message}");
             }
+        }
+
+        private const float PasoZoom = 1.25f;
+
+        private void PdfScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Con scroll horizontal habilitado el contenido se mediría a ancho infinito (imagen a
+            // tamaño nativo); fijarlo al viewport hace que zoom 100 % sea "ajustar al ancho".
+            PdfPagesPanel.Width = e.NewSize.Width;
+        }
+
+        private void PdfScrollViewer_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+        {
+            ZoomTexto.Text = $"{Math.Round(PdfScrollViewer.ZoomFactor * 100)} %";
+        }
+
+        private void ZoomAcercar_Click(object sender, RoutedEventArgs e) => CambiarZoom(PdfScrollViewer.ZoomFactor * PasoZoom);
+
+        private void ZoomAlejar_Click(object sender, RoutedEventArgs e) => CambiarZoom(PdfScrollViewer.ZoomFactor / PasoZoom);
+
+        private void ZoomAjustar_Click(object sender, RoutedEventArgs e) => CambiarZoom(1f);
+
+        /// <summary>Cambia el zoom manteniendo fijo el punto al centro del viewport.</summary>
+        private void CambiarZoom(float zoomDeseado)
+        {
+            var sv = PdfScrollViewer;
+            var zoomActual = sv.ZoomFactor;
+            var zoomNuevo = Math.Clamp(zoomDeseado, sv.MinZoomFactor, sv.MaxZoomFactor);
+
+            var centroX = (sv.HorizontalOffset + sv.ViewportWidth / 2) / zoomActual;
+            var centroY = (sv.VerticalOffset + sv.ViewportHeight / 2) / zoomActual;
+
+            sv.ChangeView(
+                Math.Max(0, centroX * zoomNuevo - sv.ViewportWidth / 2),
+                Math.Max(0, centroY * zoomNuevo - sv.ViewportHeight / 2),
+                zoomNuevo);
         }
 
         private async void DescargaPDF_Click(object sender, RoutedEventArgs e)

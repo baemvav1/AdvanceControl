@@ -121,7 +121,7 @@ namespace Advance_Control.ViewModels
                 }
                 Paginacion.EstablecerElementos(refacciones);
 
-                if (_catalogoSugerencias.Count == 0 && !HayFiltrosActivos)
+                if (!HayFiltrosActivos)
                     _catalogoSugerencias = refacciones.ToList();
 
                 await _logger.LogInformationAsync($"Se cargaron {refacciones.Count} refacciones exitosamente", "RefaccionesViewModel", "LoadRefaccionesAsync");
