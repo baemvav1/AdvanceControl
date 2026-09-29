@@ -25,6 +25,14 @@ Excepciones no controladas) para tener el stack trace real antes de tocar nada.
 
 ## 2. "Generar complemento de pago" en factura 1032 (id interno 699) no timbra
 
+> **Corregido el 2026-09-29 — falta la prueba real con la 1032.**
+> - `CfdiPagoBuilderService`: `Moneda="XXX"` y sin `TipoCambio` (`ExchangeRate=0m`, la librería
+>   omite el atributo por `[DefaultValue(0)]`) a nivel Comprobante.
+> - `ProFinancieroPage`: errores y confirmaciones ahora salen en `InfoBar` encima del visor de PDF
+>   (antes el error quedaba tapado y el mensaje de éxito no se mostraba en ningún lado).
+> - Nota: los 93 CFDI tipo P que hay en BD son todos importados (Moneda XXX); el generador propio
+>   nunca había logrado timbrar uno, así que este es su primer uso real.
+
 Al confirmar el diálogo de generar complemento para la factura 1032, no pasa nada visible en la
 UI. Preocupación inicial: que se hubiera generado algo a medias. **Ya descartado.**
 

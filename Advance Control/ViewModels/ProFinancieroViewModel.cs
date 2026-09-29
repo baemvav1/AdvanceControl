@@ -71,6 +71,12 @@ namespace Advance_Control.ViewModels
 
         public bool HasSuccess => !string.IsNullOrWhiteSpace(SuccessMessage);
 
+        /// <summary>Descarta el aviso de error (el usuario cerró el InfoBar).</summary>
+        public void LimpiarError() => ErrorMessage = null;
+
+        /// <summary>Descarta el aviso de éxito (el usuario cerró el InfoBar).</summary>
+        public void LimpiarExito() => SuccessMessage = null;
+
         public FacturaResumenDto? Factura
         {
             get => _factura;

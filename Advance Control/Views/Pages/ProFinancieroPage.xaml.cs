@@ -92,6 +92,11 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        // Limpiar el mensaje al cerrar, para que el mismo texto vuelva a abrir el aviso si se repite.
+        private void ErrorInfoBar_CloseButtonClick(InfoBar sender, object args) => ViewModel.LimpiarError();
+
+        private void SuccessInfoBar_CloseButtonClick(InfoBar sender, object args) => ViewModel.LimpiarExito();
+
         private const float PasoZoom = 1.25f;
 
         private void PdfScrollViewer_SizeChanged(object sender, SizeChangedEventArgs e)

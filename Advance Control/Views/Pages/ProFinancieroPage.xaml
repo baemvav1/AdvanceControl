@@ -140,14 +140,6 @@
                             VerticalAlignment="Center"
                             IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
 
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                            Text="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
-                            TextWrapping="Wrap"
-                            Visibility="{x:Bind ViewModel.HasError, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
-
                         <!--  Zoom: Ctrl+rueda / pellizco nativos del ScrollViewer, más los botones flotantes de abajo.
                               El ancho de PdfPagesPanel se fija al del viewport (SizeChanged), así que zoom 100 % = ajustar al ancho.  -->
                         <ScrollViewer
@@ -207,6 +199,24 @@
                                 </Button>
                             </StackPanel>
                         </Border>
+
+                        <!--  Avisos de resultado (timbrado, abonos, cancelación, errores de carga). Van al final del Grid
+                              para quedar encima del visor de PDF; antes el error quedaba tapado por el PDF.  -->
+                        <StackPanel
+                            Margin="16,12,16,0"
+                            VerticalAlignment="Top"
+                            Spacing="8">
+                            <InfoBar
+                                CloseButtonClick="ErrorInfoBar_CloseButtonClick"
+                                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                                Severity="Error" />
+                            <InfoBar
+                                CloseButtonClick="SuccessInfoBar_CloseButtonClick"
+                                IsOpen="{x:Bind ViewModel.HasSuccess, Mode=OneWay}"
+                                Message="{x:Bind ViewModel.SuccessMessage, Mode=OneWay}"
+                                Severity="Success" />
+                        </StackPanel>
                     </Grid>
                     <Border
                         Grid.Row="2"
