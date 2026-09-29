@@ -9,10 +9,10 @@ using Windows.Graphics;
 namespace Advance_Control.Views.Windows
 {
     /// <summary>
-    /// Ventana ligera que hospeda <see cref="ProFinancieroPage"/> -- reemplaza a
+    /// Ventana ligera que hospeda <see cref="FacturaVisorPage"/> -- reemplaza a
     /// DetailFacturaWindow como pantalla de detalle abierta desde el botón "Abrir" de Facturas.
-    /// ProFinancieroPage sigue siendo una Page normal (también navegable desde el navbar de
-    /// prototipos); esta ventana solo le da un Frame propio y le pasa la factura seleccionada.
+    /// Esta ventana solo le da a <see cref="FacturaVisorPage"/> un Frame propio y le pasa la
+    /// factura seleccionada.
     /// </summary>
     public sealed partial class FacturaVisorWindow : Window
     {
@@ -27,7 +27,7 @@ namespace Advance_Control.Views.Windows
             Title = factura.FolioTitulo;
             AjustarTamano(1300, 800);
 
-            ContenidoFrame.Navigate(typeof(ProFinancieroPage), factura);
+            ContenidoFrame.Navigate(typeof(FacturaVisorPage), factura);
         }
 
         private void AjustarTamano(int ancho, int alto)

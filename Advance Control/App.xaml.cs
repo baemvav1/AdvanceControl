@@ -1073,7 +1073,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.DetalleClientesViewModel>();
                     services.AddTransient<ViewModels.RPTFinancieroFacturacionViewModel>();
                     services.AddTransient<ViewModels.DevOpsViewModel>();
-                    services.AddTransient<ViewModels.ProFinancieroViewModel>();
+                    services.AddTransient<ViewModels.FacturaVisorViewModel>();
 
                     services.AddHttpClient<ICorreoUsuarioService, CorreoUsuarioService>((sp, client) =>
                     {

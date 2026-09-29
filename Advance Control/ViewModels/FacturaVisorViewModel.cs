@@ -17,7 +17,7 @@ namespace Advance_Control.ViewModels
     /// factura 962; el mecanismo de carga siempre fue generico (por id de factura), solo faltaba
     /// que algo distinto de Page_Loaded se lo pasara.
     /// </summary>
-    public class ProFinancieroViewModel : INotifyPropertyChanged
+    public class FacturaVisorViewModel : INotifyPropertyChanged
     {
         private readonly IFacturaService _facturaService;
         private readonly IFacturaPdfService _facturaPdfService;
@@ -30,7 +30,7 @@ namespace Advance_Control.ViewModels
         private FacturaResumenDto? _factura;
         private string? _pdfPath;
 
-        public ProFinancieroViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IComplementoPagoPdfService complementoPagoPdfService)
+        public FacturaVisorViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IComplementoPagoPdfService complementoPagoPdfService)
         {
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _facturaPdfService = facturaPdfService ?? throw new ArgumentNullException(nameof(facturaPdfService));

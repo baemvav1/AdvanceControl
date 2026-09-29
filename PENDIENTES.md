@@ -5,7 +5,7 @@ Reportados en vivo el 2026-09-28, justo después de liberar el nuevo visor de fa
 
 ## 1. Excepción no controlada al cambiar de tab "Pagos" → "Complementos"
 
-En `ProFinancieroPage` (visor de factura), cambiar del tab **Pagos** al tab **Complementos**
+En `FacturaVisorPage` (visor de factura), cambiar del tab **Pagos** al tab **Complementos**
 lanza una excepción no controlada. No se investigó el stack trace todavía (no se pudo reproducir
 desde aquí, no hay forma de ejercer la UI de WinUI en este entorno).
 
@@ -17,8 +17,8 @@ desde aquí, no hay forma de ejercer la UI de WinUI en este entorno).
   Complementos/Pagos en el visor de factura") o si ya existía antes y solo se hizo visible al
   encapsular la lista en tabs.
 
-**Archivos:** `Advance Control/Views/Pages/ProFinancieroPage.xaml` (los dos `PivotItem`),
-`Advance Control/Views/Pages/ProFinancieroPage.xaml.cs`.
+**Archivos:** `Advance Control/Views/Pages/FacturaVisorPage.xaml` (los dos `PivotItem`),
+`Advance Control/Views/Pages/FacturaVisorPage.xaml.cs`.
 
 **Para retomar:** reproducir localmente con el depurador de Visual Studio adjunto (Output ›
 Excepciones no controladas) para tener el stack trace real antes de tocar nada.
@@ -28,7 +28,7 @@ Excepciones no controladas) para tener el stack trace real antes de tocar nada.
 > **Corregido el 2026-09-29 — falta la prueba real con la 1032.**
 > - `CfdiPagoBuilderService`: `Moneda="XXX"` y sin `TipoCambio` (`ExchangeRate=0m`, la librería
 >   omite el atributo por `[DefaultValue(0)]`) a nivel Comprobante.
-> - `ProFinancieroPage`: errores y confirmaciones ahora salen en `InfoBar` encima del visor de PDF
+> - `FacturaVisorPage`: errores y confirmaciones ahora salen en `InfoBar` encima del visor de PDF
 >   (antes el error quedaba tapado y el mensaje de éxito no se mostraba en ningún lado).
 > - Nota: los 93 CFDI tipo P que hay en BD son todos importados (Moneda XXX); el generador propio
 >   nunca había logrado timbrar uno, así que este es su primer uso real.
@@ -51,9 +51,9 @@ UI. Preocupación inicial: que se hubiera generado algo a medias. **Ya descartad
   regla obligatoria del SAT para Pagos 2.0 (el importe real vive en el nodo `<Pago>`, la moneda del
   comprobante siempre debe ser "XXX" independientemente de la moneda real del pago).
 - **Segundo problema encontrado (UI):** aunque el error sí debería llegar de vuelta al cliente
-  (`ProFinancieroViewModel.GenerarComplementoPagoAsync` actualiza `ErrorMessage` cuando
+  (`FacturaVisorViewModel.GenerarComplementoPagoAsync` actualiza `ErrorMessage` cuando
   `!resultado.Success`), en pantalla "no pasa nada" visible. Revisar si el `TextBlock` de error en
-  `ProFinancieroPage.xaml` queda tapado por el visor de PDF (comparten el mismo `Grid.Row`), o si
+  `FacturaVisorPage.xaml` queda tapado por el visor de PDF (comparten el mismo `Grid.Row`), o si
   el mensaje no se está propagando por alguna otra razón.
 
 **Para retomar:**
@@ -61,9 +61,9 @@ UI. Preocupación inicial: que se hubiera generado algo a medias. **Ya descartad
    Complementos de Pago.
 2. Probar de nuevo con la factura 1032 (ya confirmado que no hay nada pendiente/huérfano que
    limpiar primero).
-3. Asegurar que un rechazo de Bilkon se vea claramente en la UI de `ProFinancieroPage` (no
+3. Asegurar que un rechazo de Bilkon se vea claramente en la UI de `FacturaVisorPage` (no
    silenciosamente).
 
 **Archivos:** `AdvanceControlApi/AdvanceApi/Services/CfdiPagoBuilderService.cs`,
 `AdvanceControlApi/AdvanceApi/Services/FacturaService.cs` (`GenerarComplementoPagoAsync`),
-`Advance Control/Views/Pages/ProFinancieroPage.xaml` (visualización de `ErrorMessage`).
+`Advance Control/Views/Pages/FacturaVisorPage.xaml` (visualización de `ErrorMessage`).
