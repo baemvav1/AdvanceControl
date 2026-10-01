@@ -21,7 +21,7 @@ namespace Advance_Control.Views.Windows
     /// </summary>
     public sealed partial class ConfirmacionConciliacionWindow : Window
     {
-        private readonly record struct PasoConciliacion(ConciliacionAutomaticaModo Modo, bool MismoMes, bool Rfc);
+        private readonly record struct PasoConciliacion(ConciliacionAutomaticaModo Modo, bool MismoMes, bool Rfc, bool PpdSigMes = false);
 
         private static readonly PasoConciliacion[] PasosSecuenciaCompleta =
         {
@@ -51,8 +51,12 @@ namespace Advance_Control.Views.Windows
         private PasoConciliacion PasoActual => _pasos[_pasoActual];
 
         /// <summary>Ejecuta un único paso (usado por los botones individuales de la página).</summary>
-        public ConfirmacionConciliacionWindow(ConciliacionAutomaticaModo modo, bool aplicarReglaPueMismoMes, bool usarRfcComoRegla)
-            : this(new[] { new PasoConciliacion(modo, aplicarReglaPueMismoMes, usarRfcComoRegla) })
+        public ConfirmacionConciliacionWindow(
+            ConciliacionAutomaticaModo modo,
+            bool aplicarReglaPueMismoMes,
+            bool usarRfcComoRegla,
+            bool aplicarReglaPpdSiguienteMes = false)
+            : this(new[] { new PasoConciliacion(modo, aplicarReglaPueMismoMes, usarRfcComoRegla, aplicarReglaPpdSiguienteMes) })
         {
         }
 
@@ -115,7 +119,7 @@ namespace Advance_Control.Views.Windows
                 try
                 {
                     propuestas = await _viewModel.CargarPropuestasAsync(
-                        paso.Modo, paso.MismoMes, paso.Rfc, _ctsLoading.Token);
+                        paso.Modo, paso.MismoMes, paso.PpdSigMes, paso.Rfc, _ctsLoading.Token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -307,7 +311,7 @@ namespace Advance_Control.Views.Windows
                 ConciliacionAutomaticaModo.Cheques => "Cheques (1 a 1, 1 a varios, varios a 1)",
                 _ => paso.Modo.ToString()
             };
-            var filtros = $"Mismo mes: {(paso.MismoMes ? "Sí" : "No")} · RFC: {(paso.Rfc ? "Sí" : "No")}";
+            var filtros = $"Mismo mes: {(paso.MismoMes ? "Sí" : "No")} · PPD sig. mes: {(paso.PpdSigMes ? "Sí" : "No")} · RFC: {(paso.Rfc ? "Sí" : "No")}";
             return _pasos.Count == 1
                 ? $"{nombreModo} · {filtros}"
                 : $"Paso {_pasoActual + 1} de {_pasos.Count} · {nombreModo} · {filtros}";

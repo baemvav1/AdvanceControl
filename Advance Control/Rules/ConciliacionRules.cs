@@ -18,6 +18,13 @@ namespace Advance_Control.Rules
     public sealed class ConciliacionCombinacionalRules
     {
         public int MinimoFacturasPorGrupo { get; init; } = 2;
+
+        /// <summary>
+        /// Busqueda guiada por movimiento (cheques): de cada RFC solo se consideran las N
+        /// facturas mas cercanas en fecha al movimiento, para que la suma exacta no explote
+        /// combinatoriamente con clientes que tienen decenas de facturas abiertas.
+        /// </summary>
+        public int MaximoFacturasCandidatasPorMovimiento { get; init; } = 30;
     }
 
     public sealed class ConciliacionAbonosRules
@@ -25,7 +32,7 @@ namespace Advance_Control.Rules
         /// <summary>
         /// Hasta este numero de candidatos se usa backtracking exacto de un solo hilo
         /// (rapido y ya probado en produccion). Por encima se usa busqueda "meet-in-the-middle"
-        /// en paralelo (ver ConciliacionMatchingEngine.BuscarCombinacionMovimientosMeetInTheMiddle),
+        /// en paralelo (ver ConciliacionMatchingEngine.BuscadorCombinacionExacta.BuscarMeetInTheMiddle),
         /// para no truncar candidatos legitimos ni bloquear la UI con 2^n combinaciones.
         /// </summary>
         public int UmbralBusquedaExhaustiva { get; init; } = 22;

@@ -1,31 +1,32 @@
-using Microsoft.UI.Input;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Input;
 using System;
-using System.ComponentModel;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
+using Advance_Control.Views.Dialogs;
+using Advance_Control.Views.Helpers;
 using Advance_Control.Views.Windows;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
-using Windows.Foundation;
-
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
+using WinUI.TableView;
 
 namespace Advance_Control.Views.Pages
 {
     /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
+    /// Conciliación: facturas y movimientos pendientes con filtros por encabezado (WinUI.TableView);
+    /// lo seleccionado se fija arriba y es lo que usa "Abonar". Los pasos automáticos abren
+    /// ConfirmacionConciliacionWindow con las reglas de la cinta.
+    /// Atajos: Esc = limpiar selección, F5 = recargar.
     /// </summary>
     public sealed partial class ConciliacionPage : Page
     {
-        private bool _isResizingMovimientos;
-        private bool _isResizingConciliacion;
-        private bool _isResizingFacturaAbono;
-        private readonly ProgressRing _conciliacionProgressRing;
+        private readonly FijadorSeleccionTableView _fijadorFacturas;
+        private readonly FijadorSeleccionTableView _fijadorMovimientos;
+
         public ConciliacionViewModel ViewModel { get; }
 
         public ConciliacionPage()
@@ -34,18 +35,29 @@ namespace Advance_Control.Views.Pages
             InitializeComponent();
             DataContext = ViewModel;
 
-            _conciliacionProgressRing = new ProgressRing
-            {
-                Width = 56,
-                Height = 56,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center,
-                IsHitTestVisible = false
-            };
-            ConciliacionPanelGrid.Children.Add(_conciliacionProgressRing);
+            // Al seleccionar un renglón sube a la posición 1 y se queda fijo hasta deseleccionarlo.
+            _fijadorFacturas = new FijadorSeleccionTableView(
+                TablaFacturasPendientes, fila => ((ConciliacionFacturaFila)fila).Orden);
+            _fijadorMovimientos = new FijadorSeleccionTableView(
+                TablaMovimientosPendientes, fila => ((ConciliacionMovimientoFila)fila).Orden);
+            _fijadorFacturas.FijadosCambiados += (_, _) => SincronizarSeleccion();
+            _fijadorMovimientos.FijadosCambiados += (_, _) => SincronizarSeleccion();
 
-            ViewModel.PropertyChanged += ViewModel_PropertyChanged;
-            ActualizarEstadoConciliacionAutomatica();
+            AgregarAtajo(global::Windows.System.VirtualKey.Escape, LimpiarSeleccion);
+            AgregarAtajo(global::Windows.System.VirtualKey.F5, () =>
+            {
+                if (ViewModel.PuedeOperar)
+                {
+                    _ = ViewModel.CargarDatosAsync();
+                }
+            });
+
+            TablaFacturasPendientes.RegisterPropertyChangedCallback(
+                TableView.CellsHorizontalOffsetProperty,
+                (_, _) => AjustarColumnaElastica(TablaFacturasPendientes, ColumnaRazonSocial));
+            TablaMovimientosPendientes.RegisterPropertyChangedCallback(
+                TableView.CellsHorizontalOffsetProperty,
+                (_, _) => AjustarColumnaElastica(TablaMovimientosPendientes, ColumnaMetadatos, AnchoMaximoMetadatos));
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -54,211 +66,137 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarDatosAsync();
         }
 
-        private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        private void AbrirFactura_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(e.PropertyName)
-                || e.PropertyName == nameof(ConciliacionViewModel.IsConciliacionAutomaticaEnProceso)
-                || e.PropertyName == nameof(ConciliacionViewModel.ConciliacionPanelHabilitado)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanIniciarConciliacionAutomatica)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerUltimaOperacionConciliacion)
-                || e.PropertyName == nameof(ConciliacionViewModel.CanDeshacerTodasOperacionesConciliacion))
+            if (sender is FrameworkElement { Tag: ConciliacionFacturaFila fila })
             {
-                ActualizarEstadoConciliacionAutomatica();
+                new FacturaVisorWindow(fila.Factura).Activate();
             }
         }
 
-        private void ActualizarEstadoConciliacionAutomatica()
+        private async void AbrirMovimiento_Click(object sender, RoutedEventArgs e)
         {
-            var puedeIniciar = ViewModel.CanIniciarConciliacionAutomatica;
-            BtnCheques.IsEnabled = puedeIniciar;
-            BtnConciliacion.IsEnabled = puedeIniciar;
-            BtnCombinacion.IsEnabled = puedeIniciar;
-            BtnAbonos.IsEnabled = puedeIniciar;
-            BtnDeshacerUltimo.IsEnabled = ViewModel.CanDeshacerUltimaOperacionConciliacion;
-            BtnDeshacerTodo.IsEnabled = ViewModel.CanDeshacerTodasOperacionesConciliacion;
-            ConciliacionPanelGrid.IsHitTestVisible = ViewModel.ConciliacionPanelHabilitado;
-            ConciliacionPanelGrid.Opacity = ViewModel.ConciliacionPanelHabilitado ? 1d : 0.55d;
-            _conciliacionProgressRing.IsActive = ViewModel.IsConciliacionAutomaticaEnProceso;
-            _conciliacionProgressRing.Opacity = ViewModel.OpacidadIndicadorConciliacion;
-        }
-
-        private void MovimientosResizeHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            _isResizingMovimientos = true;
-            MovimientosResizeHandle.CapturePointer(e.Pointer);
-        }
-
-        private void MovimientosResizeHandle_PointerMoved(object sender, PointerRoutedEventArgs e)
-        {
-            if (!_isResizingMovimientos)
+            if (sender is FrameworkElement { Tag: ConciliacionMovimientoFila fila })
             {
-                return;
+                await new MovimientoVisorDialog(fila, XamlRoot).ShowAsync();
             }
-
-            var point = e.GetCurrentPoint(RootGrid);
-            var ancho = Math.Max(280, Math.Min(point.Position.X, RootGrid.ActualWidth - 288));
-            RootGrid.ColumnDefinitions[0].Width = new GridLength(ancho);
         }
 
-        private void MovimientosResizeHandle_PointerReleased(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeMovimientos(e.Pointer);
-        }
+        private void TablaFacturasPendientes_SizeChanged(object sender, SizeChangedEventArgs e) =>
+            AjustarColumnaElastica(TablaFacturasPendientes, ColumnaRazonSocial);
 
-        private void MovimientosResizeHandle_PointerCanceled(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeMovimientos(e.Pointer);
-        }
+        private void TablaMovimientosPendientes_SizeChanged(object sender, SizeChangedEventArgs e) =>
+            AjustarColumnaElastica(TablaMovimientosPendientes, ColumnaMetadatos, AnchoMaximoMetadatos);
 
-        private void MovimientosResizeHandle_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeMovimientos(e.Pointer);
-        }
+        /// <summary>
+        /// TableView calcula las columnas "*" sobre su ancho menos 32 px fijos, y lo que sobra
+        /// después de la última columna se ve como una columna vacía. Para evitarla, las demás
+        /// columnas tienen ancho fijo y a esta se le asigna el espacio restante: ancho de la tabla
+        /// menos donde empiezan las celdas (CellsHorizontalOffset, la columna de selección), las
+        /// columnas fijas y el espacio de la barra de scroll vertical. Si se pasa, la última
+        /// columna queda cortada y se pierde su botón de filtro.
+        /// </summary>
+        private const double EspacioBarraScroll = 18;
 
-        private void ConciliacionResizeHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            _isResizingConciliacion = true;
-            ConciliacionResizeHandle.CapturePointer(e.Pointer);
-        }
+        /// <summary>Metadatos no pasa de este ancho (el texto completo está en el tooltip).</summary>
+        private const double AnchoMaximoMetadatos = 180;
 
-        private void ConciliacionResizeHandle_PointerMoved(object sender, PointerRoutedEventArgs e)
+        // Ancho original (el del XAML) de cada columna fija, para repartir el sobrante sin que
+        // los anchos se vayan acumulando en cada redimensión.
+        private readonly Dictionary<TableViewColumn, double> _anchosBase = new();
+
+        /// <param name="anchoMaximo">
+        /// Si la columna elástica llegaría a más de esto, se queda en este ancho y el sobrante se
+        /// reparte por igual entre las demás columnas (así no queda hueco al final).
+        /// </param>
+        private void AjustarColumnaElastica(TableView tabla, TableViewColumn columnaElastica, double? anchoMaximo = null)
         {
-            if (!_isResizingConciliacion)
+            if (tabla.ActualWidth <= 0)
             {
                 return;
             }
 
-            var point = e.GetCurrentPoint(RootGrid);
-            var alto = Math.Max(220, Math.Min(point.Position.Y, RootGrid.ActualHeight - 188));
-            RootGrid.RowDefinitions[0].Height = new GridLength(alto);
-        }
-
-        private void ConciliacionResizeHandle_PointerReleased(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeConciliacion(e.Pointer);
-        }
-
-        private void ConciliacionResizeHandle_PointerCanceled(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeConciliacion(e.Pointer);
-        }
-
-        private void ConciliacionResizeHandle_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeConciliacion(e.Pointer);
-        }
-
-        private void FinalizarResizeMovimientos(Pointer pointer)
-        {
-            _isResizingMovimientos = false;
-            MovimientosResizeHandle.ReleasePointerCapture(pointer);
-        }
-
-        private void FinalizarResizeConciliacion(Pointer pointer)
-        {
-            _isResizingConciliacion = false;
-            ConciliacionResizeHandle.ReleasePointerCapture(pointer);
-        }
-
-        private void FacturaAbonoResizeHandle_PointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            _isResizingFacturaAbono = true;
-            FacturaAbonoResizeHandle.CapturePointer(e.Pointer);
-        }
-
-        private void FacturaAbonoResizeHandle_PointerMoved(object sender, PointerRoutedEventArgs e)
-        {
-            if (!_isResizingFacturaAbono)
+            var columnasFijas = tabla.Columns.Where(columna => columna != columnaElastica).ToList();
+            foreach (var columna in columnasFijas)
             {
-                return;
+                _anchosBase.TryAdd(columna, columna.Width.Value);
             }
 
-            var point = e.GetCurrentPoint(ConciliacionPanelGrid);
-            var ancho = Math.Max(260, Math.Min(point.Position.X, ConciliacionPanelGrid.ActualWidth - 268));
-            ConciliacionPanelGrid.ColumnDefinitions[0].Width = new GridLength(ancho);
-        }
+            var anchoFijo = columnasFijas.Sum(columna => _anchosBase[columna]);
+            var restante = tabla.ActualWidth - tabla.CellsHorizontalOffset - anchoFijo - EspacioBarraScroll;
+            var anchoElastica = Math.Max(restante, 120);
+            var sobrantePorColumna = 0d;
 
-        private void FacturaAbonoResizeHandle_PointerReleased(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeFacturaAbono(e.Pointer);
-        }
-
-        private void FacturaAbonoResizeHandle_PointerCanceled(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeFacturaAbono(e.Pointer);
-        }
-
-        private void FacturaAbonoResizeHandle_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
-        {
-            FinalizarResizeFacturaAbono(e.Pointer);
-        }
-
-        private void FinalizarResizeFacturaAbono(Pointer pointer)
-        {
-            _isResizingFacturaAbono = false;
-            FacturaAbonoResizeHandle.ReleasePointerCapture(pointer);
-        }
-
-        private async void FacturaPendienteButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.Tag is FacturaResumenDto factura)
+            if (anchoMaximo is double maximo && anchoElastica > maximo && columnasFijas.Count > 0)
             {
-                await ViewModel.CargarDetalleFacturaAsync(factura.IdFactura);
+                sobrantePorColumna = Math.Floor((anchoElastica - maximo) / columnasFijas.Count);
+                anchoElastica = maximo;
             }
-        }
 
-        private void MovimientoPendienteButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button button && button.Tag is ConciliacionMovimientoResumenDto movimiento)
+            foreach (var columna in columnasFijas)
             {
-                ViewModel.CargarDetalleMovimiento(movimiento);
+                columna.Width = new GridLength(_anchosBase[columna] + sobrantePorColumna);
             }
+
+            columnaElastica.Width = new GridLength(anchoElastica);
         }
 
-        private void BtnLimpiarMovimientoCargado_Click(object sender, RoutedEventArgs e)
+        private void AgregarAtajo(global::Windows.System.VirtualKey tecla, Action accion)
         {
-            ViewModel.LimpiarMovimientoCargado();
+            var atajo = new KeyboardAccelerator { Key = tecla };
+            atajo.Invoked += (_, args) =>
+            {
+                args.Handled = true;
+                accion();
+            };
+            KeyboardAccelerators.Add(atajo);
         }
 
-        private async void BtnAbonarMovimientoCargado_Click(object sender, RoutedEventArgs e)
+        private void SincronizarSeleccion() =>
+            ViewModel.ActualizarSeleccion(
+                _fijadorFacturas.Fijados.OfType<ConciliacionFacturaFila>(),
+                _fijadorMovimientos.Fijados.OfType<ConciliacionMovimientoFila>());
+
+        private void LimpiarSeleccion()
         {
-            await ViewModel.AbonarMovimientoCargadoAsync();
+            _fijadorFacturas.Limpiar();
+            _fijadorMovimientos.Limpiar();
         }
 
-        // Botón del motor completo (recorre los 9 pasos en una sola secuencia automática)
-        // deshabilitado temporalmente en el XAML: se trababa la UI. Handler comentado para
-        // retomarlo más adelante -- el resto del código (EjecutarConciliacionAutomaticaAsync,
-        // ConfirmacionConciliacionWindow sin parámetros) sigue intacto.
-        // private async void BtnConciliacionAutomatica_Click(object sender, RoutedEventArgs e)
-        // {
-        //     await EjecutarConciliacionAutomaticaAsync();
-        // }
+        // ---------------- Conciliación (pasos automáticos) ----------------
 
         private async void BtnCheques_Click(object sender, RoutedEventArgs e) =>
-            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Cheques);
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Cheques);
 
         private async void BtnConciliacion_Click(object sender, RoutedEventArgs e) =>
-            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Automatica);
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Automatica);
 
         private async void BtnCombinacion_Click(object sender, RoutedEventArgs e) =>
-            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Combinacional);
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Combinacional);
 
         private async void BtnAbonos_Click(object sender, RoutedEventArgs e) =>
-            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Abonos);
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Abonos);
 
         private async void BtnComplementos_Click(object sender, RoutedEventArgs e) =>
-            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.Complementos);
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Complementos);
 
         private async void BtnIngresosManuales_Click(object sender, RoutedEventArgs e) =>
-            await AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo.IngresosManuales);
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.IngresosManuales);
 
-        /// <summary>Abre el visor para un único paso/modo, usando los toggles actuales de la página.</summary>
-        private async Task AbrirVentanaConciliacionPasoAsync(ConciliacionAutomaticaModo modo)
+        /// <summary>
+        /// Ventana de propuestas de conciliación automática, con las reglas de la cinta. Si se aprobó
+        /// algo, recarga las tablas y el contador de la bitácora.
+        /// </summary>
+        private async Task AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo modo)
         {
-            ViewModel.IsConciliacionAutomaticaEnProceso = true;
+            ViewModel.IsConciliacionEnProceso = true;
             try
             {
-                var ventana = new ConfirmacionConciliacionWindow(modo, ViewModel.AplicarReglaPueMismoMes, ViewModel.UsarRfcComoRegla);
+                var ventana = new ConfirmacionConciliacionWindow(
+                    modo,
+                    ViewModel.AplicarReglaPueMismoMes,
+                    ViewModel.UsarRfcComoRegla,
+                    ViewModel.AplicarReglaPpdSiguienteMes);
                 ventana.Activate();
 
                 var aprobadas = await ventana.ResultTask;
@@ -269,50 +207,73 @@ namespace Advance_Control.Views.Pages
             }
             finally
             {
-                ViewModel.IsConciliacionAutomaticaEnProceso = false;
+                ViewModel.IsConciliacionEnProceso = false;
             }
         }
 
-        private void BtnLimpiarFiltrosMovimientos_Click(object sender, RoutedEventArgs e)
+        // ---------------- Acciones ----------------
+
+        private async void BtnAbonar_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.LimpiarFiltrosMovimientos();
+            var plan = ViewModel.PlanearAbonos(out var motivo);
+            if (plan is null)
+            {
+                ViewModel.ErrorMessage = motivo;
+                return;
+            }
+
+            var confirmar = await ConfirmarAsync(
+                plan.Count == 1 ? "¿Registrar el abono?" : $"¿Registrar {plan.Count} abonos?",
+                ViewModel.DescribirPlan(plan),
+                "Abonar");
+
+            if (confirmar)
+            {
+                await ViewModel.AbonarAsync(plan);
+            }
         }
 
-        private void BtnLimpiarFiltrosFacturas_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.LimpiarFiltrosFacturas();
-        }
+        private void BtnLimpiar_Click(object sender, RoutedEventArgs e) => LimpiarSeleccion();
 
-        private async void BtnDeshacerUltimo_Click(object sender, RoutedEventArgs e)
-        {
-            await ViewModel.DeshacerUltimaOperacionConciliacionAsync();
-        }
+        // ---------------- Revertir ----------------
+
+        private async void BtnDeshacerUltimo_Click(object sender, RoutedEventArgs e) =>
+            await ViewModel.DeshacerUltimoAsync();
 
         private async void BtnDeshacerTodo_Click(object sender, RoutedEventArgs e)
         {
-            await ViewModel.DeshacerTodasOperacionesConciliacionAsync();
+            // La bitácora es global (no solo de esta sesión): se confirma con el conteo real.
+            var confirmar = await ConfirmarAsync(
+                "¿Deshacer todas las operaciones?",
+                $"Se revertirán las {ViewModel.OperacionesConciliacionPendientes} operaciones de conciliación registradas en la bitácora, "
+                    + "de cualquier usuario y sesión. Los abonos de conciliación se eliminan (los capturados a mano solo se "
+                    + "desligan del movimiento y los Complementos de Pago timbrados quedan sin ligar) y las facturas y "
+                    + "movimientos vuelven a quedar pendientes.",
+                "Deshacer todo");
+
+            if (confirmar)
+            {
+                await ViewModel.DeshacerTodoAsync();
+            }
         }
 
-        // Motor completo (los 9 pasos en una sola secuencia automática) -- comentado junto con
-        // BtnConciliacionAutomatica_Click de arriba mientras se investiga por qué trababa la UI.
-        // private async Task EjecutarConciliacionAutomaticaAsync()
-        // {
-        //     ViewModel.IsConciliacionAutomaticaEnProceso = true;
-        //     try
-        //     {
-        //         var ventana = new ConfirmacionConciliacionWindow();
-        //         ventana.Activate();
-        //
-        //         var aprobadas = await ventana.ResultTask;
-        //         if (aprobadas is { Count: > 0 })
-        //         {
-        //             await ViewModel.CargarDatosAsync();
-        //         }
-        //     }
-        //     finally
-        //     {
-        //         ViewModel.IsConciliacionAutomaticaEnProceso = false;
-        //     }
-        // }
+        private async Task<bool> ConfirmarAsync(string titulo, string contenido, string textoAceptar)
+        {
+            var dialogo = new ContentDialog
+            {
+                Title = titulo,
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 420,
+                    Content = new TextBlock { Text = contenido, TextWrapping = TextWrapping.Wrap, IsTextSelectionEnabled = true }
+                },
+                PrimaryButtonText = textoAceptar,
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot
+            };
+
+            return await dialogo.ShowAsync() == ContentDialogResult.Primary;
+        }
     }
 }

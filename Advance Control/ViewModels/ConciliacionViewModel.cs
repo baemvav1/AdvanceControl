@@ -5,100 +5,61 @@ using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
-using Advance_Control.Services.Conciliacion;
 using Advance_Control.Services.EstadoCuenta;
 using Advance_Control.Services.Facturas;
 using Advance_Control.Services.Notificacion;
 using Advance_Control.Utilities;
-using Advance_Control.Views.Windows;
 
 namespace Advance_Control.ViewModels
 {
+    /// <summary>
+    /// ViewModel de Conciliación (ConciliacionPage): facturas y movimientos pendientes, reglas de
+    /// los pasos automáticos, "Abonar" con la selección y deshacer desde la bitácora.
+    /// </summary>
     public class ConciliacionViewModel : ViewModelBase
     {
-        private readonly IEstadoCuentaXmlService _estadoCuentaXmlService;
+        private static readonly CultureInfo CulturaMx = new("es-MX");
+
         private readonly IFacturaService _facturaService;
+        private readonly IEstadoCuentaXmlService _estadoCuentaXmlService;
         private readonly INotificacionService _notificacionService;
-        private readonly ConciliacionMatchingEngine _conciliacionMatchingEngine;
-        private readonly List<ConciliacionMovimientoResumenDto> _movimientosPendientesBase;
-        private readonly List<FacturaResumenDto> _facturasPendientesBase;
-        private ObservableCollection<ConciliacionMovimientoResumenDto> _movimientosPendientes;
-        private ObservableCollection<FacturaResumenDto> _facturasPendientes;
-        private ConciliacionMovimientoResumenDto? _movimientoCargado;
-        private FacturaResumenDto? _facturaCargada;
+        private ObservableCollection<ConciliacionFacturaFila> _facturasPendientes = new();
+        private ObservableCollection<ConciliacionMovimientoFila> _movimientosPendientes = new();
+        private IReadOnlyList<ConciliacionFacturaFila> _facturasSeleccionadas = Array.Empty<ConciliacionFacturaFila>();
+        private IReadOnlyList<ConciliacionMovimientoFila> _movimientosSeleccionados = Array.Empty<ConciliacionMovimientoFila>();
         private bool _isLoading;
-        private bool _isConciliacionAutomaticaEnProceso;
-        private bool _bitacoraConciliacionInicializada;
-        private int _operacionesConciliacionPendientes;
+        private bool _isConciliacionEnProceso;
         private string? _errorMessage;
-        private string? _successMessage;
         private bool _aplicarReglaPueMismoMes = true;
-        private bool _usarRfcComoRegla = false;
-        private string? _movimientoMetadatoBusquedaTexto;
-        private string? _movimientoAbonoBusquedaTexto;
-        private DateTimeOffset? _movimientoFechaInicio;
-        private DateTimeOffset? _movimientoFechaFin;
-        private string? _facturaFolioBusquedaTexto;
-        private string? _facturaTotalBusqueda;
-        private string? _facturaNombreBusquedaTexto;
-        private string? _facturaRfcBusquedaTexto;
+        private bool _aplicarReglaPpdSiguienteMes;
+        private bool _usarRfcComoRegla;
+        private int _operacionesConciliacionPendientes;
 
         public ConciliacionViewModel(
-            IEstadoCuentaXmlService estadoCuentaXmlService,
             IFacturaService facturaService,
-            INotificacionService notificacionService,
-            ConciliacionMatchingEngine conciliacionMatchingEngine)
+            IEstadoCuentaXmlService estadoCuentaXmlService,
+            INotificacionService notificacionService)
         {
-            _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
+            _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
-            _conciliacionMatchingEngine = conciliacionMatchingEngine ?? throw new ArgumentNullException(nameof(conciliacionMatchingEngine));
-            _movimientosPendientesBase = new List<ConciliacionMovimientoResumenDto>();
-            _facturasPendientesBase = new List<FacturaResumenDto>();
-            _movimientosPendientes = new ObservableCollection<ConciliacionMovimientoResumenDto>();
-            _facturasPendientes = new ObservableCollection<FacturaResumenDto>();
-            FacturaCargadaConceptos = new ObservableCollection<FacturaConceptoDto>();
-            FacturaCargadaAbonos = new ObservableCollection<AbonoFacturaDto>();
         }
 
-        public ObservableCollection<ConciliacionMovimientoResumenDto> MovimientosPendientes
-        {
-            get => _movimientosPendientes;
-            set => SetProperty(ref _movimientosPendientes, value);
-        }
+        // ---------------- Datos ----------------
 
-        public ObservableCollection<FacturaResumenDto> FacturasPendientes
+        public ObservableCollection<ConciliacionFacturaFila> FacturasPendientes
         {
             get => _facturasPendientes;
             set => SetProperty(ref _facturasPendientes, value);
         }
 
-        public FacturaResumenDto? FacturaCargada
+        public ObservableCollection<ConciliacionMovimientoFila> MovimientosPendientes
         {
-            get => _facturaCargada;
-            private set
-            {
-                if (SetProperty(ref _facturaCargada, value))
-                {
-                    NotificarCambioFacturaCargada();
-                }
-            }
+            get => _movimientosPendientes;
+            set => SetProperty(ref _movimientosPendientes, value);
         }
 
-        public ConciliacionMovimientoResumenDto? MovimientoCargado
-        {
-            get => _movimientoCargado;
-            private set
-            {
-                if (SetProperty(ref _movimientoCargado, value))
-                {
-                    NotificarCambioMovimientoCargado();
-                }
-            }
-        }
-
-        public ObservableCollection<FacturaConceptoDto> FacturaCargadaConceptos { get; }
-        public ObservableCollection<AbonoFacturaDto> FacturaCargadaAbonos { get; }
+        // ---------------- Estado ----------------
 
         public bool IsLoading
         {
@@ -107,10 +68,20 @@ namespace Advance_Control.ViewModels
             {
                 if (SetProperty(ref _isLoading, value))
                 {
-                    OnPropertyChanged(nameof(CanAbonarMovimiento));
-                    OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
-                    OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
-                    OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
+                    NotificarEstadoAcciones();
+                }
+            }
+        }
+
+        /// <summary>Hay una ventana de conciliación automática abierta.</summary>
+        public bool IsConciliacionEnProceso
+        {
+            get => _isConciliacionEnProceso;
+            set
+            {
+                if (SetProperty(ref _isConciliacionEnProceso, value))
+                {
+                    NotificarEstadoAcciones();
                 }
             }
         }
@@ -118,19 +89,40 @@ namespace Advance_Control.ViewModels
         public string? ErrorMessage
         {
             get => _errorMessage;
-            set => SetProperty(ref _errorMessage, value);
+            set
+            {
+                if (SetProperty(ref _errorMessage, value))
+                {
+                    OnPropertyChanged(nameof(HayError));
+                }
+            }
         }
 
-        public string? SuccessMessage
+        public bool HayError
         {
-            get => _successMessage;
-            set => SetProperty(ref _successMessage, value);
+            get => !string.IsNullOrWhiteSpace(ErrorMessage);
+            set
+            {
+                // El InfoBar lo pone en false al cerrarlo.
+                if (!value)
+                {
+                    ErrorMessage = null;
+                }
+            }
         }
+
+        // ---------------- Reglas (toggles de la cinta) ----------------
 
         public bool AplicarReglaPueMismoMes
         {
             get => _aplicarReglaPueMismoMes;
             set => SetProperty(ref _aplicarReglaPueMismoMes, value);
+        }
+
+        public bool AplicarReglaPpdSiguienteMes
+        {
+            get => _aplicarReglaPpdSiguienteMes;
+            set => SetProperty(ref _aplicarReglaPpdSiguienteMes, value);
         }
 
         public bool UsarRfcComoRegla
@@ -139,158 +131,9 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _usarRfcComoRegla, value);
         }
 
-        public string? MovimientoMetadatoBusquedaTexto
-        {
-            get => _movimientoMetadatoBusquedaTexto;
-            set
-            {
-                if (SetProperty(ref _movimientoMetadatoBusquedaTexto, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
+        // ---------------- Bitácora (Revertir) ----------------
 
-        public string? MovimientoAbonoBusquedaTexto
-        {
-            get => _movimientoAbonoBusquedaTexto;
-            set
-            {
-                if (SetProperty(ref _movimientoAbonoBusquedaTexto, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
-
-        public string? FacturaFolioBusquedaTexto
-        {
-            get => _facturaFolioBusquedaTexto;
-            set
-            {
-                if (SetProperty(ref _facturaFolioBusquedaTexto, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
-
-        public DateTimeOffset? MovimientoFechaInicio
-        {
-            get => _movimientoFechaInicio;
-            set
-            {
-                if (SetProperty(ref _movimientoFechaInicio, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
-
-        public DateTimeOffset? MovimientoFechaFin
-        {
-            get => _movimientoFechaFin;
-            set
-            {
-                if (SetProperty(ref _movimientoFechaFin, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
-
-        public string? FacturaTotalBusqueda
-        {
-            get => _facturaTotalBusqueda;
-            set
-            {
-                if (SetProperty(ref _facturaTotalBusqueda, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
-
-        public string? FacturaNombreBusquedaTexto
-        {
-            get => _facturaNombreBusquedaTexto;
-            set
-            {
-                if (SetProperty(ref _facturaNombreBusquedaTexto, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
-
-        public string? FacturaRfcBusquedaTexto
-        {
-            get => _facturaRfcBusquedaTexto;
-            set
-            {
-                if (SetProperty(ref _facturaRfcBusquedaTexto, value))
-                {
-                    AplicarFiltrosVisibles();
-                }
-            }
-        }
-
-        public string ResumenMovimientos => ConstruirResumenColeccion(
-            MovimientosPendientes.Count,
-            _movimientosPendientesBase.Count,
-            "",
-            "");
-
-        public string ResumenFacturas => ConstruirResumenColeccion(
-            FacturasPendientes.Count,
-            _facturasPendientesBase.Count,
-            "",
-            "");
-        public string MensajeFacturaCargada => FacturaCargada == null
-            ? "Selecciona una factura del panel derecho para ver su detalle."
-            : $"Factura cargada: {FacturaCargada.FolioTitulo}";
-        public string MensajeMovimientoCargado => MovimientoCargado == null
-            ? "Selecciona un movimiento del panel izquierdo para ver su detalle."
-            : $"Movimiento cargado: {MovimientoCargado.TipoTitulo}";
-        public string FacturaCargadaUuidTexto => FacturaCargada?.UuidTexto ?? "Sin factura seleccionada";
-        public string FacturaCargadaFechaTexto => FacturaCargada?.FechaTexto ?? string.Empty;
-        public string FacturaCargadaEmisorTexto => FacturaCargada?.EmisorNombre ?? string.Empty;
-        public string FacturaCargadaReceptorTexto => FacturaCargada?.ReceptorNombre ?? string.Empty;
-        public string FacturaCargadaRfcTexto => FacturaCargada?.RfcTexto ?? string.Empty;
-        public string FacturaCargadaMetodoFormaTexto => FacturaCargada?.MetodoFormaPagoTexto ?? string.Empty;
-        public string FacturaCargadaTotalesTexto => FacturaCargada?.TotalesTexto ?? string.Empty;
-        public string FacturaCargadaEstadoPagoTexto => FacturaCargada?.EstadoPagoTexto ?? "Sin estado";
-        public string FacturaCargadaTotalAbonadoTexto => FacturaCargada?.TotalAbonadoTexto ?? "$0.00";
-        public string FacturaCargadaSaldoPendienteTexto => FacturaCargada?.SaldoPendienteTexto ?? "$0.00";
-        public string ResumenFacturaCargadaConceptos => $"Conceptos ({FacturaCargadaConceptos.Count})";
-        public string ResumenFacturaCargadaAbonos => $"Abonos ({FacturaCargadaAbonos.Count})";
-        public string MovimientoCargadoCuentaTexto => MovimientoCargado?.CuentaTitulo ?? string.Empty;
-        public string MovimientoCargadoBancoTexto => MovimientoCargado?.BancoTitularTexto ?? string.Empty;
-        public string MovimientoCargadoPeriodoTexto => MovimientoCargado?.PeriodoTexto ?? string.Empty;
-        public string MovimientoCargadoFechaTexto => MovimientoCargado?.FechaTexto ?? string.Empty;
-        public string MovimientoCargadoReferenciaTexto => MovimientoCargado?.ReferenciaTexto ?? string.Empty;
-        public string MovimientoCargadoCargoTexto => MovimientoCargado?.CargoTexto ?? "-";
-        public string MovimientoCargadoAbonoTexto => MovimientoCargado?.AbonoTexto ?? "-";
-        public string MovimientoCargadoMontoRestanteTexto => MovimientoCargado?.MontoRestanteTexto ?? "-";
-        public string MovimientoCargadoSaldoTexto => MovimientoCargado?.SaldoTexto ?? "$0.00";
-        public string MovimientoCargadoRelacionadosTexto => MovimientoCargado?.RelacionadosTexto ?? "Sin relacionados";
-        public string MovimientoCargadoMetadatosTexto => MovimientoCargado?.MetadatosTexto ?? "Sin metadatos adicionales.";
-        public bool IsConciliacionAutomaticaEnProceso
-        {
-            get => _isConciliacionAutomaticaEnProceso;
-            set
-            {
-                if (SetProperty(ref _isConciliacionAutomaticaEnProceso, value))
-                {
-                    OnPropertyChanged(nameof(ConciliacionPanelHabilitado));
-                    OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
-                    OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
-                    OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
-                    OnPropertyChanged(nameof(OpacidadIndicadorConciliacion));
-                }
-            }
-        }
-
+        /// <summary>Operaciones registradas en bitacora_conciliacion que se pueden deshacer.</summary>
         public int OperacionesConciliacionPendientes
         {
             get => _operacionesConciliacionPendientes;
@@ -298,675 +141,425 @@ namespace Advance_Control.ViewModels
             {
                 if (SetProperty(ref _operacionesConciliacionPendientes, value))
                 {
-                    OnPropertyChanged(nameof(CanDeshacerUltimaOperacionConciliacion));
-                    OnPropertyChanged(nameof(CanDeshacerTodasOperacionesConciliacion));
+                    NotificarEstadoAcciones();
                 }
             }
         }
 
-        public bool ConciliacionPanelHabilitado => !IsConciliacionAutomaticaEnProceso;
-        public double OpacidadIndicadorConciliacion => IsConciliacionAutomaticaEnProceso ? 1d : 0d;
-        public bool CanAbonarMovimiento => !IsLoading
-            && FacturaCargada != null
-            && MovimientoCargado != null
-            && MovimientoCargado.MontoRestante > 0
-            && FacturaCargada.SaldoPendiente > 0;
-        public bool CanIniciarConciliacionAutomatica => !IsLoading
-            && !IsConciliacionAutomaticaEnProceso
-            && (_conciliacionMatchingEngine.CanRunUnoAUno(_facturasPendientesBase, _movimientosPendientesBase)
-                || _conciliacionMatchingEngine.CanRunCombinacional(_facturasPendientesBase, _movimientosPendientesBase)
-                || _conciliacionMatchingEngine.CanRunAbonos(_facturasPendientesBase, _movimientosPendientesBase));
-        public bool CanDeshacerUltimaOperacionConciliacion => !IsLoading
-            && !IsConciliacionAutomaticaEnProceso
-            && OperacionesConciliacionPendientes > 0;
-        public bool CanDeshacerTodasOperacionesConciliacion => CanDeshacerUltimaOperacionConciliacion;
+        public bool PuedeOperar => !IsLoading && !IsConciliacionEnProceso;
+        public bool CanDeshacer => PuedeOperar && OperacionesConciliacionPendientes > 0;
 
+        public string DeshacerTooltip => OperacionesConciliacionPendientes > 0
+            ? $"{OperacionesConciliacionPendientes} operación(es) de conciliación registradas en la bitácora."
+            : "No hay operaciones de conciliación por deshacer.";
+
+        // ---------------- Selección (Acciones) ----------------
+
+        public IReadOnlyList<ConciliacionFacturaFila> FacturasSeleccionadas => _facturasSeleccionadas;
+        public IReadOnlyList<ConciliacionMovimientoFila> MovimientosSeleccionados => _movimientosSeleccionados;
+
+        public bool HaySeleccion => _facturasSeleccionadas.Count > 0 || _movimientosSeleccionados.Count > 0;
+        public bool CanAbonar => PuedeOperar && _facturasSeleccionadas.Count > 0 && _movimientosSeleccionados.Count > 0;
+        public bool CanLimpiar => HaySeleccion;
+
+        /// <summary>Resumen de lo seleccionado para el tooltip de "Abonar".</summary>
+        public string ResumenSeleccion
+        {
+            get
+            {
+                if (!HaySeleccion)
+                {
+                    return "Selecciona al menos una factura y un movimiento.";
+                }
+
+                var saldoFacturas = _facturasSeleccionadas.Sum(fila => fila.SaldoPendiente);
+                var disponibleMovimientos = _movimientosSeleccionados.Sum(fila => fila.MontoRestante);
+                var diferencia = disponibleMovimientos - saldoFacturas;
+
+                return $"{_facturasSeleccionadas.Count} factura(s): {saldoFacturas.ToString("C2", CulturaMx)} por cobrar"
+                    + Environment.NewLine
+                    + $"{_movimientosSeleccionados.Count} movimiento(s): {disponibleMovimientos.ToString("C2", CulturaMx)} disponible"
+                    + Environment.NewLine
+                    + $"Diferencia: {diferencia.ToString("C2", CulturaMx)}";
+            }
+        }
+
+        /// <summary>La página avisa qué renglones están seleccionados (fijados) en cada tabla.</summary>
+        public void ActualizarSeleccion(
+            IEnumerable<ConciliacionFacturaFila> facturas,
+            IEnumerable<ConciliacionMovimientoFila> movimientos)
+        {
+            _facturasSeleccionadas = facturas.ToList();
+            _movimientosSeleccionados = movimientos.ToList();
+            OnPropertyChanged(nameof(FacturasSeleccionadas));
+            OnPropertyChanged(nameof(MovimientosSeleccionados));
+            OnPropertyChanged(nameof(HaySeleccion));
+            OnPropertyChanged(nameof(CanAbonar));
+            OnPropertyChanged(nameof(CanLimpiar));
+            OnPropertyChanged(nameof(ResumenSeleccion));
+        }
+
+        private void NotificarEstadoAcciones()
+        {
+            OnPropertyChanged(nameof(PuedeOperar));
+            OnPropertyChanged(nameof(CanDeshacer));
+            OnPropertyChanged(nameof(DeshacerTooltip));
+            OnPropertyChanged(nameof(CanAbonar));
+        }
+
+        // ---------------- Carga ----------------
+
+        /// <summary>Carga facturas, movimientos y el contador de la bitácora en paralelo.</summary>
         public async Task CargarDatosAsync()
         {
+            IsLoading = true;
+            ErrorMessage = null;
             try
             {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
+                await Task.WhenAll(
+                    CargarFacturasPendientesAsync(),
+                    CargarMovimientosPendientesAsync(),
+                    ActualizarOperacionesPendientesAsync());
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
 
-                await InicializarBitacoraConciliacionSiEsNecesarioAsync();
+        private async Task ActualizarOperacionesPendientesAsync()
+        {
+            try
+            {
+                var resultado = await _facturaService.InicializarBitacoraConciliacionAsync();
+                if (resultado.Success)
+                {
+                    OperacionesConciliacionPendientes = resultado.OperacionesPendientes;
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"No fue posible consultar la bitácora de conciliación: {ex.Message}";
+            }
+        }
 
-                var estadosTask = _estadoCuentaXmlService.ObtenerEstadosCuentaAsync();
-                var facturasTask = _facturaService.ObtenerFacturasAsync();
+        /// <summary>
+        /// Carga las facturas pendientes con la misma regla que Conciliación
+        /// (no finiquitadas y con total mayor a cero). La razón social es la del receptor
+        /// del CFDI.
+        /// </summary>
+        private async Task CargarFacturasPendientesAsync()
+        {
+            try
+            {
+                var filas = (await _facturaService.ObtenerFacturasAsync())
+                    .Where(factura => factura.Finiquito != true)
+                    .Where(factura => decimal.Round(factura.Total, 2) > 0)
+                    .OrderBy(factura => factura.Fecha)
+                    .ThenBy(factura => factura.IdFactura)
+                    .Select((factura, indice) => new ConciliacionFacturaFila
+                    {
+                        IdFactura = factura.IdFactura,
+                        Orden = indice,
+                        Folio = factura.FolioTitulo,
+                        Fecha = factura.Fecha,
+                        Total = factura.Total,
+                        RazonSocial = factura.ReceptorNombre?.Trim() ?? string.Empty,
+                        Rfc = factura.ReceptorRfc?.Trim() ?? string.Empty,
+                        Factura = factura
+                    });
 
-                await Task.WhenAll(estadosTask, facturasTask);
+                FacturasPendientes = new ObservableCollection<ConciliacionFacturaFila>(filas);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"No fue posible cargar las facturas pendientes: {ex.Message}";
+            }
+        }
 
-                var estados = await estadosTask;
-                var facturas = await facturasTask;
+        /// <summary>
+        /// Carga los abonos no conciliados de todos los estados de cuenta, con la misma regla que
+        /// Conciliación (grupo no conciliado con monto restante mayor a cero: un abono aplicado en
+        /// parte sigue disponible por lo que le queda). Un estado de cuenta cuyo detalle falle se
+        /// omite y se sigue con el resto. En cheques (DEPOSITO_SBC, sin RFC) la columna RFC muestra
+        /// el folio del cheque del metadato FOLIO_CHEQUE; el campo referencia de esos movimientos
+        /// es la sucursal, no el cheque.
+        /// </summary>
+        private async Task CargarMovimientosPendientesAsync()
+        {
+            try
+            {
+                var estados = await _estadoCuentaXmlService.ObtenerEstadosCuentaAsync();
+                var detalles = await Task.WhenAll(estados.Select(estado => CargarDetalleSeguroAsync(estado.IdEstadoCuenta)));
 
-                var detalleTasks = estados
-                    .OrderBy(estado => estado.FechaCorte)
-                    .ThenBy(estado => estado.IdEstadoCuenta)
-                    .Select(CargarDetalleEstadoSeguroAsync)
-                    .ToList();
-
-                var resultadosDetalle = detalleTasks.Count == 0
-                    ? Array.Empty<(EstadoCuentaDetalleDto? Detalle, string? Error)>()
-                    : await Task.WhenAll(detalleTasks);
-
-                var detallesValidos = resultadosDetalle
-                    .Where(resultado => resultado.Detalle?.EstadoCuenta != null)
-                    .Select(resultado => resultado.Detalle!)
-                    .ToList();
-
-                var erroresDetalle = resultadosDetalle
-                    .Where(resultado => !string.IsNullOrWhiteSpace(resultado.Error))
-                    .Select(resultado => resultado.Error!)
-                    .ToList();
-
-                var movimientosPendientes = detallesValidos
-                    .SelectMany(detalle => detalle.Grupos
+                var filas = detalles
+                    .Where(detalle => detalle?.EstadoCuenta != null)
+                    .SelectMany(detalle => detalle!.Grupos
                         .Where(grupo => !grupo.Conciliado && grupo.MontoRestante > 0)
-                        .Select(grupo => new ConciliacionMovimientoResumenDto
+                        .Select(grupo => new ConciliacionMovimientoFila
                         {
-                            IdEstadoCuenta = detalle.EstadoCuenta!.IdEstadoCuenta,
                             IdMovimiento = grupo.IdMovimiento,
-                            NumeroCuenta = detalle.EstadoCuenta.NumeroCuenta,
-                            TipoCuenta = detalle.EstadoCuenta.TipoCuenta,
-                            Banco = detalle.EstadoCuenta.NombreBanco,
-                            Titular = detalle.EstadoCuenta.Titular,
-                            GrupoId = grupo.GrupoId,
-                            Fecha = grupo.Fecha,
-                            TipoOperacion = grupo.TipoOperacion,
-                            SubtipoOperacion = grupo.SubtipoOperacion,
-                            Descripcion = grupo.Descripcion,
-                            Referencia = grupo.Referencia,
-                            Cargo = grupo.Cargo,
                             Abono = grupo.Abono,
-                            Saldo = grupo.Saldo,
                             MontoRestante = grupo.MontoRestante,
-                            RelacionadosCount = grupo.MovimientosRelacionados.Count,
-                            RfcEmisor = grupo.RfcEmisor
-                                ?? grupo.MovimientosRelacionados
-                                .Select(r => r.Rfc)
-                                .FirstOrDefault(rfc => !string.IsNullOrWhiteSpace(rfc)),
-                            PeriodoTexto = detalle.EstadoCuenta.PeriodoTexto,
-                            MetadatosTexto = grupo.MetadatosTexto
+                            Metadatos = grupo.MetadatosResumen,
+                            MetadatosTooltip = FormatearMetadatosPorLinea(grupo),
+                            RfcReferencia = ObtenerRfcOReferenciaCheque(grupo),
+                            Banco = ObtenerBancoEmisor(grupo),
+                            Fecha = grupo.Fecha,
+                            Grupo = grupo,
+                            EstadoCuenta = detalle.EstadoCuenta!
                         }))
-                    .OrderBy(movimiento => movimiento.Fecha)
-                    .ThenBy(movimiento => movimiento.IdMovimiento)
-                    .ToList();
+                    .OrderBy(fila => fila.Fecha)
+                    .ThenBy(fila => fila.IdMovimiento)
+                    .Select((fila, indice) =>
+                    {
+                        fila.Orden = indice;
+                        return fila;
+                    });
 
-                var facturasPendientes = FiltrarFacturasConciliables(facturas);
-
-                _movimientosPendientesBase.Clear();
-                _movimientosPendientesBase.AddRange(movimientosPendientes);
-                _facturasPendientesBase.Clear();
-                _facturasPendientesBase.AddRange(facturasPendientes);
-                AplicarFiltrosVisibles();
-
-                if (erroresDetalle.Count > 0)
-                {
-                    var resumenErrores = erroresDetalle.Count == 1
-                        ? erroresDetalle[0]
-                        : $"Se omitieron {erroresDetalle.Count} estados de cuenta con error al cargar su detalle.";
-
-                    ErrorMessage = resumenErrores;
-                    SuccessMessage = null;
-                }
-
-                OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
+                MovimientosPendientes = new ObservableCollection<ConciliacionMovimientoFila>(filas);
             }
             catch (Exception ex)
             {
-                await MostrarErrorConciliacionAsync($"Error al cargar los datos de conciliacion: {ex.Message}");
+                ErrorMessage = $"No fue posible cargar los movimientos pendientes: {ex.Message}";
+            }
+        }
+
+        // ---------------- Abonar ----------------
+
+        /// <summary>
+        /// Arma los abonos a registrar con la selección actual. Casos válidos:
+        /// 1 movimiento → 1 o varias facturas (se reparte el disponible del movimiento entre las
+        /// facturas, de la más antigua a la más nueva) y varios movimientos → 1 factura (se aplican
+        /// los movimientos del más antiguo al más nuevo hasta liquidarla). Cada abono es por lo
+        /// que alcance: el menor entre lo disponible del movimiento y el saldo de la factura, igual
+        /// que en Conciliación. Devuelve null y el motivo si la selección no es válida.
+        /// </summary>
+        public IReadOnlyList<ConciliacionAbonoPlaneado>? PlanearAbonos(out string? motivo)
+        {
+            motivo = null;
+            var facturas = _facturasSeleccionadas.OrderBy(fila => fila.Fecha).ThenBy(fila => fila.IdFactura).ToList();
+            var movimientos = _movimientosSeleccionados.OrderBy(fila => fila.Fecha).ThenBy(fila => fila.IdMovimiento).ToList();
+
+            if (facturas.Count == 0 || movimientos.Count == 0)
+            {
+                motivo = "Selecciona al menos una factura y un movimiento.";
+                return null;
+            }
+
+            if (facturas.Count > 1 && movimientos.Count > 1)
+            {
+                motivo = "Selecciona un movimiento con una o varias facturas, o una factura con varios movimientos.";
+                return null;
+            }
+
+            var saldoPorFactura = facturas.ToDictionary(fila => fila, fila => decimal.Round(fila.SaldoPendiente, 2));
+            var disponiblePorMovimiento = movimientos.ToDictionary(fila => fila, fila => decimal.Round(fila.MontoRestante, 2));
+            var plan = new List<ConciliacionAbonoPlaneado>();
+
+            foreach (var movimiento in movimientos)
+            {
+                foreach (var factura in facturas)
+                {
+                    var monto = Math.Min(disponiblePorMovimiento[movimiento], saldoPorFactura[factura]);
+                    if (monto <= 0)
+                    {
+                        continue;
+                    }
+
+                    plan.Add(new ConciliacionAbonoPlaneado(factura, movimiento, monto));
+                    disponiblePorMovimiento[movimiento] -= monto;
+                    saldoPorFactura[factura] -= monto;
+                }
+            }
+
+            if (plan.Count == 0)
+            {
+                motivo = "Las facturas seleccionadas no tienen saldo o los movimientos no tienen monto disponible.";
+                return null;
+            }
+
+            return plan;
+        }
+
+        /// <summary>Texto de confirmación: cada abono y lo que queda sin aplicar o sin cubrir.</summary>
+        public string DescribirPlan(IReadOnlyList<ConciliacionAbonoPlaneado> plan)
+        {
+            var lineas = plan
+                .Select(abono => $"• Factura {abono.Factura.Folio} ← movimiento del {abono.Movimiento.FechaTexto} ({abono.Movimiento.AbonoTexto}): {abono.MontoTexto}")
+                .ToList();
+
+            var aplicadoPorMovimiento = plan.GroupBy(abono => abono.Movimiento).ToDictionary(g => g.Key, g => g.Sum(abono => abono.Monto));
+            var aplicadoPorFactura = plan.GroupBy(abono => abono.Factura).ToDictionary(g => g.Key, g => g.Sum(abono => abono.Monto));
+
+            foreach (var movimiento in _movimientosSeleccionados)
+            {
+                var sobrante = movimiento.MontoRestante - aplicadoPorMovimiento.GetValueOrDefault(movimiento);
+                if (sobrante > 0)
+                {
+                    lineas.Add($"El movimiento del {movimiento.FechaTexto} queda con {sobrante.ToString("C2", CulturaMx)} disponible (no se concilia).");
+                }
+            }
+
+            foreach (var factura in _facturasSeleccionadas)
+            {
+                var pendiente = factura.SaldoPendiente - aplicadoPorFactura.GetValueOrDefault(factura);
+                if (pendiente > 0)
+                {
+                    lineas.Add($"La factura {factura.Folio} queda con {pendiente.ToString("C2", CulturaMx)} por cobrar.");
+                }
+            }
+
+            return string.Join(Environment.NewLine, lineas);
+        }
+
+        /// <summary>
+        /// Registra los abonos uno por uno (mismo endpoint y bitácora "manual" que Conciliación).
+        /// Si uno falla se detiene y se informa cuántos sí se registraron. Al final recarga.
+        /// </summary>
+        public async Task AbonarAsync(IReadOnlyList<ConciliacionAbonoPlaneado> plan)
+        {
+            var registrados = 0;
+            IsLoading = true;
+            ErrorMessage = null;
+            try
+            {
+                foreach (var abono in plan)
+                {
+                    var movimiento = abono.Movimiento.Grupo;
+                    var resultado = await _facturaService.RegistrarAbonoAsync(new RegistrarAbonoFacturaRequestDto
+                    {
+                        IdFactura = abono.Factura.IdFactura,
+                        IdMovimiento = abono.Movimiento.IdMovimiento,
+                        FechaAbono = abono.Movimiento.Fecha,
+                        MontoAbono = abono.Monto,
+                        Referencia = movimiento.Referencia,
+                        Observaciones = $"Abono generado desde conciliacion con movimiento {movimiento.GrupoId}.",
+                        RegistrarEnBitacoraConciliacion = true,
+                        TipoOperacionBitacoraConciliacion = "manual"
+                    });
+
+                    if (!resultado.Success)
+                    {
+                        var detalle = string.IsNullOrWhiteSpace(resultado.Message) ? "No se pudo registrar el abono." : resultado.Message;
+                        ErrorMessage = registrados == 0
+                            ? detalle
+                            : $"Se registraron {registrados} de {plan.Count} abonos. Falló la factura {abono.Factura.Folio}: {detalle}";
+                        break;
+                    }
+
+                    registrados++;
+                    OperacionesConciliacionPendientes = resultado.OperacionesConciliacionPendientes;
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Se registraron {registrados} de {plan.Count} abonos. Error: {ex.Message}";
             }
             finally
             {
                 IsLoading = false;
             }
-        }
 
-        public async Task CargarDetalleFacturaAsync(int idFactura, bool autocompletarFiltroAbono = true)
-        {
-            try
+            if (registrados > 0)
             {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var detalle = await _facturaService.ObtenerDetalleFacturaAsync(idFactura);
-                if (detalle?.Factura == null)
-                {
-                    await MostrarErrorConciliacionAsync("No se encontro el detalle de la factura seleccionada.");
-                    LimpiarFacturaCargada();
-                    return;
-                }
-
-                FacturaCargada = detalle.Factura;
-                ReemplazarColeccion(FacturaCargadaConceptos, detalle.Conceptos);
-                ReemplazarColeccion(FacturaCargadaAbonos, detalle.Abonos);
-                MovimientoAbonoBusquedaTexto = autocompletarFiltroAbono
-                    ? _conciliacionMatchingEngine
-                        .ObtenerMontoPendienteFactura(detalle.Factura)
-                        .ToString("0.##", CultureInfo.InvariantCulture)
-                    : string.Empty;
-                OnPropertyChanged(nameof(ResumenFacturaCargadaConceptos));
-                OnPropertyChanged(nameof(ResumenFacturaCargadaAbonos));
-            }
-            catch (Exception ex)
-            {
-                await MostrarErrorConciliacionAsync($"Error al cargar el detalle de la factura seleccionada: {ex.Message}");
-                LimpiarFacturaCargada();
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        public void CargarDetalleMovimiento(ConciliacionMovimientoResumenDto movimiento)
-        {
-            MovimientoCargado = movimiento;
-        }
-
-        public void LimpiarMovimientoCargado()
-        {
-            MovimientoCargado = null;
-        }
-
-        public void LimpiarFiltrosMovimientos()
-        {
-            MovimientoMetadatoBusquedaTexto = null;
-            MovimientoAbonoBusquedaTexto = null;
-            MovimientoFechaInicio = null;
-            MovimientoFechaFin = null;
-        }
-
-        public void LimpiarFiltrosFacturas()
-        {
-            FacturaFolioBusquedaTexto = null;
-            FacturaTotalBusqueda = null;
-            FacturaNombreBusquedaTexto = null;
-            FacturaRfcBusquedaTexto = null;
-        }
-
-        public async Task AbonarMovimientoCargadoAsync()
-        {
-            if (FacturaCargada == null)
-            {
-                await MostrarErrorConciliacionAsync("Primero selecciona una factura.");
-                return;
-            }
-
-            if (MovimientoCargado == null)
-            {
-                await MostrarErrorConciliacionAsync("Primero selecciona un movimiento.");
-                return;
-            }
-
-            if (MovimientoCargado.MontoRestante <= 0)
-            {
-                await MostrarErrorConciliacionAsync("El movimiento seleccionado no tiene un abono valido.");
-                return;
-            }
-
-            var abonoExcedeFactura = MovimientoCargado.MontoRestante > FacturaCargada.SaldoPendiente;
-            var montoAbono = abonoExcedeFactura ? FacturaCargada.SaldoPendiente : MovimientoCargado.MontoRestante;
-
-            try
-            {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var idFactura = FacturaCargada.IdFactura;
-                var result = await _facturaService.RegistrarAbonoAsync(new RegistrarAbonoFacturaRequestDto
-                {
-                    IdFactura = idFactura,
-                    IdMovimiento = MovimientoCargado.IdMovimiento,
-                    FechaAbono = MovimientoCargado.Fecha,
-                    MontoAbono = montoAbono,
-                    Referencia = MovimientoCargado.Referencia,
-                    Observaciones = $"Abono generado desde conciliacion con movimiento {MovimientoCargado.GrupoId}.",
-                    RegistrarEnBitacoraConciliacion = true,
-                    TipoOperacionBitacoraConciliacion = "manual"
-                });
-
-                if (!result.Success)
-                {
-                    await MostrarErrorConciliacionAsync(string.IsNullOrWhiteSpace(result.Message)
-                        ? "No se pudo registrar el abono."
-                        : result.Message);
-                    return;
-                }
-
-                OperacionesConciliacionPendientes = result.OperacionesConciliacionPendientes;
-                var idMovimientoActual = MovimientoCargado?.IdMovimiento;
                 await CargarDatosAsync();
-                await CargarDetalleFacturaAsync(idFactura, autocompletarFiltroAbono: false);
-
-                // Si fue overpayment el movimiento no queda conciliado: refrescar desde la base actualizada
-                // para que MontoRestante refleje el nuevo saldo disponible.
-                if (abonoExcedeFactura && idMovimientoActual.HasValue)
+                if (registrados == plan.Count)
                 {
-                    MovimientoCargado = _movimientosPendientesBase
-                        .FirstOrDefault(m => m.IdMovimiento == idMovimientoActual.Value);
+                    await _notificacionService.MostrarAsync("Conciliación", $"{registrados} abono(s) registrado(s).");
                 }
-
-                var mensaje = abonoExcedeFactura
-                    ? $"Factura pagada correctamente. El movimiento no fue conciliado porque tiene saldo restante disponible para otras facturas."
-                    : (string.IsNullOrWhiteSpace(result.Message) ? "Abono registrado correctamente." : result.Message);
-                await MostrarExitoConciliacionAsync(mensaje);
-            }
-            catch (Exception ex)
-            {
-                await MostrarErrorConciliacionAsync($"Error al registrar el abono desde conciliacion: {ex.Message}");
-            }
-            finally
-            {
-                IsLoading = false;
             }
         }
 
-        public async Task DeshacerUltimaOperacionConciliacionAsync()
-        {
-            if (!CanDeshacerUltimaOperacionConciliacion)
-            {
-                await MostrarErrorConciliacionAsync("No hay operaciones de conciliacion pendientes por deshacer.");
-                return;
-            }
+        // ---------------- Revertir ----------------
 
+        public Task DeshacerUltimoAsync() => DeshacerAsync(
+            () => _facturaService.DeshacerUltimaOperacionConciliacionAsync(),
+            "Se deshizo la última operación de conciliación.");
+
+        public Task DeshacerTodoAsync() => DeshacerAsync(
+            () => _facturaService.DeshacerTodasOperacionesConciliacionAsync(),
+            "Se deshicieron todas las operaciones de conciliación.");
+
+        private async Task DeshacerAsync(Func<Task<BitacoraConciliacionResponseDto>> accion, string mensajeExito)
+        {
+            BitacoraConciliacionResponseDto resultado;
+            IsLoading = true;
+            ErrorMessage = null;
             try
             {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var resultado = await _facturaService.DeshacerUltimaOperacionConciliacionAsync();
-                if (!resultado.Success)
-                {
-                    await MostrarErrorConciliacionAsync(string.IsNullOrWhiteSpace(resultado.Message)
-                        ? "No fue posible deshacer la ultima operacion de conciliacion."
-                        : resultado.Message);
-                    return;
-                }
-
-                OperacionesConciliacionPendientes = resultado.OperacionesPendientes;
-                await CargarDatosAsync();
-                await RecargarDetalleTrasDeshacerAsync(resultado);
-                await MostrarExitoConciliacionAsync(string.IsNullOrWhiteSpace(resultado.Message)
-                    ? "Se deshizo la ultima operacion de conciliacion."
-                    : resultado.Message);
+                resultado = await accion();
             }
             catch (Exception ex)
             {
-                await MostrarErrorConciliacionAsync($"Error al deshacer la ultima operacion de conciliacion: {ex.Message}");
+                ErrorMessage = $"No fue posible deshacer: {ex.Message}";
+                return;
             }
             finally
             {
                 IsLoading = false;
             }
-        }
 
-        public async Task DeshacerTodasOperacionesConciliacionAsync()
-        {
-            if (!CanDeshacerTodasOperacionesConciliacion)
-            {
-                await MostrarErrorConciliacionAsync("No hay operaciones de conciliacion pendientes por deshacer.");
-                return;
-            }
-
-            try
-            {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var resultado = await _facturaService.DeshacerTodasOperacionesConciliacionAsync();
-                if (!resultado.Success)
-                {
-                    await MostrarErrorConciliacionAsync(string.IsNullOrWhiteSpace(resultado.Message)
-                        ? "No fue posible deshacer todas las operaciones de conciliacion."
-                        : resultado.Message);
-                    return;
-                }
-
-                OperacionesConciliacionPendientes = resultado.OperacionesPendientes;
-                await CargarDatosAsync();
-                await RecargarDetalleTrasDeshacerAsync(resultado);
-                await MostrarExitoConciliacionAsync(string.IsNullOrWhiteSpace(resultado.Message)
-                    ? "Se deshicieron todas las operaciones de conciliacion."
-                    : resultado.Message);
-            }
-            catch (Exception ex)
-            {
-                await MostrarErrorConciliacionAsync($"Error al deshacer todas las operaciones de conciliacion: {ex.Message}");
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        private async Task InicializarBitacoraConciliacionSiEsNecesarioAsync()
-        {
-            if (_bitacoraConciliacionInicializada)
-            {
-                return;
-            }
-
-            var resultado = await _facturaService.InicializarBitacoraConciliacionAsync();
             if (!resultado.Success)
             {
-                throw new InvalidOperationException(string.IsNullOrWhiteSpace(resultado.Message)
-                    ? "No fue posible inicializar la bitacora de conciliacion."
-                    : resultado.Message);
-            }
-
-            _bitacoraConciliacionInicializada = true;
-            OperacionesConciliacionPendientes = resultado.OperacionesPendientes;
-        }
-
-        private async Task RecargarDetalleTrasDeshacerAsync(BitacoraConciliacionResponseDto resultado)
-        {
-            var idFacturaObjetivo = resultado.IdFactura ?? FacturaCargada?.IdFactura;
-            if (idFacturaObjetivo.HasValue && idFacturaObjetivo.Value > 0)
-            {
-                await CargarDetalleFacturaAsync(idFacturaObjetivo.Value);
-            }
-            else
-            {
-                LimpiarFacturaCargada();
-            }
-
-            var idMovimientoObjetivo = resultado.IdMovimiento ?? MovimientoCargado?.IdMovimiento;
-            MovimientoCargado = idMovimientoObjetivo.HasValue
-                ? _movimientosPendientesBase.FirstOrDefault(movimiento => movimiento.IdMovimiento == idMovimientoObjetivo.Value)
-                : null;
-        }
-
-        private async Task RefrescarFacturasPendientesAsync()
-        {
-            var facturas = await _facturaService.ObtenerFacturasAsync();
-            var facturasPendientes = FiltrarFacturasConciliables(facturas);
-
-            _facturasPendientesBase.Clear();
-            _facturasPendientesBase.AddRange(facturasPendientes);
-            AplicarFiltrosVisibles();
-            OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
-        }
-
-        private void LimpiarFacturaCargada()
-        {
-            FacturaCargada = null;
-            FacturaCargadaConceptos.Clear();
-            FacturaCargadaAbonos.Clear();
-            OnPropertyChanged(nameof(ResumenFacturaCargadaConceptos));
-            OnPropertyChanged(nameof(ResumenFacturaCargadaAbonos));
-        }
-
-        private void NotificarCambioFacturaCargada()
-        {
-            OnPropertyChanged(nameof(MensajeFacturaCargada));
-            OnPropertyChanged(nameof(FacturaCargadaUuidTexto));
-            OnPropertyChanged(nameof(FacturaCargadaFechaTexto));
-            OnPropertyChanged(nameof(FacturaCargadaEmisorTexto));
-            OnPropertyChanged(nameof(FacturaCargadaReceptorTexto));
-            OnPropertyChanged(nameof(FacturaCargadaRfcTexto));
-            OnPropertyChanged(nameof(FacturaCargadaMetodoFormaTexto));
-            OnPropertyChanged(nameof(FacturaCargadaTotalesTexto));
-            OnPropertyChanged(nameof(FacturaCargadaEstadoPagoTexto));
-            OnPropertyChanged(nameof(FacturaCargadaTotalAbonadoTexto));
-            OnPropertyChanged(nameof(FacturaCargadaSaldoPendienteTexto));
-            OnPropertyChanged(nameof(CanAbonarMovimiento));
-            OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
-        }
-
-        private void NotificarCambioMovimientoCargado()
-        {
-            OnPropertyChanged(nameof(MensajeMovimientoCargado));
-            OnPropertyChanged(nameof(MovimientoCargadoCuentaTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoBancoTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoPeriodoTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoFechaTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoReferenciaTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoCargoTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoAbonoTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoMontoRestanteTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoSaldoTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoRelacionadosTexto));
-            OnPropertyChanged(nameof(MovimientoCargadoMetadatosTexto));
-            OnPropertyChanged(nameof(CanAbonarMovimiento));
-            OnPropertyChanged(nameof(CanIniciarConciliacionAutomatica));
-        }
-
-        private Task MostrarErrorConciliacionAsync(string mensaje)
-        {
-            ErrorMessage = mensaje;
-            SuccessMessage = null;
-            return Task.CompletedTask;
-        }
-
-        private async Task MostrarExitoConciliacionAsync(string mensaje)
-        {
-            SuccessMessage = mensaje;
-            ErrorMessage = null;
-            await _notificacionService.MostrarAsync("Conciliacion", mensaje);
-        }
-
-        private async Task<(EstadoCuentaDetalleDto? Detalle, string? Error)> CargarDetalleEstadoSeguroAsync(EstadoCuentaResumenDto estado)
-        {
-            try
-            {
-                var detalle = await _estadoCuentaXmlService.ObtenerDetalleEstadoCuentaAsync(estado.IdEstadoCuenta);
-                if (detalle?.EstadoCuenta == null)
-                {
-                    return (null, $"No se pudo cargar el detalle del estado {estado.CuentaTitulo}.");
-                }
-
-                return (detalle, null);
-            }
-            catch (Exception ex)
-            {
-                return (null, $"Se omitio el estado {estado.CuentaTitulo}: {ex.Message}");
-            }
-        }
-
-        private static void ReemplazarColeccion<T>(ObservableCollection<T> destino, System.Collections.Generic.IReadOnlyCollection<T>? origen)
-        {
-            destino.Clear();
-            if (origen == null)
-            {
+                ErrorMessage = string.IsNullOrWhiteSpace(resultado.Message) ? "No fue posible deshacer." : resultado.Message;
                 return;
             }
 
-            foreach (var item in origen)
+            OperacionesConciliacionPendientes = resultado.OperacionesPendientes;
+            await CargarDatosAsync();
+            await _notificacionService.MostrarAsync("Conciliación", string.IsNullOrWhiteSpace(resultado.Message) ? mensajeExito : resultado.Message);
+        }
+
+        // ---------------- Auxiliares de carga ----------------
+
+        /// <summary>Metadatos "CLAVE: valor", uno por línea; vacío si el movimiento no trae.</summary>
+        public static string FormatearMetadatosPorLinea(EstadoCuentaGrupoDetalleDto grupo) =>
+            string.Join(Environment.NewLine, grupo.Metadatos
+                .Where(par => !string.IsNullOrWhiteSpace(par.Value))
+                .Select(par => $"{par.Key.Replace("_", " ")}: {par.Value!.Trim()}"));
+
+        private async Task<EstadoCuentaDetalleDto?> CargarDetalleSeguroAsync(int idEstadoCuenta)
+        {
+            try
             {
-                destino.Add(item);
+                return await _estadoCuentaXmlService.ObtenerDetalleEstadoCuentaAsync(idEstadoCuenta);
+            }
+            catch
+            {
+                return null;
             }
         }
 
-        private void AplicarFiltrosVisibles()
+        /// <summary>
+        /// Banco del que salió el pago (no el del estado de cuenta, que es el nuestro). Solo los
+        /// SPEI recibidos lo traen: se deduce de la CLABE del emisor (metadato CUENTA_EMISOR, o
+        /// CUENTA en estados viejos). Cheques, órdenes de pago y compensaciones no traen dato de
+        /// banco emisor y quedan en blanco.
+        /// </summary>
+        private static string ObtenerBancoEmisor(EstadoCuentaGrupoDetalleDto grupo)
         {
-            var movimientosFiltrados = _movimientosPendientesBase
-                .Where(CoincideMovimientoBusqueda)
-                .OrderByDescending(movimiento => movimiento.Abono)
-                .ThenByDescending(movimiento => movimiento.Fecha)
-                .ThenByDescending(movimiento => movimiento.IdMovimiento)
-                .ToList();
+            var clabe = grupo.Metadatos.TryGetValue("CUENTA_EMISOR", out var cuentaEmisor) && !string.IsNullOrWhiteSpace(cuentaEmisor)
+                ? cuentaEmisor
+                : grupo.Metadatos.TryGetValue("CUENTA", out var cuenta) ? cuenta : null;
 
-            var facturasFiltradas = _facturasPendientesBase
-                .Where(CoincideFacturaBusqueda)
-                .OrderByDescending(factura => factura.Folio)
-                .ThenByDescending(factura => factura.IdFactura)
-                .ToList();
-
-            MovimientosPendientes = new ObservableCollection<ConciliacionMovimientoResumenDto>(movimientosFiltrados);
-            FacturasPendientes = new ObservableCollection<FacturaResumenDto>(facturasFiltradas);
-            OnPropertyChanged(nameof(ResumenMovimientos));
-            OnPropertyChanged(nameof(ResumenFacturas));
+            return BancosMexico.ObtenerNombrePorClabe(clabe);
         }
 
-        private bool CoincideMovimientoBusqueda(ConciliacionMovimientoResumenDto movimiento)
+        private static string ObtenerRfcOReferenciaCheque(EstadoCuentaGrupoDetalleDto grupo)
         {
-            return CoincideMovimientoMetadatoBusqueda(movimiento)
-                && CoincideMovimientoAbonoBusqueda(movimiento)
-                && CoincideMovimientoFecha(movimiento);
-        }
-
-        private bool CoincideMovimientoMetadatoBusqueda(ConciliacionMovimientoResumenDto movimiento)
-        {
-            var termino = MovimientoMetadatoBusquedaTexto?.Trim();
-            if (string.IsNullOrWhiteSpace(termino))
+            if (string.Equals(grupo.TipoOperacion, "DEPOSITO_SBC", StringComparison.OrdinalIgnoreCase))
             {
-                return true;
+                return grupo.Metadatos.TryGetValue("FOLIO_CHEQUE", out var folioCheque) && !string.IsNullOrWhiteSpace(folioCheque)
+                    ? folioCheque.Trim()
+                    : grupo.Referencia?.Trim() ?? string.Empty;
             }
 
-            if (ContieneTexto(movimiento.GrupoId, termino)
-                || ContieneTexto(movimiento.TipoOperacion, termino)
-                || ContieneTexto(movimiento.SubtipoOperacion, termino)
-                || ContieneTexto(movimiento.Descripcion, termino)
-                || ContieneTexto(movimiento.Referencia, termino)
-                || ContieneTexto(movimiento.MetadatosTexto, termino)
-                || ContieneTexto(movimiento.Banco, termino)
-                || ContieneTexto(movimiento.Titular, termino)
-                || ContieneTexto(movimiento.NumeroCuenta, termino)
-                || ContieneTexto(movimiento.ReferenciaTexto, termino))
-            {
-                return true;
-            }
-
-            return false;
-        }
-
-        private bool CoincideMovimientoAbonoBusqueda(ConciliacionMovimientoResumenDto movimiento)
-        {
-            var termino = MovimientoAbonoBusquedaTexto?.Trim();
-            if (string.IsNullOrWhiteSpace(termino))
-            {
-                return true;
-            }
-
-            return IntentarParsearMontoBusqueda(termino, out var montoBuscado)
-                && decimal.Round(movimiento.Abono, 2) <= decimal.Round(montoBuscado, 2);
-        }
-
-        private bool CoincideFacturaBusqueda(FacturaResumenDto factura)
-        {
-            return CoincideFacturaFolioBusqueda(factura)
-                && CoincideFacturaTotalBusqueda(factura)
-                && CoincideFacturaNombreBusqueda(factura)
-                && CoincideFacturaRfcBusqueda(factura);
-        }
-
-        private bool CoincideFacturaFolioBusqueda(FacturaResumenDto factura)
-        {
-            var termino = FacturaFolioBusquedaTexto?.Trim();
-            if (string.IsNullOrWhiteSpace(termino))
-            {
-                return true;
-            }
-
-            return ContieneTexto(factura.Folio, termino)
-                || ContieneTexto(factura.FolioTitulo, termino);
-        }
-
-        private bool CoincideMovimientoFecha(ConciliacionMovimientoResumenDto movimiento)
-        {
-            var inicio = _movimientoFechaInicio?.Date;
-            var fin = _movimientoFechaFin?.Date;
-            var fecha = movimiento.Fecha.Date;
-
-            if (inicio.HasValue && fin.HasValue)
-            {
-                return fecha >= inicio.Value && fecha <= fin.Value;
-            }
-
-            if (inicio.HasValue)
-            {
-                return fecha >= inicio.Value;
-            }
-
-            if (fin.HasValue)
-            {
-                return fecha <= fin.Value;
-            }
-
-            return true;
-        }
-
-        private bool CoincideFacturaTotalBusqueda(FacturaResumenDto factura)
-        {
-            var termino = FacturaTotalBusqueda?.Trim();
-            if (string.IsNullOrWhiteSpace(termino))
-            {
-                return true;
-            }
-
-            return IntentarParsearMontoBusqueda(termino, out var montoBuscado)
-                && CoincideMonto(factura.Total, montoBuscado);
-        }
-
-        private bool CoincideFacturaNombreBusqueda(FacturaResumenDto factura)
-        {
-            var termino = FacturaNombreBusquedaTexto?.Trim();
-            if (string.IsNullOrWhiteSpace(termino))
-            {
-                return true;
-            }
-
-            return ContieneTexto(factura.ReceptorNombre, termino);
-        }
-
-        private bool CoincideFacturaRfcBusqueda(FacturaResumenDto factura)
-        {
-            var termino = FacturaRfcBusquedaTexto?.Trim();
-            if (string.IsNullOrWhiteSpace(termino))
-            {
-                return true;
-            }
-
-            return ContieneTexto(factura.ReceptorRfc, termino);
-        }
-
-        private static bool ContieneTexto(string? valor, string termino)
-        {
-            return !string.IsNullOrWhiteSpace(valor)
-                && valor.Contains(termino, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private static bool CoincideMonto(decimal valor, decimal montoBuscado)
-        {
-            return decimal.Round(valor, 2) == decimal.Round(montoBuscado, 2);
-        }
-
-        private static bool IntentarParsearMontoBusqueda(string termino, out decimal monto)
-        {
-            var normalizado = termino
-                .Replace("$", string.Empty, StringComparison.Ordinal)
-                .Replace(",", string.Empty, StringComparison.Ordinal)
-                .Trim();
-
-            return decimal.TryParse(normalizado, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, CultureInfo.InvariantCulture, out monto)
-                || decimal.TryParse(normalizado, NumberStyles.Number | NumberStyles.AllowCurrencySymbol, new CultureInfo("es-MX"), out monto);
-        }
-
-        private static string ConstruirResumenColeccion(int visibles, int total, string etiquetaSingular, string etiquetaPlural)
-        {
-            if (visibles == total)
-            {
-                return visibles == 1
-                    ? $"1 {etiquetaSingular}"
-                    : $"{visibles} {etiquetaPlural}";
-            }
-
-            return $"{visibles} de {total} visibles";
-        }
-
-        private List<FacturaResumenDto> FiltrarFacturasConciliables(IEnumerable<FacturaResumenDto> facturas)
-        {
-            return facturas
-                .Where(factura => factura.Finiquito != true)
-                .Where(factura => _conciliacionMatchingEngine.ObtenerTotalFactura(factura) > 0)
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
-                .ToList();
+            return (grupo.RfcEmisor
+                ?? grupo.MovimientosRelacionados
+                    .Select(relacionado => relacionado.Rfc)
+                    .FirstOrDefault(rfc => !string.IsNullOrWhiteSpace(rfc)))?.Trim()
+                ?? string.Empty;
         }
     }
 }
