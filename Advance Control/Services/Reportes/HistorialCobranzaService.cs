@@ -71,6 +71,7 @@ namespace Advance_Control.Services.Reportes
             DateTimeOffset fechaInicio,
             DateTimeOffset fechaFin,
             string? dirigidoA,
+            HistorialCobranzaEstadosDto estados,
             IProgress<string>? progreso = null,
             CancellationToken cancellationToken = default)
         {
@@ -82,6 +83,11 @@ namespace Advance_Control.Services.Reportes
             if (idCliente <= 0)
             {
                 throw new ArgumentException("El cliente es obligatorio.", nameof(idCliente));
+            }
+
+            if (estados == null || !estados.AlgunoMarcado)
+            {
+                throw new ArgumentException("Marca al menos un estado (Abiertas, Abiertas S/Orden, Finalizada C/Orden, Finalizada S/Orden o Pendientes).", nameof(estados));
             }
 
             var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -117,8 +123,10 @@ namespace Advance_Control.Services.Reportes
             }
 
             progreso?.Report("Consultando operaciones del cliente...");
+            // IncluirFacturadas: sin él la API oculta las operaciones que ya tienen factura, y el
+            // historial salía solo con pendientes / sin facturar.
             var operaciones = await _operacionService.GetOperacionesAsync(
-                new OperacionQueryDto { IdCliente = idCliente, IncluirFinalizadas = true },
+                new OperacionQueryDto { IdCliente = idCliente, IncluirFinalizadas = true, IncluirFacturadas = true },
                 cancellationToken);
 
             var operacionesFiltradas = (operaciones ?? new List<OperacionDto>())
@@ -132,9 +140,18 @@ namespace Advance_Control.Services.Reportes
                 .ToList();
 
             var operacionesFacturadas = await _facturaService.ObtenerOperacionesFacturadasAsync(cancellationToken);
-            var facturaPorOperacion = (operacionesFacturadas ?? new List<OperacionFacturadaDto>())
+
+            // fn_operaciones_facturadas no excluye facturas canceladas: sin esto, una operación con su
+            // factura cancelada caería en "Pendientes" (abonado 0 < total).
+            var idsCanceladas = (await _facturaService.ObtenerFacturasAsync(cancellationToken))
+                .Where(f => f.Cancelada)
+                .Select(f => f.IdFactura)
+                .ToHashSet();
+
+            var facturasPorOperacion = (operacionesFacturadas ?? new List<OperacionFacturadaDto>())
+                .Where(f => !idsCanceladas.Contains(f.IdFactura))
                 .GroupBy(f => f.IdOperacion)
-                .ToDictionary(g => g.Key, g => g.First().IdFactura);
+                .ToDictionary(g => g.Key, g => g.ToList());
 
             foreach (var operacion in operacionesFiltradas)
             {
@@ -152,11 +169,28 @@ namespace Advance_Control.Services.Reportes
                 {
                     progreso?.Report($"Procesando operación #{idOperacion}...");
 
-                    var tieneFactura = facturaPorOperacion.TryGetValue(idOperacion, out var idFactura);
+                    facturasPorOperacion.TryGetValue(idOperacion, out var facturas);
+                    var categoria = Clasificar(operacion, facturas);
+                    if (categoria is null || !EstaMarcada(categoria.Value, estados))
+                    {
+                        resultado.OperacionesExcluidas++;
+                        continue;
+                    }
 
-                    string nombreCarpetaOperacion = operacion.TFinalizado
-                        ? (tieneFactura ? $"Operacion_{idOperacion}_finalizada" : $"Operacion_{idOperacion}_finalizada_sin_facturar")
-                        : $"Operacion_{idOperacion}_pendiente";
+                    var tieneFactura = facturas is { Count: > 0 };
+                    // Si tiene varias facturas se documenta la que falta por cubrir.
+                    var idFactura = tieneFactura
+                        ? (facturas!.FirstOrDefault(f => f.TotalAbonado < f.Total) ?? facturas![0]).IdFactura
+                        : 0;
+
+                    var nombreCarpetaOperacion = categoria switch
+                    {
+                        CategoriaHistorial.Abierta => $"Operacion_{idOperacion}_abierta",
+                        CategoriaHistorial.AbiertaSinOrden => $"Operacion_{idOperacion}_abierta_sin_orden",
+                        CategoriaHistorial.FinalizadaConOrden => $"Operacion_{idOperacion}_finalizada_con_orden",
+                        CategoriaHistorial.FinalizadaSinOrden => $"Operacion_{idOperacion}_finalizada_sin_orden",
+                        _ => $"Operacion_{idOperacion}_facturada_pendiente"
+                    };
 
                     var carpetaOperacion = Path.Combine(carpetaRaiz, nombreCarpetaOperacion);
                     Directory.CreateDirectory(carpetaOperacion);
@@ -217,15 +251,15 @@ namespace Advance_Control.Services.Reportes
                             await File.WriteAllTextAsync(rutaXml, xml, cancellationToken);
                         }
 
-                        resultado.OperacionesFinalizadas++;
                     }
-                    else if (operacion.TFinalizado)
+
+                    switch (categoria)
                     {
-                        resultado.OperacionesFinalizadasSinFacturar++;
-                    }
-                    else
-                    {
-                        resultado.OperacionesPendientes++;
+                        case CategoriaHistorial.Abierta: resultado.OperacionesAbiertas++; break;
+                        case CategoriaHistorial.AbiertaSinOrden: resultado.OperacionesAbiertasSinOrden++; break;
+                        case CategoriaHistorial.FinalizadaConOrden: resultado.OperacionesFinalizadasConOrden++; break;
+                        case CategoriaHistorial.FinalizadaSinOrden: resultado.OperacionesFinalizadasSinOrden++; break;
+                        default: resultado.OperacionesFacturadasPendientes++; break;
                     }
                 }
                 catch (Exception ex)
@@ -256,6 +290,46 @@ namespace Advance_Control.Services.Reportes
             progreso?.Report("Historial completo.");
             return resultado;
         }
+
+        private enum CategoriaHistorial
+        {
+            Abierta,
+            AbiertaSinOrden,
+            FinalizadaConOrden,
+            FinalizadaSinOrden,
+            FacturadaPendiente
+        }
+
+        /// <summary>
+        /// Categoría de la operación según los checks de Cobranza, o null si no cae en ninguna
+        /// (facturada y ya pagada por completo).
+        /// </summary>
+        private static CategoriaHistorial? Clasificar(OperacionDto operacion, List<OperacionFacturadaDto>? facturas)
+        {
+            if (facturas is { Count: > 0 })
+            {
+                return facturas.Any(f => f.TotalAbonado < f.Total)
+                    ? CategoriaHistorial.FacturadaPendiente
+                    : null;
+            }
+
+            var conOrden = operacion.CkOrdenCompraCargadaApi;
+            if (operacion.TFinalizado)
+            {
+                return conOrden ? CategoriaHistorial.FinalizadaConOrden : CategoriaHistorial.FinalizadaSinOrden;
+            }
+
+            return conOrden ? CategoriaHistorial.Abierta : CategoriaHistorial.AbiertaSinOrden;
+        }
+
+        private static bool EstaMarcada(CategoriaHistorial categoria, HistorialCobranzaEstadosDto estados) => categoria switch
+        {
+            CategoriaHistorial.Abierta => estados.Abiertas,
+            CategoriaHistorial.AbiertaSinOrden => estados.AbiertasSinOrden,
+            CategoriaHistorial.FinalizadaConOrden => estados.FinalizadaConOrden,
+            CategoriaHistorial.FinalizadaSinOrden => estados.FinalizadaSinOrden,
+            _ => estados.Pendientes
+        };
 
         private static void CopiarArchivo(string? rutaOrigen, string carpetaDestino)
         {

@@ -99,8 +99,41 @@
                         Click="BtnGenerarHistorial_Click"
                         Content="Historial de Cobranza"
                         IsEnabled="{x:Bind ViewModel.CanGenerarHistorial, Mode=OneWay}"
-                        ToolTipService.ToolTip="Genera cotizaciones, reportes, facturas y el reporte de cobranza del cliente y rango de fechas seleccionados arriba" />
-                    <CheckBox Content="Mostrar mov. no conciliados" IsChecked="{x:Bind ViewModel.MostrarMovimientosNoConciliados, Mode=TwoWay}" />
+                        ToolTipService.ToolTip="Genera cotizaciones, reportes, facturas y el reporte de cobranza del cliente y rango de fechas seleccionados arriba, solo de las operaciones en los estados marcados" />
+                    <DropDownButton
+                        Content="{x:Bind ViewModel.HistorialEstadosTexto, Mode=OneWay}"
+                        ToolTipService.ToolTip="Qué operaciones entran al historial de cobranza">
+                        <DropDownButton.Flyout>
+                            <Flyout Placement="Bottom">
+                                <StackPanel Spacing="2">
+                                    <TextBlock
+                                        Margin="0,0,0,4"
+                                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                                        Text="Operaciones del historial" />
+                                    <CheckBox
+                                        Content="Abiertas"
+                                        IsChecked="{x:Bind ViewModel.HistorialAbiertas, Mode=TwoWay}"
+                                        ToolTipService.ToolTip="Sin T-Finalizado, sin factura y con orden de compra" />
+                                    <CheckBox
+                                        Content="Abiertas S/Orden"
+                                        IsChecked="{x:Bind ViewModel.HistorialAbiertasSinOrden, Mode=TwoWay}"
+                                        ToolTipService.ToolTip="Sin T-Finalizado, sin factura y sin orden de compra" />
+                                    <CheckBox
+                                        Content="Finalizada C/Orden"
+                                        IsChecked="{x:Bind ViewModel.HistorialFinalizadaConOrden, Mode=TwoWay}"
+                                        ToolTipService.ToolTip="T-Finalizado, con orden de compra y todavía sin factura" />
+                                    <CheckBox
+                                        Content="Finalizada S/Orden"
+                                        IsChecked="{x:Bind ViewModel.HistorialFinalizadaSinOrden, Mode=TwoWay}"
+                                        ToolTipService.ToolTip="T-Finalizado, sin orden de compra y todavía sin factura" />
+                                    <CheckBox
+                                        Content="Pendientes"
+                                        IsChecked="{x:Bind ViewModel.HistorialPendientes, Mode=TwoWay}"
+                                        ToolTipService.ToolTip="Facturadas sin pago o no cubiertas en su totalidad" />
+                                </StackPanel>
+                            </Flyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
                     <ProgressRing
                         Width="24"
                         Height="24"
@@ -151,28 +184,6 @@
                     <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalFacturadoTexto, Mode=OneWay}" />
                     <TextBlock Text="Total Finiquitado:" />
                     <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalAbonadoTexto, Mode=OneWay}" />
-                    <StackPanel
-                        Orientation="Horizontal"
-                        Spacing="5"
-                        Visibility="{x:Bind ViewModel.MostrarMovimientosNoConciliados, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                        <TextBlock
-                            Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                            Text="Movimientos no conciliados:" />
-                        <TextBlock
-                            FontWeight="SemiBold"
-                            Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                            Text="{x:Bind ViewModel.TotalMovimientosNoConciliadosTexto, Mode=OneWay}" />
-                        <TextBlock
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="{x:Bind ViewModel.NumMovimientosNoConciliadosTexto, Mode=OneWay}" />
-                        <TextBlock
-                            Margin="8,0,0,0"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Restante:" />
-                        <TextBlock
-                            FontWeight="SemiBold"
-                            Text="{x:Bind ViewModel.TotalRestanteTexto, Mode=OneWay}" />
-                    </StackPanel>
                 </StackPanel>
             </StackPanel>
         </Border>

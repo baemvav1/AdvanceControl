@@ -31,10 +31,16 @@ namespace Advance_Control.ViewModels
         private bool _noFiniquitadas;
         private int _movimientosNcCount;
         private decimal _movimientosNcTotal;
-        private bool _mostrarMovimientosNoConciliados = true;
+        // Los movimientos no conciliados no se incluyen en los reportes de Cobranza.
+        private const bool MostrarMovimientosNoConciliados = false;
         private bool _isGenerandoHistorial;
         private string? _historialProgresoTexto;
         private HistorialCobranzaResultadoDto? _historialResultado;
+        private bool _historialAbiertas = true;
+        private bool _historialAbiertasSinOrden = true;
+        private bool _historialFinalizadaConOrden = true;
+        private bool _historialFinalizadaSinOrden = true;
+        private bool _historialPendientes = true;
 
         public RPTFinancieroFacturacionViewModel(
             IReporteFinancieroFacturacionService reporteService,
@@ -168,12 +174,6 @@ namespace Advance_Control.ViewModels
         }
         public bool CanGenerarReporte => !IsLoading && _detallesBase.Count > 0;
 
-        public bool MostrarMovimientosNoConciliados
-        {
-            get => _mostrarMovimientosNoConciliados;
-            set => SetProperty(ref _mostrarMovimientosNoConciliados, value);
-        }
-
         public async Task CargarReporteAsync()
         {
             if (FechaInicioFiltro.HasValue && FechaFinFiltro.HasValue && FechaFinFiltro.Value.Date < FechaInicioFiltro.Value.Date)
@@ -254,7 +254,7 @@ namespace Advance_Control.ViewModels
                     ObtenerFiniquitoFiltro(),
                     _movimientosNcCount,
                     _movimientosNcTotal,
-                    _mostrarMovimientosNoConciliados);
+                    MostrarMovimientosNoConciliados);
 
                 SuccessMessage = $"Reporte generado correctamente: {rutaArchivo}";
                 return rutaArchivo;
@@ -294,7 +294,7 @@ namespace Advance_Control.ViewModels
                     ObtenerFiniquitoFiltro(),
                     _movimientosNcCount,
                     _movimientosNcTotal,
-                    _mostrarMovimientosNoConciliados);
+                    MostrarMovimientosNoConciliados);
 
                 SuccessMessage = $"Reporte simplificado generado: {rutaArchivo}";
                 return rutaArchivo;
@@ -505,12 +505,81 @@ namespace Advance_Control.ViewModels
 
         public bool HistorialTieneErrores => HistorialResultado?.Errores.Count > 0;
 
-        public bool CanGenerarHistorial =>
-            !IsGenerandoHistorial &&
-            !string.IsNullOrWhiteSpace(ReceptorRfcFiltro) &&
-            FechaInicioFiltro.HasValue &&
-            FechaFinFiltro.HasValue &&
-            FechaFinFiltro.Value.Date >= FechaInicioFiltro.Value.Date;
+        // ---- Checks del historial de cobranza (qué operaciones entran) ----
+
+        /// <summary>Abiertas: sin T-Finalizado, sin factura, con orden de compra.</summary>
+        public bool HistorialAbiertas
+        {
+            get => _historialAbiertas;
+            set { if (SetProperty(ref _historialAbiertas, value)) NotificarEstadosHistorial(); }
+        }
+
+        /// <summary>Abiertas S/Orden: sin T-Finalizado, sin factura, sin orden de compra.</summary>
+        public bool HistorialAbiertasSinOrden
+        {
+            get => _historialAbiertasSinOrden;
+            set { if (SetProperty(ref _historialAbiertasSinOrden, value)) NotificarEstadosHistorial(); }
+        }
+
+        /// <summary>Finalizada C/Orden: T-Finalizado, sin factura, con orden de compra.</summary>
+        public bool HistorialFinalizadaConOrden
+        {
+            get => _historialFinalizadaConOrden;
+            set { if (SetProperty(ref _historialFinalizadaConOrden, value)) NotificarEstadosHistorial(); }
+        }
+
+        /// <summary>Finalizada S/Orden: T-Finalizado, sin factura, sin orden de compra.</summary>
+        public bool HistorialFinalizadaSinOrden
+        {
+            get => _historialFinalizadaSinOrden;
+            set { if (SetProperty(ref _historialFinalizadaSinOrden, value)) NotificarEstadosHistorial(); }
+        }
+
+        /// <summary>Pendientes: facturadas sin pago o no cubiertas en su totalidad.</summary>
+        public bool HistorialPendientes
+        {
+            get => _historialPendientes;
+            set { if (SetProperty(ref _historialPendientes, value)) NotificarEstadosHistorial(); }
+        }
+
+        private HistorialCobranzaEstadosDto EstadosHistorial => new()
+        {
+            Abiertas = HistorialAbiertas,
+            AbiertasSinOrden = HistorialAbiertasSinOrden,
+            FinalizadaConOrden = HistorialFinalizadaConOrden,
+            FinalizadaSinOrden = HistorialFinalizadaSinOrden,
+            Pendientes = HistorialPendientes
+        };
+
+        /// <summary>Texto del dropdown: cuántos estados están marcados.</summary>
+        public string HistorialEstadosTexto
+        {
+            get
+            {
+                var marcados = new[] { HistorialAbiertas, HistorialAbiertasSinOrden, HistorialFinalizadaConOrden, HistorialFinalizadaSinOrden, HistorialPendientes }
+                    .Count(marcado => marcado);
+                return marcados switch
+                {
+                    5 => "Estados: todos",
+                    0 => "Estados: ninguno",
+                    _ => $"Estados: {marcados} de 5"
+                };
+            }
+        }
+
+        private void NotificarEstadosHistorial()
+        {
+            OnPropertyChanged(nameof(CanGenerarHistorial));
+            OnPropertyChanged(nameof(HistorialEstadosTexto));
+        }
+
+        /// <summary>
+        /// Solo se bloquea mientras se genera: lo que falte (cliente, fechas, estados) lo explica
+        /// el botón al presionarlo, en vez de quedarse deshabilitado sin decir por qué.
+        /// </summary>
+        public bool CanGenerarHistorial => !IsGenerandoHistorial;
+
+        public bool HistorialTieneEstadosMarcados => EstadosHistorial.AlgunoMarcado;
 
         /// <summary>
         /// Genera el historial de cobranza del cliente identificado por ReceptorRfcFiltro,
@@ -551,6 +620,7 @@ namespace Advance_Control.ViewModels
                     FechaInicioFiltro.Value,
                     FechaFinFiltro.Value,
                     dirigidoA,
+                    EstadosHistorial,
                     progreso);
 
                 HistorialResultado = resultado;

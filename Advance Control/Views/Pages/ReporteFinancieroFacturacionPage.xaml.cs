@@ -206,6 +206,20 @@ namespace Advance_Control.Views.Pages
                 return;
             }
 
+            if (ViewModel.FechaFinFiltro.Value.Date < ViewModel.FechaInicioFiltro.Value.Date)
+            {
+                ViewModel.ErrorMessage = "La Fecha Fin no puede ser anterior a la Fecha Inicio.";
+                ViewModel.SuccessMessage = null;
+                return;
+            }
+
+            if (!ViewModel.HistorialTieneEstadosMarcados)
+            {
+                ViewModel.ErrorMessage = "Marca al menos un estado en el menú \"Estados\" para generar el historial.";
+                ViewModel.SuccessMessage = null;
+                return;
+            }
+
             try
             {
                 var clientes = await _clienteService.GetClientesAsync(new ClienteQueryDto { Rfc = rfcFiltro });
