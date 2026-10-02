@@ -45,6 +45,7 @@ namespace Advance_Control.ViewModels
         private readonly IAreasService _areasService;
         private readonly Services.Facturas.IFacturaService _facturaService;
         private readonly IOperacionesReporteExportService _reporteOperacionesService;
+        private readonly IReporteEjecutivoOperacionesService _reporteEjecutivoService;
         private readonly IUserSessionService _userSessionService;
         private ObservableCollection<OperacionDto> _operaciones;
         private ObservableCollection<AreaDto> _areas;
@@ -84,7 +85,7 @@ namespace Advance_Control.ViewModels
         // más reciente de los filtros, apenas termine la que está en curso.
         private bool _reloadPending;
 
-        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService, Services.Facturas.IFacturaService facturaService, IOperacionesReporteExportService reporteOperacionesService, IUserSessionService userSessionService)
+        public OperacionesViewModel(IOperacionService operacionService, IEquipoService equipoService, IUbicacionService ubicacionService, ILoggingService logger, IQuoteService quoteService, IEntidadService entidadService, IClienteService clienteService, IActivityService activityService, ICheckOperacionService checkService, IAreasService areasService, Services.Facturas.IFacturaService facturaService, IOperacionesReporteExportService reporteOperacionesService, IReporteEjecutivoOperacionesService reporteEjecutivoService, IUserSessionService userSessionService)
         {
             _operacionService  = operacionService  ?? throw new ArgumentNullException(nameof(operacionService));
             _clienteService    = clienteService    ?? throw new ArgumentNullException(nameof(clienteService));
@@ -98,6 +99,7 @@ namespace Advance_Control.ViewModels
             _areasService      = areasService      ?? throw new ArgumentNullException(nameof(areasService));
             _facturaService    = facturaService    ?? throw new ArgumentNullException(nameof(facturaService));
             _reporteOperacionesService = reporteOperacionesService ?? throw new ArgumentNullException(nameof(reporteOperacionesService));
+            _reporteEjecutivoService = reporteEjecutivoService ?? throw new ArgumentNullException(nameof(reporteEjecutivoService));
             _userSessionService = userSessionService ?? throw new ArgumentNullException(nameof(userSessionService));
             _operaciones         = new ObservableCollection<OperacionDto>();
             _areas               = new ObservableCollection<AreaDto>();
@@ -660,6 +662,28 @@ namespace Advance_Control.ViewModels
         /// </summary>
         public async Task<string> GenerarReporteOperacionesAsync(CancellationToken cancellationToken = default)
         {
+            var todas = await ObtenerOperacionesFiltradasAsync(cancellationToken);
+            return await _reporteOperacionesService.GenerarReporteOperacionesPdfAsync(todas, ConstruirFiltrosReporte());
+        }
+
+        /// <summary>
+        /// Genera el "Reporte Ejecutivo de Operaciones" del conjunto filtrado: qué se realizó en cada
+        /// operación (hojas de servicio, cargos sin precios, fotos, levantamientos, preventivos).
+        /// Devuelve la ruta del PDF.
+        /// </summary>
+        public async Task<string> GenerarReporteEjecutivoAsync(IProgress<string>? progreso = null, CancellationToken cancellationToken = default)
+        {
+            progreso?.Report("Consultando operaciones…");
+            var todas = await ObtenerOperacionesFiltradasAsync(cancellationToken);
+            return await _reporteEjecutivoService.GenerarAsync(todas, ConstruirFiltrosReporte(), progreso, cancellationToken);
+        }
+
+        /// <summary>
+        /// TODO el conjunto que cumple los filtros actuales (no solo la página en pantalla), con
+        /// checks y estado de facturación, para los reportes.
+        /// </summary>
+        private async Task<List<OperacionDto>> ObtenerOperacionesFiltradasAsync(CancellationToken cancellationToken)
+        {
             var query = new OperacionQueryDto
             {
                 IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
@@ -693,7 +717,13 @@ namespace Advance_Control.ViewModels
 
             await AplicarEstadoFacturacionAsync(todas, cancellationToken);
 
-            var filtros = new OperacionesReporteFiltrosDto
+            return todas;
+        }
+
+        /// <summary>Snapshot de los filtros activos para imprimirlos en los reportes.</summary>
+        private OperacionesReporteFiltrosDto ConstruirFiltrosReporte()
+        {
+            return new OperacionesReporteFiltrosDto
             {
                 IdOperacionFiltro = IdOperacionFilter,
                 TipoFiltro = IdTipoFilter switch { 1 => "Correctivo", 2 => "Preventivo", _ => "Todos" },
@@ -709,8 +739,6 @@ namespace Advance_Control.ViewModels
                 MostrarAbiertasConOc = MostrarAbiertasConOc,
                 GeneradoPor = _userSessionService.NombreCompleto
             };
-
-            return await _reporteOperacionesService.GenerarReporteOperacionesPdfAsync(todas, filtros);
         }
 
         public async Task<OperacionVisorAccessDto?> GetOperacionVisorAsync(int idOperacion, long? mensajeReferenciaId = null, CancellationToken cancellationToken = default)

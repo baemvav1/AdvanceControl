@@ -47,6 +47,11 @@
                 Click="ReporteGeneral_Click"
                 Content="Generar Reporte"
                 ToolTipService.ToolTip="Genera un PDF con todas las operaciones que cumplen los filtros actuales y qué checks tiene marcados cada una" />
+            <Button
+                x:Name="ReporteEjecutivoButton"
+                Click="ReporteEjecutivo_Click"
+                Content="Reporte ejecutivo"
+                ToolTipService.ToolTip="Genera un PDF con lo realizado en cada operación de los filtros actuales (p. ej. un mes con Fecha inicio / Fecha cierre): hojas de servicio, trabajos realizados sin precios, fotos, levantamientos y preventivos." />
         </StackPanel>
 
         <!--  Filtros  -->

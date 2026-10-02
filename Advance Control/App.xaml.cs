@@ -693,6 +693,7 @@ namespace Advance_Control
                     services.AddSingleton<Services.Facturas.IComplementoPagoPdfService, Services.Facturas.ComplementoPagoPdfService>();
                     services.AddSingleton<Services.Reportes.IReporteFinancieroFacturacionExportService, Services.Reportes.ReporteFinancieroFacturacionExportService>();
                     services.AddSingleton<Services.Reportes.IOperacionesReporteExportService, Services.Reportes.OperacionesReporteExportService>();
+                    services.AddSingleton<Services.Reportes.IReporteEjecutivoOperacionesService, Services.Reportes.ReporteEjecutivoOperacionesService>();
                     services.AddSingleton<Services.Reportes.IHistorialCobranzaService, Services.Reportes.HistorialCobranzaService>();
 
                     // Registrar GoogleMapsConfigService y su HttpClient pipeline con autenticación

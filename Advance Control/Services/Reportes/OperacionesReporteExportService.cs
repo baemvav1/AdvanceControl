@@ -184,7 +184,7 @@ namespace Advance_Control.Services.Reportes
             return Task.FromResult(rutaArchivo);
         }
 
-        private static string TextoEstado(OperacionDto op)
+        internal static string TextoEstado(OperacionDto op)
         {
             if (op.EstaFacturada)
                 return op.EstaPagada ? "Facturada (pagada)" : "Facturada (pend. pago)";
@@ -193,13 +193,13 @@ namespace Advance_Control.Services.Reportes
             return op.IsFinalized ? "Finalizada" : "Abierta";
         }
 
-        private static string ObtenerCarpetaReportes()
+        internal static string ObtenerCarpetaReportes()
         {
             var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             return Path.Combine(documentos, "Advance Control", "ReportesOperaciones");
         }
 
-        private static string ObtenerCarpetaCabeceras()
+        internal static string ObtenerCarpetaCabeceras()
         {
             return Path.Combine(AppContext.BaseDirectory, "Assets", "Cabeceras");
         }
@@ -214,12 +214,12 @@ namespace Advance_Control.Services.Reportes
             return $"ReporteOperaciones_{LimpiarNombreArchivo(etiqueta!)}_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
         }
 
-        private static string LimpiarNombreArchivo(string valor)
+        internal static string LimpiarNombreArchivo(string valor)
         {
             return string.Concat(valor.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
         }
 
-        private static List<string> ConstruirResumenFiltros(OperacionesReporteFiltrosDto filtros)
+        internal static List<string> ConstruirResumenFiltros(OperacionesReporteFiltrosDto filtros)
         {
             return new List<string>
             {
@@ -235,7 +235,7 @@ namespace Advance_Control.Services.Reportes
             };
         }
 
-        private static IContainer EstiloCeldaEncabezado(IContainer container)
+        internal static IContainer EstiloCeldaEncabezado(IContainer container)
         {
             return container
                 .Border(1)
@@ -246,7 +246,7 @@ namespace Advance_Control.Services.Reportes
                 .DefaultTextStyle(x => x.FontSize(8).SemiBold().FontColor(Colors.White));
         }
 
-        private static IContainer EstiloCeldaDatos(IContainer container)
+        internal static IContainer EstiloCeldaDatos(IContainer container)
         {
             return container
                 .Border(1)

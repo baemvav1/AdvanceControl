@@ -123,6 +123,38 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void ReporteEjecutivo_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button boton) return;
+
+            var contenidoOriginal = boton.Content;
+            // Progress<T> captura el hilo de UI: los reportes del servicio actualizan el botón seguro.
+            var progreso = new Progress<string>(mensaje => boton.Content = mensaje);
+
+            try
+            {
+                boton.IsEnabled = false;
+                var rutaArchivo = await ViewModel.GenerarReporteEjecutivoAsync(progreso);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _notificacionService.MostrarAsync("Sin operaciones", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await _notificacionService.MostrarAsync("Error al generar reporte ejecutivo", $"No se pudo generar el reporte: {ex.Message}");
+            }
+            finally
+            {
+                boton.Content = contenidoOriginal;
+                boton.IsEnabled = true;
+            }
+        }
+
         // --- Handlers AutoSuggestBox Cliente ---
         private void ClienteASB_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {

@@ -2,6 +2,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.LocalStorage;
 using Advance_Control.Services.Logging;
 using Advance_Control.Services.Notificacion;
+using Advance_Control.Services.Reportes;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
@@ -27,8 +28,6 @@ namespace Advance_Control.Services.Quotes
         private const double IVA_RATE = 0.16;
 
         // Constantes de layout para imágenes adaptativas (página Letter con 2cm margen)
-        private const float CONTENT_WIDTH_CM = 15.59f;   // 21.59 - 2*2 - 2*1 (padding horizontal 1cm)
-        private const float MAX_PAGE_HEIGHT_CM = 21f;    // 27.94 - 4(márgenes) - 2(padding contenido) - margen seguridad
 
         private readonly ILoggingService _logger;
         private readonly IOperacionImageService _operacionImageService;
@@ -727,10 +726,10 @@ namespace Advance_Control.Services.Quotes
                 }
 
                 // Expandir rutas: imágenes directamente, PDFs convertidos a PNGs temporales
-                var prefacturasPaths = await ExpandDocumentPathsAsync(prefacturas, tempImageFiles);
-                var hojasPaths       = await ExpandDocumentPathsAsync(hojasServicio, tempImageFiles);
-                var ordenesPaths     = await ExpandDocumentPathsAsync(ordenesCompra, tempImageFiles);
-                var levantamientosPaths = await ExpandDocumentPathsAsync(levantamientos, tempImageFiles);
+                var prefacturasPaths = await PdfDocumentosHelper.ExpandirDocumentosAsync(prefacturas, tempImageFiles);
+                var hojasPaths       = await PdfDocumentosHelper.ExpandirDocumentosAsync(hojasServicio, tempImageFiles);
+                var ordenesPaths     = await PdfDocumentosHelper.ExpandirDocumentosAsync(ordenesCompra, tempImageFiles);
+                var levantamientosPaths = await PdfDocumentosHelper.ExpandirDocumentosAsync(levantamientos, tempImageFiles);
 
                 // Filtrar rutas de imágenes de cargos (validadas fuera del lambda)
                 var cargosConImagenes = cargosList.Select(cargo => new
@@ -851,7 +850,7 @@ namespace Advance_Control.Services.Quotes
                                         .Background(Colors.Blue.Lighten4).Padding(6)
                                         .Text("Prefacturas").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
                                     foreach (var path in prefacturasPaths)
-                                        AddAdaptiveImage(column.Item(), path);
+                                        PdfDocumentosHelper.AgregarImagenAdaptativa(column.Item(), path);
                                     column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
@@ -862,7 +861,7 @@ namespace Advance_Control.Services.Quotes
                                         .Background(Colors.Blue.Lighten4).Padding(6)
                                         .Text("Hojas de Servicio").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
                                     foreach (var path in hojasPaths)
-                                        AddAdaptiveImage(column.Item(), path);
+                                        PdfDocumentosHelper.AgregarImagenAdaptativa(column.Item(), path);
                                     column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
@@ -873,7 +872,7 @@ namespace Advance_Control.Services.Quotes
                                         .Background(Colors.Blue.Lighten4).Padding(6)
                                         .Text("Levantamientos").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
                                     foreach (var path in levantamientosPaths)
-                                        AddAdaptiveImage(column.Item(), path);
+                                        PdfDocumentosHelper.AgregarImagenAdaptativa(column.Item(), path);
                                     column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
@@ -884,7 +883,7 @@ namespace Advance_Control.Services.Quotes
                                         .Background(Colors.Blue.Lighten4).Padding(6)
                                         .Text("Órdenes de Compra").Bold().FontSize(13).FontColor(Colors.Blue.Darken3);
                                     foreach (var path in ordenesPaths)
-                                        AddAdaptiveImage(column.Item(), path);
+                                        PdfDocumentosHelper.AgregarImagenAdaptativa(column.Item(), path);
                                     column.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten2);
                                 }
 
@@ -1022,107 +1021,6 @@ namespace Advance_Control.Services.Quotes
                 foreach (var tmp in tempImageFiles)
                     try { File.Delete(tmp); } catch { }
             }
-        }
-
-        /// <summary>
-        /// Expande las rutas de documentos: imágenes directamente, PDFs convertidos a PNGs temporales (una imagen por página).
-        /// </summary>
-        /// <summary>
-        /// Agrega una imagen adaptativa al contenedor: si cabe en ancho completo dentro de la página,
-        /// usa FitWidth; si es muy alta, limita la altura y ajusta el ancho proporcionalmente.
-        /// Siempre usa ShowEntire para evitar que se divida entre páginas.
-        /// </summary>
-        private static void AddAdaptiveImage(IContainer container, string imagePath)
-        {
-            try
-            {
-                using var stream = File.OpenRead(imagePath);
-                using var codec = SkiaSharp.SKCodec.Create(stream);
-                if (codec == null)
-                {
-                    // Sin dimensiones: ancho completo como fallback
-                    container.ShowEntire().PaddingTop(4).PaddingHorizontal(1, Unit.Centimetre)
-                        .Image(imagePath).FitWidth();
-                    return;
-                }
-
-                var info = codec.Info;
-                float imgW = info.Width;
-                float imgH = info.Height;
-
-                // Altura resultante si se fuerza al ancho disponible
-                float alturaResultanteCm = (imgH / imgW) * CONTENT_WIDTH_CM;
-
-                if (alturaResultanteCm <= MAX_PAGE_HEIGHT_CM)
-                {
-                    // Cabe en la página: forzar ancho completo
-                    container.ShowEntire().PaddingTop(4).PaddingHorizontal(1, Unit.Centimetre)
-                        .Image(imagePath).FitWidth();
-                }
-                else
-                {
-                    // Muy alta: calcular el ancho que hace que la altura sea exactamente MAX_PAGE_HEIGHT_CM
-                    float anchoAjustadoCm = (imgW / imgH) * MAX_PAGE_HEIGHT_CM;
-                    container.ShowEntire().PaddingTop(4).AlignCenter()
-                        .Width(anchoAjustadoCm, Unit.Centimetre)
-                        .Image(imagePath).FitWidth();
-                }
-            }
-            catch
-            {
-                // Fallback seguro: ancho completo
-                container.ShowEntire().PaddingTop(4).PaddingHorizontal(1, Unit.Centimetre)
-                    .Image(imagePath).FitWidth();
-            }
-        }
-
-        private static async Task<List<string>> ExpandDocumentPathsAsync(
-            List<OperacionImageDto> docs, List<string> tempFiles)
-        {
-            var result = new List<string>();
-            foreach (var dto in docs.Where(x => !string.IsNullOrWhiteSpace(x.Url) && File.Exists(x.Url)))
-            {
-                if (dto.IsPdf)
-                {
-                    var pages = await ConvertPdfPagesToImagesAsync(dto.Url!);
-                    result.AddRange(pages);
-                    tempFiles.AddRange(pages);
-                }
-                else
-                {
-                    result.Add(dto.Url!);
-                }
-            }
-            return result;
-        }
-
-        /// <summary>
-        /// Renderiza cada página de un PDF a un PNG temporal usando Windows.Data.Pdf (API nativa Windows, sin dependencias extra).
-        /// </summary>
-        private static async Task<List<string>> ConvertPdfPagesToImagesAsync(string pdfPath)
-        {
-            var tempFiles = new List<string>();
-            try
-            {
-                var file    = await Windows.Storage.StorageFile.GetFileFromPathAsync(pdfPath);
-                var pdfDoc  = await Windows.Data.Pdf.PdfDocument.LoadFromFileAsync(file);
-                var tempFolder = Path.GetTempPath();
-                var baseName   = Path.GetFileNameWithoutExtension(pdfPath);
-
-                for (uint i = 0; i < pdfDoc.PageCount; i++)
-                {
-                    using var page     = pdfDoc.GetPage(i);
-                    var tempPath       = Path.Combine(tempFolder, $"__acreporte_{baseName}_p{i}.png");
-                    using var memStream = new InMemoryRandomAccessStream();
-                    await page.RenderToStreamAsync(memStream);
-                    memStream.Seek(0);
-                    using var fileStream = File.Create(tempPath);
-                    await memStream.AsStreamForRead().CopyToAsync(fileStream);
-                    tempFiles.Add(tempPath);
-                }
-            }
-            catch { /* Si falla la conversión del PDF, se omite sin romper el reporte */ }
-            return tempFiles;
         }
     }
 }
