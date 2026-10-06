@@ -933,6 +933,8 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <TextBlock
                     x:Name="EstadoFinalizarTextBlock"
@@ -942,10 +944,23 @@
                     FontStyle="Italic"
                     Foreground="{ThemeResource TextFillColorTertiaryBrush}"
                     Text="Los checklists y observaciones no se guardan hasta presionar Finalizar." />
-                <Button Grid.Column="1" Click="CerrarButton_Click" Content="Cerrar" />
+                <Button
+                    x:Name="AprobarHojaButton"
+                    Grid.Column="1"
+                    Click="AprobarHojaButton_Click"
+                    Content="Registrar aprobación"
+                    IsEnabled="False"
+                    ToolTipService.ToolTip="El cliente aprobó por teléfono o en papel: queda registrado a tu nombre" />
+                <Button
+                    x:Name="ReenviarHojaButton"
+                    Grid.Column="2"
+                    Click="ReenviarHojaButton_Click"
+                    Content="Reenviar notificación"
+                    IsEnabled="False" />
+                <Button Grid.Column="3" Click="CerrarButton_Click" Content="Cerrar" />
                 <Button
                     x:Name="FinalizarButton"
-                    Grid.Column="2"
+                    Grid.Column="4"
                     Click="FinalizarButton_Click"
                     Content="Finalizar"
                     Style="{StaticResource AccentButtonStyle}" />

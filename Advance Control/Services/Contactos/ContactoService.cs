@@ -266,38 +266,6 @@ namespace Advance_Control.Services.Contactos
         }
 
         /// <summary>
-        /// Lista las empresas (Cliente) vinculadas a un contacto
-        /// </summary>
-        public async Task<List<ClientePortalSeleccionDto>> ObtenerClientesVinculadosAsync(long contactoId, CancellationToken cancellationToken = default)
-        {
-            try
-            {
-                var url = $"{_endpoints.GetEndpoint("api", "Contacto")}/{contactoId}/clientes-vinculados";
-
-                var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                    await _logger.LogErrorAsync(
-                        $"Error al obtener clientes vinculados. Status: {response.StatusCode}, Content: {errorContent}",
-                        null,
-                        "ContactoService",
-                        "ObtenerClientesVinculadosAsync");
-                    return new List<ClientePortalSeleccionDto>();
-                }
-
-                var clientes = await response.Content.ReadFromJsonAsync<List<ClientePortalSeleccionDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
-                return clientes ?? new List<ClientePortalSeleccionDto>();
-            }
-            catch (HttpRequestException ex)
-            {
-                await _logger.LogErrorAsync("Error de red al obtener clientes vinculados", ex, "ContactoService", "ObtenerClientesVinculadosAsync");
-                throw new InvalidOperationException("Error de comunicación con el servidor al obtener clientes vinculados", ex);
-            }
-        }
-
-        /// <summary>
         /// Vincula un contacto a una empresa (Cliente)
         /// </summary>
         public async Task<ContactoOperationResponse> VincularClienteAsync(long contactoId, int idCliente, CancellationToken cancellationToken = default)

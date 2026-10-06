@@ -114,6 +114,7 @@ namespace Advance_Control.Models
                     OnPropertyChanged(nameof(CanMutateOperation));
                     OnPropertyChanged(nameof(CanReopenOperation));
                     OnPropertyChanged(nameof(StatusText));
+                    OnPropertyChanged(nameof(CanEditCargos));
                 }
 
             }
@@ -147,6 +148,7 @@ namespace Advance_Control.Models
                 OnPropertyChanged(nameof(CanMutateOperation));
                 OnPropertyChanged(nameof(CanReopenOperation));
                 OnPropertyChanged(nameof(AccessBadgeVisibility));
+                OnPropertyChanged(nameof(CanEditCargos));
             }
         }
 
@@ -155,6 +157,31 @@ namespace Advance_Control.Models
 
         [JsonIgnore]
         public bool CanReopenOperation => !IsSharedReadOnly && FechaFinal != null;
+
+        private bool _cotFinalizada;
+
+        /// <summary>
+        /// Cotización cerrada ("Cerrar / Reabrir cotización"): no se editan cargos y la operación
+        /// se ve en el Portal de Clientes. Se carga aparte (api/Operaciones/{id}/aprobacion).
+        /// </summary>
+        [JsonIgnore]
+        public bool CotFinalizada
+        {
+            get => _cotFinalizada;
+            set
+            {
+                if (_cotFinalizada == value)
+                    return;
+
+                _cotFinalizada = value;
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(CanEditCargos));
+            }
+        }
+
+        /// <summary>Agregar, editar o eliminar cargos: operación abierta y cotización sin cerrar.</summary>
+        [JsonIgnore]
+        public bool CanEditCargos => CanMutateOperation && !CotFinalizada;
 
         [JsonIgnore]
         public Visibility AccessBadgeVisibility => IsSharedReadOnly ? Visibility.Visible : Visibility.Collapsed;

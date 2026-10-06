@@ -209,6 +209,11 @@ namespace Advance_Control.Views.Pages
                     await LoadContactosForClienteAsync(customer);
                 }
 
+                if (customer.Expand && !customer.LoginsLoaded)
+                {
+                    await LoadLoginsForClienteAsync(customer);
+                }
+
                 // Load suscripcion when expanding if not already loaded
                 if (customer.Expand && !customer.SuscripcionCargada)
                 {

@@ -64,6 +64,17 @@ namespace Advance_Control.Models
         [JsonPropertyName("credencialId")]
         public int? CredencialId { get; set; }
 
+        /// <summary>"interno" o "portal" (la pidió el cliente desde el Portal de Clientes).</summary>
+        [JsonPropertyName("origen")]
+        public string? Origen { get; set; }
+
+        [JsonPropertyName("creadoEn")]
+        public System.DateTime? CreadoEn { get; set; }
+
+        [JsonIgnore]
+        public Microsoft.UI.Xaml.Visibility OrigenPortalVisibility =>
+            Origen == "portal" ? Microsoft.UI.Xaml.Visibility.Visible : Microsoft.UI.Xaml.Visibility.Collapsed;
+
         private bool _expand = false;
 
         /// <summary>

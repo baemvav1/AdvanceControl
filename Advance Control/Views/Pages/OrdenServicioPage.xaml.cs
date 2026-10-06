@@ -230,11 +230,15 @@ namespace Advance_Control.Views.Pages
                     return;
                 }
 
+                var dirigido = await ElegirDirigidoAsync(orden);
+                if (dirigido == null)
+                    return;
+
                 var tipoMantenimiento = orden.TipoMantenimiento ?? "sin tipo especificado";
                 var dialog = new ContentDialog
                 {
                     Title = "Confirmar atención",
-                    Content = $"¿Está seguro de que desea marcar como atendida la orden de servicio #{orden.IdOrdenServicio} ({tipoMantenimiento})?",
+                    Content = $"¿Está seguro de que desea marcar como atendida la orden de servicio #{orden.IdOrdenServicio} ({tipoMantenimiento}), dirigida a {dirigido.NombreCompleto}?",
                     PrimaryButtonText = "Atender",
                     CloseButtonText = "Cancelar",
                     DefaultButton = ContentDialogButton.Primary,
@@ -249,6 +253,7 @@ namespace Advance_Control.Views.Pages
 
                     if (success)
                     {
+                        await AsignarDirigidoAsync(orden.IdOrdenServicio.Value, dirigido);
                         _activityService.Registrar("OrdenServicio", "Orden de servicio atendida");
                         await _notificacionService.MostrarAsync("Orden de servicio atendida", "La orden de servicio se ha marcado como atendida correctamente.");
                     }
@@ -358,11 +363,15 @@ namespace Advance_Control.Views.Pages
                 if (result == ContentDialogResult.Primary && tecnicoListView.SelectedItem is ListViewItem selectedItem
                     && selectedItem.Tag is TecnicoDisponibleDto selectedTecnico)
                 {
+                    var dirigido = await ElegirDirigidoAsync(orden);
+                    if (dirigido == null)
+                        return;
+
                     var tipoMantenimiento = orden.TipoMantenimiento ?? "sin tipo especificado";
                     var confirmDialog = new ContentDialog
                     {
                         Title = "Confirmar atención",
-                        Content = $"¿Está seguro de que desea marcar como atendida la orden de servicio #{orden.IdOrdenServicio} ({tipoMantenimiento}) por \"{selectedTecnico.NombreCompleto}\"?",
+                        Content = $"¿Está seguro de que desea marcar como atendida la orden de servicio #{orden.IdOrdenServicio} ({tipoMantenimiento}) por \"{selectedTecnico.NombreCompleto}\", dirigida a {dirigido.NombreCompleto}?",
                         PrimaryButtonText = "Atender",
                         CloseButtonText = "Cancelar",
                         DefaultButton = ContentDialogButton.Primary,
@@ -380,6 +389,7 @@ namespace Advance_Control.Views.Pages
 
                         if (success)
                         {
+                            await AsignarDirigidoAsync(orden.IdOrdenServicio.Value, dirigido);
                             _activityService.Registrar("OrdenServicio", "Atendida como técnico");
                             await _notificacionService.MostrarAsync("Orden de servicio atendida", $"La orden de servicio se ha marcado como atendida por {selectedTecnico.NombreCompleto}.");
                         }
@@ -394,6 +404,35 @@ namespace Advance_Control.Views.Pages
             {
                 System.Diagnostics.Debug.WriteLine($"Error al atender orden de servicio como técnico: {ex.GetType().Name} - {ex.Message}");
                 await _notificacionService.MostrarAsync("Error", "Ocurrió un error al atender la orden de servicio. Por favor, intente nuevamente.");
+            }
+        }
+
+        /// <summary>Antes de atender: el contacto dirigido de la operación que se va a crear (obligatorio).</summary>
+        private async System.Threading.Tasks.Task<ContactoDto?> ElegirDirigidoAsync(Models.OrdenServicioDto orden)
+        {
+            try
+            {
+                var idCliente = await AppServices.Get<Services.Aprobaciones.IAprobacionService>().ObtenerClienteDeOrdenAsync(orden.IdOrdenServicio!.Value);
+                return await SeleccionarDirigidoDialog.ElegirAsync(XamlRoot, idCliente, "¿A quién va dirigida la operación?");
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _notificacionService.MostrarAsync("Contacto dirigido", ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>Después de atender: guarda el dirigido en la operación creada. Si falla, se pedirá al cerrar la cotización.</summary>
+        private async System.Threading.Tasks.Task AsignarDirigidoAsync(int idOrdenServicio, ContactoDto dirigido)
+        {
+            try
+            {
+                await AppServices.Get<Services.Aprobaciones.IAprobacionService>().SetDirigidoDeOrdenAsync(idOrdenServicio, dirigido.ContactoId);
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _notificacionService.MostrarAsync("Contacto dirigido",
+                    $"La orden se atendió, pero no se pudo guardar a quién va dirigida ({ex.Message}). Se te pedirá al cerrar la cotización.");
             }
         }
     }

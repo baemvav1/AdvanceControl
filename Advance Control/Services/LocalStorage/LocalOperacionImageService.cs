@@ -67,6 +67,9 @@ namespace Advance_Control.Services.LocalStorage
         /// Sube una imagen de orden de compra para una operación específica.
         /// El archivo se guarda con el formato: {idOperacion}_{numeroImagen}_OrdenCompra
         /// </summary>
+        public Task<OperacionImageDto> UploadOrdenCompraConMontoAsync(int idOperacion, Stream imageStream, string contentType, decimal subtotal, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException("La orden de compra con monto solo se puede cargar al servidor.");
+
         public async Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default)
         {
             return await UploadImageAsync(idOperacion, imageStream, contentType, "OrdenCompra", cancellationToken);

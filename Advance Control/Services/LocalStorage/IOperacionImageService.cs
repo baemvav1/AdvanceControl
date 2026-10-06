@@ -43,6 +43,13 @@ namespace Advance_Control.Services.LocalStorage
         Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Orden de compra con el subtotal (antes de IVA) que cubre: debe coincidir al centavo con la
+        /// cotización vigente y, si está pendiente, la aprueba. Lanza InvalidOperationException con el
+        /// mensaje de la API si no procede.
+        /// </summary>
+        Task<OperacionImageDto> UploadOrdenCompraConMontoAsync(int idOperacion, Stream imageStream, string contentType, decimal subtotal, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Sube una imagen/PDF de levantamiento para una operación específica
         /// </summary>
         Task<OperacionImageDto?> UploadLevantamientoAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken cancellationToken = default);

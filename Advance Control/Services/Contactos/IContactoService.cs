@@ -42,11 +42,6 @@ namespace Advance_Control.Services.Contactos
         /// <returns>Resultado de la operación</returns>
         Task<ContactoOperationResponse> DeleteContactoAsync(long contactoId, CancellationToken cancellationToken = default);
 
-        /// <summary>
-        /// Lista las empresas (Cliente) vinculadas a un contacto (universo,
-        /// no solo las visibles en el portal).
-        /// </summary>
-        Task<List<ClientePortalSeleccionDto>> ObtenerClientesVinculadosAsync(long contactoId, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Vincula un contacto a una empresa (Cliente). No lo desvincula de

@@ -87,10 +87,25 @@
 
                                         <!--  Información principal de la orden de servicio  -->
                                         <StackPanel Grid.Column="0" Spacing="6">
-                                            <TextBlock
-                                                FontSize="16"
-                                                FontWeight="SemiBold"
-                                                Text="{x:Bind TipoMantenimiento}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <TextBlock
+                                                    FontSize="16"
+                                                    FontWeight="SemiBold"
+                                                    Text="{x:Bind TipoMantenimiento}" />
+                                                <Border
+                                                    Padding="6,1"
+                                                    VerticalAlignment="Center"
+                                                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                                    CornerRadius="4"
+                                                    ToolTipService.ToolTip="Solicitada por el cliente desde el Portal de Clientes"
+                                                    Visibility="{x:Bind OrigenPortalVisibility}">
+                                                    <TextBlock
+                                                        FontSize="11"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                                        Text="Portal" />
+                                                </Border>
+                                            </StackPanel>
                                             <TextBlock
                                                 FontSize="14"
                                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"

@@ -104,6 +104,30 @@
                         <TextBlock Text="Compartir" />
                     </StackPanel>
                 </Button>
+                <!--  Aprobación del cliente: contacto dirigido y estado de la cotización  -->
+                <DropDownButton x:Name="AprobacionButton" ToolTipService.ToolTip="Contacto dirigido y aprobación del cliente">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="14" Glyph="&#xE77B;" />
+                        <TextBlock x:Name="DirigidoText" Text="Sin contacto dirigido" />
+                    </StackPanel>
+                    <DropDownButton.Flyout>
+                        <MenuFlyout Placement="Bottom">
+                            <MenuFlyoutItem x:Name="CambiarDirigidoItem" Click="CambiarDirigidoItem_Click" Text="Cambiar contacto dirigido">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8FA;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="AprobarCotizacionItem" Click="AprobarCotizacionItem_Click" Text="Registrar aprobación del cliente">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE73E;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem x:Name="ReenviarCotizacionItem" Click="ReenviarCotizacionItem_Click" Text="Reenviar notificación al cliente">
+                                <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE724;" /></MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </DropDownButton.Flyout>
+                </DropDownButton>
+                <StackPanel VerticalAlignment="Center" Spacing="0">
+                    <TextBlock x:Name="CotizacionEstadoText" FontSize="12" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" MaxWidth="460" />
+                    <TextBlock x:Name="CotizacionNotificacionText" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
             </StackPanel>
         </Grid>
 
@@ -499,13 +523,13 @@
                                                 <TextBlock Text="Imagen" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Click="EditSelectedCargoButton_Click" IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}" ToolTipService.ToolTip="Editar cargo seleccionado">
+                                        <Button Click="EditSelectedCargoButton_Click" IsEnabled="{x:Bind Operacion.CanEditCargos, Mode=OneWay}" ToolTipService.ToolTip="Editar cargo seleccionado">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Edit" />
                                                 <TextBlock Text="Editar" />
                                             </StackPanel>
                                         </Button>
-                                        <Button Click="DeleteSelectedCargosButton_Click" IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}" ToolTipService.ToolTip="Eliminar cargos seleccionados">
+                                        <Button Click="DeleteSelectedCargosButton_Click" IsEnabled="{x:Bind Operacion.CanEditCargos, Mode=OneWay}" ToolTipService.ToolTip="Eliminar cargos seleccionados">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Delete" />
                                                 <TextBlock Text="Eliminar" />
@@ -542,10 +566,21 @@
                                             Background="{ThemeResource AccentFillColorDefaultBrush}"
                                             Click="AddCargoButton_Click"
                                             Foreground="{ThemeResource FocusVisualBlackStrokeThemeBrush}"
-                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}">
+                                            IsEnabled="{x:Bind Operacion.CanEditCargos, Mode=OneWay}">
                                             <StackPanel Orientation="Horizontal" Spacing="4">
                                                 <SymbolIcon Symbol="Add" />
                                                 <TextBlock Text="Agregar Cargo" />
+                                            </StackPanel>
+                                        </Button>
+                                        <!--  Cerrar / Reabrir cotización (no cierra la operación)  -->
+                                        <Button
+                                            x:Name="CotizacionToggleButton"
+                                            Click="CotizacionToggleButton_Click"
+                                            IsEnabled="{x:Bind Operacion.CanMutateOperation, Mode=OneWay}"
+                                            ToolTipService.ToolTip="Cerrada: no se editan cargos y el cliente la ve en el portal para aprobarla">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <FontIcon x:Name="CotizacionToggleIcon" FontSize="14" Glyph="&#xE72E;" />
+                                                <TextBlock x:Name="CotizacionToggleText" Text="Cerrar cotización" />
                                             </StackPanel>
                                         </Button>
                                         <!--  Botón Finalizar / Deshacer Finalización (toggle)  -->

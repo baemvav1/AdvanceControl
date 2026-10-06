@@ -230,11 +230,14 @@ namespace Advance_Control.Views.Formularios
             {
                 "Firmada" => "Esta hoja ya fue firmada por el cliente y no puede modificarse.",
                 "Completada" => "Esta hoja ya fue completada. Puedes volver a generarla si es necesario.",
+                "Rechazada" => $"El cliente rechazó esta hoja el {hoja.RechazadaEn?.ToLocalTime():dd/MM/yyyy HH:mm}: \"{hoja.RechazoMotivo}\". Corrígela y vuelve a completarla para que la apruebe.",
                 _ => "Se recuperó un borrador guardado previamente."
             };
 
             if (hoja.Estado == "Firmada")
                 FinalizarButton.IsEnabled = false;
+
+            await RefreshHojaAprobacionAsync();
         }
 
         /// <summary>"NoAplica"/"Verificacion"/"Ajuste"/"Limpieza"/"Lubricacion"/"Recorrido", o null si no está marcado.</summary>
@@ -498,6 +501,9 @@ namespace Advance_Control.Views.Formularios
                     return;
             }
 
+            // Si el cliente la había rechazado, el correo le avisa que ya se corrigió.
+            var eraRechazada = _hojaActual?.Estado == "Rechazada";
+
             FinalizarButton.IsEnabled = false;
             EstadoFinalizarTextBlock.Text = "Guardando avance...";
             try
@@ -532,14 +538,14 @@ namespace Advance_Control.Views.Formularios
                 EstadoFinalizarTextBlock.Text = subido != null
                     ? "PDF generado y guardado en el servidor."
                     : "PDF generado localmente; no se pudo subir al servidor.";
+                await RefreshHojaAprobacionAsync();
 
                 var visor = new CotizacionVisorDialog(rutaParaVisor, _contactoCliente, contactosCliente, _operacion.RazonSocial ?? string.Empty, this.Content.XamlRoot, tipo: "Mantenimiento Preventivo");
                 visor.NotificarResultado(await visor.ShowAsync());
 
                 if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
                 {
-                    var email = new EnviarCotizacionDialog(rutaParaVisor, _contactoCliente, contactosCliente, _operacion.RazonSocial ?? string.Empty, this.Content.XamlRoot, tipo: "Mantenimiento Preventivo", idOperacion: _operacion.IdOperacion);
-                    await email.ShowAsync();
+                    await NotificarHojaAsync(rutaParaVisor, eraRechazada);
                 }
                 else if (visor.Resultado == CotizacionVisorResultado.AbrirExterno)
                 {

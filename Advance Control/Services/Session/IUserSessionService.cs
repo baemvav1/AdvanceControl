@@ -37,12 +37,6 @@ namespace Advance_Control.Services.Session
         bool IsLoaded { get; }
 
         /// <summary>
-        /// true si este login es de un "usuario cliente" (Nivel/TipoUsuario = 10,
-        /// "Cliente") y debe ver el Portal de Cliente en vez del MainWindow normal.
-        /// </summary>
-        bool EsUsuarioCliente { get; }
-
-        /// <summary>
         /// Carga la información del usuario desde el API.
         /// Debe llamarse una sola vez después del login exitoso o de restaurar la sesión.
         /// </summary>

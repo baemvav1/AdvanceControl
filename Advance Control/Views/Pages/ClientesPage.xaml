@@ -474,6 +474,123 @@
                                                 </StackPanel>
                                             </PivotItem>
 
+                                            <!--  Logins del Portal de Clientes  -->
+                                            <PivotItem Header="Logins">
+                                                <StackPanel Padding="8" Spacing="6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock
+                                                            VerticalAlignment="Center"
+                                                            FontSize="14"
+                                                            FontWeight="SemiBold"
+                                                            Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="Accesos al Portal de Clientes" />
+                                                        <Button
+                                                            Click="NuevoLogin_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Crear un login para un contacto de este cliente">
+                                                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                                                <SymbolIcon Symbol="Add" />
+                                                                <TextBlock Text="Crear nuevo" />
+                                                            </StackPanel>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <ProgressRing
+                                                        Width="20"
+                                                        Height="20"
+                                                        HorizontalAlignment="Left"
+                                                        IsActive="{x:Bind IsLoadingLogins, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingLogins, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <ItemsRepeater ItemsSource="{x:Bind Logins, Mode=OneWay}">
+                                                        <ItemsRepeater.Layout>
+                                                            <StackLayout Spacing="4" />
+                                                        </ItemsRepeater.Layout>
+                                                        <ItemsRepeater.ItemTemplate>
+                                                            <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:ClienteLoginDto">
+                                                                <Border
+                                                                    Padding="12"
+                                                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                    BorderThickness="1"
+                                                                    CornerRadius="4">
+                                                                    <Grid>
+                                                                        <Grid.ColumnDefinitions>
+                                                                            <ColumnDefinition Width="*" />
+                                                                            <ColumnDefinition Width="Auto" />
+                                                                        </Grid.ColumnDefinitions>
+                                                                        <StackPanel Grid.Column="0" Spacing="2">
+                                                                            <TextBlock
+                                                                                FontSize="13"
+                                                                                FontWeight="SemiBold"
+                                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                                Text="{x:Bind Usuario}" />
+                                                                            <TextBlock
+                                                                                FontSize="12"
+                                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                                Text="{x:Bind ContactoTexto}" />
+                                                                            <TextBlock
+                                                                                FontSize="11"
+                                                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                                Text="{x:Bind UltimoAccesoTexto}" />
+                                                                            <TextBlock
+                                                                                FontSize="11"
+                                                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                                Text="{x:Bind DatosEnviadosTexto}" />
+                                                                        </StackPanel>
+                                                                        <Button
+                                                                            Grid.Column="1"
+                                                                            VerticalAlignment="Center"
+                                                                            AutomationProperties.Name="Opciones del login"
+                                                                            Background="Transparent"
+                                                                            BorderThickness="0"
+                                                                            ToolTipService.ToolTip="Opciones">
+                                                                            <SymbolIcon Symbol="More" />
+                                                                            <Button.Flyout>
+                                                                                <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                                                                    <MenuFlyoutItem
+                                                                                        Click="EnviarDatosLogin_Click"
+                                                                                        Tag="{x:Bind}"
+                                                                                        Text="Enviar/reenviar datos por correo">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <SymbolIcon Symbol="Mail" />
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+                                                                                    <MenuFlyoutItem
+                                                                                        Click="RestablecerLogin_Click"
+                                                                                        Tag="{x:Bind}"
+                                                                                        Text="Restablecer contraseña">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <SymbolIcon Symbol="Permissions" />
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+                                                                                    <MenuFlyoutSeparator />
+                                                                                    <MenuFlyoutItem
+                                                                                        Click="EliminarLogin_Click"
+                                                                                        Tag="{x:Bind}"
+                                                                                        Text="Eliminar">
+                                                                                        <MenuFlyoutItem.Icon>
+                                                                                            <SymbolIcon Symbol="Delete" />
+                                                                                        </MenuFlyoutItem.Icon>
+                                                                                    </MenuFlyoutItem>
+                                                                                </MenuFlyout>
+                                                                            </Button.Flyout>
+                                                                        </Button>
+                                                                    </Grid>
+                                                                </Border>
+                                                            </DataTemplate>
+                                                        </ItemsRepeater.ItemTemplate>
+                                                    </ItemsRepeater>
+
+                                                    <TextBlock
+                                                        FontSize="12"
+                                                        FontStyle="Italic"
+                                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                        Text="Este cliente todavía no tiene accesos al portal."
+                                                        Visibility="{x:Bind ShowNoLoginsMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </PivotItem>
+
                                             <!--  Suscripción (contrato de mantenimiento Oro/Plata/Bronce)  -->
                                             <PivotItem Header="Suscripción">
                                                 <StackPanel Padding="8" Spacing="8">

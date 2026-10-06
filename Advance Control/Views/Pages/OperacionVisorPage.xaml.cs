@@ -299,6 +299,7 @@ namespace Advance_Control.Views.Pages
             await LoadCargosAsync();
             await RefreshImageIndicatorsAsync();
             await RefreshFacturaVinculadaAsync();
+            await RefreshAprobacionAsync();
 
             if (!Operacion.TieneCheck)
             {
@@ -881,12 +882,22 @@ namespace Advance_Control.Views.Pages
                         if (contactos?.Count > 0)
                         {
                             contactosCliente = contactos;
+                            // Va dirigida siempre al contacto dirigido de la operación; solo sin dirigido se pregunta.
+                            var dirigido = _aprobacion?.IdContactoDirigido is long idDirigido ? contactos.FirstOrDefault(c => c.ContactoId == idDirigido) : null;
+                            if (dirigido != null)
+                            {
+                                contactoParaCorreo = dirigido;
+                                dirigidoA = string.Join(" ", new[] { dirigido.Tratamiento, dirigido.Nombre, dirigido.Apellido }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                            }
+                            else
+                            {
                             var lv = new ListView { ItemsSource = contactos, DisplayMemberPath = "NombreCompleto", SelectionMode = ListViewSelectionMode.Single, MaxHeight = 300 };
                             var sel = new ContentDialog { Title = "¿A quién va dirigida la cotización?", Content = new ScrollViewer { Content = lv, MaxHeight = 320 }, PrimaryButtonText = "Seleccionar", SecondaryButtonText = "Omitir", DefaultButton = ContentDialogButton.Primary, XamlRoot = _xamlRoot };
                             if (await sel.ShowAsync() == ContentDialogResult.Primary && lv.SelectedItem is ContactoDto c)
                             {
                                 contactoParaCorreo = c;
                                 dirigidoA = string.Join(" ", new[] { c.Tratamiento, c.Nombre, c.Apellido }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                            }
                             }
                         }
                     }
@@ -1248,22 +1259,16 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
+                // La hoja va dirigida al contacto dirigido de la operación (el único que la aprueba).
+                if (!await EnsureDirigidoAsync()) return;
+
                 ContactoDto? contactoSeleccionado = null;
-                if (Operacion.IdCliente.HasValue && Operacion.IdCliente.Value > 0)
+                try
                 {
-                    try
-                    {
-                        var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = Operacion.IdCliente.Value });
-                        if (contactos?.Count > 0)
-                        {
-                            var lv = new ListView { ItemsSource = contactos, DisplayMemberPath = "NombreCompleto", SelectionMode = ListViewSelectionMode.Single, MaxHeight = 300 };
-                            var sel = new ContentDialog { Title = "¿A quién va dirigido el mantenimiento preventivo?", Content = new ScrollViewer { Content = lv, MaxHeight = 320 }, PrimaryButtonText = "Seleccionar", SecondaryButtonText = "Omitir", DefaultButton = ContentDialogButton.Primary, XamlRoot = _xamlRoot };
-                            if (await sel.ShowAsync() == ContentDialogResult.Primary && lv.SelectedItem is ContactoDto c)
-                                contactoSeleccionado = c;
-                        }
-                    }
-                    catch (Exception ex) { LogDebugError("ContactosMttoPrev", ex); }
+                    var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = Operacion.IdCliente!.Value });
+                    contactoSeleccionado = contactos.FirstOrDefault(c => c.ContactoId == _aprobacion!.IdContactoDirigido);
                 }
+                catch (Exception ex) { LogDebugError("ContactosMttoPrev", ex); }
 
                 var mttoPrevWindow = new Views.Formularios.MantenimientoPreventivoWindow(Operacion, contactoSeleccionado);
                 mttoPrevWindow.Activate();
@@ -1289,6 +1294,14 @@ namespace Advance_Control.Views.Pages
             if (!await EnsureCanMutateAsync($"cargar {imageType.ToLowerInvariant()}")) return;
             try
             {
+                // La orden de compra aprueba la cotización: primero el monto que cubre (antes de IVA).
+                decimal? subtotalOc = null;
+                if (imageType == "OrdenCompra")
+                {
+                    subtotalOc = await PedirSubtotalOrdenCompraAsync();
+                    if (subtotalOc == null) return;
+                }
+
                 // Preguntar al usuario el tipo de archivo
                 var tipoDialog = new ContentDialog
                 {
@@ -1335,7 +1348,7 @@ namespace Advance_Control.Views.Pages
                 {
                     "Prefactura"    => await _operacionImageService.UploadPrefacturaAsync(Operacion.IdOperacion.Value, stream, contentType),
                     "HojaServicio"  => await _operacionImageService.UploadHojaServicioAsync(Operacion.IdOperacion.Value, stream, contentType),
-                    "OrdenCompra"   => await _operacionImageService.UploadOrdenCompraAsync(Operacion.IdOperacion.Value, stream, contentType),
+                    "OrdenCompra"   => await _operacionImageService.UploadOrdenCompraConMontoAsync(Operacion.IdOperacion.Value, stream, contentType, subtotalOc!.Value),
                     "Levantamiento" => await _operacionImageService.UploadLevantamientoAsync(Operacion.IdOperacion.Value, stream, contentType),
                     _               => null
                 };
@@ -1370,9 +1383,16 @@ namespace Advance_Control.Views.Pages
                     }
                     Operacion.NotifyDocumentsChanged();
 
+                    if (imageType == "OrdenCompra")
+                        await RefreshAprobacionAsync();
                     await _notificacionService.MostrarAsync($"{imageType} cargada", $"{result.FileName} guardada correctamente.");
                 }
                 else await MostrarErrorAsync("Error", $"No se pudo guardar la {imageType.ToLower()}.");
+            }
+            catch (InvalidOperationException ex) when (imageType == "OrdenCompra")
+            {
+                // Monto que no coincide, cotización sin cerrar o rechazada: el mensaje de la API explica qué hacer.
+                await MostrarErrorAsync("Orden de compra", ex.Message);
             }
             catch (Exception ex) { LogDebugError($"{nameof(UploadOperacionImageAsync)}[{imageType}]", ex); await MostrarErrorAsync("Error", $"Ocurrió un error al cargar la {imageType.ToLower()}."); }
         }

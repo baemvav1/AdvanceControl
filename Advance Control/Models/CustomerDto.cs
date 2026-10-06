@@ -158,6 +158,54 @@ namespace Advance_Control.Models
             OnPropertyChanged(nameof(ShowNoContactosMessage));
         }
 
+        /// <summary>
+        /// Logins del Portal de Clientes de esta empresa (pivot "Logins").
+        /// Se cargan junto con los contactos cuando se expande el item.
+        /// </summary>
+        [JsonIgnore]
+        public ObservableCollection<ClienteLoginDto> Logins { get; } = new ObservableCollection<ClienteLoginDto>();
+
+        private bool _loginsLoaded;
+
+        [JsonIgnore]
+        public bool LoginsLoaded
+        {
+            get => _loginsLoaded;
+            set
+            {
+                if (_loginsLoaded != value)
+                {
+                    _loginsLoaded = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(ShowNoLoginsMessage));
+                }
+            }
+        }
+
+        private bool _isLoadingLogins;
+
+        [JsonIgnore]
+        public bool IsLoadingLogins
+        {
+            get => _isLoadingLogins;
+            set
+            {
+                if (_isLoadingLogins != value)
+                {
+                    _isLoadingLogins = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [JsonIgnore]
+        public bool ShowNoLoginsMessage => LoginsLoaded && Logins.Count == 0;
+
+        public void NotifyNoLoginsMessageChanged()
+        {
+            OnPropertyChanged(nameof(ShowNoLoginsMessage));
+        }
+
         private ContratoSuscripcionDto? _suscripcion;
 
         /// <summary>

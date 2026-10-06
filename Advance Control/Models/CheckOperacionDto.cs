@@ -36,6 +36,13 @@ namespace Advance_Control.Models
         [JsonPropertyName("facturaCargada")]
         public bool FacturaCargada { get; set; }
 
+        /// <summary>
+        /// La cotización vigente fue aprobada por el cliente (portal, técnico u orden de compra).
+        /// Solo lectura: no cuenta en el avance de 8 pasos, que el técnico marca él mismo.
+        /// </summary>
+        [JsonPropertyName("cotizacionAprobada")]
+        public bool CotizacionAprobada { get; set; }
+
         [JsonPropertyName("fechaActualizacion")]
         public DateTime FechaActualizacion { get; set; }
 
@@ -68,6 +75,7 @@ namespace Advance_Control.Models
         {
             new() { Nombre = "Cotización generada",    Completado = CotizacionGenerada  },
             new() { Nombre = "Cotización enviada",     Completado = CotizacionEnviada   },
+            new() { Nombre = "Cotización aprobada",    Completado = CotizacionAprobada  },
             new() { Nombre = "Reporte generado",       Completado = ReporteGenerado     },
             new() { Nombre = "Reporte enviado",        Completado = ReporteEnviado      },
             new() { Nombre = "Prefactura cargada",     Completado = PrefacturaCargada   },

@@ -46,6 +46,70 @@ namespace Advance_Control.Services.LocalStorage
         public Task<OperacionImageDto?> UploadOrdenCompraAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken ct = default)
             => UploadAsync(idOperacion, imageStream, contentType, "orden_compra", ct);
 
+        public async Task<OperacionImageDto> UploadOrdenCompraConMontoAsync(int idOperacion, Stream imageStream, string contentType, decimal subtotal, CancellationToken ct = default)
+        {
+            using var ms = new MemoryStream();
+            await imageStream.CopyToAsync(ms, ct);
+            ms.Position = 0;
+
+            var ext = contentType.ToLowerInvariant() == "application/pdf" ? ".pdf" : contentType.ToLowerInvariant() == "image/png" ? ".png" : ".jpg";
+            using var content = new MultipartFormDataContent();
+            var sc = new StreamContent(ms);
+            sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(contentType);
+            content.Add(sc, "file", $"upload{ext}");
+
+            HttpResponseMessage response;
+            try
+            {
+                var monto = subtotal.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                response = await _http.PostAsync($"api/uploads/operaciones/{idOperacion}?tipo=orden_compra&subtotal={monto}", content, ct);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new InvalidOperationException("No hay conexión con el servidor. Intenta de nuevo.", ex);
+            }
+
+            using (response)
+            {
+                if (!response.IsSuccessStatusCode)
+                {
+                    var cuerpo = await response.Content.ReadAsStringAsync(ct);
+                    await _logger.LogWarningAsync($"API devolvió {(int)response.StatusCode} al subir orden de compra para operación {idOperacion}: {cuerpo}",
+                        nameof(RemoteOperacionImageService), nameof(UploadOrdenCompraConMontoAsync));
+                    throw new InvalidOperationException(MensajeDeError(cuerpo) ?? "No se pudo guardar la orden de compra.");
+                }
+
+                var dto = await response.Content.ReadFromJsonAsync<UploadFileResponseDto>(cancellationToken: ct)
+                          ?? throw new InvalidOperationException("Respuesta vacía del servidor.");
+                try
+                {
+                    ms.Position = 0;
+                    await SaveLocalAsync(Path.Combine(GetOperacionFolder(idOperacion), dto.FileName), ms, ct);
+                }
+                catch (Exception cacheEx)
+                {
+                    await _logger.LogWarningAsync($"Orden de compra subida al VPS pero no se pudo cachear localmente: {cacheEx.Message}",
+                        nameof(RemoteOperacionImageService), nameof(UploadOrdenCompraConMontoAsync));
+                }
+                return BuildDto(idOperacion, dto);
+            }
+        }
+
+        private static string? MensajeDeError(string cuerpo)
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(cuerpo);
+                return doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                       && doc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == System.Text.Json.JsonValueKind.String
+                    ? m.GetString() : null;
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return string.IsNullOrWhiteSpace(cuerpo) || cuerpo.Length > 300 ? null : cuerpo;
+            }
+        }
+
         public Task<OperacionImageDto?> UploadLevantamientoAsync(int idOperacion, Stream imageStream, string contentType, CancellationToken ct = default)
             => UploadAsync(idOperacion, imageStream, contentType, "levantamiento", ct);
 

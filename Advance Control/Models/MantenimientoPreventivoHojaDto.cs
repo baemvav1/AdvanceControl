@@ -64,6 +64,13 @@ namespace Advance_Control.Models
         [JsonPropertyName("firmadoIp")]
         public string? FirmadoIp { get; set; }
 
+        /// <summary>Motivo con el que el cliente rechazó la hoja desde el Portal de Clientes.</summary>
+        [JsonPropertyName("rechazoMotivo")]
+        public string? RechazoMotivo { get; set; }
+
+        [JsonPropertyName("rechazadaEn")]
+        public DateTime? RechazadaEn { get; set; }
+
         [JsonIgnore]
         public string CreadoEnTexto => CreadoEn.ToString("dd/MM/yyyy HH:mm");
 

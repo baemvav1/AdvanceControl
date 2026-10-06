@@ -816,8 +816,8 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
-                    // Registrar PortalClienteService y su HttpClient pipeline con autenticación
-                    services.AddHttpClient<Services.Portal.IPortalClienteService, Services.Portal.PortalClienteService>((sp, client) =>
+                    // Registrar ClienteLoginService (logins del Portal de Clientes) y su HttpClient pipeline con autenticación
+                    services.AddHttpClient<Services.Portal.IClienteLoginService, Services.Portal.ClienteLoginService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
                         if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
@@ -833,6 +833,18 @@ namespace Advance_Control
                         {
                             client.Timeout = TimeSpan.FromSeconds(30);
                         }
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Aprobaciones del cliente (contacto dirigido, cerrar/reabrir cotización, aprobación del técnico)
+                    services.AddHttpClient<Services.Aprobaciones.IAprobacionService, Services.Aprobaciones.AprobacionService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        client.Timeout = TimeSpan.FromSeconds(30);
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
@@ -1246,9 +1258,6 @@ namespace Advance_Control
                     // Registrar MainWindow para que DI pueda resolverlo y proporcionar sus dependencias
                     services.AddTransient<MainWindow>();
 
-                    // Registrar ClientePortalWindow (shell restringido para usuarios-cliente, Nivel=10)
-                    services.AddTransient<Views.Portal.ClientePortalWindow>();
-
                     // Auto-updater: HttpClient sin autenticación, apunta a /client-dist/ del VPS
                     services.AddHttpClient("AutoUpdate", (sp, client) =>
                     {
@@ -1374,26 +1383,12 @@ namespace Advance_Control
         }
 
         /// <summary>
-        /// Suscribe el evento Closed de una ventana (MainWindow o ClientePortalWindow) para
-        /// que, al cerrarse, se detenga y disponga el Host de forma ordenada. Idempotente:
-        /// si el usuario cierra ambas ventanas (o la misma dos veces), el host solo se
-        /// detiene una vez.
+        /// Suscribe el evento Closed de una ventana para que, al cerrarse, se detenga y
+        /// disponga el Host de forma ordenada. Idempotente: el host solo se detiene una vez.
         /// </summary>
         public void RegisterWindowForShutdown(Window window)
         {
             window.Closed += async (s, e) => await ShutdownHostAsync();
-        }
-
-        /// <summary>
-        /// Oculta (no cierra) el MainWindow con Win32 en vez de Close(): cerrarlo dispararía
-        /// el shutdown del Host (DI) del que depende ClientePortalWindow. Se usa al bifurcar
-        /// hacia el Portal de Cliente tras un login exitoso.
-        /// </summary>
-        public static void HideMainWindow()
-        {
-            if (MainWindow is null) return;
-            var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(MainWindow);
-            ShowWindow(hwnd, 0); // SW_HIDE
         }
 
         private async Task ShutdownHostAsync()
