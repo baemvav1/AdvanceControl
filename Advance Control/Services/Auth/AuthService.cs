@@ -118,6 +118,9 @@ namespace Advance_Control.Services.Auth
                         null,
                         "AuthService",
                         "AuthenticateAsync");
+                    // Modo pruebas (503): la API explica que el sistema está en mantenimiento.
+                    if (resp.StatusCode == HttpStatusCode.ServiceUnavailable && MensajeMantenimiento(errorContent) is string mantenimiento)
+                        throw new InvalidOperationException(mantenimiento);
                     throw new InvalidOperationException(BuildServerFailureMessage("iniciar sesión", resp.StatusCode));
                 }
 
@@ -524,6 +527,23 @@ namespace Advance_Control.Services.Auth
             public string? accessToken { get; set; }
             public string? refreshToken { get; set; }
             public int expiresIn { get; set; }
+        }
+
+        /// <summary>Mensaje {message} de un 503 de modo pruebas, o null.</summary>
+        private static string? MensajeMantenimiento(string? contenido)
+        {
+            if (string.IsNullOrWhiteSpace(contenido)) return null;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(contenido);
+                return doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                       && doc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == System.Text.Json.JsonValueKind.String
+                    ? m.GetString() : null;
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                return null;
+            }
         }
     }
 }

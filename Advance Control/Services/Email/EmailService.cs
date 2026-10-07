@@ -9,6 +9,7 @@ using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;
 using Advance_Control.Services.CorreoUsuario;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.Services.Email;
 
@@ -112,6 +113,8 @@ public class EmailService : IEmailService
         if (string.IsNullOrWhiteSpace(mensaje.CuerpoTexto) && string.IsNullOrWhiteSpace(mensaje.CuerpoHtml))
             throw new ArgumentException("El correo debe tener cuerpo de texto o HTML.", nameof(mensaje));
 
+        await ValidarModoPruebasAsync(mensaje);
+
         var (usuario, password) = await ObtenerCredencialesAsync();
 
         var mime = new MimeMessage();
@@ -200,6 +203,27 @@ public class EmailService : IEmailService
             }
             catch { /* No fallar — el correo ya fue enviado por SMTP */ }
         });
+    }
+
+    /// <summary>
+    /// Modo pruebas: solo se envía a contactos del cliente de prueba. Si no se puede consultar la
+    /// API y lo último que se supo es que el modo está activo, no se envía (falla cerrado).
+    /// </summary>
+    private static async Task ValidarModoPruebasAsync(EmailMessage mensaje)
+    {
+        var modoPruebas = AppServices.Get<Advance_Control.Services.DevOps.IModoPruebasService>();
+        try
+        {
+            await modoPruebas.ValidarDestinatariosAsync(mensaje.Para.Concat(mensaje.CC).Concat(mensaje.CCO));
+        }
+        catch (System.Net.Http.HttpRequestException) when (!modoPruebas.Estado.Activo)
+        {
+            // Sin conexión con la API y el modo no estaba activo: se envía normal.
+        }
+        catch (System.Net.Http.HttpRequestException ex)
+        {
+            throw new InvalidOperationException("Modo pruebas activo y no se pudo verificar a quién se puede enviar. Intenta de nuevo.", ex);
+        }
     }
 
     // -------------------------------------------------------------------------

@@ -1203,6 +1203,16 @@ namespace Advance_Control
                     services.AddSingleton<Services.AccessControl.IAccessControlService, Services.AccessControl.AccessControlService>();
 
                     // Registrar DevOpsService con autenticación
+                    // Modo pruebas (estado, correos permitidos, activar/desactivar)
+                    services.AddHttpClient<Services.DevOps.IModoPruebasService, Services.DevOps.ModoPruebasService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                            client.BaseAddress = baseUri;
+                        client.Timeout = TimeSpan.FromSeconds(120);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     services.AddHttpClient<Services.DevOps.IDevOpsService, Services.DevOps.DevOpsService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();

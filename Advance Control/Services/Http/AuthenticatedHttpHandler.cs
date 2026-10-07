@@ -54,6 +54,8 @@ namespace Advance_Control.Services.Http
             }
         }
 
+        private static DateTime _ultimoAvisoMantenimiento = DateTime.MinValue;
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             if (request == null) throw new ArgumentNullException(nameof(request));
@@ -69,6 +71,15 @@ namespace Advance_Control.Services.Http
             }
 
             var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
+
+            // Modo pruebas (DevOps): la API rechaza con 503 a quien no es nivel 1. Aviso visible, máximo uno por minuto.
+            if (response.StatusCode == HttpStatusCode.ServiceUnavailable && response.Headers.Contains("X-Modo-Pruebas")
+                && DateTime.UtcNow - _ultimoAvisoMantenimiento > TimeSpan.FromMinutes(1))
+            {
+                _ultimoAvisoMantenimiento = DateTime.UtcNow;
+                const string aviso = "Un administrador activó el modo pruebas: por ahora solo pueden trabajar usuarios nivel 1. Intenta más tarde.";
+                Advance_Control.Services.Notificacion.InAppNotificacionMessenger.Enviar("Error: sistema en mantenimiento", aviso, aviso);
+            }
 
             // If unauthorized, attempt a single refresh + retry
             if (response.StatusCode == HttpStatusCode.Unauthorized)
