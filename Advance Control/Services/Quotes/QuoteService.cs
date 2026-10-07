@@ -64,7 +64,7 @@ namespace Advance_Control.Services.Quotes
         private static string GetOperacionFolder(int idOperacion)
         {
             var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(documentsPath, "Advance Control", $"Operacion_{idOperacion}");
+            return Path.Combine(documentsPath, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, $"Operacion_{idOperacion}");
         }
 
         /// <inheritdoc/>

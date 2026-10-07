@@ -32,7 +32,7 @@ namespace Advance_Control.Services.Quotes
         private static string GetOperacionFolder(int idOperacion)
         {
             var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var folder = Path.Combine(documentsPath, "Advance Control", $"Operacion_{idOperacion}");
+            var folder = Path.Combine(documentsPath, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, $"Operacion_{idOperacion}");
             Directory.CreateDirectory(folder);
             return folder;
         }

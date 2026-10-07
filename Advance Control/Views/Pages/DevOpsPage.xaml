@@ -35,7 +35,7 @@
 
         <!-- Botones de limpieza -->
         <StackPanel Grid.Row="2" Spacing="8" Margin="0,0,0,24">
-            <!-- Modo pruebas: el botón más delicado (solo nivel 1) -->
+            <!-- Modo mantenimiento: el botón más delicado (solo nivel 1) -->
             <Border Padding="16" Margin="0,0,0,16" CornerRadius="8" BorderThickness="1"
                     BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
                     Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}">
@@ -45,16 +45,16 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="4">
-                        <TextBlock Text="Modo pruebas" Style="{StaticResource SubtitleTextBlockStyle}" />
-                        <TextBlock x:Name="ModoPruebasEstadoText" TextWrapping="Wrap" FontWeight="SemiBold" />
+                        <TextBlock Text="Modo mantenimiento" Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock x:Name="MantenimientoEstadoText" TextWrapping="Wrap" FontWeight="SemiBold" />
                         <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   Text="Activo: solo usuarios nivel 1 entran a Advance Control; en el portal solo el cliente de prueba (se genera si no existe); no se timbra ni se cancela ante el SAT; los correos solo salen a contactos del cliente de prueba. Al desactivar se borra el cliente de prueba con todo lo suyo, se reinician las semillas y se reabre el sistema. No se desactiva solo." />
+                                   Text="Activo: solo usuarios nivel 1 entran a Advance Control, el Portal de Clientes queda cerrado y no se timbra ni se cancela ante el SAT. No se desactiva solo. Para probar sin afectar a nadie usa el entorno de Pruebas (se elige en el login)." />
                     </StackPanel>
                     <Button x:Name="BtnModoPruebas" Grid.Column="1" VerticalAlignment="Center" Padding="16,12"
-                            Click="OnModoPruebasClick" IsEnabled="False">
+                            Click="OnMantenimientoClick" IsEnabled="False">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon x:Name="ModoPruebasIcon" Glyph="&#xE72E;" FontSize="16" />
-                            <TextBlock x:Name="ModoPruebasBotonText" Text="Activar modo pruebas" />
+                            <FontIcon x:Name="MantenimientoIcon" Glyph="&#xE72E;" FontSize="16" />
+                            <TextBlock x:Name="MantenimientoBotonText" Text="Activar mantenimiento" />
                         </StackPanel>
                     </Button>
                 </Grid>
@@ -183,31 +183,6 @@
                     <TextBlock Text="Desvincular Todas las Facturas" />
                 </StackPanel>
             </Button>
-
-            <!-- Cliente de prueba del Portal de Clientes -->
-            <TextBlock Text="Cliente de Prueba (Portal de Clientes)" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,4" />
-            <TextBlock Margin="0,0,0,8" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                       Text="CLIENTE DE PRUEBA SA DE CV (RFC PRU260101AB1): contactos, logins del portal (prueba.dirigido / prueba.admin, contraseña Prueba2026!), equipos, órdenes de servicio, cotizaciones, hoja de mantenimiento, factura ficticia y emergencia, todo dirigido a Ing. Braulio Emiliano Vazquez Valdez." />
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button x:Name="BtnGenerarPrueba" Padding="16,12" Click="OnGenerarClientePruebaClick">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE8FA;" FontSize="16" />
-                        <TextBlock Text="Generar cliente de prueba" />
-                    </StackPanel>
-                </Button>
-                <Button x:Name="BtnBorrarPrueba" Padding="16,12" Click="OnBorrarClientePruebaClick">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE74D;" FontSize="16" />
-                        <TextBlock Text="Borrar cliente de prueba" />
-                    </StackPanel>
-                </Button>
-                <Button x:Name="BtnReiniciarSemillas" Padding="16,12" Click="OnReiniciarSemillasClick">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon Glyph="&#xE72C;" FontSize="16" />
-                        <TextBlock Text="Reiniciar semillas" />
-                    </StackPanel>
-                </Button>
-            </StackPanel>
 
             <!-- Herramientas de mensajería -->
             <TextBlock Text="Herramientas de Mensajería" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,16,0,8" />

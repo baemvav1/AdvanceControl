@@ -63,8 +63,8 @@ namespace Advance_Control
             RootGrid.Loaded += RootGrid_Loaded;
             UpdateNavigationVisibility();
 
-            // Insignia "MODO PRUEBAS" (DevOps)
-            IniciarModoPruebas();
+            // Insignias "ENTORNO DE PRUEBAS" y "MANTENIMIENTO"
+            IniciarMantenimiento();
         }
 
         private void OnNotificacionInApp(object? sender, InAppNotificacionPayload e)

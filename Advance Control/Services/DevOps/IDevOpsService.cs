@@ -41,15 +41,6 @@ namespace Advance_Control.Services.DevOps
         Task<List<DevOpsWipeResult>> DesvincularFacturasAsync(CancellationToken ct = default);
 
         /// <summary>Obtiene estadísticas de la base de datos</summary>
-        /// <summary>Crea el cliente de PRUEBA del Portal de Clientes con todo lo relacionado.</summary>
-        Task<List<DevOpsWipeResult>> GenerarClientePruebaAsync(CancellationToken ct = default);
-
-        /// <summary>Borra el cliente de PRUEBA, todo lo relacionado y los archivos de sus operaciones.</summary>
-        Task<List<DevOpsWipeResult>> BorrarClientePruebaAsync(CancellationToken ct = default);
-
-        /// <summary>Reinicia las secuencias (semillas) a MAX(id)+1; RegistrosEliminados = siguiente id.</summary>
-        Task<List<DevOpsWipeResult>> ReiniciarSemillasAsync(CancellationToken ct = default);
-
         Task<List<DevOpsStatsResult>> ObtenerEstadisticasAsync(CancellationToken ct = default);
 
         /// <summary>Envía un mensaje de prueba con emisor arbitrario para testing</summary>

@@ -75,7 +75,7 @@ namespace Advance_Control.Services.Facturas
         private static string GetFacturasFolder()
         {
             var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(documentos, "Advance Control", "Facturas");
+            return Path.Combine(documentos, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "Facturas");
         }
 
         public async Task<string> GenerarFacturaPdfAsync(FacturaDetalleDto detalle)

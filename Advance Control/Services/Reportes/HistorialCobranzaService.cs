@@ -93,7 +93,7 @@ namespace Advance_Control.Services.Reportes
             var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
             var rfcLimpio = LimpiarNombreArchivo(rfc.Trim().ToUpperInvariant());
             var nombreCarpetaRaiz = $"{rfcLimpio}_{fechaInicio:yyyyMMdd}_a_{fechaFin:yyyyMMdd}_{DateTime.Now:yyyyMMdd_HHmmss}";
-            var carpetaRaiz = Path.Combine(documentsPath, "Advance Control", "HistorialesCobranza", nombreCarpetaRaiz);
+            var carpetaRaiz = Path.Combine(documentsPath, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "HistorialesCobranza", nombreCarpetaRaiz);
             Directory.CreateDirectory(carpetaRaiz);
 
             var resultado = new HistorialCobranzaResultadoDto { CarpetaHistorial = carpetaRaiz };

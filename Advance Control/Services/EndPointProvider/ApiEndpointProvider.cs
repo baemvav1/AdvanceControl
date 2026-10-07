@@ -21,7 +21,9 @@ namespace Advance_Control.Services.EndPointProvider
 
             // Seleccionar la URL según el modo
             string selectedUrl;
-            if (_isProductionMode && !string.IsNullOrWhiteSpace(_options.ProductionUrl))
+            if (_isProductionMode && Utilities.EntornoApp.EsPruebas && !string.IsNullOrWhiteSpace(_options.PruebasUrl))
+                selectedUrl = _options.PruebasUrl;
+            else if (_isProductionMode && !string.IsNullOrWhiteSpace(_options.ProductionUrl))
                 selectedUrl = _options.ProductionUrl;
             else if (!string.IsNullOrWhiteSpace(_options.BaseUrl))
                 selectedUrl = _options.BaseUrl;

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Input;
 using Advance_Control.Services.DevOps;
@@ -214,63 +213,6 @@ namespace Advance_Control.ViewModels
                 HasError = true;
                 StatusMessage = $"Error al desvincular facturas: {ex.Message}";
                 await _logger.LogErrorAsync(ex.Message, ex, "DevOpsViewModel", "DesvincularFacturasAsync");
-                return false;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>Activa el modo pruebas (solo nivel 1; genera el cliente de prueba si no existe).</summary>
-        public Task<bool> ActivarModoPruebasAsync() => EjecutarAccionAsync(
-            "Activando modo pruebas...", () => Utilities.AppServices.Get<IModoPruebasService>().ActivarAsync(),
-            _ => "MODO PRUEBAS ACTIVO: solo usuarios nivel 1 y el cliente de prueba del portal.");
-
-        /// <summary>Desactiva el modo pruebas: borra el cliente de prueba, reinicia semillas y reabre el sistema.</summary>
-        public Task<bool> DesactivarModoPruebasAsync() => EjecutarAccionAsync(
-            "Desactivando modo pruebas y limpiando...", () => Utilities.AppServices.Get<IModoPruebasService>().DesactivarAsync(),
-            _ => "Modo pruebas desactivado: cliente de prueba borrado, semillas reiniciadas y sistema abierto para todos.");
-
-        /// <summary>Crea el cliente de PRUEBA del Portal de Clientes (falla si ya existe).</summary>
-        public Task<bool> GenerarClientePruebaAsync() => EjecutarAccionAsync(
-            "Generando cliente de prueba...", () => _devOpsService.GenerarClientePruebaAsync(),
-            _ => "Cliente de prueba creado. Portal: prueba.dirigido / prueba.admin (contraseña Prueba2026!).");
-
-        /// <summary>Borra el cliente de PRUEBA y todo lo relacionado (incluye archivos de sus operaciones).</summary>
-        public Task<bool> BorrarClientePruebaAsync() => EjecutarAccionAsync(
-            "Borrando cliente de prueba...", () => _devOpsService.BorrarClientePruebaAsync(),
-            r => r.Exists(x => x.Tabla == "clientes" && x.RegistrosEliminados > 0)
-                ? $"Cliente de prueba borrado ({r.Sum(x => x.RegistrosEliminados)} registros y archivos)."
-                : "No había cliente de prueba que borrar.");
-
-        /// <summary>Reinicia las secuencias a MAX(id)+1 (en resultados, el número es el siguiente id).</summary>
-        public Task<bool> ReiniciarSemillasAsync() => EjecutarAccionAsync(
-            "Reiniciando semillas...", () => _devOpsService.ReiniciarSemillasAsync(),
-            r => $"Semillas reiniciadas en {r.Count} tablas. En resultados, el número es el siguiente id que se asignará.");
-
-        private async Task<bool> EjecutarAccionAsync(string estado, Func<Task<List<DevOpsWipeResult>>> accion, Func<List<DevOpsWipeResult>, string> exito)
-        {
-            try
-            {
-                IsLoading = true;
-                HasError = false;
-                StatusMessage = estado;
-
-                var resultados = await accion();
-                UltimosResultados.Clear();
-                foreach (var r in resultados)
-                    UltimosResultados.Add(r);
-
-                StatusMessage = exito(resultados);
-                await CargarEstadisticasAsync();
-                return true;
-            }
-            catch (Exception ex)
-            {
-                HasError = true;
-                StatusMessage = ex.Message;
-                await _logger.LogErrorAsync(ex.Message, ex, "DevOpsViewModel", nameof(EjecutarAccionAsync));
                 return false;
             }
             finally

@@ -160,7 +160,7 @@ namespace Advance_Control.ViewModels
         public string? BuscarReportePdf(int idLevantamiento)
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var folder = Path.Combine(docs, "Advance Control", "Levantamientos", $"Levantamiento{idLevantamiento}");
+            var folder = Path.Combine(docs, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "Levantamientos", $"Levantamiento{idLevantamiento}");
 
             if (!Directory.Exists(folder))
                 return null;

@@ -178,6 +178,8 @@ namespace Advance_Control
                     services.Configure<Settings.DevelopmentModeOptions>(context.Configuration.GetSection("DevelopmentMode"));
 
                     // Registrar el provider que compone endpoints (usa IOptions<ExternalApiOptions>)
+                    // Los BaseAddress llevan "/" al final: la API de pruebas vive en /pruebas/ y sin la
+                    // diagonal una ruta relativa ("client-dist/...") perdería ese segmento.
                     services.AddSingleton<IApiEndpointProvider, ApiEndpointProvider>();
 
                     // Registrar OnlineCheck como typed HttpClient (seguirá usando provider para construir endpoints)
@@ -216,7 +218,7 @@ namespace Advance_Control
                     services.AddHttpClient("LoggingService", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -241,7 +243,7 @@ namespace Advance_Control
                     services.AddHttpClient("AuthService", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -269,7 +271,7 @@ namespace Advance_Control
                     services.AddHttpClient<IClienteService, ClienteService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -290,7 +292,7 @@ namespace Advance_Control
                     services.AddHttpClient<IProveedorService, ProveedorService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -311,7 +313,7 @@ namespace Advance_Control
                     services.AddHttpClient<IEquipoService, EquipoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -332,7 +334,7 @@ namespace Advance_Control
                     services.AddHttpClient<IContratoSuscripcionService, ContratoSuscripcionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -347,7 +349,7 @@ namespace Advance_Control
                     services.AddHttpClient("RemoteContratos", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -370,7 +372,7 @@ namespace Advance_Control
                     services.AddHttpClient<IInmuebleService, InmuebleService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -391,7 +393,7 @@ namespace Advance_Control
                     services.AddHttpClient<IUserInfoService, UserInfoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -416,7 +418,7 @@ namespace Advance_Control
                     services.AddHttpClient<IRelacionService, RelacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -437,7 +439,7 @@ namespace Advance_Control
                     services.AddHttpClient<IRelacionInmuebleService, RelacionInmuebleService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -458,7 +460,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.RelacionUsuarioArea.IRelacionUsuarioAreaService, Services.RelacionUsuarioArea.RelacionUsuarioAreaService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -478,7 +480,7 @@ namespace Advance_Control
                     services.AddHttpClient<IOrdenServicioService, OrdenServicioService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -499,7 +501,7 @@ namespace Advance_Control
                     services.AddHttpClient<IOperacionService, OperacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -521,7 +523,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.CheckOperacion.ICheckOperacionService, Services.CheckOperacion.CheckOperacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         client.Timeout = TimeSpan.FromSeconds(15);
                     })
@@ -532,7 +534,7 @@ namespace Advance_Control
                     services.AddHttpClient<ICargoService, CargoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -554,7 +556,7 @@ namespace Advance_Control
                     services.AddHttpClient<IRefaccionService, RefaccionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -575,7 +577,7 @@ namespace Advance_Control
                     services.AddHttpClient<IServicioService, ServicioService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -596,7 +598,7 @@ namespace Advance_Control
                     services.AddHttpClient<IProductoService, ProductoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -617,7 +619,7 @@ namespace Advance_Control
                     services.AddHttpClient<IRelacionRefaccionEquipoService, RelacionRefaccionEquipoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -638,7 +640,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.RelacionesProveedorRefaccion.IRelacionProveedorRefaccionService, Services.RelacionesProveedorRefaccion.RelacionProveedorRefaccionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -672,7 +674,7 @@ namespace Advance_Control
                     services.AddHttpClient("RemoteFirmas", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -700,7 +702,7 @@ namespace Advance_Control
                     services.AddHttpClient<IGoogleMapsConfigService, GoogleMapsConfigService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -720,7 +722,7 @@ namespace Advance_Control
                     services.AddHttpClient<IAreasService, AreasService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -740,7 +742,7 @@ namespace Advance_Control
                     services.AddHttpClient<IUbicacionService, UbicacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -760,7 +762,7 @@ namespace Advance_Control
                     services.AddHttpClient<IEntidadService, EntidadService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -780,7 +782,7 @@ namespace Advance_Control
                     services.AddHttpClient<IContactoService, ContactoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -800,7 +802,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.MantenimientoPreventivo.IHojaMantenimientoService, Services.MantenimientoPreventivo.HojaMantenimientoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -820,7 +822,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Portal.IClienteLoginService, Services.Portal.ClienteLoginService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -840,7 +842,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Aprobaciones.IAprobacionService, Services.Aprobaciones.AprobacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -851,7 +853,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.EstadoCuenta.IEstadoCuentaXmlService, Services.EstadoCuenta.EstadoCuentaXmlService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -870,7 +872,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Facturas.IFacturaService, Services.Facturas.FacturaService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -889,7 +891,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.ConfiguracionEmisor.IConfiguracionEmisorService, Services.ConfiguracionEmisor.ConfiguracionEmisorService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -908,7 +910,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.SatCatalogo.ISatCatalogoService, Services.SatCatalogo.SatCatalogoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -927,7 +929,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.TipoCargo.ITipoCargoService, Services.TipoCargo.TipoCargoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -946,7 +948,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Reportes.IReporteFinancieroFacturacionService, Services.Reportes.ReporteFinancieroFacturacionService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -965,7 +967,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.VisorMundial.IVisorMundialService, Services.VisorMundial.VisorMundialService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                         {
                             client.BaseAddress = baseUri;
                         }
@@ -985,7 +987,7 @@ namespace Advance_Control
                     services.AddHttpClient("RemoteCargos", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1007,7 +1009,7 @@ namespace Advance_Control
                     services.AddHttpClient("RemoteLevantamientos", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1030,7 +1032,7 @@ namespace Advance_Control
                     services.AddHttpClient("RemoteOperaciones", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1091,7 +1093,7 @@ namespace Advance_Control
                     services.AddHttpClient<ICorreoUsuarioService, CorreoUsuarioService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1108,7 +1110,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Activity.IActivityService, Services.Activity.ActivityService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                     })
                     .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
@@ -1118,7 +1120,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Dashboard.IDashboardService, Services.Dashboard.DashboardService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                     })
                     .ConfigurePrimaryHttpMessageHandler(CreateHighThroughputHandler)
@@ -1128,7 +1130,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Levantamiento.ILevantamientoApiService, Services.Levantamiento.LevantamientoApiService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
@@ -1137,7 +1139,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Nivel.INivelService, Services.Nivel.NivelService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1149,7 +1151,7 @@ namespace Advance_Control
                     services.AddHttpClient<ITipoUsuarioService, TipoUsuarioService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1161,7 +1163,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.TipoMantenimiento.ITipoMantenimientoService, Services.TipoMantenimiento.TipoMantenimientoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1173,7 +1175,7 @@ namespace Advance_Control
                     services.AddHttpClient<IPermisoUiService, PermisoUiService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1190,7 +1192,7 @@ namespace Advance_Control
                     services.AddHttpClient<IUsuarioAdminService, UsuarioAdminService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1203,11 +1205,11 @@ namespace Advance_Control
                     services.AddSingleton<Services.AccessControl.IAccessControlService, Services.AccessControl.AccessControlService>();
 
                     // Registrar DevOpsService con autenticación
-                    // Modo pruebas (estado, correos permitidos, activar/desactivar)
-                    services.AddHttpClient<Services.DevOps.IModoPruebasService, Services.DevOps.ModoPruebasService>((sp, client) =>
+                    // Modo mantenimiento (estado, activar/desactivar)
+                    services.AddHttpClient<Services.DevOps.IMantenimientoService, Services.DevOps.MantenimientoService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         client.Timeout = TimeSpan.FromSeconds(120);
                     })
@@ -1216,7 +1218,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.DevOps.IDevOpsService, Services.DevOps.DevOpsService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1229,7 +1231,7 @@ namespace Advance_Control
                     services.AddHttpClient<Services.Alertas.INotificacionAlertaService, Services.Alertas.NotificacionAlertaService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1250,7 +1252,7 @@ namespace Advance_Control
                     services.AddHttpClient("MensajeriaRest", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         var devMode = sp.GetService<Microsoft.Extensions.Options.IOptions<Settings.DevelopmentModeOptions>>()?.Value;
                         client.Timeout = devMode?.Enabled == true && devMode.DisableHttpTimeouts
@@ -1272,7 +1274,7 @@ namespace Advance_Control
                     services.AddHttpClient("AutoUpdate", (sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
-                        if (Uri.TryCreate(provider.GetApiBaseUrl(), UriKind.Absolute, out var baseUri))
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
                             client.BaseAddress = baseUri;
                         client.Timeout = TimeSpan.FromMinutes(10);
                     });

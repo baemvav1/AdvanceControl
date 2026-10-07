@@ -14,8 +14,10 @@ namespace Advance_Control.Services.Security
         private readonly PasswordVault _vault = new();
         private readonly ILoggingService? _logger;
 
-        // Prefijo para distinguir entradas de esta app
-        private const string ResourcePrefix = "Advance_Control";
+        // Prefijo para distinguir entradas de esta app; el entorno de pruebas guarda sus
+        // tokens y credenciales aparte para no pisar la sesión de producción.
+        private static readonly string ResourcePrefix =
+            Utilities.EntornoApp.EsPruebas ? "Advance_Control_Pruebas" : "Advance_Control";
 
         public SecretStorageWindows(ILoggingService? logger = null)
         {

@@ -108,15 +108,6 @@ namespace Advance_Control.Services.DevOps
             }
         }
 
-        public Task<List<DevOpsWipeResult>> GenerarClientePruebaAsync(CancellationToken ct = default)
-            => EjecutarLimpiezaAsync("prueba/generar", ct);
-
-        public Task<List<DevOpsWipeResult>> BorrarClientePruebaAsync(CancellationToken ct = default)
-            => EjecutarLimpiezaAsync("prueba/borrar", ct);
-
-        public Task<List<DevOpsWipeResult>> ReiniciarSemillasAsync(CancellationToken ct = default)
-            => EjecutarLimpiezaAsync("semillas/reiniciar", ct);
-
         private async Task<List<DevOpsWipeResult>> EjecutarLimpiezaAsync(string ruta, CancellationToken ct)
         {
             try
@@ -129,9 +120,6 @@ namespace Advance_Control.Services.DevOps
                 if (!response.IsSuccessStatusCode)
                 {
                     var error = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
-                    // Error de negocio (400 con {message}): se muestra tal cual.
-                    if (response.StatusCode == System.Net.HttpStatusCode.BadRequest && MensajeDe(error) is string mensaje)
-                        throw new InvalidOperationException(mensaje);
                     throw new Exception($"Error al ejecutar limpieza ({ruta}): {response.StatusCode} - {error}");
                 }
 
@@ -164,21 +152,6 @@ namespace Advance_Control.Services.DevOps
             {
                 await _logger.LogErrorAsync($"Error al enviar mensaje de prueba: {ex.Message}", ex, "DevOpsService", "EnviarMensajePruebaAsync");
                 throw;
-            }
-        }
-
-        private static string? MensajeDe(string json)
-        {
-            try
-            {
-                using var doc = System.Text.Json.JsonDocument.Parse(json);
-                return doc.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
-                       && doc.RootElement.TryGetProperty("message", out var m) && m.ValueKind == System.Text.Json.JsonValueKind.String
-                    ? m.GetString() : null;
-            }
-            catch (System.Text.Json.JsonException)
-            {
-                return null;
             }
         }
     }

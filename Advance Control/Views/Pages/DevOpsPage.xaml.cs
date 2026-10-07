@@ -211,50 +211,6 @@ namespace Advance_Control.Views.Pages
             }
         }
 
-        private async void OnGenerarClientePruebaClick(object sender, RoutedEventArgs e)
-        {
-            if (await ConfirmarAsync("Generar cliente de prueba",
-                    "Se creará CLIENTE DE PRUEBA SA DE CV con contactos, logins del portal, equipos, órdenes de servicio, " +
-                    "operaciones con cotización, una hoja de mantenimiento por aprobar, una factura ficticia (sin timbrar) y una emergencia.\n\n" +
-                    "Todo va dirigido a Ing. Braulio Emiliano Vazquez Valdez. La factura ficticia cuenta en reportes mientras exista.",
-                    "Generar", ContentDialogButton.Primary))
-                await ViewModel.GenerarClientePruebaAsync();
-        }
-
-        private async void OnBorrarClientePruebaClick(object sender, RoutedEventArgs e)
-        {
-            if (await ConfirmarAsync("Borrar cliente de prueba",
-                    "Se borrará CLIENTE DE PRUEBA SA DE CV (RFC PRU260101AB1) y TODO lo relacionado: contactos, logins, equipos, " +
-                    "órdenes de servicio, operaciones, cargos, cotizaciones, hojas, factura ficticia, emergencias y los archivos de sus operaciones.\n\n" +
-                    "No toca a ningún otro cliente.",
-                    "Borrar", ContentDialogButton.Close))
-                await ViewModel.BorrarClientePruebaAsync();
-        }
-
-        private async void OnReiniciarSemillasClick(object sender, RoutedEventArgs e)
-        {
-            if (await ConfirmarAsync("Reiniciar semillas",
-                    "La secuencia de cada tabla usada por los datos de prueba (clientes, contactos, operaciones, cargos, facturas, etc.) " +
-                    "quedará en el siguiente número después del id más alto que exista, para que no queden huecos tras borrar el cliente de prueba.\n\n" +
-                    "Nunca baja de un id existente. Úsalo después de \"Borrar cliente de prueba\".",
-                    "Reiniciar", ContentDialogButton.Close))
-                await ViewModel.ReiniciarSemillasAsync();
-        }
-
-        private async System.Threading.Tasks.Task<bool> ConfirmarAsync(string titulo, string texto, string boton, ContentDialogButton porDefecto)
-        {
-            var dialogo = new ContentDialog
-            {
-                Title = titulo,
-                Content = new TextBlock { Text = texto, TextWrapping = TextWrapping.Wrap },
-                PrimaryButtonText = boton,
-                CloseButtonText = "Cancelar",
-                DefaultButton = porDefecto,
-                XamlRoot = this.XamlRoot
-            };
-            return await dialogo.ShowAsync() == ContentDialogResult.Primary;
-        }
-
         private async void OnCargarEstadisticasClick(object sender, RoutedEventArgs e)
         {
             await ViewModel.CargarEstadisticasAsync();

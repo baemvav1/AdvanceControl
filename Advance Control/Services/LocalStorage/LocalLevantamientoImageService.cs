@@ -20,7 +20,7 @@ namespace Advance_Control.Services.LocalStorage
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _basePath = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Advance Control", "Levantamientos");
+                global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "Levantamientos");
             Directory.CreateDirectory(_basePath);
         }
 
