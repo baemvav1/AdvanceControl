@@ -6,6 +6,8 @@ namespace Advance_Control.Models
     public class OperacionFacturadaDto
     {
         public int IdOperacion { get; set; }
+        /// <summary>Número visible ("R..." si es recuperada). Migración 142.</summary>
+        public string? FolioOperacion { get; set; }
         public string? TipoMantenimiento { get; set; }
         public string? RazonSocial { get; set; }
         public string? Identificador { get; set; }
@@ -26,7 +28,8 @@ namespace Advance_Control.Models
         public string FechaTexto => Fecha.ToString("dd/MM/yyyy");
         public string UuidTexto => string.IsNullOrWhiteSpace(Uuid) ? "Sin UUID" : $"UUID: {Uuid}";
         public string AtiendeTexto => string.IsNullOrWhiteSpace(Atiende) ? "Sin asignar" : Atiende;
-        public string IdOperacionTexto => $"Operación #{IdOperacion}";
+        public string FolioTexto => string.IsNullOrWhiteSpace(FolioOperacion) ? IdOperacion.ToString() : FolioOperacion!;
+        public string IdOperacionTexto => $"Operación #{FolioTexto}";
         public bool TieneAbonos => NumeroAbonos > 0;
     }
 }

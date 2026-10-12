@@ -192,7 +192,7 @@ namespace Advance_Control.Services.Quotes
                 Directory.CreateDirectory(operacionFolder);
 
                 var filePath = Path.Combine(operacionFolder, fileName);
-                var quotationTitle = $"Cotización {operacion.IdOperacion}";
+                var quotationTitle = $"Cotización {operacion.FolioTexto}";
                 var cotizacionImagePath = Path.Combine(GetCabecerasFolder(), "Cotizacion.png");
 
                 // Generate PDF
@@ -290,7 +290,7 @@ namespace Advance_Control.Services.Quotes
                                     text.AlignCenter();
                                     text.DefaultTextStyle(s => s.FontSize(13));
                                     text.Span("Cotización No: ").Bold();
-                                    text.Span($"{operacion.IdOperacion}");
+                                    text.Span(operacion.FolioTexto);
                                 });
 
                                 if (!string.IsNullOrWhiteSpace(ubicacionNombre))
@@ -411,7 +411,7 @@ namespace Advance_Control.Services.Quotes
                             .AlignCenter()
                             .Text(x =>
                             {
-                                x.Span($"Cotización {operacion.IdOperacion}, Hoja ");
+                                x.Span($"Cotización {operacion.FolioTexto}, Hoja ");
                                 x.CurrentPageNumber();
                                 x.Span("/");
                                 x.TotalPages();
@@ -458,7 +458,7 @@ namespace Advance_Control.Services.Quotes
                 Directory.CreateDirectory(operacionFolder);
 
                 var filePath = Path.Combine(operacionFolder, fileName);
-                var notaTitle = $"Nota {operacion.IdOperacion}";
+                var notaTitle = $"Nota {operacion.FolioTexto}";
                 var notaImagePath = Path.Combine(GetCabecerasFolder(), "Nota.png");
 
                 var document = Document.Create(container =>
@@ -547,7 +547,7 @@ namespace Advance_Control.Services.Quotes
                                     text.AlignCenter();
                                     text.DefaultTextStyle(s => s.FontSize(13));
                                     text.Span("Nota No: ").Bold();
-                                    text.Span($"{operacion.IdOperacion}");
+                                    text.Span(operacion.FolioTexto);
                                 });
 
                                 if (!string.IsNullOrWhiteSpace(ubicacionNombre))
@@ -657,7 +657,7 @@ namespace Advance_Control.Services.Quotes
                             .AlignCenter()
                             .Text(x =>
                             {
-                                x.Span($"Nota {operacion.IdOperacion}, Hoja ");
+                                x.Span($"Nota {operacion.FolioTexto}, Hoja ");
                                 x.CurrentPageNumber();
                                 x.Span("/");
                                 x.TotalPages();
@@ -706,7 +706,7 @@ namespace Advance_Control.Services.Quotes
 
                 var filePath = Path.Combine(operacionFolder, fileName);
 
-                var reportTitle = $"Reporte {operacion.IdOperacion}";
+                var reportTitle = $"Reporte {operacion.FolioTexto}";
                 var cargosList = cargos.ToList();
                 var reporteImagePath = Path.Combine(GetCabecerasFolder(), "Reporte.png");
                 var reportDate = DateTime.Now;
@@ -834,9 +834,9 @@ namespace Advance_Control.Services.Quotes
                                     text.AlignCenter();
                                     text.DefaultTextStyle(s => s.FontSize(13));
                                     text.Span("Reporte No: ").Bold();
-                                    text.Span($"{operacion.IdOperacion}");
+                                    text.Span(operacion.FolioTexto);
                                     text.Span(", Cotización No: ").Bold();
-                                    text.Span($"{operacion.IdOperacion}");
+                                    text.Span(operacion.FolioTexto);
                                     text.Span(", Orden de compra No: ").Bold();
                                     text.Span("N/D");
                                 });
@@ -996,7 +996,7 @@ namespace Advance_Control.Services.Quotes
                             .AlignCenter()
                             .Text(x =>
                             {
-                                x.Span($"Reporte {operacion.IdOperacion}  ·  Hoja ");
+                                x.Span($"Reporte {operacion.FolioTexto}  ·  Hoja ");
                                 x.CurrentPageNumber();
                                 x.Span(" de ");
                                 x.TotalPages();

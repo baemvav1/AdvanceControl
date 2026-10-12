@@ -622,6 +622,7 @@ namespace Advance_Control.Views.Formularios
             return new MantenimientoPreventivoPdfData
             {
                 IdOperacion = _operacion.IdOperacion ?? 0,
+                FolioOperacion = _operacion.FolioOperacion,
                 NombreCliente = NombreClienteTextBlock.Text,
                 Direccion = DireccionTextBlock.Text,
                 Equipo = EquipoTextBlock.Text,

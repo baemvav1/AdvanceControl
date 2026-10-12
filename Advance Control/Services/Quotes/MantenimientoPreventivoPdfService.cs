@@ -67,7 +67,7 @@ namespace Advance_Control.Services.Quotes
                         page.Header().Column(header =>
                         {
                             header.Item().Text("Mantenimiento Preventivo").FontSize(18).SemiBold();
-                            header.Item().Text($"Operación {datos.IdOperacion}").FontSize(10).FontColor(Colors.Grey.Darken1);
+                            header.Item().Text($"Operación {datos.FolioTexto}").FontSize(10).FontColor(Colors.Grey.Darken1);
                             if (!string.IsNullOrWhiteSpace(datos.DirigidoA))
                                 header.Item().PaddingTop(2).Text(datos.DirigidoA).FontSize(10).SemiBold();
                             header.Item().PaddingTop(6).LineHorizontal(1).LineColor(Colors.Grey.Lighten1);
@@ -89,7 +89,7 @@ namespace Advance_Control.Services.Quotes
 
                         page.Footer().AlignCenter().Text(x =>
                         {
-                            x.Span($"Mantenimiento Preventivo {datos.IdOperacion}, Hoja ");
+                            x.Span($"Mantenimiento Preventivo {datos.FolioTexto}, Hoja ");
                             x.CurrentPageNumber();
                             x.Span("/");
                             x.TotalPages();

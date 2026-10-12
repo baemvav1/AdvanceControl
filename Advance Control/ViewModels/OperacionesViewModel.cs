@@ -550,7 +550,8 @@ namespace Advance_Control.ViewModels
 
                 var query = new OperacionQueryDto
                 {
-                    IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+                    IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+                    IdTrasladado = int.TryParse(IdOperacionFilter, out _) ? null : IdOperacionFilter,
                     IdTipo = IdTipoFilter,
                     IdCliente = IdClienteFilter,
                     IdEquipo = IdEquipoFilter,
@@ -686,7 +687,8 @@ namespace Advance_Control.ViewModels
         {
             var query = new OperacionQueryDto
             {
-                IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+                IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+                IdTrasladado = int.TryParse(IdOperacionFilter, out _) ? null : IdOperacionFilter,
                 IdTipo = IdTipoFilter,
                 IdCliente = IdClienteFilter,
                 IdEquipo = IdEquipoFilter,

@@ -75,5 +75,11 @@ namespace Advance_Control.Models
         /// t_finalizado y sin factura, que ya tienen orden de compra cargada.
         /// </summary>
         public bool? EstadoAbiertasConOc { get; set; }
+
+        /// <summary>
+        /// Búsqueda exacta por folio de operación recuperada ("RA1023") o su número original
+        /// ("A1023"). Se usa cuando el filtro de ID no es un número (migración 142).
+        /// </summary>
+        public string? IdTrasladado { get; set; }
     }
 }

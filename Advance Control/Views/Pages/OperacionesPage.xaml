@@ -52,6 +52,11 @@
                 Click="ReporteEjecutivo_Click"
                 Content="Reporte ejecutivo"
                 ToolTipService.ToolTip="Genera un PDF con lo realizado en cada operación de los filtros actuales (p. ej. un mes con Fecha inicio / Fecha cierre): hojas de servicio, trabajos realizados sin precios, fotos, levantamientos y preventivos." />
+            <Button
+                x:Name="OpRecuperadaButton"
+                Click="OpRecuperada_Click"
+                Content="Op Recuperada"
+                ToolTipService.ToolTip="Dar de alta una operación antigua con su número original (se mostrará como R + número), sin pasar por orden de servicio" />
         </StackPanel>
 
         <!--  Filtros  -->
@@ -138,7 +143,7 @@
                         <TextBlock Margin="0,0,0,4" Text="ID Operación" />
                         <TextBox
                             x:Name="IdOperacionTextBox"
-                            PlaceholderText="Buscar por ID"
+                            PlaceholderText="ID o folio R…"
                             Text="{x:Bind ViewModel.IdOperacionFilter, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}">
                             <TextBox.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Enter" Invoked="IdOperacionTextBox_EnterInvoked" />
@@ -307,7 +312,7 @@
                                                             </TextBlock>
                                                             <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource AccentFillColorDefaultBrush}">
                                                                 <Run Text="#" />
-                                                                <Run Text="{x:Bind IdOperacion, Mode=OneWay}" />
+                                                                <Run Text="{x:Bind FolioTexto, Mode=OneWay}" />
                                                             </TextBlock>
                                                         </StackPanel>
                                                     </Grid>

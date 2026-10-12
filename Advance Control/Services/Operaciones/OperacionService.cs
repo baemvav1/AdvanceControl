@@ -74,7 +74,8 @@ namespace Advance_Control.Services.Operaciones
                         .Add("estadoAbierta", query.EstadoAbierta)
                         .Add("estadoTFinalizado", query.EstadoTFinalizado)
                         .Add("estadoFacturada", query.EstadoFacturada)
-                        .Add("estadoAbiertasConOc", query.EstadoAbiertasConOc);
+                        .Add("estadoAbiertasConOc", query.EstadoAbiertasConOc)
+                        .Add("idTrasladado", string.IsNullOrWhiteSpace(query.IdTrasladado) ? null : query.IdTrasladado.Trim());
                 }
                 if (skip > 0) builder.Add("skip", skip.ToString());
                 if (take > 0) builder.Add("take", take.ToString());
@@ -275,6 +276,55 @@ namespace Advance_Control.Services.Operaciones
             {
                 await _logger.LogErrorAsync("Error inesperado al actualizar operación", ex, "OperacionService", "UpdateOperacionAsync");
                 throw;
+            }
+        }
+
+        public async Task<OperacionRecuperadaResultadoDto> CrearRecuperadaAsync(OperacionRecuperadaCreateDto dto, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(dto);
+
+            try
+            {
+                var url = $"{_endpoints.GetEndpoint("api", "Operaciones")}/recuperada";
+                await _logger.LogInformationAsync($"Creando operación recuperada R{dto.IdTrasladado}", "OperacionService", "CrearRecuperadaAsync");
+
+                using var response = await _http.PostAsJsonAsync(url, dto, cancellationToken).ConfigureAwait(false);
+                var contenido = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al crear operación recuperada. Status: {response.StatusCode}, Content: {contenido}",
+                        null, "OperacionService", "CrearRecuperadaAsync");
+
+                    string? mensaje = null;
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(contenido);
+                        if (doc.RootElement.TryGetProperty("message", out var m)) mensaje = m.GetString();
+                    }
+                    catch (JsonException) { }
+
+                    return new OperacionRecuperadaResultadoDto
+                    {
+                        Success = false,
+                        Message = mensaje ?? $"No se pudo crear la operación recuperada ({(int)response.StatusCode})."
+                    };
+                }
+
+                var creada = JsonSerializer.Deserialize<OperacionRecuperadaResultadoDto>(contenido, _jsonOptions);
+                return new OperacionRecuperadaResultadoDto
+                {
+                    Success = creada != null,
+                    IdOperacion = creada?.IdOperacion ?? 0,
+                    FolioOperacion = creada?.FolioOperacion,
+                    Message = creada == null ? "La API devolvió una respuesta vacía." : null
+                };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al crear operación recuperada", ex, "OperacionService", "CrearRecuperadaAsync");
+                return new OperacionRecuperadaResultadoDto { Success = false, Message = "Error de comunicación con el servidor." };
             }
         }
 

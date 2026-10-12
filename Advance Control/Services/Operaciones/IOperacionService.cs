@@ -55,5 +55,11 @@ namespace Advance_Control.Services.Operaciones
         /// Desmarca el trabajo técnico de una operación como finalizado (t_finalizado = FALSE)
         /// </summary>
         Task<bool> DesfinalizarTrabajoAsync(int idOperacion, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Da de alta una operación antigua ("Op Recuperada") sin orden de servicio.
+        /// Devuelve el folio visible ("R...") o el mensaje de error de la API.
+        /// </summary>
+        Task<OperacionRecuperadaResultadoDto> CrearRecuperadaAsync(OperacionRecuperadaCreateDto dto, CancellationToken cancellationToken = default);
     }
 }

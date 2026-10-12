@@ -115,7 +115,7 @@ namespace Advance_Control.ViewModels
 
                 await _facturaService.VincularFacturaOperacionAsync(factura.IdFactura, operacion.IdOperacion);
 
-                SuccessMessage = $"Factura {factura.Folio} vinculada a la operación #{operacion.IdOperacion}.";
+                SuccessMessage = $"Factura {factura.Folio} vinculada a la operación #{operacion.FolioTexto}.";
                 await CargarAsync();
             }
             catch (Exception ex)
@@ -186,7 +186,7 @@ namespace Advance_Control.ViewModels
                 }
                 catch (Exception ex)
                 {
-                    errores.Add($"Operación #{propuesta.Operacion.IdOperacion} ({propuesta.Operacion.RazonSocial}): {ex.Message}");
+                    errores.Add($"Operación #{propuesta.Operacion.FolioTexto} ({propuesta.Operacion.RazonSocial}): {ex.Message}");
                 }
             }
 
@@ -214,7 +214,7 @@ namespace Advance_Control.ViewModels
                 var resultado = await _facturaService.DesvincularFacturaOperacionAsync(operacion.IdOperacion);
 
                 SuccessMessage = string.IsNullOrWhiteSpace(resultado.Mensaje)
-                    ? $"Factura desligada de la operación #{operacion.IdOperacion}. La factura se conserva."
+                    ? $"Factura desligada de la operación #{operacion.FolioTexto}. La factura se conserva."
                     : resultado.Mensaje;
                 await CargarAsync();
             }
@@ -282,7 +282,7 @@ namespace Advance_Control.ViewModels
                     return;
                 }
 
-                SuccessMessage = $"Factura {file.Name} vinculada a la operación #{operacion.IdOperacion}.";
+                SuccessMessage = $"Factura {file.Name} vinculada a la operación #{operacion.FolioTexto}.";
                 await CargarAsync();
             }
             catch (Exception ex)
@@ -310,7 +310,7 @@ namespace Advance_Control.ViewModels
 
                 await _facturaService.CancelarFacturaOperacionAsync(operacion.IdOperacion);
 
-                SuccessMessage = $"Factura desvinculada de la operación #{operacion.IdOperacion}.";
+                SuccessMessage = $"Factura desvinculada de la operación #{operacion.FolioTexto}.";
                 await CargarAsync();
             }
             catch (Exception ex)
