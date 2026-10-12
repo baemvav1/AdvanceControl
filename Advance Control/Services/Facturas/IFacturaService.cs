@@ -79,5 +79,17 @@ namespace Advance_Control.Services.Facturas
         /// cliente por monto+fecha).
         /// </summary>
         Task<RegistrarAbonoFacturaResponseDto> VincularIngresoManualMovimientoAsync(VincularIngresoManualMovimientoRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Importación automática, paso 1: lista del mes en el portal FEL en Línea y UUID que faltan
+        /// en el sistema. Lanza InvalidOperationException con el mensaje de la API si falla.
+        /// </summary>
+        Task<ImportacionAutomaticaConsultaResponseDto> ImportacionAutomaticaConsultarAsync(ImportacionAutomaticaRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>Importación automática, paso 2: XML de un lote de UUID (máx. 25).</summary>
+        Task<List<ImportacionAutomaticaXmlDto>> ImportacionAutomaticaDescargarXmlAsync(ImportacionAutomaticaXmlRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>Importación automática, paso 3: aplica las cancelaciones que reporta el portal.</summary>
+        Task<ImportacionAutomaticaCancelacionesResponseDto> ImportacionAutomaticaCancelacionesAsync(ImportacionAutomaticaRequestDto request, CancellationToken cancellationToken = default);
     }
 }

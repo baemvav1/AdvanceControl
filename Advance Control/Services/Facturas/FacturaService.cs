@@ -912,6 +912,45 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public Task<ImportacionAutomaticaConsultaResponseDto> ImportacionAutomaticaConsultarAsync(ImportacionAutomaticaRequestDto request, CancellationToken cancellationToken = default)
+            => PostImportacionAutomaticaAsync<ImportacionAutomaticaConsultaResponseDto>("consultar", request, cancellationToken);
+
+        public Task<List<ImportacionAutomaticaXmlDto>> ImportacionAutomaticaDescargarXmlAsync(ImportacionAutomaticaXmlRequestDto request, CancellationToken cancellationToken = default)
+            => PostImportacionAutomaticaAsync<List<ImportacionAutomaticaXmlDto>>("xml", request, cancellationToken);
+
+        public Task<ImportacionAutomaticaCancelacionesResponseDto> ImportacionAutomaticaCancelacionesAsync(ImportacionAutomaticaRequestDto request, CancellationToken cancellationToken = default)
+            => PostImportacionAutomaticaAsync<ImportacionAutomaticaCancelacionesResponseDto>("cancelaciones", request, cancellationToken);
+
+        private async Task<T> PostImportacionAutomaticaAsync<T>(string paso, object request, CancellationToken cancellationToken)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            var url = _endpoints.GetEndpoint("api", "factura", "importacion-automatica", paso);
+
+            try
+            {
+                // Sin _logger.LogInformationAsync del cuerpo: lleva la contraseña del portal.
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                    await _logger.LogErrorAsync(
+                        $"Error en importación automática ({paso}). Status: {response.StatusCode}, Content: {errorContent}",
+                        null,
+                        "FacturaService",
+                        "PostImportacionAutomaticaAsync");
+                    throw new InvalidOperationException(ExtraerMensajeError(errorContent));
+                }
+
+                var result = await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+                return result ?? throw new InvalidOperationException($"La API devolvió una respuesta vacía en la importación automática ({paso}).");
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync($"Error de red en importación automática ({paso})", ex, "FacturaService", "PostImportacionAutomaticaAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor en la importación automática.", ex);
+            }
+        }
+
         private static CancelarCfdiResponseDto ExtraerResultadoErrorCancelacion(string errorContent)
         {
             var resultado = new CancelarCfdiResponseDto { Success = false, Message = errorContent };

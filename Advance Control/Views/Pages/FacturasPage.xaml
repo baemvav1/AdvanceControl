@@ -57,6 +57,15 @@
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
                         ToolTipService.ToolTip="Cargar en lote varias facturas ya timbradas en el sistema web del proveedor" />
                     <Button
+                        Click="BtnImportacionAutomatica_Click"
+                        IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
+                        ToolTipService.ToolTip="Descarga un mes completo del portal FEL en Línea: integra las facturas que falten, omite las existentes y aplica las cancelaciones hechas en el portal">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <SymbolIcon Symbol="Sync" />
+                            <TextBlock Text="Importación automática" />
+                        </StackPanel>
+                    </Button>
+                    <Button
                         Click="BtnConsolidarComplementos_Click"
                         Content="Consolidar Complementos"
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"

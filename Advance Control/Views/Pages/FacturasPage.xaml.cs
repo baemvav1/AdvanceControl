@@ -58,6 +58,40 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarYGuardarMultiplesFacturasAsync(hwnd, XamlRoot);
         }
 
+        private async void BtnImportacionAutomatica_Click(object sender, RoutedEventArgs e)
+        {
+            var dialogo = new ImportacionAutomaticaDialog(XamlRoot);
+            if (await dialogo.ShowAsync() != ContentDialogResult.Primary || dialogo.Resultado == null)
+            {
+                return;
+            }
+
+            var resumen = await ViewModel.ImportacionAutomaticaAsync(dialogo.Resultado, XamlRoot);
+            if (resumen == null)
+            {
+                // ViewModel.ErrorMessage ya quedó establecido.
+                return;
+            }
+
+            var resumenDialogo = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Resultado de la importación automática",
+                CloseButtonText = "Cerrar",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 480,
+                    Content = new TextBlock
+                    {
+                        Text = resumen,
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                }
+            };
+            await resumenDialogo.ShowAsync();
+        }
+
         /// <summary>
         /// "Consolidar Complementos": corre en un solo clic todo el proceso que antes se hacía a
         /// mano -- (1) detectar Complementos de Pago que llegaron sin parsear y vincularlos a su
