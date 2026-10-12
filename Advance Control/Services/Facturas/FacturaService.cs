@@ -492,6 +492,51 @@ namespace Advance_Control.Services.Facturas
             }
         }
 
+        public async Task<TimbrarResultadoDto> TimbrarLibreAsync(CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default)
+        {
+            if (request == null)
+                throw new ArgumentNullException(nameof(request));
+
+            var url = _endpoints.GetEndpoint("api", "factura", "timbrar-libre");
+
+            try
+            {
+                await _logger.LogInformationAsync($"Timbrando factura libre para {request.ReceptorRfc} en: {url}", "FacturaService", "TimbrarLibreAsync");
+
+                using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
+                var contenido = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync(
+                        $"Error al timbrar factura libre para {request.ReceptorRfc}. Status: {response.StatusCode}, Content: {contenido}",
+                        null,
+                        "FacturaService",
+                        "TimbrarLibreAsync");
+
+                    return ExtraerResultadoError(contenido);
+                }
+
+                var result = JsonSerializer.Deserialize<GuardarFacturaResponseDto>(contenido, _jsonOptions);
+                if (result != null)
+                {
+                    return new TimbrarResultadoDto
+                    {
+                        Success = result.Success,
+                        Message = result.Message,
+                        IdFactura = result.IdFactura
+                    };
+                }
+
+                return new TimbrarResultadoDto { Success = false, Message = "La API devolvió una respuesta vacía al timbrar." };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al timbrar factura libre", ex, "FacturaService", "TimbrarLibreAsync");
+                return new TimbrarResultadoDto { Success = false, Message = "Error de comunicación con el servidor al timbrar." };
+            }
+        }
+
         public async Task<TimbrarResultadoDto> TimbrarIgualaMensualAsync(int idContrato, string periodo, CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default)
         {
             if (request == null)

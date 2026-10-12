@@ -32,6 +32,12 @@ namespace Advance_Control.Services.Facturas
         Task<TimbrarResultadoDto> TimbrarIgualaMensualAsync(int idContrato, string periodo, CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Construye, sella y timbra un CFDI 4.0 "libre" (conceptos capturados a mano, sin
+        /// operación ni contrato asociado). POST api/factura/timbrar-libre.
+        /// </summary>
+        Task<TimbrarResultadoDto> TimbrarLibreAsync(CfdiTimbrarRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Cancela un CFDI ya timbrado (Serie+Folio) ante el SAT vía FEL Bilkon. Operación
         /// irreversible y sin ambiente de pruebas -- consume 1 timbre si Bilkon confirma código 201.
         /// </summary>

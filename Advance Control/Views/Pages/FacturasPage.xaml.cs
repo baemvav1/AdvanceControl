@@ -31,6 +31,19 @@ namespace Advance_Control.Views.Pages
             await ViewModel.CargarFacturasAsync();
         }
 
+        // --- Factura nueva desde cero (timbrado libre) ---
+
+        private void BtnNuevaFactura_Click(object sender, RoutedEventArgs e)
+        {
+            var ventana = new NuevaFacturaWindow();
+            ventana.FacturaTimbrada += async (s, resultado) =>
+            {
+                ViewModel.SuccessMessage = $"Factura timbrada correctamente. {resultado.Message}".Trim();
+                await ViewModel.CargarFacturasAsync();
+            };
+            ventana.Activate();
+        }
+
         // --- Carga de facturas externas (portal de Bilkon, folio sin serie) ---
 
         private async void BtnCargarFacturaXml_Click(object sender, RoutedEventArgs e)
