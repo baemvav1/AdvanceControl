@@ -37,6 +37,16 @@
                         Style="{StaticResource TitleTextBlockStyle}"
                         Text="Facturas CFDI" />
                     <Button
+                        Click="BtnNuevaFactura_Click"
+                        IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
+                        Style="{StaticResource AccentButtonStyle}"
+                        ToolTipService.ToolTip="Hacer y timbrar una factura desde cero para un cliente registrado">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <SymbolIcon Symbol="Add" />
+                            <TextBlock Text="Nuevo" />
+                        </StackPanel>
+                    </Button>
+                    <Button
                         Click="BtnCargarFacturaXml_Click"
                         Content="Cargar XML"
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
