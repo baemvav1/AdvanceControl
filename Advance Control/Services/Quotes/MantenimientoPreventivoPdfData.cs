@@ -11,6 +11,11 @@ namespace Advance_Control.Services.Quotes
     {
         public int IdOperacion { get; set; }
 
+        /// <summary>Número visible ("R..." si es recuperada). Si viene vacío se usa IdOperacion.</summary>
+        public string? FolioOperacion { get; set; }
+
+        public string FolioTexto => string.IsNullOrWhiteSpace(FolioOperacion) ? IdOperacion.ToString() : FolioOperacion!;
+
         public string? NombreCliente { get; set; }
         public string? Direccion { get; set; }
         public string? Equipo { get; set; }

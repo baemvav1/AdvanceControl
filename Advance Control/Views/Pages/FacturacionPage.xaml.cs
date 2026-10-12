@@ -136,8 +136,8 @@ namespace Advance_Control.Views.Pages
             }
 
             var mensaje = operacion.TieneAbonos
-                ? $"La factura {operacion.Folio} de la operación #{operacion.IdOperacion} ya tiene abonos registrados. ¿Aun así deseas eliminarla? Se eliminará el registro y el XML por completo."
-                : $"¿Deseas eliminar la factura {operacion.Folio} de la operación #{operacion.IdOperacion}? Se eliminará el registro y el XML por completo.";
+                ? $"La factura {operacion.Folio} de la operación #{operacion.FolioTexto} ya tiene abonos registrados. ¿Aun así deseas eliminarla? Se eliminará el registro y el XML por completo."
+                : $"¿Deseas eliminar la factura {operacion.Folio} de la operación #{operacion.FolioTexto}? Se eliminará el registro y el XML por completo.";
 
             var dialog = new ContentDialog
             {
@@ -166,7 +166,7 @@ namespace Advance_Control.Views.Pages
             var dialog = new ContentDialog
             {
                 Title = "Confirmar desvinculación",
-                Content = $"¿Deseas desligar la factura {operacion.Folio} de la operación #{operacion.IdOperacion}? " +
+                Content = $"¿Deseas desligar la factura {operacion.Folio} de la operación #{operacion.FolioTexto}? " +
                     "La factura NO se borra: vuelve al listado general de facturas para poder vincularla a otra operación.",
                 PrimaryButtonText = "Desligar",
                 CloseButtonText = "Volver",
@@ -197,7 +197,7 @@ namespace Advance_Control.Views.Pages
             var dialog = new ContentDialog
             {
                 Title = "Confirmar vínculo",
-                Content = $"¿Vincular la factura {factura.Folio} ({factura.TotalTexto}, {factura.FechaTexto}) a la operación #{operacion.IdOperacion}?",
+                Content = $"¿Vincular la factura {factura.Folio} ({factura.TotalTexto}, {factura.FechaTexto}) a la operación #{operacion.FolioTexto}?",
                 PrimaryButtonText = "Vincular",
                 CloseButtonText = "Cancelar",
                 DefaultButton = ContentDialogButton.Primary,

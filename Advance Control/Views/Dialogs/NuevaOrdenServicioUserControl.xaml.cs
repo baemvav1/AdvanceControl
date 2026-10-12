@@ -93,6 +93,12 @@ namespace Advance_Control.Views.Dialogs
         /// </summary>
         public int? IdCliente => _selectedCliente?.IdCliente;
 
+        /// <summary>Identificador del equipo o inmueble elegido (para buscar técnicos de su área).</summary>
+        public string? IdentificadorSeleccionado => _buscarPorEquipo ? _selectedEquipo?.Identificador : _selectedInmueble?.Identificador;
+
+        /// <summary>"equipo" o "inmueble", según lo que se esté buscando.</summary>
+        public string TipoObjetivoSeleccionado => _buscarPorEquipo ? "equipo" : "inmueble";
+
         /// <summary>
         /// Gets the note text
         /// </summary>

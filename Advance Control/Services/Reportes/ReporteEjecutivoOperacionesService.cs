@@ -316,7 +316,7 @@ namespace Advance_Control.Services.Reportes
 
                 foreach (var op in operaciones)
                 {
-                    tabla.Cell().Element(OperacionesReporteExportService.EstiloCeldaDatos).Text(op.IdOperacion?.ToString() ?? "—").FontSize(8);
+                    tabla.Cell().Element(OperacionesReporteExportService.EstiloCeldaDatos).Text(string.IsNullOrEmpty(op.FolioTexto) ? "—" : op.FolioTexto).FontSize(8);
                     tabla.Cell().Element(OperacionesReporteExportService.EstiloCeldaDatos).Column(c =>
                     {
                         c.Item().Text(op.RazonSocial ?? "—").FontSize(8);
@@ -339,7 +339,7 @@ namespace Advance_Control.Services.Reportes
             column.Item().Background(Colors.Blue.Darken2).Padding(8).Text(text =>
             {
                 text.DefaultTextStyle(s => s.FontColor(Colors.White).FontSize(14).SemiBold());
-                text.Span($"Operación {op.IdOperacion}");
+                text.Span($"Operación {op.FolioTexto}");
                 text.Span($"  ·  {op.RazonSocial ?? "Sin cliente"}").FontSize(11).NormalWeight();
             });
 

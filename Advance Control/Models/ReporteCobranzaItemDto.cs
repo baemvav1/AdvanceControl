@@ -20,6 +20,8 @@ namespace Advance_Control.Models
         public DateTime? FechaVencimiento { get; set; }
         public int DiasVencido { get; set; }
         public string? BucketVencimiento { get; set; }
+        /// <summary>Número visible de la operación ("R..." si es recuperada). Migración 142.</summary>
+        public string? OperacionFolio { get; set; }
 
         /// <summary>True cuando la fila es una operación finalizada que aún no tiene factura (grupo 2).</summary>
         public bool EsSinFacturar => OrdenGrupo == 2;
@@ -32,7 +34,7 @@ namespace Advance_Control.Models
         public string PagadaTexto => Pagada ? "Pagada" : "Pendiente";
         public string EstadoTexto => Estado ?? PagadaTexto;
         public string OperacionTexto => IdOperacion.HasValue
-            ? $"#{IdOperacion} - {OperacionCliente ?? "Sin cliente"} ({OperacionIdentificador ?? "Sin equipo"})"
+            ? $"#{OperacionFolio ?? IdOperacion.ToString()} - {OperacionCliente ?? "Sin cliente"} ({OperacionIdentificador ?? "Sin equipo"})"
             : "Sin operación vinculada";
         public string TecnicoTexto => string.IsNullOrWhiteSpace(TecnicoAtiende) ? "Sin técnico asignado" : TecnicoAtiende;
         public string MovimientosResumenTexto => EsSinFacturar

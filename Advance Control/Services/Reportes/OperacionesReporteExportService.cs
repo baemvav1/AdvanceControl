@@ -141,7 +141,7 @@ namespace Advance_Control.Services.Reportes
 
                         foreach (var op in filas)
                         {
-                            tabla.Cell().Element(c => EstiloCeldaDatos(c)).Text(op.IdOperacion?.ToString() ?? "—").FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c)).Text(string.IsNullOrEmpty(op.FolioTexto) ? "—" : op.FolioTexto).FontSize(8);
                             tabla.Cell().Element(c => EstiloCeldaDatos(c)).Text(op.RazonSocial ?? op.Identificador ?? "—").FontSize(8);
                             tabla.Cell().Element(c => EstiloCeldaDatos(c)).Text(string.IsNullOrWhiteSpace(op.Atiende) ? "Sin asignar" : op.Atiende).FontSize(8);
                             tabla.Cell().Element(c => EstiloCeldaDatos(c)).Text(op.TipoMantenimiento ?? "—").FontSize(8);

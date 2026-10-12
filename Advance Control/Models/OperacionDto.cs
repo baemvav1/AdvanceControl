@@ -29,6 +29,22 @@ namespace Advance_Control.Models
         public int? IdOperacion { get; set; }
 
         /// <summary>
+        /// Número visible de la operación (migración 142): "R" + número original en las
+        /// operaciones recuperadas, o el id en las demás. Solo para mostrar; IdOperacion
+        /// sigue siendo la llave (rutas, archivos, carpetas locales).
+        /// </summary>
+        [JsonPropertyName("folioOperacion")]
+        public string? FolioOperacion { get; set; }
+
+        /// <summary>True si es una operación antigua dada de alta con "Op Recuperada".</summary>
+        [JsonPropertyName("recuperada")]
+        public bool Recuperada { get; set; }
+
+        /// <summary>Texto a mostrar como número de la operación.</summary>
+        [JsonIgnore]
+        public string FolioTexto => !string.IsNullOrWhiteSpace(FolioOperacion) ? FolioOperacion! : IdOperacion?.ToString() ?? string.Empty;
+
+        /// <summary>
         /// ID del tipo de operación
         /// </summary>
         [JsonPropertyName("idTipo")]
