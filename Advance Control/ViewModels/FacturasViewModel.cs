@@ -464,7 +464,7 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 SuccessMessage = null;
-                ErrorMessage = $"Error en la importación automática de {nombreMes}: {ex.Message}";
+                ErrorMessage = $"Error en la importación automática de {nombreMes}.\n\n{ex.Message}";
                 return null;
             }
             finally

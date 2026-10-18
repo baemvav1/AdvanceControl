@@ -925,6 +925,7 @@ namespace Advance_Control.Services.Facturas
         {
             ArgumentNullException.ThrowIfNull(request);
             var url = _endpoints.GetEndpoint("api", "factura", "importacion-automatica", paso);
+            var contexto = $"Paso: {NombrePasoImportacion(paso)}\nEntorno: {EntornoApp.Nombre}\nURL: POST {url}";
 
             try
             {
@@ -938,18 +939,73 @@ namespace Advance_Control.Services.Facturas
                         null,
                         "FacturaService",
                         "PostImportacionAutomaticaAsync");
-                    throw new InvalidOperationException(ExtraerMensajeError(errorContent));
+
+                    var codigo = (int)response.StatusCode;
+                    var detalleApi = string.IsNullOrWhiteSpace(errorContent) ? null : ExtraerMensajeError(errorContent);
+                    try
+                    {
+                        // 422: la API manda además el error detallado del portal.
+                        using var doc = JsonDocument.Parse(errorContent);
+                        if (doc.RootElement.TryGetProperty("detalle", out var detalleProp)
+                            && detalleProp.ValueKind == JsonValueKind.String
+                            && !string.IsNullOrWhiteSpace(detalleProp.GetString()))
+                            detalleApi += $" ({detalleProp.GetString()})";
+                    }
+                    catch (JsonException)
+                    {
+                        // errorContent no es JSON: queda solo el texto.
+                    }
+                    var causa = codigo switch
+                    {
+                        404 => $"El servidor de {EntornoApp.Nombre} no tiene la importación automática: su API todavía no se ha actualizado con esta función. "
+                               + (EntornoApp.EsPruebas
+                                   ? "Espera a que termine el deploy de la rama pruebas."
+                                   : "Por ahora solo está en Pruebas: cierra sesión y elige el entorno Pruebas en el login."),
+                        401 => "La sesión expiró o no es válida. Cierra sesión y vuelve a entrar.",
+                        403 => "Tu usuario no tiene permiso para esta función.",
+                        400 => "La API rechazó los datos enviados.",
+                        422 => "El portal FEL en Línea rechazó la consulta (revisa usuario, cuenta y contraseña del portal).",
+                        502 or 503 or 504 => "El servidor no está disponible o está en mantenimiento. Intenta de nuevo en unos minutos.",
+                        >= 500 => "Error interno en el servidor de la API.",
+                        _ => "Respuesta inesperada del servidor."
+                    };
+
+                    var mensaje = $"{causa}\n\nCódigo HTTP: {codigo} {response.ReasonPhrase}\n{contexto}";
+                    if (!string.IsNullOrWhiteSpace(detalleApi))
+                        mensaje += $"\nDetalle de la API: {detalleApi}";
+                    throw new InvalidOperationException(mensaje);
                 }
 
                 var result = await response.Content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
-                return result ?? throw new InvalidOperationException($"La API devolvió una respuesta vacía en la importación automática ({paso}).");
+                return result ?? throw new InvalidOperationException($"La API devolvió una respuesta vacía.\n{contexto}");
+            }
+            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                await _logger.LogErrorAsync($"Tiempo agotado en importación automática ({paso})", ex, "FacturaService", "PostImportacionAutomaticaAsync");
+                throw new InvalidOperationException(
+                    $"El servidor tardó más de {_http.Timeout.TotalSeconds:0} segundos en responder (el portal FEL en Línea puede estar lento). Intenta de nuevo.\n{contexto}", ex);
             }
             catch (HttpRequestException ex)
             {
                 await _logger.LogErrorAsync($"Error de red en importación automática ({paso})", ex, "FacturaService", "PostImportacionAutomaticaAsync");
-                throw new InvalidOperationException("Error de comunicación con el servidor en la importación automática.", ex);
+                throw new InvalidOperationException(
+                    $"No se pudo conectar con el servidor de la API. Revisa tu conexión a internet.\n{contexto}\nDetalle: {ex.Message}", ex);
+            }
+            catch (JsonException ex)
+            {
+                await _logger.LogErrorAsync($"Respuesta no válida en importación automática ({paso})", ex, "FacturaService", "PostImportacionAutomaticaAsync");
+                throw new InvalidOperationException(
+                    $"La respuesta del servidor no tiene el formato esperado (¿la API y la app son de versiones distintas?).\n{contexto}\nDetalle: {ex.Message}", ex);
             }
         }
+
+        private static string NombrePasoImportacion(string paso) => paso switch
+        {
+            "consultar" => "consultar el mes en el portal",
+            "xml" => "descargar los XML faltantes",
+            "cancelaciones" => "aplicar cancelaciones",
+            _ => paso
+        };
 
         private static CancelarCfdiResponseDto ExtraerResultadoErrorCancelacion(string errorContent)
         {

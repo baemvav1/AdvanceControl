@@ -67,23 +67,24 @@ namespace Advance_Control.Views.Pages
             }
 
             var resumen = await ViewModel.ImportacionAutomaticaAsync(dialogo.Resultado, XamlRoot);
-            if (resumen == null)
+            var fallo = resumen == null;
+            if (fallo && string.IsNullOrEmpty(ViewModel.ErrorMessage))
             {
-                // ViewModel.ErrorMessage ya quedó establecido.
                 return;
             }
 
+            // El error también queda en la barra de la página; aquí se muestra completo y copiable.
             var resumenDialogo = new ContentDialog
             {
                 XamlRoot = XamlRoot,
-                Title = "Resultado de la importación automática",
+                Title = fallo ? "La importación automática falló" : "Resultado de la importación automática",
                 CloseButtonText = "Cerrar",
                 Content = new ScrollViewer
                 {
                     MaxHeight = 480,
                     Content = new TextBlock
                     {
-                        Text = resumen,
+                        Text = resumen ?? ViewModel.ErrorMessage,
                         TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true
                     }
