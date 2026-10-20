@@ -113,7 +113,7 @@
                                     IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
                                     Width="90"
                                     Label="Complementos"
-                                    ToolTipService.ToolTip="Liga Complementos de Pago (CFDI) ya timbrados, sin abono interno todavía, a movimientos bancarios por monto y fecha.">
+                                    ToolTipService.ToolTip="Primero vincula a su factura los Complementos de Pago nuevos (portal de Bilkon o importación automática); luego liga los que no tienen abono interno a movimientos bancarios por monto y fecha.">
                                     <AppBarButton.Icon>
                                         <FontIcon Glyph="&#xF56E;" />
                                     </AppBarButton.Icon>

@@ -227,6 +227,35 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        /// <summary>
+        /// Paso previo del botón "Complementos" (antes era "Consolidar Complementos" en Facturas):
+        /// pide a la API que detecte complementos de pago que llegaron sin parsear (timbrados a
+        /// mano en el portal de Bilkon o traídos por la importación automática) y los vincule por
+        /// UUID a la factura que pagan, para que el asistente ya pueda proponerlos.
+        /// </summary>
+        public async Task VincularComplementosNuevosAsync()
+        {
+            try
+            {
+                var resultado = await _facturaService.ConsolidarComplementosPagoAsync();
+                if (resultado.Errores.Count > 0)
+                {
+                    ErrorMessage = string.Join(" | ", resultado.Errores);
+                }
+                if (resultado.FacturasParseadas > 0)
+                {
+                    await _notificacionService.MostrarAsync(
+                        "Conciliación",
+                        $"{resultado.FacturasParseadas} complemento(s) de pago nuevo(s) vinculado(s) a su factura.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Si falla, el asistente sigue con los complementos que ya estaban vinculados.
+                ErrorMessage = $"No fue posible vincular complementos de pago nuevos: {ex.Message}";
+            }
+        }
+
         private async Task ActualizarOperacionesPendientesAsync()
         {
             try

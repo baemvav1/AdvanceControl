@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.PermisosUi;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using Advance_Control.Views.Dialogs;
@@ -28,7 +29,42 @@ namespace Advance_Control.Views.Pages
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            PestanaComplementos.Visibility = PuedeVerComplementos() ? Visibility.Visible : Visibility.Collapsed;
             await ViewModel.CargarFacturasAsync();
+        }
+
+        // --- Pestañas: Facturas | Complementos de pago ---
+
+        /// <summary>
+        /// La pestaña respeta el permiso del módulo ComplementosPagoAuditoriaPage, igual que lo hacía
+        /// su antigua entrada del menú (MainViewModel.ShouldDisplayNavigationTag).
+        /// </summary>
+        private static bool PuedeVerComplementos()
+        {
+            var permisos = AppServices.Get<IPermisoUiRuntimeService>();
+            if (!permisos.IsInitialized)
+                return true;
+
+            var moduleKey = permisos.BuildModuleKey(typeof(ComplementosPagoAuditoriaPage));
+            return !permisos.TryGetModulo(moduleKey, out _) || permisos.CanAccessModule(moduleKey);
+        }
+
+        private void PestanasSelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
+        {
+            var complementos = sender.SelectedItem == PestanaComplementos;
+            FacturasContenido.Visibility = complementos ? Visibility.Collapsed : Visibility.Visible;
+            ComplementosFrame.Visibility = complementos ? Visibility.Visible : Visibility.Collapsed;
+
+            if (complementos && ComplementosFrame.Content == null)
+            {
+                ComplementosFrame.Navigate(typeof(ComplementosPagoAuditoriaPage));
+                if (ComplementosFrame.Content is Page pagina)
+                {
+                    // Los permisos de botones solo se aplican solos al Frame principal.
+                    pagina.Loaded += (s, _) =>
+                        PermisoUiVisualBinder.ApplyToPage((Page)s, AppServices.Get<IPermisoUiRuntimeService>());
+                }
+            }
         }
 
         // --- Factura nueva desde cero (timbrado libre) ---
@@ -91,70 +127,6 @@ namespace Advance_Control.Views.Pages
                 }
             };
             await resumenDialogo.ShowAsync();
-        }
-
-        /// <summary>
-        /// "Consolidar Complementos": corre en un solo clic todo el proceso que antes se hacía a
-        /// mano -- (1) detectar Complementos de Pago que llegaron sin parsear y vincularlos a su
-        /// factura por UUID, (2) proponer ligarlos a su movimiento bancario real, reusando el
-        /// mismo asistente que el botón "Complementos" de Conciliación.
-        /// </summary>
-        private async void BtnConsolidarComplementos_Click(object sender, RoutedEventArgs e)
-        {
-            var backfill = await ViewModel.ConsolidarBackfillComplementosAsync();
-            if (backfill == null)
-            {
-                // ViewModel.ErrorMessage ya quedó establecido.
-                return;
-            }
-
-            var ventana = new ConfirmacionConciliacionWindow(
-                ConciliacionAutomaticaModo.Complementos,
-                aplicarReglaPueMismoMes: true,
-                usarRfcComoRegla: false);
-            ventana.Activate();
-
-            var aprobadas = await ventana.ResultTask;
-
-            if (backfill.FacturasParseadas > 0 || aprobadas is { Count: > 0 })
-            {
-                await ViewModel.CargarFacturasAsync();
-            }
-
-            ViewModel.SuccessMessage =
-                $"Consolidación completada: {backfill.FacturasParseadas} complemento(s) nuevo(s) vinculado(s) a su factura, " +
-                $"{aprobadas?.Count ?? 0} vinculado(s) a movimiento bancario.";
-
-            if (backfill.Errores.Count > 0)
-            {
-                ViewModel.ErrorMessage = string.Join(" | ", backfill.Errores);
-            }
-        }
-
-        /// <summary>
-        /// "Consolidar Ingresos Manuales": detecta abonos capturados a mano ("Registrar abono")
-        /// sin movimiento bancario y propone ligarlos a su movimiento real, reusando el mismo
-        /// asistente que el botón "Ingresos Manuales" de Conciliación. A diferencia de
-        /// "Consolidar Complementos", aquí no hace falta ningún paso previo de backfill -- el
-        /// abono ya existe en cuanto se captura.
-        /// </summary>
-        private async void BtnConsolidarIngresosManuales_Click(object sender, RoutedEventArgs e)
-        {
-            var ventana = new ConfirmacionConciliacionWindow(
-                ConciliacionAutomaticaModo.IngresosManuales,
-                aplicarReglaPueMismoMes: true,
-                usarRfcComoRegla: false);
-            ventana.Activate();
-
-            var aprobadas = await ventana.ResultTask;
-
-            if (aprobadas is { Count: > 0 })
-            {
-                await ViewModel.CargarFacturasAsync();
-            }
-
-            ViewModel.SuccessMessage =
-                $"Consolidación completada: {aprobadas?.Count ?? 0} ingreso(s) manual(es) vinculado(s) a movimiento bancario.";
         }
 
         // --- Buscador ---

@@ -19,7 +19,7 @@
             <TextBlock
                 VerticalAlignment="Center"
                 Style="{StaticResource TitleTextBlockStyle}"
-                Text="Facturación" />
+                Text="Por facturar" />
             <Button
                 x:Name="BtnActualizar"
                 Click="BtnActualizar_Click"

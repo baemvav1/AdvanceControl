@@ -177,8 +177,19 @@ namespace Advance_Control.Views.Pages
         private async void BtnAbonos_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Abonos);
 
-        private async void BtnComplementos_Click(object sender, RoutedEventArgs e) =>
+        private async void BtnComplementos_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.IsConciliacionEnProceso = true;
+            try
+            {
+                await ViewModel.VincularComplementosNuevosAsync();
+            }
+            finally
+            {
+                ViewModel.IsConciliacionEnProceso = false;
+            }
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Complementos);
+        }
 
         private async void BtnIngresosManuales_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.IngresosManuales);
