@@ -196,7 +196,7 @@ namespace Advance_Control.Services.Reportes
         internal static string ObtenerCarpetaReportes()
         {
             var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(documentos, "Advance Control", "ReportesOperaciones");
+            return Path.Combine(documentos, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "ReportesOperaciones");
         }
 
         internal static string ObtenerCarpetaCabeceras()

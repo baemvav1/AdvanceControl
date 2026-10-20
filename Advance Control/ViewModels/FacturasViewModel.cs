@@ -179,34 +179,6 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Primer paso de "Consolidar Complementos": pide a la API que detecte complementos de
-        /// pago que llegaron sin parsear (timbrados a mano en el portal de Bilkon, o traídos por
-        /// una recarga de FEL) y los vincule a la factura que pagan por UUID. El segundo paso
-        /// (ligar a movimiento bancario) lo maneja el code-behind abriendo el mismo asistente que
-        /// usa el botón "Complementos" de Conciliación.
-        /// </summary>
-        public async Task<ComplementoPagoConsolidarResultDto?> ConsolidarBackfillComplementosAsync()
-        {
-            try
-            {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                return await _facturaService.ConsolidarComplementosPagoAsync();
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error al consolidar complementos de pago: {ex.Message}";
-                return null;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        /// <summary>
         /// Carga un XML de factura ya timbrada externamente (folio suelto del portal de Bilkon,
         /// sin Serie) y la guarda. Las facturas con Serie+Folio se generan solo por timbrado
         /// directo (TimbrarOperacionDirectoAsync); esto es exclusivamente para las que se siguen
@@ -371,6 +343,177 @@ namespace Advance_Control.ViewModels
             {
                 IsLoading = false;
             }
+        }
+
+        /// <summary>
+        /// "Importación automática": baja del portal FEL en Línea todo el mes indicado, guarda con
+        /// el mismo flujo de "Cargar XML" las facturas que no estén en el sistema (las que ya
+        /// existen se omiten por UUID) y al final aplica las cancelaciones que reporta el portal
+        /// (la API desliga pagos de movimientos y desvincula operaciones). Las facturas en USD se
+        /// normalizan siempre, con el TipoCambio del propio XML. Regresa el resumen para mostrarlo.
+        /// </summary>
+        public async Task<string?> ImportacionAutomaticaAsync(ImportacionAutomaticaRequestDto request, XamlRoot xamlRoot)
+        {
+            var nombreMes = new DateTime(request.Anio, request.Mes, 1).ToString("MMMM yyyy", new CultureInfo("es-MX"));
+            try
+            {
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = $"Consultando {nombreMes} en el portal FEL en Línea…";
+
+                var consulta = await _facturaService.ImportacionAutomaticaConsultarAsync(request);
+
+                var nuevas = 0;
+                var duplicadas = 0;
+                var normalizadasUsd = 0;
+                var errores = new List<string>();
+                var faltantes = consulta.Faltantes.Select(f => f.Uuid).ToList();
+
+                for (var i = 0; i < faltantes.Count; i += ImportacionAutomaticaXmlRequestDto.MaxUuids)
+                {
+                    var lote = faltantes.Skip(i).Take(ImportacionAutomaticaXmlRequestDto.MaxUuids).ToList();
+                    SuccessMessage = $"Importando {nombreMes}: {Math.Min(i + lote.Count, faltantes.Count)} de {faltantes.Count} facturas nuevas…";
+
+                    var xmls = await _facturaService.ImportacionAutomaticaDescargarXmlAsync(new ImportacionAutomaticaXmlRequestDto
+                    {
+                        Usuario = request.Usuario,
+                        Cuenta = request.Cuenta,
+                        Password = request.Password,
+                        Uuids = lote
+                    });
+
+                    foreach (var item in xmls)
+                    {
+                        if (string.IsNullOrWhiteSpace(item.Xml))
+                        {
+                            errores.Add($"{item.Uuid}: {item.Error ?? "el portal no devolvió el XML."}");
+                            continue;
+                        }
+
+                        try
+                        {
+                            var factura = CfdiXmlParser.ParseXmlToRequest(item.Xml);
+                            if (EsFacturaEnUsd(factura))
+                            {
+                                var normalizada = await NormalizarUsdImportacionAutomaticaAsync(factura, xamlRoot);
+                                if (normalizada == null)
+                                {
+                                    errores.Add($"Folio {factura.Folio ?? item.Uuid}: factura en USD sin tipo de cambio, no se importó.");
+                                    continue;
+                                }
+                                factura = normalizada;
+                                normalizadasUsd++;
+                            }
+
+                            var result = await ValidarYGuardarFacturaAsync(factura);
+                            if (result.Success)
+                                nuevas++;
+                            else if (string.Equals(result.Accion, "existente", StringComparison.OrdinalIgnoreCase))
+                                duplicadas++;
+                            else
+                                errores.Add($"Folio {factura.Folio ?? item.Uuid}: {result.Message}");
+                        }
+                        catch (Exception ex)
+                        {
+                            errores.Add($"{item.Uuid}: {ex.Message}");
+                        }
+                    }
+                }
+
+                SuccessMessage = $"Revisando cancelaciones de {nombreMes}…";
+                var cancelaciones = await _facturaService.ImportacionAutomaticaCancelacionesAsync(request);
+
+                await CargarFacturasAsync();
+
+                var resumen = ConstruirResumenImportacion(nombreMes, consulta, nuevas, duplicadas, normalizadasUsd, errores, cancelaciones);
+                SuccessMessage = $"Importación de {nombreMes}: {nuevas} nueva(s), {consulta.Existentes + duplicadas} ya existían, " +
+                                 $"{cancelaciones.Canceladas.Count} cancelación(es) aplicada(s).";
+                ErrorMessage = errores.Count + cancelaciones.Omitidas.Count > 0
+                    ? $"{errores.Count + cancelaciones.Omitidas.Count} factura(s) con problema; revisa el resumen."
+                    : null;
+                return resumen;
+            }
+            catch (Exception ex)
+            {
+                SuccessMessage = null;
+                ErrorMessage = $"Error en la importación automática de {nombreMes}.\n\n{ex.Message}";
+                return null;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        /// <summary>
+        /// En la importación automática una factura en USD siempre se normaliza: con el TipoCambio
+        /// del XML, sin preguntar. Solo si el XML no lo trae se pide con el diálogo de siempre.
+        /// </summary>
+        private async Task<GuardarFacturaRequestDto?> NormalizarUsdImportacionAutomaticaAsync(GuardarFacturaRequestDto request, XamlRoot xamlRoot)
+        {
+            var tipoCambio = ObtenerTipoCambioInicial(request);
+            return tipoCambio > 1m
+                ? NormalizarFacturaUsd(request, tipoCambio)
+                : await PrepararFacturaParaGuardadoAsync(request, xamlRoot);
+        }
+
+        private static string ConstruirResumenImportacion(
+            string nombreMes,
+            ImportacionAutomaticaConsultaResponseDto consulta,
+            int nuevas,
+            int duplicadas,
+            int normalizadasUsd,
+            List<string> errores,
+            ImportacionAutomaticaCancelacionesResponseDto cancelaciones)
+        {
+            var mx = new CultureInfo("es-MX");
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine($"Portal FEL en Línea, {nombreMes}: {consulta.TotalPortal} comprobante(s), {consulta.CanceladasPortal} cancelado(s).");
+            sb.AppendLine($"• Nuevas integradas: {nuevas}" + (normalizadasUsd > 0 ? $" ({normalizadasUsd} en USD normalizadas)" : string.Empty));
+            sb.AppendLine($"• Ya existían (omitidas): {consulta.Existentes + duplicadas}");
+            sb.AppendLine($"• Cancelaciones aplicadas: {cancelaciones.Canceladas.Count} (ya estaban canceladas: {cancelaciones.YaCanceladas})");
+
+            foreach (var c in cancelaciones.Canceladas)
+            {
+                var tipo = string.Equals(c.TipoDeComprobante, "P", StringComparison.OrdinalIgnoreCase) ? "Complemento" : "Factura";
+                var folio = $"{c.Serie} {c.Folio}".Trim();
+                sb.Append($"   – {tipo} {(folio.Length > 0 ? folio : c.Uuid)} · {c.ReceptorNombre ?? c.ReceptorRfc} · {c.Total.ToString("C2", mx)}");
+
+                var efectos = new List<string>();
+                if (c.AbonosEliminados + c.AbonosDesvinculados > 0)
+                    efectos.Add($"{c.AbonosEliminados + c.AbonosDesvinculados} pago(s) desligado(s) de {c.MovimientosDesligados} movimiento(s)");
+                if (c.IdOperacionDesvinculada.HasValue)
+                    efectos.Add($"operación {c.IdOperacionDesvinculada} desvinculada");
+                if (c.AbonosSinMovimiento > 0)
+                    efectos.Add($"OJO: {c.AbonosSinMovimiento} pago(s) capturado(s) a mano por {c.MontoSinMovimiento.ToString("C2", mx)} siguen en la factura");
+                sb.AppendLine(efectos.Count > 0 ? $" · {string.Join(", ", efectos)}" : string.Empty);
+            }
+
+            if (cancelaciones.Omitidas.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("Cancelaciones NO aplicadas:");
+                foreach (var o in cancelaciones.Omitidas)
+                    sb.AppendLine($"   – {o}");
+            }
+
+            if (cancelaciones.NoEncontradas.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine($"Canceladas en el portal que no están en el sistema: {cancelaciones.NoEncontradas.Count}");
+                foreach (var u in cancelaciones.NoEncontradas)
+                    sb.AppendLine($"   – {u}");
+            }
+
+            if (errores.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("No se pudieron integrar:");
+                foreach (var e in errores)
+                    sb.AppendLine($"   – {e}");
+            }
+
+            return sb.ToString().TrimEnd();
         }
 
         private static void ValidarFacturaParaGuardado(GuardarFacturaRequestDto request)

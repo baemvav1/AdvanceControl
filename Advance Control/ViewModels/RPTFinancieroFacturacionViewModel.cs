@@ -6,31 +6,53 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Email;
+using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Reportes;
 
 namespace Advance_Control.ViewModels
 {
+    /// <summary>
+    /// Cobranza como mesa de trabajo por cliente: listado de clientes con saldo a la izquierda y,
+    /// del cliente seleccionado, su historial (seguimientos y documentos generados), sus facturas
+    /// y los documentos que se le pueden generar o enviar. Todos los documentos son de un solo
+    /// cliente y cada uno deja un seguimiento "Documento: ..." con quién lo generó.
+    /// </summary>
     public class RPTFinancieroFacturacionViewModel : ViewModelBase
     {
+        /// <summary>Prefijo de los seguimientos que se registran solos al generar o enviar un documento.</summary>
+        public const string PrefijoDocumento = "Documento: ";
+
+        private static readonly CultureInfo CulturaMx = new("es-MX");
+
         private readonly IReporteFinancieroFacturacionService _reporteService;
         private readonly IReporteFinancieroFacturacionExportService _exportService;
         private readonly IHistorialCobranzaService _historialService;
         private readonly IEmailService _emailService;
+        private readonly IClienteService _clienteService;
+        private readonly IOperacionService _operacionService;
         private readonly List<ReporteFinancieroFacturacionCabeceraDto> _cabecerasBase = new();
         private readonly List<ReporteFinancieroFacturacionDetalleDto> _detallesBase = new();
-        private ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> _listadoItems = new();
+        private ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> _clientes = new();
+        private ReporteFinancieroFacturacionCabeceraDto? _clienteSeleccionado;
+        private ObservableCollection<ReporteFinancieroFacturacionDetalleDto> _facturasCliente = new();
+        private ObservableCollection<CobranzaSeguimientoDto> _seguimientosCliente = new();
         private bool _isLoading;
+        private bool _isCargandoSeguimientos;
+        private string _operacionesAbiertasTexto = "—";
+        private string _operacionesTFinalizadoTexto = "—";
         private string? _errorMessage;
         private string? _successMessage;
-        private string? _receptorRfcFiltro;
+        private string? _busquedaCliente;
+        private bool _soloConSaldo = true;
+        private bool _soloVencidos;
+        private int _filtroEstadoFacturas;
+        private string? _busquedaFactura;
         private string? _referenciaFiltro;
         private DateTimeOffset? _fechaInicioFiltro;
         private DateTimeOffset? _fechaFinFiltro;
-        private bool _soloFiniquitadas;
-        private bool _noFiniquitadas;
-        private int _movimientosNcCount;
-        private decimal _movimientosNcTotal;
+        private int _estadoDocumentos;
         // Los movimientos no conciliados no se incluyen en los reportes de Cobranza.
         private const bool MostrarMovimientosNoConciliados = false;
         private bool _isGenerandoHistorial;
@@ -46,25 +68,19 @@ namespace Advance_Control.ViewModels
             IReporteFinancieroFacturacionService reporteService,
             IReporteFinancieroFacturacionExportService exportService,
             IHistorialCobranzaService historialService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IClienteService clienteService,
+            IOperacionService operacionService)
         {
             _reporteService = reporteService ?? throw new ArgumentNullException(nameof(reporteService));
             _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
             _historialService = historialService ?? throw new ArgumentNullException(nameof(historialService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
+            _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
         }
 
-        public ObservableCollection<ReporteFinancieroFacturacionListadoItemDto> ListadoItems
-        {
-            get => _listadoItems;
-            private set
-            {
-                if (SetProperty(ref _listadoItems, value))
-                {
-                    NotificarResumenes();
-                }
-            }
-        }
+        // ---------------- Estado general ----------------
 
         public bool IsLoading
         {
@@ -73,7 +89,7 @@ namespace Advance_Control.ViewModels
             {
                 if (SetProperty(ref _isLoading, value))
                 {
-                    OnPropertyChanged(nameof(CanGenerarReporte));
+                    OnPropertyChanged(nameof(PuedeGenerarDocumentos));
                 }
             }
         }
@@ -90,17 +106,140 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _successMessage, value);
         }
 
-        public string? ReceptorRfcFiltro
+        // ---------------- Listado de clientes ----------------
+
+        public ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> Clientes
         {
-            get => _receptorRfcFiltro;
-            set
+            get => _clientes;
+            private set
             {
-                if (SetProperty(ref _receptorRfcFiltro, value))
+                if (SetProperty(ref _clientes, value))
                 {
-                    OnPropertyChanged(nameof(CanGenerarHistorial));
+                    OnPropertyChanged(nameof(ResumenClientesTexto));
                 }
             }
         }
+
+        public string? BusquedaCliente
+        {
+            get => _busquedaCliente;
+            set { if (SetProperty(ref _busquedaCliente, value)) AplicarFiltroClientes(); }
+        }
+
+        public bool SoloConSaldo
+        {
+            get => _soloConSaldo;
+            set { if (SetProperty(ref _soloConSaldo, value)) AplicarFiltroClientes(); }
+        }
+
+        public bool SoloVencidos
+        {
+            get => _soloVencidos;
+            set { if (SetProperty(ref _soloVencidos, value)) AplicarFiltroClientes(); }
+        }
+
+        public string ResumenClientesTexto =>
+            $"{Clientes.Count} cliente(s) · saldo {Clientes.Sum(c => c.Saldo).ToString("C2", CulturaMx)} · vencido {Clientes.Sum(c => c.TotalVencido).ToString("C2", CulturaMx)}";
+
+        // ---------------- Cliente seleccionado ----------------
+
+        public ReporteFinancieroFacturacionCabeceraDto? ClienteSeleccionado
+        {
+            get => _clienteSeleccionado;
+            set
+            {
+                if (SetProperty(ref _clienteSeleccionado, value))
+                {
+                    OnPropertyChanged(nameof(TieneClienteSeleccionado));
+                    OnPropertyChanged(nameof(NoTieneClienteSeleccionado));
+                    OnPropertyChanged(nameof(PuedeGenerarDocumentos));
+                    AplicarFiltroFacturas();
+                    _ = CargarSeguimientosAsync();
+                    _ = CargarOperacionesAsync();
+                }
+            }
+        }
+
+        public bool TieneClienteSeleccionado => ClienteSeleccionado != null;
+        public bool NoTieneClienteSeleccionado => ClienteSeleccionado == null;
+        public bool PuedeGenerarDocumentos => ClienteSeleccionado != null && !IsLoading;
+
+        public ObservableCollection<ReporteFinancieroFacturacionDetalleDto> FacturasCliente
+        {
+            get => _facturasCliente;
+            private set
+            {
+                if (SetProperty(ref _facturasCliente, value))
+                {
+                    OnPropertyChanged(nameof(ResumenFacturasTexto));
+                }
+            }
+        }
+
+        /// <summary>0 = todas, 1 = pendientes, 2 = finiquitadas.</summary>
+        public int FiltroEstadoFacturas
+        {
+            get => _filtroEstadoFacturas;
+            set { if (SetProperty(ref _filtroEstadoFacturas, value)) AplicarFiltroFacturas(); }
+        }
+
+        public string? BusquedaFactura
+        {
+            get => _busquedaFactura;
+            set { if (SetProperty(ref _busquedaFactura, value)) AplicarFiltroFacturas(); }
+        }
+
+        public string ResumenFacturasTexto => $"{FacturasCliente.Count} factura(s)";
+
+        public ObservableCollection<CobranzaSeguimientoDto> SeguimientosCliente
+        {
+            get => _seguimientosCliente;
+            private set
+            {
+                if (SetProperty(ref _seguimientosCliente, value))
+                {
+                    OnPropertyChanged(nameof(UltimoDocumentoTexto));
+                    OnPropertyChanged(nameof(SinSeguimientos));
+                }
+            }
+        }
+
+        public bool IsCargandoSeguimientos
+        {
+            get => _isCargandoSeguimientos;
+            private set => SetProperty(ref _isCargandoSeguimientos, value);
+        }
+
+        public bool SinSeguimientos => SeguimientosCliente.Count == 0;
+
+        /// <summary>"Último reporte: quién · cuándo · qué", a partir del seguimiento automático más reciente.</summary>
+        public string UltimoDocumentoTexto
+        {
+            get
+            {
+                var ultimo = SeguimientosCliente.FirstOrDefault(s =>
+                    s.TipoContacto?.StartsWith(PrefijoDocumento, StringComparison.OrdinalIgnoreCase) == true);
+                return ultimo == null
+                    ? "Último reporte: ninguno registrado"
+                    : $"Último reporte: {ultimo.RegistradoPorTexto} · {ultimo.FechaSeguimientoTexto} · {ultimo.TipoContacto![PrefijoDocumento.Length..]}";
+            }
+        }
+
+        /// <summary>Operaciones sin factura y sin T-Finalizado (con cuántas traen orden de compra).</summary>
+        public string OperacionesAbiertasTexto
+        {
+            get => _operacionesAbiertasTexto;
+            private set => SetProperty(ref _operacionesAbiertasTexto, value);
+        }
+
+        /// <summary>Operaciones con T-Finalizado que todavía no tienen factura (por facturar).</summary>
+        public string OperacionesTFinalizadoTexto
+        {
+            get => _operacionesTFinalizadoTexto;
+            private set => SetProperty(ref _operacionesTFinalizadoTexto, value);
+        }
+
+        // ---------------- Opciones de documentos ----------------
 
         public string? ReferenciaFiltro
         {
@@ -111,77 +250,279 @@ namespace Advance_Control.ViewModels
         public DateTimeOffset? FechaInicioFiltro
         {
             get => _fechaInicioFiltro;
-            set
-            {
-                if (SetProperty(ref _fechaInicioFiltro, value))
-                {
-                    OnPropertyChanged(nameof(CanGenerarHistorial));
-                }
-            }
+            set => SetProperty(ref _fechaInicioFiltro, value);
         }
 
         public DateTimeOffset? FechaFinFiltro
         {
             get => _fechaFinFiltro;
-            set
-            {
-                if (SetProperty(ref _fechaFinFiltro, value))
-                {
-                    OnPropertyChanged(nameof(CanGenerarHistorial));
-                }
-            }
+            set => SetProperty(ref _fechaFinFiltro, value);
         }
 
-        public bool SoloFiniquitadas
+        /// <summary>Qué facturas entran a los documentos: 0 = todas, 1 = pendientes, 2 = finiquitadas.</summary>
+        public int EstadoDocumentos
         {
-            get => _soloFiniquitadas;
-            set
-            {
-                if (SetProperty(ref _soloFiniquitadas, value) && value && NoFiniquitadas)
-                {
-                    NoFiniquitadas = false;
-                }
-            }
+            get => _estadoDocumentos;
+            set => SetProperty(ref _estadoDocumentos, value);
         }
 
-        public bool NoFiniquitadas
-        {
-            get => _noFiniquitadas;
-            set
-            {
-                if (SetProperty(ref _noFiniquitadas, value) && value && SoloFiniquitadas)
-                {
-                    SoloFiniquitadas = false;
-                }
-            }
-        }
+        // ---------------- Carga ----------------
 
-        public string TotalFacturadoTexto => _cabecerasBase.Sum(item => item.TotalFacturado).ToString("C2", new CultureInfo("es-MX"));
-        public string TotalAbonadoTexto => _cabecerasBase.Sum(item => item.TotalAbonadoMovimientos).ToString("C2", new CultureInfo("es-MX"));
-        public string ResumenCabecerasTexto => $"{_cabecerasBase.Sum(item => item.NumeroFacturas)} factura(s) en {_cabecerasBase.Count} cliente(s)";
-        public string ResumenDetalleTexto => $"{_detallesBase.Count} detalle(s) visibles en el listado";
-        public string TotalMovimientosNoConciliadosTexto => _movimientosNcTotal.ToString("C2", new CultureInfo("es-MX"));
-        public string NumMovimientosNoConciliadosTexto => $"{_movimientosNcCount} movimiento(s) sin conciliar";
-        public string TotalRestanteTexto
-        {
-            get
-            {
-                var totalFacturado = _cabecerasBase.Sum(item => item.TotalFacturado);
-                var totalFiniquitado = _cabecerasBase.Sum(item => item.TotalAbonadoMovimientos);
-                var restante = totalFacturado - totalFiniquitado - _movimientosNcTotal;
-                return restante.ToString("C2", new CultureInfo("es-MX"));
-            }
-        }
-        public bool CanGenerarReporte => !IsLoading && _detallesBase.Count > 0;
-
+        /// <summary>Carga una sola vez todas las cabeceras y facturas; los filtros se aplican en memoria.</summary>
         public async Task CargarReporteAsync()
         {
-            if (FechaInicioFiltro.HasValue && FechaFinFiltro.HasValue && FechaFinFiltro.Value.Date < FechaInicioFiltro.Value.Date)
+            var rfcSeleccionado = ClienteSeleccionado?.ReceptorRfc;
+
+            try
             {
-                ErrorMessage = "La fecha fin no puede ser menor que la fecha inicio.";
+                IsLoading = true;
+                ErrorMessage = null;
                 SuccessMessage = null;
+
+                var resultado = await _reporteService.ObtenerReporteAsync(null, null, null, null, null);
+
+                _cabecerasBase.Clear();
+                _cabecerasBase.AddRange(resultado.Cabeceras);
+                _detallesBase.Clear();
+                _detallesBase.AddRange(resultado.Detalles.OrderByDescending(item => item.FechaTimbrado).ThenBy(item => item.FolioTexto));
+
+                AplicarFiltroClientes();
+
+                ClienteSeleccionado = rfcSeleccionado == null
+                    ? null
+                    : _cabecerasBase.FirstOrDefault(c => MismoRfc(c.ReceptorRfc, rfcSeleccionado));
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al cargar la cobranza: {ex.Message}";
+                Clientes = new ObservableCollection<ReporteFinancieroFacturacionCabeceraDto>();
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+        }
+
+        private void AplicarFiltroClientes()
+        {
+            var texto = BusquedaCliente?.Trim();
+            var filtrados = _cabecerasBase
+                .Where(c => !SoloConSaldo || c.Saldo > 0.005m)
+                .Where(c => !SoloVencidos || c.TieneVencido)
+                .Where(c => string.IsNullOrEmpty(texto)
+                    || c.ReceptorRfcTexto.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || c.ReceptorNombreTexto.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(c => c.TotalVencido)
+                .ThenByDescending(c => c.Saldo)
+                .ThenBy(c => c.ReceptorNombreTexto);
+
+            Clientes = new ObservableCollection<ReporteFinancieroFacturacionCabeceraDto>(filtrados);
+        }
+
+        private void AplicarFiltroFacturas()
+        {
+            if (ClienteSeleccionado == null)
+            {
+                FacturasCliente = new ObservableCollection<ReporteFinancieroFacturacionDetalleDto>();
                 return;
             }
+
+            var texto = BusquedaFactura?.Trim();
+            var facturas = DetallesDe(ClienteSeleccionado.ReceptorRfc)
+                .Where(f => FiltroEstadoFacturas switch
+                {
+                    1 => f.Finiquito != true,
+                    2 => f.Finiquito == true,
+                    _ => true
+                })
+                .Where(f => string.IsNullOrEmpty(texto)
+                    || f.FolioTexto.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || f.ReferenciaTexto.Contains(texto, StringComparison.OrdinalIgnoreCase)
+                    || (f.ConceptosTexto?.Contains(texto, StringComparison.OrdinalIgnoreCase) ?? false));
+
+            FacturasCliente = new ObservableCollection<ReporteFinancieroFacturacionDetalleDto>(facturas);
+        }
+
+        private IEnumerable<ReporteFinancieroFacturacionDetalleDto> DetallesDe(string? rfc) =>
+            _detallesBase.Where(d => MismoRfc(d.ReceptorRfc, rfc));
+
+        private static bool MismoRfc(string? a, string? b) => string.Equals(a?.Trim(), b?.Trim(), StringComparison.OrdinalIgnoreCase);
+
+        public async Task CargarSeguimientosAsync()
+        {
+            var rfc = ClienteSeleccionado?.ReceptorRfc;
+            if (string.IsNullOrWhiteSpace(rfc))
+            {
+                SeguimientosCliente = new ObservableCollection<CobranzaSeguimientoDto>();
+                return;
+            }
+
+            try
+            {
+                IsCargandoSeguimientos = true;
+                var seguimientos = await _reporteService.ObtenerSeguimientosAsync(rfc);
+
+                // Si mientras tanto se eligió otro cliente, esta respuesta ya no aplica.
+                if (MismoRfc(ClienteSeleccionado?.ReceptorRfc, rfc))
+                {
+                    SeguimientosCliente = new ObservableCollection<CobranzaSeguimientoDto>(seguimientos.OrderByDescending(s => s.FechaSeguimiento));
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"No se pudo cargar el historial del cliente: {ex.Message}";
+            }
+            finally
+            {
+                IsCargandoSeguimientos = false;
+            }
+        }
+
+        /// <summary>
+        /// Cuenta las operaciones del cliente que aún no tienen factura, con la misma regla que el
+        /// Historial de cobranza: abiertas = sin T-Finalizado; T-Finalizado = trabajo terminado
+        /// y por facturar. Las operaciones se ligan por id de cliente, que se resuelve por RFC.
+        /// </summary>
+        public async Task CargarOperacionesAsync()
+        {
+            var rfc = ClienteSeleccionado?.ReceptorRfc;
+            OperacionesAbiertasTexto = "…";
+            OperacionesTFinalizadoTexto = "…";
+            if (string.IsNullOrWhiteSpace(rfc))
+            {
+                return;
+            }
+
+            try
+            {
+                var clientes = await _clienteService.GetClientesAsync(new ClienteQueryDto { Rfc = rfc });
+                var cliente = clientes?.FirstOrDefault(c => MismoRfc(c.Rfc, rfc)) ?? clientes?.FirstOrDefault();
+
+                // Sin IncluirFacturadas la API ya excluye las operaciones con factura.
+                var operaciones = cliente == null
+                    ? new List<OperacionDto>()
+                    : await _operacionService.GetOperacionesAsync(new OperacionQueryDto { IdCliente = cliente.IdCliente, IncluirFinalizadas = true });
+
+                if (!MismoRfc(ClienteSeleccionado?.ReceptorRfc, rfc))
+                {
+                    return;
+                }
+
+                if (cliente == null)
+                {
+                    OperacionesAbiertasTexto = OperacionesTFinalizadoTexto = "Sin cliente en catálogo";
+                    return;
+                }
+
+                var abiertas = operaciones.Where(o => !o.TFinalizado).ToList();
+                var tFinalizadas = operaciones.Where(o => o.TFinalizado).ToList();
+                OperacionesAbiertasTexto = $"{abiertas.Count} ({abiertas.Count(o => o.CkOrdenCompraCargadaApi)} con OC)";
+                OperacionesTFinalizadoTexto = $"{tFinalizadas.Count} ({tFinalizadas.Count(o => o.CkOrdenCompraCargadaApi)} con OC)";
+            }
+            catch (Exception ex)
+            {
+                if (MismoRfc(ClienteSeleccionado?.ReceptorRfc, rfc))
+                {
+                    OperacionesAbiertasTexto = OperacionesTFinalizadoTexto = "Error";
+                    ErrorMessage = $"No se pudieron contar las operaciones del cliente: {ex.Message}";
+                }
+            }
+        }
+
+        public async Task AgregarSeguimientoAsync(CobranzaSeguimientoCreateDto dto)
+        {
+            var cliente = ClienteSeleccionado ?? throw new InvalidOperationException("Selecciona un cliente.");
+            dto.ReceptorRfc = cliente.ReceptorRfc;
+
+            try
+            {
+                var creado = await _reporteService.RegistrarSeguimientoAsync(dto);
+                if (creado != null && MismoRfc(ClienteSeleccionado?.ReceptorRfc, cliente.ReceptorRfc))
+                {
+                    SeguimientosCliente.Insert(0, creado);
+                    OnPropertyChanged(nameof(UltimoDocumentoTexto));
+                    OnPropertyChanged(nameof(SinSeguimientos));
+                }
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"No se pudo guardar el seguimiento: {ex.Message}";
+            }
+        }
+
+        /// <summary>
+        /// Anota en la bitácora del cliente quién generó o envió un documento. Si falla, el documento
+        /// ya se generó: solo se avisa.
+        /// </summary>
+        private async Task RegistrarDocumentoAsync(ReporteFinancieroFacturacionCabeceraDto cliente, string documento, string nota)
+        {
+            try
+            {
+                await AgregarSeguimientoAsync(new CobranzaSeguimientoCreateDto
+                {
+                    ReceptorRfc = cliente.ReceptorRfc,
+                    TipoContacto = PrefijoDocumento + documento,
+                    Nota = nota
+                });
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"El documento se generó, pero no se pudo anotar en el historial: {ex.Message}";
+            }
+        }
+
+        // ---------------- Documentos del cliente seleccionado ----------------
+
+        private ReporteFinancieroFacturacionCabeceraDto ClienteParaDocumento()
+        {
+            var cliente = ClienteSeleccionado ?? throw new InvalidOperationException("Selecciona un cliente.");
+            if (string.IsNullOrWhiteSpace(cliente.ReceptorRfc))
+            {
+                throw new InvalidOperationException("El cliente seleccionado no tiene RFC.");
+            }
+
+            if (FechaInicioFiltro.HasValue && FechaFinFiltro.HasValue && FechaFinFiltro.Value.Date < FechaInicioFiltro.Value.Date)
+            {
+                throw new InvalidOperationException("La fecha fin no puede ser menor que la fecha inicio.");
+            }
+
+            return cliente;
+        }
+
+        private bool? FiniquitoDocumentos => EstadoDocumentos switch
+        {
+            1 => false,
+            2 => true,
+            _ => null
+        };
+
+        private string? ReferenciaDocumentos => string.IsNullOrWhiteSpace(ReferenciaFiltro) ? null : ReferenciaFiltro.Trim();
+
+        /// <summary>Texto para la nota del historial: periodo, facturas incluidas y referencia.</summary>
+        private string DescribirOpcionesDocumento()
+        {
+            var periodo = (FechaInicioFiltro, FechaFinFiltro) switch
+            {
+                ({ } ini, { } fin) => $"{ini:dd/MM/yyyy} al {fin:dd/MM/yyyy}",
+                ({ } ini, null) => $"desde {ini:dd/MM/yyyy}",
+                (null, { } fin) => $"hasta {fin:dd/MM/yyyy}",
+                _ => "todas las fechas"
+            };
+            var estado = EstadoDocumentos switch { 1 => "pendientes", 2 => "finiquitadas", _ => "todas" };
+            var nota = $"Periodo: {periodo} · Facturas: {estado}";
+            return ReferenciaDocumentos == null ? nota : $"{nota} · Referencia: {ReferenciaDocumentos}";
+        }
+
+        public Task<string> GenerarReporteAsync() =>
+            GenerarReporteFinancieroAsync(simplificado: false);
+
+        public Task<string> GenerarReporteSimplificadoAsync() =>
+            GenerarReporteFinancieroAsync(simplificado: true);
+
+        private async Task<string> GenerarReporteFinancieroAsync(bool simplificado)
+        {
+            var cliente = ClienteParaDocumento();
+            var nombreDocumento = simplificado ? "Reporte simplificado" : "Reporte";
 
             try
             {
@@ -190,118 +531,32 @@ namespace Advance_Control.ViewModels
                 SuccessMessage = null;
 
                 var resultado = await _reporteService.ObtenerReporteAsync(
-                    string.IsNullOrWhiteSpace(ReceptorRfcFiltro) ? null : ReceptorRfcFiltro.Trim().ToUpperInvariant(),
-                    ObtenerFiniquitoFiltro(),
-                    string.IsNullOrWhiteSpace(ReferenciaFiltro) ? null : ReferenciaFiltro.Trim(),
-                    FechaInicioFiltro,
-                    FechaFinFiltro);
+                    cliente.ReceptorRfc, FiniquitoDocumentos, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro);
 
-                _cabecerasBase.Clear();
-                _cabecerasBase.AddRange(resultado.Cabeceras.OrderBy(item => item.ReceptorNombreTexto).ThenBy(item => item.ReceptorRfcTexto));
-                _detallesBase.Clear();
-                _detallesBase.AddRange(resultado.Detalles.OrderBy(item => item.ReceptorNombreTexto).ThenByDescending(item => item.FechaTimbrado).ThenBy(item => item.FolioTexto));
+                var cabeceras = resultado.Cabeceras.Where(c => MismoRfc(c.ReceptorRfc, cliente.ReceptorRfc)).ToList();
+                var detalles = resultado.Detalles.Where(d => MismoRfc(d.ReceptorRfc, cliente.ReceptorRfc))
+                    .OrderByDescending(d => d.FechaTimbrado).ThenBy(d => d.FolioTexto).ToList();
 
-                _movimientosNcCount = resultado.MovimientosNoConciliadosCount;
-                _movimientosNcTotal = resultado.MovimientosNoConciliadosTotal;
+                if (detalles.Count == 0)
+                {
+                    throw new InvalidOperationException("El cliente no tiene facturas con las opciones elegidas.");
+                }
 
-                ListadoItems = new ObservableCollection<ReporteFinancieroFacturacionListadoItemDto>(ConstruirListadoVertical());
+                var rutaArchivo = simplificado
+                    ? await _exportService.GenerarReporteSimplificadoPdfAsync(
+                        cabeceras, detalles, cliente.ReceptorRfc, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro, FiniquitoDocumentos,
+                        resultado.MovimientosNoConciliadosCount, resultado.MovimientosNoConciliadosTotal, MostrarMovimientosNoConciliados)
+                    : await _exportService.GenerarReportePdfAsync(
+                        cabeceras, detalles, cliente.ReceptorRfc, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro, FiniquitoDocumentos,
+                        resultado.MovimientosNoConciliadosCount, resultado.MovimientosNoConciliadosTotal, MostrarMovimientosNoConciliados);
 
-                SuccessMessage = _detallesBase.Count == 0
-                    ? "No se encontraron registros con los filtros actuales."
-                    : $"Reporte cargado correctamente. Se obtuvieron {_detallesBase.Count} factura(s).";
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error al cargar el reporte financiero de facturación: {ex.Message}";
-                ListadoItems = new ObservableCollection<ReporteFinancieroFacturacionListadoItemDto>();
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        public void LimpiarFiltros()
-        {
-            ReceptorRfcFiltro = null;
-            ReferenciaFiltro = null;
-            FechaInicioFiltro = null;
-            FechaFinFiltro = null;
-            SoloFiniquitadas = false;
-            NoFiniquitadas = false;
-        }
-
-        public async Task<string> GenerarReporteAsync()
-        {
-            if (_detallesBase.Count == 0)
-            {
-                throw new InvalidOperationException("No hay registros visibles para generar el reporte.");
-            }
-
-            try
-            {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var rutaArchivo = await _exportService.GenerarReportePdfAsync(
-                    _cabecerasBase,
-                    _detallesBase,
-                    ReceptorRfcFiltro,
-                    ReferenciaFiltro,
-                    FechaInicioFiltro,
-                    FechaFinFiltro,
-                    ObtenerFiniquitoFiltro(),
-                    _movimientosNcCount,
-                    _movimientosNcTotal,
-                    MostrarMovimientosNoConciliados);
-
-                SuccessMessage = $"Reporte generado correctamente: {rutaArchivo}";
+                SuccessMessage = $"{nombreDocumento} generado: {rutaArchivo}";
+                await RegistrarDocumentoAsync(cliente, nombreDocumento, DescribirOpcionesDocumento());
                 return rutaArchivo;
             }
             catch (Exception ex)
             {
-                ErrorMessage = $"Error al generar el reporte financiero de facturación: {ex.Message}";
-                SuccessMessage = null;
-                throw;
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-        }
-
-        public async Task<string> GenerarReporteSimplificadoAsync()
-        {
-            if (_detallesBase.Count == 0)
-            {
-                throw new InvalidOperationException("No hay registros visibles para generar el reporte simplificado.");
-            }
-
-            try
-            {
-                IsLoading = true;
-                ErrorMessage = null;
-                SuccessMessage = null;
-
-                var rutaArchivo = await _exportService.GenerarReporteSimplificadoPdfAsync(
-                    _cabecerasBase,
-                    _detallesBase,
-                    ReceptorRfcFiltro,
-                    ReferenciaFiltro,
-                    FechaInicioFiltro,
-                    FechaFinFiltro,
-                    ObtenerFiniquitoFiltro(),
-                    _movimientosNcCount,
-                    _movimientosNcTotal,
-                    MostrarMovimientosNoConciliados);
-
-                SuccessMessage = $"Reporte simplificado generado: {rutaArchivo}";
-                return rutaArchivo;
-            }
-            catch (Exception ex)
-            {
-                ErrorMessage = $"Error al generar el reporte simplificado: {ex.Message}";
+                ErrorMessage = $"Error al generar el {nombreDocumento.ToLowerInvariant()}: {ex.Message}";
                 SuccessMessage = null;
                 throw;
             }
@@ -313,10 +568,7 @@ namespace Advance_Control.ViewModels
 
         public async Task<string> GenerarReporteCobranzaAsync()
         {
-            if (FechaInicioFiltro.HasValue && FechaFinFiltro.HasValue && FechaFinFiltro.Value.Date < FechaInicioFiltro.Value.Date)
-            {
-                throw new InvalidOperationException("La fecha fin no puede ser menor que la fecha inicio.");
-            }
+            var cliente = ClienteParaDocumento();
 
             try
             {
@@ -325,26 +577,18 @@ namespace Advance_Control.ViewModels
                 SuccessMessage = null;
 
                 var items = await _reporteService.ObtenerReporteCobranzaAsync(
-                    string.IsNullOrWhiteSpace(ReceptorRfcFiltro) ? null : ReceptorRfcFiltro.Trim().ToUpperInvariant(),
-                    ObtenerFiniquitoFiltro(),
-                    string.IsNullOrWhiteSpace(ReferenciaFiltro) ? null : ReferenciaFiltro.Trim(),
-                    FechaInicioFiltro,
-                    FechaFinFiltro);
+                    cliente.ReceptorRfc, FiniquitoDocumentos, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro);
 
                 if (items.Count == 0)
                 {
-                    throw new InvalidOperationException("No hay facturas con los filtros actuales para generar el reporte de cobranza.");
+                    throw new InvalidOperationException("El cliente no tiene facturas con las opciones elegidas para el reporte de cobranza.");
                 }
 
                 var rutaArchivo = await _exportService.GenerarReporteCobranzaPdfAsync(
-                    items,
-                    ReceptorRfcFiltro,
-                    ReferenciaFiltro,
-                    FechaInicioFiltro,
-                    FechaFinFiltro,
-                    ObtenerFiniquitoFiltro());
+                    items, cliente.ReceptorRfc, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro, FiniquitoDocumentos);
 
                 SuccessMessage = $"Reporte de cobranza generado: {rutaArchivo}";
+                await RegistrarDocumentoAsync(cliente, "Reporte de cobranza", DescribirOpcionesDocumento());
                 return rutaArchivo;
             }
             catch (Exception ex)
@@ -359,14 +603,9 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        public async Task<string> EnviarAlertaCobranzaAsync(
-            ReporteFinancieroFacturacionCabeceraDto cliente,
-            IReadOnlyList<string> destinatarios)
+        public async Task<string> EnviarAlertaCobranzaAsync(IReadOnlyList<string> destinatarios)
         {
-            if (cliente == null || string.IsNullOrWhiteSpace(cliente.ReceptorRfc))
-            {
-                throw new InvalidOperationException("El cliente seleccionado no tiene RFC.");
-            }
+            var cliente = ClienteParaDocumento();
 
             if (destinatarios == null || destinatarios.Count == 0)
             {
@@ -395,7 +634,7 @@ namespace Advance_Control.ViewModels
                     CuerpoTexto =
                         $"Estimado(a),{Environment.NewLine}{Environment.NewLine}" +
                         $"Le compartimos el estado de cuenta de facturación pendiente de {cliente.ReceptorNombreTexto} (RFC {cliente.ReceptorRfcTexto}).{Environment.NewLine}{Environment.NewLine}" +
-                        $"Saldo pendiente: {(cliente.TotalFacturado - cliente.TotalAbonadoMovimientos).ToString("C2", new CultureInfo("es-MX"))}{Environment.NewLine}" +
+                        $"Saldo pendiente: {cliente.SaldoTexto}{Environment.NewLine}" +
                         $"Facturas pendientes: {cliente.NumeroFacturasNoFiniquitadas}{Environment.NewLine}{Environment.NewLine}" +
                         "Se adjunta el detalle. Quedamos atentos.",
                     Adjuntos = { (Path.GetFileName(rutaPdf), pdfBytes) },
@@ -405,6 +644,7 @@ namespace Advance_Control.ViewModels
                 await _emailService.SendEmailAsync(mensaje);
 
                 SuccessMessage = $"Alerta de cobranza enviada a {destinatarios.Count} contacto(s) de {cliente.ReceptorNombreTexto}.";
+                await RegistrarDocumentoAsync(cliente, "Alerta por correo", $"Enviada a: {string.Join(", ", destinatarios)}");
                 return rutaPdf;
             }
             catch (Exception ex)
@@ -419,51 +659,7 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        private IEnumerable<ReporteFinancieroFacturacionListadoItemDto> ConstruirListadoVertical()
-        {
-            foreach (var cabecera in _cabecerasBase)
-            {
-                yield return new ReporteFinancieroFacturacionListadoItemDto
-                {
-                    Cabecera = cabecera
-                };
-
-                foreach (var detalle in _detallesBase.Where(item => string.Equals(item.ReceptorRfc, cabecera.ReceptorRfc, StringComparison.OrdinalIgnoreCase)))
-                {
-                    yield return new ReporteFinancieroFacturacionListadoItemDto
-                    {
-                        Detalle = detalle
-                    };
-                }
-            }
-        }
-
-        private void NotificarResumenes()
-        {
-            OnPropertyChanged(nameof(TotalFacturadoTexto));
-            OnPropertyChanged(nameof(TotalAbonadoTexto));
-            OnPropertyChanged(nameof(TotalMovimientosNoConciliadosTexto));
-            OnPropertyChanged(nameof(NumMovimientosNoConciliadosTexto));
-            OnPropertyChanged(nameof(TotalRestanteTexto));
-            OnPropertyChanged(nameof(ResumenCabecerasTexto));
-            OnPropertyChanged(nameof(ResumenDetalleTexto));
-            OnPropertyChanged(nameof(CanGenerarReporte));
-        }
-
-        private bool? ObtenerFiniquitoFiltro()
-        {
-            if (SoloFiniquitadas)
-            {
-                return true;
-            }
-
-            if (NoFiniquitadas)
-            {
-                return false;
-            }
-
-            return null;
-        }
+        // ---------------- Historial de cobranza (carpeta de documentos) ----------------
 
         public bool IsGenerandoHistorial
         {
@@ -504,8 +700,6 @@ namespace Advance_Control.ViewModels
             : new ObservableCollection<string>();
 
         public bool HistorialTieneErrores => HistorialResultado?.Errores.Count > 0;
-
-        // ---- Checks del historial de cobranza (qué operaciones entran) ----
 
         /// <summary>Abiertas: sin T-Finalizado, sin factura, con orden de compra.</summary>
         public bool HistorialAbiertas
@@ -574,24 +768,20 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Solo se bloquea mientras se genera: lo que falte (cliente, fechas, estados) lo explica
-        /// el botón al presionarlo, en vez de quedarse deshabilitado sin decir por qué.
+        /// Solo se bloquea mientras se genera: lo que falte (fechas, estados) lo explica el botón al
+        /// presionarlo, en vez de quedarse deshabilitado sin decir por qué.
         /// </summary>
         public bool CanGenerarHistorial => !IsGenerandoHistorial;
 
         public bool HistorialTieneEstadosMarcados => EstadosHistorial.AlgunoMarcado;
 
         /// <summary>
-        /// Genera el historial de cobranza del cliente identificado por ReceptorRfcFiltro,
-        /// usando el mismo rango de fechas (FechaInicioFiltro/FechaFinFiltro) que el reporte
-        /// principal. idCliente y nombreCliente se resuelven en la página a partir del RFC.
+        /// Genera la carpeta de historial de cobranza del cliente seleccionado con el periodo de
+        /// Documentos. idCliente y nombreCliente se resuelven en la página a partir del RFC.
         /// </summary>
         public async Task GenerarHistorialAsync(int idCliente, string nombreCliente, string? dirigidoA)
         {
-            if (string.IsNullOrWhiteSpace(ReceptorRfcFiltro))
-            {
-                throw new InvalidOperationException("Selecciona un cliente (RFC o nombre) para generar el historial.");
-            }
+            var cliente = ClienteParaDocumento();
 
             if (!FechaInicioFiltro.HasValue || !FechaFinFiltro.HasValue)
             {
@@ -614,7 +804,7 @@ namespace Advance_Control.ViewModels
                 var progreso = new Progress<string>(texto => HistorialProgresoTexto = texto);
 
                 var resultado = await _historialService.GenerarHistorialAsync(
-                    ReceptorRfcFiltro.Trim().ToUpperInvariant(),
+                    cliente.ReceptorRfc!.Trim().ToUpperInvariant(),
                     nombreCliente,
                     idCliente,
                     FechaInicioFiltro.Value,
@@ -625,6 +815,13 @@ namespace Advance_Control.ViewModels
 
                 HistorialResultado = resultado;
                 SuccessMessage = $"Historial generado en: {resultado.CarpetaHistorial} ({resultado.ResumenTexto})";
+
+                var nota = $"Periodo: {FechaInicioFiltro.Value:dd/MM/yyyy} al {FechaFinFiltro.Value:dd/MM/yyyy} · {HistorialEstadosTexto} · {resultado.ResumenTexto}";
+                if (!string.IsNullOrWhiteSpace(dirigidoA))
+                {
+                    nota += $" · Dirigido a: {dirigidoA}";
+                }
+                await RegistrarDocumentoAsync(cliente, "Historial de cobranza", nota);
             }
             catch (Exception ex)
             {

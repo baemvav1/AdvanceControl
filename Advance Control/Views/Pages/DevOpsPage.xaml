@@ -35,6 +35,31 @@
 
         <!-- Botones de limpieza -->
         <StackPanel Grid.Row="2" Spacing="8" Margin="0,0,0,24">
+            <!-- Modo mantenimiento: el botón más delicado (solo nivel 1) -->
+            <Border Padding="16" Margin="0,0,0,16" CornerRadius="8" BorderThickness="1"
+                    BorderBrush="{ThemeResource SystemFillColorCriticalBrush}"
+                    Background="{ThemeResource SystemFillColorCriticalBackgroundBrush}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Modo mantenimiento" Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock x:Name="MantenimientoEstadoText" TextWrapping="Wrap" FontWeight="SemiBold" />
+                        <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="Activo: solo usuarios nivel 1 entran a Advance Control, el Portal de Clientes queda cerrado y no se timbra ni se cancela ante el SAT. No se desactiva solo. Para probar sin afectar a nadie usa el entorno de Pruebas (se elige en el login)." />
+                    </StackPanel>
+                    <Button x:Name="BtnModoPruebas" Grid.Column="1" VerticalAlignment="Center" Padding="16,12"
+                            Click="OnMantenimientoClick" IsEnabled="False">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon x:Name="MantenimientoIcon" Glyph="&#xE72E;" FontSize="16" />
+                            <TextBlock x:Name="MantenimientoBotonText" Text="Activar mantenimiento" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+            </Border>
+
             <TextBlock Text="Operaciones de limpieza" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,0,0,8" />
 
             <Grid>

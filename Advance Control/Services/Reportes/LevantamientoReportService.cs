@@ -215,7 +215,7 @@ namespace Advance_Control.Services.Reportes
         private static string GetLevantamientoFolder(int idLevantamiento)
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(docs, "Advance Control", "Levantamientos", $"Levantamiento{idLevantamiento}");
+            return Path.Combine(docs, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "Levantamientos", $"Levantamiento{idLevantamiento}");
         }
 
         private static string GetCabeceraPath()
@@ -226,7 +226,7 @@ namespace Advance_Control.Services.Reportes
         private static string GetFirmaDireccionPath()
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(docs, "Advance Control", "Firmas", "FirmaDireccion.png");
+            return Path.Combine(docs, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "Firmas", "FirmaDireccion.png");
         }
 
         private static string SanitizeFileName(string value)

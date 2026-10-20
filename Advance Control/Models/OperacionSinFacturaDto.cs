@@ -25,6 +25,9 @@ namespace Advance_Control.Models
         public string AtiendeTexto => string.IsNullOrWhiteSpace(Atiende) ? "Sin asignar" : Atiende;
         public string FolioTexto => string.IsNullOrWhiteSpace(FolioOperacion) ? IdOperacion.ToString() : FolioOperacion!;
         public string IdOperacionTexto => $"Operación #{FolioTexto}";
+        /// <summary>Check "Orden de compra cargada" de la operación. Migración 144.</summary>
+        public bool OrdenCompraCargada { get; set; }
+        public string OrdenCompraTexto => OrdenCompraCargada ? "Con orden de compra" : "Sin orden de compra";
         public bool TieneSugerencias => Sugerencias.Count > 0;
         public string SugerenciasTexto => Sugerencias.Count == 1
             ? "1 factura sugerida"

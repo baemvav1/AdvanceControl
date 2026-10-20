@@ -15,7 +15,7 @@ namespace Advance_Control.Services.Quotes
         public string GetFirmasFolder()
         {
             var docs = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(docs, "Advance Control", "Firmas");
+            return Path.Combine(docs, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "Firmas");
         }
 
         /// <inheritdoc/>

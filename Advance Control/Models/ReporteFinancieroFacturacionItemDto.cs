@@ -27,6 +27,9 @@ namespace Advance_Control.Models
         public string TotalVencidoTexto => TotalVencido.ToString("C2", new CultureInfo("es-MX"));
         public string DiasVencidoMaxTexto => DiasVencidoMax > 0 ? $"{DiasVencidoMax} día(s) vencido" : "Al corriente";
         public string ResumenTexto => $"{NumeroFacturas} factura(s) · {NumeroFacturasFiniquitadas} finiquitada(s) · {NumeroFacturasNoFiniquitadas} pendiente(s)";
+        public decimal Saldo => TotalFacturado - TotalAbonadoMovimientos;
+        public string SaldoTexto => Saldo.ToString("C2", new CultureInfo("es-MX"));
+        public bool TieneVencido => TotalVencido > 0;
     }
 
     public class ReporteFinancieroFacturacionDetalleDto
@@ -96,14 +99,5 @@ namespace Advance_Control.Models
         public List<ReporteFinancieroFacturacionDetalleDto> Detalles { get; set; } = new();
         public int MovimientosNoConciliadosCount { get; set; }
         public decimal MovimientosNoConciliadosTotal { get; set; }
-    }
-
-    public class ReporteFinancieroFacturacionListadoItemDto
-    {
-        public ReporteFinancieroFacturacionCabeceraDto? Cabecera { get; set; }
-        public ReporteFinancieroFacturacionDetalleDto? Detalle { get; set; }
-
-        public bool EsCabecera => Cabecera != null;
-        public bool EsDetalle => Detalle != null;
     }
 }

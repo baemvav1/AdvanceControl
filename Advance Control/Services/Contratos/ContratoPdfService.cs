@@ -35,7 +35,7 @@ namespace Advance_Control.Services.Contratos
         private static string GetContratosFolder()
         {
             var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var folder = Path.Combine(documentsPath, "Advance Control", "Contratos");
+            var folder = Path.Combine(documentsPath, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "Contratos");
             Directory.CreateDirectory(folder);
             return folder;
         }

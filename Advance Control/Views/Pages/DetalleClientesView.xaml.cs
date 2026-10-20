@@ -15,8 +15,6 @@ namespace Advance_Control.Views.Pages
 {
     public sealed partial class DetalleClientesView : Page
     {
-        private static readonly string[] TiposContacto = { "Llamada", "Visita", "Correo", "WhatsApp", "Otro" };
-
         public DetalleClientesViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
 
@@ -98,89 +96,11 @@ namespace Advance_Control.Views.Pages
 
         private async void BtnAgregarSeguimiento_Click(object sender, RoutedEventArgs e)
         {
-            var tipoComboBox = new ComboBox
-            {
-                PlaceholderText = "Selecciona un tipo",
-                Margin = new Thickness(0, 0, 0, 8),
-                ItemsSource = TiposContacto
-            };
-
-            var notaTextBox = new TextBox
-            {
-                PlaceholderText = "Nota del contacto...",
-                AcceptsReturn = true,
-                TextWrapping = TextWrapping.Wrap,
-                MinHeight = 80,
-                MaxHeight = 160,
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var promesaMontoTextBox = new TextBox
-            {
-                PlaceholderText = "Monto de la promesa (opcional)",
-                InputScope = new InputScope { Names = { new InputScopeName(InputScopeNameValue.Number) } },
-                Margin = new Thickness(0, 0, 0, 8)
-            };
-
-            var promesaFechaPicker = new DatePicker();
-
-            var dialogContent = new StackPanel
-            {
-                Spacing = 8,
-                Children =
-                {
-                    new TextBlock { Text = "Tipo de contacto:" },
-                    tipoComboBox,
-                    new TextBlock { Text = "Nota:" },
-                    notaTextBox,
-                    new TextBlock { Text = "Promesa de pago (opcional):" },
-                    promesaMontoTextBox,
-                    promesaFechaPicker
-                }
-            };
-
-            var dialog = new ContentDialog
-            {
-                Title = "Agregar seguimiento",
-                Content = dialogContent,
-                PrimaryButtonText = "Guardar",
-                CloseButtonText = "Cancelar",
-                DefaultButton = ContentDialogButton.Primary,
-                XamlRoot = this.XamlRoot
-            };
-
-            var result = await dialog.ShowAsync();
-            if (result != ContentDialogResult.Primary)
+            var dto = await Dialogs.SeguimientoCobranzaDialog.MostrarAsync(XamlRoot, _notificacionService);
+            if (dto == null)
             {
                 return;
             }
-
-            if (tipoComboBox.SelectedItem is not string tipoContacto)
-            {
-                await _notificacionService.MostrarAsync("Campo requerido", "Selecciona un tipo de contacto.");
-                return;
-            }
-
-            decimal? promesaMonto = null;
-            if (!string.IsNullOrWhiteSpace(promesaMontoTextBox.Text))
-            {
-                if (!decimal.TryParse(promesaMontoTextBox.Text, out var monto))
-                {
-                    await _notificacionService.MostrarAsync("Monto inválido", "El monto de la promesa no es un número válido.");
-                    return;
-                }
-                promesaMonto = monto;
-            }
-
-            // El DatePicker siempre trae una fecha seleccionada (hoy por defecto) aunque el usuario
-            // no lo haya tocado, así que la fecha de promesa solo cuenta si además se capturó un monto.
-            var dto = new CobranzaSeguimientoCreateDto
-            {
-                TipoContacto = tipoContacto,
-                Nota = string.IsNullOrWhiteSpace(notaTextBox.Text) ? null : notaTextBox.Text,
-                PromesaPagoMonto = promesaMonto,
-                PromesaPagoFecha = promesaMonto.HasValue ? promesaFechaPicker.SelectedDate?.Date : null
-            };
 
             await ViewModel.AgregarSeguimientoAsync(dto);
         }

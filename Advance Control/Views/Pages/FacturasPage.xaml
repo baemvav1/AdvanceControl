@@ -8,7 +8,36 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="20" RowSpacing="16">
+    <Grid>
+    <Grid.RowDefinitions>
+        <RowDefinition Height="Auto" />
+        <RowDefinition Height="*" />
+    </Grid.RowDefinitions>
+
+    <!--  Pestañas: la auditoría de Complementos de Pago antes era otra entrada del menú  -->
+    <SelectorBar
+        x:Name="PestanasSelectorBar"
+        Grid.Row="0"
+        Margin="12,8,12,0"
+        SelectionChanged="PestanasSelectorBar_SelectionChanged">
+        <SelectorBarItem
+            x:Name="PestanaFacturas"
+            IsSelected="True"
+            Text="Facturas" />
+        <SelectorBarItem x:Name="PestanaComplementos" Text="Complementos de pago" />
+    </SelectorBar>
+
+    <!--  Se llena al abrir la pestaña por primera vez con ComplementosPagoAuditoriaPage  -->
+    <Frame
+        x:Name="ComplementosFrame"
+        Grid.Row="1"
+        Visibility="Collapsed" />
+
+    <Grid
+        x:Name="FacturasContenido"
+        Grid.Row="1"
+        Padding="20"
+        RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -57,15 +86,14 @@
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
                         ToolTipService.ToolTip="Cargar en lote varias facturas ya timbradas en el sistema web del proveedor" />
                     <Button
-                        Click="BtnConsolidarComplementos_Click"
-                        Content="Consolidar Complementos"
+                        Click="BtnImportacionAutomatica_Click"
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
-                        ToolTipService.ToolTip="Detecta Complementos de Pago sin procesar, los vincula a su factura y propone ligarlos a su movimiento bancario -- todo el proceso que antes se hacía a mano" />
-                    <Button
-                        Click="BtnConsolidarIngresosManuales_Click"
-                        Content="Consolidar Ingresos Manuales"
-                        IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
-                        ToolTipService.ToolTip="Detecta abonos capturados a mano (Registrar abono) sin movimiento bancario y propone ligarlos a su movimiento real. Excluye pagos en efectivo." />
+                        ToolTipService.ToolTip="Descarga un mes completo del portal FEL en Línea: integra las facturas que falten, omite las existentes y aplica las cancelaciones hechas en el portal">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <SymbolIcon Symbol="Sync" />
+                            <TextBlock Text="Importación automática" />
+                        </StackPanel>
+                    </Button>
                 </StackPanel>
 
                 <!--  Renglón 1: buscador + tipo de factura  -->
@@ -418,5 +446,6 @@
                 </StackPanel>
             </Grid>
         </Border>
+    </Grid>
     </Grid>
 </Page>

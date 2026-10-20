@@ -9,221 +9,423 @@
     xmlns:models="using:Advance_Control.Models"
     mc:Ignorable="d">
 
-    <Grid RowSpacing="8">
+    <!--
+        Cobranza por cliente: listado de clientes a la izquierda y, del seleccionado, sus pestañas
+        Historial | Facturas | Documentos. Los botones de documentos conservan su texto de antes
+        ("Generar Reporte", "Reporte de Cobranza", ...) porque la llave de permisos se arma con él.
+    -->
+    <Grid Padding="5" ColumnSpacing="8" RowSpacing="8">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*" MinWidth="300" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
 
-        <Border
-            Grid.Row="0"
-            Margin="5"
-            Padding="10"
-            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="2"
-            CornerRadius="8">
-            <StackPanel Spacing="10">
-                <TextBlock FontSize="10" Text="Filtros" />
+        <!--  Mensajes  -->
+        <StackPanel Grid.Row="0" Grid.ColumnSpan="2" Spacing="4">
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{x:Bind ViewModel.ErrorMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                Severity="Error" />
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{x:Bind ViewModel.SuccessMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
+                Message="{x:Bind ViewModel.SuccessMessage, Mode=OneWay}"
+                Severity="Success" />
+        </StackPanel>
 
-                <Grid ColumnSpacing="12" RowSpacing="8">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="240" />
-                        <ColumnDefinition Width="240" />
-                        <ColumnDefinition Width="170" />
-                        <ColumnDefinition Width="170" />
-                        <ColumnDefinition Width="170" />
-                    </Grid.ColumnDefinitions>
-
-                    <StackPanel
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Spacing="4">
-                        <TextBlock Text="Cliente (RFC o nombre)" />
-                        <AutoSuggestBox
-                            x:Name="ClienteAutoSuggestBox"
-                            PlaceholderText="RFC o nombre del cliente..."
-                            QueryIcon="Find"
-                            GotFocus="ClienteAutoSuggestBox_GotFocus"
-                            SuggestionChosen="ClienteAutoSuggestBox_SuggestionChosen"
-                            TextChanged="ClienteAutoSuggestBox_TextChanged" />
-                    </StackPanel>
-
-                    <StackPanel
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Spacing="4">
-                        <TextBlock Text="Referencia" />
-                        <TextBox
-                            PlaceholderText="Referencia..."
-                            Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                            TextChanged="Filtro_TextChanged" />
-                    </StackPanel>
-
-                    <StackPanel
-                        Grid.Row="0"
-                        Grid.Column="2"
-                        Spacing="4">
-                        <TextBlock Text="Fecha Inicio" />
-                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaInicioFiltro, Mode=TwoWay}" DateChanged="FiltroFecha_DateChanged" />
-                    </StackPanel>
-
-                    <StackPanel
-                        Grid.Row="0"
-                        Grid.Column="3"
-                        Spacing="4">
-                        <TextBlock Text="Fecha Fin" />
-                        <CalendarDatePicker Date="{x:Bind ViewModel.FechaFinFiltro, Mode=TwoWay}" DateChanged="FiltroFecha_DateChanged" />
-                    </StackPanel>
-
-                    <StackPanel
-                        Grid.Row="0"
-                        Grid.Column="4"
-                        Spacing="4">
-                        <TextBlock Text="Estado" />
-                        <CheckBox Content="Solo finiquitadas" IsChecked="{x:Bind ViewModel.SoloFiniquitadas, Mode=TwoWay}" Checked="FiltroEstado_Changed" Unchecked="FiltroEstado_Changed" />
-                        <CheckBox Content="No finiquitadas" IsChecked="{x:Bind ViewModel.NoFiniquitadas, Mode=TwoWay}" Checked="FiltroEstado_Changed" Unchecked="FiltroEstado_Changed" />
-                    </StackPanel>
-                </Grid>
-
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Click="BtnLimpiar_Click" Content="Limpiar filtros" />
-                    <Button Click="BtnGenerarReporte_Click" Content="Generar Reporte" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" />
-                    <Button Click="BtnGenerarReporteSimplificado_Click" Content="Generar Reporte Simplificado" IsEnabled="{x:Bind ViewModel.CanGenerarReporte, Mode=OneWay}" Style="{StaticResource AccentButtonStyle}" />
-                    <Button Click="BtnGenerarReporteCobranza_Click" Content="Reporte de Cobranza" IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
-                    <Button
-                        Click="BtnGenerarHistorial_Click"
-                        Content="Historial de Cobranza"
-                        IsEnabled="{x:Bind ViewModel.CanGenerarHistorial, Mode=OneWay}"
-                        ToolTipService.ToolTip="Genera cotizaciones, reportes, facturas y el reporte de cobranza del cliente y rango de fechas seleccionados arriba, solo de las operaciones en los estados marcados" />
-                    <DropDownButton
-                        Content="{x:Bind ViewModel.HistorialEstadosTexto, Mode=OneWay}"
-                        ToolTipService.ToolTip="Qué operaciones entran al historial de cobranza">
-                        <DropDownButton.Flyout>
-                            <Flyout Placement="Bottom">
-                                <StackPanel Spacing="2">
-                                    <TextBlock
-                                        Margin="0,0,0,4"
-                                        Style="{StaticResource BodyStrongTextBlockStyle}"
-                                        Text="Operaciones del historial" />
-                                    <CheckBox
-                                        Content="Abiertas"
-                                        IsChecked="{x:Bind ViewModel.HistorialAbiertas, Mode=TwoWay}"
-                                        ToolTipService.ToolTip="Sin T-Finalizado, sin factura y con orden de compra" />
-                                    <CheckBox
-                                        Content="Abiertas S/Orden"
-                                        IsChecked="{x:Bind ViewModel.HistorialAbiertasSinOrden, Mode=TwoWay}"
-                                        ToolTipService.ToolTip="Sin T-Finalizado, sin factura y sin orden de compra" />
-                                    <CheckBox
-                                        Content="Finalizada C/Orden"
-                                        IsChecked="{x:Bind ViewModel.HistorialFinalizadaConOrden, Mode=TwoWay}"
-                                        ToolTipService.ToolTip="T-Finalizado, con orden de compra y todavía sin factura" />
-                                    <CheckBox
-                                        Content="Finalizada S/Orden"
-                                        IsChecked="{x:Bind ViewModel.HistorialFinalizadaSinOrden, Mode=TwoWay}"
-                                        ToolTipService.ToolTip="T-Finalizado, sin orden de compra y todavía sin factura" />
-                                    <CheckBox
-                                        Content="Pendientes"
-                                        IsChecked="{x:Bind ViewModel.HistorialPendientes, Mode=TwoWay}"
-                                        ToolTipService.ToolTip="Facturadas sin pago o no cubiertas en su totalidad" />
-                                </StackPanel>
-                            </Flyout>
-                        </DropDownButton.Flyout>
-                    </DropDownButton>
-                    <ProgressRing
-                        Width="24"
-                        Height="24"
-                        IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-                        Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <ProgressRing
-                        Width="24"
-                        Height="24"
-                        IsActive="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay}"
-                        Visibility="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind ViewModel.HistorialProgresoTexto, Mode=OneWay}"
-                        Visibility="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
-                </StackPanel>
-
-                <InfoBar
-                    IsClosable="False"
-                    IsOpen="{x:Bind ViewModel.ErrorMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
-                    Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
-                    Severity="Error" />
-
-                <InfoBar
-                    IsClosable="False"
-                    IsOpen="{x:Bind ViewModel.SuccessMessage, Converter={StaticResource NullToBoolConverter}, Mode=OneWay}"
-                    Message="{x:Bind ViewModel.SuccessMessage, Mode=OneWay}"
-                    Severity="Success" />
-
-                <ItemsRepeater ItemsSource="{x:Bind ViewModel.HistorialErrores, Mode=OneWay}" Visibility="{x:Bind ViewModel.HistorialTieneErrores, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
-                    <ItemsRepeater.Layout>
-                        <StackLayout Orientation="Vertical" Spacing="2" />
-                    </ItemsRepeater.Layout>
-                    <ItemsRepeater.ItemTemplate>
-                        <DataTemplate x:DataType="x:String">
-                            <TextBlock Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="{Binding}" TextWrapping="Wrap" />
-                        </DataTemplate>
-                    </ItemsRepeater.ItemTemplate>
-                </ItemsRepeater>
-
-                <StackPanel
-                    Grid.Column="0"
-                    HorizontalAlignment="Center"
-                    Orientation="Horizontal"
-                    Spacing="5">
-                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenCabecerasTexto, Mode=OneWay}" />
-                    <TextBlock Text="Total Facturado:" />
-                    <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalFacturadoTexto, Mode=OneWay}" />
-                    <TextBlock Text="Total Finiquitado:" />
-                    <TextBlock HorizontalAlignment="Right" Text="{x:Bind ViewModel.TotalAbonadoTexto, Mode=OneWay}" />
-                </StackPanel>
-            </StackPanel>
-        </Border>
+        <!--  Listado de clientes  -->
         <Border
             Grid.Row="1"
-            Margin="5,0,5,5"
+            Grid.Column="0"
             Padding="10"
             Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
             BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="2"
+            BorderThickness="1"
             CornerRadius="8">
-            <Grid RowSpacing="10">
+            <Grid RowSpacing="8">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
-                <StackPanel Grid.Row="0" Spacing="2">
-                    <TextBlock FontWeight="SemiBold" Text="Facturas y movimientos" />
-                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.ResumenDetalleTexto, Mode=OneWay}" />
+                <Grid Grid.Row="0" ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock VerticalAlignment="Center" Style="{StaticResource SubtitleTextBlockStyle}" Text="Clientes" />
+                    <ProgressRing
+                        Grid.Column="1"
+                        Width="20"
+                        Height="20"
+                        IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+                    <Button
+                        Grid.Column="2"
+                        Click="BtnActualizar_Click"
+                        Content="Actualizar"
+                        IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
+                </Grid>
+
+                <TextBox
+                    Grid.Row="1"
+                    PlaceholderText="Buscar por RFC o nombre..."
+                    Text="{x:Bind ViewModel.BusquedaCliente, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
+                    <CheckBox Content="Solo con saldo" IsChecked="{x:Bind ViewModel.SoloConSaldo, Mode=TwoWay}" />
+                    <CheckBox Content="Solo vencidos" IsChecked="{x:Bind ViewModel.SoloVencidos, Mode=TwoWay}" />
                 </StackPanel>
 
-                <ScrollViewer Grid.Row="1">
-                    <ItemsRepeater ItemsSource="{x:Bind ViewModel.ListadoItems, Mode=OneWay}">
-                        <ItemsRepeater.Layout>
-                            <StackLayout Orientation="Vertical" Spacing="10" />
-                        </ItemsRepeater.Layout>
-                        <ItemsRepeater.ItemTemplate>
-                            <DataTemplate x:DataType="models:ReporteFinancieroFacturacionListadoItemDto">
-                                <Grid>
-                                    <items:ReporteFacturacionCabeceraItemView Cabecera="{Binding Cabecera}" EnviarAlertaClick="CabeceraItem_EnviarAlertaClick" Visibility="{Binding EsCabecera, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                    <items:ReporteFacturacionDetalleItemView
-                                        Margin="20,0,0,0"
-                                        Detalle="{Binding Detalle}"
-                                        Visibility="{Binding EsDetalle, Converter={StaticResource BoolToVisibilityConverter}}" />
-                                </Grid>
-                            </DataTemplate>
-                        </ItemsRepeater.ItemTemplate>
-                    </ItemsRepeater>
-                </ScrollViewer>
+                <TextBlock
+                    Grid.Row="3"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind ViewModel.ResumenClientesTexto, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+
+                <ListView
+                    x:Name="ClientesListView"
+                    Grid.Row="4"
+                    ItemsSource="{x:Bind ViewModel.Clientes, Mode=OneWay}"
+                    SelectionChanged="ClientesListView_SelectionChanged"
+                    SelectionMode="Single">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:ReporteFinancieroFacturacionCabeceraDto">
+                            <Grid Padding="0,6" ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Spacing="2">
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="{x:Bind ReceptorNombreTexto}"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind ReceptorRfcTexto}" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind DiasVencidoMaxTexto}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
+                                    <TextBlock
+                                        HorizontalAlignment="Right"
+                                        FontWeight="SemiBold"
+                                        Text="{x:Bind SaldoTexto}" />
+                                    <TextBlock
+                                        HorizontalAlignment="Right"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                        Text="{x:Bind TotalVencidoTexto}"
+                                        Visibility="{x:Bind TieneVencido, Converter={StaticResource BoolToVisibilityConverter}}" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+            </Grid>
+        </Border>
+
+        <!--  Cliente seleccionado  -->
+        <Border
+            Grid.Row="1"
+            Grid.Column="1"
+            Padding="12"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="8">
+            <Grid>
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="Selecciona un cliente del listado para ver su historial, sus facturas y sus documentos."
+                    TextWrapping="Wrap"
+                    Visibility="{x:Bind ViewModel.NoTieneClienteSeleccionado, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                <Grid RowSpacing="10" Visibility="{x:Bind ViewModel.TieneClienteSeleccionado, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!--  Encabezado del cliente  -->
+                    <StackPanel Grid.Row="0" Spacing="6">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="{x:Bind ViewModel.ClienteSeleccionado.ReceptorNombreTexto, Mode=OneWay}" />
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                            <Run Text="{x:Bind ViewModel.ClienteSeleccionado.ReceptorRfcTexto, Mode=OneWay}" />
+                            <Run Text=" · " />
+                            <Run Text="{x:Bind ViewModel.ClienteSeleccionado.ResumenTexto, Mode=OneWay}" />
+                        </TextBlock>
+                        <StackPanel Orientation="Horizontal" Spacing="20">
+                            <StackPanel>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Facturado" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.ClienteSeleccionado.TotalFacturadoTexto, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Abonado" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.ClienteSeleccionado.TotalAbonadoMovimientosTexto, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Saldo" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.ClienteSeleccionado.SaldoTexto, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Vencido" />
+                                <TextBlock FontWeight="SemiBold">
+                                    <Run Text="{x:Bind ViewModel.ClienteSeleccionado.TotalVencidoTexto, Mode=OneWay}" />
+                                    <Run Text=" · " />
+                                    <Run Text="{x:Bind ViewModel.ClienteSeleccionado.DiasVencidoMaxTexto, Mode=OneWay}" />
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel ToolTipService.ToolTip="Operaciones sin factura y sin T-Finalizado (misma regla que el Historial de cobranza)">
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Op. abiertas" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.OperacionesAbiertasTexto, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel ToolTipService.ToolTip="Operaciones con T-Finalizado que todavía no tienen factura (por facturar)">
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="T-Finalizado" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.OperacionesTFinalizadoTexto, Mode=OneWay}" />
+                            </StackPanel>
+                        </StackPanel>
+                        <TextBlock FontStyle="Italic" Text="{x:Bind ViewModel.UltimoDocumentoTexto, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <SelectorBar
+                        x:Name="PestanasSelectorBar"
+                        Grid.Row="1"
+                        SelectionChanged="PestanasSelectorBar_SelectionChanged">
+                        <SelectorBarItem
+                            x:Name="PestanaHistorial"
+                            IsSelected="True"
+                            Text="Historial" />
+                        <SelectorBarItem x:Name="PestanaFacturas" Text="Facturas" />
+                        <SelectorBarItem x:Name="PestanaDocumentos" Text="Documentos" />
+                    </SelectorBar>
+
+                    <!--  Pestaña: Historial (seguimientos manuales y documentos generados)  -->
+                    <Grid x:Name="PanelHistorial" Grid.Row="2" RowSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Click="BtnAgregarSeguimiento_Click" Content="Agregar seguimiento" />
+                            <ProgressRing
+                                Width="20"
+                                Height="20"
+                                IsActive="{x:Bind ViewModel.IsCargandoSeguimientos, Mode=OneWay}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Sin seguimientos ni documentos registrados."
+                                Visibility="{x:Bind ViewModel.SinSeguimientos, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+                        </StackPanel>
+                        <ScrollViewer Grid.Row="1">
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.SeguimientosCliente, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Spacing="8" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="models:CobranzaSeguimientoDto">
+                                        <Border
+                                            Padding="12"
+                                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            CornerRadius="6">
+                                            <StackPanel Spacing="4">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <TextBlock FontWeight="SemiBold" Text="{x:Bind TipoContactoTexto}" />
+                                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind FechaSeguimientoTexto}" />
+                                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind RegistradoPorTexto}" />
+                                                </StackPanel>
+                                                <TextBlock Text="{x:Bind NotaTexto}" TextWrapping="Wrap" />
+                                                <TextBlock FontStyle="Italic" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind PromesaTexto}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!--  Pestaña: Facturas del cliente  -->
+                    <Grid
+                        x:Name="PanelFacturas"
+                        Grid.Row="2"
+                        RowSpacing="8"
+                        Visibility="Collapsed">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <ComboBox Width="160" SelectedIndex="{x:Bind ViewModel.FiltroEstadoFacturas, Mode=TwoWay}">
+                                <ComboBoxItem Content="Todas" />
+                                <ComboBoxItem Content="Pendientes" />
+                                <ComboBoxItem Content="Finiquitadas" />
+                            </ComboBox>
+                            <TextBox
+                                Width="280"
+                                PlaceholderText="Buscar por folio, referencia o concepto..."
+                                Text="{x:Bind ViewModel.BusquedaFactura, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind ViewModel.ResumenFacturasTexto, Mode=OneWay}" />
+                        </StackPanel>
+                        <ScrollViewer Grid.Row="1">
+                            <ItemsRepeater ItemsSource="{x:Bind ViewModel.FacturasCliente, Mode=OneWay}">
+                                <ItemsRepeater.Layout>
+                                    <StackLayout Spacing="10" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ReporteFinancieroFacturacionDetalleDto">
+                                        <items:ReporteFacturacionDetalleItemView Detalle="{x:Bind}" />
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!--  Pestaña: Documentos del cliente  -->
+                    <ScrollViewer
+                        x:Name="PanelDocumentos"
+                        Grid.Row="2"
+                        Visibility="Collapsed">
+                        <StackPanel Spacing="16">
+                            <StackPanel Spacing="8">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Opciones" />
+                                <StackPanel Orientation="Horizontal" Spacing="12">
+                                    <CalendarDatePicker
+                                        Date="{x:Bind ViewModel.FechaInicioFiltro, Mode=TwoWay}"
+                                        Header="Desde"
+                                        PlaceholderText="Sin límite" />
+                                    <CalendarDatePicker
+                                        Date="{x:Bind ViewModel.FechaFinFiltro, Mode=TwoWay}"
+                                        Header="Hasta"
+                                        PlaceholderText="Sin límite" />
+                                    <ComboBox
+                                        Width="160"
+                                        Header="Facturas"
+                                        SelectedIndex="{x:Bind ViewModel.EstadoDocumentos, Mode=TwoWay}">
+                                        <ComboBoxItem Content="Todas" />
+                                        <ComboBoxItem Content="Pendientes" />
+                                        <ComboBoxItem Content="Finiquitadas" />
+                                    </ComboBox>
+                                    <TextBox
+                                        Width="200"
+                                        Header="Referencia"
+                                        PlaceholderText="Opcional"
+                                        Text="{x:Bind ViewModel.ReferenciaFiltro, Mode=TwoWay}" />
+                                </StackPanel>
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="Cada documento es solo de este cliente y queda anotado en su historial con tu nombre."
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Reportes (PDF)" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button
+                                        Click="BtnGenerarReporte_Click"
+                                        Content="Generar Reporte"
+                                        IsEnabled="{x:Bind ViewModel.PuedeGenerarDocumentos, Mode=OneWay}" />
+                                    <Button
+                                        Click="BtnGenerarReporteSimplificado_Click"
+                                        Content="Generar Reporte Simplificado"
+                                        IsEnabled="{x:Bind ViewModel.PuedeGenerarDocumentos, Mode=OneWay}" />
+                                    <Button
+                                        Click="BtnGenerarReporteCobranza_Click"
+                                        Content="Reporte de Cobranza"
+                                        IsEnabled="{x:Bind ViewModel.PuedeGenerarDocumentos, Mode=OneWay}" />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Historial de cobranza (carpeta con cotizaciones, reportes y facturas)" />
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button
+                                        Click="BtnGenerarHistorial_Click"
+                                        Content="Historial de Cobranza"
+                                        IsEnabled="{x:Bind ViewModel.CanGenerarHistorial, Mode=OneWay}"
+                                        ToolTipService.ToolTip="Requiere Desde y Hasta. Solo incluye las operaciones en los estados marcados" />
+                                    <DropDownButton Content="{x:Bind ViewModel.HistorialEstadosTexto, Mode=OneWay}" ToolTipService.ToolTip="Qué operaciones entran al historial de cobranza">
+                                        <DropDownButton.Flyout>
+                                            <Flyout Placement="Bottom">
+                                                <StackPanel Spacing="2">
+                                                    <TextBlock
+                                                        Margin="0,0,0,4"
+                                                        Style="{StaticResource BodyStrongTextBlockStyle}"
+                                                        Text="Operaciones del historial" />
+                                                    <CheckBox
+                                                        Content="Abiertas"
+                                                        IsChecked="{x:Bind ViewModel.HistorialAbiertas, Mode=TwoWay}"
+                                                        ToolTipService.ToolTip="Sin T-Finalizado, sin factura y con orden de compra" />
+                                                    <CheckBox
+                                                        Content="Abiertas S/Orden"
+                                                        IsChecked="{x:Bind ViewModel.HistorialAbiertasSinOrden, Mode=TwoWay}"
+                                                        ToolTipService.ToolTip="Sin T-Finalizado, sin factura y sin orden de compra" />
+                                                    <CheckBox
+                                                        Content="Finalizada C/Orden"
+                                                        IsChecked="{x:Bind ViewModel.HistorialFinalizadaConOrden, Mode=TwoWay}"
+                                                        ToolTipService.ToolTip="T-Finalizado, con orden de compra y todavía sin factura" />
+                                                    <CheckBox
+                                                        Content="Finalizada S/Orden"
+                                                        IsChecked="{x:Bind ViewModel.HistorialFinalizadaSinOrden, Mode=TwoWay}"
+                                                        ToolTipService.ToolTip="T-Finalizado, sin orden de compra y todavía sin factura" />
+                                                    <CheckBox
+                                                        Content="Pendientes"
+                                                        IsChecked="{x:Bind ViewModel.HistorialPendientes, Mode=TwoWay}"
+                                                        ToolTipService.ToolTip="Facturadas sin pago o no cubiertas en su totalidad" />
+                                                </StackPanel>
+                                            </Flyout>
+                                        </DropDownButton.Flyout>
+                                    </DropDownButton>
+                                    <ProgressRing
+                                        Width="20"
+                                        Height="20"
+                                        IsActive="{x:Bind ViewModel.IsGenerandoHistorial, Mode=OneWay}" />
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind ViewModel.HistorialProgresoTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <ItemsRepeater ItemsSource="{x:Bind ViewModel.HistorialErrores, Mode=OneWay}" Visibility="{x:Bind ViewModel.HistorialTieneErrores, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                    <ItemsRepeater.ItemTemplate>
+                                        <DataTemplate x:DataType="x:String">
+                                            <TextBlock Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="{x:Bind}" TextWrapping="Wrap" />
+                                        </DataTemplate>
+                                    </ItemsRepeater.ItemTemplate>
+                                </ItemsRepeater>
+                            </StackPanel>
+
+                            <StackPanel Spacing="8">
+                                <TextBlock Style="{StaticResource BodyStrongTextBlockStyle}" Text="Enviar al cliente" />
+                                <Button
+                                    Click="BtnEnviarAlerta_Click"
+                                    Content="Enviar alerta por correo"
+                                    IsEnabled="{x:Bind ViewModel.PuedeGenerarDocumentos, Mode=OneWay}"
+                                    ToolTipService.ToolTip="Manda el reporte de cobranza en PDF a los contactos del cliente que elijas (desde tu cuenta de correo configurada)" />
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
             </Grid>
         </Border>
     </Grid>

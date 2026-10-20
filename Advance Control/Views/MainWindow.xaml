@@ -56,6 +56,40 @@
                 x:Name="AppTitleBarDragRegion"
                 Grid.Column="1"
                 Background="Transparent" />
+            <!--  Entorno de pruebas y modo mantenimiento (DevOps)  -->
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsHitTestVisible="False"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Border
+                    x:Name="EntornoPruebasBadge"
+                    Padding="10,2"
+                    Background="#9D5D00"
+                    CornerRadius="4"
+                    Visibility="Collapsed">
+                    <TextBlock
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="ENTORNO DE PRUEBAS · los datos no son reales" />
+                </Border>
+                <Border
+                    x:Name="MantenimientoBadge"
+                    Padding="10,2"
+                    Background="#C42B1C"
+                    CornerRadius="4"
+                    Visibility="Collapsed">
+                    <TextBlock
+                        x:Name="MantenimientoText"
+                        FontSize="12"
+                        FontWeight="Bold"
+                        Foreground="White"
+                        Text="MANTENIMIENTO · solo usuarios nivel 1" />
+                </Border>
+            </StackPanel>
         </Grid>
 
         <Grid Grid.Row="1" Grid.Column="0">
@@ -290,22 +324,50 @@
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 
-                        <!--  Grupo: Financiero  -->
+                        <!--
+                            Antes todo esto era un solo grupo "Financiero". Solo cambian grupo y texto:
+                            los Tags (y por lo tanto los permisos por página) son los mismos.
+                            "Complementos de Pago" ahora es una pestaña de Facturas.
+                        -->
+
+                        <!--  Grupo: Facturación (CFDI)  -->
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"
-                            Content="Financiero"
+                            Content="Facturación"
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE8A5;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Facturas"
+                                    Icon="Document"
+                                    Tag="Facturas" />
+                                <NavigationViewItem Content="Por facturar" Tag="Facturacion">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE7C3;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
+                                <NavigationViewItem Content="Prototipo" Tag="ProFinanciero">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE70F;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
+                        <!--  Grupo: Bancos  -->
+                        <NavigationViewItem
+                            Background="{ThemeResource ControlElevationBorderBrush}"
+                            Content="Bancos"
                             IsExpanded="True"
                             SelectsOnInvoked="False">
                             <NavigationViewItem.Icon>
                                 <FontIcon Glyph="&#xE825;" />
                             </NavigationViewItem.Icon>
                             <NavigationViewItem.MenuItems>
-                                <NavigationViewItem Content="Entidades" Tag="Entidades">
-                                    <NavigationViewItem.Icon>
-                                        <FontIcon Glyph="&#xE8C7;" />
-                                    </NavigationViewItem.Icon>
-                                </NavigationViewItem>
-                                <NavigationViewItem Content="Estado de Cuenta" Tag="EstadoCuenta">
+                                <NavigationViewItem Content="Estados de cuenta" Tag="EstadoCuenta">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xEAFC;" />
                                     </NavigationViewItem.Icon>
@@ -314,29 +376,22 @@
                                     Content="Conciliación"
                                     Icon="Switch"
                                     Tag="Conciliacion" />
-                                <NavigationViewItem
-                                    Content="Facturas"
-                                    Icon="Document"
-                                    Tag="Facturas" />
-                                <NavigationViewItem Content="Complementos de Pago" Tag="ComplementosPagoAuditoria">
-                                    <NavigationViewItem.Icon>
-                                        <FontIcon Glyph="&#xE9D9;" />
-                                    </NavigationViewItem.Icon>
-                                </NavigationViewItem>
-                                <NavigationViewItem Content="Facturación" Tag="Facturacion">
-                                    <NavigationViewItem.Icon>
-                                        <FontIcon Glyph="&#xE8A5;" />
-                                    </NavigationViewItem.Icon>
-                                </NavigationViewItem>
-                                <!--  ReportHacked  -->
-                                <NavigationViewItem Content="Cobranza" Tag="ReporteFinancieroFacturacion">
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
+                        <!--  Grupo: Cobranza  -->
+                        <NavigationViewItem
+                            Background="{ThemeResource ControlElevationBorderBrush}"
+                            Content="Cobranza"
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE9F9;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem Content="Reportes de cobranza" Tag="ReporteFinancieroFacturacion">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xE9F9;" />
-                                    </NavigationViewItem.Icon>
-                                </NavigationViewItem>
-                                <NavigationViewItem Content="Prototipo" Tag="ProFinanciero">
-                                    <NavigationViewItem.Icon>
-                                        <FontIcon Glyph="&#xE70F;" />
                                     </NavigationViewItem.Icon>
                                 </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
@@ -383,6 +438,12 @@
                                     Content="Administración"
                                     Icon="Setting"
                                     Tag="Administracion" />
+                                <!--  Emisor fiscal: dirección, datos legales, CSD y FIEL  -->
+                                <NavigationViewItem Content="Entidades" Tag="Entidades">
+                                    <NavigationViewItem.Icon>
+                                        <FontIcon Glyph="&#xE8C7;" />
+                                    </NavigationViewItem.Icon>
+                                </NavigationViewItem>
                                 <NavigationViewItem Content="Prototipo" Tag="ProAdministracion">
                                     <NavigationViewItem.Icon>
                                         <FontIcon Glyph="&#xE70F;" />

@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
 using System;
 
@@ -36,6 +37,8 @@ namespace Advance_Control.Views.Login
             ViewModel = viewModel;
             
             this.InitializeComponent();
+
+            EntornoComboBox.SelectedIndex = EntornoApp.EsPruebas ? 1 : 0;
             
             // Establecer el DataContext para los bindings
             this.DataContext = ViewModel;
@@ -59,6 +62,27 @@ namespace Advance_Control.Views.Login
                 // Si se cerró sesión exitosamente, cerrar el diálogo
                 CloseDialogAction?.Invoke();
             }
+        }
+
+        private bool PruebasElegido => EntornoComboBox.SelectedIndex == 1;
+
+        private void EntornoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Solo se ofrece reiniciar si se eligió un entorno distinto al actual. Mientras no se
+            // reinicie, la URL de la API sigue siendo la del entorno con que arrancó la app: se oculta
+            // "Iniciar Sesión" para no entrar a Producción creyendo que se está en Pruebas (o al revés).
+            var cambioPendiente = PruebasElegido != EntornoApp.EsPruebas;
+            EntornoInfoBar.IsOpen = cambioPendiente;
+            LoginButton.Visibility = cambioPendiente ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        private void ReiniciarEntorno_Click(object sender, RoutedEventArgs e)
+        {
+            EntornoApp.Guardar(PruebasElegido);
+            var fallo = Microsoft.Windows.AppLifecycle.AppInstance.Restart(string.Empty);
+            // Restart solo regresa si no pudo reiniciar.
+            EntornoInfoBar.Severity = InfoBarSeverity.Informational;
+            EntornoInfoBar.Message = $"Entorno guardado. Cierra y vuelve a abrir Advance Control para conectarte a {(PruebasElegido ? "Pruebas" : "Producción")} ({fallo}).";
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)

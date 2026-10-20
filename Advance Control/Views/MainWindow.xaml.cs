@@ -62,6 +62,9 @@ namespace Advance_Control
             // Subscribe to Loaded event to attempt auto-login after the window is ready
             RootGrid.Loaded += RootGrid_Loaded;
             UpdateNavigationVisibility();
+
+            // Insignias "ENTORNO DE PRUEBAS" y "MANTENIMIENTO"
+            IniciarMantenimiento();
         }
 
         private void OnNotificacionInApp(object? sender, InAppNotificacionPayload e)

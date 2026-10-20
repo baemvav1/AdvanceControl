@@ -314,7 +314,7 @@ namespace Advance_Control.Services.Reportes
         private static string ObtenerCarpetaReportes()
         {
             var documentos = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            return Path.Combine(documentos, "Advance Control", "ReportesFinancieros");
+            return Path.Combine(documentos, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos, "ReportesFinancieros");
         }
 
         /// <summary>

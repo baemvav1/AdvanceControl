@@ -1,0 +1,163 @@
+name: Publicar instalador cliente PRUEBAS
+
+# Build de la rama "pruebas": se publica en el client-dist del entorno de pruebas
+# (https://advance-elevadores.mx/pruebas/client-dist/), del que se auto-actualiza
+# Advance Control cuando en el login se eligió "Pruebas". No crea releases de GitHub:
+# client-latest es el de producción.
+
+on:
+  push:
+    branches:
+      - pruebas
+    paths:
+      - "Advance Control/**"
+      - "build/**"
+      - ".github/workflows/publish-client-pruebas.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-client-pruebas
+  cancel-in-progress: false
+
+jobs:
+  publish-client-pruebas:
+    runs-on: windows-latest
+
+    env:
+      SOLUTION_PATH: Advance Control.sln
+      PROJECT_PATH: Advance Control/Advance Control.csproj
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Configurar MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Calcular version del paquete
+        id: version
+        shell: pwsh
+        run: |
+          $baseDate = [datetime]'2024-01-01T00:00:00Z'
+          $daysSinceBase = [int]([datetime]::UtcNow - $baseDate).TotalDays
+          $revision = ([int]${{ github.run_number }} * 10) + [int]${{ github.run_attempt }}
+          if ($revision -gt 65535) {
+            $revision = $revision % 65535
+          }
+          $version = "1.0.$daysSinceBase.$revision"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version calculada: $version"
+
+      - name: Restaurar
+        run: dotnet restore "${{ env.SOLUTION_PATH }}" -p:Platform=x64 -p:PublishReadyToRun=false -p:PublishTrimmed=false
+
+      - name: Compilar
+        run: dotnet build "${{ env.SOLUTION_PATH }}" -c Release -p:Platform=x64 -p:PublishReadyToRun=false -p:PublishTrimmed=false --no-restore -nologo
+
+      - name: Probar
+        run: dotnet test "${{ env.SOLUTION_PATH }}" -c Release -p:Platform=x64 -p:PublishReadyToRun=false -p:PublishTrimmed=false --no-build --verbosity minimal -nologo
+
+      - name: Materializar certificado de firma
+        id: cert
+        shell: pwsh
+        env:
+          WINDOWS_PFX_BASE64: ${{ secrets.WINDOWS_PFX_BASE64 }}
+          WINDOWS_PFX_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_PFX_BASE64)) {
+            throw 'Falta el secreto WINDOWS_PFX_BASE64.'
+          }
+
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_PFX_PASSWORD)) {
+            throw 'Falta el secreto WINDOWS_PFX_PASSWORD.'
+          }
+
+          $certPath = Join-Path $env:RUNNER_TEMP 'advance-control-signing.pfx'
+          [System.IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String($env:WINDOWS_PFX_BASE64))
+          "path=$certPath" >> $env:GITHUB_OUTPUT
+
+      - name: Publicar instalador MSIX
+        shell: pwsh
+        env:
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+          # client-dist del entorno de pruebas (API de pruebas detrás de /pruebas/)
+          APP_INSTALLER_BASE_URI: https://advance-elevadores.mx/pruebas/client-dist
+          CERT_PATH: ${{ steps.cert.outputs.path }}
+          CERT_PASSWORD: ${{ secrets.WINDOWS_PFX_PASSWORD }}
+        run: |
+          .\build\Publish-ClientInstaller.ps1 `
+            -ProjectPath "${{ env.PROJECT_PATH }}" `
+            -Configuration Release `
+            -Platform x64 `
+            -Version $env:PACKAGE_VERSION `
+            -AppInstallerBaseUri $env:APP_INSTALLER_BASE_URI `
+            -OutputDirectory ".\artifacts\installer" `
+            -CertificatePath $env:CERT_PATH `
+            -CertificatePassword $env:CERT_PASSWORD
+
+      - name: Generar version.json
+        shell: pwsh
+        run: |
+          @{ version = "${{ steps.version.outputs.version }}" } |
+            ConvertTo-Json -Compress |
+            Set-Content -Encoding UTF8 artifacts/installer/version.json
+
+      - name: Subir MSIX, version.json y AppInstaller al VPS
+        shell: pwsh
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          # appleboy/scp-action es una Docker container action: GitHub no permite
+          # correr acciones Docker en runners Windows, solo Linux. Este job corre
+          # en windows-latest (obligatorio para MSBuild/MSIX), asi que usamos el
+          # cliente scp nativo de OpenSSH que ya viene instalado en el runner.
+          $keyPath = Join-Path $env:RUNNER_TEMP 'vps_deploy_key'
+          # Normalizar a LF puro — OpenSSH rechaza la llave si tiene CRLF
+          # (puede colarse al copiar/pegar el secret desde el navegador en Windows).
+          $normalizedKey = ($env:VPS_SSH_KEY -replace "`r`n", "`n" -replace "`r", "`n").TrimEnd("`n") + "`n"
+          [System.IO.File]::WriteAllText($keyPath, $normalizedKey, [System.Text.Encoding]::ASCII)
+          icacls $keyPath /inheritance:r | Out-Null
+          icacls $keyPath /grant:r "$($env:USERNAME):(F)" | Out-Null
+
+          $files = @(
+            'artifacts\installer\AdvanceControl-x64.msix',
+            'artifacts\installer\version.json',
+            'artifacts\installer\AdvanceControl.appinstaller'
+          )
+
+          foreach ($file in $files) {
+            $maxAttempts = 5
+            $succeeded = $false
+            for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+              & scp -o StrictHostKeyChecking=no -o ConnectTimeout=15 -i $keyPath $file "${env:VPS_USER}@${env:VPS_HOST}:/opt/advanceapi-pruebas/storage/client-dist/"
+              if ($LASTEXITCODE -eq 0) {
+                $succeeded = $true
+                break
+              }
+              Write-Host "scp fallo para '$file' (intento $attempt/$maxAttempts, exit code $LASTEXITCODE) — el proveedor del VPS a veces limita momentaneamente IPs de runners en la nube. Reintentando en 20s..."
+              Start-Sleep -Seconds 20
+            }
+            if (-not $succeeded) {
+              throw "scp fallo para '$file' tras $maxAttempts intentos"
+            }
+          }
+
+          Remove-Item $keyPath -Force
+
+      - name: Publicar artefactos del workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: cliente-pruebas-${{ steps.version.outputs.version }}
+          path: |
+            artifacts/installer/AdvanceControl.appinstaller
+            artifacts/installer/AdvanceControl-x64.msix

@@ -25,7 +25,7 @@ namespace Advance_Control.Services.LocalStorage
             
             // Obtener la ruta base: Documentos/Advance Control
             var documentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            _basePath = Path.Combine(documentsPath, "Advance Control");
+            _basePath = Path.Combine(documentsPath, global::Advance_Control.Utilities.EntornoApp.CarpetaDocumentos);
             
             // Asegurar que el directorio base existe
             if (!Directory.Exists(_basePath))
