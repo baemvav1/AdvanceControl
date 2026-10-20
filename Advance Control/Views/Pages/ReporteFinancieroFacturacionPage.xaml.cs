@@ -2,29 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Contactos;
+using Advance_Control.Services.Notificacion;
 using Advance_Control.Utilities;
 using Advance_Control.ViewModels;
+using Advance_Control.Views.Dialogs;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Navigation;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Advance_Control.Views.Pages
 {
     public sealed partial class ReporteFinancieroFacturacionPage : Page
     {
-        private const int LiveFilterDelayMs = 300;
-        private CancellationTokenSource? _filtrosLiveCts;
-        private bool _recargaLiveEnCurso;
-        private bool _recargaLivePendiente;
-        private List<CustomerDto> _allClientes = new();
-
         private readonly IClienteService _clienteService;
         private readonly IContactoService _contactoService;
+        private readonly INotificacionService _notificacionService;
 
         public RPTFinancieroFacturacionViewModel ViewModel { get; }
 
@@ -34,181 +30,98 @@ namespace Advance_Control.Views.Pages
             ViewModel = AppServices.Get<RPTFinancieroFacturacionViewModel>();
             _clienteService = AppServices.Get<IClienteService>();
             _contactoService = AppServices.Get<IContactoService>();
+            _notificacionService = AppServices.Get<INotificacionService>();
             DataContext = ViewModel;
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
-            await CargarReporteSeguroAsync();
-            await CargarClientesAutoSuggestSeguroAsync();
+            await ViewModel.CargarReporteAsync();
         }
 
-        private void Filtro_TextChanged(object sender, TextChangedEventArgs e)
+        private async void BtnActualizar_Click(object sender, RoutedEventArgs e)
         {
-            ProgramarRecargaLive();
+            await ViewModel.CargarReporteAsync();
+            ClientesListView.SelectedItem = ViewModel.ClienteSeleccionado;
         }
 
-        private async Task CargarClientesAutoSuggestSeguroAsync()
+        private void ClientesListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            // Al refiltrar el listado la selección se pierde; el cliente abierto se conserva
+            // hasta que se elija otro.
+            if (e.AddedItems.FirstOrDefault() is ReporteFinancieroFacturacionCabeceraDto cliente)
+            {
+                ViewModel.ClienteSeleccionado = cliente;
+            }
+        }
+
+        private void PestanasSelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
+        {
+            PanelHistorial.Visibility = sender.SelectedItem == PestanaHistorial ? Visibility.Visible : Visibility.Collapsed;
+            PanelFacturas.Visibility = sender.SelectedItem == PestanaFacturas ? Visibility.Visible : Visibility.Collapsed;
+            PanelDocumentos.Visibility = sender.SelectedItem == PestanaDocumentos ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        // ---------------- Historial ----------------
+
+        private async void BtnAgregarSeguimiento_Click(object sender, RoutedEventArgs e)
+        {
+            var dto = await SeguimientoCobranzaDialog.MostrarAsync(XamlRoot, _notificacionService);
+            if (dto == null)
+            {
+                return;
+            }
+
+            await ViewModel.AgregarSeguimientoAsync(dto);
+        }
+
+        // ---------------- Documentos ----------------
+
+        private async void BtnGenerarReporte_Click(object sender, RoutedEventArgs e) =>
+            await GenerarYAbrirAsync(ViewModel.GenerarReporteAsync);
+
+        private async void BtnGenerarReporteSimplificado_Click(object sender, RoutedEventArgs e) =>
+            await GenerarYAbrirAsync(ViewModel.GenerarReporteSimplificadoAsync);
+
+        private async void BtnGenerarReporteCobranza_Click(object sender, RoutedEventArgs e) =>
+            await GenerarYAbrirAsync(ViewModel.GenerarReporteCobranzaAsync);
+
+        /// <summary>Genera el PDF y lo abre. El ViewModel ya deja el error en la barra si falla.</summary>
+        private async Task GenerarYAbrirAsync(Func<Task<string>> generar)
         {
             try
             {
-                _allClientes = await _clienteService.GetClientesAsync(null);
+                var rutaArchivo = await generar();
+                Process.Start(new ProcessStartInfo(rutaArchivo) { UseShellExecute = true });
             }
             catch (Exception ex)
             {
-                _allClientes = new List<CustomerDto>();
-                ViewModel.ErrorMessage = $"No se pudo cargar el listado de clientes para el buscador: {ex.Message}";
-                ViewModel.SuccessMessage = null;
-            }
-        }
-
-        private void ClienteAutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
-        {
-            if (args.Reason != AutoSuggestionBoxTextChangeReason.UserInput)
-            {
-                return;
-            }
-
-            var texto = sender.Text?.Trim() ?? string.Empty;
-            ViewModel.ReceptorRfcFiltro = texto;
-
-            sender.ItemsSource = string.IsNullOrWhiteSpace(texto)
-                ? _allClientes.Take(10).Select(FormatClienteDisplay).ToList()
-                : _allClientes
-                    .Where(c =>
-                        (!string.IsNullOrEmpty(c.Rfc) && c.Rfc.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(c.NombreComercial) && c.NombreComercial.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
-                        (!string.IsNullOrEmpty(c.RazonSocial) && c.RazonSocial.Contains(texto, StringComparison.OrdinalIgnoreCase)))
-                    .Take(10)
-                    .Select(FormatClienteDisplay)
-                    .ToList();
-
-            ProgramarRecargaLive();
-        }
-
-        private void ClienteAutoSuggestBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is AutoSuggestBox autoSuggestBox)
-            {
-                autoSuggestBox.ItemsSource = _allClientes.Take(10).Select(FormatClienteDisplay).ToList();
-                autoSuggestBox.IsSuggestionListOpen = true;
-            }
-        }
-
-        private void ClienteAutoSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        {
-            if (args.SelectedItem is not string selectedText)
-            {
-                return;
-            }
-
-            var cliente = _allClientes.FirstOrDefault(c => FormatClienteDisplay(c) == selectedText);
-            if (cliente == null)
-            {
-                return;
-            }
-
-            sender.Text = cliente.Rfc;
-            ViewModel.ReceptorRfcFiltro = cliente.Rfc;
-            ProgramarRecargaLive();
-        }
-
-        private static string FormatClienteDisplay(CustomerDto cliente)
-        {
-            return string.IsNullOrWhiteSpace(cliente.NombreComercial)
-                ? cliente.Rfc
-                : $"{cliente.Rfc} — {cliente.NombreComercial}";
-        }
-
-        private void FiltroFecha_DateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
-        {
-            ProgramarRecargaLive();
-        }
-
-        private void FiltroEstado_Changed(object sender, RoutedEventArgs e)
-        {
-            ProgramarRecargaLive();
-        }
-
-        private async void BtnLimpiar_Click(object sender, RoutedEventArgs e)
-        {
-            ViewModel.LimpiarFiltros();
-            ClienteAutoSuggestBox.Text = string.Empty;
-            ProgramarRecargaLive();
-        }
-
-        private async void BtnGenerarReporte_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var rutaArchivo = await ViewModel.GenerarReporteAsync();
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
-                {
-                    UseShellExecute = true
-                });
-            }
-            catch (System.Exception ex)
-            {
-                ViewModel.ErrorMessage = $"No se pudo generar el reporte financiero de facturación: {ex.Message}";
-                ViewModel.SuccessMessage = null;
-            }
-        }
-
-        private async void BtnGenerarReporteSimplificado_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var rutaArchivo = await ViewModel.GenerarReporteSimplificadoAsync();
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
-                {
-                    UseShellExecute = true
-                });
-            }
-            catch (System.Exception ex)
-            {
-                ViewModel.ErrorMessage = $"No se pudo generar el reporte simplificado: {ex.Message}";
-                ViewModel.SuccessMessage = null;
-            }
-        }
-
-        private async void BtnGenerarReporteCobranza_Click(object sender, RoutedEventArgs e)
-        {
-            try
-            {
-                var rutaArchivo = await ViewModel.GenerarReporteCobranzaAsync();
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
-                {
-                    UseShellExecute = true
-                });
-            }
-            catch (System.Exception ex)
-            {
-                ViewModel.ErrorMessage = $"No se pudo generar el reporte de cobranza: {ex.Message}";
+                ViewModel.ErrorMessage ??= ex.Message;
                 ViewModel.SuccessMessage = null;
             }
         }
 
         private async void BtnGenerarHistorial_Click(object sender, RoutedEventArgs e)
         {
-            var rfcFiltro = ViewModel.ReceptorRfcFiltro;
-            if (string.IsNullOrWhiteSpace(rfcFiltro))
+            var cabecera = ViewModel.ClienteSeleccionado;
+            if (cabecera == null || string.IsNullOrWhiteSpace(cabecera.ReceptorRfc))
             {
-                ViewModel.ErrorMessage = "Selecciona un cliente (RFC o nombre) arriba para generar el historial.";
+                ViewModel.ErrorMessage = "El cliente seleccionado no tiene RFC.";
                 ViewModel.SuccessMessage = null;
                 return;
             }
 
             if (!ViewModel.FechaInicioFiltro.HasValue || !ViewModel.FechaFinFiltro.HasValue)
             {
-                ViewModel.ErrorMessage = "Selecciona la Fecha Inicio y Fecha Fin arriba para generar el historial.";
+                ViewModel.ErrorMessage = "Selecciona Desde y Hasta en las opciones para generar el historial.";
                 ViewModel.SuccessMessage = null;
                 return;
             }
 
             if (ViewModel.FechaFinFiltro.Value.Date < ViewModel.FechaInicioFiltro.Value.Date)
             {
-                ViewModel.ErrorMessage = "La Fecha Fin no puede ser anterior a la Fecha Inicio.";
+                ViewModel.ErrorMessage = "La fecha Hasta no puede ser anterior a Desde.";
                 ViewModel.SuccessMessage = null;
                 return;
             }
@@ -222,13 +135,10 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                var clientes = await _clienteService.GetClientesAsync(new ClienteQueryDto { Rfc = rfcFiltro });
-                var cliente = clientes?.FirstOrDefault(c => string.Equals(c.Rfc, rfcFiltro, StringComparison.OrdinalIgnoreCase))
-                    ?? clientes?.FirstOrDefault();
-
+                var cliente = await BuscarClienteAsync(cabecera.ReceptorRfc);
                 if (cliente == null)
                 {
-                    ViewModel.ErrorMessage = $"No se encontró el cliente con RFC {rfcFiltro}. Selecciónalo desde el buscador de arriba.";
+                    ViewModel.ErrorMessage = $"No se encontró el cliente con RFC {cabecera.ReceptorRfc} en el catálogo de clientes.";
                     ViewModel.SuccessMessage = null;
                     return;
                 }
@@ -272,13 +182,14 @@ namespace Advance_Control.Views.Pages
             }
             catch (Exception ex)
             {
-                ViewModel.ErrorMessage = $"No se pudo generar el historial de cobranza: {ex.Message}";
+                ViewModel.ErrorMessage ??= $"No se pudo generar el historial de cobranza: {ex.Message}";
                 ViewModel.SuccessMessage = null;
             }
         }
 
-        private async void CabeceraItem_EnviarAlertaClick(object sender, ReporteFinancieroFacturacionCabeceraDto cabecera)
+        private async void BtnEnviarAlerta_Click(object sender, RoutedEventArgs e)
         {
+            var cabecera = ViewModel.ClienteSeleccionado;
             if (cabecera == null || string.IsNullOrWhiteSpace(cabecera.ReceptorRfc))
             {
                 ViewModel.ErrorMessage = "El cliente seleccionado no tiene RFC.";
@@ -288,10 +199,7 @@ namespace Advance_Control.Views.Pages
 
             try
             {
-                var clientes = await _clienteService.GetClientesAsync(new ClienteQueryDto { Rfc = cabecera.ReceptorRfc });
-                var cliente = clientes?.FirstOrDefault(c => string.Equals(c.Rfc, cabecera.ReceptorRfc, StringComparison.OrdinalIgnoreCase))
-                    ?? clientes?.FirstOrDefault();
-
+                var cliente = await BuscarClienteAsync(cabecera.ReceptorRfc);
                 if (cliente == null)
                 {
                     ViewModel.ErrorMessage = $"No se encontró el cliente con RFC {cabecera.ReceptorRfc}.";
@@ -336,13 +244,21 @@ namespace Advance_Control.Views.Pages
                     return;
                 }
 
-                await ViewModel.EnviarAlertaCobranzaAsync(cabecera, destinatarios);
+                await ViewModel.EnviarAlertaCobranzaAsync(destinatarios);
             }
             catch (Exception ex)
             {
-                ViewModel.ErrorMessage = $"No se pudo enviar la alerta de cobranza: {ex.Message}";
+                ViewModel.ErrorMessage ??= $"No se pudo enviar la alerta de cobranza: {ex.Message}";
                 ViewModel.SuccessMessage = null;
             }
+        }
+
+        /// <summary>Cliente del catálogo con ese RFC (clientes.rfc puede repetirse: se toma el que coincide exacto).</summary>
+        private async Task<CustomerDto?> BuscarClienteAsync(string rfc)
+        {
+            var clientes = await _clienteService.GetClientesAsync(new ClienteQueryDto { Rfc = rfc });
+            return clientes?.FirstOrDefault(c => string.Equals(c.Rfc, rfc, StringComparison.OrdinalIgnoreCase))
+                ?? clientes?.FirstOrDefault();
         }
 
         private sealed class ContactoAlertaItem
@@ -358,67 +274,5 @@ namespace Advance_Control.Views.Pages
 
             public override string ToString() => Texto;
         }
-
-        private void ProgramarRecargaLive()
-        {
-            _filtrosLiveCts?.Cancel();
-            _filtrosLiveCts?.Dispose();
-            _filtrosLiveCts = new CancellationTokenSource();
-
-            _ = EjecutarRecargaLiveAsync(_filtrosLiveCts.Token);
-        }
-
-        private async Task EjecutarRecargaLiveAsync(CancellationToken cancellationToken)
-        {
-            try
-            {
-                await Task.Delay(LiveFilterDelayMs, cancellationToken);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            await CargarReporteLiveSerializadoAsync();
-        }
-
-        private async Task CargarReporteLiveSerializadoAsync()
-        {
-            if (_recargaLiveEnCurso)
-            {
-                _recargaLivePendiente = true;
-                return;
-            }
-
-            _recargaLiveEnCurso = true;
-
-            try
-            {
-                do
-                {
-                    _recargaLivePendiente = false;
-                    await CargarReporteSeguroAsync();
-                }
-                while (_recargaLivePendiente);
-            }
-            finally
-            {
-                _recargaLiveEnCurso = false;
-            }
-        }
-
-        private async Task CargarReporteSeguroAsync()
-        {
-            try
-            {
-                await ViewModel.CargarReporteAsync();
-            }
-            catch (System.Exception ex)
-            {
-                ViewModel.ErrorMessage = $"No se pudo cargar el reporte financiero de facturación: {ex.Message}";
-                ViewModel.SuccessMessage = null;
-            }
-        }
     }
 }
-
