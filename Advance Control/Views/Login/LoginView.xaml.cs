@@ -68,8 +68,12 @@ namespace Advance_Control.Views.Login
 
         private void EntornoComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Solo se ofrece reiniciar si se eligió un entorno distinto al actual.
-            EntornoInfoBar.IsOpen = PruebasElegido != EntornoApp.EsPruebas;
+            // Solo se ofrece reiniciar si se eligió un entorno distinto al actual. Mientras no se
+            // reinicie, la URL de la API sigue siendo la del entorno con que arrancó la app: se oculta
+            // "Iniciar Sesión" para no entrar a Producción creyendo que se está en Pruebas (o al revés).
+            var cambioPendiente = PruebasElegido != EntornoApp.EsPruebas;
+            EntornoInfoBar.IsOpen = cambioPendiente;
+            LoginButton.Visibility = cambioPendiente ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void ReiniciarEntorno_Click(object sender, RoutedEventArgs e)

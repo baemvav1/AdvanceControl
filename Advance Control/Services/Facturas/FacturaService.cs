@@ -960,7 +960,7 @@ namespace Advance_Control.Services.Facturas
                         404 => $"El servidor de {EntornoApp.Nombre} no tiene la importación automática: su API todavía no se ha actualizado con esta función. "
                                + (EntornoApp.EsPruebas
                                    ? "Espera a que termine el deploy de la rama pruebas."
-                                   : "Por ahora solo está en Pruebas: cierra sesión y elige el entorno Pruebas en el login."),
+                                   : "Por ahora solo está en Pruebas: cierra sesión, elige el entorno Pruebas en el login y pulsa \"Reiniciar ahora\" (la barra de título debe decir PRUEBAS)."),
                         401 => "La sesión expiró o no es válida. Cierra sesión y vuelve a entrar.",
                         403 => "Tu usuario no tiene permiso para esta función.",
                         400 => "La API rechazó los datos enviados.",

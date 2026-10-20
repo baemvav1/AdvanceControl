@@ -37,7 +37,7 @@
                     Width="300"
                     HorizontalAlignment="Left"
                     IsClosable="False"
-                    Message="Advance Control se reiniciará para conectarse al entorno elegido."
+                    Message="Para entrar al entorno elegido primero hay que reiniciar Advance Control; mientras tanto la sesión seguiría en el entorno actual."
                     Severity="Warning">
                     <InfoBar.ActionButton>
                         <Button Click="ReiniciarEntorno_Click" Content="Reiniciar ahora" />
