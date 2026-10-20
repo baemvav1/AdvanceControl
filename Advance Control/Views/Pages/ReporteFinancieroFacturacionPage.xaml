@@ -191,6 +191,14 @@
                                     <Run Text="{x:Bind ViewModel.ClienteSeleccionado.DiasVencidoMaxTexto, Mode=OneWay}" />
                                 </TextBlock>
                             </StackPanel>
+                            <StackPanel ToolTipService.ToolTip="Operaciones sin factura y sin T-Finalizado (misma regla que el Historial de cobranza)">
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Op. abiertas" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.OperacionesAbiertasTexto, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel ToolTipService.ToolTip="Operaciones con T-Finalizado que todavía no tienen factura (por facturar)">
+                                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="T-Finalizado" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.OperacionesTFinalizadoTexto, Mode=OneWay}" />
+                            </StackPanel>
                         </StackPanel>
                         <TextBlock FontStyle="Italic" Text="{x:Bind ViewModel.UltimoDocumentoTexto, Mode=OneWay}" />
                     </StackPanel>

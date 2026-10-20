@@ -6,7 +6,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Email;
+using Advance_Control.Services.Operaciones;
 using Advance_Control.Services.Reportes;
 
 namespace Advance_Control.ViewModels
@@ -28,6 +30,8 @@ namespace Advance_Control.ViewModels
         private readonly IReporteFinancieroFacturacionExportService _exportService;
         private readonly IHistorialCobranzaService _historialService;
         private readonly IEmailService _emailService;
+        private readonly IClienteService _clienteService;
+        private readonly IOperacionService _operacionService;
         private readonly List<ReporteFinancieroFacturacionCabeceraDto> _cabecerasBase = new();
         private readonly List<ReporteFinancieroFacturacionDetalleDto> _detallesBase = new();
         private ObservableCollection<ReporteFinancieroFacturacionCabeceraDto> _clientes = new();
@@ -36,6 +40,8 @@ namespace Advance_Control.ViewModels
         private ObservableCollection<CobranzaSeguimientoDto> _seguimientosCliente = new();
         private bool _isLoading;
         private bool _isCargandoSeguimientos;
+        private string _operacionesAbiertasTexto = "—";
+        private string _operacionesTFinalizadoTexto = "—";
         private string? _errorMessage;
         private string? _successMessage;
         private string? _busquedaCliente;
@@ -62,12 +68,16 @@ namespace Advance_Control.ViewModels
             IReporteFinancieroFacturacionService reporteService,
             IReporteFinancieroFacturacionExportService exportService,
             IHistorialCobranzaService historialService,
-            IEmailService emailService)
+            IEmailService emailService,
+            IClienteService clienteService,
+            IOperacionService operacionService)
         {
             _reporteService = reporteService ?? throw new ArgumentNullException(nameof(reporteService));
             _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
             _historialService = historialService ?? throw new ArgumentNullException(nameof(historialService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
+            _operacionService = operacionService ?? throw new ArgumentNullException(nameof(operacionService));
         }
 
         // ---------------- Estado general ----------------
@@ -145,6 +155,7 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(PuedeGenerarDocumentos));
                     AplicarFiltroFacturas();
                     _ = CargarSeguimientosAsync();
+                    _ = CargarOperacionesAsync();
                 }
             }
         }
@@ -212,6 +223,20 @@ namespace Advance_Control.ViewModels
                     ? "Último reporte: ninguno registrado"
                     : $"Último reporte: {ultimo.RegistradoPorTexto} · {ultimo.FechaSeguimientoTexto} · {ultimo.TipoContacto![PrefijoDocumento.Length..]}";
             }
+        }
+
+        /// <summary>Operaciones sin factura y sin T-Finalizado (con cuántas traen orden de compra).</summary>
+        public string OperacionesAbiertasTexto
+        {
+            get => _operacionesAbiertasTexto;
+            private set => SetProperty(ref _operacionesAbiertasTexto, value);
+        }
+
+        /// <summary>Operaciones con T-Finalizado que todavía no tienen factura (por facturar).</summary>
+        public string OperacionesTFinalizadoTexto
+        {
+            get => _operacionesTFinalizadoTexto;
+            private set => SetProperty(ref _operacionesTFinalizadoTexto, value);
         }
 
         // ---------------- Opciones de documentos ----------------
@@ -350,6 +375,57 @@ namespace Advance_Control.ViewModels
             finally
             {
                 IsCargandoSeguimientos = false;
+            }
+        }
+
+        /// <summary>
+        /// Cuenta las operaciones del cliente que aún no tienen factura, con la misma regla que el
+        /// Historial de cobranza: abiertas = sin T-Finalizado; T-Finalizado = trabajo terminado
+        /// y por facturar. Las operaciones se ligan por id de cliente, que se resuelve por RFC.
+        /// </summary>
+        public async Task CargarOperacionesAsync()
+        {
+            var rfc = ClienteSeleccionado?.ReceptorRfc;
+            OperacionesAbiertasTexto = "…";
+            OperacionesTFinalizadoTexto = "…";
+            if (string.IsNullOrWhiteSpace(rfc))
+            {
+                return;
+            }
+
+            try
+            {
+                var clientes = await _clienteService.GetClientesAsync(new ClienteQueryDto { Rfc = rfc });
+                var cliente = clientes?.FirstOrDefault(c => MismoRfc(c.Rfc, rfc)) ?? clientes?.FirstOrDefault();
+
+                // Sin IncluirFacturadas la API ya excluye las operaciones con factura.
+                var operaciones = cliente == null
+                    ? new List<OperacionDto>()
+                    : await _operacionService.GetOperacionesAsync(new OperacionQueryDto { IdCliente = cliente.IdCliente, IncluirFinalizadas = true });
+
+                if (!MismoRfc(ClienteSeleccionado?.ReceptorRfc, rfc))
+                {
+                    return;
+                }
+
+                if (cliente == null)
+                {
+                    OperacionesAbiertasTexto = OperacionesTFinalizadoTexto = "Sin cliente en catálogo";
+                    return;
+                }
+
+                var abiertas = operaciones.Where(o => !o.TFinalizado).ToList();
+                var tFinalizadas = operaciones.Where(o => o.TFinalizado).ToList();
+                OperacionesAbiertasTexto = $"{abiertas.Count} ({abiertas.Count(o => o.CkOrdenCompraCargadaApi)} con OC)";
+                OperacionesTFinalizadoTexto = $"{tFinalizadas.Count} ({tFinalizadas.Count(o => o.CkOrdenCompraCargadaApi)} con OC)";
+            }
+            catch (Exception ex)
+            {
+                if (MismoRfc(ClienteSeleccionado?.ReceptorRfc, rfc))
+                {
+                    OperacionesAbiertasTexto = OperacionesTFinalizadoTexto = "Error";
+                    ErrorMessage = $"No se pudieron contar las operaciones del cliente: {ex.Message}";
+                }
             }
         }
 
