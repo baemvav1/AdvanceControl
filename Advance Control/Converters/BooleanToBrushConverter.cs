@@ -9,12 +9,28 @@ namespace Advance_Control.Converters
     /// Convierte un bool en uno de dos Brush. A diferencia de BooleanToSystemColorBrushConverter
     /// (colores fijos), aquí los brushes se asignan desde XAML con {ThemeResource ...}, así el
     /// fondo respeta el tema claro/oscuro y el texto por defecto sigue siendo legible.
+    /// TrueBrush/FalseBrush son DependencyProperty: {ThemeResource} solo se puede asignar a
+    /// propiedades de dependencia (en una propiedad CLR compila, pero truena al cargar el XAML).
     /// </summary>
-    public class BooleanToBrushConverter : IValueConverter
+    public class BooleanToBrushConverter : DependencyObject, IValueConverter
     {
-        public Brush? TrueBrush { get; set; }
+        public static readonly DependencyProperty TrueBrushProperty =
+            DependencyProperty.Register(nameof(TrueBrush), typeof(Brush), typeof(BooleanToBrushConverter), new PropertyMetadata(null));
 
-        public Brush? FalseBrush { get; set; }
+        public static readonly DependencyProperty FalseBrushProperty =
+            DependencyProperty.Register(nameof(FalseBrush), typeof(Brush), typeof(BooleanToBrushConverter), new PropertyMetadata(null));
+
+        public Brush? TrueBrush
+        {
+            get => (Brush?)GetValue(TrueBrushProperty);
+            set => SetValue(TrueBrushProperty, value);
+        }
+
+        public Brush? FalseBrush
+        {
+            get => (Brush?)GetValue(FalseBrushProperty);
+            set => SetValue(FalseBrushProperty, value);
+        }
 
         public object Convert(object value, Type targetType, object parameter, string language)
         {

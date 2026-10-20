@@ -58,6 +58,11 @@ namespace Advance_Control.Views.Pages
 
         private void PestanasSelectorBar_SelectionChanged(SelectorBar sender, SelectorBarSelectionChangedEventArgs args)
         {
+            // IsSelected="True" en el XAML dispara este evento mientras se arma la página,
+            // antes de que existan los paneles.
+            if (PanelHistorial == null || PanelFacturas == null || PanelDocumentos == null)
+                return;
+
             PanelHistorial.Visibility = sender.SelectedItem == PestanaHistorial ? Visibility.Visible : Visibility.Collapsed;
             PanelFacturas.Visibility = sender.SelectedItem == PestanaFacturas ? Visibility.Visible : Visibility.Collapsed;
             PanelDocumentos.Visibility = sender.SelectedItem == PestanaDocumentos ? Visibility.Visible : Visibility.Collapsed;
