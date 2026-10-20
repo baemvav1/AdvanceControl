@@ -11,7 +11,11 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <converters:BooleanToSystemColorBrushConverter x:Key="RenglonFondoConverter" TrueColorName="WhiteSmoke" FalseColorName="MistyRose" />
+        <!--  Fondos del tema: los colores fijos (WhiteSmoke/MistyRose) dejaban el texto blanco invisible en tema oscuro  -->
+        <converters:BooleanToBrushConverter
+            x:Key="RenglonFondoConverter"
+            FalseBrush="{ThemeResource SystemFillColorCriticalBackgroundBrush}"
+            TrueBrush="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
         <converters:BooleanToSystemColorBrushConverter x:Key="BadgeFondoConverter" TrueColorName="SeaGreen" FalseColorName="Crimson" />
     </Page.Resources>
 
