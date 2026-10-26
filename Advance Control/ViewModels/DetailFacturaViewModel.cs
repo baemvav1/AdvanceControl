@@ -121,7 +121,7 @@ namespace Advance_Control.ViewModels
         public string ResumenTraslados => $"Traslados globales ({TrasladosGlobales.Count})";
         public string ResumenAbonos => $"Abonos registrados ({Abonos.Count})";
         public string ResumenComplementos => $"Complementos de pago relacionados ({ComplementosRelacionados.Count})";
-        public bool CanRegistrarAbono => Factura != null && !IsLoading && Factura.SaldoPendiente > 0
+        public bool CanRegistrarAbono => Factura != null && !IsLoading && Factura.PuedeCapturarPagoManual && Factura.SaldoPendiente > 0
             && MontoAbono > 0 && !string.IsNullOrWhiteSpace(FormaPagoAbono);
 
         public async Task CargarDetalleAsync(int idFactura)
@@ -260,6 +260,18 @@ namespace Advance_Control.ViewModels
             if (MontoAbono <= 0)
             {
                 ErrorMessage = "El monto del abono debe ser mayor a cero.";
+                return;
+            }
+
+            if (!Factura.PuedeCapturarPagoManual)
+            {
+                ErrorMessage = Factura.TooltipCapturarPagoTexto;
+                return;
+            }
+
+            if (Convert.ToDecimal(MontoAbono) > Factura.SaldoPendiente)
+            {
+                ErrorMessage = $"El monto no puede exceder el saldo pendiente ({Factura.SaldoPendienteTexto}).";
                 return;
             }
 

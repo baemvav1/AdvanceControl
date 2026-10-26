@@ -55,6 +55,24 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
             return;
         }
 
+        // La BD lo rechaza igual (fn_facturas_registrar_abono); validarlo aquí deja corregir el
+        // monto sin cerrar el diálogo.
+        if (_factura.SaldoPendiente <= 0m)
+        {
+            EstadoInfoBar.Message = "Esta factura ya no tiene saldo pendiente.";
+            EstadoInfoBar.IsOpen = true;
+            args.Cancel = true;
+            return;
+        }
+
+        if (monto > _factura.SaldoPendiente)
+        {
+            EstadoInfoBar.Message = $"El monto no puede exceder el saldo pendiente ({_factura.SaldoPendienteTexto}).";
+            EstadoInfoBar.IsOpen = true;
+            args.Cancel = true;
+            return;
+        }
+
         if (FechaDatePicker.Date == null)
         {
             EstadoInfoBar.Message = "Selecciona la fecha del pago.";

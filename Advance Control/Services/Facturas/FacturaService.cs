@@ -215,7 +215,7 @@ namespace Advance_Control.Services.Facturas
                     return new RegistrarAbonoFacturaResponseDto
                     {
                         Success = false,
-                        Message = errorContent
+                        Message = ExtraerMensajeError(errorContent)
                     };
                 }
 
@@ -779,7 +779,7 @@ namespace Advance_Control.Services.Facturas
                     return new RegistrarAbonoFacturaResponseDto
                     {
                         Success = false,
-                        Message = errorContent
+                        Message = ExtraerMensajeError(errorContent)
                     };
                 }
 
@@ -850,7 +850,7 @@ namespace Advance_Control.Services.Facturas
                     return new RegistrarAbonoFacturaResponseDto
                     {
                         Success = false,
-                        Message = errorContent
+                        Message = ExtraerMensajeError(errorContent)
                     };
                 }
 

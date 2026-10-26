@@ -1115,6 +1115,7 @@ namespace Advance_Control.ViewModels
         {
             return facturas
                 .Where(factura => factura.Finiquito != true)
+                .Where(factura => !factura.Cancelada) // la BD rechaza abonos a canceladas (migración 145)
                 .Where(factura => _conciliacionMatchingEngine.ObtenerTotalFactura(factura) > 0)
                 .OrderBy(factura => factura.Fecha)
                 .ThenBy(factura => factura.IdFactura)
