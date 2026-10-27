@@ -68,12 +68,21 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource TitleTextBlockStyle}"
                             Text="Facturas CFDI" />
+                        <!--  El texto se busca solo en el campo elegido; la selección inicial se pone en el constructor  -->
+                        <ComboBox
+                            x:Name="CampoBusquedaComboBox"
+                            Width="170"
+                            VerticalAlignment="Center"
+                            ToolTipService.ToolTip="Campo en el que se busca el texto">
+                            <ComboBoxItem Content="RFC" Tag="Rfc" />
+                            <ComboBoxItem Content="Nombre comercial" Tag="NombreComercial" />
+                            <ComboBoxItem Content="Folio" Tag="Folio" />
+                        </ComboBox>
                         <AutoSuggestBox
                             x:Name="BusquedaAutoSuggestBox"
-                            Grid.Column="0"
-                            DisplayMemberPath="SugerenciaTexto"
+                            Width="320"
+                            VerticalAlignment="Center"
                             ItemsSource="{x:Bind ViewModel.Sugerencias, Mode=OneWay}"
-                            PlaceholderText="Buscar por receptor, UUID o folio (Serie + folio o solo folio)…"
                             QueryIcon="Find"
                             QuerySubmitted="BusquedaAutoSuggestBox_QuerySubmitted"
                             TextChanged="BusquedaAutoSuggestBox_TextChanged" />

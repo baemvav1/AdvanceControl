@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.PermisosUi;
@@ -24,6 +25,10 @@ namespace Advance_Control.Views.Pages
             InitializeComponent();
             ViewModel = AppServices.Get<FacturasViewModel>();
             DataContext = ViewModel;
+
+            // Se conecta aquí y no en el XAML: SelectionChanged dispararía antes de existir el ViewModel.
+            SeleccionarCampoBusqueda(ViewModel.CampoBusqueda);
+            CampoBusquedaComboBox.SelectionChanged += CampoBusquedaComboBox_SelectionChanged;
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -169,12 +174,43 @@ namespace Advance_Control.Views.Pages
 
         private void BusquedaAutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            var texto = args.ChosenSuggestion is FacturaResumenDto elegida
-                ? elegida.Uuid ?? elegida.FolioTitulo
-                : args.QueryText;
-
-            ViewModel.TextoBusqueda = texto;
+            ViewModel.TextoBusqueda = args.ChosenSuggestion as string ?? args.QueryText;
             ViewModel.Buscar();
+        }
+
+        private void CampoBusquedaComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((CampoBusquedaComboBox.SelectedItem as ComboBoxItem)?.Tag is not string tag
+                || !Enum.TryParse<CampoBusquedaFactura>(tag, out var campo))
+            {
+                return;
+            }
+
+            ViewModel.CampoBusqueda = campo;
+            ActualizarPlaceholderBusqueda();
+
+            // Rehace la búsqueda con el texto que ya estaba escrito, ahora contra el campo nuevo.
+            ViewModel.Sugerencias.Clear();
+            ViewModel.TextoBusqueda = BusquedaAutoSuggestBox.Text;
+            ViewModel.Buscar();
+        }
+
+        private void SeleccionarCampoBusqueda(CampoBusquedaFactura campo)
+        {
+            CampoBusquedaComboBox.SelectedItem = CampoBusquedaComboBox.Items
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(i => (i.Tag as string) == campo.ToString());
+            ActualizarPlaceholderBusqueda();
+        }
+
+        private void ActualizarPlaceholderBusqueda()
+        {
+            BusquedaAutoSuggestBox.PlaceholderText = ViewModel.CampoBusqueda switch
+            {
+                CampoBusquedaFactura.Rfc => "RFC del receptor (completo o parte)…",
+                CampoBusquedaFactura.Folio => "Folio exacto: 1250 o A1250…",
+                _ => "Nombre comercial del cliente…"
+            };
         }
 
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
@@ -187,6 +223,7 @@ namespace Advance_Control.Views.Pages
         {
             BusquedaAutoSuggestBox.Text = string.Empty;
             ViewModel.LimpiarFiltros();
+            SeleccionarCampoBusqueda(ViewModel.CampoBusqueda);
         }
 
         // --- Paginación ---
