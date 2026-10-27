@@ -28,6 +28,7 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private string? _successMessage;
         private FacturaResumenDto? _factura;
+        private FacturaDetalleDto? _detalle;
         private string? _pdfPath;
 
         public FacturaVisorViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IComplementoPagoPdfService complementoPagoPdfService)
@@ -87,9 +88,23 @@ namespace Advance_Control.ViewModels
                     OnPropertyChanged(nameof(ClienteTexto));
                     OnPropertyChanged(nameof(FolioTexto));
                     OnPropertyChanged(nameof(EstadoTexto));
+                    OnPropertyChanged(nameof(EsCancelada));
+                    OnPropertyChanged(nameof(PermiteMovimientosFinancieros));
+                    OnPropertyChanged(nameof(OpacidadFinanciera));
                 }
             }
         }
+
+        /// <summary>Muestra los botones del comprobante de cancelación (descargar y enviar).</summary>
+        public bool EsCancelada => Factura?.Cancelada == true;
+
+        /// <summary>
+        /// Una factura cancelada ya no admite abonos, complementos ni cancelación: se apagan los
+        /// paneles de Datos financieros y de Complementos/Pagos.
+        /// </summary>
+        public bool PermiteMovimientosFinancieros => Factura != null && !Factura.Cancelada;
+
+        public double OpacidadFinanciera => EsCancelada ? 0.45 : 1.0;
 
         /// <summary>Ruta del PDF ya generado en disco (misma mecánica que <see cref="IFacturaPdfService"/> usa hoy: QuestPDF escribe a Documentos\Advance Control\Facturas).</summary>
         public string? PdfPath
@@ -179,6 +194,11 @@ namespace Advance_Control.ViewModels
                     return string.Empty;
                 }
 
+                if (Factura.Cancelada)
+                {
+                    return "Cancelada";
+                }
+
                 var restanteComplementos = RestanteSegunComplementos;
                 var restante = restanteComplementos ?? Factura.SaldoPendiente;
 
@@ -209,6 +229,7 @@ namespace Advance_Control.ViewModels
             ErrorMessage = null;
             PdfPath = null;
             Factura = null;
+            _detalle = null;
             ComplementosRelacionados.Clear();
             PagosVinculados.Clear();
 
@@ -221,6 +242,7 @@ namespace Advance_Control.ViewModels
                     return;
                 }
 
+                _detalle = detalle;
                 Factura = detalle.Factura;
                 PdfPath = await _facturaPdfService.GenerarFacturaPdfAsync(detalle);
 
@@ -363,6 +385,27 @@ namespace Advance_Control.ViewModels
             finally
             {
                 IsLoading = false;
+            }
+        }
+
+        /// <summary>Genera el PDF del comprobante (acuse) de cancelación de la factura cargada.</summary>
+        public async Task<string?> GenerarAcuseCancelacionPdfAsync()
+        {
+            if (_detalle?.Factura == null || !_detalle.Factura.Cancelada)
+            {
+                ErrorMessage = "Esta factura no está cancelada; no hay comprobante de cancelación.";
+                return null;
+            }
+
+            try
+            {
+                ErrorMessage = null;
+                return await _facturaPdfService.GenerarAcuseCancelacionPdfAsync(_detalle);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al generar el comprobante de cancelación: {ex.Message}";
+                return null;
             }
         }
 

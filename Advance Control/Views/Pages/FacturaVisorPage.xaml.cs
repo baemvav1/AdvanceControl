@@ -292,6 +292,66 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        // --- Solo facturas canceladas: comprobante (acuse) de cancelación ---
+
+        private async void DescargarComprobanteCancelacion_Click(object sender, RoutedEventArgs e)
+        {
+            var rutaPdf = await ViewModel.GenerarAcuseCancelacionPdfAsync();
+            if (rutaPdf == null)
+            {
+                return;
+            }
+
+            var nombreSugerido = $"Cancelacion_{ViewModel.FolioTexto}".Replace(" ", "_");
+            await GuardarArchivoAsync(rutaPdf, nombreSugerido, "Documento PDF", ".pdf");
+        }
+
+        private async void EnviarComprobanteCancelacion_Click(object sender, RoutedEventArgs e)
+        {
+            var factura = ViewModel.Factura;
+            if (factura == null || !factura.Cancelada)
+            {
+                return;
+            }
+
+            var rutaPdf = await ViewModel.GenerarAcuseCancelacionPdfAsync();
+            if (rutaPdf == null)
+            {
+                return;
+            }
+
+            var (contactoPrincipal, contactos) = await ObtenerContactosClienteAsync(factura.ReceptorRfc);
+
+            var partesSaludo = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre, contactoPrincipal?.Apellido }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            var destinatario = string.Join(" ", partesSaludo);
+            if (string.IsNullOrWhiteSpace(destinatario))
+            {
+                destinatario = "cliente";
+            }
+
+            var mensaje =
+                $"Estimado: {destinatario}.\n\n" +
+                $"Le informamos que la factura {factura.FolioTitulo} (folio fiscal {factura.Uuid}) fue cancelada ante el SAT. " +
+                "Adjuntamos el comprobante de cancelación.\n\n" +
+                "Saludos Cordiales";
+
+            var email = new EnviarCotizacionDialog(
+                rutaPdf,
+                contactoPrincipal,
+                contactos,
+                factura.ReceptorNombre ?? string.Empty,
+                XamlRoot,
+                tipo: "Comprobante de cancelación",
+                asuntoPersonalizado: $"Cancelación de la factura {factura.FolioTitulo}",
+                mensajePersonalizado: mensaje);
+
+            if (await email.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await MostrarMensajeAsync("Enviar por correo", "El comprobante de cancelación fue enviado correctamente.");
+            }
+        }
+
         /// <summary>
         /// Resuelve el cliente por RFC del receptor y trae sus contactos, igual que hacen los
         /// botones de enviar cotización/reporte por operación. Si hay más de un contacto, deja
