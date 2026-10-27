@@ -16,7 +16,7 @@ namespace Advance_Control.Utilities
 
     /// <summary>
     /// Búsqueda del listado de facturas por un solo campo elegido en el selector:
-    /// RFC (parcial), nombre comercial (parcial, sin acentos) o folio (exacto, con o sin serie).
+    /// RFC (parcial), nombre comercial (parcial, sin acentos) o serie + folio (exacto).
     /// </summary>
     public static class FacturaBuscador
     {
@@ -64,8 +64,7 @@ namespace Advance_Control.Utilities
             {
                 CampoBusquedaFactura.Rfc => facturas.Where(f => Coincide(f, campo, texto, nombresPorRfc)).Select(f => f.ReceptorRfc?.Trim().ToUpperInvariant()),
                 CampoBusquedaFactura.NombreComercial => facturas.Where(f => Coincide(f, campo, texto, nombresPorRfc)).Select(f => NombreComercial(f, nombresPorRfc)),
-                _ => facturas.Where(f => NormalizarClave(f.FolioTitulo).StartsWith(NormalizarClave(texto), StringComparison.Ordinal)
-                        || NormalizarClave(f.Folio).StartsWith(NormalizarClave(texto), StringComparison.Ordinal))
+                _ => facturas.Where(f => NormalizarClave(f.FolioTitulo).StartsWith(NormalizarClave(texto), StringComparison.Ordinal))
                     .Select(f => f.FolioTitulo)
             };
 
@@ -77,17 +76,14 @@ namespace Advance_Control.Utilities
                 .ToList();
         }
 
-        /// <summary>"123", "A123", "A-123" y "a 123" encuentran la factura A123; "12" no encuentra la 123.</summary>
+        /// <summary>
+        /// Serie + folio exactos: "A123", "A-123" y "a 123" encuentran la A123, pero "123" solo encuentra
+        /// la factura sin serie con folio 123 (los folios del portal se repiten con los de la serie A).
+        /// </summary>
         private static bool CoincideFolio(FacturaResumenDto factura, string texto)
         {
-            var buscado = NormalizarClave(texto);
             var folio = NormalizarClave(factura.Folio);
-            if (folio.Length == 0)
-            {
-                return false;
-            }
-
-            return buscado == folio || buscado == NormalizarClave(factura.Serie) + folio;
+            return folio.Length > 0 && NormalizarClave(texto) == NormalizarClave(factura.Serie) + folio;
         }
 
         private static string NormalizarClave(string? valor)

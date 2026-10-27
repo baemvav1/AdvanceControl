@@ -16,14 +16,22 @@ namespace Advance_Control.Tests.Utilities
         private static readonly FacturaResumenDto SinCatalogo = Factura(null, "125", "GKI071109C82", "GRUPO KIMBERLEY");
 
         [Theory]
-        [InlineData("1250", true)]
         [InlineData("A1250", true)]
         [InlineData("a-1250", true)]
-        [InlineData("125", false)]   // folio exacto: 125 no es 1250
+        [InlineData("A 1250", true)]
+        [InlineData("1250", false)]  // sin serie no encuentra la A1250
+        [InlineData("A125", false)]
         [InlineData("B1250", false)]
-        public void Folio_EsExacto(string texto, bool esperado)
+        public void Folio_EsSerieMasFolioExacto(string texto, bool esperado)
         {
             Assert.Equal(esperado, FacturaBuscador.Coincide(Salazar, CampoBusquedaFactura.Folio, texto, Nombres));
+        }
+
+        [Fact]
+        public void Folio_SinSerie_SoloConElFolio()
+        {
+            Assert.True(FacturaBuscador.Coincide(SinCatalogo, CampoBusquedaFactura.Folio, "125", Nombres));
+            Assert.False(FacturaBuscador.Coincide(SinCatalogo, CampoBusquedaFactura.Folio, "A125", Nombres));
         }
 
         [Fact]
@@ -55,7 +63,8 @@ namespace Advance_Control.Tests.Utilities
             var facturas = new[] { Salazar, Factura("A", "1251", "SCO7505142JA", "SALAZAR CONSTRUCCIONES SA DE CV"), SinCatalogo };
 
             Assert.Equal(new[] { "Constructora Salazar" }, FacturaBuscador.Sugerencias(facturas, CampoBusquedaFactura.NombreComercial, "salaz", Nombres));
-            Assert.Equal(new[] { "A1250", "A1251", "125" }, FacturaBuscador.Sugerencias(facturas, CampoBusquedaFactura.Folio, "125", Nombres));
+            Assert.Equal(new[] { "A1250", "A1251" }, FacturaBuscador.Sugerencias(facturas, CampoBusquedaFactura.Folio, "A125", Nombres));
+            Assert.Equal(new[] { "125" }, FacturaBuscador.Sugerencias(facturas, CampoBusquedaFactura.Folio, "125", Nombres));
         }
 
         private static FacturaResumenDto Factura(string? serie, string folio, string rfc, string receptor) => new()

@@ -208,7 +208,7 @@ namespace Advance_Control.Views.Pages
             BusquedaAutoSuggestBox.PlaceholderText = ViewModel.CampoBusqueda switch
             {
                 CampoBusquedaFactura.Rfc => "RFC del receptor (completo o parte)…",
-                CampoBusquedaFactura.Folio => "Folio exacto: 1250 o A1250…",
+                CampoBusquedaFactura.Folio => "Serie + folio: A1250 (sin serie: 1250)…",
                 _ => "Nombre comercial del cliente…"
             };
         }

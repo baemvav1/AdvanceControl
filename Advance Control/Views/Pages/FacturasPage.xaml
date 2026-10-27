@@ -76,7 +76,7 @@
                             ToolTipService.ToolTip="Campo en el que se busca el texto">
                             <ComboBoxItem Content="RFC" Tag="Rfc" />
                             <ComboBoxItem Content="Nombre comercial" Tag="NombreComercial" />
-                            <ComboBoxItem Content="Folio" Tag="Folio" />
+                            <ComboBoxItem Content="Serie + folio" Tag="Folio" />
                         </ComboBox>
                         <AutoSuggestBox
                             x:Name="BusquedaAutoSuggestBox"
