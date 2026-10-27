@@ -146,26 +146,41 @@
                             Width="220"
                             Date="{x:Bind ViewModel.FechaHasta, Mode=TwoWay}"
                             Header="Hasta" />
-                        <CheckBox
-                            Grid.Column="1"
+                        <!--  Tipos de CFDI a mostrar: cada botón se prende/apaga y filtra al momento  -->
+                        <CommandBar
                             VerticalAlignment="Bottom"
-                            Content="Con serie + folio"
-                            IsChecked="{x:Bind ViewModel.IncluirConSerie, Mode=TwoWay}"
-                            ToolTipService.ToolTip="Facturas generadas por el software (Serie A + folio propio)" />
-
-                        <CheckBox
-                            Grid.Column="2"
-                            VerticalAlignment="Bottom"
-                            Content="Sin serie (solo folio)"
-                            IsChecked="{x:Bind ViewModel.IncluirSinSerie, Mode=TwoWay}"
-                            ToolTipService.ToolTip="Facturas emitidas manualmente desde el portal de Bilkon, identificadas solo por folio" />
-
-                        <CheckBox
-                            Grid.Column="3"
-                            VerticalAlignment="Bottom"
-                            Content="Complementos de pago"
-                            IsChecked="{x:Bind ViewModel.IncluirComplementosPago, Mode=TwoWay}"
-                            ToolTipService.ToolTip="CFDI de tipo Pago (P)" />
+                            Background="Transparent"
+                            DefaultLabelPosition="Right"
+                            IsDynamicOverflowEnabled="False"
+                            OverflowButtonVisibility="Collapsed">
+                            <AppBarToggleButton
+                                Click="FiltroTipo_Click"
+                                IsChecked="{x:Bind ViewModel.IncluirConSerie, Mode=TwoWay}"
+                                Label="Serie + folio"
+                                ToolTipService.ToolTip="Facturas generadas por el software (Serie A + folio propio)">
+                                <AppBarToggleButton.Icon>
+                                    <FontIcon Glyph="&#xE8A5;" />
+                                </AppBarToggleButton.Icon>
+                            </AppBarToggleButton>
+                            <AppBarToggleButton
+                                Click="FiltroTipo_Click"
+                                IsChecked="{x:Bind ViewModel.IncluirSinSerie, Mode=TwoWay}"
+                                Label="Sin serie"
+                                ToolTipService.ToolTip="Facturas emitidas manualmente desde el portal de Bilkon, identificadas solo por folio">
+                                <AppBarToggleButton.Icon>
+                                    <FontIcon Glyph="&#xE7C3;" />
+                                </AppBarToggleButton.Icon>
+                            </AppBarToggleButton>
+                            <AppBarToggleButton
+                                Click="FiltroTipo_Click"
+                                IsChecked="{x:Bind ViewModel.IncluirComplementosPago, Mode=TwoWay}"
+                                Label="Complementos"
+                                ToolTipService.ToolTip="Complementos de pago (CFDI de tipo Pago)">
+                                <AppBarToggleButton.Icon>
+                                    <FontIcon Glyph="&#xE8C7;" />
+                                </AppBarToggleButton.Icon>
+                            </AppBarToggleButton>
+                        </CommandBar>
                         <Button
                             x:Name="BtnBuscar"
                             Grid.Column="2"

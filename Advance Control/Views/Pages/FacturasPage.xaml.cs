@@ -213,6 +213,13 @@ namespace Advance_Control.Views.Pages
             };
         }
 
+        private void FiltroTipo_Click(object sender, RoutedEventArgs e)
+        {
+            // El binding TwoWay ya actualizó Incluir*; se vuelve a filtrar sin esperar a "Buscar".
+            ViewModel.TextoBusqueda = BusquedaAutoSuggestBox.Text;
+            ViewModel.Buscar();
+        }
+
         private void BtnBuscar_Click(object sender, RoutedEventArgs e)
         {
             ViewModel.TextoBusqueda = BusquedaAutoSuggestBox.Text;
