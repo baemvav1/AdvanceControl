@@ -74,7 +74,7 @@ namespace Advance_Control.Views.Pages
 
         // --- Factura nueva desde cero (timbrado libre) ---
 
-        private void BtnNuevaFactura_Click(object sender, RoutedEventArgs e)
+        private void BtnNuevaFactura_Click(SplitButton sender, SplitButtonClickEventArgs e)
         {
             var ventana = new NuevaFacturaWindow();
             ventana.FacturaTimbrada += async (s, resultado) =>
@@ -86,6 +86,29 @@ namespace Advance_Control.Views.Pages
         }
 
         // --- Carga de facturas externas (portal de Bilkon, folio sin serie) ---
+
+        /// <summary>
+        /// PermisoUiVisualBinder no alcanza los MenuFlyout (no están en el árbol visual), así que
+        /// los permisos de las cargas se aplican al abrir el menú. También se respeta la clave
+        /// "Button::..." de cuando eran botones sueltos, para no perder el nivel ya configurado.
+        /// </summary>
+        private void MenuCargas_Opening(object sender, object e)
+        {
+            var permisos = AppServices.Get<IPermisoUiRuntimeService>();
+            if (!permisos.IsInitialized)
+                return;
+
+            var moduleKey = permisos.BuildModuleKey(GetType());
+            foreach (var item in ((MenuFlyout)sender).Items)
+            {
+                if (item is MenuFlyoutItem opcion && !string.IsNullOrWhiteSpace(opcion.Text))
+                {
+                    opcion.IsEnabled =
+                        permisos.CanAccessAction(permisos.BuildActionKey(moduleKey, nameof(MenuFlyoutItem), opcion.Text))
+                        && permisos.CanAccessAction(permisos.BuildActionKey(moduleKey, nameof(Button), opcion.Text));
+                }
+            }
+        }
 
         private async void BtnCargarFacturaXml_Click(object sender, RoutedEventArgs e)
         {
