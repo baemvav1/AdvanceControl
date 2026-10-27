@@ -4,6 +4,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Advance_Control.Models;
+using Advance_Control.Services.ConfiguracionEmisor;
 using Advance_Control.Services.Entidades;
 using Advance_Control.Services.Logging;
 using Advance_Control.ViewModels;
@@ -19,6 +20,7 @@ namespace Advance_Control.Tests.ViewModels
     {
         private readonly Mock<IEntidadService> _mockEntidadService;
         private readonly Mock<ILoggingService> _mockLogger;
+        private readonly Mock<IConfiguracionEmisorService> _mockConfiguracionEmisor = new();
 
         public EntidadesViewModelTests()
         {
@@ -31,7 +33,7 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new EntidadesViewModel(null!, _mockLogger.Object));
+                new EntidadesViewModel(null!, _mockConfiguracionEmisor.Object, _mockLogger.Object));
         }
 
         [Fact]
@@ -39,14 +41,14 @@ namespace Advance_Control.Tests.ViewModels
         {
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => 
-                new EntidadesViewModel(_mockEntidadService.Object, null!));
+                new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, null!));
         }
 
         [Fact]
         public void Constructor_InitializesEntidadesCollection()
         {
             // Act
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Assert
             Assert.NotNull(viewModel.Entidades);
@@ -68,7 +70,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockEntidades);
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             await viewModel.LoadEntidadesAsync();
@@ -95,7 +97,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(mockEntidades);
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
             
             // Set IsLoading to true manually
             viewModel.GetType().GetProperty("IsLoading")!.SetValue(viewModel, true);
@@ -119,7 +121,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(emptyList);
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             await viewModel.LoadEntidadesAsync();
@@ -138,7 +140,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((List<EntidadDto>?)null);
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             await viewModel.LoadEntidadesAsync();
@@ -158,7 +160,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new HttpRequestException("Network error"));
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             await viewModel.LoadEntidadesAsync();
@@ -178,7 +180,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new OperationCanceledException());
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             await viewModel.LoadEntidadesAsync();
@@ -197,7 +199,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Unexpected error"));
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             await viewModel.LoadEntidadesAsync();
@@ -218,7 +220,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Callback<EntidadQueryDto?, CancellationToken>((query, _) => capturedQuery = query)
                 .ReturnsAsync(new List<EntidadDto>());
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object)
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object)
             {
                 NombreComercialFilter = "Test Nombre",
                 RazonSocialFilter = "Test Razon",
@@ -247,7 +249,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<EntidadDto>());
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object)
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object)
             {
                 NombreComercialFilter = "test",
                 RazonSocialFilter = "razon",
@@ -279,7 +281,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Test error"));
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             await viewModel.ClearFiltersAsync();
@@ -293,7 +295,7 @@ namespace Advance_Control.Tests.ViewModels
         public void HasError_WithErrorMessage_ReturnsTrue()
         {
             // Arrange
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             viewModel.GetType().GetProperty("ErrorMessage")!.SetValue(viewModel, "Test error");
@@ -306,7 +308,7 @@ namespace Advance_Control.Tests.ViewModels
         public void HasError_WithoutErrorMessage_ReturnsFalse()
         {
             // Arrange
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Assert
             Assert.False(viewModel.HasError);
@@ -321,7 +323,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<EntidadDto>());
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
             viewModel.PropertyChanged += (s, e) =>
             {
                 if (e.PropertyName == nameof(EntidadesViewModel.IsLoading))
@@ -369,6 +371,7 @@ namespace Advance_Control.Tests.ViewModels
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
+                    It.IsAny<string?>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ApiResponse { Success = true });
 
@@ -376,7 +379,7 @@ namespace Advance_Control.Tests.ViewModels
                 .Setup(x => x.GetEntidadesAsync(It.IsAny<EntidadQueryDto>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<EntidadDto>());
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             var result = await viewModel.CreateEntidadAsync("Nombre Test", "Razon Test");
@@ -403,10 +406,11 @@ namespace Advance_Control.Tests.ViewModels
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
+                    It.IsAny<string?>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new ApiResponse { Success = false, Message = "Error" });
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             var result = await viewModel.CreateEntidadAsync("Nombre Test", "Razon Test");
@@ -433,10 +437,11 @@ namespace Advance_Control.Tests.ViewModels
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
                     It.IsAny<string?>(),
+                    It.IsAny<string?>(),
                     It.IsAny<CancellationToken>()))
                 .ThrowsAsync(new Exception("Test error"));
 
-            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockLogger.Object);
+            var viewModel = new EntidadesViewModel(_mockEntidadService.Object, _mockConfiguracionEmisor.Object, _mockLogger.Object);
 
             // Act
             var result = await viewModel.CreateEntidadAsync("Nombre Test", "Razon Test");

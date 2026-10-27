@@ -283,6 +283,7 @@ namespace Advance_Control.ViewModels
             {
                 var filas = (await _facturaService.ObtenerFacturasAsync())
                     .Where(factura => factura.Finiquito != true)
+                    .Where(factura => !factura.Cancelada) // la BD rechaza abonos a canceladas (migración 145)
                     .Where(factura => decimal.Round(factura.Total, 2) > 0)
                     .OrderBy(factura => factura.Fecha)
                     .ThenBy(factura => factura.IdFactura)

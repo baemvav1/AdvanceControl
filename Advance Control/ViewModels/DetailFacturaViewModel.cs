@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Facturas;
+using Advance_Control.Utilities;
 
 namespace Advance_Control.ViewModels
 {
@@ -121,7 +122,7 @@ namespace Advance_Control.ViewModels
         public string ResumenTraslados => $"Traslados globales ({TrasladosGlobales.Count})";
         public string ResumenAbonos => $"Abonos registrados ({Abonos.Count})";
         public string ResumenComplementos => $"Complementos de pago relacionados ({ComplementosRelacionados.Count})";
-        public bool CanRegistrarAbono => Factura != null && !IsLoading && Factura.SaldoPendiente > 0
+        public bool CanRegistrarAbono => Factura != null && !IsLoading && Factura.PuedeCapturarPagoManual && Factura.SaldoPendiente > 0
             && MontoAbono > 0 && !string.IsNullOrWhiteSpace(FormaPagoAbono);
 
         public async Task CargarDetalleAsync(int idFactura)
@@ -257,15 +258,12 @@ namespace Advance_Control.ViewModels
                 return;
             }
 
-            if (MontoAbono <= 0)
+            // NumberBox vacío deja NaN, que Convert.ToDecimal no acepta.
+            var monto = double.IsNaN(MontoAbono) ? 0m : Convert.ToDecimal(MontoAbono);
+            var error = AbonoManualValidador.Validar(Factura, monto, FechaAbono ?? DateTimeOffset.Now, FormaPagoAbono, DateTime.Today);
+            if (error != null)
             {
-                ErrorMessage = "El monto del abono debe ser mayor a cero.";
-                return;
-            }
-
-            if (string.IsNullOrWhiteSpace(FormaPagoAbono))
-            {
-                ErrorMessage = "Selecciona cómo llegó el pago (efectivo, transferencia, SPEI o cheque).";
+                ErrorMessage = error;
                 return;
             }
 
@@ -279,8 +277,8 @@ namespace Advance_Control.ViewModels
                 {
                     IdFactura = Factura.IdFactura,
                     IdMovimiento = null,
-                    FechaAbono = FechaAbono?.DateTime ?? DateTime.Now,
-                    MontoAbono = Convert.ToDecimal(MontoAbono),
+                    FechaAbono = AbonoManualValidador.FechaParaGuardar(FechaAbono ?? DateTimeOffset.Now),
+                    MontoAbono = monto,
                     Referencia = ReferenciaAbono,
                     Observaciones = ObservacionesAbono,
                     FormaPago = FormaPagoAbono

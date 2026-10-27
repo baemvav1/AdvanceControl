@@ -47,25 +47,13 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
     {
         EstadoInfoBar.IsOpen = false;
 
-        if (!TryParseDecimal(MontoTextBox.Text, out var monto) || monto <= 0m)
-        {
-            EstadoInfoBar.Message = "Captura un monto válido mayor que cero.";
-            EstadoInfoBar.IsOpen = true;
-            args.Cancel = true;
-            return;
-        }
+        TryParseDecimal(MontoTextBox.Text, out var monto);
+        var formaPago = (FormaPagoComboBox.SelectedItem as FormaPagoOpcion)?.Clave;
 
-        if (FechaDatePicker.Date == null)
+        var error = AbonoManualValidador.Validar(_factura, monto, FechaDatePicker.Date, formaPago, DateTime.Today);
+        if (error != null)
         {
-            EstadoInfoBar.Message = "Selecciona la fecha del pago.";
-            EstadoInfoBar.IsOpen = true;
-            args.Cancel = true;
-            return;
-        }
-
-        if (FormaPagoComboBox.SelectedItem is not FormaPagoOpcion formaPago)
-        {
-            EstadoInfoBar.Message = "Selecciona cómo llegó el pago (efectivo, transferencia, SPEI o cheque).";
+            EstadoInfoBar.Message = error;
             EstadoInfoBar.IsOpen = true;
             args.Cancel = true;
             return;
@@ -74,11 +62,11 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
         ResultadoRequest = new RegistrarAbonoFacturaRequestDto
         {
             IdFactura = _factura.IdFactura,
-            FechaAbono = FechaDatePicker.Date.Value.DateTime,
+            FechaAbono = AbonoManualValidador.FechaParaGuardar(FechaDatePicker.Date!.Value),
             MontoAbono = monto,
             Referencia = string.IsNullOrWhiteSpace(ReferenciaTextBox.Text) ? null : ReferenciaTextBox.Text.Trim(),
             Observaciones = string.IsNullOrWhiteSpace(ObservacionesTextBox.Text) ? null : ObservacionesTextBox.Text.Trim(),
-            FormaPago = formaPago.Clave
+            FormaPago = formaPago
         };
     }
 

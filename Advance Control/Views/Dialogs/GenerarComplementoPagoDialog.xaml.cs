@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using Advance_Control.Models;
+using Advance_Control.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -77,49 +78,18 @@ namespace Advance_Control.Views.Dialogs
             EstadoInfoBar.IsOpen = false;
 
             var seleccionados = Abonos.Where(a => a.IsSelected).Select(a => a.Abono).ToList();
-            if (seleccionados.Count == 0)
+            var formaPagoCombo = (CmbFormaPago.SelectedItem as ComboBoxItem)?.Tag as string;
+
+            var error = ComplementoPagoArmador.Validar(seleccionados, formaPagoCombo);
+            if (error != null)
             {
-                EstadoInfoBar.Message = "Selecciona al menos un abono para incluir en el complemento.";
+                EstadoInfoBar.Message = error;
                 EstadoInfoBar.IsOpen = true;
                 args.Cancel = true;
                 return;
             }
 
-            if (CmbFormaPago.SelectedItem is not ComboBoxItem formaPagoItem || formaPagoItem.Tag is not string formaPago)
-            {
-                EstadoInfoBar.Message = "Selecciona la forma de pago.";
-                EstadoInfoBar.IsOpen = true;
-                args.Cancel = true;
-                return;
-            }
-
-            var numOperacion = string.IsNullOrWhiteSpace(NumOperacionTextBox.Text) ? null : NumOperacionTextBox.Text.Trim();
-
-            // Abonos con la misma fecha (día) se agrupan en un solo nodo <Pago> -- así un pago que
-            // cubrió varias facturas queda en un solo nodo con varios <DoctoRelacionado>, mientras
-            // que abonos de fechas distintas (pagos reales distintos) quedan en nodos separados.
-            var grupos = seleccionados
-                .GroupBy(a => a.FechaAbono.Date)
-                .OrderBy(g => g.Key)
-                .Select(g => new GrupoPagoComplementoDto
-                {
-                    FechaPago = g.Key,
-                    FormaPago = formaPago,
-                    Moneda = g.First().Moneda,
-                    TipoCambio = 1m,
-                    NumOperacion = numOperacion,
-                    Doctos = g.Select(a => new DoctoRelacionadoComplementoDto
-                    {
-                        IdAbonoFactura = a.IdAbonoFactura,
-                        IdFacturaPagada = a.IdFactura,
-                        NumParcialidad = a.NumParcialidad,
-                        ImpSaldoAnt = a.ImpSaldoAnt,
-                        ImpPagado = a.MontoAbono,
-                        ImpSaldoInsoluto = a.ImpSaldoInsoluto,
-                        ObjetoImp = "02"
-                    }).ToList()
-                })
-                .ToList();
+            var grupos = ComplementoPagoArmador.Armar(seleccionados, formaPagoCombo, NumOperacionTextBox.Text);
 
             ResultadoRequest = new GenerarComplementoPagoRequestDto
             {
