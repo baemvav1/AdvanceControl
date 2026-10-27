@@ -125,6 +125,31 @@
                                             <FontIcon FontSize="14" Glyph="&#xE724;" />
                                         </StackPanel>
                                     </Button>
+                                    <!--  Solo facturas canceladas: comprobante (acuse) de cancelación  -->
+                                    <Button
+                                        x:Name="BtnDescargarComprobanteCancelacion"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Click="DescargarComprobanteCancelacion_Click"
+                                        ToolTipService.ToolTip="Descargar el comprobante de cancelación"
+                                        Visibility="{x:Bind ViewModel.EsCancelada, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon FontSize="14" Glyph="&#xE896;" />
+                                            <TextBlock Text="Cancelación" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button
+                                        x:Name="BtnEnviarComprobanteCancelacion"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Click="EnviarComprobanteCancelacion_Click"
+                                        ToolTipService.ToolTip="Enviar el comprobante de cancelación por correo"
+                                        Visibility="{x:Bind ViewModel.EsCancelada, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon FontSize="14" Glyph="&#xE724;" />
+                                            <TextBlock Text="Enviar cancelación" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Grid>
 
@@ -241,8 +266,16 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Border
+                <!--  Factura cancelada: el panel queda apagado. Se deshabilita el contenedor y no cada botón,
+                      para no pisar el IsEnabled que pone PermisoUiVisualBinder según el nivel del usuario.  -->
+                <ContentControl
                     Grid.Row="0"
+                    HorizontalContentAlignment="Stretch"
+                    VerticalContentAlignment="Stretch"
+                    IsEnabled="{x:Bind ViewModel.PermiteMovimientosFinancieros, Mode=OneWay}"
+                    IsTabStop="False"
+                    Opacity="{x:Bind ViewModel.OpacidadFinanciera, Mode=OneWay}">
+                <Border
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
@@ -385,13 +418,15 @@
                         </Grid>
                     </Grid>
                 </Border>
+                </ContentControl>
                 <Border
                     Grid.Row="1"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
-                    CornerRadius="8">
-                    <Pivot>
+                    CornerRadius="8"
+                    Opacity="{x:Bind ViewModel.OpacidadFinanciera, Mode=OneWay}">
+                    <Pivot IsEnabled="{x:Bind ViewModel.PermiteMovimientosFinancieros, Mode=OneWay}">
                         <PivotItem Header="Complementos">
                             <Grid RowSpacing="0">
                                 <Grid.RowDefinitions>

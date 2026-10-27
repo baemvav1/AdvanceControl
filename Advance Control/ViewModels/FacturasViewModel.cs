@@ -6,7 +6,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Advance_Control.Models;
+using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Facturas;
+using Advance_Control.Utilities;
 using Advance_Control.Views.Dialogs;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -21,18 +23,21 @@ namespace Advance_Control.ViewModels
 
         private readonly IFacturaService _facturaService;
         private readonly IFacturaPdfService _facturaPdfService;
+        private readonly IClienteService _clienteService;
 
         private readonly List<FacturaResumenDto> _todasLasFacturas = new();
         private List<FacturaResumenDto> _facturasFiltradas = new();
+        private Dictionary<string, string> _nombresComercialesPorRfc = new(StringComparer.OrdinalIgnoreCase);
 
         private ObservableCollection<FacturaResumenDto> _facturasPagina;
-        private ObservableCollection<FacturaResumenDto> _sugerencias;
+        private ObservableCollection<string> _sugerencias;
 
         private bool _isLoading;
         private string? _errorMessage;
         private string? _successMessage;
 
         private string? _textoBusqueda;
+        private CampoBusquedaFactura _campoBusqueda = CampoBusquedaFactura.NombreComercial;
         private bool _incluirConSerie = true;
         private bool _incluirSinSerie = true;
         private bool _incluirComplementosPago = true;
@@ -41,12 +46,13 @@ namespace Advance_Control.ViewModels
 
         private int _paginaActual = 1;
 
-        public FacturasViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService)
+        public FacturasViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IClienteService clienteService)
         {
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _facturaPdfService = facturaPdfService ?? throw new ArgumentNullException(nameof(facturaPdfService));
+            _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
             _facturasPagina = new ObservableCollection<FacturaResumenDto>();
-            _sugerencias = new ObservableCollection<FacturaResumenDto>();
+            _sugerencias = new ObservableCollection<string>();
         }
 
         public ObservableCollection<FacturaResumenDto> FacturasPagina
@@ -55,7 +61,7 @@ namespace Advance_Control.ViewModels
             private set => SetProperty(ref _facturasPagina, value);
         }
 
-        public ObservableCollection<FacturaResumenDto> Sugerencias
+        public ObservableCollection<string> Sugerencias
         {
             get => _sugerencias;
             private set => SetProperty(ref _sugerencias, value);
@@ -91,6 +97,13 @@ namespace Advance_Control.ViewModels
         {
             get => _textoBusqueda;
             set => SetProperty(ref _textoBusqueda, value);
+        }
+
+        /// <summary>Campo elegido en el selector del buscador; el texto solo se compara contra ese campo.</summary>
+        public CampoBusquedaFactura CampoBusqueda
+        {
+            get => _campoBusqueda;
+            set => SetProperty(ref _campoBusqueda, value);
         }
 
         public bool IncluirConSerie
@@ -162,7 +175,10 @@ namespace Advance_Control.ViewModels
                 IsLoading = true;
                 ErrorMessage = null;
 
-                var facturas = await _facturaService.ObtenerFacturasAsync();
+                var facturasTask = _facturaService.ObtenerFacturasAsync();
+                var nombresTask = CargarNombresComercialesAsync();
+                var facturas = await facturasTask;
+                _nombresComercialesPorRfc = await nombresTask;
                 _todasLasFacturas.Clear();
                 _todasLasFacturas.AddRange(facturas.OrderByDescending(f => f.Fecha).ThenByDescending(f => f.IdFactura));
 
@@ -854,20 +870,34 @@ namespace Advance_Control.ViewModels
         private static string FormatearTasa(decimal value)
             => value.ToString("0.000000", CultureInfo.InvariantCulture);
 
-        public void ActualizarSugerencias(string? texto)
+        /// <summary>
+        /// RFC → nombre comercial del catálogo de clientes. Si el catálogo no responde, la búsqueda
+        /// por nombre comercial cae al nombre del receptor del CFDI en vez de fallar la carga.
+        /// </summary>
+        private async Task<Dictionary<string, string>> CargarNombresComercialesAsync()
         {
-            if (string.IsNullOrWhiteSpace(texto))
+            var nombres = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            try
             {
-                Sugerencias.Clear();
-                return;
+                foreach (var cliente in await _clienteService.GetClientesAsync())
+                {
+                    if (!string.IsNullOrWhiteSpace(cliente.Rfc) && !string.IsNullOrWhiteSpace(cliente.NombreComercial))
+                    {
+                        nombres[cliente.Rfc.Trim().ToUpperInvariant()] = cliente.NombreComercial.Trim();
+                    }
+                }
+            }
+            catch
+            {
+                // Sin catálogo se busca por el nombre del receptor (ver FacturaBuscador.NombreComercial).
             }
 
-            var coincidencias = _todasLasFacturas
-                .Where(f => Coincide(f, texto))
-                .Take(8)
-                .ToList();
+            return nombres;
+        }
 
-            ReemplazarColeccion(Sugerencias, coincidencias);
+        public void ActualizarSugerencias(string? texto)
+        {
+            ReemplazarColeccion(Sugerencias, FacturaBuscador.Sugerencias(_todasLasFacturas, CampoBusqueda, texto, _nombresComercialesPorRfc));
         }
 
         public void Buscar()
@@ -882,7 +912,7 @@ namespace Advance_Control.ViewModels
             }
 
             _facturasFiltradas = _todasLasFacturas
-                .Where(f => Coincide(f, texto))
+                .Where(f => FacturaBuscador.Coincide(f, CampoBusqueda, texto, _nombresComercialesPorRfc))
                 .Where(f => !desde.HasValue || f.Fecha.Date >= desde.Value)
                 .Where(f => !hasta.HasValue || f.Fecha.Date <= hasta.Value)
                 .Where(f => (IncluirConSerie && f.EsConSerie)
@@ -897,6 +927,7 @@ namespace Advance_Control.ViewModels
         public void LimpiarFiltros()
         {
             TextoBusqueda = null;
+            CampoBusqueda = CampoBusquedaFactura.NombreComercial;
             FechaDesde = null;
             FechaHasta = null;
             IncluirConSerie = true;
@@ -950,24 +981,6 @@ namespace Advance_Control.ViewModels
             OnPropertyChanged(nameof(ResumenPaginacionTexto));
             OnPropertyChanged(nameof(PaginaTexto));
         }
-
-        private static bool Coincide(FacturaResumenDto f, string? texto)
-        {
-            if (string.IsNullOrWhiteSpace(texto))
-            {
-                return true;
-            }
-
-            return Contiene(f.ReceptorNombre, texto)
-                || Contiene(f.ReceptorRfc, texto)
-                || Contiene(f.Uuid, texto)
-                || Contiene(f.Folio, texto)
-                || Contiene(f.FolioTitulo, texto)
-                || Contiene(f.Serie, texto);
-        }
-
-        private static bool Contiene(string? valor, string texto)
-            => !string.IsNullOrWhiteSpace(valor) && valor.Contains(texto, StringComparison.OrdinalIgnoreCase);
 
         // --- Acciones por factura ---
 
@@ -1134,10 +1147,29 @@ namespace Advance_Control.ViewModels
             return _todasLasFacturas
                 .Where(f => f.IdFactura != facturaExcluir.IdFactura)
                 .Where(f => f.PermiteGestionInterna && !f.Cancelada)
-                .Where(f => Coincide(f, texto))
+                .Where(f => CoincideSustitucion(f, texto))
                 .Take(8)
                 .ToList();
         }
+
+        // Búsqueda libre del diálogo de cancelación (receptor, RFC, UUID o folio); el listado usa FacturaBuscador.
+        private static bool CoincideSustitucion(FacturaResumenDto f, string? texto)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                return true;
+            }
+
+            return Contiene(f.ReceptorNombre, texto)
+                || Contiene(f.ReceptorRfc, texto)
+                || Contiene(f.Uuid, texto)
+                || Contiene(f.Folio, texto)
+                || Contiene(f.FolioTitulo, texto)
+                || Contiene(f.Serie, texto);
+        }
+
+        private static bool Contiene(string? valor, string texto)
+            => !string.IsNullOrWhiteSpace(valor) && valor.Contains(texto, StringComparison.OrdinalIgnoreCase);
 
         public async Task<RegistrarAbonoFacturaResponseDto> RegistrarComplementoPagoAsync(RegistrarAbonoFacturaRequestDto request)
         {

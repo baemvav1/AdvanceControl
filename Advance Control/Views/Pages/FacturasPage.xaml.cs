@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.PermisosUi;
@@ -24,6 +25,10 @@ namespace Advance_Control.Views.Pages
             InitializeComponent();
             ViewModel = AppServices.Get<FacturasViewModel>();
             DataContext = ViewModel;
+
+            // Se conecta aquí y no en el XAML: SelectionChanged dispararía antes de existir el ViewModel.
+            SeleccionarCampoBusqueda(ViewModel.CampoBusqueda);
+            CampoBusquedaComboBox.SelectionChanged += CampoBusquedaComboBox_SelectionChanged;
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -74,7 +79,7 @@ namespace Advance_Control.Views.Pages
 
         // --- Factura nueva desde cero (timbrado libre) ---
 
-        private void BtnNuevaFactura_Click(object sender, RoutedEventArgs e)
+        private void BtnNuevaFactura_Click(SplitButton sender, SplitButtonClickEventArgs e)
         {
             var ventana = new NuevaFacturaWindow();
             ventana.FacturaTimbrada += async (s, resultado) =>
@@ -86,6 +91,29 @@ namespace Advance_Control.Views.Pages
         }
 
         // --- Carga de facturas externas (portal de Bilkon, folio sin serie) ---
+
+        /// <summary>
+        /// PermisoUiVisualBinder no alcanza los MenuFlyout (no están en el árbol visual), así que
+        /// los permisos de las cargas se aplican al abrir el menú. También se respeta la clave
+        /// "Button::..." de cuando eran botones sueltos, para no perder el nivel ya configurado.
+        /// </summary>
+        private void MenuCargas_Opening(object sender, object e)
+        {
+            var permisos = AppServices.Get<IPermisoUiRuntimeService>();
+            if (!permisos.IsInitialized)
+                return;
+
+            var moduleKey = permisos.BuildModuleKey(GetType());
+            foreach (var item in ((MenuFlyout)sender).Items)
+            {
+                if (item is MenuFlyoutItem opcion && !string.IsNullOrWhiteSpace(opcion.Text))
+                {
+                    opcion.IsEnabled =
+                        permisos.CanAccessAction(permisos.BuildActionKey(moduleKey, nameof(MenuFlyoutItem), opcion.Text))
+                        && permisos.CanAccessAction(permisos.BuildActionKey(moduleKey, nameof(Button), opcion.Text));
+                }
+            }
+        }
 
         private async void BtnCargarFacturaXml_Click(object sender, RoutedEventArgs e)
         {
@@ -146,11 +174,49 @@ namespace Advance_Control.Views.Pages
 
         private void BusquedaAutoSuggestBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
         {
-            var texto = args.ChosenSuggestion is FacturaResumenDto elegida
-                ? elegida.Uuid ?? elegida.FolioTitulo
-                : args.QueryText;
+            ViewModel.TextoBusqueda = args.ChosenSuggestion as string ?? args.QueryText;
+            ViewModel.Buscar();
+        }
 
-            ViewModel.TextoBusqueda = texto;
+        private void CampoBusquedaComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if ((CampoBusquedaComboBox.SelectedItem as ComboBoxItem)?.Tag is not string tag
+                || !Enum.TryParse<CampoBusquedaFactura>(tag, out var campo))
+            {
+                return;
+            }
+
+            ViewModel.CampoBusqueda = campo;
+            ActualizarPlaceholderBusqueda();
+
+            // Rehace la búsqueda con el texto que ya estaba escrito, ahora contra el campo nuevo.
+            ViewModel.Sugerencias.Clear();
+            ViewModel.TextoBusqueda = BusquedaAutoSuggestBox.Text;
+            ViewModel.Buscar();
+        }
+
+        private void SeleccionarCampoBusqueda(CampoBusquedaFactura campo)
+        {
+            CampoBusquedaComboBox.SelectedItem = CampoBusquedaComboBox.Items
+                .OfType<ComboBoxItem>()
+                .FirstOrDefault(i => (i.Tag as string) == campo.ToString());
+            ActualizarPlaceholderBusqueda();
+        }
+
+        private void ActualizarPlaceholderBusqueda()
+        {
+            BusquedaAutoSuggestBox.PlaceholderText = ViewModel.CampoBusqueda switch
+            {
+                CampoBusquedaFactura.Rfc => "RFC del receptor (completo o parte)…",
+                CampoBusquedaFactura.Folio => "Serie + folio: A1250 (sin serie: 1250)…",
+                _ => "Nombre comercial del cliente…"
+            };
+        }
+
+        private void FiltroTipo_Click(object sender, RoutedEventArgs e)
+        {
+            // El binding TwoWay ya actualizó Incluir*; se vuelve a filtrar sin esperar a "Buscar".
+            ViewModel.TextoBusqueda = BusquedaAutoSuggestBox.Text;
             ViewModel.Buscar();
         }
 
@@ -164,6 +230,7 @@ namespace Advance_Control.Views.Pages
         {
             BusquedaAutoSuggestBox.Text = string.Empty;
             ViewModel.LimpiarFiltros();
+            SeleccionarCampoBusqueda(ViewModel.CampoBusqueda);
         }
 
         // --- Paginación ---

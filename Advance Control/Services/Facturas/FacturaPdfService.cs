@@ -437,30 +437,56 @@ namespace Advance_Control.Services.Facturas
                                 col.Item().Text(t => { t.Span("Fecha de cancelación: ").SemiBold(); t.Span(factura.FechaCancelacion?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-"); });
                             });
 
-                            // Confirmación del SAT (parseada del XML del acuse)
-                            column.Item().Background(Colors.Green.Lighten5).Border(1).BorderColor(Colors.Green.Lighten1).Padding(8).Row(row =>
+                            // Cancelada fuera de la app (portal FEL): no hay acuse del SAT guardado, así que no
+                            // se pinta el recuadro verde de confirmación con todos sus datos en "-".
+                            if (string.IsNullOrWhiteSpace(factura.AcuseCancelacionXml))
                             {
-                                row.RelativeItem(3).Column(col =>
+                                column.Item().Background(Colors.Grey.Lighten4).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(8).Row(row =>
                                 {
-                                    col.Item().Text("Confirmación del SAT").SemiBold().FontColor(Colors.Green.Darken2);
-                                    col.Item().Text(t => { t.Span("Fecha del acuse: ").SemiBold(); t.Span(acuse.Fecha?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-"); });
-                                    col.Item().Text(t => { t.Span("RFC emisor: ").SemiBold(); t.Span(acuse.RfcEmisor ?? factura.EmisorRfc ?? "-"); });
-                                    col.Item().Text(t =>
+                                    row.RelativeItem(3).Column(col =>
                                     {
-                                        t.Span("Estatus: ").SemiBold();
-                                        t.Span(acuse.EstatusUuid == "201" ? "201 · Folio Fiscal Cancelado" : acuse.EstatusUuid ?? "-");
+                                        col.Item().Text("Estatus ante el SAT").SemiBold().FontColor(Colors.Grey.Darken3);
+                                        col.Item().Text(t => { t.Span("Estatus: ").SemiBold(); t.Span("Cancelado"); });
+                                        col.Item().Text("La cancelación se realizó en el portal del proveedor de timbrado; " +
+                                            "este documento no incluye el acuse firmado por el SAT.").FontSize(8);
                                     });
-                                    col.Item().Text(t => { t.Span("No. certificado SAT: ").SemiBold(); t.Span(acuse.NoCertificadoSat ?? "-"); });
-                                });
 
-                                row.ConstantItem(110).AlignCenter().Column(qrCol =>
-                                {
-                                    if (qrBytes != null)
+                                    row.ConstantItem(110).AlignCenter().Column(qrCol =>
                                     {
-                                        qrCol.Item().Width(100).Image(qrBytes);
-                                    }
+                                        if (qrBytes != null)
+                                        {
+                                            qrCol.Item().Width(100).Image(qrBytes);
+                                        }
+                                    });
                                 });
-                            });
+                            }
+                            else
+                            {
+                                // Confirmación del SAT (parseada del XML del acuse)
+                                column.Item().Background(Colors.Green.Lighten5).Border(1).BorderColor(Colors.Green.Lighten1).Padding(8).Row(row =>
+                                {
+                                    row.RelativeItem(3).Column(col =>
+                                    {
+                                        col.Item().Text("Confirmación del SAT").SemiBold().FontColor(Colors.Green.Darken2);
+                                        col.Item().Text(t => { t.Span("Fecha del acuse: ").SemiBold(); t.Span(acuse.Fecha?.ToString("dd/MM/yyyy HH:mm:ss") ?? "-"); });
+                                        col.Item().Text(t => { t.Span("RFC emisor: ").SemiBold(); t.Span(acuse.RfcEmisor ?? factura.EmisorRfc ?? "-"); });
+                                        col.Item().Text(t =>
+                                        {
+                                            t.Span("Estatus: ").SemiBold();
+                                            t.Span(acuse.EstatusUuid == "201" ? "201 · Folio Fiscal Cancelado" : acuse.EstatusUuid ?? "-");
+                                        });
+                                        col.Item().Text(t => { t.Span("No. certificado SAT: ").SemiBold(); t.Span(acuse.NoCertificadoSat ?? "-"); });
+                                    });
+
+                                    row.ConstantItem(110).AlignCenter().Column(qrCol =>
+                                    {
+                                        if (qrBytes != null)
+                                        {
+                                            qrCol.Item().Width(100).Image(qrBytes);
+                                        }
+                                    });
+                                });
+                            }
 
                             column.Item().PaddingTop(4).Text(
                                 "Este acuse no tiene validez fiscal por sí mismo; es la representación de la confirmación de " +
