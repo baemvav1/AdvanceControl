@@ -125,79 +125,78 @@
                                 </MenuFlyout>
                             </SplitButton.Flyout>
                         </SplitButton>
-
-
-                        <!--  Renglón 1: buscador + tipo de factura  -->
                     </StackPanel>
-                    <StackPanel
+                    <!--  Renglón de filtros en una sola barra: fechas, tipo de CFDI, Buscar y Limpiar  -->
+                    <CommandBar
                         Grid.Row="1"
-                        Orientation="Horizontal"
-                        Spacing="10">
-                        <CalendarDatePicker
-                            x:Name="FechaDesdeDatePicker"
-                            Grid.Column="0"
-                            Width="220"
-                            Date="{x:Bind ViewModel.FechaDesde, Mode=TwoWay}"
-                            Header="Desde" />
-
-                        <CalendarDatePicker
-                            x:Name="FechaHastaDatePicker"
-                            Grid.Column="1"
-                            Width="220"
-                            Date="{x:Bind ViewModel.FechaHasta, Mode=TwoWay}"
-                            Header="Hasta" />
+                        HorizontalAlignment="Left"
+                        Background="Transparent"
+                        DefaultLabelPosition="Right"
+                        IsDynamicOverflowEnabled="False"
+                        OverflowButtonVisibility="Collapsed">
+                        <AppBarElementContainer VerticalContentAlignment="Center">
+                            <CalendarDatePicker
+                                x:Name="FechaDesdeDatePicker"
+                                Width="170"
+                                Margin="0,0,8,0"
+                                Date="{x:Bind ViewModel.FechaDesde, Mode=TwoWay}"
+                                PlaceholderText="Desde"
+                                ToolTipService.ToolTip="Fecha inicial" />
+                        </AppBarElementContainer>
+                        <AppBarElementContainer VerticalContentAlignment="Center">
+                            <CalendarDatePicker
+                                x:Name="FechaHastaDatePicker"
+                                Width="170"
+                                Date="{x:Bind ViewModel.FechaHasta, Mode=TwoWay}"
+                                PlaceholderText="Hasta"
+                                ToolTipService.ToolTip="Fecha final" />
+                        </AppBarElementContainer>
+                        <AppBarSeparator />
                         <!--  Tipos de CFDI a mostrar: cada botón se prende/apaga y filtra al momento  -->
-                        <CommandBar
-                            VerticalAlignment="Bottom"
-                            Background="Transparent"
-                            DefaultLabelPosition="Right"
-                            IsDynamicOverflowEnabled="False"
-                            OverflowButtonVisibility="Collapsed">
-                            <AppBarToggleButton
-                                Click="FiltroTipo_Click"
-                                IsChecked="{x:Bind ViewModel.IncluirConSerie, Mode=TwoWay}"
-                                Label="Serie + folio"
-                                ToolTipService.ToolTip="Facturas generadas por el software (Serie A + folio propio)">
-                                <AppBarToggleButton.Icon>
-                                    <FontIcon Glyph="&#xE8A5;" />
-                                </AppBarToggleButton.Icon>
-                            </AppBarToggleButton>
-                            <AppBarToggleButton
-                                Click="FiltroTipo_Click"
-                                IsChecked="{x:Bind ViewModel.IncluirSinSerie, Mode=TwoWay}"
-                                Label="Sin serie"
-                                ToolTipService.ToolTip="Facturas emitidas manualmente desde el portal de Bilkon, identificadas solo por folio">
-                                <AppBarToggleButton.Icon>
-                                    <FontIcon Glyph="&#xE7C3;" />
-                                </AppBarToggleButton.Icon>
-                            </AppBarToggleButton>
-                            <AppBarToggleButton
-                                Click="FiltroTipo_Click"
-                                IsChecked="{x:Bind ViewModel.IncluirComplementosPago, Mode=TwoWay}"
-                                Label="Complementos"
-                                ToolTipService.ToolTip="Complementos de pago (CFDI de tipo Pago)">
-                                <AppBarToggleButton.Icon>
-                                    <FontIcon Glyph="&#xE8C7;" />
-                                </AppBarToggleButton.Icon>
-                            </AppBarToggleButton>
-                        </CommandBar>
-                        <Button
+                        <AppBarToggleButton
+                            Click="FiltroTipo_Click"
+                            IsChecked="{x:Bind ViewModel.IncluirConSerie, Mode=TwoWay}"
+                            Label="Serie + folio"
+                            ToolTipService.ToolTip="Facturas generadas por el software (Serie A + folio propio)">
+                            <AppBarToggleButton.Icon>
+                                <FontIcon Glyph="&#xE8A5;" />
+                            </AppBarToggleButton.Icon>
+                        </AppBarToggleButton>
+                        <AppBarToggleButton
+                            Click="FiltroTipo_Click"
+                            IsChecked="{x:Bind ViewModel.IncluirSinSerie, Mode=TwoWay}"
+                            Label="Sin serie"
+                            ToolTipService.ToolTip="Facturas emitidas manualmente desde el portal de Bilkon, identificadas solo por folio">
+                            <AppBarToggleButton.Icon>
+                                <FontIcon Glyph="&#xE7C3;" />
+                            </AppBarToggleButton.Icon>
+                        </AppBarToggleButton>
+                        <AppBarToggleButton
+                            Click="FiltroTipo_Click"
+                            IsChecked="{x:Bind ViewModel.IncluirComplementosPago, Mode=TwoWay}"
+                            Label="Complementos"
+                            ToolTipService.ToolTip="Complementos de pago (CFDI de tipo Pago)">
+                            <AppBarToggleButton.Icon>
+                                <FontIcon Glyph="&#xE8C7;" />
+                            </AppBarToggleButton.Icon>
+                        </AppBarToggleButton>
+                        <AppBarSeparator />
+                        <AppBarButton
                             x:Name="BtnBuscar"
-                            Grid.Column="2"
-                            VerticalAlignment="Bottom"
                             Click="BtnBuscar_Click"
-                            Content="Buscar"
+                            Icon="Find"
                             IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
-                            Style="{StaticResource AccentButtonStyle}" />
-
-                        <Button
+                            Label="Buscar" />
+                        <AppBarButton
                             x:Name="BtnLimpiarFiltros"
-                            Grid.Column="3"
-                            VerticalAlignment="Bottom"
                             Click="BtnLimpiarFiltros_Click"
-                            Content="Limpiar filtros"
-                            IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
-                    </StackPanel>
+                            IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}"
+                            Label="Limpiar filtros">
+                            <AppBarButton.Icon>
+                                <FontIcon Glyph="&#xE894;" />
+                            </AppBarButton.Icon>
+                        </AppBarButton>
+                    </CommandBar>
 
 
 
