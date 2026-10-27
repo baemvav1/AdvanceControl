@@ -209,6 +209,7 @@ namespace Advance_Control.Views.Pages
             {
                 CampoBusquedaFactura.Rfc => "RFC del receptor (completo o parte)…",
                 CampoBusquedaFactura.Folio => "Serie + folio: A1250 (sin serie: 1250)…",
+                CampoBusquedaFactura.Uuid => "UUID completo o parte…",
                 _ => "Nombre comercial del cliente…"
             };
         }

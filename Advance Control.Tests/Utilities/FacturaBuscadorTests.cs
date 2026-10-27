@@ -67,6 +67,21 @@ namespace Advance_Control.Tests.Utilities
             Assert.Equal(new[] { "125" }, FacturaBuscador.Sugerencias(facturas, CampoBusquedaFactura.Folio, "125", Nombres));
         }
 
+        [Theory]
+        [InlineData("cb07bb5d", true)]
+        [InlineData("CB07BB5D-1877-4827-8613-B06FF7B27A57", true)]
+        [InlineData("cb07bb5d1877", true)]  // sin guiones también
+        [InlineData("B06FF7B27A57", true)]
+        [InlineData("A1250", false)]
+        public void Uuid_ParcialSinGuiones(string texto, bool esperado)
+        {
+            var factura = Factura("A", "1250", "SCO7505142JA", "SALAZAR CONSTRUCCIONES SA DE CV");
+            factura.Uuid = "cb07bb5d-1877-4827-8613-b06ff7b27a57";
+
+            Assert.Equal(esperado, FacturaBuscador.Coincide(factura, CampoBusquedaFactura.Uuid, texto, Nombres));
+            Assert.False(FacturaBuscador.Coincide(SinCatalogo, CampoBusquedaFactura.Uuid, texto, Nombres));
+        }
+
         private static FacturaResumenDto Factura(string? serie, string folio, string rfc, string receptor) => new()
         {
             Serie = serie,
