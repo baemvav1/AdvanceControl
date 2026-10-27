@@ -47,43 +47,13 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
     {
         EstadoInfoBar.IsOpen = false;
 
-        if (!TryParseDecimal(MontoTextBox.Text, out var monto) || monto <= 0m)
-        {
-            EstadoInfoBar.Message = "Captura un monto válido mayor que cero.";
-            EstadoInfoBar.IsOpen = true;
-            args.Cancel = true;
-            return;
-        }
+        TryParseDecimal(MontoTextBox.Text, out var monto);
+        var formaPago = (FormaPagoComboBox.SelectedItem as FormaPagoOpcion)?.Clave;
 
-        // La BD lo rechaza igual (fn_facturas_registrar_abono); validarlo aquí deja corregir el
-        // monto sin cerrar el diálogo.
-        if (_factura.SaldoPendiente <= 0m)
+        var error = AbonoManualValidador.Validar(_factura, monto, FechaDatePicker.Date, formaPago, DateTime.Today);
+        if (error != null)
         {
-            EstadoInfoBar.Message = "Esta factura ya no tiene saldo pendiente.";
-            EstadoInfoBar.IsOpen = true;
-            args.Cancel = true;
-            return;
-        }
-
-        if (monto > _factura.SaldoPendiente)
-        {
-            EstadoInfoBar.Message = $"El monto no puede exceder el saldo pendiente ({_factura.SaldoPendienteTexto}).";
-            EstadoInfoBar.IsOpen = true;
-            args.Cancel = true;
-            return;
-        }
-
-        if (FechaDatePicker.Date == null)
-        {
-            EstadoInfoBar.Message = "Selecciona la fecha del pago.";
-            EstadoInfoBar.IsOpen = true;
-            args.Cancel = true;
-            return;
-        }
-
-        if (FormaPagoComboBox.SelectedItem is not FormaPagoOpcion formaPago)
-        {
-            EstadoInfoBar.Message = "Selecciona cómo llegó el pago (efectivo, transferencia, SPEI o cheque).";
+            EstadoInfoBar.Message = error;
             EstadoInfoBar.IsOpen = true;
             args.Cancel = true;
             return;
@@ -92,14 +62,11 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
         ResultadoRequest = new RegistrarAbonoFacturaRequestDto
         {
             IdFactura = _factura.IdFactura,
-            // Mediodía del día elegido: el VPS guarda/lee en UTC y la PC muestra en hora de México
-            // (-6 h); con la hora real, un abono capturado de madrugada (o una fecha elegida a las
-            // 00:00) regresaría con el día anterior y así saldría en el Complemento de Pago.
-            FechaAbono = FechaDatePicker.Date.Value.Date.AddHours(12),
+            FechaAbono = AbonoManualValidador.FechaParaGuardar(FechaDatePicker.Date!.Value),
             MontoAbono = monto,
             Referencia = string.IsNullOrWhiteSpace(ReferenciaTextBox.Text) ? null : ReferenciaTextBox.Text.Trim(),
             Observaciones = string.IsNullOrWhiteSpace(ObservacionesTextBox.Text) ? null : ObservacionesTextBox.Text.Trim(),
-            FormaPago = formaPago.Clave
+            FormaPago = formaPago
         };
     }
 

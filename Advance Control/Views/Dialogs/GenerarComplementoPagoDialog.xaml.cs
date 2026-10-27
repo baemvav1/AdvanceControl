@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using Advance_Control.Models;
+using Advance_Control.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -77,80 +78,24 @@ namespace Advance_Control.Views.Dialogs
             EstadoInfoBar.IsOpen = false;
 
             var seleccionados = Abonos.Where(a => a.IsSelected).Select(a => a.Abono).ToList();
-            if (seleccionados.Count == 0)
-            {
-                EstadoInfoBar.Message = "Selecciona al menos un abono para incluir en el complemento.";
-                EstadoInfoBar.IsOpen = true;
-                args.Cancel = true;
-                return;
-            }
-
-            // Cada abono usa la forma de pago con que se registró (efectivo → 01, cheque → 02,
-            // transferencia/SPEI → 03); el combo solo cubre los abonos que no la tienen
-            // (conciliación, históricos).
             var formaPagoCombo = (CmbFormaPago.SelectedItem as ComboBoxItem)?.Tag as string;
-            if (formaPagoCombo == null && seleccionados.Any(a => a.FormaPagoSat == null))
+
+            var error = ComplementoPagoArmador.Validar(seleccionados, formaPagoCombo);
+            if (error != null)
             {
-                EstadoInfoBar.Message = "Hay abonos sin forma de pago registrada: selecciona la forma de pago para ellos.";
+                EstadoInfoBar.Message = error;
                 EstadoInfoBar.IsOpen = true;
                 args.Cancel = true;
                 return;
             }
 
-            var numOperacionCapturado = string.IsNullOrWhiteSpace(NumOperacionTextBox.Text) ? null : NumOperacionTextBox.Text.Trim();
-
-            // Abonos con la misma fecha (día) y forma de pago se agrupan en un solo nodo <Pago> --
-            // así un pago que cubrió varias facturas queda en un solo nodo con varios
-            // <DoctoRelacionado>, mientras que pagos reales distintos quedan en nodos separados.
-            var grupos = seleccionados
-                .GroupBy(a => (Fecha: a.FechaAbono.Date, FormaPago: a.FormaPagoSat ?? formaPagoCombo!))
-                .OrderBy(g => g.Key.Fecha)
-                .Select(g => new GrupoPagoComplementoDto
-                {
-                    FechaPago = g.Key.Fecha,
-                    FormaPago = g.Key.FormaPago,
-                    Moneda = g.First().Moneda,
-                    TipoCambio = 1m,
-                    NumOperacion = numOperacionCapturado ?? ReferenciaComun(g),
-                    Doctos = g.Select(a => new DoctoRelacionadoComplementoDto
-                    {
-                        IdAbonoFactura = a.IdAbonoFactura,
-                        IdFacturaPagada = a.IdFactura,
-                        NumParcialidad = a.NumParcialidad,
-                        ImpSaldoAnt = a.ImpSaldoAnt,
-                        ImpPagado = a.MontoAbono,
-                        ImpSaldoInsoluto = a.ImpSaldoInsoluto,
-                        ObjetoImp = "02"
-                    }).ToList()
-                })
-                .ToList();
+            var grupos = ComplementoPagoArmador.Armar(seleccionados, formaPagoCombo, NumOperacionTextBox.Text);
 
             ResultadoRequest = new GenerarComplementoPagoRequestDto
             {
                 ReceptorRfc = _factura.ReceptorRfc ?? string.Empty,
                 Pagos = grupos
             };
-        }
-        /// <summary>
-        /// Referencia capturada a mano en "Registrar abono" (núm. de transferencia o cheque) si
-        /// todos los abonos del pago comparten la misma. Solo se toman abonos con forma de pago
-        /// registrada: en los de conciliación la referencia es el texto del banco, no el número
-        /// de operación. Respeta el patrón de NumOperacion del SAT ([^|]{1,100}).
-        /// </summary>
-        private static string? ReferenciaComun(IEnumerable<AbonoPendienteComplementoDto> abonos)
-        {
-            var referencias = abonos
-                .Where(a => a.FormaPagoSat != null)
-                .Select(a => a.Referencia?.Trim())
-                .Distinct()
-                .ToList();
-
-            return referencias.Count == 1
-                && !string.IsNullOrEmpty(referencias[0])
-                && referencias[0]!.Length <= 100
-                && !referencias[0]!.Contains('|')
-                ? referencias[0]
-                : null;
         }
     }
 }
