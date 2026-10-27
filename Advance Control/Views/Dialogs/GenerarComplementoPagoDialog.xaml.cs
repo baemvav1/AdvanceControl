@@ -85,29 +85,33 @@ namespace Advance_Control.Views.Dialogs
                 return;
             }
 
-            if (CmbFormaPago.SelectedItem is not ComboBoxItem formaPagoItem || formaPagoItem.Tag is not string formaPago)
+            // Cada abono usa la forma de pago con que se registró (efectivo → 01, cheque → 02,
+            // transferencia/SPEI → 03); el combo solo cubre los abonos que no la tienen
+            // (conciliación, históricos).
+            var formaPagoCombo = (CmbFormaPago.SelectedItem as ComboBoxItem)?.Tag as string;
+            if (formaPagoCombo == null && seleccionados.Any(a => a.FormaPagoSat == null))
             {
-                EstadoInfoBar.Message = "Selecciona la forma de pago.";
+                EstadoInfoBar.Message = "Hay abonos sin forma de pago registrada: selecciona la forma de pago para ellos.";
                 EstadoInfoBar.IsOpen = true;
                 args.Cancel = true;
                 return;
             }
 
-            var numOperacion = string.IsNullOrWhiteSpace(NumOperacionTextBox.Text) ? null : NumOperacionTextBox.Text.Trim();
+            var numOperacionCapturado = string.IsNullOrWhiteSpace(NumOperacionTextBox.Text) ? null : NumOperacionTextBox.Text.Trim();
 
-            // Abonos con la misma fecha (día) se agrupan en un solo nodo <Pago> -- así un pago que
-            // cubrió varias facturas queda en un solo nodo con varios <DoctoRelacionado>, mientras
-            // que abonos de fechas distintas (pagos reales distintos) quedan en nodos separados.
+            // Abonos con la misma fecha (día) y forma de pago se agrupan en un solo nodo <Pago> --
+            // así un pago que cubrió varias facturas queda en un solo nodo con varios
+            // <DoctoRelacionado>, mientras que pagos reales distintos quedan en nodos separados.
             var grupos = seleccionados
-                .GroupBy(a => a.FechaAbono.Date)
-                .OrderBy(g => g.Key)
+                .GroupBy(a => (Fecha: a.FechaAbono.Date, FormaPago: a.FormaPagoSat ?? formaPagoCombo!))
+                .OrderBy(g => g.Key.Fecha)
                 .Select(g => new GrupoPagoComplementoDto
                 {
-                    FechaPago = g.Key,
-                    FormaPago = formaPago,
+                    FechaPago = g.Key.Fecha,
+                    FormaPago = g.Key.FormaPago,
                     Moneda = g.First().Moneda,
                     TipoCambio = 1m,
-                    NumOperacion = numOperacion,
+                    NumOperacion = numOperacionCapturado ?? ReferenciaComun(g),
                     Doctos = g.Select(a => new DoctoRelacionadoComplementoDto
                     {
                         IdAbonoFactura = a.IdAbonoFactura,
@@ -126,6 +130,27 @@ namespace Advance_Control.Views.Dialogs
                 ReceptorRfc = _factura.ReceptorRfc ?? string.Empty,
                 Pagos = grupos
             };
+        }
+        /// <summary>
+        /// Referencia capturada a mano en "Registrar abono" (núm. de transferencia o cheque) si
+        /// todos los abonos del pago comparten la misma. Solo se toman abonos con forma de pago
+        /// registrada: en los de conciliación la referencia es el texto del banco, no el número
+        /// de operación. Respeta el patrón de NumOperacion del SAT ([^|]{1,100}).
+        /// </summary>
+        private static string? ReferenciaComun(IEnumerable<AbonoPendienteComplementoDto> abonos)
+        {
+            var referencias = abonos
+                .Where(a => a.FormaPagoSat != null)
+                .Select(a => a.Referencia?.Trim())
+                .Distinct()
+                .ToList();
+
+            return referencias.Count == 1
+                && !string.IsNullOrEmpty(referencias[0])
+                && referencias[0]!.Length <= 100
+                && !referencias[0]!.Contains('|')
+                ? referencias[0]
+                : null;
         }
     }
 }

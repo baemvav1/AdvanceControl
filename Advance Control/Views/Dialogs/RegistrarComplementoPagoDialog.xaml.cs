@@ -92,7 +92,10 @@ public sealed partial class RegistrarComplementoPagoDialog : ContentDialog
         ResultadoRequest = new RegistrarAbonoFacturaRequestDto
         {
             IdFactura = _factura.IdFactura,
-            FechaAbono = FechaDatePicker.Date.Value.DateTime,
+            // Mediodía del día elegido: el VPS guarda/lee en UTC y la PC muestra en hora de México
+            // (-6 h); con la hora real, un abono capturado de madrugada (o una fecha elegida a las
+            // 00:00) regresaría con el día anterior y así saldría en el Complemento de Pago.
+            FechaAbono = FechaDatePicker.Date.Value.Date.AddHours(12),
             MontoAbono = monto,
             Referencia = string.IsNullOrWhiteSpace(ReferenciaTextBox.Text) ? null : ReferenciaTextBox.Text.Trim(),
             Observaciones = string.IsNullOrWhiteSpace(ObservacionesTextBox.Text) ? null : ObservacionesTextBox.Text.Trim(),

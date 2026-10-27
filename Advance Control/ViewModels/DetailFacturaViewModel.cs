@@ -291,7 +291,8 @@ namespace Advance_Control.ViewModels
                 {
                     IdFactura = Factura.IdFactura,
                     IdMovimiento = null,
-                    FechaAbono = FechaAbono?.DateTime ?? DateTime.Now,
+                    // Mediodía: ver RegistrarComplementoPagoDialog (desfase UTC/México en la fecha del complemento).
+                    FechaAbono = (FechaAbono?.Date ?? DateTime.Today).AddHours(12),
                     MontoAbono = Convert.ToDecimal(MontoAbono),
                     Referencia = ReferenciaAbono,
                     Observaciones = ObservacionesAbono,

@@ -55,7 +55,7 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
             <StackPanel Grid.Column="0">
-                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Forma de pago:" />
+                <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Forma de pago (abonos sin forma registrada):" />
                 <ComboBox x:Name="CmbFormaPago" HorizontalAlignment="Stretch">
                     <ComboBoxItem Content="01 - Efectivo" Tag="01" />
                     <ComboBoxItem Content="02 - Cheque nominativo" Tag="02" />
@@ -71,14 +71,15 @@
             </StackPanel>
             <StackPanel Grid.Column="1">
                 <TextBlock Margin="0,0,0,4" FontWeight="SemiBold" Text="Núm. de operación (opcional):" />
-                <TextBox x:Name="NumOperacionTextBox" PlaceholderText="Referencia bancaria" />
+                <TextBox x:Name="NumOperacionTextBox" PlaceholderText="Vacío: usa la referencia del abono" />
             </StackPanel>
         </Grid>
 
         <TextBlock
             FontSize="12"
             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-            Text="Los abonos con la misma fecha se agrupan en un solo pago del complemento; los de fechas distintas se separan automáticamente." />
+            Text="Cada abono usa la forma de pago con que se registró. Los abonos con la misma fecha y forma de pago se agrupan en un solo pago del complemento; los demás se separan automáticamente."
+            TextWrapping="WrapWholeWords" />
 
         <InfoBar
             x:Name="EstadoInfoBar"

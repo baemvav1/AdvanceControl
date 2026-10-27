@@ -27,6 +27,22 @@ namespace Advance_Control.Utilities
         /// <summary>Opciones para poblar un selector, en el orden en que deben mostrarse.</summary>
         public static readonly IReadOnlyList<string> Claves = new[] { Transferencia, Spei, Cheque, Efectivo };
 
+        /// <summary>
+        /// c_FormaPago del SAT para el Complemento de Pago: 01 Efectivo, 02 Cheque nominativo,
+        /// 03 Transferencia (incluye SPEI). Null si la clave es vacía o no está en el catálogo.
+        /// </summary>
+        public static string? ClaveSat(string? clave)
+        {
+            switch (clave?.Trim().ToLowerInvariant())
+            {
+                case Efectivo: return "01";
+                case Cheque: return "02";
+                case Transferencia:
+                case Spei: return "03";
+                default: return null;
+            }
+        }
+
         /// <summary>Descripción de la clave, o la clave tal cual si no está en el catálogo. "Sin especificar" si es null/vacío.</summary>
         public static string Describir(string? clave)
         {
