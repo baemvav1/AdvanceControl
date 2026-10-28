@@ -11,12 +11,13 @@ namespace Advance_Control.Utilities
     {
         Rfc,
         NombreComercial,
-        Folio
+        Folio,
+        Uuid
     }
 
     /// <summary>
     /// Búsqueda del listado de facturas por un solo campo elegido en el selector:
-    /// RFC (parcial), nombre comercial (parcial, sin acentos) o serie + folio (exacto).
+    /// RFC (parcial), nombre comercial (parcial, sin acentos), serie + folio (exacto) o UUID (parcial, sin guiones).
     /// </summary>
     public static class FacturaBuscador
     {
@@ -48,11 +49,12 @@ namespace Advance_Control.Utilities
                 CampoBusquedaFactura.Rfc => NormalizarClave(factura.ReceptorRfc).Contains(NormalizarClave(texto), StringComparison.Ordinal),
                 CampoBusquedaFactura.NombreComercial => NormalizarNombre(NombreComercial(factura, nombresPorRfc)).Contains(NormalizarNombre(texto), StringComparison.Ordinal),
                 CampoBusquedaFactura.Folio => CoincideFolio(factura, texto),
+                CampoBusquedaFactura.Uuid => NormalizarClave(factura.Uuid).Contains(NormalizarClave(texto), StringComparison.Ordinal),
                 _ => false
             };
         }
 
-        /// <summary>Valores distintos del campo elegido que empiezan con (folio) o contienen (RFC/nombre) el texto.</summary>
+        /// <summary>Valores distintos del campo elegido que empiezan con (folio) o contienen (RFC/nombre/UUID) el texto.</summary>
         public static List<string> Sugerencias(IEnumerable<FacturaResumenDto> facturas, CampoBusquedaFactura campo, string? texto, IReadOnlyDictionary<string, string> nombresPorRfc, int maximo = 8)
         {
             if (string.IsNullOrWhiteSpace(texto))
@@ -64,6 +66,7 @@ namespace Advance_Control.Utilities
             {
                 CampoBusquedaFactura.Rfc => facturas.Where(f => Coincide(f, campo, texto, nombresPorRfc)).Select(f => f.ReceptorRfc?.Trim().ToUpperInvariant()),
                 CampoBusquedaFactura.NombreComercial => facturas.Where(f => Coincide(f, campo, texto, nombresPorRfc)).Select(f => NombreComercial(f, nombresPorRfc)),
+                CampoBusquedaFactura.Uuid => facturas.Where(f => Coincide(f, campo, texto, nombresPorRfc)).Select(f => f.Uuid?.Trim().ToUpperInvariant()),
                 _ => facturas.Where(f => NormalizarClave(f.FolioTitulo).StartsWith(NormalizarClave(texto), StringComparison.Ordinal))
                     .Select(f => f.FolioTitulo)
             };
