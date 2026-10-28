@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Clientes;
@@ -153,7 +155,7 @@ namespace Advance_Control.Views.Pages
             }
 
             var rutaTemporal = Path.Combine(Path.GetTempPath(), $"factura_{ViewModel.FolioTexto}_{Guid.NewGuid():N}.xml");
-            await File.WriteAllTextAsync(rutaTemporal, xml, System.Text.Encoding.UTF8);
+            await File.WriteAllTextAsync(rutaTemporal, xml, Encoding.UTF8);
 
             try
             {
@@ -249,9 +251,10 @@ namespace Advance_Control.Views.Pages
         }
 
         /// <summary>
-        /// Envía la factura por correo, calcado del flujo de EnviarCotizacionDialog usado por
-        /// Cotización/Reporte: matchea contactos por el RFC del receptor y, si hay más de uno,
-        /// deja elegir a cuál dirigirlo.
+        /// Envía el historial completo de la factura por correo, calcado del flujo de
+        /// EnviarCotizacionDialog usado por Cotización/Reporte: PDF y XML de la factura, PDF y XML de
+        /// cada Complemento de Pago vigente y, en el cuerpo, la lista de pagos recibidos. Matchea
+        /// contactos por el RFC del receptor y, si hay más de uno, deja elegir a cuál dirigirlo.
         /// </summary>
         private async void EnviarHistorial_Click(object sender, RoutedEventArgs e)
         {
@@ -261,20 +264,44 @@ namespace Advance_Control.Views.Pages
                 return;
             }
 
-            var (contactoPrincipal, contactos) = await ObtenerContactosClienteAsync(factura.ReceptorRfc);
-
-            var partesSaludo = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre, contactoPrincipal?.Apellido }
-                .Where(p => !string.IsNullOrWhiteSpace(p));
-            var destinatario = string.Join(" ", partesSaludo);
-            if (string.IsNullOrWhiteSpace(destinatario))
+            var historial = await ViewModel.PrepararAdjuntosHistorialAsync();
+            if (historial is not var (adjuntos, complementos))
             {
-                destinatario = "cliente";
+                return;
             }
 
-            var mensaje =
-                $"Estimado: {destinatario}.\n\n" +
-                $"En el siguiente correo, adjuntamos la factura {factura.FolioTitulo}.\n\n" +
-                "Saludos Cordiales";
+            var (contactoPrincipal, contactos) = await ObtenerContactosClienteAsync(factura.ReceptorRfc);
+
+            var mx = new CultureInfo("es-MX");
+            var sb = new StringBuilder();
+            sb.Append($"Estimado: {NombreDestinatario(contactoPrincipal)}.\n\n");
+            sb.Append($"En el siguiente correo, adjuntamos el historial de la factura {factura.FolioTitulo} ({factura.Total.ToString("C2", mx)}).\n");
+
+            if (ViewModel.PagosVinculados.Count > 0)
+            {
+                sb.Append("\nPagos recibidos:\n");
+                foreach (var pago in ViewModel.PagosVinculados.OrderBy(p => p.FechaAbono))
+                {
+                    sb.Append($"   – {pago.FechaAbono:dd/MM/yyyy} · {pago.MontoAbonoTexto} · {pago.FormaPagoTexto}");
+                    if (!string.IsNullOrWhiteSpace(pago.Referencia))
+                    {
+                        sb.Append($" · Ref. {pago.Referencia}");
+                    }
+                    sb.Append('\n');
+                }
+            }
+
+            if (complementos.Count > 0)
+            {
+                sb.Append("\nComplementos de pago (PDF y XML adjuntos):\n");
+                foreach (var complemento in complementos)
+                {
+                    sb.Append($"   – {complemento.DescripcionTexto} · Saldo insoluto {complemento.ImpSaldoInsoluto.ToString("C2", mx)}\n");
+                }
+            }
+
+            sb.Append($"\nSaldo pendiente: {ViewModel.RestanteTexto}\n\n");
+            sb.Append("Saludos Cordiales");
 
             var email = new EnviarCotizacionDialog(
                 ViewModel.PdfPath!,
@@ -282,14 +309,23 @@ namespace Advance_Control.Views.Pages
                 contactos,
                 factura.ReceptorNombre ?? string.Empty,
                 XamlRoot,
-                tipo: "Factura",
-                asuntoPersonalizado: $"Factura {factura.FolioTitulo}",
-                mensajePersonalizado: mensaje);
+                tipo: "Historial",
+                adjuntosAdicionales: adjuntos,
+                asuntoPersonalizado: $"Historial de la factura {factura.FolioTitulo}",
+                mensajePersonalizado: sb.ToString());
 
             if (await email.ShowAsync() == ContentDialogResult.Primary)
             {
-                await MostrarMensajeAsync("Enviar por correo", "La factura fue enviada correctamente.");
+                await MostrarMensajeAsync("Enviar por correo", "El historial de la factura fue enviado correctamente.");
             }
+        }
+
+        private static string NombreDestinatario(ContactoDto? contacto)
+        {
+            var partes = new[] { contacto?.Tratamiento, contacto?.Nombre, contacto?.Apellido }
+                .Where(p => !string.IsNullOrWhiteSpace(p));
+            var nombre = string.Join(" ", partes);
+            return string.IsNullOrWhiteSpace(nombre) ? "cliente" : nombre;
         }
 
         // --- Solo facturas canceladas: comprobante (acuse) de cancelación ---
@@ -322,16 +358,8 @@ namespace Advance_Control.Views.Pages
 
             var (contactoPrincipal, contactos) = await ObtenerContactosClienteAsync(factura.ReceptorRfc);
 
-            var partesSaludo = new[] { contactoPrincipal?.Tratamiento, contactoPrincipal?.Nombre, contactoPrincipal?.Apellido }
-                .Where(p => !string.IsNullOrWhiteSpace(p));
-            var destinatario = string.Join(" ", partesSaludo);
-            if (string.IsNullOrWhiteSpace(destinatario))
-            {
-                destinatario = "cliente";
-            }
-
             var mensaje =
-                $"Estimado: {destinatario}.\n\n" +
+                $"Estimado: {NombreDestinatario(contactoPrincipal)}.\n\n" +
                 $"Le informamos que la factura {factura.FolioTitulo} (folio fiscal {factura.Uuid}) fue cancelada ante el SAT. " +
                 "Adjuntamos el comprobante de cancelación.\n\n" +
                 "Saludos Cordiales";
@@ -431,6 +459,73 @@ namespace Advance_Control.Views.Pages
 
             var nombreSugerido = $"ComplementoPago_{complemento.FolioTitulo}".Replace(" ", "_");
             await GuardarArchivoAsync(rutaPdf, nombreSugerido, "Documento PDF", ".pdf");
+        }
+
+        private async void ComplementoXml_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is not ComplementoPagoRelacionadoDto complemento)
+            {
+                return;
+            }
+
+            var xml = await ViewModel.ObtenerXmlComplementoAsync(complemento.IdFacturaComplemento);
+            if (xml == null)
+            {
+                return;
+            }
+
+            var rutaTemporal = Path.Combine(Path.GetTempPath(), $"complemento_{complemento.FolioTitulo}_{Guid.NewGuid():N}.xml");
+            await File.WriteAllTextAsync(rutaTemporal, xml, Encoding.UTF8);
+
+            try
+            {
+                var nombreSugerido = $"ComplementoPago_{complemento.FolioTitulo}".Replace(" ", "_");
+                await GuardarArchivoAsync(rutaTemporal, nombreSugerido, "Documento XML", ".xml");
+            }
+            finally
+            {
+                try { File.Delete(rutaTemporal); } catch { /* archivo temporal, no crítico */ }
+            }
+        }
+
+        private async void ComplementoEnviar_Click(object sender, RoutedEventArgs e)
+        {
+            var factura = ViewModel.Factura;
+            if (factura == null || (sender as FrameworkElement)?.Tag is not ComplementoPagoRelacionadoDto complemento)
+            {
+                return;
+            }
+
+            var archivos = await ViewModel.PrepararArchivosComplementoAsync(complemento);
+            if (archivos is not var (rutaPdf, xml))
+            {
+                return;
+            }
+
+            var (contactoPrincipal, contactos) = await ObtenerContactosClienteAsync(factura.ReceptorRfc);
+
+            var mensaje =
+                $"Estimado: {NombreDestinatario(contactoPrincipal)}.\n\n" +
+                $"En el siguiente correo, adjuntamos el complemento de pago {complemento.FolioTitulo} (PDF y XML) " +
+                $"correspondiente a la parcialidad {complemento.NumParcialidad} de la factura {factura.FolioTitulo}, " +
+                $"por {complemento.ImpPagadoTexto} con fecha de pago {complemento.FechaPagoTexto}.\n\n" +
+                "Saludos Cordiales";
+
+            var email = new EnviarCotizacionDialog(
+                rutaPdf,
+                contactoPrincipal,
+                contactos,
+                factura.ReceptorNombre ?? string.Empty,
+                XamlRoot,
+                tipo: "Complemento de pago",
+                adjuntosAdicionales: new List<(string NombreArchivo, byte[] Contenido)> { xml },
+                asuntoPersonalizado: $"Complemento de pago {complemento.FolioTitulo} de la factura {factura.FolioTitulo}",
+                mensajePersonalizado: mensaje);
+
+            if (await email.ShowAsync() == ContentDialogResult.Primary)
+            {
+                await MostrarMensajeAsync("Enviar por correo", "El complemento de pago fue enviado correctamente.");
+            }
         }
 
         private async void ComplementoEliminar_Click(object sender, RoutedEventArgs e)

@@ -1,9 +1,12 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading.Tasks;
 using Advance_Control.Models;
 using Advance_Control.Services.Facturas;
@@ -430,6 +433,101 @@ namespace Advance_Control.ViewModels
                 return null;
             }
         }
+
+        /// <summary>XML timbrado de un Complemento de Pago relacionado (también es una factura en la base de datos).</summary>
+        public async Task<string?> ObtenerXmlComplementoAsync(int idFacturaComplemento)
+        {
+            try
+            {
+                ErrorMessage = null;
+                var xml = await _facturaService.ObtenerXmlFacturaAsync(idFacturaComplemento);
+                if (string.IsNullOrWhiteSpace(xml))
+                {
+                    ErrorMessage = "El complemento de pago no tiene XML almacenado.";
+                    return null;
+                }
+
+                return xml;
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al consultar el XML del complemento de pago: {ex.Message}";
+                return null;
+            }
+        }
+
+        /// <summary>PDF y XML de un Complemento de Pago, ya listos para adjuntar a un correo (null si falla alguno).</summary>
+        public async Task<(string RutaPdf, (string NombreArchivo, byte[] Contenido) Xml)?> PrepararArchivosComplementoAsync(ComplementoPagoRelacionadoDto complemento)
+        {
+            var rutaPdf = await GenerarPdfComplementoAsync(complemento.IdFacturaComplemento);
+            if (rutaPdf == null)
+            {
+                return null;
+            }
+
+            var xml = await ObtenerXmlComplementoAsync(complemento.IdFacturaComplemento);
+            if (xml == null)
+            {
+                return null;
+            }
+
+            return (rutaPdf, (NombreArchivo($"ComplementoPago_{complemento.FolioTitulo}", ".xml"), Encoding.UTF8.GetBytes(xml)));
+        }
+
+        /// <summary>
+        /// Adjuntos del "Enviar historial" además del PDF de la factura: XML de la factura y PDF + XML
+        /// de cada Complemento de Pago vigente (los cancelados ante el SAT no se envían). Regresa
+        /// también los complementos incluidos para listarlos en el cuerpo del correo.
+        /// </summary>
+        public async Task<(List<(string NombreArchivo, byte[] Contenido)> Adjuntos, List<ComplementoPagoRelacionadoDto> Complementos)?> PrepararAdjuntosHistorialAsync()
+        {
+            if (Factura == null)
+            {
+                return null;
+            }
+
+            try
+            {
+                ErrorMessage = null;
+                var adjuntos = new List<(string NombreArchivo, byte[] Contenido)>();
+                var incluidos = new List<ComplementoPagoRelacionadoDto>();
+
+                var xmlFactura = await _facturaService.ObtenerXmlFacturaAsync(Factura.IdFactura);
+                if (!string.IsNullOrWhiteSpace(xmlFactura))
+                {
+                    adjuntos.Add((NombreArchivo($"Factura_{FolioTexto}", ".xml"), Encoding.UTF8.GetBytes(xmlFactura)));
+                }
+
+                foreach (var complemento in ComplementosRelacionados.OrderBy(c => c.NumParcialidad))
+                {
+                    var detalle = await _facturaService.ObtenerComplementoPagoDetalleAsync(complemento.IdFacturaComplemento);
+                    if (detalle?.Factura == null || detalle.Factura.Cancelada)
+                    {
+                        continue;
+                    }
+
+                    var rutaPdf = await _complementoPagoPdfService.GenerarComplementoPagoPdfAsync(detalle);
+                    adjuntos.Add((NombreArchivo($"ComplementoPago_{complemento.FolioTitulo}", ".pdf"), await File.ReadAllBytesAsync(rutaPdf)));
+
+                    var xml = await _facturaService.ObtenerXmlFacturaAsync(complemento.IdFacturaComplemento);
+                    if (!string.IsNullOrWhiteSpace(xml))
+                    {
+                        adjuntos.Add((NombreArchivo($"ComplementoPago_{complemento.FolioTitulo}", ".xml"), Encoding.UTF8.GetBytes(xml)));
+                    }
+
+                    incluidos.Add(complemento);
+                }
+
+                return (adjuntos, incluidos);
+            }
+            catch (Exception ex)
+            {
+                ErrorMessage = $"Error al preparar los archivos del historial: {ex.Message}";
+                return null;
+            }
+        }
+
+        private static string NombreArchivo(string nombre, string extension) => nombre.Replace(" ", "_") + extension;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 

@@ -446,6 +446,8 @@
                                         <ColumnDefinition Width="1*" />
                                         <ColumnDefinition Width="36" />
                                         <ColumnDefinition Width="36" />
+                                        <ColumnDefinition Width="36" />
+                                        <ColumnDefinition Width="36" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock
                                         Grid.Column="0"
@@ -498,6 +500,8 @@
                                                             <ColumnDefinition Width="1*" />
                                                             <ColumnDefinition Width="36" />
                                                             <ColumnDefinition Width="36" />
+                                                            <ColumnDefinition Width="36" />
+                                                            <ColumnDefinition Width="36" />
                                                         </Grid.ColumnDefinitions>
                                                         <TextBlock
                                                             Grid.Column="0"
@@ -525,6 +529,22 @@
                                                         </Button>
                                                         <Button
                                                             Grid.Column="5"
+                                                            Padding="6"
+                                                            Click="ComplementoXml_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Descargar XML">
+                                                            <FontIcon FontSize="14" Glyph="&#xE943;" />
+                                                        </Button>
+                                                        <Button
+                                                            Grid.Column="6"
+                                                            Padding="6"
+                                                            Click="ComplementoEnviar_Click"
+                                                            Tag="{x:Bind}"
+                                                            ToolTipService.ToolTip="Enviar PDF y XML por correo">
+                                                            <FontIcon FontSize="14" Glyph="&#xE724;" />
+                                                        </Button>
+                                                        <Button
+                                                            Grid.Column="7"
                                                             Padding="6"
                                                             Click="ComplementoEliminar_Click"
                                                             Tag="{x:Bind}"
