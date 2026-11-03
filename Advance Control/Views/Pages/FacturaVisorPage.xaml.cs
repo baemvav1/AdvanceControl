@@ -277,10 +277,10 @@ namespace Advance_Control.Views.Pages
             sb.Append($"Estimado: {NombreDestinatario(contactoPrincipal)}.\n\n");
             sb.Append($"En el siguiente correo, adjuntamos el historial de la factura {factura.FolioTitulo} ({factura.Total.ToString("C2", mx)}).\n");
 
-            if (ViewModel.PagosVinculados.Count > 0)
+            if (ViewModel.PagosConfirmados.Count > 0)
             {
                 sb.Append("\nPagos recibidos:\n");
-                foreach (var pago in ViewModel.PagosVinculados.OrderBy(p => p.FechaAbono))
+                foreach (var pago in ViewModel.PagosConfirmados.OrderBy(p => p.FechaAbono))
                 {
                     sb.Append($"   – {pago.FechaAbono:dd/MM/yyyy} · {pago.MontoAbonoTexto} · {pago.FormaPagoTexto}");
                     if (!string.IsNullOrWhiteSpace(pago.Referencia))

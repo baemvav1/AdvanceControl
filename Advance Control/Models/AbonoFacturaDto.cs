@@ -23,5 +23,16 @@ namespace Advance_Control.Models
         public string ReferenciaTexto => string.IsNullOrWhiteSpace(Referencia) ? "Sin referencia" : Referencia!;
         public string ObservacionesTexto => string.IsNullOrWhiteSpace(Observaciones) ? "Sin observaciones" : Observaciones!;
         public string FormaPagoTexto => FormaPagoAbonoManualCatalogo.Describir(FormaPago);
+
+        /// <summary>
+        /// Abono capturado a mano que aún espera su movimiento en un estado de cuenta. Un pago en
+        /// efectivo nunca va a tener uno: mismo criterio que fn_ingresos_manuales_sin_movimiento.
+        /// </summary>
+        public bool PendienteConciliar => !IdMovimiento.HasValue
+            && !string.Equals(FormaPago, FormaPagoAbonoManualCatalogo.Efectivo, StringComparison.OrdinalIgnoreCase);
+
+        public string ConciliacionTexto => IdMovimiento.HasValue
+            ? MovimientoTexto
+            : PendienteConciliar ? "Pendiente de conciliar" : "No requiere conciliación";
     }
 }
