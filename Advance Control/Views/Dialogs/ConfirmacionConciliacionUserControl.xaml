@@ -454,7 +454,8 @@
                                                                 Grid.Column="4"
                                                                 HorizontalAlignment="Right"
                                                                 Click="BtnDescartarMovimientoAbono_Click"
-                                                                Content="Descartar y reintentar" />
+                                                                Content="Descartar y reintentar"
+                                                                Visibility="{x:Bind PermiteDescartar, Converter={StaticResource BoolToVisibility}}" />
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>

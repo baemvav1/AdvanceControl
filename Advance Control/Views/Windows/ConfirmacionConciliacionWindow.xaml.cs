@@ -55,7 +55,7 @@ namespace Advance_Control.Views.Windows
             ConciliacionAutomaticaModo modo,
             bool aplicarDtc,
             bool usarRfcComoRegla)
-            : this(new[] { new PasoConciliacion(modo, aplicarDtc, usarRfcComoRegla) })
+            : this(new[] { new PasoConciliacion(modo, aplicarDtc, usarRfcComoRegla || modo == ConciliacionAutomaticaModo.Abonos) })
         {
         }
 
@@ -356,7 +356,7 @@ namespace Advance_Control.Views.Windows
             TxtResumen.Text = prefijo + (esModoAbonos
                 ? total == 0
                     ? "no quedan propuestas vigentes de abonos despues de los descartes. Continuar pasa al siguiente paso sin conciliar nada de este."
-                    : $"{total} propuesta(s) vigente(s). Desmarca las que no quieras conciliar; puedes descartar facturas completas o subdescartar movimientos para reintentar la misma factura."
+                    : $"{total} propuesta(s) vigente(s). Desmarca las que no quieras conciliar: al descartar una se recalcula y la factura puede volver con otra combinación de pagos."
                 : $"{total} conciliacion(es) propuesta(s). Desmarca las que no quieras conciliar: las que queden marcadas se aplicaran al continuar, y si no dejas ninguna marcada se pasa al siguiente paso sin conciliar nada.");
         }
 

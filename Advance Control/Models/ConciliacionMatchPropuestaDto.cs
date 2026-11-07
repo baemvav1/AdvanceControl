@@ -24,6 +24,12 @@ namespace Advance_Control.Models
 
         // Helpers para display en diálogo
         public bool EsAbonos => string.Equals(Tipo, "Abonos", StringComparison.OrdinalIgnoreCase);
+
+        /// <summary>
+        /// Abonos del motor del servidor: solo se descarta la propuesta completa (veta esa combinación
+        /// de pagos para la factura). El paso de Cheques sigue permitiendo descartar movimiento por movimiento.
+        /// </summary>
+        public bool PermiteDescartarMovimientos { get; init; } = true;
         public const string TipoVariasAUno = "Varias a 1";
 
         public bool EsUnoAUno => string.Equals(Tipo, "1 a 1", StringComparison.OrdinalIgnoreCase);
@@ -56,7 +62,8 @@ namespace Advance_Control.Models
             {
                 IdFactura = FacturaPrincipal?.IdFactura ?? 0,
                 FolioFactura = FacturaObjetivoFolio,
-                Movimiento = movimiento
+                Movimiento = movimiento,
+                PermiteDescartar = PermiteDescartarMovimientos
             })
             .ToList();
 

@@ -174,8 +174,12 @@ namespace Advance_Control.Views.Pages
         private async void BtnCombinacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Combinacional);
 
-        private async void BtnAbonos_Click(object sender, RoutedEventArgs e) =>
+        private async void BtnAbonos_Click(object sender, RoutedEventArgs e)
+        {
+            // En Abonos el RFC siempre aplica: se enciende el botón antes de calcular.
+            ViewModel.UsarRfcComoRegla = true;
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Abonos);
+        }
 
         private async void BtnComplementos_Click(object sender, RoutedEventArgs e)
         {
