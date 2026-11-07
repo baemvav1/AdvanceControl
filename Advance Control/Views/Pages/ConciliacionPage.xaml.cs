@@ -205,9 +205,8 @@ namespace Advance_Control.Views.Pages
             {
                 var ventana = new ConfirmacionConciliacionWindow(
                     modo,
-                    ViewModel.AplicarReglaPueMismoMes,
-                    ViewModel.UsarRfcComoRegla,
-                    ViewModel.AplicarReglaPpdSiguienteMes);
+                    ViewModel.AplicarDtc,
+                    ViewModel.UsarRfcComoRegla);
                 ventana.Activate();
 
                 var aprobadas = await ventana.ResultTask;

@@ -151,21 +151,12 @@
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <AppBarToggleButton
-                                    Width="100"
-                                    IsChecked="{x:Bind ViewModel.AplicarReglaPueMismoMes, Mode=TwoWay}"
-                                    Label="PUE Mismo mes"
-                                    ToolTipService.ToolTip="Aplicar la regla de PUE en el mismo mes">
+                                    Width="84"
+                                    IsChecked="{x:Bind ViewModel.AplicarDtc, Mode=TwoWay}"
+                                    Label="DTC"
+                                    ToolTipService.ToolTip="Date Time Correct: el pago debe ser del día del timbrado o posterior. PUE: mismo mes. PPD: mismo mes o posterior.">
                                     <AppBarToggleButton.Icon>
                                         <FontIcon Glyph="&#xE787;" />
-                                    </AppBarToggleButton.Icon>
-                                </AppBarToggleButton>
-                                <AppBarToggleButton
-                                    Width="84"
-                                    IsChecked="{x:Bind ViewModel.AplicarReglaPpdSiguienteMes, Mode=TwoWay}"
-                                    Label="PPD Sig. mes"
-                                    ToolTipService.ToolTip="PPD: solo sugerir pagos del mes siguiente al de la factura (sin importar el día)">
-                                    <AppBarToggleButton.Icon>
-                                        <FontIcon Glyph="&#xE8BF;" />
                                     </AppBarToggleButton.Icon>
                                 </AppBarToggleButton>
                                 <AppBarToggleButton

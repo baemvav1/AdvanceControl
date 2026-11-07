@@ -30,8 +30,7 @@ namespace Advance_Control.ViewModels
         private bool _isLoading;
         private bool _isConciliacionEnProceso;
         private string? _errorMessage;
-        private bool _aplicarReglaPueMismoMes = true;
-        private bool _aplicarReglaPpdSiguienteMes;
+        private bool _aplicarDtc = true;
         private bool _usarRfcComoRegla;
         private int _operacionesConciliacionPendientes;
 
@@ -113,16 +112,14 @@ namespace Advance_Control.ViewModels
 
         // ---------------- Reglas (toggles de la cinta) ----------------
 
-        public bool AplicarReglaPueMismoMes
+        /// <summary>
+        /// DTC (Date Time Correct): el pago debe ser del día del timbrado o posterior; PUE en el
+        /// mismo mes, PPD en el mismo mes o posterior. Reemplaza a "PUE Mismo mes" y "PPD Sig. mes".
+        /// </summary>
+        public bool AplicarDtc
         {
-            get => _aplicarReglaPueMismoMes;
-            set => SetProperty(ref _aplicarReglaPueMismoMes, value);
-        }
-
-        public bool AplicarReglaPpdSiguienteMes
-        {
-            get => _aplicarReglaPpdSiguienteMes;
-            set => SetProperty(ref _aplicarReglaPpdSiguienteMes, value);
+            get => _aplicarDtc;
+            set => SetProperty(ref _aplicarDtc, value);
         }
 
         public bool UsarRfcComoRegla

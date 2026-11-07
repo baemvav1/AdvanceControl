@@ -18,6 +18,7 @@ namespace Advance_Control.ViewModels
         private readonly IFacturaService _facturaService;
         private readonly INotificacionService _notificacionService;
         private readonly ConciliacionMatchingEngine _conciliacionMatchingEngine;
+        private readonly IConciliacionApiService _conciliacionApiService;
         private readonly List<ConciliacionMovimientoResumenDto> _movimientosPendientesBase = new();
         private readonly List<FacturaResumenDto> _facturasPendientesBase = new();
         // A diferencia de _facturasPendientesBase (excluye Finiquito == true), IngresosManuales
@@ -29,6 +30,10 @@ namespace Advance_Control.ViewModels
         // vuelve a proponer en los pasos restantes del mismo asistente.
         private readonly HashSet<int> _facturasDescartadas = new();
         private readonly Dictionary<int, HashSet<int>> _movimientosVetadosPorFacturaAbonos = new();
+        // 1 a 1 (motor del servidor): descartar una propuesta veta solo el par factura-movimiento;
+        // la factura puede volver a proponerse con otro movimiento y el movimiento con otra factura.
+        private readonly HashSet<(int IdFactura, int IdMovimiento)> _paresVetadosUnoAUno = new();
+        private bool _aplicarDtc = true;
         private bool _bitacoraConciliacionInicializada;
         private bool _aplicarReglaPueMismoMes = true;
         private bool _aplicarReglaPpdSiguienteMes = false;
@@ -38,23 +43,36 @@ namespace Advance_Control.ViewModels
             IEstadoCuentaXmlService estadoCuentaXmlService,
             IFacturaService facturaService,
             INotificacionService notificacionService,
-            ConciliacionMatchingEngine conciliacionMatchingEngine)
+            ConciliacionMatchingEngine conciliacionMatchingEngine,
+            IConciliacionApiService conciliacionApiService)
         {
             _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
             _conciliacionMatchingEngine = conciliacionMatchingEngine ?? throw new ArgumentNullException(nameof(conciliacionMatchingEngine));
+            _conciliacionApiService = conciliacionApiService ?? throw new ArgumentNullException(nameof(conciliacionApiService));
         }
 
+        /// <summary>
+        /// Motivos de las conciliaciones 1 a 1 que el servidor rechazó en el último "Continuar"
+        /// (p. ej. otro usuario ya usó el movimiento). Vacío si todas se aplicaron.
+        /// </summary>
+        public IReadOnlyList<string> UltimosRechazos { get; private set; } = Array.Empty<string>();
+
+        /// <param name="aplicarDtc">
+        /// Regla DTC. En 1 a 1 la evalúa el servidor (pago el día del timbrado o después; PUE mismo
+        /// mes, PPD mismo mes o posterior). Los pasos que siguen en el cliente (combinación, abonos,
+        /// cheques, complementos, ingresos) la traducen a su regla anterior de mes hasta migrarlos.
+        /// </param>
         public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CargarPropuestasAsync(
             ConciliacionAutomaticaModo modo,
-            bool aplicarReglaPueMismoMes,
-            bool aplicarReglaPpdSiguienteMes,
+            bool aplicarDtc,
             bool usarRfcComoRegla,
             CancellationToken ct = default)
         {
-            _aplicarReglaPueMismoMes = aplicarReglaPueMismoMes;
-            _aplicarReglaPpdSiguienteMes = aplicarReglaPpdSiguienteMes;
+            _aplicarDtc = aplicarDtc;
+            _aplicarReglaPueMismoMes = aplicarDtc;
+            _aplicarReglaPpdSiguienteMes = false;
             _usarRfcComoRegla = usarRfcComoRegla;
 
             await CargarDatosBaseAsync(ct);
@@ -63,7 +81,7 @@ namespace Advance_Control.ViewModels
 
             return modo switch
             {
-                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
+                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasUnoAUnoServidorAsync(ct),
                 ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
@@ -84,15 +102,25 @@ namespace Advance_Control.ViewModels
             ConciliacionMatchPropuestaDto propuestaDescartada,
             CancellationToken ct = default)
         {
-            foreach (var factura in propuestaDescartada.Facturas)
+            if (modo == ConciliacionAutomaticaModo.Automatica)
             {
-                _facturasDescartadas.Add(factura.IdFactura);
-                _movimientosVetadosPorFacturaAbonos.Remove(factura.IdFactura);
+                foreach (var factura in propuestaDescartada.Facturas)
+                {
+                    _paresVetadosUnoAUno.Add((factura.IdFactura, propuestaDescartada.Movimiento.IdMovimiento));
+                }
+            }
+            else
+            {
+                foreach (var factura in propuestaDescartada.Facturas)
+                {
+                    _facturasDescartadas.Add(factura.IdFactura);
+                    _movimientosVetadosPorFacturaAbonos.Remove(factura.IdFactura);
+                }
             }
 
             return modo switch
             {
-                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
+                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasUnoAUnoServidorAsync(ct),
                 ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
                 ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
@@ -131,9 +159,15 @@ namespace Advance_Control.ViewModels
             ConciliacionAutomaticaModo modo,
             IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
         {
+            UltimosRechazos = Array.Empty<string>();
             if (aprobadas.Count == 0)
             {
                 return false;
+            }
+
+            if (modo == ConciliacionAutomaticaModo.Automatica)
+            {
+                return await AplicarUnoAUnoServidorAsync(aprobadas);
             }
 
             foreach (var propuesta in aprobadas)
@@ -163,6 +197,122 @@ namespace Advance_Control.ViewModels
 
             await MostrarResultadoSegunModoAsync(modo, aprobadas);
             return true;
+        }
+
+        // ---------------- 1 a 1 (motor del servidor) ----------------
+
+        /// <summary>
+        /// Propuestas 1 a 1 calculadas por la API (api/conciliacion/uno-a-uno/propuestas). El
+        /// cliente solo las empata con las facturas y movimientos que ya cargó para mostrarlas;
+        /// las reglas (monto exacto contra saldo/restante, DTC, RFC, la más vieja) viven en el
+        /// servidor.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasUnoAUnoServidorAsync(CancellationToken ct)
+        {
+            var respuesta = await _conciliacionApiService.ProponerUnoAUnoAsync(new ConciliacionUnoAUnoPropuestasRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla,
+                ParesVetados = _paresVetadosUnoAUno
+                    .Select(par => new ConciliacionParDto { IdFactura = par.IdFactura, IdMovimiento = par.IdMovimiento })
+                    .ToList()
+            }, ct);
+
+            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
+            var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var item in respuesta)
+            {
+                // Si algo cambió entre la carga del cliente y el cálculo del servidor, se omite:
+                // al aplicar el servidor vuelve a validar todo de cualquier forma.
+                if (!facturasPorId.TryGetValue(item.IdFactura, out var factura)
+                    || !movimientosPorId.TryGetValue(item.IdMovimiento, out var movimiento))
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = "1 a 1",
+                    Facturas = new List<FacturaResumenDto> { factura },
+                    Movimiento = movimiento,
+                    Observaciones = item.Observaciones
+                });
+            }
+
+            return propuestas;
+        }
+
+        /// <summary>
+        /// Aplica las propuestas 1 a 1 en el servidor: cada par se revalida con las reglas activas
+        /// y con la factura y el movimiento bloqueados. Los que ya no cumplen (otro usuario los
+        /// usó, cambió el saldo...) se rechazan sin afectar al resto y quedan en
+        /// <see cref="UltimosRechazos"/>.
+        /// </summary>
+        private async Task<bool> AplicarUnoAUnoServidorAsync(IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
+        {
+            var respuesta = await _conciliacionApiService.AplicarUnoAUnoAsync(new ConciliacionUnoAUnoAplicarRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla,
+                Pares = aprobadas
+                    .Select(propuesta => new ConciliacionParDto
+                    {
+                        IdFactura = propuesta.Facturas[0].IdFactura,
+                        IdMovimiento = propuesta.Movimiento.IdMovimiento
+                    })
+                    .ToList()
+            });
+
+            var foliosPorId = aprobadas
+                .SelectMany(propuesta => propuesta.Facturas)
+                .GroupBy(factura => factura.IdFactura)
+                .ToDictionary(grupo => grupo.Key, grupo => grupo.First().FolioTitulo);
+
+            UltimosRechazos = respuesta.Resultados
+                .Where(resultado => !resultado.Aplicado)
+                .Select(resultado => $"Factura {foliosPorId.GetValueOrDefault(resultado.IdFactura, resultado.IdFactura.ToString())}: {resultado.Motivo}")
+                .ToList();
+
+            var mensaje = respuesta.Rechazados == 0
+                ? $"Conciliacion 1 a 1 completada. {respuesta.Aplicados} factura(s) conciliada(s)."
+                : $"Conciliacion 1 a 1: {respuesta.Aplicados} aplicada(s), {respuesta.Rechazados} rechazada(s) por el servidor.";
+            await _notificacionService.MostrarAsync("Conciliacion", mensaje);
+
+            return respuesta.Aplicados > 0;
+        }
+
+        /// <summary>
+        /// Valida en el servidor, con las mismas reglas del motor, que la factura escrita (folio con
+        /// o sin serie) pueda ir con el movimiento. Devuelve la factura o el motivo del rechazo.
+        /// </summary>
+        public Task<(FacturaResumenDto? Factura, string? Motivo)> ValidarFolioUnoAUnoAsync(
+            ConciliacionAutomaticaModo modo, int idMovimiento, string folio, CancellationToken ct = default)
+            => ValidarUnoAUnoAsync(modo, new ConciliacionUnoAUnoValidarRequestDto { IdMovimiento = idMovimiento, Folio = folio }, ct);
+
+        /// <summary>Igual que <see cref="ValidarFolioUnoAUnoAsync"/> pero con la factura ya identificada (intercambios).</summary>
+        public Task<(FacturaResumenDto? Factura, string? Motivo)> ValidarFacturaUnoAUnoAsync(
+            ConciliacionAutomaticaModo modo, int idMovimiento, int idFactura, CancellationToken ct = default)
+            => ValidarUnoAUnoAsync(modo, new ConciliacionUnoAUnoValidarRequestDto { IdMovimiento = idMovimiento, IdFactura = idFactura }, ct);
+
+        private async Task<(FacturaResumenDto? Factura, string? Motivo)> ValidarUnoAUnoAsync(
+            ConciliacionAutomaticaModo modo, ConciliacionUnoAUnoValidarRequestDto request, CancellationToken ct)
+        {
+            request.Dtc = _aplicarDtc;
+            // El paso de Cheques ignora el RFC (los cheques nunca lo traen).
+            request.Rfc = modo != ConciliacionAutomaticaModo.Cheques && _usarRfcComoRegla;
+
+            var respuesta = await _conciliacionApiService.ValidarUnoAUnoAsync(request, ct);
+            if (!respuesta.Valido || respuesta.IdFactura is not int idFactura)
+            {
+                return (null, respuesta.Motivo ?? "La factura no cumple las reglas de conciliación.");
+            }
+
+            var factura = _facturasTodasBase.FirstOrDefault(item => item.IdFactura == idFactura);
+            return factura == null
+                ? (null, $"La factura {respuesta.FolioTitulo} no está en la lista cargada; recarga la conciliación.")
+                : (factura, null);
         }
 
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAutomaticasAsync(
@@ -655,7 +805,9 @@ namespace Advance_Control.ViewModels
 
             var movimientosPendientes = detallesValidos
                 .SelectMany(detalle => detalle.Grupos
-                    .Where(grupo => !grupo.Conciliado && grupo.Abono > 0)
+                    // Solo lo que le queda al movimiento: uno usado en parte no se vuelve a
+                    // proponer por su monto original (eso sobreaplicaba el movimiento).
+                    .Where(grupo => !grupo.Conciliado && grupo.MontoRestante > 0)
                     .Select(grupo => new ConciliacionMovimientoResumenDto
                     {
                         IdEstadoCuenta = detalle.EstadoCuenta!.IdEstadoCuenta,
@@ -671,7 +823,8 @@ namespace Advance_Control.ViewModels
                         Descripcion = grupo.Descripcion,
                         Referencia = grupo.Referencia,
                         Cargo = grupo.Cargo,
-                        Abono = grupo.Abono,
+                        Abono = grupo.MontoRestante,
+                        MontoRestante = grupo.MontoRestante,
                         Saldo = grupo.Saldo,
                         RelacionadosCount = grupo.MovimientosRelacionados.Count,
                         RfcEmisor = grupo.RfcEmisor

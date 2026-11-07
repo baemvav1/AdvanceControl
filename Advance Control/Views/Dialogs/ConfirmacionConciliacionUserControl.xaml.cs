@@ -32,6 +32,15 @@ namespace Advance_Control.Views.Dialogs
 
         public bool EsModoAbonos => _modoAbonos;
 
+        /// <summary>
+        /// Valida en el servidor que la factura del folio escrito pueda ir con el movimiento
+        /// (idMovimiento, folio) → (factura, motivo del rechazo). Lo asigna la ventana.
+        /// </summary>
+        public Func<int, string, System.Threading.Tasks.Task<(FacturaResumenDto? Factura, string? Motivo)>>? ValidarFolio { get; set; }
+
+        /// <summary>Igual que <see cref="ValidarFolio"/> con la factura ya identificada (intercambios).</summary>
+        public Func<int, int, System.Threading.Tasks.Task<(FacturaResumenDto? Factura, string? Motivo)>>? ValidarFactura { get; set; }
+
         public ConfirmacionConciliacionUserControl()
         {
             InitializeComponent();
@@ -203,64 +212,80 @@ namespace Advance_Control.Views.Dialogs
                 return;
             }
 
+            if (ValidarFolio is null || ValidarFactura is null)
+            {
+                MostrarEstadoFlyout(panel, cargando: false, mensaje: "La validación de folios no está disponible.", esError: true);
+                return;
+            }
+
             MostrarEstadoFlyout(panel, cargando: true, mensaje: "Verificando...", esError: false);
             btnComprobar.IsEnabled = false;
 
             try
             {
-                var facturaService = AppServices.Get<IFacturaService>();
-                var facturaEncontrada = await facturaService
-                    .BuscarFacturaPorFolioAsync(folioNuevo, cancellationToken: CancellationToken.None)
-                    .ConfigureAwait(true);
-
-                if (facturaEncontrada is null)
+                // Mismas reglas del motor (saldo exacto, DTC, RFC, no cancelada...), evaluadas en el servidor.
+                var (facturaNueva, motivo) = await ValidarFolio(propuesta.Movimiento.IdMovimiento, folioNuevo).ConfigureAwait(true);
+                if (facturaNueva is null)
                 {
-                    MostrarEstadoFlyout(panel, cargando: false,
-                        mensaje: $"No se encontró ninguna factura con folio \"{folioNuevo}\".",
-                        esError: true);
-                    return;
-                }
-
-                var montoMovimiento = decimal.Round(propuesta.Movimiento.Abono, 2);
-                var totalFactura = decimal.Round(facturaEncontrada.Total, 2);
-
-                if (totalFactura != montoMovimiento)
-                {
-                    MostrarEstadoFlyout(panel, cargando: false,
-                        mensaje: $"El total de la factura ({totalFactura:C2}) no coincide con el abono del movimiento ({montoMovimiento:C2}).",
-                        esError: true);
+                    MostrarEstadoFlyout(panel, cargando: false, mensaje: motivo ?? "La factura no cumple las reglas.", esError: true);
                     return;
                 }
 
                 var facturaOriginal = propuesta.Facturas[0];
+                if (facturaNueva.IdFactura == facturaOriginal.IdFactura)
+                {
+                    MostrarEstadoFlyout(panel, cargando: false, mensaje: "Esa factura ya es la propuesta.", esError: true);
+                    return;
+                }
 
-                // Buscar si el folio ya existe en otra propuesta 1-a-1 del mismo monto
+                // Si la factura nueva ya estaba en otra propuesta, se intercambian; pero solo si la
+                // factura original también cumple con el movimiento de esa otra propuesta. Si no,
+                // esa otra propuesta se queda sin factura y se quita (no se puede aplicar a medias).
                 var otraPropuesta = _todasLasPropuestas
-                    .FirstOrDefault(p => p != propuesta
-                        && p.EsUnoAUno
-                        && string.Equals(p.FacturaPrincipal?.Folio, folioNuevo, StringComparison.OrdinalIgnoreCase)
-                        && decimal.Round(p.Movimiento.Abono, 2) == montoMovimiento);
+                    .FirstOrDefault(p => p != propuesta && p.Facturas.Any(f => f.IdFactura == facturaNueva.IdFactura));
 
+                string? aviso = null;
                 if (otraPropuesta is not null)
                 {
-                    // SWAP: intercambiar facturas entre las dos propuestas
-                    propuesta.Facturas[0] = facturaEncontrada;
-                    otraPropuesta.Facturas[0] = facturaOriginal;
-                }
-                else
-                {
-                    // Reemplazo directo
-                    propuesta.Facturas[0] = facturaEncontrada;
+                    if (!otraPropuesta.EsUnoAUno)
+                    {
+                        MostrarEstadoFlyout(panel, cargando: false,
+                            mensaje: $"La factura {facturaNueva.FolioTitulo} ya está en una propuesta {otraPropuesta.Tipo}; descártala primero.",
+                            esError: true);
+                        return;
+                    }
+
+                    var (facturaIntercambio, motivoIntercambio) = await ValidarFactura(
+                        otraPropuesta.Movimiento.IdMovimiento, facturaOriginal.IdFactura).ConfigureAwait(true);
+
+                    if (facturaIntercambio is not null)
+                    {
+                        otraPropuesta.Facturas[0] = facturaIntercambio;
+                    }
+                    else
+                    {
+                        _todasLasPropuestas.Remove(otraPropuesta);
+                        _propuestas.Remove(otraPropuesta);
+                        aviso = $"Se quitó la propuesta del movimiento del {otraPropuesta.Movimiento.FechaTexto} "
+                            + $"({otraPropuesta.Movimiento.AbonoTexto}): {motivoIntercambio}";
+                    }
                 }
 
-                // Cerrar el flyout y refrescar la lista
+                propuesta.Facturas[0] = facturaNueva;
+                RefrescarListaVisible();
+
+                if (aviso is not null)
+                {
+                    // El flyout queda abierto para que se lea el aviso.
+                    MostrarEstadoFlyout(panel, cargando: false, mensaje: $"Factura cambiada a {facturaNueva.FolioTitulo}. {aviso}", esError: false);
+                    return;
+                }
+
                 if (_btnFolioActivo is not null)
                 {
                     FlyoutBase.GetAttachedFlyout(_btnFolioActivo)?.Hide();
                     _btnFolioActivo = null;
                 }
-
-                RefrescarListaVisible();
             }
             catch (Exception ex)
             {
