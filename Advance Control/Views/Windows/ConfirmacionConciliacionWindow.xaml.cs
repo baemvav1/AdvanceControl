@@ -84,6 +84,10 @@ namespace Advance_Control.Views.Windows
                 _viewModel.ValidarFolioUnoAUnoAsync(PasoActual.Modo, idMovimiento, folio);
             ControlConfirmacion.ValidarFactura = (idMovimiento, idFactura) =>
                 _viewModel.ValidarFacturaUnoAUnoAsync(PasoActual.Modo, idMovimiento, idFactura);
+            ControlConfirmacion.ValidarFolios = (idMovimiento, folios) =>
+                _viewModel.ValidarFoliosVariasAUnoAsync(idMovimiento, folios);
+            ControlConfirmacion.ValidarFacturas = (idMovimiento, idsFacturas) =>
+                _viewModel.ValidarFacturasVariasAUnoAsync(idMovimiento, idsFacturas);
 
             Activated += ConfirmacionConciliacionWindow_Activated;
             Closed += ConfirmacionConciliacionWindow_Closed;
@@ -134,6 +138,8 @@ namespace Advance_Control.Views.Windows
                     TxtResumen.Text = $"No fue posible calcular las propuestas: {ex.Message}";
                     return;
                 }
+
+                await MostrarAvisosCalculoAsync();
 
                 if (propuestas.Count == 0)
                 {
@@ -258,6 +264,7 @@ namespace Advance_Control.Views.Windows
                 TxtResumen.Text = "Recalculando propuestas...";
 
                 var propuestas = await _viewModel.DescartarYRecalcularPropuestaAsync(PasoActual.Modo, propuestaDescartada);
+                await MostrarAvisosCalculoAsync();
                 ControlConfirmacion.SetPropuestas(propuestas);
                 ActualizarResumen(propuestas.Count, PasoActual);
                 BtnContinuar.IsEnabled = true;
@@ -299,6 +306,36 @@ namespace Advance_Control.Views.Windows
             }
         }
 
+        /// <summary>
+        /// Muestra los avisos del último cálculo (p. ej. pagos de Varias a 1 que el servidor no alcanzó
+        /// a resolver), para que no queden omitidos en silencio.
+        /// </summary>
+        private async Task MostrarAvisosCalculoAsync()
+        {
+            if (_viewModel.UltimosAvisosCalculo.Count == 0)
+            {
+                return;
+            }
+
+            var aviso = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = $"{_viewModel.UltimosAvisosCalculo.Count} pago(s) sin resolver",
+                Content = new Microsoft.UI.Xaml.Controls.ScrollViewer
+                {
+                    MaxHeight = 360,
+                    Content = new Microsoft.UI.Xaml.Controls.TextBlock
+                    {
+                        Text = string.Join(Environment.NewLine, _viewModel.UltimosAvisosCalculo),
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                CloseButtonText = "Aceptar",
+                XamlRoot = Content.XamlRoot
+            };
+            await aviso.ShowAsync();
+        }
+
         private void ConfirmacionConciliacionWindow_Closed(object sender, WindowEventArgs args)
         {
             _ctsLoading?.Cancel();
@@ -335,7 +372,7 @@ namespace Advance_Control.Views.Windows
             var nombreModo = paso.Modo switch
             {
                 ConciliacionAutomaticaModo.Automatica => "Conciliación",
-                ConciliacionAutomaticaModo.Combinacional => "Combinación",
+                ConciliacionAutomaticaModo.Combinacional => "Varias a 1",
                 ConciliacionAutomaticaModo.Abonos => "Conciliación de abonos",
                 ConciliacionAutomaticaModo.Cheques => "Cheques (1 a 1, 1 a varios, varios a 1)",
                 _ => paso.Modo.ToString()

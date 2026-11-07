@@ -24,7 +24,13 @@ namespace Advance_Control.Models
 
         // Helpers para display en diálogo
         public bool EsAbonos => string.Equals(Tipo, "Abonos", StringComparison.OrdinalIgnoreCase);
+        public const string TipoVariasAUno = "Varias a 1";
+
         public bool EsUnoAUno => string.Equals(Tipo, "1 a 1", StringComparison.OrdinalIgnoreCase);
+        public bool EsVariasAUno => string.Equals(Tipo, TipoVariasAUno, StringComparison.OrdinalIgnoreCase);
+        /// <summary>Propuestas cuyo(s) folio(s) se pueden cambiar en la ventana (validados en el servidor).</summary>
+        public bool EsFolioEditable => EsUnoAUno || EsVariasAUno;
+        public string FoliosEditablesTexto => string.Join(", ", Facturas.Select(f => f.FolioTitulo));
         public bool EsComplemento => string.Equals(Tipo, "Complemento", StringComparison.OrdinalIgnoreCase);
         public bool EsIngresoManual => string.Equals(Tipo, "IngresoManual", StringComparison.OrdinalIgnoreCase);
         // Las propuestas "Complemento"/"IngresoManual" reusan el layout genérico (1 a 1/

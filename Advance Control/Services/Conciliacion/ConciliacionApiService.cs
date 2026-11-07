@@ -16,11 +16,18 @@ namespace Advance_Control.Services.Conciliacion
         Task<IReadOnlyList<ConciliacionUnoAUnoPropuestaDto>> ProponerUnoAUnoAsync(ConciliacionUnoAUnoPropuestasRequestDto request, CancellationToken ct = default);
         Task<ConciliacionUnoAUnoValidarResponseDto> ValidarUnoAUnoAsync(ConciliacionUnoAUnoValidarRequestDto request, CancellationToken ct = default);
         Task<ConciliacionUnoAUnoAplicarResponseDto> AplicarUnoAUnoAsync(ConciliacionUnoAUnoAplicarRequestDto request, CancellationToken ct = default);
+
+        Task<ConciliacionVariasAUnoPropuestasResponseDto> ProponerVariasAUnoAsync(ConciliacionVariasAUnoPropuestasRequestDto request, CancellationToken ct = default);
+        Task<ConciliacionVariasAUnoValidarResponseDto> ValidarVariasAUnoAsync(ConciliacionVariasAUnoValidarRequestDto request, CancellationToken ct = default);
+        Task<ConciliacionVariasAUnoAplicarResponseDto> AplicarVariasAUnoAsync(ConciliacionVariasAUnoAplicarRequestDto request, CancellationToken ct = default);
     }
 
     /// <summary>Cliente del motor de conciliación del servidor (api/conciliacion).</summary>
     public sealed class ConciliacionApiService : IConciliacionApiService
     {
+        private const string UnoAUno = "uno-a-uno";
+        private const string VariasAUno = "varias-a-uno";
+
         private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
         private readonly HttpClient _http;
@@ -35,19 +42,30 @@ namespace Advance_Control.Services.Conciliacion
         }
 
         public async Task<IReadOnlyList<ConciliacionUnoAUnoPropuestaDto>> ProponerUnoAUnoAsync(ConciliacionUnoAUnoPropuestasRequestDto request, CancellationToken ct = default)
-            => await PostAsync<List<ConciliacionUnoAUnoPropuestaDto>>("propuestas", request, ct) ?? new List<ConciliacionUnoAUnoPropuestaDto>();
+            => await PostAsync<List<ConciliacionUnoAUnoPropuestaDto>>(UnoAUno, "propuestas", request, ct) ?? new List<ConciliacionUnoAUnoPropuestaDto>();
 
         public async Task<ConciliacionUnoAUnoValidarResponseDto> ValidarUnoAUnoAsync(ConciliacionUnoAUnoValidarRequestDto request, CancellationToken ct = default)
-            => await PostAsync<ConciliacionUnoAUnoValidarResponseDto>("validar", request, ct)
+            => await PostAsync<ConciliacionUnoAUnoValidarResponseDto>(UnoAUno, "validar", request, ct)
                 ?? new ConciliacionUnoAUnoValidarResponseDto { Motivo = "El servidor no devolvió respuesta." };
 
         public async Task<ConciliacionUnoAUnoAplicarResponseDto> AplicarUnoAUnoAsync(ConciliacionUnoAUnoAplicarRequestDto request, CancellationToken ct = default)
-            => await PostAsync<ConciliacionUnoAUnoAplicarResponseDto>("aplicar", request, ct)
+            => await PostAsync<ConciliacionUnoAUnoAplicarResponseDto>(UnoAUno, "aplicar", request, ct)
                 ?? throw new InvalidOperationException("El servidor no devolvió el resultado de la conciliación.");
 
-        private async Task<T?> PostAsync<T>(string accion, object request, CancellationToken ct)
+        public async Task<ConciliacionVariasAUnoPropuestasResponseDto> ProponerVariasAUnoAsync(ConciliacionVariasAUnoPropuestasRequestDto request, CancellationToken ct = default)
+            => await PostAsync<ConciliacionVariasAUnoPropuestasResponseDto>(VariasAUno, "propuestas", request, ct) ?? new ConciliacionVariasAUnoPropuestasResponseDto();
+
+        public async Task<ConciliacionVariasAUnoValidarResponseDto> ValidarVariasAUnoAsync(ConciliacionVariasAUnoValidarRequestDto request, CancellationToken ct = default)
+            => await PostAsync<ConciliacionVariasAUnoValidarResponseDto>(VariasAUno, "validar", request, ct)
+                ?? new ConciliacionVariasAUnoValidarResponseDto { Motivo = "El servidor no devolvió respuesta." };
+
+        public async Task<ConciliacionVariasAUnoAplicarResponseDto> AplicarVariasAUnoAsync(ConciliacionVariasAUnoAplicarRequestDto request, CancellationToken ct = default)
+            => await PostAsync<ConciliacionVariasAUnoAplicarResponseDto>(VariasAUno, "aplicar", request, ct)
+                ?? throw new InvalidOperationException("El servidor no devolvió el resultado de la conciliación.");
+
+        private async Task<T?> PostAsync<T>(string modo, string accion, object request, CancellationToken ct)
         {
-            var url = _endpoints.GetEndpoint("api", "conciliacion", "uno-a-uno", accion);
+            var url = _endpoints.GetEndpoint("api", "conciliacion", modo, accion);
             try
             {
                 using var response = await _http.PostAsJsonAsync(url, request, ct).ConfigureAwait(false);

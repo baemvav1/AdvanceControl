@@ -41,6 +41,15 @@ namespace Advance_Control.Views.Dialogs
         /// <summary>Igual que <see cref="ValidarFolio"/> con la factura ya identificada (intercambios).</summary>
         public Func<int, int, System.Threading.Tasks.Task<(FacturaResumenDto? Factura, string? Motivo)>>? ValidarFactura { get; set; }
 
+        /// <summary>
+        /// Varias a 1: valida en el servidor que los folios escritos puedan ir juntos con el movimiento
+        /// (idMovimiento, folios) → (facturas, motivo del rechazo). Lo asigna la ventana.
+        /// </summary>
+        public Func<int, IReadOnlyList<string>, System.Threading.Tasks.Task<(IReadOnlyList<FacturaResumenDto>? Facturas, string? Motivo)>>? ValidarFolios { get; set; }
+
+        /// <summary>Igual que <see cref="ValidarFolios"/> con las facturas ya identificadas (intercambios).</summary>
+        public Func<int, IReadOnlyList<int>, System.Threading.Tasks.Task<(IReadOnlyList<FacturaResumenDto>? Facturas, string? Motivo)>>? ValidarFacturas { get; set; }
+
         public ConfirmacionConciliacionUserControl()
         {
             InitializeComponent();
@@ -158,10 +167,21 @@ namespace Advance_Control.Views.Dialogs
                 return;
             }
 
-            // Limpiar estado del flyout cada vez que se abre
+            // Limpiar estado del flyout cada vez que se abre. En Varias a 1 se precarga la lista
+            // actual de folios para editarla (quitar, agregar o cambiar alguno).
+            var propuesta = _btnFolioActivo?.DataContext as ConciliacionMatchPropuestaDto;
+            var esVariasAUno = propuesta?.EsVariasAUno == true;
+
+            if (panel.FindName("TxtTituloFolio") is TextBlock titulo)
+            {
+                titulo.Text = esVariasAUno ? "Cambiar facturas del pago" : "Reasignar folio de factura";
+            }
+
             if (panel.FindName("TxtFolioNuevo") is TextBox txt)
             {
-                txt.Text = string.Empty;
+                txt.Header = esVariasAUno ? "Folios separados por coma" : "Nuevo folio";
+                txt.PlaceholderText = esVariasAUno ? "Ej. A-459, A-460" : "Ej. A-459";
+                txt.Text = esVariasAUno ? propuesta!.FoliosEditablesTexto : string.Empty;
             }
 
             if (panel.FindName("PanelEstadoFolio") is StackPanel panelEstado)
@@ -207,8 +227,27 @@ namespace Advance_Control.Views.Dialogs
                 return;
             }
 
-            if (btnComprobar.DataContext is not ConciliacionMatchPropuestaDto propuesta || !propuesta.EsUnoAUno)
+            if (btnComprobar.DataContext is not ConciliacionMatchPropuestaDto propuesta || !propuesta.EsFolioEditable)
             {
+                return;
+            }
+
+            if (propuesta.EsVariasAUno)
+            {
+                btnComprobar.IsEnabled = false;
+                try
+                {
+                    await ComprobarFoliosVariasAUnoAsync(panel, propuesta, folioNuevo).ConfigureAwait(true);
+                }
+                catch (Exception ex)
+                {
+                    MostrarEstadoFlyout(panel, cargando: false, mensaje: $"Error al verificar los folios: {ex.Message}", esError: true);
+                }
+                finally
+                {
+                    btnComprobar.IsEnabled = true;
+                }
+
                 return;
             }
 
@@ -297,6 +336,121 @@ namespace Advance_Control.Views.Dialogs
             {
                 btnComprobar.IsEnabled = true;
             }
+        }
+
+        /// <summary>
+        /// Varias a 1: reemplaza las facturas del pago por las de los folios escritos, validadas en el
+        /// servidor con las mismas reglas del motor. Si alguna ya estaba en otra propuesta, esa otra
+        /// recibe las facturas que este pago soltó, pero solo si así también cumple; si no, se quita
+        /// con aviso (no se puede aplicar a medias ni usar una factura dos veces).
+        /// </summary>
+        private async System.Threading.Tasks.Task ComprobarFoliosVariasAUnoAsync(StackPanel panel, ConciliacionMatchPropuestaDto propuesta, string textoFolios)
+        {
+            if (ValidarFolios is null || ValidarFacturas is null)
+            {
+                MostrarEstadoFlyout(panel, cargando: false, mensaje: "La validación de folios no está disponible.", esError: true);
+                return;
+            }
+
+            var folios = textoFolios
+                .Split(new[] { ',', ';', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (folios.Count < 2)
+            {
+                MostrarEstadoFlyout(panel, cargando: false,
+                    mensaje: "Escribe al menos 2 folios separados por coma; con uno solo es conciliación 1 a 1.", esError: true);
+                return;
+            }
+
+            MostrarEstadoFlyout(panel, cargando: true, mensaje: "Verificando...", esError: false);
+
+            var (facturasNuevas, motivo) = await ValidarFolios(propuesta.Movimiento.IdMovimiento, folios).ConfigureAwait(true);
+            if (facturasNuevas is null)
+            {
+                MostrarEstadoFlyout(panel, cargando: false, mensaje: motivo ?? "Las facturas no cumplen las reglas.", esError: true);
+                return;
+            }
+
+            var idsNuevos = facturasNuevas.Select(f => f.IdFactura).ToHashSet();
+            if (idsNuevos.SetEquals(propuesta.Facturas.Select(f => f.IdFactura)))
+            {
+                MostrarEstadoFlyout(panel, cargando: false, mensaje: "Esas facturas ya son las propuestas.", esError: true);
+                return;
+            }
+
+            var otras = _todasLasPropuestas
+                .Where(p => p != propuesta && p.Facturas.Any(f => idsNuevos.Contains(f.IdFactura)))
+                .ToList();
+
+            var noEditable = otras.FirstOrDefault(p => !p.EsVariasAUno);
+            if (noEditable is not null)
+            {
+                MostrarEstadoFlyout(panel, cargando: false,
+                    mensaje: $"Alguna factura ya está en una propuesta {noEditable.Tipo}; descártala primero.", esError: true);
+                return;
+            }
+
+            var avisos = new List<string>();
+            var soltadas = propuesta.Facturas.Where(f => !idsNuevos.Contains(f.IdFactura)).ToList();
+
+            if (otras.Count == 1 && soltadas.Count > 0)
+            {
+                // Intercambio: la otra propuesta cede las facturas que tomamos y recibe las que soltamos.
+                var otra = otras[0];
+                var candidatas = otra.Facturas
+                    .Where(f => !idsNuevos.Contains(f.IdFactura))
+                    .Concat(soltadas)
+                    .ToList();
+
+                var (facturasIntercambio, motivoIntercambio) = await ValidarFacturas(
+                    otra.Movimiento.IdMovimiento, candidatas.Select(f => f.IdFactura).ToList()).ConfigureAwait(true);
+
+                if (facturasIntercambio is not null)
+                {
+                    otra.Facturas.Clear();
+                    otra.Facturas.AddRange(facturasIntercambio);
+                    avisos.Add($"El pago del {otra.Movimiento.FechaTexto} ({otra.Movimiento.AbonoTexto}) quedó con {otra.FoliosTexto}.");
+                }
+                else
+                {
+                    QuitarPropuesta(otra);
+                    avisos.Add($"Se quitó la propuesta del pago del {otra.Movimiento.FechaTexto} ({otra.Movimiento.AbonoTexto}): {motivoIntercambio}");
+                }
+            }
+            else
+            {
+                foreach (var otra in otras)
+                {
+                    QuitarPropuesta(otra);
+                    avisos.Add($"Se quitó la propuesta del pago del {otra.Movimiento.FechaTexto} ({otra.Movimiento.AbonoTexto}) porque usaba alguna de esas facturas.");
+                }
+            }
+
+            propuesta.Facturas.Clear();
+            propuesta.Facturas.AddRange(facturasNuevas);
+            RefrescarListaVisible();
+
+            if (avisos.Count > 0)
+            {
+                // El flyout queda abierto para que se lea el aviso.
+                MostrarEstadoFlyout(panel, cargando: false,
+                    mensaje: $"Facturas cambiadas a {propuesta.FoliosTexto}. {string.Join(" ", avisos)}", esError: false);
+                return;
+            }
+
+            if (_btnFolioActivo is not null)
+            {
+                FlyoutBase.GetAttachedFlyout(_btnFolioActivo)?.Hide();
+                _btnFolioActivo = null;
+            }
+        }
+
+        private void QuitarPropuesta(ConciliacionMatchPropuestaDto propuesta)
+        {
+            _todasLasPropuestas.Remove(propuesta);
+            _propuestas.Remove(propuesta);
         }
 
         private static void MostrarEstadoFlyout(StackPanel panel, bool cargando, string mensaje, bool esError)
