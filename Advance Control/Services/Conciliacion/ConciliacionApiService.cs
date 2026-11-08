@@ -23,6 +23,10 @@ namespace Advance_Control.Services.Conciliacion
 
         Task<ConciliacionAbonosPropuestasResponseDto> ProponerAbonosAsync(ConciliacionAbonosPropuestasRequestDto request, CancellationToken ct = default);
         Task<ConciliacionAbonosAplicarResponseDto> AplicarAbonosAsync(ConciliacionAbonosAplicarRequestDto request, CancellationToken ct = default);
+
+        /// <summary>Complementos o Ingresos manuales, según <paramref name="modo"/>.</summary>
+        Task<IReadOnlyList<ConciliacionVinculoPropuestaDto>> ProponerVinculosAsync(ConciliacionAutomaticaModo modo, ConciliacionVinculosPropuestasRequestDto request, CancellationToken ct = default);
+        Task<ConciliacionVinculosAplicarResponseDto> AplicarVinculosAsync(ConciliacionAutomaticaModo modo, ConciliacionVinculosAplicarRequestDto request, CancellationToken ct = default);
     }
 
     /// <summary>Cliente del motor de conciliación del servidor (api/conciliacion).</summary>
@@ -31,6 +35,8 @@ namespace Advance_Control.Services.Conciliacion
         private const string UnoAUno = "uno-a-uno";
         private const string VariasAUno = "varias-a-uno";
         private const string Abonos = "abonos";
+        private const string Complementos = "complementos";
+        private const string IngresosManuales = "ingresos-manuales";
 
         /// <summary>
         /// Tope de espera por petición. El servidor corta sus cálculos a los 20 s; si no contesta en
@@ -79,6 +85,20 @@ namespace Advance_Control.Services.Conciliacion
         public async Task<ConciliacionAbonosAplicarResponseDto> AplicarAbonosAsync(ConciliacionAbonosAplicarRequestDto request, CancellationToken ct = default)
             => await PostAsync<ConciliacionAbonosAplicarResponseDto>(Abonos, "aplicar", request, ct)
                 ?? throw new InvalidOperationException("El servidor no devolvió el resultado de la conciliación.");
+
+        public async Task<IReadOnlyList<ConciliacionVinculoPropuestaDto>> ProponerVinculosAsync(ConciliacionAutomaticaModo modo, ConciliacionVinculosPropuestasRequestDto request, CancellationToken ct = default)
+            => await PostAsync<List<ConciliacionVinculoPropuestaDto>>(RutaVinculo(modo), "propuestas", request, ct) ?? new List<ConciliacionVinculoPropuestaDto>();
+
+        public async Task<ConciliacionVinculosAplicarResponseDto> AplicarVinculosAsync(ConciliacionAutomaticaModo modo, ConciliacionVinculosAplicarRequestDto request, CancellationToken ct = default)
+            => await PostAsync<ConciliacionVinculosAplicarResponseDto>(RutaVinculo(modo), "aplicar", request, ct)
+                ?? throw new InvalidOperationException("El servidor no devolvió el resultado de la conciliación.");
+
+        private static string RutaVinculo(ConciliacionAutomaticaModo modo) => modo switch
+        {
+            ConciliacionAutomaticaModo.Complementos => Complementos,
+            ConciliacionAutomaticaModo.IngresosManuales => IngresosManuales,
+            _ => throw new ArgumentOutOfRangeException(nameof(modo), modo, "Solo Complementos o Ingresos manuales.")
+        };
 
         private async Task<T?> PostAsync<T>(string modo, string accion, object request, CancellationToken ct)
         {
