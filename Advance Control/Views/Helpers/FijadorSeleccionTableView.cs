@@ -31,6 +31,7 @@ namespace Advance_Control.Views.Helpers
     {
         private readonly TableView _tabla;
         private readonly Func<object, int> _ordenOriginal;
+        private readonly Func<object, bool>? _puedeFijarse;
         private readonly SortDescription _ordenFijados;
         private readonly List<object> _fijados = new();
         private readonly Dictionary<object, int> _posicionFijado = new();
@@ -44,8 +45,13 @@ namespace Advance_Control.Views.Helpers
         /// <summary>Renglones fijados, el más reciente primero.</summary>
         public IReadOnlyList<object> Fijados => _fijados;
 
-        public FijadorSeleccionTableView(TableView tabla, Func<object, int> ordenOriginal)
+        /// <param name="puedeFijarse">
+        /// Opcional: los renglones para los que devuelve false no se pueden seleccionar ni fijar,
+        /// siempre se muestran (el filtro no los oculta) y van al final aunque se ordene por columna.
+        /// </param>
+        public FijadorSeleccionTableView(TableView tabla, Func<object, int> ordenOriginal, Func<object, bool>? puedeFijarse = null)
         {
+            _puedeFijarse = puedeFijarse;
             _tabla = tabla ?? throw new ArgumentNullException(nameof(tabla));
             _ordenOriginal = ordenOriginal ?? throw new ArgumentNullException(nameof(ordenOriginal));
             _ordenFijados = new SortDescription(null, SortDirection.Ascending, new ComparadorFijados(this), item => item);
@@ -71,6 +77,8 @@ namespace Advance_Control.Views.Helpers
 
         private bool EstaFijado(object? item) => item is not null && _posicionFijado.ContainsKey(item);
 
+        private bool EsFijable(object? item) => item is not null && (_puedeFijarse?.Invoke(item) ?? true);
+
         private void Tabla_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_suprimirSeleccion || _reselectPendiente)
@@ -90,6 +98,24 @@ namespace Advance_Control.Views.Helpers
                 {
                     ReseleccionarFijados();
                     return;
+                }
+
+                var noFijables = agregados.Where(item => !EsFijable(item)).ToList();
+                if (noFijables.Count > 0)
+                {
+                    agregados.RemoveAll(noFijables.Contains);
+                    _suprimirSeleccion = true;
+                    try
+                    {
+                        foreach (var item in noFijables)
+                        {
+                            _tabla.SelectedItems.Remove(item);
+                        }
+                    }
+                    finally
+                    {
+                        _suprimirSeleccion = false;
+                    }
                 }
 
                 AplicarCambioDeSeleccion(agregados, quitados);
@@ -365,6 +391,13 @@ namespace Advance_Control.Views.Helpers
                     return fijadoX ? -1 : 1;
                 }
 
+                var fijableX = _fijador.EsFijable(x);
+                var fijableY = _fijador.EsFijable(y);
+                if (fijableX != fijableY)
+                {
+                    return fijableX ? -1 : 1;
+                }
+
                 if (_fijador._tabla.SortDescriptions.Count > 1 || x is null || y is null)
                 {
                     return 0;
@@ -386,7 +419,7 @@ namespace Advance_Control.Views.Helpers
             }
 
             public override bool Filter(TableViewColumn column, object? item) =>
-                _fijador.EstaFijado(item) || base.Filter(column, item);
+                _fijador.EstaFijado(item) || !_fijador.EsFijable(item) || base.Filter(column, item);
         }
     }
 }

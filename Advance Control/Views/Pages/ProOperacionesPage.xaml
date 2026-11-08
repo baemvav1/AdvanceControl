@@ -5,36 +5,287 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:converters="using:Advance_Control.Converters"
+    xmlns:models="using:Advance_Control.Models"
+    xmlns:tv="using:WinUI.TableView"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
-    <Grid Padding="24">
+    <Page.Resources>
+        <!--
+            Renglón seleccionado (fijado): mismo tinte que en Conciliación; el contorno de 1 px
+            lo pone FijadorSeleccionTableView
+        -->
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelected"
+                        Opacity="0.15"
+                        Color="{ThemeResource SystemAccentColorLight2}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPointerOver"
+                        Opacity="0.22"
+                        Color="{ThemeResource SystemAccentColorLight2}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPressed"
+                        Opacity="0.10"
+                        Color="{ThemeResource SystemAccentColorLight2}" />
+                    <StaticResource x:Key="TableViewRowForegroundSelected" ResourceKey="TextFillColorPrimaryBrush" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelected"
+                        Opacity="0.15"
+                        Color="{ThemeResource SystemAccentColorDark1}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPointerOver"
+                        Opacity="0.22"
+                        Color="{ThemeResource SystemAccentColorDark1}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPressed"
+                        Opacity="0.10"
+                        Color="{ThemeResource SystemAccentColorDark1}" />
+                    <StaticResource x:Key="TableViewRowForegroundSelected" ResourceKey="TextFillColorPrimaryBrush" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+        </ResourceDictionary>
+    </Page.Resources>
+
+    <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="100" />
+            <RowDefinition Height="1*" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-
-        <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="4">
-            <TextBlock FontSize="28" FontWeight="Bold" Text="Prototipo — Operaciones" />
-            <TextBlock
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Zona de pruebas exclusiva para desarrollo (nivel 1). Diseña y da funcionamiento libremente aquí; una vez aprobado, se promueve a un módulo formal del grupo Operaciones."
-                TextWrapping="Wrap" />
-        </StackPanel>
-
-        <Border
-            Grid.Row="1"
-            BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-            BorderThickness="2"
-            CornerRadius="8">
-            <Grid x:Name="Lienzo" Padding="16">
+        <Grid
+            x:Name="header"
+            Grid.Row="0"
+            Padding="20,0"
+            Background="Transparent">
+            <StackPanel
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="16">
+                <!--  Número de operación  -->
                 <TextBlock
-                    HorizontalAlignment="Center"
+                    x:Name="NumeroOperacionText"
+                    VerticalAlignment="Center"
+                    FontSize="18"
+                    FontWeight="SemiBold" />
+                <!--  Cliente  -->
+                <TextBlock
+                    x:Name="ClienteText"
+                    MaxWidth="320"
                     VerticalAlignment="Center"
                     FontSize="14"
-                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                    Text="Aquí puedes empezar a construir tu prototipo." />
+                    TextTrimming="CharacterEllipsis" />
+                <!--  A quién va dirigida  -->
+                <ComboBox
+                    x:Name="DirigidoCombo"
+                    MinWidth="220"
+                    VerticalAlignment="Center"
+                    DisplayMemberPath="NombreCompleto"
+                    PlaceholderText="¿A quién va dirigida?"
+                    SelectionChanged="DirigidoCombo_SelectionChanged" />
+                <!--  Estado de la cotización (abierta / cerrada)  -->
+                <TextBlock
+                    x:Name="CotizacionEstadoText"
+                    MaxWidth="360"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    TextTrimming="CharacterEllipsis" />
+                <!--  Identificador del equipo  -->
+                <TextBlock
+                    x:Name="EquipoText"
+                    VerticalAlignment="Center"
+                    FontSize="14"
+                    FontWeight="SemiBold" />
+                <!--  Nota de la operación (viene de la orden de servicio)  -->
+                <TextBlock
+                    x:Name="NotaText"
+                    MaxWidth="360"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    TextTrimming="CharacterEllipsis" />
+                <!--  Operación abierta / finalizada  -->
+                <Border
+                    x:Name="EstadoBadge"
+                    Padding="6,2"
+                    VerticalAlignment="Center"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                    <TextBlock x:Name="EstadoBadgeText" FontSize="11" />
+                </Border>
+            </StackPanel>
+        </Grid>
+        <Grid Grid.Row="1" Background="Transparent">
+            <!--  Listado de cargos: misma tabla y selección (fijado) que Conciliación  -->
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="7*" />
+                <ColumnDefinition Width="3*" />
+            </Grid.ColumnDefinitions>
+            <Border
+                Grid.Column="0"
+                Margin="5"
+                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8">
+                <tv:TableView
+                    x:Name="TablaCargos"
+                    AutoGenerateColumns="False"
+                    CanFilterColumns="True"
+                    CanSortColumns="True"
+                    IsReadOnly="True"
+                    DoubleTapped="TablaCargos_DoubleTapped"
+                    SelectionMode="Extended"
+                    SizeChanged="TablaCargos_SizeChanged">
+                    <tv:TableView.Columns>
+                        <tv:TableViewTextColumn
+                            Width="110"
+                            Binding="{Binding Tipo}"
+                            Header="Tipo" />
+                        <tv:TableViewTemplateColumn
+                            x:Name="ColumnaDetalle"
+                            Width="250"
+                            CanFilter="True"
+                            ClipboardContentBinding="{Binding Detalle}"
+                            Header="Detalle"
+                            SortMemberPath="Detalle">
+                            <tv:TableViewTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="{Binding Detalle}"
+                                        TextTrimming="CharacterEllipsis"
+                                        ToolTipService.ToolTip="{Binding Detalle}" />
+                                </DataTemplate>
+                            </tv:TableViewTemplateColumn.CellTemplate>
+                        </tv:TableViewTemplateColumn>
+                        <tv:TableViewTextColumn
+                            Width="80"
+                            Binding="{Binding CantidadTexto}"
+                            Header="Cant."
+                            SortMemberPath="Cantidad" />
+                        <tv:TableViewTextColumn
+                            Width="120"
+                            Binding="{Binding UnitarioTexto}"
+                            Header="Unitario"
+                            SortMemberPath="Unitario" />
+                        <tv:TableViewTextColumn
+                            Width="120"
+                            Binding="{Binding MontoTexto}"
+                            Header="Monto"
+                            SortMemberPath="Monto" />
+                        <tv:TableViewTextColumn
+                            Width="180"
+                            Binding="{Binding Nota}"
+                            Header="Nota" />
+                        <tv:TableViewTextColumn
+                            Width="150"
+                            Binding="{Binding Proveedor}"
+                            Header="Proveedor" />
+                    </tv:TableView.Columns>
+                </tv:TableView>
+            </Border>
+            <Grid x:Name="Info" Grid.Column="1">
+                <!--  Fotos del cargo seleccionado (el más reciente si hay varios)  -->
+                <Border
+                    Margin="5"
+                    Padding="10"
+                    Background="{ThemeResource LayerFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="8">
+                    <Grid RowSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                            x:Name="InfoTitulo"
+                            FontWeight="SemiBold"
+                            Text="Fotos"
+                            TextTrimming="CharacterEllipsis" />
+                        <ScrollViewer Grid.Row="1">
+                            <ItemsRepeater x:Name="FotosRepeater">
+                                <ItemsRepeater.Layout>
+                                    <UniformGridLayout
+                                        MinColumnSpacing="6"
+                                        MinItemHeight="120"
+                                        MinItemWidth="120"
+                                        MinRowSpacing="6" />
+                                </ItemsRepeater.Layout>
+                                <ItemsRepeater.ItemTemplate>
+                                    <DataTemplate x:DataType="models:CargoImageDto">
+                                        <Button
+                                            Width="120"
+                                            Height="120"
+                                            Padding="0"
+                                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                            Click="FotoButton_Click"
+                                            Tag="{x:Bind}"
+                                            ToolTipService.ToolTip="Ver imagen">
+                                            <Image Source="{x:Bind converters:FilePathToImageConverter.ToImage(Url), Mode=OneWay}" Stretch="UniformToFill" />
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsRepeater.ItemTemplate>
+                            </ItemsRepeater>
+                        </ScrollViewer>
+                        <TextBlock
+                            x:Name="InfoMensaje"
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Selecciona un cargo para ver sus fotos."
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                        <ProgressRing
+                            x:Name="InfoCargando"
+                            Grid.Row="1"
+                            IsActive="False" />
+                    </Grid>
+                </Border>
             </Grid>
-        </Border>
+        </Grid>
+        <Grid
+            Grid.Row="2"
+            Padding="10,6"
+            Background="Transparent"
+            RowSpacing="6">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+            <!--  Acciones de la operación  -->
+            <StackPanel
+                Grid.Row="0"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button x:Name="EliminarButton" Click="EliminarButton_Click" ToolTipService.ToolTip="Eliminar los cargos seleccionados">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                        <TextBlock Text="Eliminar" />
+                    </StackPanel>
+                </Button>
+                <!--  Reabre la operación si está finalizada; si no, la cotización cerrada  -->
+                <Button x:Name="ReabrirButton" Click="ReabrirButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="14" Glyph="&#xE785;" />
+                        <TextBlock x:Name="ReabrirText" Text="Reabrir cotización" />
+                    </StackPanel>
+                </Button>
+                <Button x:Name="FinalizarButton" Click="FinalizarButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon x:Name="FinalizarIcon" FontSize="14" Glyph="&#xE73E;" />
+                        <TextBlock x:Name="FinalizarText" Text="Finalizar" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+            <!--  Línea de tiempo: pasos del check; debajo de cada paso cumplido, quién lo hizo  -->
+            <Grid x:Name="LineaTiempo" Grid.Row="1" />
+        </Grid>
     </Grid>
 </Page>

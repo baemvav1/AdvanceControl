@@ -39,6 +39,15 @@ namespace Advance_Control.Services.CheckOperacion
             }
         }
 
+        public async Task<System.Collections.Generic.List<CheckHistorialDto>> GetHistorialAsync(int idOperacion)
+        {
+            var url = _endpoints.GetEndpoint("api", "CheckOperacion", idOperacion.ToString(), "historial");
+            using var response = await _http.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<System.Collections.Generic.List<CheckHistorialDto>>(_jsonOptions)
+                ?? new System.Collections.Generic.List<CheckHistorialDto>();
+        }
+
         public async Task<bool> UpdateCampoAsync(int idOperacion, string campo, bool valor = true)
         {
             try
