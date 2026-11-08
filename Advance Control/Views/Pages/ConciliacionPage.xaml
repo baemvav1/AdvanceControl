@@ -64,17 +64,6 @@
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Orientation="Horizontal">
                                 <AppBarButton
-                                    x:Name="BtnCheques"
-                                    Click="BtnCheques_Click"
-                                    IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
-                                    ToolTipService.ToolTip="Solo cheques: 1 a 1, un cheque con varias facturas y varios cheques con una factura."
-                                    Width="84"
-                                    Label="Cheques">
-                                    <AppBarButton.Icon>
-                                        <FontIcon Glyph="&#xE8C7;" />
-                                    </AppBarButton.Icon>
-                                </AppBarButton>
-                                <AppBarButton
                                     x:Name="BtnConciliacion"
                                     Click="BtnConciliacion_Click"
                                     IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
@@ -99,7 +88,7 @@
                                 <AppBarButton
                                     x:Name="BtnAbonos"
                                     Click="BtnAbonos_Click"
-                                    IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.PuedeConciliarAbonos, Mode=OneWay}"
                                     ToolTipService.ToolTip="Varios movimientos que juntos liquidan una factura."
                                     Width="84"
                                     Label="Abonos">
@@ -162,10 +151,20 @@
                                 <AppBarToggleButton
                                     Width="84"
                                     IsChecked="{x:Bind ViewModel.UsarRfcComoRegla, Mode=TwoWay}"
+                                    IsEnabled="{x:Bind ViewModel.RfcHabilitado, Mode=OneWay}"
                                     Label="RFC"
                                     ToolTipService.ToolTip="Usar el RFC como regla de coincidencia">
                                     <AppBarToggleButton.Icon>
                                         <FontIcon Glyph="&#xE71C;" />
+                                    </AppBarToggleButton.Icon>
+                                </AppBarToggleButton>
+                                <AppBarToggleButton
+                                    Width="84"
+                                    IsChecked="{x:Bind ViewModel.SoloCheques, Mode=TwoWay}"
+                                    Label="Cheques"
+                                    ToolTipService.ToolTip="Solo cheques: 1 a 1 y Varias a 1 trabajan únicamente con cheques (sin RFC). Apagado, los cheques se ignoran. Abonos no está disponible con cheques.">
+                                    <AppBarToggleButton.Icon>
+                                        <FontIcon Glyph="&#xE8C7;" />
                                     </AppBarToggleButton.Icon>
                                 </AppBarToggleButton>
                             </StackPanel>

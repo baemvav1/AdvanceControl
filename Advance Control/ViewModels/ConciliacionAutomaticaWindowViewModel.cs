@@ -44,6 +44,8 @@ namespace Advance_Control.ViewModels
         private bool _aplicarReglaPueMismoMes = true;
         private bool _aplicarReglaPpdSiguienteMes = false;
         private bool _usarRfcComoRegla = false;
+        // Botón Cheques: 1 a 1 y Varias a 1 trabajan solo con cheques (sin RFC); apagado, los ignoran.
+        private bool _soloCheques;
 
         public ConciliacionAutomaticaWindowViewModel(
             IEstadoCuentaXmlService estadoCuentaXmlService,
@@ -80,9 +82,11 @@ namespace Advance_Control.ViewModels
             ConciliacionAutomaticaModo modo,
             bool aplicarDtc,
             bool usarRfcComoRegla,
+            bool soloCheques = false,
             CancellationToken ct = default)
         {
             _aplicarDtc = aplicarDtc;
+            _soloCheques = soloCheques;
             UltimosAvisosCalculo = Array.Empty<string>();
             _aplicarReglaPueMismoMes = aplicarDtc;
             _aplicarReglaPpdSiguienteMes = false;
@@ -252,7 +256,8 @@ namespace Advance_Control.ViewModels
             var respuesta = await _conciliacionApiService.ProponerUnoAUnoAsync(new ConciliacionUnoAUnoPropuestasRequestDto
             {
                 Dtc = _aplicarDtc,
-                Rfc = _usarRfcComoRegla,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
                 ParesVetados = _paresVetadosUnoAUno
                     .Select(par => new ConciliacionParDto { IdFactura = par.IdFactura, IdMovimiento = par.IdMovimiento })
                     .ToList()
@@ -295,7 +300,8 @@ namespace Advance_Control.ViewModels
             var respuesta = await _conciliacionApiService.AplicarUnoAUnoAsync(new ConciliacionUnoAUnoAplicarRequestDto
             {
                 Dtc = _aplicarDtc,
-                Rfc = _usarRfcComoRegla,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
                 Pares = aprobadas
                     .Select(propuesta => new ConciliacionParDto
                     {
@@ -340,8 +346,9 @@ namespace Advance_Control.ViewModels
             ConciliacionAutomaticaModo modo, ConciliacionUnoAUnoValidarRequestDto request, CancellationToken ct)
         {
             request.Dtc = _aplicarDtc;
-            // El paso de Cheques ignora el RFC (los cheques nunca lo traen).
-            request.Rfc = modo != ConciliacionAutomaticaModo.Cheques && _usarRfcComoRegla;
+            // Con el botón Cheques el RFC no aplica (los cheques nunca lo traen).
+            request.Rfc = _usarRfcComoRegla && !_soloCheques;
+            request.Cheques = _soloCheques;
 
             var respuesta = await _conciliacionApiService.ValidarUnoAUnoAsync(request, ct);
             if (!respuesta.Valido || respuesta.IdFactura is not int idFactura)
@@ -368,7 +375,8 @@ namespace Advance_Control.ViewModels
             var respuesta = await _conciliacionApiService.ProponerVariasAUnoAsync(new ConciliacionVariasAUnoPropuestasRequestDto
             {
                 Dtc = _aplicarDtc,
-                Rfc = _usarRfcComoRegla,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
                 CombinacionesVetadas = _combinacionesVetadasVariasAUno.ToList()
             }, ct);
 
@@ -411,7 +419,8 @@ namespace Advance_Control.ViewModels
             var respuesta = await _conciliacionApiService.AplicarVariasAUnoAsync(new ConciliacionVariasAUnoAplicarRequestDto
             {
                 Dtc = _aplicarDtc,
-                Rfc = _usarRfcComoRegla,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
                 Combinaciones = aprobadas
                     .Select(propuesta => new ConciliacionCombinacionDto
                     {
@@ -457,7 +466,8 @@ namespace Advance_Control.ViewModels
             ConciliacionVariasAUnoValidarRequestDto request, CancellationToken ct)
         {
             request.Dtc = _aplicarDtc;
-            request.Rfc = _usarRfcComoRegla;
+            request.Rfc = _usarRfcComoRegla && !_soloCheques;
+            request.Cheques = _soloCheques;
 
             var respuesta = await _conciliacionApiService.ValidarVariasAUnoAsync(request, ct);
             if (!respuesta.Valido)

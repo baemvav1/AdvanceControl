@@ -15,6 +15,7 @@ namespace Advance_Control.Models
     {
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }
+        public bool Cheques { get; set; }
         public List<ConciliacionCombinacionDto> CombinacionesVetadas { get; set; } = new();
     }
 
@@ -58,6 +59,7 @@ namespace Advance_Control.Models
         public List<string> Folios { get; set; } = new();
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }
+        public bool Cheques { get; set; }
     }
 
     public class ConciliacionVariasAUnoValidarResponseDto
@@ -71,6 +73,7 @@ namespace Advance_Control.Models
     {
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }
+        public bool Cheques { get; set; }
         public List<ConciliacionCombinacionDto> Combinaciones { get; set; } = new();
     }
 

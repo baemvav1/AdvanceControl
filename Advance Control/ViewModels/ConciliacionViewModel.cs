@@ -32,6 +32,7 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private bool _aplicarDtc = true;
         private bool _usarRfcComoRegla;
+        private bool _soloCheques;
         private int _operacionesConciliacionPendientes;
 
         public ConciliacionViewModel(
@@ -128,6 +129,35 @@ namespace Advance_Control.ViewModels
             set => SetProperty(ref _usarRfcComoRegla, value);
         }
 
+        /// <summary>
+        /// Cheques: 1 a 1 y Varias a 1 trabajan solo con cheques (DEPOSITO_SBC); apagado, los
+        /// ignoran. Los cheques no traen RFC, así que al encenderlo se apaga y bloquea RFC, y
+        /// Abonos se deshabilita (no se combinan cheques sin RFC para una factura).
+        /// </summary>
+        public bool SoloCheques
+        {
+            get => _soloCheques;
+            set
+            {
+                if (SetProperty(ref _soloCheques, value))
+                {
+                    if (value)
+                    {
+                        UsarRfcComoRegla = false;
+                    }
+
+                    OnPropertyChanged(nameof(RfcHabilitado));
+                    OnPropertyChanged(nameof(PuedeConciliarAbonos));
+                }
+            }
+        }
+
+        /// <summary>El botón RFC no aplica con Cheques encendido.</summary>
+        public bool RfcHabilitado => !_soloCheques;
+
+        /// <summary>Abonos se deshabilita con Cheques encendido.</summary>
+        public bool PuedeConciliarAbonos => PuedeOperar && !_soloCheques;
+
         // ---------------- Bitácora (Revertir) ----------------
 
         /// <summary>Operaciones registradas en bitacora_conciliacion que se pueden deshacer.</summary>
@@ -199,6 +229,7 @@ namespace Advance_Control.ViewModels
         private void NotificarEstadoAcciones()
         {
             OnPropertyChanged(nameof(PuedeOperar));
+            OnPropertyChanged(nameof(PuedeConciliarAbonos));
             OnPropertyChanged(nameof(CanDeshacer));
             OnPropertyChanged(nameof(DeshacerTooltip));
             OnPropertyChanged(nameof(CanAbonar));

@@ -165,9 +165,6 @@ namespace Advance_Control.Views.Pages
 
         // ---------------- Conciliación (pasos automáticos) ----------------
 
-        private async void BtnCheques_Click(object sender, RoutedEventArgs e) =>
-            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Cheques);
-
         private async void BtnConciliacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Automatica);
 
@@ -210,7 +207,8 @@ namespace Advance_Control.Views.Pages
                 var ventana = new ConfirmacionConciliacionWindow(
                     modo,
                     ViewModel.AplicarDtc,
-                    ViewModel.UsarRfcComoRegla);
+                    ViewModel.UsarRfcComoRegla,
+                    ViewModel.SoloCheques);
                 ventana.Activate();
 
                 var aprobadas = await ventana.ResultTask;

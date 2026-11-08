@@ -21,11 +21,12 @@ namespace Advance_Control.Views.Windows
     /// </summary>
     public sealed partial class ConfirmacionConciliacionWindow : Window
     {
-        private readonly record struct PasoConciliacion(ConciliacionAutomaticaModo Modo, bool Dtc, bool Rfc);
+        private readonly record struct PasoConciliacion(ConciliacionAutomaticaModo Modo, bool Dtc, bool Rfc, bool Cheques = false);
 
         private static readonly PasoConciliacion[] PasosSecuenciaCompleta =
         {
-            new(ConciliacionAutomaticaModo.Cheques, Dtc: false, Rfc: false),
+            new(ConciliacionAutomaticaModo.Automatica, Dtc: false, Rfc: false, Cheques: true),
+            new(ConciliacionAutomaticaModo.Combinacional, Dtc: false, Rfc: false, Cheques: true),
             new(ConciliacionAutomaticaModo.Automatica, Dtc: true, Rfc: true),
             new(ConciliacionAutomaticaModo.Combinacional, Dtc: true, Rfc: true),
             new(ConciliacionAutomaticaModo.Abonos, Dtc: true, Rfc: true),
@@ -54,10 +55,17 @@ namespace Advance_Control.Views.Windows
         public ConfirmacionConciliacionWindow(
             ConciliacionAutomaticaModo modo,
             bool aplicarDtc,
-            bool usarRfcComoRegla)
-            : this(new[] { new PasoConciliacion(modo, aplicarDtc, usarRfcComoRegla || modo == ConciliacionAutomaticaModo.Abonos) })
+            bool usarRfcComoRegla,
+            bool soloCheques = false)
+            : this(new[] { CrearPaso(modo, aplicarDtc, usarRfcComoRegla, soloCheques) })
         {
         }
+
+        // Abonos siempre lleva RFC y nunca cheques; con Cheques (1 a 1 / Varias a 1) el RFC no aplica.
+        private static PasoConciliacion CrearPaso(ConciliacionAutomaticaModo modo, bool dtc, bool rfc, bool cheques)
+            => modo == ConciliacionAutomaticaModo.Abonos
+                ? new PasoConciliacion(modo, dtc, Rfc: true)
+                : new PasoConciliacion(modo, dtc, rfc && !cheques, cheques);
 
         /// <summary>Ejecuta la receta completa (todos los pasos en secuencia).</summary>
         public ConfirmacionConciliacionWindow()
@@ -126,7 +134,7 @@ namespace Advance_Control.Views.Windows
                 try
                 {
                     propuestas = await _viewModel.CargarPropuestasAsync(
-                        paso.Modo, paso.Dtc, paso.Rfc, _ctsLoading.Token);
+                        paso.Modo, paso.Dtc, paso.Rfc, paso.Cheques, _ctsLoading.Token);
                 }
                 catch (OperationCanceledException)
                 {
@@ -377,7 +385,9 @@ namespace Advance_Control.Views.Windows
                 ConciliacionAutomaticaModo.Cheques => "Cheques (1 a 1, 1 a varios, varios a 1)",
                 _ => paso.Modo.ToString()
             };
-            var filtros = $"DTC: {(paso.Dtc ? "Sí" : "No")} · RFC: {(paso.Rfc ? "Sí" : "No")}";
+            var filtros = paso.Cheques
+                ? $"Solo cheques · DTC: {(paso.Dtc ? "Sí" : "No")}"
+                : $"DTC: {(paso.Dtc ? "Sí" : "No")} · RFC: {(paso.Rfc ? "Sí" : "No")}";
             return _pasos.Count == 1
                 ? $"{nombreModo} · {filtros}"
                 : $"Paso {_pasoActual + 1} de {_pasos.Count} · {nombreModo} · {filtros}";

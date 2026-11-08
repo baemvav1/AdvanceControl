@@ -15,6 +15,7 @@ namespace Advance_Control.Models
     {
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }
+        public bool Cheques { get; set; }
         public List<ConciliacionParDto> ParesVetados { get; set; } = new();
     }
 
@@ -38,6 +39,7 @@ namespace Advance_Control.Models
         public string? Folio { get; set; }
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }
+        public bool Cheques { get; set; }
     }
 
     public class ConciliacionUnoAUnoValidarResponseDto
@@ -52,6 +54,7 @@ namespace Advance_Control.Models
     {
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }
+        public bool Cheques { get; set; }
         public List<ConciliacionParDto> Pares { get; set; } = new();
     }
 
