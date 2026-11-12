@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Buscador de equipos. Tamaño FIJO de modal: 820 x 520 de contenido.
+    Mostrado con DialogService (ContentDialog), el diálogo queda en ~916 x 680
+    (+96 de ancho y +160 de alto de marco, título y botones), que cabe en 1366x768.
+-->
+<UserControl
+    x:Class="Advance_Control.Views.Dialogs.BuscadorEquiposUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Advance_Control.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    Width="820"
+    Height="520"
+    mc:Ignorable="d">
+
+    <UserControl.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
+
+        <Style x:Key="EtiquetaFicha" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Style x:Key="ValorFicha" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="IsTextSelectionEnabled" Value="True" />
+        </Style>
+        <Style x:Key="TituloSeccion" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Margin" Value="0,12,0,4" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid RowSpacing="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Búsqueda  -->
+        <Grid Grid.Row="0" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBox
+                x:Name="BusquedaTextBox"
+                KeyDown="BusquedaTextBox_KeyDown"
+                PlaceholderText="Buscar por identificador, marca, cliente, ubicación, área o técnico…"
+                Text="{x:Bind ViewModel.Texto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock
+                Grid.Column="1"
+                VerticalAlignment="Center"
+                FontSize="12"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                Text="{x:Bind ViewModel.ConteoTexto, Mode=OneWay}" />
+        </Grid>
+
+        <!--  Filtros  -->
+        <Grid Grid.Row="1" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="160" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <ComboBox
+                Grid.Column="0"
+                HorizontalAlignment="Stretch"
+                ItemsSource="{x:Bind ViewModel.OpcionesCliente}"
+                SelectedItem="{x:Bind ViewModel.ClienteFiltro, Mode=TwoWay}" />
+            <ComboBox
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                ItemsSource="{x:Bind ViewModel.OpcionesArea}"
+                SelectedItem="{x:Bind ViewModel.AreaFiltro, Mode=TwoWay}" />
+            <ComboBox
+                Grid.Column="2"
+                HorizontalAlignment="Stretch"
+                ItemsSource="{x:Bind ViewModel.OpcionesMarca}"
+                SelectedItem="{x:Bind ViewModel.MarcaFiltro, Mode=TwoWay}" />
+            <Button
+                Grid.Column="3"
+                Click="LimpiarFiltros_Click"
+                IsEnabled="{x:Bind ViewModel.HayFiltros, Mode=OneWay}"
+                ToolTipService.ToolTip="Quitar filtros">
+                <SymbolIcon Symbol="Clear" />
+            </Button>
+        </Grid>
+
+        <!--  Resultados + ficha  -->
+        <Grid Grid.Row="2" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="290" />
+            </Grid.ColumnDefinitions>
+
+            <!--  Lista  -->
+            <Border
+                Grid.Column="0"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Grid>
+                    <ListView
+                        x:Name="ResultadosListView"
+                        DoubleTapped="ResultadosListView_DoubleTapped"
+                        IsItemClickEnabled="False"
+                        ItemsSource="{x:Bind ViewModel.Resultados}"
+                        KeyDown="ResultadosListView_KeyDown"
+                        SelectedItem="{x:Bind ViewModel.Seleccionado, Mode=TwoWay}"
+                        SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:EquipoBusquedaDto">
+                                <Grid Padding="0,8" ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="64" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Height="28"
+                                        VerticalAlignment="Top"
+                                        Background="{ThemeResource AccentFillColorDefaultBrush}"
+                                        CornerRadius="4">
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            FontFamily="Consolas"
+                                            FontSize="13"
+                                            FontWeight="SemiBold"
+                                            Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                            Text="{x:Bind Identificador}" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="1">
+                                        <TextBlock TextTrimming="CharacterEllipsis">
+                                            <Run FontWeight="SemiBold" Text="{x:Bind MarcaTexto}" />
+                                            <Run Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind CapacidadTexto}" />
+                                        </TextBlock>
+                                        <TextBlock
+                                            FontSize="12"
+                                            Text="{x:Bind ClientesTexto}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <StackPanel Orientation="Horizontal" Spacing="4">
+                                            <FontIcon
+                                                FontSize="11"
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                Glyph="&#xE707;" />
+                                            <TextBlock
+                                                FontSize="11"
+                                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                Text="{x:Bind UbicacionAreaTexto}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <ProgressRing
+                        Width="32"
+                        Height="32"
+                        IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
+
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Spacing="6"
+                        Visibility="{x:Bind ViewModel.SinResultados, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                        <FontIcon
+                            FontSize="28"
+                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                            Glyph="&#xE721;" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Sin coincidencias" />
+                    </StackPanel>
+
+                    <InfoBar
+                        Margin="12"
+                        VerticalAlignment="Top"
+                        IsClosable="False"
+                        IsOpen="{x:Bind ViewModel.HayError, Mode=OneWay}"
+                        Message="{x:Bind ViewModel.Error, Mode=OneWay}"
+                        Severity="Error"
+                        Title="No se pudieron cargar los equipos" />
+                </Grid>
+            </Border>
+
+            <!--  Ficha del equipo seleccionado  -->
+            <Border
+                Grid.Column="1"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Grid>
+                    <TextBlock
+                        Margin="24"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Selecciona un equipo para ver su ficha"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap"
+                        Visibility="{x:Bind ViewModel.SinSeleccion, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+                    <ScrollViewer Padding="16,14,16,14" Visibility="{x:Bind ViewModel.HaySeleccion, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                        <StackPanel>
+                            <TextBlock
+                                FontFamily="Consolas"
+                                FontSize="22"
+                                FontWeight="SemiBold"
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ViewModel.Seleccionado.Identificador, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                Text="{x:Bind ViewModel.Seleccionado.MarcaTexto, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind ViewModel.Seleccionado.DescripcionTexto, Mode=OneWay}"
+                                TextWrapping="Wrap" />
+
+                            <TextBlock Style="{StaticResource TituloSeccion}" Text="Cliente" />
+                            <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.ClientesTexto, Mode=OneWay}" />
+
+                            <TextBlock Style="{StaticResource TituloSeccion}" Text="Ubicación" />
+                            <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.UbicacionTexto, Mode=OneWay}" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind ViewModel.Seleccionado.DireccionTexto, Mode=OneWay}"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind ViewModel.Seleccionado.CiudadEstadoTexto, Mode=OneWay}"
+                                TextWrapping="Wrap" />
+
+                            <TextBlock Style="{StaticResource TituloSeccion}" Text="Área" />
+                            <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.AreaTexto, Mode=OneWay}" />
+
+                            <TextBlock Style="{StaticResource TituloSeccion}" Text="Técnicos del área" />
+                            <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.TecnicosTexto, Mode=OneWay}" />
+
+                            <TextBlock Style="{StaticResource TituloSeccion}" Text="Datos técnicos" />
+                            <Grid ColumnSpacing="12" RowSpacing="6">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+
+                                <StackPanel Grid.Row="0" Grid.Column="0">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Paradas" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.ParadasTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="0" Grid.Column="1">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Año" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.AnioTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="0">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Capacidad" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.KilogramosTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="1" Grid.Column="1">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Personas" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.PersonasTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="0">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Velocidad" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.VelocidadTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="2" Grid.Column="1">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Controlador" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.ControladorTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="3" Grid.Column="0">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Máquina" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.TipoMaquinaTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="3" Grid.Column="1">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Puerta" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.TipoPuertaTexto, Mode=OneWay}" />
+                                </StackPanel>
+                                <StackPanel Grid.Row="4" Grid.Column="0">
+                                    <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Operador" />
+                                    <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Seleccionado.OperadorTexto, Mode=OneWay}" />
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>
