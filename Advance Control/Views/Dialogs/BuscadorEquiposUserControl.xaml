@@ -51,7 +51,7 @@
             <TextBox
                 x:Name="BusquedaTextBox"
                 KeyDown="BusquedaTextBox_KeyDown"
-                PlaceholderText="Buscar por identificador, marca, cliente, ubicación, área o técnico…"
+                PlaceholderText="Buscar por identificador…"
                 Text="{x:Bind ViewModel.Texto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             <TextBlock
                 Grid.Column="1"
@@ -72,13 +72,13 @@
             <ComboBox
                 Grid.Column="0"
                 HorizontalAlignment="Stretch"
-                ItemsSource="{x:Bind ViewModel.OpcionesCliente}"
-                SelectedItem="{x:Bind ViewModel.ClienteFiltro, Mode=TwoWay}" />
+                ItemsSource="{x:Bind ViewModel.OpcionesArea}"
+                SelectedItem="{x:Bind ViewModel.AreaFiltro, Mode=TwoWay}" />
             <ComboBox
                 Grid.Column="1"
                 HorizontalAlignment="Stretch"
-                ItemsSource="{x:Bind ViewModel.OpcionesArea}"
-                SelectedItem="{x:Bind ViewModel.AreaFiltro, Mode=TwoWay}" />
+                ItemsSource="{x:Bind ViewModel.OpcionesUbicacion}"
+                SelectedItem="{x:Bind ViewModel.UbicacionFiltro, Mode=TwoWay}" />
             <ComboBox
                 Grid.Column="2"
                 HorizontalAlignment="Stretch"

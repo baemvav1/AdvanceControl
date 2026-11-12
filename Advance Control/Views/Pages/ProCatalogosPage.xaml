@@ -19,7 +19,7 @@
             <TextBlock FontSize="28" FontWeight="Bold" Text="Prototipo — Catálogos" />
             <TextBlock
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Buscador de equipos, a tamaño real de modal (contenido 820 × 520; diálogo ≈ 868 × 688). Funciona igual que funcionará el modal: escribe, filtra, ↓ para ir a la lista, Enter o doble clic para elegir."
+                Text="Buscador de equipos, a tamaño real de modal (contenido 820 × 520; diálogo ≈ 868 × 688). Funciona igual que funcionará el modal: escribe el identificador, filtra por área, ubicación o marca, ↓ para ir a la lista, Enter o doble clic para elegir."
                 TextWrapping="Wrap" />
         </StackPanel>
 

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 
 namespace Advance_Control.Models
 {
@@ -74,30 +73,8 @@ namespace Advance_Control.Models
         public string TipoPuertaTexto => Texto(TipoPuerta);
         public string OperadorTexto => Texto(Operador);
 
-        // ── Búsqueda ───────────────────────────────────────────────────────
-
-        private string? _textoBusqueda;
-
-        /// <summary>Todo lo buscable en minúsculas y sin acentos.</summary>
-        public string TextoBusqueda => _textoBusqueda ??= Normalizar(string.Join(" ", new[]
-        {
-            Identificador, Marca, Descripcion, Controlador, TipoMaquina, TipoPuerta, Velocidad, Operador,
-            Ubicacion, Direccion, Ciudad, Estado, Area, AnioFabricacion?.ToString()
-        }.Concat(Clientes).Concat(Tecnicos).Where(s => !string.IsNullOrWhiteSpace(s))));
-
         private static readonly CultureInfo CulturaMx = new("es-MX");
 
         private static string Texto(string? valor) => string.IsNullOrWhiteSpace(valor) ? "—" : valor!;
-
-        public static string Normalizar(string? texto)
-        {
-            if (string.IsNullOrWhiteSpace(texto)) return string.Empty;
-            var descompuesto = texto.ToLowerInvariant().Normalize(NormalizationForm.FormD);
-            var sb = new StringBuilder(descompuesto.Length);
-            foreach (var c in descompuesto)
-                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
-                    sb.Append(c);
-            return sb.ToString().Normalize(NormalizationForm.FormC);
-        }
     }
 }
