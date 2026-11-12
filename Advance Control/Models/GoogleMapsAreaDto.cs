@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Advance_Control.Models
 {
     /// <summary>
@@ -6,8 +8,11 @@ namespace Advance_Control.Models
     public class GoogleMapsAreaDto
     {
         /// <summary>
-        /// Identificador del área
+        /// Identificador del área. GET api/Areas/googlemaps devuelve las columnas de
+        /// fn_areas_gestionar tal cual, así que llega como "id" (no "idArea"); sin este
+        /// mapeo quedaba en 0 y el filtro por área de Ubicaciones siempre salía vacío.
         /// </summary>
+        [JsonPropertyName("id")]
         public int IdArea { get; set; }
 
         /// <summary>
