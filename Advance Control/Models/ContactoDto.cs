@@ -144,6 +144,17 @@ namespace Advance_Control.Models
             string.Join(" ", new[] { Tratamiento, Nombre, Apellido }
                 .Where(s => !string.IsNullOrWhiteSpace(s)));
 
+        /// <summary>Tratamiento + primer palabra del nombre (ej. "Ing. Norberto").</summary>
+        [JsonIgnore]
+        public string NombreCorto =>
+            string.Join(" ", new[] { Tratamiento?.Trim(), Nombre?.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() }
+                .Where(s => !string.IsNullOrWhiteSpace(s)));
+
+        /// <summary>Cargo · correo · teléfono, con lo que haya.</summary>
+        [JsonIgnore]
+        public string DetalleCorto =>
+            string.Join(" · ", new[] { Cargo, Correo, Telefono }.Where(s => !string.IsNullOrWhiteSpace(s)));
+
         /// <summary>
         /// Áreas asignadas al contacto (lazy-load)
         /// </summary>

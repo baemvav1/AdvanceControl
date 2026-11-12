@@ -60,6 +60,58 @@ namespace Advance_Control.Views.Dialogs
         }
 
         /// <summary>
+        /// Formulario modal con botones Guardar / Cancelar. <paramref name="guardar"/> devuelve true si
+        /// se guardó (entonces se cierra); si devuelve false el formulario sigue abierto (p. ej. para
+        /// que muestre su error). Resultado: true si se guardó.
+        /// </summary>
+        public static System.Threading.Tasks.Task<bool> FormularioAsync(XamlRoot xamlRoot, string titulo, UIElement contenido,
+            Func<System.Threading.Tasks.Task<bool>> guardar, string textoGuardar = "Guardar", string textoCancelar = "Cancelar")
+        {
+            var tcs = new System.Threading.Tasks.TaskCompletionSource<bool>();
+            var guardarButton = new Button
+            {
+                Content = textoGuardar,
+                MinWidth = 120,
+                Style = (Style)Application.Current.Resources["AccentButtonStyle"]
+            };
+            var cancelarButton = new Button { Content = textoCancelar, MinWidth = 120 };
+            var botones = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Spacing = 8,
+                Children = { guardarButton, cancelarButton }
+            };
+            var cuerpo = new StackPanel { Spacing = 20, Children = { contenido, botones } };
+
+            Action? cerrar = null;
+            void Terminar(bool guardado)
+            {
+                if (tcs.Task.IsCompleted) return;
+                cerrar?.Invoke();
+                tcs.TrySetResult(guardado);
+            }
+
+            guardarButton.Click += async (_, _) =>
+            {
+                guardarButton.IsEnabled = false;
+                try
+                {
+                    if (await guardar())
+                        Terminar(true);
+                }
+                finally
+                {
+                    guardarButton.IsEnabled = true;
+                }
+            };
+            cancelarButton.Click += (_, _) => Terminar(false);
+
+            cerrar = Abrir(xamlRoot, Marco(titulo, cuerpo, xamlRoot.Size.Height - 48), alEscape: () => Terminar(false));
+            return tcs.Task;
+        }
+
+        /// <summary>
         /// Marco con la apariencia de ContentDialog (fondo, borde, esquinas, sombra, título y padding 24)
         /// para contenidos que no traen el suyo.
         /// </summary>

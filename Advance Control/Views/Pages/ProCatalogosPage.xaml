@@ -6,11 +6,21 @@
     xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
     <Page.Resources>
         <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
+        <Style x:Key="EtiquetaFicha" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
+        </Style>
+        <Style x:Key="ValorFicha" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="13" />
+            <Setter Property="TextWrapping" Value="Wrap" />
+            <Setter Property="IsTextSelectionEnabled" Value="True" />
+        </Style>
     </Page.Resources>
 
     <Grid Background="Red">
@@ -47,6 +57,7 @@
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="8"
+                Tapped="TarjetaEquipo_Tapped"
                 Visibility="{x:Bind ViewModel.HayEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
                 <Grid>
                     <StackPanel Margin="0,0,40,0" Spacing="4">
@@ -64,12 +75,10 @@
                             <Run FontWeight="SemiBold" Text="{x:Bind ViewModel.Equipo.MarcaTexto, Mode=OneWay}" />
                             <Run Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.Equipo.CapacidadTexto, Mode=OneWay}" />
                         </TextBlock>
-                        <TextBlock
+                        <StackPanel
                             Margin="0,6,0,0"
-                            FontSize="13"
-                            Text="{x:Bind ViewModel.Equipo.ClientesTexto, Mode=OneWay}"
-                            TextWrapping="Wrap" />
-                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            Orientation="Horizontal"
+                            Spacing="4">
                             <FontIcon
                                 FontSize="12"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -94,6 +103,83 @@
         </Grid>
         <Grid Grid.Row="0" Grid.Column="1" Background="Green" x:Name="Clientes">
 
+            <!--  Sin equipo: nada que mostrar  -->
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Foreground="White"
+                Text="Elige un equipo"
+                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+            <!--  Tarjeta: clientes vinculados al equipo, + para vincular y basura para desvincular el seleccionado  -->
+            <Border
+                Margin="12"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{x:Bind ViewModel.HayEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <Grid RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="CLIENTES" />
+                        <StackPanel
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="4">
+                            <Button
+                                Click="AgregarCliente_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                ToolTipService.ToolTip="Vincular cliente">
+                                <FontIcon FontSize="14" Glyph="&#xE710;" />
+                            </Button>
+                            <Button
+                                Click="DesvincularCliente_Click"
+                                IsEnabled="{x:Bind ViewModel.HayClienteSeleccionado, Mode=OneWay}"
+                                ToolTipService.ToolTip="Desvincular cliente seleccionado">
+                                <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <ListView
+                            ItemsSource="{x:Bind ViewModel.Clientes}"
+                            SelectedItem="{x:Bind ViewModel.ClienteSeleccionado, Mode=TwoWay}"
+                            SelectionMode="Single">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:RelacionClienteDto">
+                                    <TextBlock
+                                        Padding="0,6"
+                                        Text="{x:Bind RazonSocial}"
+                                        TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <ProgressRing
+                            Width="24"
+                            Height="24"
+                            IsActive="{x:Bind ViewModel.CargandoClientes, Mode=OneWay}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Sin clientes vinculados. Usa + para vincular uno."
+                            TextAlignment="Center"
+                            TextWrapping="Wrap"
+                            Visibility="{x:Bind ViewModel.SinClientes, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </Grid>
+            </Border>
         </Grid>
         <Grid Grid.Column="0" Grid.Row="1" Background="Blue" x:Name="Areas">
             
@@ -102,7 +188,180 @@
 
         </Grid>
         <Grid Grid.Column="2" Grid.RowSpan="2" Background="DarkGray" x:Name="Visor">
-            
+
+            <!--  Vacío  -->
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Foreground="White"
+                Text="Elige un equipo para empezar"
+                Visibility="{x:Bind ViewModel.VisorVacio, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+            <!--  Equipo: resumen de operaciones (fase 4)  -->
+            <Border
+                Margin="12"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{x:Bind ViewModel.VisorEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel Spacing="4">
+                    <TextBlock
+                        FontSize="11"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="RESUMEN DE OPERACIONES" />
+                    <TextBlock
+                        FontFamily="Consolas"
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Text="{x:Bind ViewModel.Equipo.Identificador, Mode=OneWay}" />
+                    <TextBlock
+                        Margin="0,12,0,0"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Text="Próximamente: totales (facturado y vencido), últimas operaciones, última visita y órdenes pendientes."
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <!--  Cliente: ficha completa + contactos  -->
+            <Border
+                Margin="12"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{x:Bind ViewModel.VisorCliente, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <!--  Cabecera: todos los datos del cliente  -->
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="CLIENTE" />
+                        <TextBlock
+                            FontSize="20"
+                            FontWeight="SemiBold"
+                            IsTextSelectionEnabled="True"
+                            Text="{x:Bind ViewModel.ClienteRazonSocial, Mode=OneWay}"
+                            TextWrapping="Wrap" />
+                        <Grid ColumnSpacing="16" RowSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Nombre comercial" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteNombreComercial, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="1">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="RFC" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteRfc, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="2">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Estatus" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteEstatus, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="0">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Régimen fiscal" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteRegimen, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="1">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Uso de CFDI" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteUsoCfdi, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="2">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Código postal" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteCodigoPostal, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="0">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Días de crédito" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteDiasCredito, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="1">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Límite de crédito" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteLimiteCredito, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="2">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Prioridad" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClientePrioridad, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Row="3"
+                                Grid.Column="0"
+                                Grid.ColumnSpan="3">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Notas" />
+                                <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.ClienteNotas, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+
+                    <!--  Contactos: + para vincular, basura para desvincular el seleccionado  -->
+                    <Grid Grid.Row="1">
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="CONTACTOS" />
+                        <StackPanel
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="4">
+                            <Button
+                                Click="AgregarContacto_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                ToolTipService.ToolTip="Vincular contacto">
+                                <FontIcon FontSize="14" Glyph="&#xE710;" />
+                            </Button>
+                            <Button
+                                Click="DesvincularContacto_Click"
+                                IsEnabled="{x:Bind ViewModel.HayContactoSeleccionado, Mode=OneWay}"
+                                ToolTipService.ToolTip="Desvincular contacto seleccionado">
+                                <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid Grid.Row="2">
+                        <ListView
+                            IsItemClickEnabled="True"
+                            ItemClick="Contacto_ItemClick"
+                            ItemsSource="{x:Bind ViewModel.Contactos}"
+                            SelectedItem="{x:Bind ViewModel.ContactoSeleccionado, Mode=TwoWay}"
+                            SelectionMode="Single">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:ContactoDto">
+                                    <TextBlock Padding="0,6" Text="{x:Bind NombreCorto}" />
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <ProgressRing
+                            Width="24"
+                            Height="24"
+                            IsActive="{x:Bind ViewModel.CargandoCliente, Mode=OneWay}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Sin contactos. Usa + para vincular uno."
+                            Visibility="{x:Bind ViewModel.SinContactos, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                </Grid>
+            </Border>
         </Grid>
     </Grid>
 </Page>
