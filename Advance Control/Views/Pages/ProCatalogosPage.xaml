@@ -3,38 +3,106 @@
     x:Class="Advance_Control.Views.Pages.ProCatalogosPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
-    <Grid Padding="24">
+    <Page.Resources>
+        <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
+    </Page.Resources>
+
+    <Grid Background="Red">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="1*"/>
+            <RowDefinition Height="1*"/>
         </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="1*"/>
+            <ColumnDefinition Width="2*"/>
+        </Grid.ColumnDefinitions>
+        <Grid Grid.Row="0" Grid.Column="0" Background="Purple" x:Name="Equipos">
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="4">
-            <TextBlock FontSize="28" FontWeight="Bold" Text="Prototipo — Catálogos" />
-            <TextBlock
-                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Zona de pruebas exclusiva para desarrollo (nivel 1). Diseña y da funcionamiento libremente aquí; una vez aprobado, se promueve a un módulo formal del grupo Catálogos."
-                TextWrapping="Wrap" />
-        </StackPanel>
+            <!--  Vacío: botón "+" que abre el buscador de equipos  -->
+            <Button
+                Width="56"
+                Height="56"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Click="AgregarEquipo_Click"
+                CornerRadius="28"
+                Style="{ThemeResource AccentButtonStyle}"
+                ToolTipService.ToolTip="Buscar equipo"
+                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <FontIcon FontSize="20" Glyph="&#xE710;" />
+            </Button>
 
-        <Border
-            Grid.Row="1"
-            BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
-            BorderThickness="2"
-            CornerRadius="8">
-            <Grid x:Name="Lienzo" Padding="16">
-                <TextBlock
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    FontSize="14"
-                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                    Text="Aquí puedes empezar a construir tu prototipo." />
-            </Grid>
-        </Border>
+            <!--  Con equipo: tarjeta + basura para limpiarla  -->
+            <Border
+                Margin="12"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{x:Bind ViewModel.HayEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <Grid>
+                    <StackPanel Margin="0,0,40,0" Spacing="4">
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="EQUIPO" />
+                        <TextBlock
+                            FontFamily="Consolas"
+                            FontSize="28"
+                            FontWeight="SemiBold"
+                            IsTextSelectionEnabled="True"
+                            Text="{x:Bind ViewModel.Equipo.Identificador, Mode=OneWay}" />
+                        <TextBlock TextWrapping="Wrap">
+                            <Run FontWeight="SemiBold" Text="{x:Bind ViewModel.Equipo.MarcaTexto, Mode=OneWay}" />
+                            <Run Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind ViewModel.Equipo.CapacidadTexto, Mode=OneWay}" />
+                        </TextBlock>
+                        <TextBlock
+                            Margin="0,6,0,0"
+                            FontSize="13"
+                            Text="{x:Bind ViewModel.Equipo.ClientesTexto, Mode=OneWay}"
+                            TextWrapping="Wrap" />
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <FontIcon
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Glyph="&#xE707;" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind ViewModel.Equipo.UbicacionAreaTexto, Mode=OneWay}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Button
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Top"
+                        Click="LimpiarEquipo_Click"
+                        ToolTipService.ToolTip="Quitar equipo">
+                        <FontIcon FontSize="16" Glyph="&#xE74D;" />
+                    </Button>
+                </Grid>
+            </Border>
+        </Grid>
+        <Grid Grid.Row="0" Grid.Column="1" Background="Green" x:Name="Clientes">
+
+        </Grid>
+        <Grid Grid.Column="0" Grid.Row="1" Background="Blue" x:Name="Areas">
+            
+        </Grid>
+        <Grid Grid.Column="1" Grid.Row="1" Background="Pink" x:Name="Ubicaciones">
+
+        </Grid>
+        <Grid Grid.Column="2" Grid.RowSpan="2" Background="DarkGray" x:Name="Mapa">
+            
+        </Grid>
     </Grid>
 </Page>
