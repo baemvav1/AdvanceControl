@@ -165,17 +165,18 @@ namespace Advance_Control.Views.Pages
 
         // ---------------- Conciliación (pasos automáticos) ----------------
 
-        private async void BtnCheques_Click(object sender, RoutedEventArgs e) =>
-            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Cheques);
-
         private async void BtnConciliacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Automatica);
 
         private async void BtnCombinacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Combinacional);
 
-        private async void BtnAbonos_Click(object sender, RoutedEventArgs e) =>
+        private async void BtnAbonos_Click(object sender, RoutedEventArgs e)
+        {
+            // En Abonos el RFC siempre aplica: se enciende el botón antes de calcular.
+            ViewModel.UsarRfcComoRegla = true;
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Abonos);
+        }
 
         private async void BtnComplementos_Click(object sender, RoutedEventArgs e)
         {
@@ -205,9 +206,9 @@ namespace Advance_Control.Views.Pages
             {
                 var ventana = new ConfirmacionConciliacionWindow(
                     modo,
-                    ViewModel.AplicarReglaPueMismoMes,
+                    ViewModel.AplicarDtc,
                     ViewModel.UsarRfcComoRegla,
-                    ViewModel.AplicarReglaPpdSiguienteMes);
+                    ViewModel.SoloCheques);
                 ventana.Activate();
 
                 var aprobadas = await ventana.ResultTask;

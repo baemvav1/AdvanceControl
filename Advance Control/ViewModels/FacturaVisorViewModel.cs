@@ -128,10 +128,16 @@ namespace Advance_Control.ViewModels
         public ObservableCollection<ComplementoPagoRelacionadoDto> ComplementosRelacionados { get; } = new();
 
         /// <summary>
-        /// Abonos de esta factura ya ligados a un movimiento bancario real (pestaña "Pagos") --
-        /// excluye los abonos sin movimiento (manuales sin vincular, o en efectivo).
+        /// Todos los abonos de esta factura (pestaña "Pagos"), incluidos los capturados a mano que
+        /// aún no se concilian con un movimiento bancario.
         /// </summary>
-        public ObservableCollection<AbonoFacturaDto> PagosVinculados { get; } = new();
+        public ObservableCollection<AbonoFacturaDto> Pagos { get; } = new();
+
+        /// <summary>
+        /// Abonos que se informan al cliente en el correo de historial: los ya ligados a un
+        /// movimiento bancario y los pagos en efectivo -- excluye los pendientes de conciliar.
+        /// </summary>
+        public ObservableCollection<AbonoFacturaDto> PagosConfirmados { get; } = new();
 
         public string ClienteTexto => Factura?.ReceptorNombre ?? "Sin cliente";
 
@@ -234,7 +240,8 @@ namespace Advance_Control.ViewModels
             Factura = null;
             _detalle = null;
             ComplementosRelacionados.Clear();
-            PagosVinculados.Clear();
+            Pagos.Clear();
+            PagosConfirmados.Clear();
 
             try
             {
@@ -254,9 +261,13 @@ namespace Advance_Control.ViewModels
                     ComplementosRelacionados.Add(complemento);
                 }
 
-                foreach (var abono in detalle.Abonos.Where(a => a.IdMovimiento.HasValue))
+                foreach (var abono in detalle.Abonos)
                 {
-                    PagosVinculados.Add(abono);
+                    Pagos.Add(abono);
+                    if (!abono.PendienteConciliar)
+                    {
+                        PagosConfirmados.Add(abono);
+                    }
                 }
 
                 OnPropertyChanged(nameof(PagadoTexto));

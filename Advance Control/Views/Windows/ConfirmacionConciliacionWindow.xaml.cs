@@ -21,19 +21,20 @@ namespace Advance_Control.Views.Windows
     /// </summary>
     public sealed partial class ConfirmacionConciliacionWindow : Window
     {
-        private readonly record struct PasoConciliacion(ConciliacionAutomaticaModo Modo, bool MismoMes, bool Rfc, bool PpdSigMes = false);
+        private readonly record struct PasoConciliacion(ConciliacionAutomaticaModo Modo, bool Dtc, bool Rfc, bool Cheques = false);
 
         private static readonly PasoConciliacion[] PasosSecuenciaCompleta =
         {
-            new(ConciliacionAutomaticaModo.Cheques, MismoMes: false, Rfc: false),
-            new(ConciliacionAutomaticaModo.Automatica, MismoMes: true, Rfc: true),
-            new(ConciliacionAutomaticaModo.Combinacional, MismoMes: true, Rfc: true),
-            new(ConciliacionAutomaticaModo.Abonos, MismoMes: true, Rfc: true),
-            new(ConciliacionAutomaticaModo.Automatica, MismoMes: false, Rfc: true),
-            new(ConciliacionAutomaticaModo.Combinacional, MismoMes: false, Rfc: true),
-            new(ConciliacionAutomaticaModo.Abonos, MismoMes: false, Rfc: true),
-            new(ConciliacionAutomaticaModo.Automatica, MismoMes: false, Rfc: false),
-            new(ConciliacionAutomaticaModo.Combinacional, MismoMes: false, Rfc: false),
+            new(ConciliacionAutomaticaModo.Automatica, Dtc: false, Rfc: false, Cheques: true),
+            new(ConciliacionAutomaticaModo.Combinacional, Dtc: false, Rfc: false, Cheques: true),
+            new(ConciliacionAutomaticaModo.Automatica, Dtc: true, Rfc: true),
+            new(ConciliacionAutomaticaModo.Combinacional, Dtc: true, Rfc: true),
+            new(ConciliacionAutomaticaModo.Abonos, Dtc: true, Rfc: true),
+            new(ConciliacionAutomaticaModo.Automatica, Dtc: false, Rfc: true),
+            new(ConciliacionAutomaticaModo.Combinacional, Dtc: false, Rfc: true),
+            new(ConciliacionAutomaticaModo.Abonos, Dtc: false, Rfc: true),
+            new(ConciliacionAutomaticaModo.Automatica, Dtc: false, Rfc: false),
+            new(ConciliacionAutomaticaModo.Combinacional, Dtc: false, Rfc: false),
         };
 
         private readonly IReadOnlyList<PasoConciliacion> _pasos;
@@ -53,12 +54,18 @@ namespace Advance_Control.Views.Windows
         /// <summary>Ejecuta un único paso (usado por los botones individuales de la página).</summary>
         public ConfirmacionConciliacionWindow(
             ConciliacionAutomaticaModo modo,
-            bool aplicarReglaPueMismoMes,
+            bool aplicarDtc,
             bool usarRfcComoRegla,
-            bool aplicarReglaPpdSiguienteMes = false)
-            : this(new[] { new PasoConciliacion(modo, aplicarReglaPueMismoMes, usarRfcComoRegla, aplicarReglaPpdSiguienteMes) })
+            bool soloCheques = false)
+            : this(new[] { CrearPaso(modo, aplicarDtc, usarRfcComoRegla, soloCheques) })
         {
         }
+
+        // Abonos siempre lleva RFC y nunca cheques; con Cheques (1 a 1 / Varias a 1) el RFC no aplica.
+        private static PasoConciliacion CrearPaso(ConciliacionAutomaticaModo modo, bool dtc, bool rfc, bool cheques)
+            => modo == ConciliacionAutomaticaModo.Abonos
+                ? new PasoConciliacion(modo, dtc, Rfc: true)
+                : new PasoConciliacion(modo, dtc, rfc && !cheques, cheques);
 
         /// <summary>Ejecuta la receta completa (todos los pasos en secuencia).</summary>
         public ConfirmacionConciliacionWindow()
@@ -81,6 +88,14 @@ namespace Advance_Control.Views.Windows
 
             ControlConfirmacion.PropuestaDescartada += ControlConfirmacion_PropuestaDescartada;
             ControlConfirmacion.MovimientoAbonosDescartado += ControlConfirmacion_MovimientoAbonosDescartado;
+            ControlConfirmacion.ValidarFolio = (idMovimiento, folio) =>
+                _viewModel.ValidarFolioUnoAUnoAsync(PasoActual.Modo, idMovimiento, folio);
+            ControlConfirmacion.ValidarFactura = (idMovimiento, idFactura) =>
+                _viewModel.ValidarFacturaUnoAUnoAsync(PasoActual.Modo, idMovimiento, idFactura);
+            ControlConfirmacion.ValidarFolios = (idMovimiento, folios) =>
+                _viewModel.ValidarFoliosVariasAUnoAsync(idMovimiento, folios);
+            ControlConfirmacion.ValidarFacturas = (idMovimiento, idsFacturas) =>
+                _viewModel.ValidarFacturasVariasAUnoAsync(idMovimiento, idsFacturas);
 
             Activated += ConfirmacionConciliacionWindow_Activated;
             Closed += ConfirmacionConciliacionWindow_Closed;
@@ -119,13 +134,20 @@ namespace Advance_Control.Views.Windows
                 try
                 {
                     propuestas = await _viewModel.CargarPropuestasAsync(
-                        paso.Modo, paso.MismoMes, paso.PpdSigMes, paso.Rfc, _ctsLoading.Token);
+                        paso.Modo, paso.Dtc, paso.Rfc, paso.Cheques, _ctsLoading.Token);
                 }
                 catch (OperationCanceledException)
                 {
                     TxtResumen.Text = "Proceso cancelado.";
                     return;
                 }
+                catch (InvalidOperationException ex)
+                {
+                    TxtResumen.Text = $"No fue posible calcular las propuestas: {ex.Message}";
+                    return;
+                }
+
+                await MostrarAvisosCalculoAsync();
 
                 if (propuestas.Count == 0)
                 {
@@ -177,6 +199,27 @@ namespace Advance_Control.Views.Windows
                 {
                     await _viewModel.AplicarPropuestasAprobadasAsync(paso.Modo, seleccionadas);
                     _todasLasAprobadas.AddRange(seleccionadas);
+
+                    if (_viewModel.UltimosRechazos.Count > 0)
+                    {
+                        var aviso = new Microsoft.UI.Xaml.Controls.ContentDialog
+                        {
+                            Title = "Algunas conciliaciones no se aplicaron",
+                            Content = new Microsoft.UI.Xaml.Controls.ScrollViewer
+                            {
+                                MaxHeight = 360,
+                                Content = new Microsoft.UI.Xaml.Controls.TextBlock
+                                {
+                                    Text = string.Join(Environment.NewLine, _viewModel.UltimosRechazos),
+                                    TextWrapping = TextWrapping.Wrap,
+                                    IsTextSelectionEnabled = true
+                                }
+                            },
+                            CloseButtonText = "Aceptar",
+                            XamlRoot = Content.XamlRoot
+                        };
+                        await aviso.ShowAsync();
+                    }
                 }
             }
             catch (Exception ex)
@@ -229,6 +272,7 @@ namespace Advance_Control.Views.Windows
                 TxtResumen.Text = "Recalculando propuestas...";
 
                 var propuestas = await _viewModel.DescartarYRecalcularPropuestaAsync(PasoActual.Modo, propuestaDescartada);
+                await MostrarAvisosCalculoAsync();
                 ControlConfirmacion.SetPropuestas(propuestas);
                 ActualizarResumen(propuestas.Count, PasoActual);
                 BtnContinuar.IsEnabled = true;
@@ -270,6 +314,36 @@ namespace Advance_Control.Views.Windows
             }
         }
 
+        /// <summary>
+        /// Muestra los avisos del último cálculo (p. ej. pagos de Varias a 1 que el servidor no alcanzó
+        /// a resolver), para que no queden omitidos en silencio.
+        /// </summary>
+        private async Task MostrarAvisosCalculoAsync()
+        {
+            if (_viewModel.UltimosAvisosCalculo.Count == 0)
+            {
+                return;
+            }
+
+            var aviso = new Microsoft.UI.Xaml.Controls.ContentDialog
+            {
+                Title = $"{_viewModel.UltimosAvisosCalculo.Count} pago(s) sin resolver",
+                Content = new Microsoft.UI.Xaml.Controls.ScrollViewer
+                {
+                    MaxHeight = 360,
+                    Content = new Microsoft.UI.Xaml.Controls.TextBlock
+                    {
+                        Text = string.Join(Environment.NewLine, _viewModel.UltimosAvisosCalculo),
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                CloseButtonText = "Aceptar",
+                XamlRoot = Content.XamlRoot
+            };
+            await aviso.ShowAsync();
+        }
+
         private void ConfirmacionConciliacionWindow_Closed(object sender, WindowEventArgs args)
         {
             _ctsLoading?.Cancel();
@@ -290,7 +364,7 @@ namespace Advance_Control.Views.Windows
             TxtResumen.Text = prefijo + (esModoAbonos
                 ? total == 0
                     ? "no quedan propuestas vigentes de abonos despues de los descartes. Continuar pasa al siguiente paso sin conciliar nada de este."
-                    : $"{total} propuesta(s) vigente(s). Desmarca las que no quieras conciliar; puedes descartar facturas completas o subdescartar movimientos para reintentar la misma factura."
+                    : $"{total} propuesta(s) vigente(s). Desmarca las que no quieras conciliar: al descartar una se recalcula y la factura puede volver con otra combinación de pagos."
                 : $"{total} conciliacion(es) propuesta(s). Desmarca las que no quieras conciliar: las que queden marcadas se aplicaran al continuar, y si no dejas ninguna marcada se pasa al siguiente paso sin conciliar nada.");
         }
 
@@ -306,12 +380,14 @@ namespace Advance_Control.Views.Windows
             var nombreModo = paso.Modo switch
             {
                 ConciliacionAutomaticaModo.Automatica => "Conciliación",
-                ConciliacionAutomaticaModo.Combinacional => "Combinación",
+                ConciliacionAutomaticaModo.Combinacional => "Varias a 1",
                 ConciliacionAutomaticaModo.Abonos => "Conciliación de abonos",
                 ConciliacionAutomaticaModo.Cheques => "Cheques (1 a 1, 1 a varios, varios a 1)",
                 _ => paso.Modo.ToString()
             };
-            var filtros = $"Mismo mes: {(paso.MismoMes ? "Sí" : "No")} · PPD sig. mes: {(paso.PpdSigMes ? "Sí" : "No")} · RFC: {(paso.Rfc ? "Sí" : "No")}";
+            var filtros = paso.Cheques
+                ? $"Solo cheques · DTC: {(paso.Dtc ? "Sí" : "No")}"
+                : $"DTC: {(paso.Dtc ? "Sí" : "No")} · RFC: {(paso.Rfc ? "Sí" : "No")}";
             return _pasos.Count == 1
                 ? $"{nombreModo} · {filtros}"
                 : $"Paso {_pasoActual + 1} de {_pasos.Count} · {nombreModo} · {filtros}";

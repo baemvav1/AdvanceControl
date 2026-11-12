@@ -178,7 +178,7 @@ namespace Advance_Control.Views
         {
             if (sender is Button btn && btn.Tag is string url && !string.IsNullOrEmpty(url))
             {
-                try { await global::Windows.System.Launcher.LaunchUriAsync(new Uri(url)); }
+                try { await ViewModel.AbrirArchivoAsync(url); }
                 catch { }
             }
         }

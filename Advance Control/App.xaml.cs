@@ -850,6 +850,17 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    services.AddHttpClient<Services.Conciliacion.IConciliacionApiService, Services.Conciliacion.ConciliacionApiService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        client.Timeout = TimeSpan.FromSeconds(120);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     services.AddHttpClient<Services.EstadoCuenta.IEstadoCuentaXmlService, Services.EstadoCuenta.EstadoCuentaXmlService>((sp, client) =>
                     {
                         var provider = sp.GetRequiredService<IApiEndpointProvider>();
@@ -1260,6 +1271,18 @@ namespace Advance_Control
                             : TimeSpan.FromSeconds(30);
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
+                    // Archivos de /storage (la API exige token): se bajan autenticados a caché local
+                    services.AddHttpClient("ArchivosProtegidos", (sp, client) =>
+                    {
+                        client.Timeout = TimeSpan.FromSeconds(120);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+                    services.AddSingleton<Services.Http.IArchivoProtegidoService>(sp =>
+                        new Services.Http.ArchivoProtegidoService(
+                            sp.GetRequiredService<IHttpClientFactory>().CreateClient("ArchivosProtegidos"),
+                            sp.GetRequiredService<IApiEndpointProvider>(),
+                            sp.GetRequiredService<ILoggingService>()));
 
                     // Registrar MensajesViewModel
                     services.AddTransient<ViewModels.MensajesViewModel>();

@@ -30,9 +30,9 @@ namespace Advance_Control.ViewModels
         private bool _isLoading;
         private bool _isConciliacionEnProceso;
         private string? _errorMessage;
-        private bool _aplicarReglaPueMismoMes = true;
-        private bool _aplicarReglaPpdSiguienteMes;
+        private bool _aplicarDtc = true;
         private bool _usarRfcComoRegla;
+        private bool _soloCheques;
         private int _operacionesConciliacionPendientes;
 
         public ConciliacionViewModel(
@@ -113,16 +113,14 @@ namespace Advance_Control.ViewModels
 
         // ---------------- Reglas (toggles de la cinta) ----------------
 
-        public bool AplicarReglaPueMismoMes
+        /// <summary>
+        /// DTC (Date Time Correct): el pago debe ser del día del timbrado o posterior; PUE en el
+        /// mismo mes, PPD en el mismo mes o posterior. Reemplaza a "PUE Mismo mes" y "PPD Sig. mes".
+        /// </summary>
+        public bool AplicarDtc
         {
-            get => _aplicarReglaPueMismoMes;
-            set => SetProperty(ref _aplicarReglaPueMismoMes, value);
-        }
-
-        public bool AplicarReglaPpdSiguienteMes
-        {
-            get => _aplicarReglaPpdSiguienteMes;
-            set => SetProperty(ref _aplicarReglaPpdSiguienteMes, value);
+            get => _aplicarDtc;
+            set => SetProperty(ref _aplicarDtc, value);
         }
 
         public bool UsarRfcComoRegla
@@ -130,6 +128,35 @@ namespace Advance_Control.ViewModels
             get => _usarRfcComoRegla;
             set => SetProperty(ref _usarRfcComoRegla, value);
         }
+
+        /// <summary>
+        /// Cheques: 1 a 1 y Varias a 1 trabajan solo con cheques (DEPOSITO_SBC); apagado, los
+        /// ignoran. Los cheques no traen RFC, así que al encenderlo se apaga y bloquea RFC, y
+        /// Abonos se deshabilita (no se combinan cheques sin RFC para una factura).
+        /// </summary>
+        public bool SoloCheques
+        {
+            get => _soloCheques;
+            set
+            {
+                if (SetProperty(ref _soloCheques, value))
+                {
+                    if (value)
+                    {
+                        UsarRfcComoRegla = false;
+                    }
+
+                    OnPropertyChanged(nameof(RfcHabilitado));
+                    OnPropertyChanged(nameof(PuedeConciliarAbonos));
+                }
+            }
+        }
+
+        /// <summary>El botón RFC no aplica con Cheques encendido.</summary>
+        public bool RfcHabilitado => !_soloCheques;
+
+        /// <summary>Abonos se deshabilita con Cheques encendido.</summary>
+        public bool PuedeConciliarAbonos => PuedeOperar && !_soloCheques;
 
         // ---------------- Bitácora (Revertir) ----------------
 
@@ -202,6 +229,7 @@ namespace Advance_Control.ViewModels
         private void NotificarEstadoAcciones()
         {
             OnPropertyChanged(nameof(PuedeOperar));
+            OnPropertyChanged(nameof(PuedeConciliarAbonos));
             OnPropertyChanged(nameof(CanDeshacer));
             OnPropertyChanged(nameof(DeshacerTooltip));
             OnPropertyChanged(nameof(CanAbonar));

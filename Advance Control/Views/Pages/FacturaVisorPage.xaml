@@ -6,9 +6,26 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:models="using:Advance_Control.Models"
+    xmlns:converters="using:Advance_Control.Converters"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     Loaded="Page_Loaded"
     mc:Ignorable="d">
+
+    <Page.Resources>
+        <!--  Pestaña Pagos: un abono pendiente de conciliar se resalta en rojo  -->
+        <converters:BooleanToBrushConverter
+            x:Key="PagoFondoConverter"
+            FalseBrush="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+            TrueBrush="{ThemeResource SystemFillColorCriticalBackgroundBrush}" />
+        <converters:BooleanToBrushConverter
+            x:Key="PagoBordeConverter"
+            FalseBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            TrueBrush="{ThemeResource SystemFillColorCriticalBrush}" />
+        <converters:BooleanToBrushConverter
+            x:Key="PagoTextoConverter"
+            FalseBrush="{ThemeResource TextFillColorPrimaryBrush}"
+            TrueBrush="{ThemeResource SystemFillColorCriticalBrush}" />
+    </Page.Resources>
 
     <Grid Background="Transparent">
         <Grid.ColumnDefinitions>
@@ -567,7 +584,7 @@
                                     <RowDefinition Height="1*" />
                                 </Grid.RowDefinitions>
 
-                                <!--  Cabecera fija: abonos ya ligados a un movimiento bancario real  -->
+                                <!--  Cabecera fija: abonos de la factura, en rojo los pendientes de conciliar  -->
                                 <Grid
                                     Grid.Row="0"
                                     Margin="10,0,10,0"
@@ -609,7 +626,7 @@
                                 </Grid>
 
                                 <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                                    <ItemsRepeater x:Name="PagosRepeater" Margin="10,4,10,10" ItemsSource="{x:Bind ViewModel.PagosVinculados, Mode=OneWay}">
+                                    <ItemsRepeater x:Name="PagosRepeater" Margin="10,4,10,10" ItemsSource="{x:Bind ViewModel.Pagos, Mode=OneWay}">
                                         <ItemsRepeater.Layout>
                                             <StackLayout Spacing="6" />
                                         </ItemsRepeater.Layout>
@@ -617,8 +634,8 @@
                                             <DataTemplate x:DataType="models:AbonoFacturaDto">
                                                 <Border
                                                     Padding="8"
-                                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                    Background="{x:Bind PendienteConciliar, Converter={StaticResource PagoFondoConverter}}"
+                                                    BorderBrush="{x:Bind PendienteConciliar, Converter={StaticResource PagoBordeConverter}}"
                                                     BorderThickness="1"
                                                     CornerRadius="6">
                                                     <Grid ColumnSpacing="8">
@@ -639,7 +656,9 @@
                                                         <TextBlock
                                                             Grid.Column="2"
                                                             VerticalAlignment="Center"
-                                                            Text="{x:Bind MovimientoTexto}" />
+                                                            FontWeight="SemiBold"
+                                                            Foreground="{x:Bind PendienteConciliar, Converter={StaticResource PagoTextoConverter}}"
+                                                            Text="{x:Bind ConciliacionTexto}" />
                                                         <TextBlock
                                                             Grid.Column="3"
                                                             VerticalAlignment="Center"

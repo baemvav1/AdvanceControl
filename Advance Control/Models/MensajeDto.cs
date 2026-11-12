@@ -220,9 +220,7 @@ namespace Advance_Control.Models
                 if (_imagenUrlCompleta == value) return;
 
                 _imagenUrlCompleta = value;
-                _imagenSource = CreateImagenSource(value);
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(ImagenSource));
             }
         }
 
@@ -233,18 +231,14 @@ namespace Advance_Control.Models
         private string? _imagenUrlCompleta;
         private BitmapImage? _imagenSource;
 
-        private static BitmapImage? CreateImagenSource(string? imageUrl)
+        /// <summary>
+        /// La imagen ya bajada a disco (la API exige token en /storage, así que BitmapImage
+        /// no puede pedir la URL directa). Llamar en el hilo de UI.
+        /// </summary>
+        public void MostrarImagenLocal(string? rutaLocal)
         {
-            if (string.IsNullOrWhiteSpace(imageUrl)) return null;
-
-            try
-            {
-                return new BitmapImage(new Uri(imageUrl));
-            }
-            catch
-            {
-                return null;
-            }
+            _imagenSource = Advance_Control.Converters.FilePathToImageConverter.ToImage(rutaLocal);
+            OnPropertyChanged(nameof(ImagenSource));
         }
 
         /// <summary>Contenido seguro para binding (nunca null).</summary>

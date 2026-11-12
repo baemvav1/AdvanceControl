@@ -73,15 +73,15 @@ namespace Advance_Control.Models
         /// <summary>Lista de pasos con su estado, para binding en XAML.</summary>
         public List<CheckPasoItem> Pasos => new()
         {
-            new() { Nombre = "Cotización generada",    Completado = CotizacionGenerada  },
-            new() { Nombre = "Cotización enviada",     Completado = CotizacionEnviada   },
-            new() { Nombre = "Cotización aprobada",    Completado = CotizacionAprobada  },
-            new() { Nombre = "Reporte generado",       Completado = ReporteGenerado     },
-            new() { Nombre = "Reporte enviado",        Completado = ReporteEnviado      },
-            new() { Nombre = "Prefactura cargada",     Completado = PrefacturaCargada   },
-            new() { Nombre = "Hoja de servicio",       Completado = HojaServicioCargada },
-            new() { Nombre = "Orden de compra",        Completado = OrdenCompraCargada  },
-            new() { Nombre = "Factura cargada",        Completado = FacturaCargada      },
+            new() { Nombre = "Cotización generada",    Campo = "cotizacion_generada",   Completado = CotizacionGenerada  },
+            new() { Nombre = "Cotización enviada",     Campo = "cotizacion_enviada",    Completado = CotizacionEnviada   },
+            new() { Nombre = "Cotización aprobada",    Campo = "cotizacion_aprobada",   Completado = CotizacionAprobada  },
+            new() { Nombre = "Reporte generado",       Campo = "reporte_generado",      Completado = ReporteGenerado     },
+            new() { Nombre = "Reporte enviado",        Campo = "reporte_enviado",       Completado = ReporteEnviado      },
+            new() { Nombre = "Prefactura cargada",     Campo = "prefactura_cargada",    Completado = PrefacturaCargada   },
+            new() { Nombre = "Hoja de servicio",       Campo = "hoja_servicio_cargada", Completado = HojaServicioCargada },
+            new() { Nombre = "Orden de compra",        Campo = "orden_compra_cargada",  Completado = OrdenCompraCargada  },
+            new() { Nombre = "Factura cargada",        Campo = "factura_cargada",       Completado = FacturaCargada      },
         };
     }
 }

@@ -14,10 +14,13 @@ namespace Advance_Control.ViewModels
 {
     public class ConciliacionAutomaticaWindowViewModel : ViewModelBase
     {
+        private static readonly System.Globalization.CultureInfo CulturaMx = new("es-MX");
+
         private readonly IEstadoCuentaXmlService _estadoCuentaXmlService;
         private readonly IFacturaService _facturaService;
         private readonly INotificacionService _notificacionService;
         private readonly ConciliacionMatchingEngine _conciliacionMatchingEngine;
+        private readonly IConciliacionApiService _conciliacionApiService;
         private readonly List<ConciliacionMovimientoResumenDto> _movimientosPendientesBase = new();
         private readonly List<FacturaResumenDto> _facturasPendientesBase = new();
         // A diferencia de _facturasPendientesBase (excluye Finiquito == true), IngresosManuales
@@ -29,32 +32,67 @@ namespace Advance_Control.ViewModels
         // vuelve a proponer en los pasos restantes del mismo asistente.
         private readonly HashSet<int> _facturasDescartadas = new();
         private readonly Dictionary<int, HashSet<int>> _movimientosVetadosPorFacturaAbonos = new();
+        // 1 a 1 (motor del servidor): descartar una propuesta veta solo el par factura-movimiento;
+        // la factura puede volver a proponerse con otro movimiento y el movimiento con otra factura.
+        private readonly HashSet<(int IdFactura, int IdMovimiento)> _paresVetadosUnoAUno = new();
+        // Varias a 1 (motor del servidor): descartar veta solo esa combinación de facturas con ese pago.
+        private readonly List<ConciliacionCombinacionDto> _combinacionesVetadasVariasAUno = new();
+        // Abonos (motor del servidor): descartar veta solo esa combinación de pagos con esa factura.
+        private readonly List<ConciliacionAbonosCombinacionDto> _combinacionesVetadasAbonos = new();
+        // Complementos / Ingresos manuales (motor del servidor): descartar veta solo el par pago-movimiento.
+        private readonly HashSet<(int IdPago, int IdMovimiento)> _paresVetadosComplementos = new();
+        private readonly HashSet<(int IdPago, int IdMovimiento)> _paresVetadosIngresosManuales = new();
+        private bool _aplicarDtc = true;
         private bool _bitacoraConciliacionInicializada;
         private bool _aplicarReglaPueMismoMes = true;
         private bool _aplicarReglaPpdSiguienteMes = false;
         private bool _usarRfcComoRegla = false;
+        // Botón Cheques: 1 a 1 y Varias a 1 trabajan solo con cheques (sin RFC); apagado, los ignoran.
+        private bool _soloCheques;
 
         public ConciliacionAutomaticaWindowViewModel(
             IEstadoCuentaXmlService estadoCuentaXmlService,
             IFacturaService facturaService,
             INotificacionService notificacionService,
-            ConciliacionMatchingEngine conciliacionMatchingEngine)
+            ConciliacionMatchingEngine conciliacionMatchingEngine,
+            IConciliacionApiService conciliacionApiService)
         {
             _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
             _conciliacionMatchingEngine = conciliacionMatchingEngine ?? throw new ArgumentNullException(nameof(conciliacionMatchingEngine));
+            _conciliacionApiService = conciliacionApiService ?? throw new ArgumentNullException(nameof(conciliacionApiService));
         }
 
+        /// <summary>
+        /// Motivos de las conciliaciones 1 a 1 que el servidor rechazó en el último "Continuar"
+        /// (p. ej. otro usuario ya usó el movimiento). Vacío si todas se aplicaron.
+        /// </summary>
+        public IReadOnlyList<string> UltimosRechazos { get; private set; } = Array.Empty<string>();
+
+        /// <summary>
+        /// Avisos del último cálculo de propuestas (p. ej. pagos de Varias a 1 que el servidor no
+        /// alcanzó a resolver en su tiempo de cálculo). Vacío si no hubo nada que avisar.
+        /// </summary>
+        public IReadOnlyList<string> UltimosAvisosCalculo { get; private set; } = Array.Empty<string>();
+
+        /// <param name="aplicarDtc">
+        /// Regla DTC. En 1 a 1 la evalúa el servidor (pago el día del timbrado o después; PUE mismo
+        /// mes, PPD mismo mes o posterior), igual que en Varias a 1. Los pasos que siguen en el cliente (abonos,
+        /// cheques, complementos, ingresos) la traducen a su regla anterior de mes hasta migrarlos.
+        /// </param>
         public async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CargarPropuestasAsync(
             ConciliacionAutomaticaModo modo,
-            bool aplicarReglaPueMismoMes,
-            bool aplicarReglaPpdSiguienteMes,
+            bool aplicarDtc,
             bool usarRfcComoRegla,
+            bool soloCheques = false,
             CancellationToken ct = default)
         {
-            _aplicarReglaPueMismoMes = aplicarReglaPueMismoMes;
-            _aplicarReglaPpdSiguienteMes = aplicarReglaPpdSiguienteMes;
+            _aplicarDtc = aplicarDtc;
+            _soloCheques = soloCheques;
+            UltimosAvisosCalculo = Array.Empty<string>();
+            _aplicarReglaPueMismoMes = aplicarDtc;
+            _aplicarReglaPpdSiguienteMes = false;
             _usarRfcComoRegla = usarRfcComoRegla;
 
             await CargarDatosBaseAsync(ct);
@@ -63,12 +101,12 @@ namespace Advance_Control.ViewModels
 
             return modo switch
             {
-                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
-                ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
-                ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
+                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasUnoAUnoServidorAsync(ct),
+                ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasVariasAUnoServidorAsync(ct),
+                ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosServidorAsync(ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
-                ConciliacionAutomaticaModo.Complementos => await CrearPropuestasComplementosAsync(ct),
-                ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasIngresosManualesAsync(ct),
+                ConciliacionAutomaticaModo.Complementos => await CrearPropuestasVinculosServidorAsync(modo, ct),
+                ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasVinculosServidorAsync(modo, ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -84,20 +122,57 @@ namespace Advance_Control.ViewModels
             ConciliacionMatchPropuestaDto propuestaDescartada,
             CancellationToken ct = default)
         {
-            foreach (var factura in propuestaDescartada.Facturas)
+            UltimosAvisosCalculo = Array.Empty<string>();
+            if (modo == ConciliacionAutomaticaModo.Automatica)
             {
-                _facturasDescartadas.Add(factura.IdFactura);
-                _movimientosVetadosPorFacturaAbonos.Remove(factura.IdFactura);
+                foreach (var factura in propuestaDescartada.Facturas)
+                {
+                    _paresVetadosUnoAUno.Add((factura.IdFactura, propuestaDescartada.Movimiento.IdMovimiento));
+                }
+            }
+            else if (modo == ConciliacionAutomaticaModo.Combinacional)
+            {
+                _combinacionesVetadasVariasAUno.Add(new ConciliacionCombinacionDto
+                {
+                    IdMovimiento = propuestaDescartada.Movimiento.IdMovimiento,
+                    IdsFacturas = propuestaDescartada.Facturas.Select(factura => factura.IdFactura).ToList()
+                });
+            }
+            else if (modo is ConciliacionAutomaticaModo.Complementos or ConciliacionAutomaticaModo.IngresosManuales)
+            {
+                var idPago = modo == ConciliacionAutomaticaModo.Complementos
+                    ? propuestaDescartada.IdComplementoPagoDocto
+                    : propuestaDescartada.IdAbonoFacturaIngresoManual;
+                if (idPago is int id)
+                {
+                    ParesVetadosVinculo(modo).Add((id, propuestaDescartada.Movimiento.IdMovimiento));
+                }
+            }
+            else if (modo == ConciliacionAutomaticaModo.Abonos)
+            {
+                _combinacionesVetadasAbonos.Add(new ConciliacionAbonosCombinacionDto
+                {
+                    IdFactura = propuestaDescartada.Facturas[0].IdFactura,
+                    IdsMovimientos = propuestaDescartada.TodosLosMovimientos.Select(movimiento => movimiento.IdMovimiento).ToList()
+                });
+            }
+            else
+            {
+                foreach (var factura in propuestaDescartada.Facturas)
+                {
+                    _facturasDescartadas.Add(factura.IdFactura);
+                    _movimientosVetadosPorFacturaAbonos.Remove(factura.IdFactura);
+                }
             }
 
             return modo switch
             {
-                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasAutomaticasAsync(),
-                ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasCombinacionalesAsync(),
-                ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosAsync(ct: ct),
+                ConciliacionAutomaticaModo.Automatica => await CrearPropuestasUnoAUnoServidorAsync(ct),
+                ConciliacionAutomaticaModo.Combinacional => await CrearPropuestasVariasAUnoServidorAsync(ct),
+                ConciliacionAutomaticaModo.Abonos => await CrearPropuestasAbonosServidorAsync(ct),
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
-                ConciliacionAutomaticaModo.Complementos => await CrearPropuestasComplementosAsync(ct),
-                ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasIngresosManualesAsync(ct),
+                ConciliacionAutomaticaModo.Complementos => await CrearPropuestasVinculosServidorAsync(modo, ct),
+                ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasVinculosServidorAsync(modo, ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -131,9 +206,30 @@ namespace Advance_Control.ViewModels
             ConciliacionAutomaticaModo modo,
             IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
         {
+            UltimosRechazos = Array.Empty<string>();
             if (aprobadas.Count == 0)
             {
                 return false;
+            }
+
+            if (modo == ConciliacionAutomaticaModo.Automatica)
+            {
+                return await AplicarUnoAUnoServidorAsync(aprobadas);
+            }
+
+            if (modo == ConciliacionAutomaticaModo.Combinacional)
+            {
+                return await AplicarVariasAUnoServidorAsync(aprobadas);
+            }
+
+            if (modo == ConciliacionAutomaticaModo.Abonos)
+            {
+                return await AplicarAbonosServidorAsync(aprobadas);
+            }
+
+            if (modo is ConciliacionAutomaticaModo.Complementos or ConciliacionAutomaticaModo.IngresosManuales)
+            {
+                return await AplicarVinculosServidorAsync(modo, aprobadas);
             }
 
             foreach (var propuesta in aprobadas)
@@ -143,14 +239,6 @@ namespace Advance_Control.ViewModels
                     await AplicarMovimientosSobreFacturaAsync(
                         propuesta.Facturas[0],
                         propuesta.TodosLosMovimientos);
-                }
-                else if (propuesta.EsComplemento)
-                {
-                    await AplicarComplementoAsync(propuesta);
-                }
-                else if (propuesta.EsIngresoManual)
-                {
-                    await AplicarIngresoManualAsync(propuesta);
                 }
                 else
                 {
@@ -163,6 +251,435 @@ namespace Advance_Control.ViewModels
 
             await MostrarResultadoSegunModoAsync(modo, aprobadas);
             return true;
+        }
+
+        // ---------------- Complementos e Ingresos manuales (motor del servidor) ----------------
+
+        private static string TipoPropuestaVinculo(ConciliacionAutomaticaModo modo)
+            => modo == ConciliacionAutomaticaModo.Complementos ? "Complemento" : "IngresoManual";
+
+        private HashSet<(int IdPago, int IdMovimiento)> ParesVetadosVinculo(ConciliacionAutomaticaModo modo)
+            => modo == ConciliacionAutomaticaModo.Complementos ? _paresVetadosComplementos : _paresVetadosIngresosManuales;
+
+        /// <summary>
+        /// Complementos de pago sin abono, o ingresos capturados a mano sin movimiento, ligados en el
+        /// servidor al movimiento con disponible igual a su importe (el de fecha más cercana al pago),
+        /// con las reglas de la cinta (DTC, RFC, Cheques).
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasVinculosServidorAsync(ConciliacionAutomaticaModo modo, CancellationToken ct)
+        {
+            var respuesta = await _conciliacionApiService.ProponerVinculosAsync(modo, new ConciliacionVinculosPropuestasRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                ParesVetados = ParesVetadosVinculo(modo)
+                    .Select(par => new ConciliacionVinculoParDto { IdPago = par.IdPago, IdMovimiento = par.IdMovimiento })
+                    .ToList()
+            }, ct);
+
+            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
+            var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
+            var esComplemento = modo == ConciliacionAutomaticaModo.Complementos;
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var item in respuesta)
+            {
+                // Si algo cambió entre la carga del cliente y el cálculo del servidor, se omite:
+                // al aplicar el servidor vuelve a validar todo de cualquier forma.
+                if (!facturasPorId.TryGetValue(item.IdFactura, out var factura)
+                    || !movimientosPorId.TryGetValue(item.IdMovimiento, out var movimiento))
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = TipoPropuestaVinculo(modo),
+                    Facturas = new List<FacturaResumenDto> { factura },
+                    Movimiento = movimiento,
+                    Observaciones = item.Observaciones,
+                    IdComplementoPagoDocto = esComplemento ? item.IdPago : null,
+                    ComplementoFolioTexto = esComplemento ? item.Descripcion : null,
+                    IdAbonoFacturaIngresoManual = esComplemento ? null : item.IdPago,
+                    IngresoManualReferenciaTexto = esComplemento ? null : item.Descripcion
+                });
+            }
+
+            return propuestas;
+        }
+
+        /// <summary>
+        /// Liga en el servidor los pares aprobados: cada uno se revalida con el pago, la factura y el
+        /// movimiento bloqueados. Los rechazados quedan en <see cref="UltimosRechazos"/>.
+        /// </summary>
+        private async Task<bool> AplicarVinculosServidorAsync(ConciliacionAutomaticaModo modo, IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
+        {
+            var esComplemento = modo == ConciliacionAutomaticaModo.Complementos;
+            var pares = aprobadas
+                .Select(propuesta => (Propuesta: propuesta, IdPago: esComplemento ? propuesta.IdComplementoPagoDocto : propuesta.IdAbonoFacturaIngresoManual))
+                .Where(x => x.IdPago is int)
+                .ToList();
+
+            var respuesta = await _conciliacionApiService.AplicarVinculosAsync(modo, new ConciliacionVinculosAplicarRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                Pares = pares
+                    .Select(x => new ConciliacionVinculoParDto { IdPago = x.IdPago!.Value, IdMovimiento = x.Propuesta.Movimiento.IdMovimiento })
+                    .ToList()
+            });
+
+            var foliosPorPago = pares
+                .GroupBy(x => x.IdPago!.Value)
+                .ToDictionary(g => g.Key, g => g.First().Propuesta.Facturas[0].FolioTitulo);
+
+            UltimosRechazos = respuesta.Resultados
+                .Where(resultado => !resultado.Aplicado)
+                .Select(resultado => $"Factura {foliosPorPago.GetValueOrDefault(resultado.IdPago, resultado.IdPago.ToString())}: {resultado.Motivo}")
+                .ToList();
+
+            var nombre = esComplemento ? "complemento(s) de pago" : "ingreso(s) manual(es)";
+            var mensaje = respuesta.Rechazados == 0
+                ? $"Vinculacion completada. {respuesta.Aplicados} {nombre} ligado(s) a movimientos bancarios."
+                : $"Vinculacion: {respuesta.Aplicados} {nombre} ligado(s), {respuesta.Rechazados} rechazado(s) por el servidor.";
+            await _notificacionService.MostrarAsync("Conciliacion", mensaje);
+
+            return respuesta.Aplicados > 0;
+        }
+
+        // ---------------- 1 a 1 (motor del servidor) ----------------
+
+        /// <summary>
+        /// Propuestas 1 a 1 calculadas por la API (api/conciliacion/uno-a-uno/propuestas). El
+        /// cliente solo las empata con las facturas y movimientos que ya cargó para mostrarlas;
+        /// las reglas (monto exacto contra saldo/restante, DTC, RFC, la más vieja) viven en el
+        /// servidor.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasUnoAUnoServidorAsync(CancellationToken ct)
+        {
+            var respuesta = await _conciliacionApiService.ProponerUnoAUnoAsync(new ConciliacionUnoAUnoPropuestasRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                ParesVetados = _paresVetadosUnoAUno
+                    .Select(par => new ConciliacionParDto { IdFactura = par.IdFactura, IdMovimiento = par.IdMovimiento })
+                    .ToList()
+            }, ct);
+
+            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
+            var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var item in respuesta)
+            {
+                // Si algo cambió entre la carga del cliente y el cálculo del servidor, se omite:
+                // al aplicar el servidor vuelve a validar todo de cualquier forma.
+                if (!facturasPorId.TryGetValue(item.IdFactura, out var factura)
+                    || !movimientosPorId.TryGetValue(item.IdMovimiento, out var movimiento))
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = "1 a 1",
+                    Facturas = new List<FacturaResumenDto> { factura },
+                    Movimiento = movimiento,
+                    Observaciones = item.Observaciones
+                });
+            }
+
+            return propuestas;
+        }
+
+        /// <summary>
+        /// Aplica las propuestas 1 a 1 en el servidor: cada par se revalida con las reglas activas
+        /// y con la factura y el movimiento bloqueados. Los que ya no cumplen (otro usuario los
+        /// usó, cambió el saldo...) se rechazan sin afectar al resto y quedan en
+        /// <see cref="UltimosRechazos"/>.
+        /// </summary>
+        private async Task<bool> AplicarUnoAUnoServidorAsync(IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
+        {
+            var respuesta = await _conciliacionApiService.AplicarUnoAUnoAsync(new ConciliacionUnoAUnoAplicarRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                Pares = aprobadas
+                    .Select(propuesta => new ConciliacionParDto
+                    {
+                        IdFactura = propuesta.Facturas[0].IdFactura,
+                        IdMovimiento = propuesta.Movimiento.IdMovimiento
+                    })
+                    .ToList()
+            });
+
+            var foliosPorId = aprobadas
+                .SelectMany(propuesta => propuesta.Facturas)
+                .GroupBy(factura => factura.IdFactura)
+                .ToDictionary(grupo => grupo.Key, grupo => grupo.First().FolioTitulo);
+
+            UltimosRechazos = respuesta.Resultados
+                .Where(resultado => !resultado.Aplicado)
+                .Select(resultado => $"Factura {foliosPorId.GetValueOrDefault(resultado.IdFactura, resultado.IdFactura.ToString())}: {resultado.Motivo}")
+                .ToList();
+
+            var mensaje = respuesta.Rechazados == 0
+                ? $"Conciliacion 1 a 1 completada. {respuesta.Aplicados} factura(s) conciliada(s)."
+                : $"Conciliacion 1 a 1: {respuesta.Aplicados} aplicada(s), {respuesta.Rechazados} rechazada(s) por el servidor.";
+            await _notificacionService.MostrarAsync("Conciliacion", mensaje);
+
+            return respuesta.Aplicados > 0;
+        }
+
+        /// <summary>
+        /// Valida en el servidor, con las mismas reglas del motor, que la factura escrita (folio con
+        /// o sin serie) pueda ir con el movimiento. Devuelve la factura o el motivo del rechazo.
+        /// </summary>
+        public Task<(FacturaResumenDto? Factura, string? Motivo)> ValidarFolioUnoAUnoAsync(
+            ConciliacionAutomaticaModo modo, int idMovimiento, string folio, CancellationToken ct = default)
+            => ValidarUnoAUnoAsync(modo, new ConciliacionUnoAUnoValidarRequestDto { IdMovimiento = idMovimiento, Folio = folio }, ct);
+
+        /// <summary>Igual que <see cref="ValidarFolioUnoAUnoAsync"/> pero con la factura ya identificada (intercambios).</summary>
+        public Task<(FacturaResumenDto? Factura, string? Motivo)> ValidarFacturaUnoAUnoAsync(
+            ConciliacionAutomaticaModo modo, int idMovimiento, int idFactura, CancellationToken ct = default)
+            => ValidarUnoAUnoAsync(modo, new ConciliacionUnoAUnoValidarRequestDto { IdMovimiento = idMovimiento, IdFactura = idFactura }, ct);
+
+        private async Task<(FacturaResumenDto? Factura, string? Motivo)> ValidarUnoAUnoAsync(
+            ConciliacionAutomaticaModo modo, ConciliacionUnoAUnoValidarRequestDto request, CancellationToken ct)
+        {
+            request.Dtc = _aplicarDtc;
+            // Con el botón Cheques el RFC no aplica (los cheques nunca lo traen).
+            request.Rfc = _usarRfcComoRegla && !_soloCheques;
+            request.Cheques = _soloCheques;
+
+            var respuesta = await _conciliacionApiService.ValidarUnoAUnoAsync(request, ct);
+            if (!respuesta.Valido || respuesta.IdFactura is not int idFactura)
+            {
+                return (null, respuesta.Motivo ?? "La factura no cumple las reglas de conciliación.");
+            }
+
+            var factura = _facturasTodasBase.FirstOrDefault(item => item.IdFactura == idFactura);
+            return factura == null
+                ? (null, $"La factura {respuesta.FolioTitulo} no está en la lista cargada; recarga la conciliación.")
+                : (factura, null);
+        }
+
+        // ---------------- Varias a 1 (motor del servidor) ----------------
+
+        /// <summary>
+        /// Propuestas Varias a 1 calculadas por la API (api/conciliacion/varias-a-uno/propuestas): varias
+        /// facturas del mismo cliente que suman exacto un pago. Las reglas (DTC, RFC, mismo cliente, la
+        /// combinación más vieja, maximizar pagos conciliados, sin exclusiones entre modos) viven en el
+        /// servidor. Los pagos que no alcanzó a resolver quedan en <see cref="UltimosAvisosCalculo"/>.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasVariasAUnoServidorAsync(CancellationToken ct)
+        {
+            var respuesta = await _conciliacionApiService.ProponerVariasAUnoAsync(new ConciliacionVariasAUnoPropuestasRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                CombinacionesVetadas = _combinacionesVetadasVariasAUno.ToList()
+            }, ct);
+
+            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
+            var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var item in respuesta.Propuestas)
+            {
+                // Si algo cambió entre la carga del cliente y el cálculo del servidor, se omite:
+                // al aplicar el servidor vuelve a validar todo de cualquier forma.
+                if (!movimientosPorId.TryGetValue(item.IdMovimiento, out var movimiento)
+                    || item.Facturas.Any(f => !facturasPorId.ContainsKey(f.IdFactura)))
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = ConciliacionMatchPropuestaDto.TipoVariasAUno,
+                    Facturas = item.Facturas.Select(f => facturasPorId[f.IdFactura]).ToList(),
+                    Movimiento = movimiento,
+                    Observaciones = item.Observaciones
+                });
+            }
+
+            UltimosAvisosCalculo = respuesta.SinResolver
+                .Select(pago => $"Pago del {pago.FechaMovimiento:dd/MM/yyyy} por {pago.Monto.ToString("C2", CulturaMx)}: {pago.Motivo}")
+                .ToList();
+
+            return propuestas;
+        }
+
+        /// <summary>
+        /// Aplica las propuestas Varias a 1 en el servidor: cada pago se revalida con sus facturas
+        /// bloqueadas y se aplica completo o no se aplica. Los rechazados quedan en <see cref="UltimosRechazos"/>.
+        /// </summary>
+        private async Task<bool> AplicarVariasAUnoServidorAsync(IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
+        {
+            var respuesta = await _conciliacionApiService.AplicarVariasAUnoAsync(new ConciliacionVariasAUnoAplicarRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                Combinaciones = aprobadas
+                    .Select(propuesta => new ConciliacionCombinacionDto
+                    {
+                        IdMovimiento = propuesta.Movimiento.IdMovimiento,
+                        IdsFacturas = propuesta.Facturas.Select(factura => factura.IdFactura).ToList()
+                    })
+                    .ToList()
+            });
+
+            var propuestaPorMovimiento = aprobadas
+                .GroupBy(propuesta => propuesta.Movimiento.IdMovimiento)
+                .ToDictionary(grupo => grupo.Key, grupo => grupo.First());
+
+            UltimosRechazos = respuesta.Resultados
+                .Where(resultado => !resultado.Aplicado)
+                .Select(resultado => propuestaPorMovimiento.TryGetValue(resultado.IdMovimiento, out var propuesta)
+                    ? $"Pago del {propuesta.Movimiento.FechaTexto} ({propuesta.Movimiento.AbonoTexto}), facturas {propuesta.FoliosTexto}: {resultado.Motivo}"
+                    : $"Movimiento {resultado.IdMovimiento}: {resultado.Motivo}")
+                .ToList();
+
+            var mensaje = respuesta.Rechazados == 0
+                ? $"Conciliacion varias a 1 completada. {respuesta.Aplicados} pago(s) conciliado(s)."
+                : $"Conciliacion varias a 1: {respuesta.Aplicados} aplicada(s), {respuesta.Rechazados} rechazada(s) por el servidor.";
+            await _notificacionService.MostrarAsync("Conciliacion", mensaje);
+
+            return respuesta.Aplicados > 0;
+        }
+
+        /// <summary>
+        /// Valida en el servidor, con las reglas de Varias a 1, que los folios escritos (con o sin
+        /// serie) puedan ir juntos con el movimiento. Devuelve las facturas o el motivo del rechazo.
+        /// </summary>
+        public Task<(IReadOnlyList<FacturaResumenDto>? Facturas, string? Motivo)> ValidarFoliosVariasAUnoAsync(
+            int idMovimiento, IReadOnlyList<string> folios, CancellationToken ct = default)
+            => ValidarVariasAUnoAsync(new ConciliacionVariasAUnoValidarRequestDto { IdMovimiento = idMovimiento, Folios = folios.ToList() }, ct);
+
+        /// <summary>Igual que <see cref="ValidarFoliosVariasAUnoAsync"/> con las facturas ya identificadas (intercambios).</summary>
+        public Task<(IReadOnlyList<FacturaResumenDto>? Facturas, string? Motivo)> ValidarFacturasVariasAUnoAsync(
+            int idMovimiento, IReadOnlyList<int> idsFacturas, CancellationToken ct = default)
+            => ValidarVariasAUnoAsync(new ConciliacionVariasAUnoValidarRequestDto { IdMovimiento = idMovimiento, IdsFacturas = idsFacturas.ToList() }, ct);
+
+        private async Task<(IReadOnlyList<FacturaResumenDto>? Facturas, string? Motivo)> ValidarVariasAUnoAsync(
+            ConciliacionVariasAUnoValidarRequestDto request, CancellationToken ct)
+        {
+            request.Dtc = _aplicarDtc;
+            request.Rfc = _usarRfcComoRegla && !_soloCheques;
+            request.Cheques = _soloCheques;
+
+            var respuesta = await _conciliacionApiService.ValidarVariasAUnoAsync(request, ct);
+            if (!respuesta.Valido)
+            {
+                return (null, respuesta.Motivo ?? "Las facturas no cumplen las reglas de conciliación.");
+            }
+
+            var facturas = new List<FacturaResumenDto>();
+            foreach (var referencia in respuesta.Facturas)
+            {
+                var factura = _facturasTodasBase.FirstOrDefault(item => item.IdFactura == referencia.IdFactura);
+                if (factura == null)
+                {
+                    return (null, $"La factura {referencia.FolioTitulo} no está en la lista cargada; recarga la conciliación.");
+                }
+
+                facturas.Add(factura);
+            }
+
+            return (facturas, null);
+        }
+
+        // ---------------- Abonos (motor del servidor) ----------------
+
+        /// <summary>
+        /// Propuestas de Abonos calculadas por la API (api/conciliacion/abonos/propuestas): una factura
+        /// completada con varios pagos de su mismo RFC. Las reglas (RFC siempre, DTC opcional, pagos más
+        /// viejos, maximizar facturas conciliadas) y los topes de tiempo y memoria viven en el servidor:
+        /// la PC no calcula nada. Las facturas que no alcanzó a resolver quedan en <see cref="UltimosAvisosCalculo"/>.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAbonosServidorAsync(CancellationToken ct)
+        {
+            var respuesta = await _conciliacionApiService.ProponerAbonosAsync(new ConciliacionAbonosPropuestasRequestDto
+            {
+                Dtc = _aplicarDtc,
+                CombinacionesVetadas = _combinacionesVetadasAbonos.ToList()
+            }, ct);
+
+            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
+            var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var item in respuesta.Propuestas)
+            {
+                // Si algo cambió entre la carga del cliente y el cálculo del servidor, se omite:
+                // al aplicar el servidor vuelve a validar todo de cualquier forma.
+                if (!facturasPorId.TryGetValue(item.IdFactura, out var factura)
+                    || item.Movimientos.Count == 0
+                    || item.Movimientos.Any(m => !movimientosPorId.ContainsKey(m.IdMovimiento)))
+                {
+                    continue;
+                }
+
+                var movimientos = item.Movimientos.Select(m => movimientosPorId[m.IdMovimiento]).ToList();
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = "Abonos",
+                    Facturas = new List<FacturaResumenDto> { factura },
+                    Movimiento = movimientos[0],
+                    MovimientosAdicionales = movimientos.Skip(1).ToList(),
+                    Observaciones = item.Observaciones,
+                    PermiteDescartarMovimientos = false
+                });
+            }
+
+            UltimosAvisosCalculo = respuesta.SinResolver
+                .Select(factura => $"Factura {factura.FolioTitulo} ({factura.SaldoPendiente.ToString("C2", CulturaMx)}): {factura.Motivo}")
+                .ToList();
+
+            return propuestas;
+        }
+
+        /// <summary>
+        /// Aplica las propuestas de Abonos en el servidor: cada factura se revalida con sus pagos
+        /// bloqueados y se aplica completa o no se aplica. Los rechazados quedan en <see cref="UltimosRechazos"/>.
+        /// </summary>
+        private async Task<bool> AplicarAbonosServidorAsync(IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
+        {
+            var respuesta = await _conciliacionApiService.AplicarAbonosAsync(new ConciliacionAbonosAplicarRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Combinaciones = aprobadas
+                    .Select(propuesta => new ConciliacionAbonosCombinacionDto
+                    {
+                        IdFactura = propuesta.Facturas[0].IdFactura,
+                        IdsMovimientos = propuesta.TodosLosMovimientos.Select(movimiento => movimiento.IdMovimiento).ToList()
+                    })
+                    .ToList()
+            });
+
+            var foliosPorId = aprobadas
+                .Select(propuesta => propuesta.Facturas[0])
+                .GroupBy(factura => factura.IdFactura)
+                .ToDictionary(grupo => grupo.Key, grupo => grupo.First().FolioTitulo);
+
+            UltimosRechazos = respuesta.Resultados
+                .Where(resultado => !resultado.Aplicado)
+                .Select(resultado => $"Factura {foliosPorId.GetValueOrDefault(resultado.IdFactura, resultado.IdFactura.ToString())}: {resultado.Motivo}")
+                .ToList();
+
+            var mensaje = respuesta.Rechazados == 0
+                ? $"Conciliacion de abonos completada. {respuesta.Aplicados} factura(s) conciliada(s)."
+                : $"Conciliacion de abonos: {respuesta.Aplicados} aplicada(s), {respuesta.Rechazados} rechazada(s) por el servidor.";
+            await _notificacionService.MostrarAsync("Conciliacion", mensaje);
+
+            return respuesta.Aplicados > 0;
         }
 
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAutomaticasAsync(
@@ -197,7 +714,7 @@ namespace Advance_Control.ViewModels
             var facturasRemanentes = new List<FacturaResumenDto>(facturasObjetivo);
 
             // "Conciliación" es exclusivamente 1 a 1 -- la combinación varios-a-1 vive
-            // aparte en CrearPropuestasCombinacionalesAsync (botón "Combinación").
+            // aparte en el motor del servidor (botón "Varias a 1", CrearPropuestasVariasAUnoServidorAsync).
             var propuestas = RecolectarPropuestasUnoAUno(facturasUnoAUno, movimientosDisponibles, facturasRemanentes).ToList();
 
             if (_usarRfcComoRegla)
@@ -209,51 +726,6 @@ namespace Advance_Control.ViewModels
                             p.Movimiento.RfcEmisor?.Trim(),
                             p.Facturas.First().ReceptorRfc?.Trim(),
                             StringComparison.OrdinalIgnoreCase))
-                    .ToList();
-            }
-
-            return propuestas;
-        }
-
-        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasCombinacionalesAsync(
-            Func<ConciliacionMovimientoResumenDto, bool>? filtroMovimientoExtra = null,
-            Func<FacturaResumenDto, bool>? filtroFacturaExtra = null)
-        {
-            var facturasObjetivo = _facturasPendientesBase
-                .Where(factura => _conciliacionMatchingEngine.ObtenerMontoPendienteFactura(factura) > 0)
-                .Where(factura => !_facturasDescartadas.Contains(factura.IdFactura))
-                .Where(factura => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
-                .Where(factura => filtroFacturaExtra == null || filtroFacturaExtra(factura))
-                .OrderBy(factura => factura.Fecha)
-                .ThenBy(factura => factura.IdFactura)
-                .ToList();
-
-            var movimientosBase = filtroMovimientoExtra == null
-                ? _movimientosPendientesBase
-                : _movimientosPendientesBase.Where(filtroMovimientoExtra).ToList();
-
-            if (!_conciliacionMatchingEngine.CanRunCombinacional(facturasObjetivo, movimientosBase))
-            {
-                return Array.Empty<ConciliacionMatchPropuestaDto>();
-            }
-
-            var movimientosDisponibles = movimientosBase
-                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
-                .OrderBy(movimiento => movimiento.Fecha)
-                .ThenBy(movimiento => movimiento.IdMovimiento)
-                .ToList();
-            var facturasRemanentes = new List<FacturaResumenDto>(facturasObjetivo);
-            var propuestas = RecolectarPropuestasCombinacional(facturasRemanentes, movimientosDisponibles);
-
-            if (_usarRfcComoRegla)
-            {
-                propuestas = propuestas
-                    .Where(p => p.Movimiento != null
-                        && p.Facturas.Any()
-                        && p.Facturas.All(f => string.Equals(
-                            p.Movimiento.RfcEmisor?.Trim(),
-                            f.ReceptorRfc?.Trim(),
-                            StringComparison.OrdinalIgnoreCase)))
                     .ToList();
             }
 
@@ -437,167 +909,6 @@ namespace Advance_Control.ViewModels
             return propuestas;
         }
 
-        /// <summary>
-        /// Liga Complementos de Pago (CFDI Pagos 2.0) ya timbrados -- que citan una factura propia
-        /// pero todavía no tienen ningún abono interno registrado -- contra movimientos bancarios,
-        /// por monto + fecha de pago del complemento. Reusa BuscarMovimientoCoincidente tal cual
-        /// (misma regla PPD "mismo mes o posterior" que los demás modos); solo se le pasa la fecha
-        /// de pago del complemento en vez de la fecha de la factura, como señal de desempate entre
-        /// candidatos igualmente válidos -- la compatibilidad por método de pago sigue evaluándose
-        /// contra la fecha/método de la factura, igual que en cualquier otro modo.
-        /// </summary>
-        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasComplementosAsync(CancellationToken ct = default)
-        {
-            var complementosPendientes = await _facturaService.ObtenerComplementosSinMovimientoAsync(ct);
-            ct.ThrowIfCancellationRequested();
-
-            if (complementosPendientes.Count == 0)
-            {
-                return Array.Empty<ConciliacionMatchPropuestaDto>();
-            }
-
-            var facturasPorId = _facturasPendientesBase.ToDictionary(factura => factura.IdFactura);
-
-            var movimientosDisponibles = _movimientosPendientesBase
-                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
-                .OrderBy(movimiento => movimiento.Fecha)
-                .ThenBy(movimiento => movimiento.IdMovimiento)
-                .ToList();
-
-            var propuestas = new List<ConciliacionMatchPropuestaDto>();
-
-            foreach (var docto in complementosPendientes
-                .Where(docto => !_facturasDescartadas.Contains(docto.IdFacturaPagada))
-                .OrderBy(docto => docto.IdFacturaPagada)
-                .ThenBy(docto => docto.NumParcialidad))
-            {
-                if (!facturasPorId.TryGetValue(docto.IdFacturaPagada, out var facturaPagada))
-                {
-                    continue; // la factura pagada ya no está en el pool activo (ej. cancelada)
-                }
-
-                if (_usarRfcComoRegla && string.IsNullOrWhiteSpace(facturaPagada.ReceptorRfc))
-                {
-                    continue;
-                }
-
-                var movimientoObjetivo = _conciliacionMatchingEngine.BuscarMovimientoCoincidente(
-                    movimientosDisponibles,
-                    docto.ImpPagado,
-                    new[] { facturaPagada },
-                    docto.FechaPago,
-                    _aplicarReglaPueMismoMes,
-                    _aplicarReglaPpdSiguienteMes);
-
-                if (movimientoObjetivo == null)
-                {
-                    continue;
-                }
-
-                if (_usarRfcComoRegla && !string.Equals(
-                        movimientoObjetivo.RfcEmisor?.Trim(),
-                        facturaPagada.ReceptorRfc?.Trim(),
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                propuestas.Add(new ConciliacionMatchPropuestaDto
-                {
-                    Tipo = "Complemento",
-                    Facturas = new List<FacturaResumenDto> { facturaPagada },
-                    Movimiento = movimientoObjetivo,
-                    Observaciones = $"Complemento de pago {docto.ComplementoFolioTitulo} (parcialidad {docto.NumParcialidad}) contra movimiento {movimientoObjetivo.GrupoId}.",
-                    IdComplementoPagoDocto = docto.IdDocto,
-                    ComplementoFolioTexto = docto.ComplementoFolioTitulo
-                });
-
-                movimientosDisponibles.Remove(movimientoObjetivo);
-            }
-
-            return propuestas;
-        }
-
-        /// <summary>
-        /// Liga abonos capturados a mano ("Registrar abono") -- que ya descontaron el saldo de su
-        /// factura pero todavia no tienen ningun movimiento bancario real vinculado -- contra
-        /// movimientos bancarios, por monto + fecha del abono. Calco de
-        /// <see cref="CrearPropuestasComplementosAsync"/>, con dos diferencias: usa
-        /// _facturasTodasBase (no _facturasPendientesBase) porque la factura del abono pudo haber
-        /// quedado finiquitada, y el backend ya excluyo los abonos en efectivo.
-        /// </summary>
-        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasIngresosManualesAsync(CancellationToken ct = default)
-        {
-            var ingresosPendientes = await _facturaService.ObtenerIngresosManualesSinMovimientoAsync(ct);
-            ct.ThrowIfCancellationRequested();
-
-            if (ingresosPendientes.Count == 0)
-            {
-                return Array.Empty<ConciliacionMatchPropuestaDto>();
-            }
-
-            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
-
-            var movimientosDisponibles = _movimientosPendientesBase
-                .Where(movimiento => !_usarRfcComoRegla || !string.IsNullOrWhiteSpace(movimiento.RfcEmisor))
-                .OrderBy(movimiento => movimiento.Fecha)
-                .ThenBy(movimiento => movimiento.IdMovimiento)
-                .ToList();
-
-            var propuestas = new List<ConciliacionMatchPropuestaDto>();
-
-            foreach (var ingreso in ingresosPendientes
-                .Where(ingreso => !_facturasDescartadas.Contains(ingreso.IdFactura))
-                .OrderBy(ingreso => ingreso.IdFactura)
-                .ThenBy(ingreso => ingreso.FechaAbono))
-            {
-                if (!facturasPorId.TryGetValue(ingreso.IdFactura, out var factura))
-                {
-                    continue; // la factura ya no esta en el pool activo (ej. cancelada)
-                }
-
-                if (_usarRfcComoRegla && string.IsNullOrWhiteSpace(factura.ReceptorRfc))
-                {
-                    continue;
-                }
-
-                var movimientoObjetivo = _conciliacionMatchingEngine.BuscarMovimientoCoincidente(
-                    movimientosDisponibles,
-                    ingreso.MontoAbono,
-                    new[] { factura },
-                    ingreso.FechaAbono,
-                    _aplicarReglaPueMismoMes,
-                    _aplicarReglaPpdSiguienteMes);
-
-                if (movimientoObjetivo == null)
-                {
-                    continue;
-                }
-
-                if (_usarRfcComoRegla && !string.Equals(
-                        movimientoObjetivo.RfcEmisor?.Trim(),
-                        factura.ReceptorRfc?.Trim(),
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                propuestas.Add(new ConciliacionMatchPropuestaDto
-                {
-                    Tipo = "IngresoManual",
-                    Facturas = new List<FacturaResumenDto> { factura },
-                    Movimiento = movimientoObjetivo,
-                    Observaciones = $"Ingreso manual ({ingreso.FormaPagoTexto}) de {ingreso.MontoAbonoTexto} contra movimiento {movimientoObjetivo.GrupoId}.",
-                    IdAbonoFacturaIngresoManual = ingreso.IdAbonoFactura,
-                    IngresoManualReferenciaTexto = ingreso.ReferenciaTexto
-                });
-
-                movimientosDisponibles.Remove(movimientoObjetivo);
-            }
-
-            return propuestas;
-        }
-
         private static void RegistrarUsados(
             IEnumerable<ConciliacionMatchPropuestaDto> propuestas,
             HashSet<int> movimientosUsados,
@@ -655,7 +966,9 @@ namespace Advance_Control.ViewModels
 
             var movimientosPendientes = detallesValidos
                 .SelectMany(detalle => detalle.Grupos
-                    .Where(grupo => !grupo.Conciliado && grupo.Abono > 0)
+                    // Solo lo que le queda al movimiento: uno usado en parte no se vuelve a
+                    // proponer por su monto original (eso sobreaplicaba el movimiento).
+                    .Where(grupo => !grupo.Conciliado && grupo.MontoRestante > 0)
                     .Select(grupo => new ConciliacionMovimientoResumenDto
                     {
                         IdEstadoCuenta = detalle.EstadoCuenta!.IdEstadoCuenta,
@@ -671,7 +984,8 @@ namespace Advance_Control.ViewModels
                         Descripcion = grupo.Descripcion,
                         Referencia = grupo.Referencia,
                         Cargo = grupo.Cargo,
-                        Abono = grupo.Abono,
+                        Abono = grupo.MontoRestante,
+                        MontoRestante = grupo.MontoRestante,
                         Saldo = grupo.Saldo,
                         RelacionadosCount = grupo.MovimientosRelacionados.Count,
                         RfcEmisor = grupo.RfcEmisor
@@ -753,48 +1067,6 @@ namespace Advance_Control.ViewModels
                         ? "No fue posible registrar uno de los abonos combinados."
                         : resultado.Message);
                 }
-            }
-        }
-
-        private async Task AplicarComplementoAsync(ConciliacionMatchPropuestaDto propuesta)
-        {
-            if (propuesta.IdComplementoPagoDocto is not int idDocto)
-            {
-                return;
-            }
-
-            var resultado = await _facturaService.VincularComplementoMovimientoAsync(new VincularComplementoMovimientoRequestDto
-            {
-                IdDocto = idDocto,
-                IdMovimiento = propuesta.Movimiento.IdMovimiento
-            });
-
-            if (!resultado.Success)
-            {
-                throw new InvalidOperationException(string.IsNullOrWhiteSpace(resultado.Message)
-                    ? "No fue posible ligar el complemento de pago al movimiento."
-                    : resultado.Message);
-            }
-        }
-
-        private async Task AplicarIngresoManualAsync(ConciliacionMatchPropuestaDto propuesta)
-        {
-            if (propuesta.IdAbonoFacturaIngresoManual is not int idAbonoFactura)
-            {
-                return;
-            }
-
-            var resultado = await _facturaService.VincularIngresoManualMovimientoAsync(new VincularIngresoManualMovimientoRequestDto
-            {
-                IdAbonoFactura = idAbonoFactura,
-                IdMovimiento = propuesta.Movimiento.IdMovimiento
-            });
-
-            if (!resultado.Success)
-            {
-                throw new InvalidOperationException(string.IsNullOrWhiteSpace(resultado.Message)
-                    ? "No fue posible ligar el ingreso manual al movimiento."
-                    : resultado.Message);
             }
         }
 
@@ -928,71 +1200,6 @@ namespace Advance_Control.ViewModels
 
                 movimientosDisponibles.Remove(movimientoObjetivo);
                 facturasRemanentes.RemoveAll(factura => factura.IdFactura == facturaObjetivo.IdFactura);
-            }
-
-            return propuestas;
-        }
-
-        private List<ConciliacionMatchPropuestaDto> RecolectarPropuestasCombinacional(
-            List<FacturaResumenDto> facturasRemanentes,
-            List<ConciliacionMovimientoResumenDto> movimientosDisponibles)
-        {
-            var propuestas = new List<ConciliacionMatchPropuestaDto>();
-
-            var gruposPorRfc = facturasRemanentes
-                .Where(factura => !string.IsNullOrWhiteSpace(factura.ReceptorRfc))
-                .GroupBy(factura => factura.ReceptorRfc!.Trim(), StringComparer.OrdinalIgnoreCase)
-                .OrderBy(grupo => grupo.Min(factura => factura.Fecha))
-                .ThenBy(grupo => grupo.Key, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            foreach (var grupoRfc in gruposPorRfc)
-            {
-                var facturasRfc = facturasRemanentes
-                    .Where(factura => string.Equals(factura.ReceptorRfc?.Trim(), grupoRfc.Key, StringComparison.OrdinalIgnoreCase))
-                    .OrderBy(factura => factura.Fecha)
-                    .ThenBy(factura => factura.IdFactura)
-                    .ToList();
-
-                if (facturasRfc.Count < 2)
-                {
-                    continue;
-                }
-
-                while (facturasRfc.Count >= 2 && movimientosDisponibles.Count > 0)
-                {
-                    var maximoAbonoDisponible = movimientosDisponibles.Max(movimiento => movimiento.Abono);
-                    if (maximoAbonoDisponible <= 0)
-                    {
-                        break;
-                    }
-
-                    var combinacion = _conciliacionMatchingEngine.BuscarCombinacionFacturasCompatible(
-                        facturasRfc,
-                        movimientosDisponibles,
-                        maximoAbonoDisponible,
-                        out var movimientoObjetivo,
-                        _aplicarReglaPueMismoMes,
-                        _aplicarReglaPpdSiguienteMes);
-
-                    if (combinacion == null || movimientoObjetivo == null)
-                    {
-                        break;
-                    }
-
-                    propuestas.Add(new ConciliacionMatchPropuestaDto
-                    {
-                        Tipo = "Combinacional",
-                        Facturas = combinacion,
-                        Movimiento = movimientoObjetivo,
-                        Observaciones = $"Conciliacion automatica combinacional con movimiento {movimientoObjetivo.GrupoId} para RFC {grupoRfc.Key}."
-                    });
-
-                    var idsConciliados = combinacion.Select(factura => factura.IdFactura).ToHashSet();
-                    facturasRemanentes.RemoveAll(factura => idsConciliados.Contains(factura.IdFactura));
-                    facturasRfc.RemoveAll(factura => idsConciliados.Contains(factura.IdFactura));
-                    movimientosDisponibles.RemoveAll(movimiento => movimiento.IdMovimiento == movimientoObjetivo.IdMovimiento);
-                }
             }
 
             return propuestas;

@@ -1254,6 +1254,34 @@ namespace Advance_Control.Views.Pages
                 selectedColor = selectedItem.Tag.ToString() ?? "#FF0000";
             }
 
+            // Estado/Municipio: además de los nombres, se guarda el contorno real (path) y la
+            // caja (bbox) tomados del GeoJSON embebido. Sin eso, la BD no puede saber qué
+            // ubicaciones caen dentro del área: técnicos disponibles, equipos visibles por
+            // técnico y detección automática de área quedaban vacíos para estas áreas.
+            GeoContorno? geoContorno = null;
+            if (isGeoType)
+            {
+                var geoNombre = _pendingGeoNombre;
+                var geoEstado = _pendingEstadoNombre;
+                if (_isEditMode && string.IsNullOrEmpty(geoNombre))
+                {
+                    var areaEditada = ViewModel.Areas.FirstOrDefault(a => a.IdArea == _editingAreaId);
+                    LeerNombresGeo(areaEditada?.MetadataJSON, ref geoNombre, ref geoEstado);
+                }
+                geoNombre ??= NombreTextBox.Text.Trim();
+                _pendingGeoNombre = geoNombre;
+                _pendingEstadoNombre = geoEstado;
+
+                geoContorno = ObtenerContornoGeo(_currentShapeType!, geoNombre, geoEstado);
+                if (geoContorno == null)
+                {
+                    await _notificacionService.MostrarAsync("Validación",
+                        $"No se encontró el contorno de \"{geoNombre}\" en los límites estatales/municipales. " +
+                        "Sin contorno el sistema no puede ubicar equipos ni técnicos dentro del área; vuelve a seleccionarlo en el mapa.");
+                    return;
+                }
+            }
+
             var area = new AreaDto
             {
                 IdArea = _editingAreaId ?? 0,
@@ -1270,7 +1298,8 @@ namespace Advance_Control.Views.Pages
                       {
                           geoType = _currentShapeType,
                           nombre = _pendingGeoNombre ?? NombreTextBox.Text.Trim(),
-                          estado = _pendingEstadoNombre
+                          estado = _pendingEstadoNombre,
+                          path = geoContorno!.Path
                       })
                     : _isEditMode && string.IsNullOrEmpty(_currentShapePath)
                         ? null
@@ -1336,6 +1365,16 @@ namespace Advance_Control.Views.Pages
                 area.Radio = _currentShapeRadius.Value;
             }
 
+            if (geoContorno != null)
+            {
+                area.BoundingBoxNE_Lat = geoContorno.Norte;
+                area.BoundingBoxNE_Lng = geoContorno.Este;
+                area.BoundingBoxSW_Lat = geoContorno.Sur;
+                area.BoundingBoxSW_Lng = geoContorno.Oeste;
+                area.CentroLatitud = Math.Round((geoContorno.Norte + geoContorno.Sur) / 2m, 6);
+                area.CentroLongitud = Math.Round((geoContorno.Este + geoContorno.Oeste) / 2m, 6);
+            }
+
             ApiResponse result;
             if (_isEditMode && _editingAreaId.HasValue)
             {
@@ -1360,6 +1399,102 @@ namespace Advance_Control.Views.Pages
             {
                 await _notificacionService.MostrarAsync("Error", result.Message ?? "Error al guardar el área.");
             }
+        }
+
+        /// <summary>Contorno de un estado/municipio listo para guardarse en el área.</summary>
+        private sealed class GeoContorno
+        {
+            public List<Dictionary<string, decimal>> Path { get; init; } = new();
+            public decimal Norte { get; init; }
+            public decimal Sur { get; init; }
+            public decimal Este { get; init; }
+            public decimal Oeste { get; init; }
+        }
+
+        private static void LeerNombresGeo(string? metadataJson, ref string? nombre, ref string? estado)
+        {
+            if (string.IsNullOrWhiteSpace(metadataJson)) return;
+            try
+            {
+                using var doc = JsonDocument.Parse(metadataJson);
+                if (doc.RootElement.TryGetProperty("nombre", out var n) && n.ValueKind == JsonValueKind.String)
+                    nombre = n.GetString();
+                if (doc.RootElement.TryGetProperty("estado", out var e) && e.ValueKind == JsonValueKind.String)
+                    estado = e.GetString();
+            }
+            catch (JsonException) { }
+        }
+
+        /// <summary>
+        /// Busca el estado/municipio en el GeoJSON embebido y devuelve como "path" el anillo
+        /// exterior del polígono más grande (las islas pequeñas se descartan, igual que hace
+        /// fn_punto_en_poligono, que trabaja con un solo anillo) y la caja de todo el MultiPolygon.
+        /// </summary>
+        private GeoContorno? ObtenerContornoGeo(string geoType, string nombre, string? estado)
+        {
+            var bytes = geoType == "Estado" ? _estadosGeoJsonBytes : _municipiosGeoJsonBytes;
+            if (bytes == null && LoadGeoAssetsIntoMemory())
+                bytes = geoType == "Estado" ? _estadosGeoJsonBytes : _municipiosGeoJsonBytes;
+            if (bytes == null) return null;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(bytes);
+                foreach (var feature in doc.RootElement.GetProperty("features").EnumerateArray())
+                {
+                    var props = feature.GetProperty("properties");
+                    if (!props.TryGetProperty("nombre", out var pNombre) || pNombre.GetString() != nombre)
+                        continue;
+                    if (geoType == "Municipio" && estado != null
+                        && (!props.TryGetProperty("estado", out var pEstado) || pEstado.GetString() != estado))
+                        continue;
+
+                    var geometry = feature.GetProperty("geometry");
+                    var coords = geometry.GetProperty("coordinates");
+                    var poligonos = geometry.GetProperty("type").GetString() == "MultiPolygon"
+                        ? coords.EnumerateArray().ToList()
+                        : new List<JsonElement> { coords };
+
+                    List<(decimal Lat, decimal Lng)>? mayor = null;
+                    double mayorArea = -1;
+                    decimal norte = decimal.MinValue, sur = decimal.MaxValue, este = decimal.MinValue, oeste = decimal.MaxValue;
+
+                    foreach (var poligono in poligonos)
+                    {
+                        var anillo = poligono.EnumerateArray().First()
+                            .EnumerateArray()
+                            .Select(p => (Lat: Math.Round(p[1].GetDecimal(), 5), Lng: Math.Round(p[0].GetDecimal(), 5)))
+                            .ToList();
+                        if (anillo.Count < 3) continue;
+
+                        foreach (var (lat, lng) in anillo)
+                        {
+                            norte = Math.Max(norte, lat); sur = Math.Min(sur, lat);
+                            este = Math.Max(este, lng); oeste = Math.Min(oeste, lng);
+                        }
+
+                        // Área por fórmula del zapato (en grados², solo para comparar tamaños)
+                        double area = 0;
+                        for (int i = 0, j = anillo.Count - 1; i < anillo.Count; j = i++)
+                            area += (double)(anillo[j].Lng * anillo[i].Lat - anillo[i].Lng * anillo[j].Lat);
+                        area = Math.Abs(area);
+                        if (area > mayorArea) { mayorArea = area; mayor = anillo; }
+                    }
+
+                    if (mayor == null) return null;
+
+                    return new GeoContorno
+                    {
+                        Path = mayor.Select(p => new Dictionary<string, decimal> { ["lat"] = p.Lat, ["lng"] = p.Lng }).ToList(),
+                        Norte = norte, Sur = sur, Este = este, Oeste = oeste
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                _ = _loggingService.LogErrorAsync($"Error al leer el contorno de {geoType} '{nombre}'", ex, "AreasPage", "ObtenerContornoGeo");
+            }
+            return null;
         }
 
         private void CancelButton_Click(object sender, RoutedEventArgs e)

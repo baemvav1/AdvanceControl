@@ -91,6 +91,26 @@
                 </StackPanel>
 
 
+                <!--  Cantidad (empieza en 1; en servicios solo enteros)  -->
+                <StackPanel
+                    x:Name="CantidadPanel"
+                    Margin="0,0,0,12"
+                    Visibility="Collapsed">
+                    <TextBlock
+                        Margin="0,0,0,4"
+                        FontWeight="SemiBold"
+                        Text="Cantidad:" />
+                    <NumberBox
+                        x:Name="CantidadNumberBox"
+                        AutomationProperties.Name="Cantidad del cargo"
+                        LargeChange="1"
+                        Maximum="999999"
+                        Minimum="0.01"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Compact"
+                        Value="1" />
+                </StackPanel>
+
                 <!--  Unitario (Costo unitario del cargo)  -->
                 <StackPanel
                     x:Name="UnitarioPanel"

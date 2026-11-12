@@ -74,6 +74,9 @@ namespace Advance_Control.Models
             set => SetProperty(ref _nombre, value);
         }
 
+        /// <summary>Clave del paso en checks_operacion (ej: "cotizacion_generada").</summary>
+        public string Campo { get; set; } = string.Empty;
+
         public bool Completado
         {
             get => _completado;

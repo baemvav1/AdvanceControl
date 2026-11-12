@@ -82,11 +82,13 @@ namespace Advance_Control.Views.Dialogs
             if (cargoType != 0)
             {
                 NotaPanel.Visibility = Visibility.Visible;
+                CantidadPanel.Visibility = Visibility.Visible;
                 UnitarioPanel.Visibility = Visibility.Visible;
             }
             else
             {
                 NotaPanel.Visibility = Visibility.Collapsed;
+                CantidadPanel.Visibility = Visibility.Collapsed;
                 UnitarioPanel.Visibility = Visibility.Collapsed;
             }
             if (cargoType == TIPO_CARGO_REFACCION && _refaccionSelector == null)
@@ -153,6 +155,13 @@ namespace Advance_Control.Views.Dialogs
                 if (double.IsNaN(UnitarioNumberBox.Value) || UnitarioNumberBox.Value <= 0)
                     return false;
 
+                // Cantidad mayor que 0; en servicios solo enteros (p. ej. limpieza de 4 botoneras).
+                var cantidad = CantidadNumberBox.Value;
+                if (double.IsNaN(cantidad) || cantidad <= 0)
+                    return false;
+                if (SelectedCargoType == TIPO_CARGO_SERVICIO && cantidad % 1 != 0)
+                    return false;
+
                 // Check if a selection has been made in the appropriate selector
                 if (SelectedCargoType == TIPO_CARGO_REFACCION)
                 {
@@ -184,7 +193,7 @@ namespace Advance_Control.Views.Dialogs
 
             int idRelacionCargo = 0;
             int? idProveedor = null;
-            double cantidad = 1;
+            double cantidad = CantidadNumberBox.Value;
 
             
             
@@ -199,8 +208,6 @@ namespace Advance_Control.Views.Dialogs
                 idRelacionCargo = _servicioSelector.SelectedServicio?.IdServicio ?? 0;
                 // For Servicio, automatically copy idAtiende from operation as idProveedor
                 idProveedor = _idProveedor;
-                // For Servicio, cantidad is always 1
-                cantidad = 1;
             }
             else if (idTipoCargo == TIPO_CARGO_PRODUCTO && _productoSelector?.HasSelection == true)
             {

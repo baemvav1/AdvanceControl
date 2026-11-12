@@ -193,35 +193,37 @@
                                     Text="{x:Bind Tipo}" />
                             </Border>
 
-                            <!--  Folio(s): clickeable solo en propuestas 1 a 1  -->
+                            <!--  Folio(s): clickeable en propuestas 1 a 1 y Varias a 1  -->
                             <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
                             <Grid>
 
-                                <!--  Texto plano para propuestas no 1-a-1 (combinacional)  -->
+                                <!--  Texto plano para propuestas sin folio editable  -->
                                 <TextBlock
                                     Text="{x:Bind FoliosTexto}"
                                     TextTrimming="CharacterEllipsis"
-                                    Visibility="{x:Bind EsUnoAUno, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}">
+                                    Visibility="{x:Bind EsFolioEditable, Converter={StaticResource BoolToVisibility}, ConverterParameter=invert}">
                                     <ToolTipService.ToolTip>
                                         <ToolTip Content="{x:Bind FoliosTexto}" />
                                     </ToolTipService.ToolTip>
                                 </TextBlock>
 
-                                <!--  Botón-folio con Flyout de reasignación para propuestas 1 a 1  -->
+                                <!--  Botón-folio con Flyout de reasignación (1 a 1: un folio; Varias a 1: la lista de folios)  -->
                                 <HyperlinkButton
                                     x:Name="BtnFolioReasignar"
                                     Padding="0"
                                     Click="BtnFolioReasignar_Click"
                                     Content="{x:Bind FoliosTexto}"
                                     FontSize="14"
-                                    ToolTipService.ToolTip="Haz clic para reasignar a otra factura"
-                                    Visibility="{x:Bind EsUnoAUno, Converter={StaticResource BoolToVisibility}}">
+                                    ToolTipService.ToolTip="Haz clic para cambiar la(s) factura(s)"
+                                    Visibility="{x:Bind EsFolioEditable, Converter={StaticResource BoolToVisibility}}">
                                     <FlyoutBase.AttachedFlyout>
                                         <Flyout x:Name="FlyoutReasignacion" Opening="FlyoutFolio_Opening" Placement="Bottom">
                                             <StackPanel MinWidth="280" Spacing="10">
                                                 <TextBlock
+                                                    x:Name="TxtTituloFolio"
                                                     FontWeight="SemiBold"
-                                                    Text="Reasignar folio de factura" />
+                                                    Text="Reasignar folio de factura"
+                                                    TextWrapping="Wrap" />
                                                 <TextBox
                                                     x:Name="TxtFolioNuevo"
                                                     Header="Nuevo folio"
@@ -452,7 +454,8 @@
                                                                 Grid.Column="4"
                                                                 HorizontalAlignment="Right"
                                                                 Click="BtnDescartarMovimientoAbono_Click"
-                                                                Content="Descartar y reintentar" />
+                                                                Content="Descartar y reintentar"
+                                                                Visibility="{x:Bind PermiteDescartar, Converter={StaticResource BoolToVisibility}}" />
                                                         </Grid>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
