@@ -10,20 +10,40 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <!--  Renglón seleccionado (fijado) de las tablas: tinte suave derivado del acento; el
-              contorno de 1 px lo pone FijadorSeleccionTableView  -->
+        <!--
+            Renglón seleccionado (fijado) de las tablas: tinte suave derivado del acento; el
+            contorno de 1 px lo pone FijadorSeleccionTableView
+        -->
         <ResourceDictionary>
             <ResourceDictionary.ThemeDictionaries>
                 <ResourceDictionary x:Key="Default">
-                    <SolidColorBrush x:Key="TableViewRowBackgroundSelected" Opacity="0.15" Color="{ThemeResource SystemAccentColorLight2}" />
-                    <SolidColorBrush x:Key="TableViewRowBackgroundSelectedPointerOver" Opacity="0.22" Color="{ThemeResource SystemAccentColorLight2}" />
-                    <SolidColorBrush x:Key="TableViewRowBackgroundSelectedPressed" Opacity="0.10" Color="{ThemeResource SystemAccentColorLight2}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelected"
+                        Opacity="0.15"
+                        Color="{ThemeResource SystemAccentColorLight2}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPointerOver"
+                        Opacity="0.22"
+                        Color="{ThemeResource SystemAccentColorLight2}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPressed"
+                        Opacity="0.10"
+                        Color="{ThemeResource SystemAccentColorLight2}" />
                     <StaticResource x:Key="TableViewRowForegroundSelected" ResourceKey="TextFillColorPrimaryBrush" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Light">
-                    <SolidColorBrush x:Key="TableViewRowBackgroundSelected" Opacity="0.15" Color="{ThemeResource SystemAccentColorDark1}" />
-                    <SolidColorBrush x:Key="TableViewRowBackgroundSelectedPointerOver" Opacity="0.22" Color="{ThemeResource SystemAccentColorDark1}" />
-                    <SolidColorBrush x:Key="TableViewRowBackgroundSelectedPressed" Opacity="0.10" Color="{ThemeResource SystemAccentColorDark1}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelected"
+                        Opacity="0.15"
+                        Color="{ThemeResource SystemAccentColorDark1}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPointerOver"
+                        Opacity="0.22"
+                        Color="{ThemeResource SystemAccentColorDark1}" />
+                    <SolidColorBrush
+                        x:Key="TableViewRowBackgroundSelectedPressed"
+                        Opacity="0.10"
+                        Color="{ThemeResource SystemAccentColorDark1}" />
                     <StaticResource x:Key="TableViewRowForegroundSelected" ResourceKey="TextFillColorPrimaryBrush" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
@@ -65,42 +85,42 @@
                             <StackPanel Orientation="Horizontal">
                                 <AppBarButton
                                     x:Name="BtnConciliacion"
+                                    Width="84"
                                     Click="BtnConciliacion_Click"
                                     IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
-                                    ToolTipService.ToolTip="Un movimiento con una factura del mismo monto."
-                                    Width="84"
-                                    Label="1 a 1">
+                                    Label="1 a 1"
+                                    ToolTipService.ToolTip="Un movimiento con una factura del mismo monto.">
                                     <AppBarButton.Icon>
                                         <FontIcon Glyph="&#xF57F;" />
                                     </AppBarButton.Icon>
                                 </AppBarButton>
                                 <AppBarButton
                                     x:Name="BtnCombinacion"
+                                    Width="84"
                                     Click="BtnCombinacion_Click"
                                     IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
-                                    ToolTipService.ToolTip="Un movimiento que liquida varias facturas del mismo RFC."
-                                    Width="84"
-                                    Label="Varias a 1">
+                                    Label="Varias a 1"
+                                    ToolTipService.ToolTip="Un movimiento que liquida varias facturas del mismo RFC.">
                                     <AppBarButton.Icon>
                                         <FontIcon Glyph="&#xF585;" />
                                     </AppBarButton.Icon>
                                 </AppBarButton>
                                 <AppBarButton
                                     x:Name="BtnAbonos"
+                                    Width="84"
                                     Click="BtnAbonos_Click"
                                     IsEnabled="{x:Bind ViewModel.PuedeConciliarAbonos, Mode=OneWay}"
-                                    ToolTipService.ToolTip="Varios movimientos que juntos liquidan una factura."
-                                    Width="84"
-                                    Label="Abonos">
+                                    Label="Abonos"
+                                    ToolTipService.ToolTip="Varios movimientos que juntos liquidan una factura.">
                                     <AppBarButton.Icon>
                                         <FontIcon Glyph="&#xEC59;" />
                                     </AppBarButton.Icon>
                                 </AppBarButton>
                                 <AppBarButton
                                     x:Name="BtnComplementos"
+                                    Width="90"
                                     Click="BtnComplementos_Click"
                                     IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
-                                    Width="90"
                                     Label="Complementos"
                                     ToolTipService.ToolTip="Primero vincula a su factura los Complementos de Pago nuevos (portal de Bilkon o importación automática); luego liga los que no tienen abono interno a movimientos bancarios por monto y fecha.">
                                     <AppBarButton.Icon>
@@ -109,9 +129,9 @@
                                 </AppBarButton>
                                 <AppBarButton
                                     x:Name="BtnIngresosManuales"
+                                    Width="120"
                                     Click="BtnIngresosManuales_Click"
                                     IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
-                                    Width="120"
                                     Label="Ingresos Manuales"
                                     ToolTipService.ToolTip="Liga abonos capturados a mano (sin movimiento bancario) a su movimiento real, por monto y fecha. Excluye pagos en efectivo.">
                                     <AppBarButton.Icon>
@@ -236,8 +256,8 @@
                                     Width="100"
                                     Click="BtnDeshacerUltimo_Click"
                                     IsEnabled="{x:Bind ViewModel.CanDeshacer, Mode=OneWay}"
-                                    ToolTipService.ToolTip="{x:Bind ViewModel.DeshacerTooltip, Mode=OneWay}"
-                                    Label="Deshacer último">
+                                    Label="Deshacer último"
+                                    ToolTipService.ToolTip="{x:Bind ViewModel.DeshacerTooltip, Mode=OneWay}">
                                     <AppBarButton.Icon>
                                         <FontIcon Glyph="&#xE7A7;" />
                                     </AppBarButton.Icon>
@@ -247,8 +267,8 @@
                                     Width="84"
                                     Click="BtnDeshacerTodo_Click"
                                     IsEnabled="{x:Bind ViewModel.CanDeshacer, Mode=OneWay}"
-                                    ToolTipService.ToolTip="{x:Bind ViewModel.DeshacerTooltip, Mode=OneWay}"
-                                    Label="Deshacer todo">
+                                    Label="Deshacer todo"
+                                    ToolTipService.ToolTip="{x:Bind ViewModel.DeshacerTooltip, Mode=OneWay}">
                                     <AppBarButton.Icon>
                                         <FontIcon Glyph="&#xE777;" />
                                     </AppBarButton.Icon>
@@ -278,12 +298,12 @@
             <tv:TableView
                 x:Name="TablaFacturasPendientes"
                 AutoGenerateColumns="False"
-                SizeChanged="TablaFacturasPendientes_SizeChanged"
                 CanFilterColumns="True"
                 CanSortColumns="True"
                 IsReadOnly="True"
                 ItemsSource="{x:Bind ViewModel.FacturasPendientes, Mode=OneWay}"
-                SelectionMode="Extended">
+                SelectionMode="Extended"
+                SizeChanged="TablaFacturasPendientes_SizeChanged">
                 <tv:TableView.Columns>
                     <tv:TableViewTemplateColumn
                         Width="90"
@@ -293,9 +313,7 @@
                         SortMemberPath="Folio">
                         <tv:TableViewTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <TextBlock
-                                    VerticalAlignment="Center"
-                                    Text="{Binding Folio}">
+                                <TextBlock VerticalAlignment="Center" Text="{Binding Folio}">
                                     <TextBlock.ContextFlyout>
                                         <MenuFlyout>
                                             <MenuFlyoutItem
@@ -353,12 +371,12 @@
             <tv:TableView
                 x:Name="TablaMovimientosPendientes"
                 AutoGenerateColumns="False"
-                SizeChanged="TablaMovimientosPendientes_SizeChanged"
                 CanFilterColumns="True"
                 CanSortColumns="True"
                 IsReadOnly="True"
                 ItemsSource="{x:Bind ViewModel.MovimientosPendientes, Mode=OneWay}"
-                SelectionMode="Extended">
+                SelectionMode="Extended"
+                SizeChanged="TablaMovimientosPendientes_SizeChanged">
                 <tv:TableView.Columns>
                     <tv:TableViewTemplateColumn
                         Width="130"
@@ -432,13 +450,13 @@
             IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
             IsHitTestVisible="False" />
         <InfoBar
+            Title="Error"
             Grid.Row="1"
             Grid.ColumnSpan="2"
             Margin="12"
             VerticalAlignment="Bottom"
             IsOpen="{x:Bind ViewModel.HayError, Mode=TwoWay}"
             Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
-            Severity="Error"
-            Title="Error" />
+            Severity="Error" />
     </Grid>
 </Page>

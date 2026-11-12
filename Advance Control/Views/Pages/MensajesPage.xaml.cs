@@ -172,7 +172,7 @@ namespace Advance_Control.Views.Pages
             {
                 try
                 {
-                    await global::Windows.System.Launcher.LaunchUriAsync(new Uri(url));
+                    await ViewModel.AbrirArchivoAsync(url);
                 }
                 catch { }
             }

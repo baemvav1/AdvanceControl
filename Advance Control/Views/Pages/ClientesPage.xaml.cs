@@ -370,7 +370,12 @@ namespace Advance_Control.Views.Pages
         {
             try
             {
-                if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
+                // Los PDF de contratos viven en /storage, que pide token: se bajan y se abren locales.
+                if (url.Contains("/storage/", StringComparison.OrdinalIgnoreCase))
+                {
+                    await AppServices.Get<Services.Http.IArchivoProtegidoService>().AbrirAsync(url);
+                }
+                else if (Uri.TryCreate(url, UriKind.Absolute, out var uri))
                 {
                     await global::Windows.System.Launcher.LaunchUriAsync(uri);
                 }

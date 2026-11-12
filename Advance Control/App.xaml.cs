@@ -1272,6 +1272,18 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Archivos de /storage (la API exige token): se bajan autenticados a caché local
+                    services.AddHttpClient("ArchivosProtegidos", (sp, client) =>
+                    {
+                        client.Timeout = TimeSpan.FromSeconds(120);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+                    services.AddSingleton<Services.Http.IArchivoProtegidoService>(sp =>
+                        new Services.Http.ArchivoProtegidoService(
+                            sp.GetRequiredService<IHttpClientFactory>().CreateClient("ArchivosProtegidos"),
+                            sp.GetRequiredService<IApiEndpointProvider>(),
+                            sp.GetRequiredService<ILoggingService>()));
+
                     // Registrar MensajesViewModel
                     services.AddTransient<ViewModels.MensajesViewModel>();
 

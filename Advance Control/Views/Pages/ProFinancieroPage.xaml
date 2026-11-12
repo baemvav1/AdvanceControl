@@ -14,8 +14,14 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Margin="0,0,0,16" Spacing="4">
-            <TextBlock FontSize="28" FontWeight="Bold" Text="Prototipo — Financiero" />
+        <StackPanel
+            Grid.Row="0"
+            Margin="0,0,0,16"
+            Spacing="4">
+            <TextBlock
+                FontSize="28"
+                FontWeight="Bold"
+                Text="Prototipo — Financiero" />
             <TextBlock
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 Text="Zona de pruebas exclusiva para desarrollo (nivel 1). Diseña y da funcionamiento libremente aquí; una vez aprobado, se promueve a un módulo formal del grupo Financiero."

@@ -27,6 +27,7 @@ namespace Advance_Control.ViewModels
         private readonly ILoggingService _logger;
         private readonly IApiEndpointProvider _endpoints;
         private readonly INotificacionService _notificacionService;
+        private readonly Services.Http.IArchivoProtegidoService _archivos;
         private DispatcherQueue? _dispatcher;
         private bool _eventosSubscritos;
 
@@ -182,8 +183,10 @@ namespace Advance_Control.ViewModels
             IAuthService authService,
             ILoggingService logger,
             IApiEndpointProvider endpoints,
-            INotificacionService notificacionService)
+            INotificacionService notificacionService,
+            Services.Http.IArchivoProtegidoService archivos)
         {
+            _archivos = archivos ?? throw new ArgumentNullException(nameof(archivos));
             _mensajeria = mensajeria ?? throw new ArgumentNullException(nameof(mensajeria));
             _session = session ?? throw new ArgumentNullException(nameof(session));
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
@@ -309,7 +312,7 @@ namespace Advance_Control.ViewModels
                 foreach (var m in mensajes)
                 {
                     m.EsMio = m.DeCredencialId == _session.CredencialId;
-                    m.ImagenUrlCompleta = BuildImageUrl(m.ArchivoUrl);
+                    m.ImagenUrlCompleta = BuildImageUrl(m);
                     Mensajes.Add(m);
                 }
 
@@ -461,12 +464,30 @@ namespace Advance_Control.ViewModels
                 Usuarios.Add(u);
         }
 
-        private string? BuildImageUrl(string? archivoUrl)
+        /// <summary>
+        /// URL absoluta del archivo (sin duplicar "/pruebas"). Si es imagen, la baja con token
+        /// en segundo plano y la muestra al terminar.
+        /// </summary>
+        private string? BuildImageUrl(MensajeDto mensaje)
         {
-            if (string.IsNullOrEmpty(archivoUrl)) return null;
-            var baseUrl = _endpoints.GetApiBaseUrl().TrimEnd('/');
-            return archivoUrl.StartsWith("http") ? archivoUrl : $"{baseUrl}{archivoUrl}";
+            var url = _archivos.ResolverUrl(mensaje.ArchivoUrl);
+            if (url != null && mensaje.EsImagen)
+                _ = CargarImagenAsync(mensaje, url);
+            return url;
         }
+
+        private async Task CargarImagenAsync(MensajeDto mensaje, string url)
+        {
+            var local = await _archivos.DescargarAsync(url);
+            if (local == null) return;
+            if (_dispatcher != null && !_dispatcher.HasThreadAccess)
+                _dispatcher.TryEnqueue(() => mensaje.MostrarImagenLocal(local));
+            else
+                mensaje.MostrarImagenLocal(local);
+        }
+
+        /// <summary>Abre un PDF (u otro archivo) del chat: lo baja con token y lo abre con Windows.</summary>
+        public Task<bool> AbrirArchivoAsync(string? url) => _archivos.AbrirAsync(url);
 
         // --- Event handlers ---
 
@@ -477,7 +498,7 @@ namespace Advance_Control.ViewModels
                 try
                 {
                     msg.EsMio = false;
-                    msg.ImagenUrlCompleta = BuildImageUrl(msg.ArchivoUrl);
+                    msg.ImagenUrlCompleta = BuildImageUrl(msg);
 
                     if (UsuarioSeleccionado?.CredencialId == msg.DeCredencialId)
                     {
@@ -525,7 +546,7 @@ namespace Advance_Control.ViewModels
                 try
                 {
                     msg.EsMio = true;
-                    msg.ImagenUrlCompleta = BuildImageUrl(msg.ArchivoUrl);
+                    msg.ImagenUrlCompleta = BuildImageUrl(msg);
                     if (UsuarioSeleccionado?.CredencialId == msg.ParaCredencialId)
                         Mensajes.Add(msg);
                 }
