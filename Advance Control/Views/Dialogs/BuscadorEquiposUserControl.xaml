@@ -240,6 +240,17 @@
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                 BorderThickness="0,1,0,0"
                 CornerRadius="0,0,8,8" />
+            <Button
+                Grid.Row="2"
+                Margin="24,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Click="NuevoEquipo_Click">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon FontSize="14" Glyph="&#xE710;" />
+                    <TextBlock Text="Nuevo equipo" />
+                </StackPanel>
+            </Button>
             <StackPanel
                 Grid.Row="2"
                 Margin="0,0,24,0"

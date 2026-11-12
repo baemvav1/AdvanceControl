@@ -109,6 +109,11 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        /// <summary>Equipo con ese identificador entre los cargados (p. ej. recién creado tras recargar).</summary>
+        public EquipoBusquedaDto? Encontrar(string? identificador) =>
+            string.IsNullOrWhiteSpace(identificador) ? null
+            : _todos.FirstOrDefault(e => string.Equals(e.Identificador, identificador.Trim(), StringComparison.OrdinalIgnoreCase));
+
         /// <summary>Recalcula las sugerencias de un campo para lo que se lleva escrito.</summary>
         public void ActualizarSugerencias(Campo campo, string? escrito)
         {

@@ -114,6 +114,34 @@ namespace Advance_Control.Views.Dialogs
             Cancelado?.Invoke(this, EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Abre el alta de equipo encima del buscador. Al guardar, recarga los equipos y devuelve
+        /// el nuevo como seleccionado (cierra el buscador con él).
+        /// </summary>
+        private void NuevoEquipo_Click(object sender, RoutedEventArgs e)
+        {
+            var nuevoVm = AppServices.Get<NuevoEquipoViewModel>();
+            var formulario = new NuevoEquipoUserControl(nuevoVm, AppServices.Get<EquiposViewModel>());
+            Action? cerrar = null;
+
+            formulario.CloseDialogAction = async () =>
+            {
+                var identificador = nuevoVm.Identificador;
+                cerrar?.Invoke();
+                if (!formulario.SaveSuccessful)
+                    return;
+
+                await ViewModel.CargarAsync();
+                if (ViewModel.Encontrar(identificador) is { } creado)
+                    EquipoSeleccionado?.Invoke(this, creado);
+                else
+                    ViewModel.Texto = identificador ?? string.Empty;
+            };
+
+            var marco = ModalPopup.Marco("Nuevo equipo", formulario, XamlRoot.Size.Height - 48);
+            cerrar = ModalPopup.Abrir(XamlRoot, marco, alEscape: () => cerrar?.Invoke());
+        }
+
         private void Seleccionar()
         {
             if (ViewModel.Seleccionado is { } equipo)

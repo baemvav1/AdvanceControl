@@ -101,7 +101,7 @@
         <Grid Grid.Column="1" Grid.Row="1" Background="Pink" x:Name="Ubicaciones">
 
         </Grid>
-        <Grid Grid.Column="2" Grid.RowSpan="2" Background="DarkGray" x:Name="Mapa">
+        <Grid Grid.Column="2" Grid.RowSpan="2" Background="DarkGray" x:Name="Visor">
             
         </Grid>
     </Grid>
