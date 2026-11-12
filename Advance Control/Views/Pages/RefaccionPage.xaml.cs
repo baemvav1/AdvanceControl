@@ -13,8 +13,8 @@ using Advance_Control.Services.Logging;
 using Advance_Control.Utilities;
 using Advance_Control.Services.RelacionesRefaccionEquipo;
 using Advance_Control.Services.Activity;
-using Advance_Control.Services.Equipos;
 using Advance_Control.Models;
+using Advance_Control.Views.Dialogs;
 
 namespace Advance_Control.Views.Pages
 {
@@ -26,7 +26,6 @@ namespace Advance_Control.Views.Pages
         public RefaccionesViewModel ViewModel { get; }
         private readonly INotificacionService _notificacionService;
         private readonly IRelacionRefaccionEquipoService _relacionRefaccionEquipoService;
-        private readonly IEquipoService _equipoService;
         private readonly IActivityService _activityService;
 
         public RefaccionPage()
@@ -41,7 +40,6 @@ namespace Advance_Control.Views.Pages
             _relacionRefaccionEquipoService = AppServices.Get<IRelacionRefaccionEquipoService>();
             
             // Resolver el servicio de equipos desde DI
-            _equipoService = AppServices.Get<IEquipoService>();
 
             // Resolver el servicio de actividades desde DI
             _activityService = AppServices.Get<IActivityService>();
@@ -420,56 +418,27 @@ namespace Advance_Control.Views.Pages
             if (sender is not FrameworkElement element || element.Tag is not RefaccionDto refaccion)
                 return;
 
-            // Variables para almacenar el equipo seleccionado y la lista de equipos
+            // El equipo se elige con el buscador de equipos (modal sobre este diálogo)
             EquipoDto? selectedEquipo = null;
-            List<EquipoDto> allEquipos = new List<EquipoDto>();
-            List<EquipoDto> filteredEquipos = new List<EquipoDto>();
 
-            // Crear los campos de búsqueda
-            var marcaFilterTextBox = new TextBox
+            var equipoElegidoText = new TextBlock
             {
-                PlaceholderText = "Buscar por marca",
-                Margin = new Thickness(0, 0, 4, 0)
-            };
-
-            var identificadorFilterTextBox = new TextBox
-            {
-                PlaceholderText = "Buscar por identificador",
-                Margin = new Thickness(4, 0, 0, 0)
-            };
-
-            var searchButton = new Button
-            {
-                Content = "Buscar",
-                Margin = new Thickness(8, 0, 0, 0),
-                VerticalAlignment = VerticalAlignment.Bottom
-            };
-
-            var searchPanel = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Margin = new Thickness(0, 0, 0, 12),
-                HorizontalAlignment = HorizontalAlignment.Stretch
-            };
-            searchPanel.Children.Add(marcaFilterTextBox);
-            searchPanel.Children.Add(identificadorFilterTextBox);
-            searchPanel.Children.Add(searchButton);
-
-            // Crear el ListView para mostrar equipos
-            var equiposListView = new ListView
-            {
-                Height = 200,
-                SelectionMode = ListViewSelectionMode.Single,
+                Text = "Ningún equipo seleccionado",
+                FontStyle = global::Windows.UI.Text.FontStyle.Italic,
+                TextWrapping = TextWrapping.Wrap,
                 Margin = new Thickness(0, 0, 0, 12)
             };
 
-            // Crear el ProgressRing para la carga
-            var loadingRing = new ProgressRing
+            var buscarEquipoButton = new Button
             {
-                Width = 30,
-                Height = 30,
-                IsActive = true,
-                Margin = new Thickness(0, 20, 0, 20)
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Left,
+                Content = new StackPanel
+                {
+                    Orientation = Orientation.Horizontal,
+                    Spacing = 8,
+                    Children = { new SymbolIcon(Symbol.Find), new TextBlock { Text = "Buscar equipo..." } }
+                }
             };
 
             var notaTextBox = new TextBox
@@ -488,130 +457,30 @@ namespace Advance_Control.Views.Pages
                 MinWidth = 400,
                 Children =
                 {
-                    new TextBlock { Text = "Buscar Equipo:" },
-                    searchPanel,
-                    new TextBlock { Text = "Seleccionar Equipo:" },
-                    loadingRing,
-                    equiposListView,
+                    new TextBlock { Text = "Equipo:" },
+                    buscarEquipoButton,
+                    equipoElegidoText,
                     new TextBlock { Text = "Nota:" },
                     notaTextBox
                 }
             };
 
-            // Función para actualizar la lista de equipos filtrados en el ListView
-            void UpdateEquiposListView()
+            buscarEquipoButton.Click += async (s, args) =>
             {
-                equiposListView.Items.Clear();
-                foreach (var equipo in filteredEquipos)
+                var elegido = await BuscadorEquiposDialog.MostrarAsync(this.XamlRoot);
+                if (elegido is null)
+                    return;
+
+                selectedEquipo = new EquipoDto
                 {
-                    var itemPanel = new StackPanel
-                    {
-                        Orientation = Orientation.Vertical,
-                        Padding = new Thickness(8, 4, 8, 4)
-                    };
-
-                    var marcaText = new TextBlock
-                    {
-                        Text = equipo.Marca ?? "(Sin marca)",
-                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                        FontSize = 14
-                    };
-
-                    var identifierText = new TextBlock
-                    {
-                        Text = equipo.Identificador ?? "(Sin identificador)",
-                        Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray),
-                        FontSize = 12
-                    };
-
-                    var idText = new TextBlock
-                    {
-                        Text = $"ID: {equipo.IdEquipo}",
-                        Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.DimGray),
-                        FontSize = 11
-                    };
-
-                    itemPanel.Children.Add(marcaText);
-                    itemPanel.Children.Add(identifierText);
-                    itemPanel.Children.Add(idText);
-
-                    var listViewItem = new ListViewItem
-                    {
-                        Content = itemPanel,
-                        Tag = equipo
-                    };
-
-                    equiposListView.Items.Add(listViewItem);
-                }
-            }
-
-            // Función para buscar equipos con filtros
-            async System.Threading.Tasks.Task SearchEquiposAsync()
-            {
-                loadingRing.IsActive = true;
-                loadingRing.Visibility = Visibility.Visible;
-                equiposListView.Visibility = Visibility.Collapsed;
-
-                try
-                {
-                    var query = new EquipoQueryDto
-                    {
-                        Marca = string.IsNullOrWhiteSpace(marcaFilterTextBox.Text) ? null : marcaFilterTextBox.Text,
-                        Identificador = string.IsNullOrWhiteSpace(identificadorFilterTextBox.Text) ? null : identificadorFilterTextBox.Text
-                    };
-
-                    allEquipos = await _equipoService.GetEquiposAsync(query);
-                    filteredEquipos = allEquipos;
-                    UpdateEquiposListView();
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine($"Error al cargar equipos: {ex.GetType().Name} - {ex.Message}");
-                    filteredEquipos = new List<EquipoDto>();
-                    UpdateEquiposListView();
-                    // Errors are handled silently - the UI will show an empty list
-                    // This is consistent with existing error handling patterns in this codebase
-                }
-                finally
-                {
-                    loadingRing.IsActive = false;
-                    loadingRing.Visibility = Visibility.Collapsed;
-                    equiposListView.Visibility = Visibility.Visible;
-                }
-            }
-
-            // Función para iniciar la carga de equipos de forma segura
-            // No retorna hasta completar o fallar, sin propagar excepciones
-            async void LoadEquiposInitiallyAsync()
-            {
-                try
-                {
-                    await SearchEquiposAsync();
-                }
-                catch
-                {
-                    // Exceptions are already handled in SearchEquiposAsync
-                    // This wrapper ensures any unexpected exceptions don't crash the app
-                }
-            }
-
-            // Manejar el evento de clic en el botón de búsqueda
-            searchButton.Click += async (s, args) =>
-            {
-                await SearchEquiposAsync();
-            };
-
-            // Manejar la selección de equipo en el ListView
-            equiposListView.SelectionChanged += (s, args) =>
-            {
-                if (equiposListView.SelectedItem is ListViewItem item && item.Tag is EquipoDto equipo)
-                {
-                    selectedEquipo = equipo;
-                }
-                else
-                {
-                    selectedEquipo = null;
-                }
+                    IdEquipo = elegido.IdEquipo,
+                    Identificador = elegido.Identificador,
+                    Marca = elegido.Marca,
+                    Descripcion = elegido.Descripcion,
+                    IdUbicacion = elegido.IdUbicacion
+                };
+                equipoElegidoText.Text = $"{elegido.Identificador} · {elegido.MarcaTexto} · {elegido.ClientesTexto}";
+                equipoElegidoText.FontStyle = global::Windows.UI.Text.FontStyle.Normal;
             };
 
             var dialog = new ContentDialog
@@ -623,9 +492,6 @@ namespace Advance_Control.Views.Pages
                 DefaultButton = ContentDialogButton.Primary,
                 XamlRoot = this.XamlRoot
             };
-
-            // Cargar equipos inicialmente usando el wrapper async void
-            LoadEquiposInitiallyAsync();
 
             var result = await dialog.ShowAsync();
 

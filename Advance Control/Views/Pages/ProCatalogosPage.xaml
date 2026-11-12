@@ -3,258 +3,32 @@
     x:Class="Advance_Control.Views.Pages.ProCatalogosPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dialogs="using:Advance_Control.Views.Dialogs"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:models="using:Advance_Control.Models"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <converters:BooleanToVisibilityConverter x:Key="BoolToVis" />
-    </Page.Resources>
-
     <!--
-        Marco del modal, igual que ContentDialog:
-        fondo SolidBackgroundFillColorBase (franja de botones), capa LayerFillColorAlt
-        (título + contenido), borde SurfaceStroke de 1, esquinas OverlayCornerRadius (8) y sombra.
+        El diseño del buscador vive en Views/Dialogs/BuscadorEquiposUserControl.xaml
+        (es el mismo que se abre como modal en toda la app). Aquí se muestra en línea para
+        seguir ajustándolo, y el botón lo abre como modal real.
     -->
-    <Border
-        HorizontalAlignment="Center"
-        VerticalAlignment="Center"
-        Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-        BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
-        BorderThickness="1"
-        CornerRadius="{ThemeResource OverlayCornerRadius}"
-        Translation="0,0,32">
-        <Border.Shadow>
-            <ThemeShadow />
-        </Border.Shadow>
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
 
-        <Grid
-            Width="800"
-            MinHeight="450"
-            Background="{ThemeResource LayerFillColorAltBrush}"
-            CornerRadius="8">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="50" />
-                <RowDefinition MinHeight="350" />
-                <RowDefinition Height="50" />
-            </Grid.RowDefinitions>
-            <Grid Grid.Row="0" Margin="24,12,24,0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*" />
-                    <ColumnDefinition Width="3*" />
-                </Grid.ColumnDefinitions>
+        <Button
+            HorizontalAlignment="Left"
+            Click="AbrirModal_Click"
+            Content="Abrir como modal" />
 
-
-                <TextBlock
-                    Grid.Column="0"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    FontSize="20"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                    Text="Buscador equipos..." />
-                <TextBox
-                    x:Name="BusquedaTextBox"
-                    Grid.Column="1"
-                    Width="550"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Center"
-                    KeyDown="BusquedaTextBox_KeyDown"
-                    PlaceholderText="Buscar..."
-                    Text="{x:Bind ViewModel.Texto, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-
-            </Grid>
-            <Grid Grid.Row="1" Background="Transparent">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="50" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <Grid Grid.Row="0" Margin="24,9,24,5">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                        <ColumnDefinition Width="1*" />
-                    </Grid.ColumnDefinitions>
-                    <AutoSuggestBox
-                        x:Name="MarcaBox"
-                        Grid.Column="0"
-                        Margin="0,0,4,0"
-                        VerticalAlignment="Center"
-                        GotFocus="Opcion_GotFocus"
-                        LostFocus="Opcion_LostFocus"
-                        ItemsSource="{x:Bind ViewModel.SugerenciasMarca}"
-                        PlaceholderText="Marca"
-                        QuerySubmitted="Opcion_QuerySubmitted"
-                        SuggestionChosen="Opcion_SuggestionChosen"
-                        Tag="Marca"
-                        TextChanged="Opcion_TextChanged" />
-                    <AutoSuggestBox
-                        x:Name="AreaBox"
-                        Grid.Column="1"
-                        Margin="4,0,4,0"
-                        VerticalAlignment="Center"
-                        GotFocus="Opcion_GotFocus"
-                        LostFocus="Opcion_LostFocus"
-                        ItemsSource="{x:Bind ViewModel.SugerenciasArea}"
-                        PlaceholderText="Área"
-                        QuerySubmitted="Opcion_QuerySubmitted"
-                        SuggestionChosen="Opcion_SuggestionChosen"
-                        Tag="Area"
-                        TextChanged="Opcion_TextChanged" />
-                    <AutoSuggestBox
-                        x:Name="UbicacionBox"
-                        Grid.Column="2"
-                        Margin="4,0,0,0"
-                        VerticalAlignment="Center"
-                        GotFocus="Opcion_GotFocus"
-                        LostFocus="Opcion_LostFocus"
-                        ItemsSource="{x:Bind ViewModel.SugerenciasUbicacion}"
-                        PlaceholderText="Ubicación"
-                        QuerySubmitted="Opcion_QuerySubmitted"
-                        SuggestionChosen="Opcion_SuggestionChosen"
-                        Tag="Ubicacion"
-                        TextChanged="Opcion_TextChanged" />
-
-                </Grid>
-
-                <!--  Equipos  -->
-                <Border
-                    Grid.Row="1"
-                    Margin="24,4,24,12"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    CornerRadius="6">
-                    <Grid>
-                        <ListView
-                            x:Name="EquiposListView"
-                            DoubleTapped="EquiposListView_DoubleTapped"
-                            ItemsSource="{x:Bind ViewModel.Resultados}"
-                            SelectedItem="{x:Bind ViewModel.Seleccionado, Mode=TwoWay}"
-                            SelectionMode="Single">
-                            <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="models:EquipoBusquedaDto">
-                                    <Grid Padding="0,8" ColumnSpacing="12">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="80" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Border
-                                            Height="34"
-                                            VerticalAlignment="Top"
-                                            Background="{ThemeResource AccentFillColorDefaultBrush}"
-                                            CornerRadius="4">
-                                            <TextBlock
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                FontFamily="Consolas"
-                                                FontSize="17"
-                                                FontWeight="SemiBold"
-                                                Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                                                Text="{x:Bind Identificador}" />
-                                        </Border>
-                                        <StackPanel Grid.Column="1" Spacing="1">
-                                            <TextBlock TextTrimming="CharacterEllipsis">
-                                                <Run FontWeight="SemiBold" Text="{x:Bind MarcaTexto}" />
-                                                <Run Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind CapacidadTexto}" />
-                                            </TextBlock>
-                                            <TextBlock
-                                                FontSize="12"
-                                                Text="{x:Bind ClientesTexto}"
-                                                TextTrimming="CharacterEllipsis" />
-                                            <StackPanel Orientation="Horizontal" Spacing="4">
-                                                <FontIcon
-                                                    FontSize="11"
-                                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                    Glyph="&#xE707;" />
-                                                <TextBlock
-                                                    FontSize="11"
-                                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                                    Text="{x:Bind UbicacionAreaTexto}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-
-                        <ProgressRing
-                            Width="32"
-                            Height="32"
-                            IsActive="{x:Bind ViewModel.IsLoading, Mode=OneWay}" />
-
-                        <StackPanel
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Spacing="6"
-                            Visibility="{x:Bind ViewModel.MostrarIndicacion, Mode=OneWay, Converter={StaticResource BoolToVis}}">
-                            <FontIcon
-                                FontSize="28"
-                                Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                                Glyph="&#xE721;" />
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="Escribe un identificador o elige marca, área o ubicación" />
-                        </StackPanel>
-
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Sin coincidencias"
-                            Visibility="{x:Bind ViewModel.SinResultados, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
-
-                        <InfoBar
-                            Margin="12"
-                            VerticalAlignment="Top"
-                            IsClosable="False"
-                            IsOpen="{x:Bind ViewModel.HayError, Mode=OneWay}"
-                            Message="{x:Bind ViewModel.Error, Mode=OneWay}"
-                            Severity="Error"
-                            Title="No se pudieron cargar los equipos" />
-
-                        <TextBlock
-                            Margin="0,0,12,6"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Bottom"
-                            FontSize="11"
-                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                            Text="{x:Bind ViewModel.ConteoTexto, Mode=OneWay}" />
-                    </Grid>
-                </Border>
-            </Grid>
-
-            <!--  Franja de botones: fondo base del diálogo y línea separadora, de orilla a orilla  -->
-            <Border
-                Grid.Row="2"
-                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="0,1,0,0"
-                CornerRadius="0,0,8,8" />
-            <StackPanel
-                Grid.Row="2"
-                Margin="0,0,24,0"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                Orientation="Horizontal"
-                Spacing="8">
-                <Button
-                    MinWidth="120"
-                    Click="Seleccionar_Click"
-                    Content="Seleccionar"
-                    IsEnabled="{x:Bind ViewModel.HaySeleccion, Mode=OneWay}"
-                    Style="{ThemeResource AccentButtonStyle}" />
-                <Button
-                    MinWidth="120"
-                    Click="Cancelar_Click"
-                    Content="Cancelar" />
-            </StackPanel>
-        </Grid>
-    </Border>
+        <dialogs:BuscadorEquiposUserControl
+            x:Name="Buscador"
+            Grid.Row="1"
+            Cancelado="Buscador_Cancelado"
+            EquipoSeleccionado="Buscador_EquipoSeleccionado" />
+    </Grid>
 </Page>

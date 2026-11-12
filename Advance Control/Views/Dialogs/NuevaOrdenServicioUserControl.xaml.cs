@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Advance_Control.Models;
-using Advance_Control.Services.Equipos;
 using Advance_Control.Services.Inmuebles;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.RelacionesInmueble;
@@ -21,12 +20,10 @@ namespace Advance_Control.Views.Dialogs
     /// </summary>
     public sealed partial class NuevaOrdenServicioUserControl : UserControl
     {
-        private readonly IEquipoService _equipoService;
         private readonly IInmuebleService _inmuebleService;
         private readonly IRelacionService _relacionService;
         private readonly IRelacionInmuebleService _relacionInmuebleService;
         private readonly ITipoMantenimientoService _tipoMantenimientoService;
-        private List<EquipoDto> _allEquipos = new();
         private List<InmuebleDto> _allInmuebles = new();
         private List<TipoMantenimientoDto> _tiposMantenimiento = new();
         private EquipoDto? _selectedEquipo;
@@ -43,7 +40,6 @@ namespace Advance_Control.Views.Dialogs
             this.InitializeComponent();
 
             // Resolve services from DI
-            _equipoService = ((App)Application.Current).Host.Services.GetRequiredService<IEquipoService>();
             _inmuebleService = ((App)Application.Current).Host.Services.GetRequiredService<IInmuebleService>();
             _relacionService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionService>();
             _relacionInmuebleService = ((App)Application.Current).Host.Services.GetRequiredService<IRelacionInmuebleService>();
@@ -57,7 +53,7 @@ namespace Advance_Control.Views.Dialogs
             // Load equipment, inmuebles and tipos when control is loaded
             this.Loaded += async (s, e) =>
             {
-                await Task.WhenAll(LoadEquiposAsync(), LoadInmueblesAsync(), LoadTiposMantenimientoAsync());
+                await Task.WhenAll(LoadInmueblesAsync(), LoadTiposMantenimientoAsync());
             };
         }
 
@@ -167,99 +163,31 @@ namespace Advance_Control.Views.Dialogs
             // Limpiar la selección del lado equipo y recalcular clientes según el inmueble actual
             _selectedEquipo = null;
             SelectedEquipoInfo.Visibility = Visibility.Collapsed;
-            EquipoAutoSuggestBox.Text = string.Empty;
+            BuscarEquipoTexto.Text = "Buscar equipo...";
             _ = LoadClientesRelacionadosAsync(_selectedInmueble?.Identificador);
         }
 
         #endregion
 
-        #region Equipment Loading and Search
+        #region Equipo (buscador de equipos)
 
         /// <summary>
-        /// Loads equipment from the service
+        /// Abre el buscador de equipos (modal) y, si se elige uno, lo selecciona y carga sus clientes.
         /// </summary>
-        private async Task LoadEquiposAsync()
+        private async void BuscarEquipo_Click(object sender, RoutedEventArgs e)
         {
-            try
+            var elegido = await BuscadorEquiposDialog.MostrarAsync(XamlRoot);
+            if (elegido is null)
+                return;
+
+            await SelectEquipoAsync(new EquipoDto
             {
-                EquipoLoadingRing.IsActive = true;
-
-                _allEquipos = await _equipoService.GetEquiposAsync(null, CancellationToken.None);
-            }
-            catch (Exception ex)
-            {
-                // En caso de error, mostrar lista vacía
-                _allEquipos = new List<EquipoDto>();
-                System.Diagnostics.Debug.WriteLine($"Error al cargar equipos: {ex.GetType().Name} - {ex.Message}");
-            }
-            finally
-            {
-                EquipoLoadingRing.IsActive = false;
-            }
-        }
-
-        /// <summary>
-        /// Handles text changes in the equipment search box
-        /// </summary>
-        private void EquipoAutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
-        {
-            if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
-            {
-                var searchText = sender.Text?.Trim().ToLowerInvariant() ?? string.Empty;
-
-                if (string.IsNullOrWhiteSpace(searchText))
-                {
-                    sender.ItemsSource = _allEquipos.Take(10).Select(e => FormatEquipoDisplay(e)).ToList();
-                }
-                else
-                {
-                    var filtered = _allEquipos.Where(e =>
-                        (e.Identificador?.ToLowerInvariant().Contains(searchText) == true) ||
-                        (e.Marca?.ToLowerInvariant().Contains(searchText) == true) ||
-                        (e.Descripcion?.ToLowerInvariant().Contains(searchText) == true) ||
-                        e.IdEquipo.ToString().Contains(searchText)
-                    ).Take(10).Select(e => FormatEquipoDisplay(e)).ToList();
-
-                    sender.ItemsSource = filtered;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Shows suggestions when the equipment search box gets focus
-        /// </summary>
-        private void EquipoAutoSuggestBox_GotFocus(object sender, RoutedEventArgs e)
-        {
-            if (sender is AutoSuggestBox autoSuggestBox)
-            {
-                autoSuggestBox.ItemsSource = _allEquipos.Take(10).Select(eq => FormatEquipoDisplay(eq)).ToList();
-                autoSuggestBox.IsSuggestionListOpen = true;
-            }
-        }
-
-        /// <summary>
-        /// Handles equipment suggestion selection
-        /// </summary>
-        private async void EquipoAutoSuggestBox_SuggestionChosen(AutoSuggestBox sender, AutoSuggestBoxSuggestionChosenEventArgs args)
-        {
-            if (args.SelectedItem is string selectedText)
-            {
-                // Find the equipment by matching the formatted display text
-                var selectedEquipo = _allEquipos.FirstOrDefault(e => FormatEquipoDisplay(e) == selectedText);
-
-                if (selectedEquipo != null)
-                {
-                    await SelectEquipoAsync(selectedEquipo);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Formats equipment display text for the AutoSuggestBox
-        /// </summary>
-        private static string FormatEquipoDisplay(EquipoDto equipo)
-        {
-            return $"{equipo.Identificador} - {equipo.Marca}";
+                IdEquipo = elegido.IdEquipo,
+                Identificador = elegido.Identificador,
+                Marca = elegido.Marca,
+                Descripcion = elegido.Descripcion,
+                IdUbicacion = elegido.IdUbicacion
+            });
         }
 
         /// <summary>
@@ -270,7 +198,7 @@ namespace Advance_Control.Views.Dialogs
             _selectedEquipo = null;
             _selectedCliente = null;
 
-            EquipoAutoSuggestBox.Text = string.Empty;
+            BuscarEquipoTexto.Text = "Buscar equipo...";
             SelectedEquipoInfo.Visibility = Visibility.Collapsed;
 
             // Reset client list
@@ -292,6 +220,7 @@ namespace Advance_Control.Views.Dialogs
             SelectedEquipoIdentificador.Text = equipo.Identificador ?? "Sin identificador";
             SelectedEquipoMarca.Text = equipo.Marca ?? "Sin marca";
             SelectedEquipoInfo.Visibility = Visibility.Visible;
+            BuscarEquipoTexto.Text = "Cambiar equipo...";
 
             // Hide the no equipment selected message
             NoEquipoSelectedMessage.Visibility = Visibility.Collapsed;
