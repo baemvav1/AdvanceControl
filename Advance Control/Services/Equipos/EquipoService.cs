@@ -111,35 +111,6 @@ namespace Advance_Control.Services.Equipos
         }
 
         /// <summary>
-        /// Equipos activos con clientes, ubicación, área y técnicos para el buscador.
-        /// La API ya recorta a las áreas del usuario cuando es técnico.
-        /// </summary>
-        public async Task<List<EquipoBusquedaDto>> GetBuscadorAsync(CancellationToken cancellationToken = default)
-        {
-            var url = _endpoints.GetEndpoint("api", "equipo_crud", "buscador");
-            try
-            {
-                using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
-                if (!response.IsSuccessStatusCode)
-                {
-                    var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                    await _logger.LogErrorAsync(
-                        $"Error al obtener el buscador de equipos. Status: {response.StatusCode}, Content: {errorContent}",
-                        null, "EquipoService", "GetBuscadorAsync");
-                    throw new InvalidOperationException("No se pudieron cargar los equipos del buscador.");
-                }
-
-                var equipos = await response.Content.ReadFromJsonAsync<List<EquipoBusquedaDto>>(cancellationToken: cancellationToken).ConfigureAwait(false);
-                return equipos ?? new List<EquipoBusquedaDto>();
-            }
-            catch (HttpRequestException ex)
-            {
-                await _logger.LogErrorAsync("Error de red al obtener el buscador de equipos", ex, "EquipoService", "GetBuscadorAsync");
-                throw new InvalidOperationException("Error de comunicación con el servidor al cargar los equipos.", ex);
-            }
-        }
-
-        /// <summary>
         /// Elimina (soft delete) un equipo por su ID
         /// </summary>
         public async Task<bool> DeleteEquipoAsync(int id, CancellationToken cancellationToken = default)

@@ -4,7 +4,6 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dialogs="using:Advance_Control.Views.Dialogs"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
@@ -19,81 +18,23 @@
             <TextBlock FontSize="28" FontWeight="Bold" Text="Prototipo — Catálogos" />
             <TextBlock
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                Text="Buscador de equipos, a tamaño real de modal (contenido 820 × 520; diálogo ≈ 868 × 688). Funciona igual que funcionará el modal: escribe el identificador, filtra por área, ubicación o marca, ↓ para ir a la lista, Enter o doble clic para elegir."
+                Text="Zona de pruebas exclusiva para desarrollo (nivel 1). Diseña y da funcionamiento libremente aquí; una vez aprobado, se promueve a un módulo formal del grupo Catálogos."
                 TextWrapping="Wrap" />
         </StackPanel>
 
-        <!--  "Pantalla" con el velo del modal  -->
         <Border
             Grid.Row="1"
-            Background="{ThemeResource SmokeFillColorDefaultBrush}"
+            BorderBrush="{ThemeResource ControlStrokeColorDefaultBrush}"
+            BorderThickness="2"
             CornerRadius="8">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" HorizontalScrollMode="Auto">
-                <StackPanel
-                    Margin="24"
+            <Grid x:Name="Lienzo" Padding="16">
+                <TextBlock
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Spacing="12">
-
-                    <!--  Réplica del ContentDialog: 24 de padding, título, contenido y franja de botones  -->
-                    <Border
-                        Width="868"
-                        Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}"
-                        BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
-                        BorderThickness="1"
-                        CornerRadius="8">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                                <RowDefinition Height="80" />
-                            </Grid.RowDefinitions>
-
-                            <StackPanel Padding="24,24,24,24" Spacing="12">
-                                <TextBlock
-                                    FontSize="20"
-                                    FontWeight="SemiBold"
-                                    Text="Buscar equipo" />
-                                <dialogs:BuscadorEquiposUserControl x:Name="Buscador" EquipoElegido="Buscador_EquipoElegido" />
-                            </StackPanel>
-
-                            <Border
-                                Grid.Row="1"
-                                Padding="24,0"
-                                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,1,0,0"
-                                CornerRadius="0,0,8,8">
-                                <Grid VerticalAlignment="Center" ColumnSpacing="8">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <Button
-                                        HorizontalAlignment="Stretch"
-                                        Click="Seleccionar_Click"
-                                        Content="Seleccionar"
-                                        IsEnabled="{x:Bind Buscador.ViewModel.HaySeleccion, Mode=OneWay}"
-                                        Style="{ThemeResource AccentButtonStyle}" />
-                                    <Button
-                                        Grid.Column="1"
-                                        HorizontalAlignment="Stretch"
-                                        Click="Cancelar_Click"
-                                        Content="Cancelar" />
-                                </Grid>
-                            </Border>
-                        </Grid>
-                    </Border>
-
-                    <!--  Lo que devolvería el modal (solo en el prototipo)  -->
-                    <InfoBar
-                        x:Name="ResultadoInfoBar"
-                        Width="868"
-                        IsClosable="True"
-                        IsOpen="False"
-                        Severity="Success"
-                        Title="El modal devolvería" />
-                </StackPanel>
-            </ScrollViewer>
+                    FontSize="14"
+                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                    Text="Aquí puedes empezar a construir tu prototipo." />
+            </Grid>
         </Border>
     </Grid>
 </Page>
