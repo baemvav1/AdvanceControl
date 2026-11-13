@@ -33,7 +33,7 @@ namespace Advance_Control.Models
         public bool EsPagada => OrdenGrupo == 3;
 
         public string FolioTexto => EsSinFacturar
-            ? "Sin facturar"
+            ? $"OP:{(string.IsNullOrWhiteSpace(OperacionFolio) ? IdOperacion?.ToString() : OperacionFolio)}"
             : string.IsNullOrWhiteSpace(Folio) ? "Sin folio" : Folio;
         public string FechaFacturaTexto => FechaFactura == default ? string.Empty : FechaFactura.ToString("dd/MM/yyyy");
         public string TotalTexto => Total.ToString("C2", new CultureInfo("es-MX"));
