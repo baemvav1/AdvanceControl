@@ -87,6 +87,7 @@ namespace Advance_Control.ViewModels
                 {
                     _ = CargarClientesAsync();
                     _ = PrepararAreaUbicacionAsync();
+                    _ = CargarResumenAsync();
                 }
             }
         }
@@ -99,6 +100,8 @@ namespace Advance_Control.ViewModels
 
         private void Reiniciar()
         {
+            Resumen = null;
+            ErrorResumen = null;
             _area = null;
             NotificarAreaUbicacion();
             Clientes.Clear();
@@ -142,6 +145,61 @@ namespace Advance_Control.ViewModels
         public void MostrarEquipoEnVisor()
         {
             if (HayEquipo) Modo = ModoVisor.Equipo;
+        }
+
+        // ── Resumen de operaciones del equipo (Visor) ─────────────────────
+
+        private EquipoResumenDto? _resumen;
+        private bool _cargandoResumen;
+        private string? _errorResumen;
+
+        public EquipoResumenDto? Resumen
+        {
+            get => _resumen;
+            private set { if (SetProperty(ref _resumen, value)) NotificarResumen(); }
+        }
+
+        public bool CargandoResumen
+        {
+            get => _cargandoResumen;
+            private set { if (SetProperty(ref _cargandoResumen, value)) NotificarResumen(); }
+        }
+
+        public string? ErrorResumen
+        {
+            get => _errorResumen;
+            private set { if (SetProperty(ref _errorResumen, value)) NotificarResumen(); }
+        }
+
+        public bool HayResumen => _resumen is not null;
+        public bool HayErrorResumen => _errorResumen is not null;
+
+        public async Task CargarResumenAsync()
+        {
+            if (_equipo is null) return;
+            var id = _equipo.IdEquipo;
+            CargandoResumen = true;
+            ErrorResumen = null;
+            try
+            {
+                var resumen = await _equipoService.GetResumenOperacionesAsync(id);
+                if (_equipo?.IdEquipo == id) Resumen = resumen;
+            }
+            catch (Exception ex)
+            {
+                ErrorResumen = ex.Message;
+                await _logger.LogErrorAsync("Error al cargar el resumen de operaciones", ex, nameof(ProCatalogosViewModel), nameof(CargarResumenAsync));
+            }
+            finally
+            {
+                CargandoResumen = false;
+            }
+        }
+
+        private void NotificarResumen()
+        {
+            OnPropertyChanged(nameof(HayResumen));
+            OnPropertyChanged(nameof(HayErrorResumen));
         }
 
         // ── Clientes del equipo ───────────────────────────────────────────

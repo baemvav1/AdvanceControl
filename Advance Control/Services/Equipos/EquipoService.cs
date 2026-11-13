@@ -140,6 +140,24 @@ namespace Advance_Control.Services.Equipos
         }
 
         /// <summary>
+        /// Resumen de operaciones del equipo: totales (facturado, vencido…), últimas operaciones,
+        /// última visita y órdenes de servicio pendientes.
+        /// </summary>
+        public async Task<EquipoResumenDto?> GetResumenOperacionesAsync(int idEquipo, CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "equipo_crud", idEquipo.ToString(), "resumen-operaciones");
+            using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                await _logger.LogErrorAsync($"Error al obtener el resumen de operaciones. Status: {response.StatusCode}, Content: {error}",
+                    null, "EquipoService", "GetResumenOperacionesAsync");
+                throw new InvalidOperationException("No se pudo cargar el resumen de operaciones del equipo.");
+            }
+            return await response.Content.ReadFromJsonAsync<EquipoResumenDto>(cancellationToken: cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
         /// Elimina (soft delete) un equipo por su ID
         /// </summary>
         public async Task<bool> DeleteEquipoAsync(int id, CancellationToken cancellationToken = default)

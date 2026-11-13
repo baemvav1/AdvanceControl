@@ -257,6 +257,13 @@ namespace Advance_Control.Views.Pages
 
         private void TarjetaEquipo_Tapped(object sender, TappedRoutedEventArgs e) => ViewModel.MostrarEquipoEnVisor();
 
+        /// <summary>Clic en una operación del resumen: se abre en su propia ventana.</summary>
+        private void OperacionResumen_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is OperacionResumenDto operacion)
+                Advance_Control.Views.Windows.OperacionVisorWindow.Open(operacion.Id);
+        }
+
         // ── Clientes ───────────────────────────────────────────────────────
 
         private async void AgregarCliente_Click(object sender, RoutedEventArgs e)

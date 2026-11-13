@@ -345,22 +345,179 @@
                 BorderThickness="1"
                 CornerRadius="8"
                 Visibility="{x:Bind ViewModel.VisorEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
-                <StackPanel Spacing="4">
-                    <TextBlock
-                        FontSize="11"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="RESUMEN DE OPERACIONES" />
-                    <TextBlock
-                        FontFamily="Consolas"
-                        FontSize="22"
-                        FontWeight="SemiBold"
-                        Text="{x:Bind ViewModel.Equipo.Identificador, Mode=OneWay}" />
-                    <TextBlock
-                        Margin="0,12,0,0"
-                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
-                        Text="Próximamente: totales (facturado y vencido), últimas operaciones, última visita y órdenes pendientes."
-                        TextWrapping="Wrap" />
-                </StackPanel>
+                <Grid RowSpacing="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!--  Encabezado  -->
+                    <StackPanel Spacing="2">
+                        <TextBlock
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="RESUMEN DE OPERACIONES" />
+                        <TextBlock
+                            FontFamily="Consolas"
+                            FontSize="22"
+                            FontWeight="SemiBold"
+                            Text="{x:Bind ViewModel.Equipo.Identificador, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <!--  Totales  -->
+                    <Grid Grid.Row="1" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border
+                            Padding="12"
+                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            CornerRadius="6">
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Operaciones" />
+                                <TextBlock
+                                    FontSize="22"
+                                    FontWeight="SemiBold"
+                                    Text="{x:Bind ViewModel.Resumen.TotalOperaciones, Mode=OneWay}" />
+                                <TextBlock
+                                    FontSize="11"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind ViewModel.Resumen.AbiertasFinalizadasTexto, Mode=OneWay}" />
+                            </StackPanel>
+                        </Border>
+                        <Border
+                            Grid.Column="1"
+                            Padding="12"
+                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            CornerRadius="6">
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Total facturado" />
+                                <TextBlock
+                                    FontSize="22"
+                                    FontWeight="SemiBold"
+                                    Text="{x:Bind ViewModel.Resumen.TotalFacturadoTexto, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Border>
+                        <Border
+                            Grid.Column="2"
+                            Padding="12"
+                            Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                            CornerRadius="6">
+                            <StackPanel Spacing="2">
+                                <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Total vencido" />
+                                <Grid>
+                                    <TextBlock
+                                        FontSize="22"
+                                        FontWeight="SemiBold"
+                                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                                        Text="{x:Bind ViewModel.Resumen.TotalVencidoTexto, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Visibility="{x:Bind ViewModel.Resumen.HayVencido, Mode=OneWay, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                                    <TextBlock
+                                        FontSize="22"
+                                        FontWeight="SemiBold"
+                                        Text="{x:Bind ViewModel.Resumen.TotalVencidoTexto, Mode=OneWay}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Visibility="{x:Bind ViewModel.Resumen.HayVencido, Mode=OneWay, Converter={StaticResource BoolToVis}, ConverterParameter=invert, FallbackValue=Visible}" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+
+                    <!--  Última visita  -->
+                    <StackPanel Grid.Row="2" Spacing="2">
+                        <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Última visita" />
+                        <TextBlock Style="{StaticResource ValorFicha}" Text="{x:Bind ViewModel.Resumen.UltimaVisitaTexto, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <!--  Últimas operaciones (clic → abre la operación)  -->
+                    <Grid Grid.Row="3" RowSpacing="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Últimas operaciones" />
+                        <ListView
+                            Grid.Row="1"
+                            IsItemClickEnabled="True"
+                            ItemClick="OperacionResumen_ItemClick"
+                            ItemsSource="{x:Bind ViewModel.Resumen.Ultimas, Mode=OneWay}"
+                            SelectionMode="None">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:OperacionResumenDto">
+                                    <Grid Padding="0,6" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="90" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock FontWeight="SemiBold" Text="{x:Bind FolioTexto}" />
+                                        <TextBlock Grid.Column="1" Text="{x:Bind FechaTexto}" />
+                                        <TextBlock
+                                            Grid.Column="2"
+                                            Text="{x:Bind TipoTexto}"
+                                            TextTrimming="CharacterEllipsis" />
+                                        <TextBlock
+                                            Grid.Column="3"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind EstatusTexto}" />
+                                        <TextBlock
+                                            Grid.Column="4"
+                                            HorizontalAlignment="Right"
+                                            Text="{x:Bind MontoTexto}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                        <TextBlock
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="Este equipo no tiene operaciones"
+                            Visibility="{x:Bind ViewModel.Resumen.SinOperaciones, Mode=OneWay, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                        <ProgressRing
+                            Grid.Row="1"
+                            Width="28"
+                            Height="28"
+                            IsActive="{x:Bind ViewModel.CargandoResumen, Mode=OneWay}" />
+                        <TextBlock
+                            Grid.Row="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                            Text="{x:Bind ViewModel.ErrorResumen, Mode=OneWay}"
+                            TextWrapping="Wrap"
+                            Visibility="{x:Bind ViewModel.HayErrorResumen, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+
+                    <!--  Órdenes de servicio pendientes  -->
+                    <StackPanel Grid.Row="4" Spacing="4">
+                        <TextBlock Style="{StaticResource EtiquetaFicha}" Text="Órdenes de servicio pendientes" />
+                        <TextBlock
+                            Style="{StaticResource ValorFicha}"
+                            Text="Ninguna"
+                            Visibility="{x:Bind ViewModel.Resumen.SinOrdenesPendientes, Mode=OneWay, Converter={StaticResource BoolToVis}, FallbackValue=Collapsed}" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Resumen.OrdenesPendientes, Mode=OneWay}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:OrdenPendienteResumenDto">
+                                    <TextBlock
+                                        Padding="0,2"
+                                        Style="{StaticResource ValorFicha}"
+                                        Text="{x:Bind Texto}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Grid>
             </Border>
 
             <!--  Cliente: ficha completa + contactos  -->

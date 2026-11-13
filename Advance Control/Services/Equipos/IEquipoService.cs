@@ -23,6 +23,9 @@ namespace Advance_Control.Services.Equipos
         /// </summary>
         Task<List<EquipoBusquedaDto>> GetBuscadorAsync(CancellationToken cancellationToken = default);
 
+        /// <summary>Resumen de operaciones del equipo (GET api/equipo_crud/{id}/resumen-operaciones).</summary>
+        Task<EquipoResumenDto?> GetResumenOperacionesAsync(int idEquipo, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Elimina (soft delete) un equipo por su ID
         /// </summary>
