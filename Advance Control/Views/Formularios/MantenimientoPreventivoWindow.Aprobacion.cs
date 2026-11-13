@@ -145,7 +145,7 @@ namespace Advance_Control.Views.Formularios
                 };
 
                 var email = new EnviarCotizacionDialog(pdfPath, dirigido, contactos, _operacion.RazonSocial ?? string.Empty, this.Content.XamlRoot,
-                    tipo: "Mantenimiento Preventivo", idOperacion: _operacion.IdOperacion, portal: portal);
+                    tipo: "Mantenimiento Preventivo", idOperacion: _operacion.IdOperacion, portal: portal, idCliente: _operacion.IdCliente);
                 if (await email.ShowAsync() != ContentDialogResult.Primary)
                     return;
 

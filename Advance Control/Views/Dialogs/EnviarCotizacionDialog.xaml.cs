@@ -7,6 +7,7 @@ using System.Web;
 using Advance_Control.Models;
 using Advance_Control.Services.CorreoUsuario;
 using Advance_Control.Services.Email;
+using Advance_Control.Services.PersonalCliente;
 using Advance_Control.Utilities;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -49,6 +50,9 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
     private readonly List<(string NombreArchivo, byte[] Contenido)> _adjuntosAdicionales;
     private readonly NotificacionPortal? _portal;
 
+    /// <summary>Carga del personal asignado al cliente (se agrega en CC, ya marcado).</summary>
+    private readonly Task _cargaPersonal = Task.CompletedTask;
+
     /// <summary>Para + CC efectivamente enviados (para registrar la notificación).</summary>
     public string Destinatarios { get; private set; } = string.Empty;
 
@@ -62,6 +66,10 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
     /// <param name="xamlRoot">XamlRoot del padre.</param>
     /// <param name="tipo">Tipo de documento: "Cotización", "Reporte", "Nota" o "Finiquito".</param>
     /// <param name="idOperacion">ID de la operación (para el cuerpo del correo).</param>
+    /// <param name="idCliente">
+    /// Cliente del envío: sus técnicos, supervisores y administrativos asignados se agregan
+    /// en CC ya marcados (se pueden desmarcar).
+    /// </param>
     /// <param name="adjuntosAdicionales">
     /// Adjuntos extra ya leídos en memoria (nombre + bytes), usados por "Finiquito" para
     /// sumar reporte, factura PDF y factura XML junto al <paramref name="pdfPath"/> principal.
@@ -78,7 +86,8 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
         List<(string NombreArchivo, byte[] Contenido)>? adjuntosAdicionales = null,
         string? asuntoPersonalizado = null,
         string? mensajePersonalizado = null,
-        NotificacionPortal? portal = null)
+        NotificacionPortal? portal = null,
+        int? idCliente = null)
     {
         _pdfPath = pdfPath ?? throw new ArgumentNullException(nameof(pdfPath));
         _portal = portal;
@@ -167,8 +176,51 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
             MensajeTextBox.Text = MensajePortal(contactoPrincipal, portal, tipo, idOperacion);
         }
 
+        if (idCliente is > 0)
+            _cargaPersonal = AgregarPersonalEnCcAsync(idCliente.Value, contactoPrincipal?.Correo);
+
         // Suscribir el botón Enviar con validación
         this.PrimaryButtonClick += OnEnviarClick;
+    }
+
+    /// <summary>
+    /// Agrega en CC (marcados) a los técnicos, supervisores y administrativos asignados al
+    /// cliente, con su rol entre paréntesis. Omite los correos que ya están en la lista o en "Para".
+    /// </summary>
+    private async Task AgregarPersonalEnCcAsync(int idCliente, string? correoPrincipal)
+    {
+        try
+        {
+            var personal = await AppServices.Get<IPersonalClienteService>().GetPersonalAsync(idCliente);
+            var existentes = _ccCheckboxes.Select(cb => cb.Tag?.ToString() ?? string.Empty)
+                .Append(correoPrincipal ?? string.Empty)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var grupo in personal.Where(p => !string.IsNullOrWhiteSpace(p.Correo))
+                         .GroupBy(p => p.Correo!.Trim(), StringComparer.OrdinalIgnoreCase))
+            {
+                if (existentes.Contains(grupo.Key)) continue;
+                var primero = grupo.First();
+                var roles = string.Join(", ", grupo.Select(p => p.Rol switch
+                {
+                    PersonalClienteDto.RolTecnico => "Técnico",
+                    PersonalClienteDto.RolSupervisor => "Supervisor",
+                    _ => "Administrativo"
+                }).Distinct());
+                var cb = new CheckBox
+                {
+                    Content = $"{primero.NombreCompleto} ({roles}) <{grupo.Key}>",
+                    Tag = grupo.Key,
+                    IsChecked = true
+                };
+                CCPanel.Children.Add(cb);
+                _ccCheckboxes.Add(cb);
+            }
+        }
+        catch (Exception)
+        {
+            // Sin personal en CC si falla la consulta; el envío sigue normal.
+        }
     }
 
     private async void OnEnviarClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
@@ -189,6 +241,9 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
                 MostrarError("El campo \"Para\" es obligatorio.");
                 return;
             }
+
+            // El personal asignado se agrega en CC en segundo plano: esperar a que termine
+            await _cargaPersonal;
 
             // Construir listas CC
             var ccEmails = _ccCheckboxes
