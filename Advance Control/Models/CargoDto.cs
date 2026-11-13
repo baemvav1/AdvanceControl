@@ -159,8 +159,24 @@ namespace Advance_Control.Models
         private string? GetDetalleLinea(int index)
         {
             if (string.IsNullOrEmpty(_detalleRelacionado)) return null;
-            var parts = _detalleRelacionado.Split('/');
+            // La descripción (línea 3) puede traer "/" propios ("TORNILLO 1/4"): se toma completa.
+            var parts = _detalleRelacionado.Split('/', 3);
             return index < parts.Length ? parts[index].Trim() : null;
+        }
+
+        /// <summary>
+        /// Lo que se está cobrando, para la factura: la descripción de la refacción, o el
+        /// concepto del servicio. Null si el cargo no tiene detalle.
+        /// </summary>
+        [JsonIgnore]
+        public string? DescripcionDetalle
+        {
+            get
+            {
+                if (string.IsNullOrWhiteSpace(_detalleRelacionado)) return null;
+                var texto = TieneSubdetalle ? DetalleLinea3 : _detalleRelacionado.Trim();
+                return string.IsNullOrWhiteSpace(texto) ? null : texto;
+            }
         }
 
         /// <summary>Línea 1 del detalle (marca para refacciones, concepto para servicios)</summary>
