@@ -354,12 +354,22 @@ namespace Advance_Control.Views.Windows
             var encabezado = new Grid();
             encabezado.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             encabezado.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var txtDescripcion = new TextBlock
+            var txtDescripcion = new StackPanel();
+            txtDescripcion.Children.Add(new TextBlock
             {
                 Text = $"{cargo.TipoCargo}{(string.IsNullOrWhiteSpace(cargo.Nota) ? "" : $" · {cargo.Nota}")}",
                 FontWeight = FontWeights.SemiBold,
                 TextWrapping = TextWrapping.Wrap
-            };
+            });
+            if (!string.IsNullOrWhiteSpace(cargo.DescripcionDetalle))
+            {
+                txtDescripcion.Children.Add(new TextBlock
+                {
+                    Text = cargo.DescripcionDetalle,
+                    TextWrapping = TextWrapping.Wrap,
+                    Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
+                });
+            }
             Grid.SetColumn(txtDescripcion, 0);
             var txtMonto = new TextBlock
             {
@@ -548,13 +558,26 @@ namespace Advance_Control.Views.Windows
                     ClaveProdServ = ExtraerClave(fila.ProdServBox.Text),
                     ClaveUnidad = claveUnidad,
                     Unidad = string.IsNullOrWhiteSpace(descripcionUnidad) ? claveUnidad : descripcionUnidad,
-                    Descripcion = $"{fila.Cargo.TipoCargo}{(string.IsNullOrWhiteSpace(fila.Cargo.Nota) ? "" : $" - {fila.Cargo.Nota}")}",
+                    Descripcion = DescripcionConcepto(fila.Cargo),
                     Cantidad = cantidad,
                     ValorUnitario = valorUnitario,
                     TasaIva = tasaIva
                 });
             }
             return conceptos;
+        }
+
+        /// <summary>
+        /// "Tipo - Nota" y, en un renglón aparte, lo que se cobra (descripción de la refacción o
+        /// concepto del servicio). El SAT permite hasta 1000 caracteres en Descripcion.
+        /// </summary>
+        private static string DescripcionConcepto(CargoDto cargo)
+        {
+            var texto = $"{cargo.TipoCargo}{(string.IsNullOrWhiteSpace(cargo.Nota) ? "" : $" - {cargo.Nota}")}";
+            if (!string.IsNullOrWhiteSpace(cargo.DescripcionDetalle))
+                texto += "\n" + cargo.DescripcionDetalle;
+            texto = texto.Replace("|", "/");
+            return texto.Length > 1000 ? texto[..1000] : texto;
         }
 
         /// <summary>Snapshot legible de cada renglón de Conceptos para el panel de depuración -- muestra

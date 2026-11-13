@@ -26,6 +26,12 @@ namespace Advance_Control.Models
         /// <summary>True cuando la fila es una operación finalizada que aún no tiene factura (grupo 2).</summary>
         public bool EsSinFacturar => OrdenGrupo == 2;
 
+        /// <summary>Factura sin pagar cuya fecha de vencimiento ya pasó.</summary>
+        public bool EsVencida => OrdenGrupo == 1 && FechaVencimiento.HasValue && FechaVencimiento.Value < DateTime.Now;
+
+        /// <summary>Factura pagada (grupo 3).</summary>
+        public bool EsPagada => OrdenGrupo == 3;
+
         public string FolioTexto => EsSinFacturar
             ? "Sin facturar"
             : string.IsNullOrWhiteSpace(Folio) ? "Sin folio" : Folio;
