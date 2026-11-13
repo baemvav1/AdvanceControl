@@ -189,140 +189,125 @@
                         FontSize="13"
                         LineHeight="20">
                         <RichTextBlock.Blocks>
-
                             <Paragraph Margin="0,0,0,4">
-                                <Run FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="Novedades de las últimas semanas" />
+                                <Run FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" Text="Novedades de octubre y noviembre 2026" />
                             </Paragraph>
 
                             <Paragraph Margin="0,4,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource SystemFillColorCriticalBrush}" Text="⚠️ Modo de pruebas en producción" />
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Portal de Clientes" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Las funciones de esta actualización (Complementos de Pago, Ingresos Manuales y el nuevo visor de factura) se acaban de liberar y siguen en observación directamente en producción." />
+                                <Run Text="• Ya está en línea el Portal de Clientes web: el cliente consulta sus operaciones, firma o rechaza hojas de mantenimiento, aprueba cotizaciones, carga su orden de compra, hace solicitudes y reporta emergencias." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Si ves algo raro, un botón que no responde como esperabas o un dato que no cuadra, repórtalo -- nos ayuda a corregirlo rápido." />
-                            </Paragraph>
-
-                            <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Complementos de pago" />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Ya se pueden generar Complementos de Pago reales (timbrados ante el SAT) directamente desde Facturas, a partir de los abonos ya registrados." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nueva pantalla de auditoría de Complementos de Pago, para revisar cuáles ya quedaron ligados a su factura y cuáles no." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nuevo botón &quot;Consolidar Complementos&quot; en Facturas: detecta complementos que llegaron sin procesar y los vincula a su factura y a su movimiento bancario." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se corrigió un error que impedía generar el complemento de pago en facturas capturadas sin serie (folio suelto del portal de Bilkon)." />
-                            </Paragraph>
-
-                            <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Ingresos manuales" />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Al registrar un abono a mano ahora se pide indicar cómo llegó el pago (efectivo, transferencia, SPEI o cheque)." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nuevo botón &quot;Consolidar Ingresos Manuales&quot; en Facturas: detecta abonos capturados a mano sin movimiento bancario y propone ligarlos a su movimiento real." />
-                            </Paragraph>
-
-                            <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Visor de factura" />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nueva pantalla para abrir una factura desde Facturas, con vista previa del PDF, datos de pago y acciones (registrar abono, generar complemento, cancelar) en un solo lugar." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Ya se puede enviar la factura por correo directamente a los contactos del cliente." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Registrar abonos y generar complementos de pago ya no requiere que la factura haya sido generada por el software -- funciona para cualquier factura vigente." />
-                            </Paragraph>
-
-                            <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Suscripciones y contratos de mantenimiento" />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Ya se pueden generar contratos de suscripción (Oro/Plata/Bronce) desde la ficha del cliente: se elige el nivel, se seleccionan los equipos cubiertos y se genera el PDF del contrato con su firma." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• A los clientes con un contrato de suscripción vigente ahora se les puede generar la factura mensual de iguala directamente desde la app." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se corrigió un error que impedía ver la lista de equipos disponibles al crear una suscripción nueva." />
+                                <Run Text="• Los accesos del portal se crean desde Clientes, en la pestaña Logins, y ahí mismo se puede ver el historial de accesos de cada login." />
                             </Paragraph>
 
                             <Paragraph Margin="0,16,0,4">
                                 <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Facturación" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Ya es posible cancelar facturas (CFDI) directamente desde la app." />
+                                <Run Text="• Nueva factura desde cero (timbrado libre), sin partir de una operación." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se agregó la carga del certificado necesario para poder cancelar facturas." />
+                                <Run Text="• Botón &quot;Importación automática&quot; en Facturas: trae las facturas emitidas en el portal FEL en Línea." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se corrigieron folios duplicados y problemas de numeración que afectaban a algunas facturas." />
+                                <Run Text="• Buscador de Facturas con selector de campo: RFC, nombre comercial, folio (con serie) o UUID." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• El botón Nuevo ahora es un menú que incluye las cargas de XML." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Visor de factura: descarga del XML, comprobante de cancelación, pagos manuales en la pestaña Pagos y envío del historial con complementos y pagos." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Abonos y complementos de pago" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Al registrar un abono se valida el saldo y que la factura no esté cancelada." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• El complemento de pago generado desde abonos manuales toma la forma de pago, la referencia y la fecha de cada abono, y numera bien las parcialidades." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Conciliación bancaria" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• La conciliación ahora se calcula en el servidor: 1 a 1, varias a 1, abonos, complementos e ingresos manuales. Es más rápida y da el mismo resultado en todas las computadoras." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Reglas configurables con botón: DTC, RFC y Cheques." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Financiero y cobranza" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Financiero se reorganizó en tres grupos: Facturación, Bancos y Cobranza." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nueva Cobranza por cliente: historial, facturas, documentos, operaciones abiertas y T-Finalizado del cliente seleccionado." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• El reporte de cobranza ya no incluye facturas canceladas." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• En Por facturar cada operación muestra si ya tiene orden de compra." />
                             </Paragraph>
 
                             <Paragraph Margin="0,16,0,4">
                                 <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Operaciones" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nuevo Reporte General de Operaciones, con casillas de verificación por operación." />
+                                <Run Text="• Visor de operaciones rediseñado." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nuevo filtro para ver solo las operaciones abiertas que ya tienen orden de compra cargada." />
+                                <Run Text="• Operaciones recuperadas: botón &quot;Op Recuperada&quot; y folio visible con R." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Las operaciones con orden de compra, o con factura pagada/pendiente, ahora se distinguen con una barra de color en la lista." />
+                                <Run Text="• Nuevo Reporte ejecutivo de operaciones." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se corrigió que las casillas de filtro por estado no actualizaban la lista de operaciones." />
-                            </Paragraph>
-                            <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se corrigió un error que avisaba &quot;no se pudo guardar&quot; al subir fotos o documentos a una operación, aunque sí quedaban guardados." />
+                                <Run Text="• El check de la operación guarda quién marcó cada paso y cuándo." />
                             </Paragraph>
 
                             <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Mantenimiento preventivo" />
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Áreas y ubicaciones" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• El mantenimiento preventivo ahora queda registrado en el sistema, ya no se genera solo como PDF." />
+                                <Run Text="• Las áreas de Estado y Municipio guardan su contorno real." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nuevo formulario para capturar y generar el reporte de mantenimiento preventivo." />
+                                <Run Text="• Las ubicaciones quedan asignadas a su área automáticamente según el mapa, y el filtro por área en Ubicaciones ya funciona." />
                             </Paragraph>
 
                             <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Catálogos" />
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Entorno de pruebas y seguridad" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Nuevo catálogo de Inmuebles." />
+                                <Run Text="• En el login se puede elegir entre Producción y Pruebas. Pruebas usa una copia de los datos para practicar sin afectar nada." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se corrigió un error que mostraba &quot;no se pudo eliminar&quot; en Clientes, Entidades, Contactos, Operaciones, Órdenes de Servicio, Productos, Proveedores, Refacciones, Servicios, Cargos, Áreas y Ubicaciones, aunque el registro sí se había borrado." />
+                                <Run Text="• Modo mantenimiento para trabajos delicados: mientras está activo solo entra el área de sistemas." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Los campos de Régimen Fiscal y Uso de CFDI ahora sugieren valores mientras escribes." />
+                                <Run Text="• Las fotos y documentos guardados ahora solo se abren con una sesión válida." />
                             </Paragraph>
 
                             <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Mapas" />
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="En pruebas (próximamente)" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Se corrigieron problemas al mostrar los mapas y ahora se avisa si falta información geográfica necesaria." />
-                            </Paragraph>
-
-                            <Paragraph Margin="0,16,0,2">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="En camino" />
+                                <Run Text="• Personal asignado por cliente (técnicos, supervisores y administrativos): define quién ve sus operaciones y órdenes de servicio, se copia en sus correos y recibe avisos de emergencias, órdenes nuevas, respuestas a cotizaciones y hojas de mantenimiento." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Estamos preparando las bases para un futuro Portal de Clientes, donde podrán consultar su información directamente." />
+                                <Run Text="• Chat: lista de chats al abrir la cortina, mensaje de difusión a todos, botón en verde con mensajes sin leer y reconexión automática." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Asistente de Equipos: buscar un equipo y ver en un solo lugar sus clientes, contactos, personal, mapa y operaciones." />
                             </Paragraph>
 
                         </RichTextBlock.Blocks>
