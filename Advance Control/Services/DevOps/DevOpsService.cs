@@ -133,6 +133,31 @@ namespace Advance_Control.Services.DevOps
             }
         }
 
+        public async Task IniciarRefrescoPruebasAsync(CancellationToken ct = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "DevOps", "refrescar-pruebas");
+            using var response = await _http.PostAsync(url, null, ct).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                var cuerpo = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+                var mensaje = cuerpo;
+                try
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(cuerpo);
+                    if (doc.RootElement.TryGetProperty("message", out var m)) mensaje = m.GetString() ?? cuerpo;
+                }
+                catch { }
+                await _logger.LogErrorAsync($"No se pudo iniciar la copia a pruebas: {response.StatusCode} {mensaje}", null, "DevOpsService", "IniciarRefrescoPruebasAsync");
+                throw new Exception(string.IsNullOrWhiteSpace(mensaje) ? $"Error {(int)response.StatusCode}" : mensaje);
+            }
+        }
+
+        public async Task<DevOpsRefrescoEstado> ObtenerEstadoRefrescoPruebasAsync(CancellationToken ct = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "DevOps", "refrescar-pruebas/estado");
+            return await _http.GetFromJsonAsync<DevOpsRefrescoEstado>(url, ct).ConfigureAwait(false) ?? new DevOpsRefrescoEstado();
+        }
+
         public async Task EnviarMensajePruebaAsync(long deCredencialId, long paraCredencialId, string contenido, CancellationToken ct = default)
         {
             try
