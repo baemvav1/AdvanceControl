@@ -294,6 +294,13 @@ namespace Advance_Control.Services.Mensajeria
             }
         }
 
+        public async Task<int> EnviarDifusionAsync(string contenido)
+        {
+            if (_hubConnection?.State != HubConnectionState.Connected)
+                throw new InvalidOperationException("El chat no está conectado.");
+            return await _hubConnection.InvokeAsync<int>("EnviarDifusion", contenido);
+        }
+
         public async Task EliminarMensajeParaTodosAsync(long mensajeId)
         {
             if (_hubConnection?.State != HubConnectionState.Connected) return;

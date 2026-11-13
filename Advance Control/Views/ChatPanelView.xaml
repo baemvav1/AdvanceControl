@@ -284,6 +284,35 @@
                     PlaceholderText="Buscar usuario…"
                     QueryIcon="Find"
                     TextChanged="BuscadorUsuarios_TextChanged" />
+
+                <!--  Mensaje de difusión: antes de todos los contactos  -->
+                <Button
+                    Margin="0,2,0,0"
+                    Padding="8,10"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Click="Difusion_Click"
+                    IsEnabled="{x:Bind ViewModel.EstaConectado, Mode=OneWay}"
+                    ToolTipService.ToolTip="Enviar un mensaje a todos los usuarios">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="40" Height="40">
+                            <Ellipse Width="40" Height="40" Fill="{ThemeResource SystemFillColorCautionBrush}" />
+                            <FontIcon FontSize="16" Foreground="White" Glyph="&#xE789;" />
+                        </Grid>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="Mensaje de difusión" />
+                            <TextBlock FontSize="11"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="Enviar un mensaje a todos" />
+                        </StackPanel>
+                    </Grid>
+                </Button>
             </StackPanel>
 
             <ListView

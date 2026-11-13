@@ -462,6 +462,17 @@ namespace Advance_Control.ViewModels
             }
         }
 
+        /// <summary>Número de usuarios que recibirían un mensaje de difusión.</summary>
+        public int TotalDestinatariosDifusion => _todosLosUsuarios.Count;
+
+        /// <summary>Envía un mensaje de difusión a todos y regresa a la lista de chats.</summary>
+        public async Task<int> EnviarDifusionAsync(string texto)
+        {
+            var enviados = await _mensajeria.EnviarDifusionAsync(texto.Trim());
+            MostrarListaChats();
+            return enviados;
+        }
+
         /// <summary>Inicia el modo respuesta para un mensaje (estilo WhatsApp).</summary>
         public void IniciarRespuesta(MensajeDto mensaje)
         {

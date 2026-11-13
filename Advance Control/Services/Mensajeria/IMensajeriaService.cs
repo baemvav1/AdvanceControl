@@ -91,6 +91,9 @@ namespace Advance_Control.Services.Mensajeria
         /// <summary>Chats existentes del usuario (último mensaje y no leídos), más reciente primero.</summary>
         Task<List<ConversacionResumenDto>> GetConversacionesAsync(CancellationToken ct = default);
 
+        /// <summary>Mensaje de difusión a todos los usuarios activos. Regresa a cuántos se envió.</summary>
+        Task<int> EnviarDifusionAsync(string contenido);
+
         /// <summary>Obtener conteo de mensajes no leídos via REST.</summary>
         Task<long> GetNoLeidosCountAsync(long credencialId, CancellationToken ct = default);
 
