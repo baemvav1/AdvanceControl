@@ -129,6 +129,7 @@ namespace Advance_Control
             else
             {
                 ChatPanelControl.ViewModel.IsPanelVisible = true;
+                ChatPanelControl.ViewModel.MostrarListaChats();
             }
         }
 

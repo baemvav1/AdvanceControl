@@ -1272,7 +1272,9 @@ namespace Advance_Control
                         var httpClient = httpFactory.CreateClient("MensajeriaRest");
                         var endpoints = sp.GetRequiredService<IApiEndpointProvider>();
                         var logger = sp.GetRequiredService<ILoggingService>();
-                        return new Services.Mensajeria.MensajeriaService(httpClient, endpoints, logger);
+                        // Token vigente en cada reconexión del hub (se resuelve tarde para no crear ciclos en DI)
+                        return new Services.Mensajeria.MensajeriaService(httpClient, endpoints, logger,
+                            () => sp.GetRequiredService<Services.Auth.IAuthService>().GetAccessTokenAsync());
                     });
                     services.AddHttpClient("MensajeriaRest", (sp, client) =>
                     {

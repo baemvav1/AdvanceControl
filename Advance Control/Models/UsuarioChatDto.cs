@@ -34,7 +34,50 @@ namespace Advance_Control.Models
         public bool EstaEscribiendo
         {
             get => _estaEscribiendo;
-            set { if (_estaEscribiendo != value) { _estaEscribiendo = value; OnPropertyChanged(); } }
+            set { if (_estaEscribiendo != value) { _estaEscribiendo = value; OnPropertyChanged(); OnPropertyChanged(nameof(MostrarUltimoMensaje)); } }
+        }
+
+        private string _ultimoMensaje = string.Empty;
+        /// <summary>Resumen del último mensaje del chat (vacío fuera de la lista de chats).</summary>
+        [JsonIgnore]
+        public string UltimoMensaje
+        {
+            get => _ultimoMensaje;
+            set
+            {
+                if (_ultimoMensaje != value)
+                {
+                    _ultimoMensaje = value ?? string.Empty;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(MostrarUltimoMensaje));
+                }
+            }
+        }
+
+        private System.DateTime? _ultimoEn;
+        /// <summary>Fecha local del último mensaje del chat.</summary>
+        [JsonIgnore]
+        public System.DateTime? UltimoEn
+        {
+            get => _ultimoEn;
+            set { if (_ultimoEn != value) { _ultimoEn = value; OnPropertyChanged(); OnPropertyChanged(nameof(UltimoEnTexto)); } }
+        }
+
+        [JsonIgnore]
+        public bool MostrarUltimoMensaje => !EstaEscribiendo && !string.IsNullOrEmpty(UltimoMensaje);
+
+        /// <summary>Hora si fue hoy, "Ayer", o la fecha corta.</summary>
+        [JsonIgnore]
+        public string UltimoEnTexto
+        {
+            get
+            {
+                if (UltimoEn is not System.DateTime f) return string.Empty;
+                var hoy = System.DateTime.Today;
+                if (f.Date == hoy) return f.ToString("HH:mm");
+                if (f.Date == hoy.AddDays(-1)) return "Ayer";
+                return f.ToString("dd/MM/yy");
+            }
         }
 
         private int _mensajesNoLeidos;

@@ -88,6 +88,9 @@ namespace Advance_Control.Services.Mensajeria
         /// <summary>Obtener usuarios disponibles para chat via REST.</summary>
         Task<List<UsuarioChatDto>> GetUsuariosChatAsync(CancellationToken ct = default);
 
+        /// <summary>Chats existentes del usuario (último mensaje y no leídos), más reciente primero.</summary>
+        Task<List<ConversacionResumenDto>> GetConversacionesAsync(CancellationToken ct = default);
+
         /// <summary>Obtener conteo de mensajes no leídos via REST.</summary>
         Task<long> GetNoLeidosCountAsync(long credencialId, CancellationToken ct = default);
 

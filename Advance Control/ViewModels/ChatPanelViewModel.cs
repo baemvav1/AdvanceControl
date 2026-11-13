@@ -41,6 +41,26 @@ namespace Advance_Control.ViewModels
         public ObservableCollection<UsuarioChatDto> Usuarios { get; } = new();
         public ObservableCollection<MensajeDto> Mensajes { get; } = new();
 
+        /// <summary>Chats existentes (personas con mensajes), el más reciente arriba.</summary>
+        public ObservableCollection<UsuarioChatDto> Chats { get; } = new();
+
+        private bool _hayChats;
+        public bool HayChats
+        {
+            get => _hayChats;
+            set { if (SetProperty(ref _hayChats, value)) OnPropertyChanged(nameof(SinChats)); }
+        }
+
+        private bool _cargandoChats;
+        public bool CargandoChats
+        {
+            get => _cargandoChats;
+            set { if (SetProperty(ref _cargandoChats, value)) OnPropertyChanged(nameof(SinChats)); }
+        }
+
+        /// <summary>Mensaje "aún no tienes chats".</summary>
+        public bool SinChats => !HayChats && !CargandoChats;
+
         private readonly List<UsuarioChatDto> _todosLosUsuarios = new();
 
         private UsuarioChatDto? _usuarioSeleccionado;
@@ -225,6 +245,7 @@ namespace Advance_Control.ViewModels
                 EstadoConexion = EstaConectado ? "Conectado" : "Sin conexión";
 
                 await CargarUsuariosAsync();
+                await CargarChatsAsync();
             }
             catch (Exception ex)
             {
@@ -268,6 +289,82 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Carga los chats existentes con su último mensaje y no leídos. Usa las mismas instancias
+        /// de usuario que la lista de contactos (en línea / escribiendo / no leídos quedan sincronizados).
+        /// </summary>
+        public async Task CargarChatsAsync()
+        {
+            if (CargandoChats) return;
+            CargandoChats = true;
+            try
+            {
+                if (_todosLosUsuarios.Count == 0)
+                    await CargarUsuariosAsync();
+
+                var chats = await _mensajeria.GetConversacionesAsync();
+                Chats.Clear();
+                foreach (var c in chats)
+                {
+                    var usuario = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId == c.OtroCredencialId);
+                    if (usuario == null) continue; // usuario inactivo o sin acceso al chat
+                    usuario.UltimoMensaje = ConversacionResumenDto.Resumen(c.UltimoContenido, c.UltimoEliminado, c.UltimoEsMio);
+                    usuario.UltimoEn = ConversacionResumenDto.ALocal(c.UltimoEn);
+                    if (UsuarioSeleccionado?.CredencialId != usuario.CredencialId)
+                        usuario.MensajesNoLeidos = (int)c.NoLeidos;
+                    Chats.Add(usuario);
+                }
+                HayChats = Chats.Count > 0;
+            }
+            catch (Exception ex)
+            {
+                try { await _logger.LogErrorAsync("Error al cargar los chats", ex, "ChatPanelViewModel", "CargarChatsAsync"); } catch { }
+            }
+            finally
+            {
+                CargandoChats = false;
+            }
+        }
+
+        /// <summary>Regresa a la lista de chats (al abrir la cortina o con la flecha de la conversación).</summary>
+        public void MostrarListaChats()
+        {
+            UsuarioSeleccionado = null;
+            IsUserListVisible = false;
+            _ = CargarChatsAsync();
+        }
+
+        /// <summary>Sube el chat con esa persona al inicio y actualiza su último mensaje.</summary>
+        private void ActualizarChat(long otroCredencialId, MensajeDto msg, bool esMio)
+        {
+            var usuario = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId == otroCredencialId);
+            if (usuario == null) return;
+            usuario.UltimoMensaje = ConversacionResumenDto.Resumen(msg.Contenido, msg.EstaEliminado, esMio);
+            usuario.UltimoEn = msg.CreatedAt == default ? DateTime.Now : ConversacionResumenDto.ALocal(msg.CreatedAt);
+            var idx = Chats.IndexOf(usuario);
+            if (idx < 0) Chats.Insert(0, usuario);
+            else if (idx > 0) Chats.Move(idx, 0);
+            HayChats = true;
+        }
+
+        /// <summary>Tras reconectar: chats, en línea y la conversación abierta pudieron cambiar.</summary>
+        private async Task RefrescarTrasReconexionAsync()
+        {
+            try
+            {
+                await CargarChatsAsync();
+                var enLinea = (await _mensajeria.ObtenerUsuariosEnLineaAsync()).ToHashSet();
+                foreach (var u in _todosLosUsuarios)
+                    u.EstaEnLinea = enLinea.Contains(u.CredencialId.ToString());
+                if (UsuarioSeleccionado != null)
+                    await CargarConversacionSeguroAsync(UsuarioSeleccionado.CredencialId);
+            }
+            catch (Exception ex)
+            {
+                try { await _logger.LogErrorAsync("Error al refrescar el chat tras reconectar", ex, "ChatPanelViewModel", "RefrescarTrasReconexionAsync"); } catch { }
+            }
+        }
+
+        /// <summary>
         /// Abre la conversación con un usuario específico.
         /// Puede ser llamado externamente (ej. desde MensajesPage).
         /// </summary>
@@ -283,7 +380,7 @@ namespace Advance_Control.ViewModels
         /// </summary>
         public void AbrirConversacionPorId(long credencialId)
         {
-            var usuario = Usuarios.FirstOrDefault(u => u.CredencialId == credencialId);
+            var usuario = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId == credencialId);
             System.Diagnostics.Debug.WriteLine($"[ChatVM] AbrirConversacionPorId({credencialId}), encontrado={usuario != null}, Usuarios.Count={Usuarios.Count}");
             if (usuario != null)
                 AbrirConversacion(usuario);
@@ -507,15 +604,16 @@ namespace Advance_Control.ViewModels
                     }
                     else
                     {
-                        var user = Usuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
+                        var user = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
                         if (user != null) user.MensajesNoLeidos++;
                     }
+                    ActualizarChat(msg.DeCredencialId, msg, esMio: false);
 
                     // Notificación si el remitente no es el usuario visible
                     if (msg.DeCredencialId != _mensajeria.UsuarioVisibleId)
                     {
                         UltimaNotificacionCredencialId = msg.DeCredencialId;
-                        var remitente = Usuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
+                        var remitente = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId == msg.DeCredencialId);
                         var nombre = remitente?.NombreVisible ?? "Nuevo mensaje";
                         try
                         {
@@ -549,6 +647,7 @@ namespace Advance_Control.ViewModels
                     msg.ImagenUrlCompleta = BuildImageUrl(msg);
                     if (UsuarioSeleccionado?.CredencialId == msg.ParaCredencialId)
                         Mensajes.Add(msg);
+                    ActualizarChat(msg.ParaCredencialId, msg, esMio: true);
                 }
                 catch (Exception ex)
                 {
@@ -618,7 +717,7 @@ namespace Advance_Control.ViewModels
         {
             _dispatcher?.TryEnqueue(() =>
             {
-                var user = Usuarios.FirstOrDefault(u => u.CredencialId.ToString() == credencialId);
+                var user = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId.ToString() == credencialId);
                 if (user != null) user.EstaEnLinea = true;
             });
         }
@@ -627,7 +726,7 @@ namespace Advance_Control.ViewModels
         {
             _dispatcher?.TryEnqueue(() =>
             {
-                var user = Usuarios.FirstOrDefault(u => u.CredencialId.ToString() == credencialId);
+                var user = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId.ToString() == credencialId);
                 if (user != null) { user.EstaEnLinea = false; user.EstaEscribiendo = false; }
             });
         }
@@ -636,7 +735,7 @@ namespace Advance_Control.ViewModels
         {
             _dispatcher?.TryEnqueue(async () =>
             {
-                var user = Usuarios.FirstOrDefault(u => u.CredencialId.ToString() == credencialId);
+                var user = _todosLosUsuarios.FirstOrDefault(u => u.CredencialId.ToString() == credencialId);
                 if (user != null)
                 {
                     user.EstaEscribiendo = true;
@@ -650,8 +749,11 @@ namespace Advance_Control.ViewModels
         {
             _dispatcher?.TryEnqueue(() =>
             {
+                var reconectado = conectado && !EstaConectado;
                 EstaConectado = conectado;
                 EstadoConexion = conectado ? "Conectado" : "Reconectando…";
+                if (reconectado)
+                    _ = RefrescarTrasReconexionAsync();
             });
         }
     }

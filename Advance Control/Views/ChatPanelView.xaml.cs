@@ -58,6 +58,15 @@ namespace Advance_Control.Views
             }
         }
 
+        private void RegresarAChats_Click(object sender, RoutedEventArgs e)
+            => ViewModel.MostrarListaChats();
+
+        private void ChatsListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is UsuarioChatDto usuario)
+                ViewModel.AbrirConversacion(usuario);
+        }
+
         private void BuscadorUsuarios_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)
