@@ -55,6 +55,7 @@ namespace Advance_Control
 
             // Inicializar ChatPanelView
             ChatPanelControl.Initialize();
+            ChatPanelControl.ViewModel.PropertyChanged += ChatPanel_PropertyChanged;
 
             // Fallback in-app notifications cuando el sistema toast no está disponible
             InAppNotificacionMessenger.NotificacionSolicitada += OnNotificacionInApp;
@@ -65,6 +66,26 @@ namespace Advance_Control
 
             // Insignias "ENTORNO DE PRUEBAS" y "MANTENIMIENTO"
             IniciarMantenimiento();
+        }
+
+        /// <summary>Botón de la cortina de chats en verde mientras haya mensajes sin leer.</summary>
+        private void ChatPanel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(ViewModels.ChatPanelViewModel.TotalNoLeidos)) return;
+            var total = ChatPanelControl.ViewModel.TotalNoLeidos;
+            if (total > 0)
+            {
+                ToggleChatButton.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                    global::Windows.UI.Color.FromArgb(255, 16, 185, 129));
+                ToggleChatButton.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.White);
+                ToolTipService.SetToolTip(ToggleChatButton, total == 1 ? "Chat · 1 mensaje sin leer" : $"Chat · {total} mensajes sin leer");
+            }
+            else
+            {
+                ToggleChatButton.ClearValue(Control.BackgroundProperty);
+                ToggleChatButton.ClearValue(Control.ForegroundProperty);
+                ToolTipService.SetToolTip(ToggleChatButton, "Chat");
+            }
         }
 
         private void OnNotificacionInApp(object? sender, InAppNotificacionPayload e)

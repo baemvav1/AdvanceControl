@@ -61,6 +61,24 @@ namespace Advance_Control.ViewModels
         /// <summary>Mensaje "aún no tienes chats".</summary>
         public bool SinChats => !HayChats && !CargandoChats;
 
+        private int _totalNoLeidos;
+        /// <summary>Mensajes sin leer de todos los chats (pinta de verde el botón de la cortina).</summary>
+        public int TotalNoLeidos
+        {
+            get => _totalNoLeidos;
+            private set { if (SetProperty(ref _totalNoLeidos, value)) OnPropertyChanged(nameof(HayNoLeidos)); }
+        }
+
+        public bool HayNoLeidos => TotalNoLeidos > 0;
+
+        private void RecalcularNoLeidos() => TotalNoLeidos = _todosLosUsuarios.Sum(u => u.MensajesNoLeidos);
+
+        private void Usuario_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(UsuarioChatDto.MensajesNoLeidos))
+                RecalcularNoLeidos();
+        }
+
         private readonly List<UsuarioChatDto> _todosLosUsuarios = new();
 
         private UsuarioChatDto? _usuarioSeleccionado;
@@ -263,14 +281,18 @@ namespace Advance_Control.ViewModels
             {
                 var usuarios = await _mensajeria.GetUsuariosChatAsync();
                 var miId = _session.CredencialId;
+                foreach (var viejo in _todosLosUsuarios)
+                    viejo.PropertyChanged -= Usuario_PropertyChanged;
                 _todosLosUsuarios.Clear();
                 Usuarios.Clear();
 
                 foreach (var u in usuarios.Where(u => u.CredencialId != miId))
                 {
+                    u.PropertyChanged += Usuario_PropertyChanged;
                     _todosLosUsuarios.Add(u);
                     Usuarios.Add(u);
                 }
+                RecalcularNoLeidos();
 
                 if (EstaConectado)
                 {
@@ -608,7 +630,7 @@ namespace Advance_Control.ViewModels
                     msg.EsMio = false;
                     msg.ImagenUrlCompleta = BuildImageUrl(msg);
 
-                    if (UsuarioSeleccionado?.CredencialId == msg.DeCredencialId)
+                    if (IsPanelVisible && UsuarioSeleccionado?.CredencialId == msg.DeCredencialId)
                     {
                         Mensajes.Add(msg);
                         _ = _mensajeria.MarcarLeidoAsync(msg.Id);
