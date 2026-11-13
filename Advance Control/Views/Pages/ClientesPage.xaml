@@ -474,6 +474,244 @@
                                                 </StackPanel>
                                             </PivotItem>
 
+                                            <!--  Personal asignado: técnicos, supervisores y administrativos  -->
+                                            <PivotItem Header="Personal">
+                                                <Grid Padding="8" ColumnSpacing="16">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ProgressRing
+                                                        Grid.ColumnSpan="3"
+                                                        Width="20"
+                                                        Height="20"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Top"
+                                                        IsActive="{x:Bind IsLoadingPersonal, Mode=OneWay}"
+                                                        Visibility="{x:Bind IsLoadingPersonal, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+
+                                                    <!--  Técnicos  -->
+                                                    <StackPanel Grid.Column="0" Spacing="6">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <TextBlock
+                                                                VerticalAlignment="Center"
+                                                                FontSize="14"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                Text="Técnicos" />
+                                                            <Button
+                                                                VerticalAlignment="Center"
+                                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                                BorderThickness="0"
+                                                                Click="AgregarPersonal_Click"
+                                                                CommandParameter="tecnico"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Tag="{x:Bind}"
+                                                                ToolTipService.ToolTip="Asignar técnico">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                        <ItemsRepeater ItemsSource="{x:Bind Tecnicos, Mode=OneWay}">
+                                                            <ItemsRepeater.Layout>
+                                                                <StackLayout Spacing="4" />
+                                                            </ItemsRepeater.Layout>
+                                                            <ItemsRepeater.ItemTemplate>
+                                                                <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:PersonalClienteDto">
+                                                                    <Border
+                                                                        Padding="12,8"
+                                                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="4">
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <StackPanel Spacing="2">
+                                                                                <TextBlock
+                                                                                    FontSize="13"
+                                                                                    FontWeight="SemiBold"
+                                                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                                    Text="{x:Bind NombreCompleto}"
+                                                                                    TextWrapping="Wrap" />
+                                                                                <TextBlock
+                                                                                    FontSize="11"
+                                                                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                                    Text="{x:Bind Detalle}"
+                                                                                    TextWrapping="Wrap" />
+                                                                            </StackPanel>
+                                                                            <Button
+                                                                                Grid.Column="1"
+                                                                                VerticalAlignment="Center"
+                                                                                Background="Transparent"
+                                                                                BorderThickness="0"
+                                                                                Click="QuitarPersonal_Click"
+                                                                                ToolTipService.ToolTip="Quitar del cliente">
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsRepeater.ItemTemplate>
+                                                        </ItemsRepeater>
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            FontStyle="Italic"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Sin técnicos asignados"
+                                                            Visibility="{x:Bind ShowNoTecnicosMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                    </StackPanel>
+
+                                                    <!--  Supervisores  -->
+                                                    <StackPanel Grid.Column="1" Spacing="6">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <TextBlock
+                                                                VerticalAlignment="Center"
+                                                                FontSize="14"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                Text="Supervisores" />
+                                                            <Button
+                                                                VerticalAlignment="Center"
+                                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                                BorderThickness="0"
+                                                                Click="AgregarPersonal_Click"
+                                                                CommandParameter="supervisor"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Tag="{x:Bind}"
+                                                                ToolTipService.ToolTip="Asignar supervisor">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                        <ItemsRepeater ItemsSource="{x:Bind Supervisores, Mode=OneWay}">
+                                                            <ItemsRepeater.Layout>
+                                                                <StackLayout Spacing="4" />
+                                                            </ItemsRepeater.Layout>
+                                                            <ItemsRepeater.ItemTemplate>
+                                                                <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:PersonalClienteDto">
+                                                                    <Border
+                                                                        Padding="12,8"
+                                                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="4">
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <StackPanel Spacing="2">
+                                                                                <TextBlock
+                                                                                    FontSize="13"
+                                                                                    FontWeight="SemiBold"
+                                                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                                    Text="{x:Bind NombreCompleto}"
+                                                                                    TextWrapping="Wrap" />
+                                                                                <TextBlock
+                                                                                    FontSize="11"
+                                                                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                                    Text="{x:Bind Detalle}"
+                                                                                    TextWrapping="Wrap" />
+                                                                            </StackPanel>
+                                                                            <Button
+                                                                                Grid.Column="1"
+                                                                                VerticalAlignment="Center"
+                                                                                Background="Transparent"
+                                                                                BorderThickness="0"
+                                                                                Click="QuitarPersonal_Click"
+                                                                                ToolTipService.ToolTip="Quitar del cliente">
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsRepeater.ItemTemplate>
+                                                        </ItemsRepeater>
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            FontStyle="Italic"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Sin supervisores asignados"
+                                                            Visibility="{x:Bind ShowNoSupervisoresMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                    </StackPanel>
+
+                                                    <!--  Administrativos  -->
+                                                    <StackPanel Grid.Column="2" Spacing="6">
+                                                        <StackPanel Orientation="Horizontal" Spacing="5">
+                                                            <TextBlock
+                                                                VerticalAlignment="Center"
+                                                                FontSize="14"
+                                                                FontWeight="SemiBold"
+                                                                Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                Text="Administrativos" />
+                                                            <Button
+                                                                VerticalAlignment="Center"
+                                                                Background="{ThemeResource LayerFillColorDefaultBrush}"
+                                                                BorderThickness="0"
+                                                                Click="AgregarPersonal_Click"
+                                                                CommandParameter="agente"
+                                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                                Tag="{x:Bind}"
+                                                                ToolTipService.ToolTip="Asignar administrativo">
+                                                                <SymbolIcon Symbol="Add" />
+                                                            </Button>
+                                                        </StackPanel>
+                                                        <ItemsRepeater ItemsSource="{x:Bind Agentes, Mode=OneWay}">
+                                                            <ItemsRepeater.Layout>
+                                                                <StackLayout Spacing="4" />
+                                                            </ItemsRepeater.Layout>
+                                                            <ItemsRepeater.ItemTemplate>
+                                                                <DataTemplate xmlns:models="using:Advance_Control.Models" x:DataType="models:PersonalClienteDto">
+                                                                    <Border
+                                                                        Padding="12,8"
+                                                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                                        BorderThickness="1"
+                                                                        CornerRadius="4">
+                                                                        <Grid>
+                                                                            <Grid.ColumnDefinitions>
+                                                                                <ColumnDefinition Width="*" />
+                                                                                <ColumnDefinition Width="Auto" />
+                                                                            </Grid.ColumnDefinitions>
+                                                                            <StackPanel Spacing="2">
+                                                                                <TextBlock
+                                                                                    FontSize="13"
+                                                                                    FontWeight="SemiBold"
+                                                                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                                                    Text="{x:Bind NombreCompleto}"
+                                                                                    TextWrapping="Wrap" />
+                                                                                <TextBlock
+                                                                                    FontSize="11"
+                                                                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                                                    Text="{x:Bind Detalle}"
+                                                                                    TextWrapping="Wrap" />
+                                                                            </StackPanel>
+                                                                            <Button
+                                                                                Grid.Column="1"
+                                                                                VerticalAlignment="Center"
+                                                                                Background="Transparent"
+                                                                                BorderThickness="0"
+                                                                                Click="QuitarPersonal_Click"
+                                                                                ToolTipService.ToolTip="Quitar del cliente">
+                                                                                <SymbolIcon Foreground="{ThemeResource TextFillColorPrimaryBrush}" Symbol="Delete" />
+                                                                            </Button>
+                                                                        </Grid>
+                                                                    </Border>
+                                                                </DataTemplate>
+                                                            </ItemsRepeater.ItemTemplate>
+                                                        </ItemsRepeater>
+                                                        <TextBlock
+                                                            FontSize="12"
+                                                            FontStyle="Italic"
+                                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                            Text="Sin administrativos asignados"
+                                                            Visibility="{x:Bind ShowNoAgentesMessage, Converter={StaticResource BooleanToVisibilityConverter}, Mode=OneWay}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </PivotItem>
+
                                             <!--  Logins del Portal de Clientes  -->
                                             <PivotItem Header="Logins">
                                                 <StackPanel Padding="8" Spacing="6">

@@ -227,18 +227,7 @@ namespace Advance_Control.Views.Pages
 
         /// <summary>Buscador de lista con la lista completa visible (áreas, ubicaciones del área).</summary>
         private Task<object?> ElegirDeListaAsync(string titulo, string placeholder, string vacio, System.Collections.Generic.IEnumerable<BuscadorListaItem> items)
-        {
-            var lista = items.ToList();
-            var tcs = new TaskCompletionSource<object?>();
-            Action? cerrar = null;
-            var buscador = new BuscadorListaUserControl(titulo, placeholder, vacio, null,
-                () => Task.FromResult(lista), mostrarTodoSinTexto: true);
-            void Terminar(object? r) { if (tcs.Task.IsCompleted) return; cerrar?.Invoke(); tcs.TrySetResult(r); }
-            buscador.Elegido += (_, item) => Terminar(item.Dato);
-            buscador.Cancelado += (_, _) => Terminar(null);
-            cerrar = ModalPopup.Abrir(XamlRoot, buscador, alEscape: () => Terminar(null));
-            return tcs.Task;
-        }
+            => BuscadorListaDialog.ElegirAsync(XamlRoot, titulo, placeholder, vacio, items);
 
         private static void MostrarError(TextBlock destino, string mensaje)
         {
