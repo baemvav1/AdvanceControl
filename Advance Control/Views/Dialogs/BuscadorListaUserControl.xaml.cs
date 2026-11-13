@@ -20,6 +20,7 @@ namespace Advance_Control.Views.Dialogs
     {
         private readonly Func<Task<List<BuscadorListaItem>>> _cargar;
         private readonly string _indicacion;
+        private readonly bool _mostrarTodoSinTexto;
         private List<BuscadorListaItem> _todos = new();
         private bool _cargado;
 
@@ -28,10 +29,12 @@ namespace Advance_Control.Views.Dialogs
         public event EventHandler? NuevoSolicitado;
 
         /// <param name="textoNuevo">Texto del botón "Nuevo…"; null lo oculta.</param>
+        /// <param name="mostrarTodoSinTexto">true: sin texto se ve toda la lista (listas cortas, p. ej. áreas).</param>
         public BuscadorListaUserControl(string titulo, string placeholder, string indicacion,
-            string? textoNuevo, Func<Task<List<BuscadorListaItem>>> cargar)
+            string? textoNuevo, Func<Task<List<BuscadorListaItem>>> cargar, bool mostrarTodoSinTexto = false)
         {
             _cargar = cargar;
+            _mostrarTodoSinTexto = mostrarTodoSinTexto;
             _indicacion = indicacion;
             InitializeComponent();
             TituloText.Text = titulo;
@@ -86,7 +89,12 @@ namespace Advance_Control.Views.Dialogs
             var anterior = Seleccionado;
             List<BuscadorListaItem> resultados;
 
-            if (texto.Length == 0)
+            if (texto.Length == 0 && _mostrarTodoSinTexto)
+            {
+                resultados = _todos.ToList();
+                EstadoText.Text = resultados.Count == 0 ? _indicacion : string.Empty;
+            }
+            else if (texto.Length == 0)
             {
                 resultados = new List<BuscadorListaItem>();
                 EstadoText.Text = _indicacion;

@@ -3,6 +3,7 @@
     x:Class="Advance_Control.Views.Pages.ProCatalogosPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Advance_Control.Views.Controls"
     xmlns:converters="using:Advance_Control.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -182,20 +183,158 @@
             </Border>
         </Grid>
         <Grid Grid.Column="0" Grid.Row="1" Background="Blue" x:Name="Areas">
-            
-        </Grid>
-        <Grid Grid.Column="1" Grid.Row="1" Background="Pink" x:Name="Ubicaciones">
 
-        </Grid>
-        <Grid Grid.Column="2" Grid.RowSpan="2" Background="DarkGray" x:Name="Visor">
-
-            <!--  Vacío  -->
             <TextBlock
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Foreground="White"
-                Text="Elige un equipo para empezar"
-                Visibility="{x:Bind ViewModel.VisorVacio, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                Text="Elige un equipo"
+                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+            <!--  Tarjeta de área: buscar o crear (sin basura); bloqueada si el equipo ya tiene ubicación  -->
+            <Border
+                Margin="12"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Tapped="TarjetaArea_Tapped"
+                Visibility="{x:Bind ViewModel.HayEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <Grid RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="ÁREA" />
+                        <StackPanel
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="4"
+                            Visibility="{x:Bind ViewModel.AreaEditable, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                            <Button Click="BuscarArea_Click" ToolTipService.ToolTip="Buscar área">
+                                <FontIcon FontSize="14" Glyph="&#xE721;" />
+                            </Button>
+                            <Button
+                                Click="CrearArea_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                ToolTipService.ToolTip="Crear área">
+                                <FontIcon FontSize="14" Glyph="&#xE710;" />
+                            </Button>
+                        </StackPanel>
+                        <FontIcon
+                            HorizontalAlignment="Right"
+                            FontSize="14"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Glyph="&#xE72E;"
+                            ToolTipService.ToolTip="El equipo ya tiene ubicación: el área no se puede cambiar"
+                            Visibility="{x:Bind ViewModel.AreaBloqueada, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                    </Grid>
+                    <TextBlock
+                        Grid.Row="1"
+                        FontSize="18"
+                        FontWeight="SemiBold"
+                        Text="{x:Bind ViewModel.AreaTexto, Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                </Grid>
+            </Border>
+        </Grid>
+        <Grid Grid.Column="1" Grid.Row="1" Background="Pink" x:Name="Ubicaciones">
+
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Foreground="White"
+                Text="Elige un equipo"
+                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+
+            <!--  Bloqueada hasta que haya área  -->
+            <Border
+                Margin="12"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{x:Bind ViewModel.UbicacionBloqueada, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Spacing="6">
+                    <FontIcon
+                        FontSize="20"
+                        Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                        Glyph="&#xE72E;" />
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Primero elige un área" />
+                </StackPanel>
+            </Border>
+
+            <!--  Tarjeta de ubicación: buscar o crear dentro del área; se asigna al equipo en el momento  -->
+            <Border
+                Margin="12"
+                Padding="16"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Tapped="TarjetaUbicacion_Tapped"
+                Visibility="{x:Bind ViewModel.UbicacionHabilitada, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <Grid RowSpacing="8">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <Grid>
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            FontSize="11"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="UBICACIÓN" />
+                        <StackPanel
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="4">
+                            <Button Click="BuscarUbicacion_Click" ToolTipService.ToolTip="Buscar ubicación del área">
+                                <FontIcon FontSize="14" Glyph="&#xE721;" />
+                            </Button>
+                            <Button
+                                Click="CrearUbicacion_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                ToolTipService.ToolTip="Crear ubicación">
+                                <FontIcon FontSize="14" Glyph="&#xE710;" />
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                    <StackPanel Grid.Row="1" Spacing="4">
+                        <TextBlock
+                            FontSize="18"
+                            FontWeight="SemiBold"
+                            Text="{x:Bind ViewModel.UbicacionNombre, Mode=OneWay}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind ViewModel.UbicacionDireccion, Mode=OneWay}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+        <Grid Grid.Column="2" Grid.RowSpan="2" Background="DarkGray" x:Name="Visor">
+
+            <!--  Mapa: desplegado desde el inicio; equipo y cliente se muestran encima  -->
+            <controls:MapaVisorControl
+                x:Name="Mapa"
+                GeoClic="Mapa_GeoClic"
+                MarcadorClic="Mapa_MarcadorClic"
+                PuntoClic="Mapa_PuntoClic" />
+
+            <Grid Background="{ThemeResource SolidBackgroundFillColorBaseBrush}" Visibility="{x:Bind ViewModel.VisorTapaMapa, Mode=OneWay, Converter={StaticResource BoolToVis}}">
 
             <!--  Equipo: resumen de operaciones (fase 4)  -->
             <Border
@@ -361,6 +500,116 @@
                             Visibility="{x:Bind ViewModel.SinContactos, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
                     </Grid>
                 </Grid>
+            </Border>
+            </Grid>
+
+            <!--  Crear área: se elige un estado o municipio en el mapa  -->
+            <Border
+                Width="320"
+                Margin="12"
+                Padding="16"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{x:Bind ViewModel.VisorCrearArea, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel Spacing="10">
+                    <TextBlock
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Text="Nueva área" />
+                    <TextBlock
+                        x:Name="GeoElegidoText"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Elige un estado o municipio en el mapa."
+                        TextWrapping="Wrap" />
+                    <TextBox x:Name="NombreAreaTextBox" Header="Nombre del área *" />
+                    <TextBlock
+                        x:Name="ErrorAreaText"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        TextWrapping="Wrap"
+                        Visibility="Collapsed" />
+                    <StackPanel
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="GuardarAreaButton"
+                            MinWidth="100"
+                            Click="GuardarArea_Click"
+                            Content="Guardar"
+                            Style="{ThemeResource AccentButtonStyle}" />
+                        <Button
+                            MinWidth="100"
+                            Click="CancelarCreacion_Click"
+                            Content="Cancelar" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--  Crear ubicación: dirección buscada + punto ajustado en el mapa; todo obligatorio  -->
+            <Border
+                Width="340"
+                Margin="12"
+                Padding="16"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Bottom"
+                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="8"
+                Visibility="{x:Bind ViewModel.VisorCrearUbicacion, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+                <StackPanel Spacing="8">
+                    <TextBlock
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Text="Nueva ubicación" />
+                    <TextBlock
+                        x:Name="PuntoText"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="Busca la dirección arriba del mapa y ajusta el punto con un clic."
+                        TextWrapping="Wrap" />
+                    <TextBox x:Name="NombreUbicacionTextBox" Header="Nombre *" />
+                    <TextBox x:Name="DescripcionUbicacionTextBox" Header="Descripción *" />
+                    <TextBox
+                        x:Name="DireccionUbicacionTextBox"
+                        Header="Dirección *"
+                        TextWrapping="Wrap" />
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="CiudadUbicacionTextBox" Header="Ciudad *" />
+                        <TextBox
+                            x:Name="EstadoUbicacionTextBox"
+                            Grid.Column="1"
+                            Header="Estado *" />
+                    </Grid>
+                    <TextBlock
+                        x:Name="ErrorUbicacionText"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        TextWrapping="Wrap"
+                        Visibility="Collapsed" />
+                    <StackPanel
+                        HorizontalAlignment="Right"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="GuardarUbicacionButton"
+                            MinWidth="100"
+                            Click="GuardarUbicacion_Click"
+                            Content="Guardar"
+                            Style="{ThemeResource AccentButtonStyle}" />
+                        <Button
+                            MinWidth="100"
+                            Click="CancelarCreacion_Click"
+                            Content="Cancelar" />
+                    </StackPanel>
+                </StackPanel>
             </Border>
         </Grid>
     </Grid>
