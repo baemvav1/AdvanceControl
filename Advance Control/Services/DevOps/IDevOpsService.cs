@@ -45,6 +45,12 @@ namespace Advance_Control.Services.DevOps
 
         /// <summary>Envía un mensaje de prueba con emisor arbitrario para testing</summary>
         Task EnviarMensajePruebaAsync(long deCredencialId, long paraCredencialId, string contenido, CancellationToken ct = default);
+
+        /// <summary>Inicia la copia de producción hacia Pruebas (solo funciona en el API de pruebas).</summary>
+        Task IniciarRefrescoPruebasAsync(CancellationToken ct = default);
+
+        /// <summary>Avance de la copia de producción hacia Pruebas.</summary>
+        Task<DevOpsRefrescoEstado> ObtenerEstadoRefrescoPruebasAsync(CancellationToken ct = default);
     }
 
     /// <summary>Resultado de limpieza por tabla</summary>
@@ -55,6 +61,28 @@ namespace Advance_Control.Services.DevOps
     }
 
     /// <summary>Estadísticas por tabla</summary>
+    /// <summary>Avance de "Copiar producción a Pruebas".</summary>
+    public class DevOpsRefrescoEstado
+    {
+        /// <summary>corriendo, ok, error o ninguno.</summary>
+        [System.Text.Json.Serialization.JsonPropertyName("estado")]
+        public string Estado { get; set; } = "ninguno";
+
+        [System.Text.Json.Serialization.JsonPropertyName("paso")]
+        public string Paso { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("mensaje")]
+        public string Mensaje { get; set; } = string.Empty;
+
+        [System.Text.Json.Serialization.JsonPropertyName("inicio")]
+        public DateTime? Inicio { get; set; }
+
+        [System.Text.Json.Serialization.JsonPropertyName("fin")]
+        public DateTime? Fin { get; set; }
+
+        public bool Corriendo => Estado == "corriendo";
+    }
+
     public class DevOpsStatsResult
     {
         public string Tabla { get; set; } = string.Empty;

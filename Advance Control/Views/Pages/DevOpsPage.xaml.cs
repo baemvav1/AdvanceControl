@@ -20,6 +20,119 @@ namespace Advance_Control.Views.Pages
             ViewModel = services.GetRequiredService<DevOpsViewModel>();
             this.InitializeComponent();
             this.DataContext = ViewModel;
+
+            // "Copiar producción a Pruebas" solo existe en el entorno de pruebas (el API de
+            // producción además lo rechaza con 403).
+            if (Advance_Control.Utilities.EntornoApp.EsPruebas)
+            {
+                RefrescoPruebasPanel.Visibility = Visibility.Visible;
+                Loaded += async (_, _) => await RetomarRefrescoSiCorreAsync();
+            }
+        }
+
+        private bool _siguiendoRefresco;
+
+        private async void OnRefrescarPruebasClick(object sender, RoutedEventArgs e)
+        {
+            if (!Advance_Control.Utilities.EntornoApp.EsPruebas) return;
+
+            var dialogo = new ContentDialog
+            {
+                Title = "Copiar producción a Pruebas",
+                Content = "Se BORRA todo lo que hay en la base de Pruebas y se reemplaza con una copia " +
+                          "fresca de producción (anonimizada), junto con sus fotos y documentos.\n\n" +
+                          "Tarda un par de minutos. Al terminar se reinicia el API de pruebas y todos " +
+                          "tendrán que volver a iniciar sesión en Pruebas.\n\n" +
+                          "Producción no se modifica.",
+                PrimaryButtonText = "Copiar ahora",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Close,
+                XamlRoot = XamlRoot
+            };
+            if (await dialogo.ShowAsync() != ContentDialogResult.Primary) return;
+
+            var servicio = ((App)Application.Current).Host.Services.GetRequiredService<Services.DevOps.IDevOpsService>();
+            try
+            {
+                MostrarRefresco(true, "Iniciando…");
+                await servicio.IniciarRefrescoPruebasAsync();
+            }
+            catch (Exception ex)
+            {
+                MostrarRefresco(false, $"No se pudo iniciar: {ex.Message}");
+                return;
+            }
+            await SeguirRefrescoAsync(servicio);
+        }
+
+        /// <summary>Si se abrió la página con una copia en curso, sigue mostrando su avance.</summary>
+        private async System.Threading.Tasks.Task RetomarRefrescoSiCorreAsync()
+        {
+            var servicio = ((App)Application.Current).Host.Services.GetRequiredService<Services.DevOps.IDevOpsService>();
+            try
+            {
+                var estado = await servicio.ObtenerEstadoRefrescoPruebasAsync();
+                if (estado.Corriendo) await SeguirRefrescoAsync(servicio);
+                else if (estado.Estado == "ok" && estado.Fin is DateTime fin)
+                    RefrescoEstadoText.Text = $"Última copia: {fin.ToLocalTime():dd/MM/yyyy HH:mm}";
+                else if (estado.Estado == "error")
+                    RefrescoEstadoText.Text = $"La última copia falló en \"{estado.Paso}\": {estado.Mensaje}";
+            }
+            catch { /* sin estado: no se muestra nada */ }
+        }
+
+        /// <summary>Consulta el avance cada 3 s hasta que termine (el API se reinicia al final).</summary>
+        private async System.Threading.Tasks.Task SeguirRefrescoAsync(Services.DevOps.IDevOpsService servicio)
+        {
+            if (_siguiendoRefresco) return;
+            _siguiendoRefresco = true;
+            try
+            {
+                var limite = DateTime.Now.AddMinutes(30);
+                while (DateTime.Now < limite)
+                {
+                    await System.Threading.Tasks.Task.Delay(3000);
+                    Services.DevOps.DevOpsRefrescoEstado estado;
+                    try { estado = await servicio.ObtenerEstadoRefrescoPruebasAsync(); }
+                    catch { MostrarRefresco(true, "Esperando al servidor (se está reiniciando)…"); continue; }
+
+                    if (estado.Corriendo)
+                    {
+                        MostrarRefresco(true, string.IsNullOrEmpty(estado.Paso) ? "Copiando…" : estado.Paso + "…");
+                        continue;
+                    }
+
+                    if (estado.Estado == "ok")
+                    {
+                        MostrarRefresco(false, "Listo: Pruebas tiene datos frescos de producción.");
+                        await new ContentDialog
+                        {
+                            Title = "Copia terminada",
+                            Content = "Pruebas ya tiene una copia fresca de producción.\n\nCierra sesión y vuelve a entrar para seguir trabajando en Pruebas.",
+                            CloseButtonText = "Aceptar",
+                            XamlRoot = XamlRoot
+                        }.ShowAsync();
+                    }
+                    else
+                    {
+                        MostrarRefresco(false, $"Falló en \"{estado.Paso}\": {estado.Mensaje}");
+                    }
+                    return;
+                }
+                MostrarRefresco(false, "La copia sigue sin terminar después de 30 minutos; revisa el servidor.");
+            }
+            finally
+            {
+                _siguiendoRefresco = false;
+            }
+        }
+
+        private void MostrarRefresco(bool corriendo, string texto)
+        {
+            BtnRefrescarPruebas.IsEnabled = !corriendo;
+            RefrescoProgreso.IsActive = corriendo;
+            RefrescoProgreso.Visibility = corriendo ? Visibility.Visible : Visibility.Collapsed;
+            RefrescoEstadoText.Text = texto;
         }
 
         private async void OnLimpiarFinancieroClick(object sender, RoutedEventArgs e)
