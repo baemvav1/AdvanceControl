@@ -298,16 +298,42 @@
                             </Paragraph>
 
                             <Paragraph Margin="0,16,0,4">
-                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="En pruebas (próximamente)" />
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Personal asignado por cliente" />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Personal asignado por cliente (técnicos, supervisores y administrativos): define quién ve sus operaciones y órdenes de servicio, se copia en sus correos y recibe avisos de emergencias, órdenes nuevas, respuestas a cotizaciones y hojas de mantenimiento." />
+                                <Run Text="• En Clientes, nueva pestaña Personal para asignar técnicos, supervisores y administrativos a cada cliente." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Chat: lista de chats al abrir la cortina, mensaje de difusión a todos, botón en verde con mensajes sin leer y reconexión automática." />
+                                <Run Text="• Ese personal define quién ve las operaciones y órdenes de servicio del cliente y quién aparece en &quot;Atender como&quot;." />
                             </Paragraph>
                             <Paragraph Margin="0,0,0,2">
-                                <Run Text="• Asistente de Equipos: buscar un equipo y ver en un solo lugar sus clientes, contactos, personal, mapa y operaciones." />
+                                <Run Text="• Se copia automáticamente (CC) en los correos al cliente: cotizaciones, reportes, finiquitos, hojas de mantenimiento y facturas." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Recibe aviso en la campanita cuando el cliente reporta una emergencia, se crea una orden de servicio, responde una cotización o firma/rechaza una hoja de mantenimiento." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Chat" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Al abrir la cortina aparecen tus chats con el último mensaje y los no leídos." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo &quot;Mensaje de difusión&quot; al inicio de la lista de contactos: envía un mensaje a todos." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• El botón del chat se pone verde cuando tienes mensajes sin leer." />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• El chat se reconecta solo si se pierde la conexión con el servidor." />
+                            </Paragraph>
+
+                            <Paragraph Margin="0,16,0,4">
+                                <Run FontWeight="SemiBold" FontSize="14" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" Text="Asistentes" />
+                            </Paragraph>
+                            <Paragraph Margin="0,0,0,2">
+                                <Run Text="• Nuevo Asistente de Equipos (menú Asistentes): busca un equipo y ve en un solo lugar sus clientes, contactos, personal, mapa y operaciones." />
                             </Paragraph>
 
                         </RichTextBlock.Blocks>
