@@ -186,6 +186,23 @@
                             </NavigationViewItem.Icon>
                         </NavigationViewItem>
 
+                        <!--  Grupo: Asistentes (tareas que antes pedían 2 o más ventanas, en una sola)  -->
+                        <NavigationViewItem
+                            Background="{ThemeResource ControlElevationBorderBrush}"
+                            Content="Asistentes"
+                            IsExpanded="True"
+                            SelectsOnInvoked="False">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE99A;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.MenuItems>
+                                <NavigationViewItem
+                                    Content="Equipos"
+                                    Icon="AllApps"
+                                    Tag="AsistenteEquipos" />
+                            </NavigationViewItem.MenuItems>
+                        </NavigationViewItem>
+
                         <!--  Grupo: Negocios  -->
                         <NavigationViewItem
                             Background="{ThemeResource ControlElevationBorderBrush}"

@@ -21,7 +21,7 @@ namespace Advance_Control.ViewModels
     public enum ModoVisor { Vacio, Equipo, Cliente, Area, Ubicacion, CrearArea, CrearUbicacion }
 
     /// <summary>
-    /// Estado del prototipo de Catálogos.
+    /// Estado del asistente Equipos (grupo Asistentes).
     ///  - Equipo: elegido con el buscador; quitarlo reinicia toda la pantalla.
     ///  - Clientes: los vinculados al equipo (relaciones_equipo_cliente); vincular con el buscador,
     ///    desvincular uno a la vez. Cada acción se guarda en el momento.
@@ -32,7 +32,7 @@ namespace Advance_Control.ViewModels
     ///  - Visor: según la tarjeta seleccionada (equipo → resumen de operaciones, fase 4;
     ///    cliente → su ficha y contactos; área → mapa con contorno y ubicaciones; ubicación → su punto).
     /// </summary>
-    public class ProCatalogosViewModel : ViewModelBase
+    public class AsistenteEquiposViewModel : ViewModelBase
     {
         private static readonly CultureInfo CulturaMx = new("es-MX");
 
@@ -57,7 +57,7 @@ namespace Advance_Control.ViewModels
         private bool _cargandoClientes;
         private bool _cargandoCliente;
 
-        public ProCatalogosViewModel(IRelacionService relacionService, IClienteService clienteService,
+        public AsistenteEquiposViewModel(IRelacionService relacionService, IClienteService clienteService,
             IContactoService contactoService, ILoggingService logger, IAreasService areasService,
             IUbicacionService ubicacionService, IEquipoService equipoService, IPersonalClienteService personalService)
         {
@@ -195,7 +195,7 @@ namespace Advance_Control.ViewModels
             catch (Exception ex)
             {
                 ErrorResumen = ex.Message;
-                await _logger.LogErrorAsync("Error al cargar el resumen de operaciones", ex, nameof(ProCatalogosViewModel), nameof(CargarResumenAsync));
+                await _logger.LogErrorAsync("Error al cargar el resumen de operaciones", ex, nameof(AsistenteEquiposViewModel), nameof(CargarResumenAsync));
             }
             finally
             {
@@ -257,7 +257,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al cargar clientes del equipo", ex, nameof(ProCatalogosViewModel), nameof(CargarClientesAsync));
+                await _logger.LogErrorAsync("Error al cargar clientes del equipo", ex, nameof(AsistenteEquiposViewModel), nameof(CargarClientesAsync));
             }
             finally
             {
@@ -356,7 +356,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al cargar el cliente", ex, nameof(ProCatalogosViewModel), nameof(CargarClienteAsync));
+                await _logger.LogErrorAsync("Error al cargar el cliente", ex, nameof(AsistenteEquiposViewModel), nameof(CargarClienteAsync));
             }
             finally
             {
@@ -423,7 +423,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al cargar el personal asignado", ex, nameof(ProCatalogosViewModel), nameof(CargarPersonalSeguroAsync));
+                await _logger.LogErrorAsync("Error al cargar el personal asignado", ex, nameof(AsistenteEquiposViewModel), nameof(CargarPersonalSeguroAsync));
                 return new();
             }
         }
@@ -534,7 +534,7 @@ namespace Advance_Control.ViewModels
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync("Error al cargar áreas y ubicaciones", ex, nameof(ProCatalogosViewModel), nameof(CargarCatalogosAsync));
+                await _logger.LogErrorAsync("Error al cargar áreas y ubicaciones", ex, nameof(AsistenteEquiposViewModel), nameof(CargarCatalogosAsync));
             }
         }
 

@@ -1095,7 +1095,7 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.ProductosViewModel>();
                     services.AddTransient<ViewModels.UbicacionesViewModel>();
                     services.AddTransient<ViewModels.BuscadorEquiposViewModel>();
-                    services.AddTransient<ViewModels.ProCatalogosViewModel>();
+                    services.AddTransient<ViewModels.AsistenteEquiposViewModel>();
                     services.AddTransient<ViewModels.AreasViewModel>();
                     services.AddTransient<ViewModels.EntidadesViewModel>();
                     services.AddTransient<ViewModels.ContactosViewModel>();
