@@ -30,6 +30,9 @@ namespace Advance_Control.Services.Ubicaciones
         /// </summary>
         Task<ApiResponse> CreateUbicacionAsync(UbicacionDto ubicacion, CancellationToken cancellationToken = default);
 
+        /// <summary>Crea una ubicación y devuelve su id.</summary>
+        Task<(bool Exito, string? Mensaje, int? IdUbicacion)> CrearUbicacionConIdAsync(UbicacionDto ubicacion, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Actualiza una ubicación existente
         /// </summary>

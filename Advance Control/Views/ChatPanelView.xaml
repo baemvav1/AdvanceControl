@@ -48,6 +48,53 @@
         <!--  Área de conversación  -->
         <Grid Grid.Row="2"
               Visibility="{x:Bind ViewModel.IsUserListVisible, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=invert, Mode=OneWay}">
+            <!--  Chats existentes (sin conversación abierta)  -->
+            <Grid Visibility="{x:Bind ViewModel.HayUsuarioSeleccionado, Converter={StaticResource BoolToVisibilityConverter}, ConverterParameter=invert, Mode=OneWay}">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <StackPanel Grid.Row="0" Padding="12,10,12,6" Spacing="2">
+                    <TextBlock FontSize="14" FontWeight="SemiBold" Text="Chats" />
+                    <TextBlock FontSize="11"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="Usa el botón ☰ para buscar a alguien más" />
+                </StackPanel>
+                <ListView
+                    x:Name="ChatsListView"
+                    Grid.Row="1"
+                    Margin="4,0,4,8"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    IsItemClickEnabled="True"
+                    ItemClick="ChatsListView_ItemClick"
+                    ItemsSource="{x:Bind ViewModel.Chats, Mode=OneWay}"
+                    SelectionMode="None">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:UsuarioChatDto">
+                            <items:UsuarioChatItemView />
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Margin" Value="4,2" />
+                            <Setter Property="Padding" Value="6,4" />
+                            <Setter Property="MinHeight" Value="0" />
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                </ListView>
+                <ProgressRing Grid.Row="1" Width="24" Height="24"
+                              HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,24,0,0"
+                              IsActive="{x:Bind ViewModel.CargandoChats, Mode=OneWay}"
+                              Visibility="{x:Bind ViewModel.CargandoChats, Mode=OneWay}" />
+                <TextBlock Grid.Row="1" Margin="24,24,24,0"
+                           HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                           FontSize="12" FontStyle="Italic"
+                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="Aún no tienes chats. Usa el botón ☰ para elegir a alguien y escribirle."
+                           Visibility="{x:Bind ViewModel.SinChats, Mode=OneWay}" />
+            </Grid>
             <!--  Header de conversación activa  -->
             <Grid Visibility="{x:Bind ViewModel.HayUsuarioSeleccionado, Mode=OneWay}">
                 <Grid.RowDefinitions>
@@ -62,16 +109,23 @@
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
                             <ColumnDefinition Width="*" />
                         </Grid.ColumnDefinitions>
-                        <Grid Grid.Column="0" Width="28" Height="28" Margin="0,0,8,0">
+                        <Button Grid.Column="0" Width="28" Height="28" Margin="0,0,6,0" Padding="0"
+                                Background="Transparent" BorderThickness="0"
+                                Click="RegresarAChats_Click"
+                                ToolTipService.ToolTip="Regresar a los chats">
+                            <FontIcon FontSize="12" Glyph="&#xE72B;" />
+                        </Button>
+                        <Grid Grid.Column="1" Width="28" Height="28" Margin="0,0,8,0">
                             <Ellipse Width="28" Height="28"
                                      Fill="{ThemeResource AccentFillColorDefaultBrush}" />
                             <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
                                        FontSize="10" FontWeight="SemiBold" Foreground="White"
                                        Text="{x:Bind GetUsuarioIniciales(ViewModel.UsuarioSeleccionado), Mode=OneWay}" />
                         </Grid>
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
                             <TextBlock FontSize="12" FontWeight="SemiBold"
                                        Text="{x:Bind GetUsuarioNombre(ViewModel.UsuarioSeleccionado), Mode=OneWay}" />
                             <TextBlock FontSize="10" Foreground="#10B981" Text="En línea"
@@ -230,6 +284,35 @@
                     PlaceholderText="Buscar usuario…"
                     QueryIcon="Find"
                     TextChanged="BuscadorUsuarios_TextChanged" />
+
+                <!--  Mensaje de difusión: antes de todos los contactos  -->
+                <Button
+                    Margin="0,2,0,0"
+                    Padding="8,10"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    Click="Difusion_Click"
+                    IsEnabled="{x:Bind ViewModel.EstaConectado, Mode=OneWay}"
+                    ToolTipService.ToolTip="Enviar un mensaje a todos los usuarios">
+                    <Grid ColumnSpacing="10">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="40" Height="40">
+                            <Ellipse Width="40" Height="40" Fill="{ThemeResource SystemFillColorCautionBrush}" />
+                            <FontIcon FontSize="16" Foreground="White" Glyph="&#xE789;" />
+                        </Grid>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="Mensaje de difusión" />
+                            <TextBlock FontSize="11"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="Enviar un mensaje a todos" />
+                        </StackPanel>
+                    </Grid>
+                </Button>
             </StackPanel>
 
             <ListView

@@ -174,7 +174,7 @@ namespace Advance_Control.Views.Pages
                 };
 
                 var correo = new EnviarCotizacionDialog(ruta, dirigido, contactos, op.RazonSocial ?? string.Empty, XamlRoot,
-                    idOperacion: _idOperacion, portal: portal);
+                    idOperacion: _idOperacion, portal: portal, idCliente: idCliente);
                 if (await correo.ShowAsync() != ContentDialogResult.Primary)
                 {
                     await RefrescarGaleriaAsync();

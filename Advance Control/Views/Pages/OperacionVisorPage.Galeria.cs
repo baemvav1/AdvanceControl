@@ -705,7 +705,7 @@ namespace Advance_Control.Views.Pages
                 };
 
                 var correo = new EnviarCotizacionDialog(cotizacion, contacto, contactos, op.RazonSocial ?? string.Empty, XamlRoot,
-                    tipo: "Finiquito", idOperacion: _idOperacion, adjuntosAdicionales: adjuntos);
+                    tipo: "Finiquito", idOperacion: _idOperacion, adjuntosAdicionales: adjuntos, idCliente: op.IdCliente);
                 if (await correo.ShowAsync() == ContentDialogResult.Primary)
                 {
                     _actividad.Registrar("Operaciones", "Finiquito enviado");
@@ -948,8 +948,8 @@ namespace Advance_Control.Views.Pages
             if (visor.Resultado == CotizacionVisorResultado.EnviarCorreo)
             {
                 var correo = tipo == "Cotización"
-                    ? new EnviarCotizacionDialog(ruta, contacto, contactos, razon, XamlRoot, idOperacion: _idOperacion)
-                    : new EnviarCotizacionDialog(ruta, contacto, contactos, razon, XamlRoot, tipo: tipo, idOperacion: _idOperacion, tFinalizado: tFinalizado);
+                    ? new EnviarCotizacionDialog(ruta, contacto, contactos, razon, XamlRoot, idOperacion: _idOperacion, idCliente: _operacion?.IdCliente)
+                    : new EnviarCotizacionDialog(ruta, contacto, contactos, razon, XamlRoot, tipo: tipo, idOperacion: _idOperacion, tFinalizado: tFinalizado, idCliente: _operacion?.IdCliente);
                 return await correo.ShowAsync() == ContentDialogResult.Primary;
             }
 

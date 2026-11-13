@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--  Formulario de contacto (crear o editar). Sin botones: los pone quien lo abre.  -->
+<UserControl
+    x:Class="Advance_Control.Views.Dialogs.ContactoFormUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Width="460"
+    mc:Ignorable="d">
+
+    <StackPanel Spacing="10">
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="110" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBox
+                x:Name="TratamientoTextBox"
+                Header="Tratamiento"
+                PlaceholderText="Ing., Lic.…" />
+            <TextBox
+                x:Name="NombreTextBox"
+                Grid.Column="1"
+                Header="Nombre *" />
+        </Grid>
+        <TextBox x:Name="ApellidoTextBox" Header="Apellido" />
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="CargoTextBox" Header="Cargo" />
+            <TextBox
+                x:Name="DepartamentoTextBox"
+                Grid.Column="1"
+                Header="Departamento" />
+        </Grid>
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <TextBox x:Name="CorreoTextBox" Header="Correo" />
+            <TextBox
+                x:Name="TelefonoTextBox"
+                Grid.Column="1"
+                Header="Teléfono" />
+        </Grid>
+        <TextBox
+            x:Name="NotasTextBox"
+            MinHeight="60"
+            MaxHeight="120"
+            AcceptsReturn="True"
+            Header="Notas"
+            TextWrapping="Wrap" />
+        <TextBlock
+            x:Name="ErrorText"
+            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+            TextWrapping="Wrap"
+            Visibility="Collapsed" />
+    </StackPanel>
+</UserControl>

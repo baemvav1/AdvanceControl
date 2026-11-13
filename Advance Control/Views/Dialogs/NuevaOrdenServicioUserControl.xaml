@@ -46,28 +46,22 @@
                 Checked="BuscarPorInmuebleRadio_Checked" />
         </StackPanel>
 
-        <!-- Equipo (Searchable dropdown) -->
+        <!-- Equipo: se elige con el buscador de equipos (modal) -->
         <StackPanel x:Name="EquipoPanel" Grid.Row="2" Margin="0,0,0,12">
             <TextBlock
                 Text="Equipo"
                 FontWeight="SemiBold"
                 Margin="0,0,0,4" />
-            <AutoSuggestBox
-                x:Name="EquipoAutoSuggestBox"
-                PlaceholderText="Buscar equipo por identificador, marca..."
-                QueryIcon="Find"
-                TextChanged="EquipoAutoSuggestBox_TextChanged"
-                SuggestionChosen="EquipoAutoSuggestBox_SuggestionChosen"
-                GotFocus="EquipoAutoSuggestBox_GotFocus" />
-
-            <!-- Loading indicator for equipment -->
-            <ProgressRing
-                x:Name="EquipoLoadingRing"
-                Width="20"
-                Height="20"
-                HorizontalAlignment="Left"
-                IsActive="False"
-                Margin="0,4,0,0" />
+            <Button
+                x:Name="BuscarEquipoButton"
+                HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Left"
+                Click="BuscarEquipo_Click">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <SymbolIcon Symbol="Find" />
+                    <TextBlock x:Name="BuscarEquipoTexto" Text="Buscar equipo..." />
+                </StackPanel>
+            </Button>
 
             <!-- Selected equipment info -->
             <Border

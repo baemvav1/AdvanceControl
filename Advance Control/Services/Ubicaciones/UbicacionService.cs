@@ -254,6 +254,47 @@ namespace Advance_Control.Services.Ubicaciones
         }
 
         /// <summary>
+        /// Crea una ubicación y devuelve su id (CreateUbicacionAsync no lo expone).
+        /// </summary>
+        public async Task<(bool Exito, string? Mensaje, int? IdUbicacion)> CrearUbicacionConIdAsync(UbicacionDto ubicacion, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "Ubicacion");
+                var content = new StringContent(JsonSerializer.Serialize(ubicacion), Encoding.UTF8, "application/json");
+                using var response = await _http.PostAsync(url, content, cancellationToken).ConfigureAwait(false);
+                var cuerpo = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    await _logger.LogErrorAsync($"Error al crear ubicación. Status: {response.StatusCode}, Content: {cuerpo}",
+                        null, "UbicacionService", "CrearUbicacionConIdAsync");
+                    return (false, $"Error al crear ubicación: {response.StatusCode}", null);
+                }
+
+                using var doc = JsonDocument.Parse(cuerpo);
+                bool exito = true;
+                string? mensaje = null;
+                int? id = null;
+                foreach (var p in doc.RootElement.EnumerateObject())
+                {
+                    if (p.NameEquals("success") || p.Name.Equals("success", StringComparison.OrdinalIgnoreCase))
+                        exito = p.Value.ValueKind == JsonValueKind.True;
+                    else if (p.Name.Equals("message", StringComparison.OrdinalIgnoreCase) && p.Value.ValueKind == JsonValueKind.String)
+                        mensaje = p.Value.GetString();
+                    else if (p.Name.Equals("idUbicacion", StringComparison.OrdinalIgnoreCase) && p.Value.TryGetInt32(out var v) && v > 0)
+                        id = v;
+                }
+                return (exito && id.HasValue, mensaje, id);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al crear ubicación", ex, "UbicacionService", "CrearUbicacionConIdAsync");
+                return (false, "Error de comunicación con el servidor al crear la ubicación.", null);
+            }
+        }
+
+        /// <summary>
         /// Actualiza una ubicación existente
         /// </summary>
         public async Task<ApiResponse> UpdateUbicacionAsync(int id, UbicacionDto ubicacion, CancellationToken cancellationToken = default)

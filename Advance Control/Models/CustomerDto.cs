@@ -206,6 +206,75 @@ namespace Advance_Control.Models
             OnPropertyChanged(nameof(ShowNoLoginsMessage));
         }
 
+        // ── Personal asignado (pivot "Personal"): técnicos, supervisores y administrativos ──
+
+        [JsonIgnore]
+        public ObservableCollection<PersonalClienteDto> Tecnicos { get; } = new ObservableCollection<PersonalClienteDto>();
+
+        [JsonIgnore]
+        public ObservableCollection<PersonalClienteDto> Supervisores { get; } = new ObservableCollection<PersonalClienteDto>();
+
+        [JsonIgnore]
+        public ObservableCollection<PersonalClienteDto> Agentes { get; } = new ObservableCollection<PersonalClienteDto>();
+
+        private bool _personalLoaded;
+
+        [JsonIgnore]
+        public bool PersonalLoaded
+        {
+            get => _personalLoaded;
+            set
+            {
+                if (_personalLoaded != value)
+                {
+                    _personalLoaded = value;
+                    OnPropertyChanged();
+                    NotifyPersonalChanged();
+                }
+            }
+        }
+
+        private bool _isLoadingPersonal;
+
+        [JsonIgnore]
+        public bool IsLoadingPersonal
+        {
+            get => _isLoadingPersonal;
+            set
+            {
+                if (_isLoadingPersonal != value)
+                {
+                    _isLoadingPersonal = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        [JsonIgnore]
+        public bool ShowNoTecnicosMessage => PersonalLoaded && Tecnicos.Count == 0;
+
+        [JsonIgnore]
+        public bool ShowNoSupervisoresMessage => PersonalLoaded && Supervisores.Count == 0;
+
+        [JsonIgnore]
+        public bool ShowNoAgentesMessage => PersonalLoaded && Agentes.Count == 0;
+
+        /// <summary>Lista del cliente para el rol (tecnico, supervisor, agente).</summary>
+        public ObservableCollection<PersonalClienteDto>? PersonalDeRol(string? rol) => rol switch
+        {
+            PersonalClienteDto.RolTecnico => Tecnicos,
+            PersonalClienteDto.RolSupervisor => Supervisores,
+            PersonalClienteDto.RolAgente => Agentes,
+            _ => null
+        };
+
+        public void NotifyPersonalChanged()
+        {
+            OnPropertyChanged(nameof(ShowNoTecnicosMessage));
+            OnPropertyChanged(nameof(ShowNoSupervisoresMessage));
+            OnPropertyChanged(nameof(ShowNoAgentesMessage));
+        }
+
         private ContratoSuscripcionDto? _suscripcion;
 
         /// <summary>

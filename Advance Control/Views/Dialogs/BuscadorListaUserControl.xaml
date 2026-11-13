@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+    Buscador de lista genérico (clientes, contactos…), con el mismo estilo que el buscador de
+    equipos: marco de ContentDialog, búsqueda arriba, lista vacía hasta escribir, "Nuevo…" a la
+    izquierda y Seleccionar / Cancelar a la derecha. Se abre con ModalPopup.
+-->
+<UserControl
+    x:Class="Advance_Control.Views.Dialogs.BuscadorListaUserControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
+    mc:Ignorable="d">
+
+    <Border
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+        BorderBrush="{ThemeResource SurfaceStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        CornerRadius="{ThemeResource OverlayCornerRadius}"
+        Translation="0,0,32">
+        <Border.Shadow>
+            <ThemeShadow />
+        </Border.Shadow>
+
+        <Grid
+            Width="640"
+            Height="480"
+            Background="{ThemeResource LayerFillColorAltBrush}"
+            CornerRadius="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="56" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="56" />
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0" Margin="24,12,24,0" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock
+                    x:Name="TituloText"
+                    VerticalAlignment="Center"
+                    FontSize="20"
+                    FontWeight="SemiBold" />
+                <TextBox
+                    x:Name="BusquedaTextBox"
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    KeyDown="BusquedaTextBox_KeyDown"
+                    TextChanged="BusquedaTextBox_TextChanged" />
+            </Grid>
+
+            <Border
+                Grid.Row="1"
+                Margin="24,12,24,12"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="6">
+                <Grid>
+                    <ListView
+                        x:Name="ResultadosListView"
+                        DoubleTapped="ResultadosListView_DoubleTapped"
+                        SelectionChanged="ResultadosListView_SelectionChanged"
+                        SelectionMode="Single">
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="models:BuscadorListaItem">
+                                <StackPanel Padding="0,8" Spacing="2">
+                                    <TextBlock
+                                        FontWeight="SemiBold"
+                                        Text="{x:Bind Titulo}"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind Subtitulo}"
+                                        TextTrimming="CharacterEllipsis"
+                                        Visibility="{x:Bind TieneSubtitulo}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <ProgressRing
+                        x:Name="CargandoRing"
+                        Width="32"
+                        Height="32"
+                        IsActive="False" />
+
+                    <TextBlock
+                        x:Name="EstadoText"
+                        Margin="24"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap" />
+                </Grid>
+            </Border>
+
+            <Border
+                Grid.Row="2"
+                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="0,1,0,0"
+                CornerRadius="0,0,8,8" />
+            <Button
+                x:Name="NuevoButton"
+                Grid.Row="2"
+                Margin="24,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Click="Nuevo_Click">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon FontSize="14" Glyph="&#xE710;" />
+                    <TextBlock x:Name="NuevoText" />
+                </StackPanel>
+            </Button>
+            <StackPanel
+                Grid.Row="2"
+                Margin="0,0,24,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal"
+                Spacing="8">
+                <Button
+                    x:Name="SeleccionarButton"
+                    MinWidth="120"
+                    Click="Seleccionar_Click"
+                    Content="Seleccionar"
+                    IsEnabled="False"
+                    Style="{ThemeResource AccentButtonStyle}" />
+                <Button
+                    MinWidth="120"
+                    Click="Cancelar_Click"
+                    Content="Cancelar" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

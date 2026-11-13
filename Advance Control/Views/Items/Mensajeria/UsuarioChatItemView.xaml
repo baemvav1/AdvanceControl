@@ -45,14 +45,27 @@
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 Text="Escribiendo…"
                 Visibility="{Binding EstaEscribiendo, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+            <TextBlock
+                FontSize="11"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                MaxLines="1"
+                Text="{Binding UltimoMensaje, Mode=OneWay}"
+                TextTrimming="CharacterEllipsis"
+                TextWrapping="NoWrap"
+                Visibility="{Binding MostrarUltimoMensaje, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
         </StackPanel>
 
-        <!--  Badge de no leídos  -->
+        <!--  Hora del último mensaje + badge de no leídos  -->
+        <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="4">
+        <TextBlock
+            HorizontalAlignment="Right"
+            FontSize="10"
+            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+            Text="{Binding UltimoEnTexto, Mode=OneWay}" />
         <Border
-            Grid.Column="2"
             MinWidth="20" Height="20"
             Padding="5,0"
-            HorizontalAlignment="Center" VerticalAlignment="Center"
+            HorizontalAlignment="Right" VerticalAlignment="Center"
             Background="{ThemeResource SystemFillColorCriticalBrush}"
             CornerRadius="10"
             Visibility="{Binding TieneNoLeidos, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
@@ -62,5 +75,6 @@
                 Foreground="White"
                 Text="{Binding MensajesNoLeidos, Mode=OneWay}" />
         </Border>
+        </StackPanel>
     </Grid>
 </UserControl>

@@ -58,6 +58,73 @@ namespace Advance_Control.Views
             }
         }
 
+        /// <summary>"Mensaje de difusión": escribe un mensaje que se envía a todos los usuarios.</summary>
+        private async void Difusion_Click(object sender, RoutedEventArgs e)
+        {
+            var texto = new TextBox
+            {
+                AcceptsReturn = true,
+                TextWrapping = TextWrapping.Wrap,
+                MinHeight = 100,
+                MaxHeight = 220,
+                MaxLength = 3900,
+                PlaceholderText = "Escribe el mensaje para todos…"
+            };
+            var aviso = new TextBlock
+            {
+                Text = $"Se enviará a los {ViewModel.TotalDestinatariosDifusion} usuarios activos del chat, a cada uno en su conversación.",
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 12,
+                Opacity = 0.8
+            };
+            var panel = new StackPanel { Spacing = 10, Width = 380 };
+            panel.Children.Add(aviso);
+            panel.Children.Add(texto);
+
+            var dialogo = new ContentDialog
+            {
+                Title = "Mensaje de difusión",
+                Content = panel,
+                PrimaryButtonText = "Enviar a todos",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                IsPrimaryButtonEnabled = false,
+                XamlRoot = XamlRoot
+            };
+            texto.TextChanged += (_, _) => dialogo.IsPrimaryButtonEnabled = !string.IsNullOrWhiteSpace(texto.Text);
+            dialogo.Opened += (_, _) => texto.Focus(FocusState.Programmatic);
+
+            if (await dialogo.ShowAsync() != ContentDialogResult.Primary) return;
+
+            string resultado;
+            try
+            {
+                var enviados = await ViewModel.EnviarDifusionAsync(texto.Text);
+                resultado = $"Mensaje enviado a {enviados} usuario(s).";
+            }
+            catch (Exception ex)
+            {
+                resultado = $"No se pudo enviar el mensaje de difusión: {ex.Message}";
+            }
+
+            await new ContentDialog
+            {
+                Title = "Mensaje de difusión",
+                Content = resultado,
+                CloseButtonText = "Aceptar",
+                XamlRoot = XamlRoot
+            }.ShowAsync();
+        }
+
+        private void RegresarAChats_Click(object sender, RoutedEventArgs e)
+            => ViewModel.MostrarListaChats();
+
+        private void ChatsListView_ItemClick(object sender, ItemClickEventArgs e)
+        {
+            if (e.ClickedItem is UsuarioChatDto usuario)
+                ViewModel.AbrirConversacion(usuario);
+        }
+
         private void BuscadorUsuarios_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
         {
             if (args.Reason == AutoSuggestionBoxTextChangeReason.UserInput)

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--  Mapa del Visor (Google Maps en WebView2). Ver MapaVisorControl.xaml.cs.  -->
+<UserControl
+    x:Class="Advance_Control.Views.Controls.MapaVisorControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid>
+        <WebView2 x:Name="Web" />
+        <TextBlock
+            x:Name="EstadoText"
+            Margin="24"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            Foreground="White"
+            TextAlignment="Center"
+            TextWrapping="Wrap" />
+    </Grid>
+</UserControl>

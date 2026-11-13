@@ -21,6 +21,14 @@ namespace Advance_Control.Services.Mensajeria
         private readonly ILoggingService _logger;
         private HubConnection? _hubConnection;
         private string? _currentToken;
+        private readonly Func<Task<string?>>? _tokenProvider;
+
+        /// <summary>True cuando se desconectó a propósito (cerrar sesión): no reintentar.</summary>
+        private bool _detenido;
+        private int _reintentoActivo;
+
+        /// <summary>Espera entre intentos cuando la conexión se cerró del todo (p. ej. reinicio del API).</summary>
+        private static readonly TimeSpan IntervaloReintento = TimeSpan.FromSeconds(30);
 
         private static readonly JsonSerializerOptions _jsonOptions = new()
         {
@@ -43,8 +51,10 @@ namespace Advance_Control.Services.Mensajeria
         public event EventHandler<string>? UsuarioEscribiendo;
         public event EventHandler<bool>? EstadoConexionCambiado;
 
-        public MensajeriaService(HttpClient http, IApiEndpointProvider endpoints, ILoggingService logger)
+        public MensajeriaService(HttpClient http, IApiEndpointProvider endpoints, ILoggingService logger,
+            Func<Task<string?>>? tokenProvider = null)
         {
+            _tokenProvider = tokenProvider;
             _http = http ?? throw new ArgumentNullException(nameof(http));
             _endpoints = endpoints ?? throw new ArgumentNullException(nameof(endpoints));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -68,15 +78,17 @@ namespace Advance_Control.Services.Mensajeria
             if (_hubConnection != null)
                 await DesconectarAsync();
 
+            _detenido = false;
             _currentToken = token;
             var hubUrl = _endpoints.GetApiBaseUrl().TrimEnd('/') + "/hubs/mensajes";
 
             _hubConnection = new HubConnectionBuilder()
                 .WithUrl(hubUrl, options =>
                 {
-                    options.AccessTokenProvider = () => Task.FromResult(_currentToken);
+                    options.AccessTokenProvider = ObtenerTokenAsync;
                 })
-                .WithAutomaticReconnect(new[] { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30) })
+                // Sin límite de intentos: un reinicio/deploy del API puede tardar varios minutos.
+                .WithAutomaticReconnect(new ReintentoSinLimite())
                 .Build();
 
             // Registrar handlers
@@ -155,6 +167,7 @@ namespace Advance_Control.Services.Mensajeria
             _hubConnection.Closed += _ =>
             {
                 EstadoConexionCambiado?.Invoke(this, false);
+                IniciarReintentos();
                 return Task.CompletedTask;
             };
 
@@ -168,12 +181,77 @@ namespace Advance_Control.Services.Mensajeria
             {
                 await _logger.LogErrorAsync("Error al conectar al hub de mensajería", ex, "MensajeriaService", "ConectarAsync");
                 EstadoConexionCambiado?.Invoke(this, false);
+                IniciarReintentos();
                 throw;
             }
         }
 
+        /// <summary>Token vigente para cada (re)conexión; si no hay proveedor usa el último conocido.</summary>
+        private async Task<string?> ObtenerTokenAsync()
+        {
+            if (_tokenProvider != null)
+            {
+                try
+                {
+                    var nuevo = await _tokenProvider();
+                    if (!string.IsNullOrWhiteSpace(nuevo))
+                        _currentToken = nuevo;
+                }
+                catch { }
+            }
+            return _currentToken;
+        }
+
+        /// <summary>
+        /// La conexión se cerró del todo (el servidor no volvió durante la reconexión automática, o el
+        /// primer intento falló): reintenta cada 30 s hasta conectar o hasta cerrar sesión.
+        /// </summary>
+        private void IniciarReintentos()
+        {
+            if (_detenido || Interlocked.Exchange(ref _reintentoActivo, 1) == 1) return;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    while (!_detenido)
+                    {
+                        await Task.Delay(IntervaloReintento);
+                        var conexion = _hubConnection;
+                        if (_detenido || conexion == null) break;
+                        if (conexion.State == HubConnectionState.Connected) break;
+                        if (conexion.State != HubConnectionState.Disconnected) continue; // ya está reconectando
+                        try
+                        {
+                            await conexion.StartAsync();
+                            EstadoConexionCambiado?.Invoke(this, true);
+                            try { await _logger.LogInformationAsync("Reconectado al hub de mensajería", "MensajeriaService", "IniciarReintentos"); } catch { }
+                            break;
+                        }
+                        catch { /* el servidor sigue sin responder: siguiente intento */ }
+                    }
+                }
+                finally
+                {
+                    Interlocked.Exchange(ref _reintentoActivo, 0);
+                }
+            });
+        }
+
+        /// <summary>0, 2, 5, 10 y 30 s; después cada 30 s sin límite.</summary>
+        private sealed class ReintentoSinLimite : IRetryPolicy
+        {
+            private static readonly TimeSpan[] Esperas =
+                { TimeSpan.Zero, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(30) };
+
+            public TimeSpan? NextRetryDelay(RetryContext retryContext)
+                => retryContext.PreviousRetryCount < Esperas.Length
+                    ? Esperas[retryContext.PreviousRetryCount]
+                    : IntervaloReintento;
+        }
+
         public async Task DesconectarAsync()
         {
+            _detenido = true;
             if (_hubConnection != null)
             {
                 try
@@ -214,6 +292,13 @@ namespace Advance_Control.Services.Mensajeria
                 try { await _logger.LogErrorAsync("Error en InvokeAsync EnviarMensaje", ex, "MensajeriaService", "EnviarMensajeAsync"); } catch { }
                 throw;
             }
+        }
+
+        public async Task<int> EnviarDifusionAsync(string contenido)
+        {
+            if (_hubConnection?.State != HubConnectionState.Connected)
+                throw new InvalidOperationException("El chat no está conectado.");
+            return await _hubConnection.InvokeAsync<int>("EnviarDifusion", contenido);
         }
 
         public async Task EliminarMensajeParaTodosAsync(long mensajeId)
@@ -299,6 +384,20 @@ namespace Advance_Control.Services.Mensajeria
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync("Error al obtener usuarios de chat", ex, "MensajeriaService", "GetUsuariosChatAsync");
+                return new();
+            }
+        }
+
+        public async Task<List<ConversacionResumenDto>> GetConversacionesAsync(CancellationToken ct = default)
+        {
+            try
+            {
+                var url = _endpoints.GetEndpoint("api", "Mensajes", "conversaciones");
+                return await _http.GetFromJsonAsync<List<ConversacionResumenDto>>(url, _jsonOptions, ct) ?? new();
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al obtener los chats", ex, "MensajeriaService", "GetConversacionesAsync");
                 return new();
             }
         }

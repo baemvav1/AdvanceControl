@@ -22,7 +22,7 @@ namespace Advance_Control.Models
         /// <summary>
         /// ID of the contacto (returned from create operations)
         /// </summary>
-        [JsonPropertyName("contactoId")]
+        [JsonPropertyName("contacto_id")] // la API responde contacto_id (antes llegaba siempre null)
         public long? ContactoId { get; set; }
     }
 }

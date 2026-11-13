@@ -163,6 +163,7 @@ namespace Advance_Control.ViewModels
             _navigationService.Configure<Views.Pages.ProOperacionesPage>("ProOperaciones");
             _navigationService.Configure<Views.Pages.ProDireccionPage>("ProDireccion");
             _navigationService.Configure<Views.Pages.ProCatalogosPage>("ProCatalogos");
+            _navigationService.Configure<Views.Pages.AsistenteEquiposPage>("AsistenteEquipos");
             _navigationService.Configure<Views.Pages.ProUbicacionesPage>("ProUbicaciones");
             _navigationService.Configure<Views.Pages.ProFinancieroPage>("ProFinanciero");
             _navigationService.Configure<Views.Pages.ProComunicacionPage>("ProComunicacion");

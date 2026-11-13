@@ -22,6 +22,8 @@ namespace Advance_Control.Models
             "Operaciones"   => "\uE7BA",   // Warning
             "Equipos"       => "\uE7F4",   // AllApps/Devices
             "Cotizaciones"  => "\uE7BC",   // Document
+            "Emergencias"   => "\uE7E7",   // Alerta (emergencia del portal)
+            "Mantenimiento" => "\uE9D5",   // Checklist (hoja de mantenimiento)
             _               => "\uEA8F",   // Bell
         };
     }

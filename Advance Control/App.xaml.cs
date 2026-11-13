@@ -309,6 +309,18 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Personal asignado a clientes (Técnicos, Supervisores, Agentes)
+                    services.AddHttpClient<Services.PersonalCliente.IPersonalClienteService, Services.PersonalCliente.PersonalClienteService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        client.Timeout = TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar EquipoService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IEquipoService, EquipoService>((sp, client) =>
                     {
@@ -1082,6 +1094,8 @@ namespace Advance_Control
                     services.AddTransient<ViewModels.ServiciosViewModel>();
                     services.AddTransient<ViewModels.ProductosViewModel>();
                     services.AddTransient<ViewModels.UbicacionesViewModel>();
+                    services.AddTransient<ViewModels.BuscadorEquiposViewModel>();
+                    services.AddTransient<ViewModels.AsistenteEquiposViewModel>();
                     services.AddTransient<ViewModels.AreasViewModel>();
                     services.AddTransient<ViewModels.EntidadesViewModel>();
                     services.AddTransient<ViewModels.ContactosViewModel>();
@@ -1258,7 +1272,9 @@ namespace Advance_Control
                         var httpClient = httpFactory.CreateClient("MensajeriaRest");
                         var endpoints = sp.GetRequiredService<IApiEndpointProvider>();
                         var logger = sp.GetRequiredService<ILoggingService>();
-                        return new Services.Mensajeria.MensajeriaService(httpClient, endpoints, logger);
+                        // Token vigente en cada reconexión del hub (se resuelve tarde para no crear ciclos en DI)
+                        return new Services.Mensajeria.MensajeriaService(httpClient, endpoints, logger,
+                            () => sp.GetRequiredService<Services.Auth.IAuthService>().GetAccessTokenAsync());
                     });
                     services.AddHttpClient("MensajeriaRest", (sp, client) =>
                     {

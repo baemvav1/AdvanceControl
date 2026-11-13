@@ -312,7 +312,8 @@ namespace Advance_Control.Views.Pages
                 tipo: "Historial",
                 adjuntosAdicionales: adjuntos,
                 asuntoPersonalizado: $"Historial de la factura {factura.FolioTitulo}",
-                mensajePersonalizado: sb.ToString());
+                mensajePersonalizado: sb.ToString(),
+                idCliente: _idClienteCorreo);
 
             if (await email.ShowAsync() == ContentDialogResult.Primary)
             {
@@ -372,7 +373,8 @@ namespace Advance_Control.Views.Pages
                 XamlRoot,
                 tipo: "Comprobante de cancelación",
                 asuntoPersonalizado: $"Cancelación de la factura {factura.FolioTitulo}",
-                mensajePersonalizado: mensaje);
+                mensajePersonalizado: mensaje,
+                idCliente: _idClienteCorreo);
 
             if (await email.ShowAsync() == ContentDialogResult.Primary)
             {
@@ -385,8 +387,12 @@ namespace Advance_Control.Views.Pages
         /// botones de enviar cotización/reporte por operación. Si hay más de un contacto, deja
         /// elegir a cuál dirigir el correo (o continuar sin destinatario preseleccionado).
         /// </summary>
+        /// <summary>Cliente resuelto en el último ObtenerContactosClienteAsync (para el personal en CC).</summary>
+        private int? _idClienteCorreo;
+
         private async Task<(ContactoDto? Principal, List<ContactoDto> Todos)> ObtenerContactosClienteAsync(string? receptorRfc)
         {
+            _idClienteCorreo = null;
             if (string.IsNullOrWhiteSpace(receptorRfc))
             {
                 return (null, new List<ContactoDto>());
@@ -401,6 +407,7 @@ namespace Advance_Control.Views.Pages
                     return (null, new List<ContactoDto>());
                 }
 
+                _idClienteCorreo = cliente.IdCliente;
                 var contactos = await _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = cliente.IdCliente });
                 if (contactos.Count == 0)
                 {
@@ -520,7 +527,8 @@ namespace Advance_Control.Views.Pages
                 tipo: "Complemento de pago",
                 adjuntosAdicionales: new List<(string NombreArchivo, byte[] Contenido)> { xml },
                 asuntoPersonalizado: $"Complemento de pago {complemento.FolioTitulo} de la factura {factura.FolioTitulo}",
-                mensajePersonalizado: mensaje);
+                mensajePersonalizado: mensaje,
+                idCliente: _idClienteCorreo);
 
             if (await email.ShowAsync() == ContentDialogResult.Primary)
             {

@@ -7,12 +7,14 @@
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
+    <!--  Con scroll: el contenido ya no cabe en pantallas bajas (Mensajería quedaba oculta)  -->
+    <ScrollViewer HorizontalScrollMode="Disabled" VerticalScrollBarVisibility="Auto">
     <Grid Padding="24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
         <!-- Encabezado -->
@@ -250,4 +252,5 @@
             </StackPanel>
         </Grid>
     </Grid>
+    </ScrollViewer>
 </Page>
