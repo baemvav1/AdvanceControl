@@ -309,6 +309,18 @@ namespace Advance_Control
                     })
                     .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
 
+                    // Personal asignado a clientes (Técnicos, Supervisores, Agentes)
+                    services.AddHttpClient<Services.PersonalCliente.IPersonalClienteService, Services.PersonalCliente.PersonalClienteService>((sp, client) =>
+                    {
+                        var provider = sp.GetRequiredService<IApiEndpointProvider>();
+                        if (Uri.TryCreate(provider.GetApiBaseUrl() + "/", UriKind.Absolute, out var baseUri))
+                        {
+                            client.BaseAddress = baseUri;
+                        }
+                        client.Timeout = TimeSpan.FromSeconds(30);
+                    })
+                    .AddHttpMessageHandler<Services.Http.AuthenticatedHttpHandler>();
+
                     // Registrar EquipoService y su HttpClient pipeline con autenticación
                     services.AddHttpClient<IEquipoService, EquipoService>((sp, client) =>
                     {

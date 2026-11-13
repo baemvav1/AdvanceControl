@@ -8,6 +8,7 @@ using Advance_Control.Models;
 using Advance_Control.Services.Clientes;
 using Advance_Control.Services.Contactos;
 using Advance_Control.Services.Logging;
+using Advance_Control.Services.PersonalCliente;
 using Advance_Control.Services.Relaciones;
 using Advance_Control.Services.Areas;
 using Advance_Control.Services.Equipos;
@@ -42,6 +43,7 @@ namespace Advance_Control.ViewModels
         private readonly IAreasService _areasService;
         private readonly IUbicacionService _ubicacionService;
         private readonly IEquipoService _equipoService;
+        private readonly IPersonalClienteService _personalService;
 
         private List<AreaDto> _areas = new();
         private List<UbicacionDto> _ubicaciones = new();
@@ -57,8 +59,9 @@ namespace Advance_Control.ViewModels
 
         public ProCatalogosViewModel(IRelacionService relacionService, IClienteService clienteService,
             IContactoService contactoService, ILoggingService logger, IAreasService areasService,
-            IUbicacionService ubicacionService, IEquipoService equipoService)
+            IUbicacionService ubicacionService, IEquipoService equipoService, IPersonalClienteService personalService)
         {
+            _personalService = personalService;
             _areasService = areasService;
             _ubicacionService = ubicacionService;
             _equipoService = equipoService;
@@ -70,6 +73,9 @@ namespace Advance_Control.ViewModels
 
         public ObservableCollection<RelacionClienteDto> Clientes { get; } = new();
         public ObservableCollection<ContactoDto> Contactos { get; } = new();
+        public ObservableCollection<PersonalClienteDto> Tecnicos { get; } = new();
+        public ObservableCollection<PersonalClienteDto> Supervisores { get; } = new();
+        public ObservableCollection<PersonalClienteDto> Agentes { get; } = new();
 
         // ── Equipo ─────────────────────────────────────────────────────────
 
@@ -106,6 +112,7 @@ namespace Advance_Control.ViewModels
             NotificarAreaUbicacion();
             Clientes.Clear();
             Contactos.Clear();
+            LimpiarPersonal();
             _clienteSeleccionado = null;
             _clienteDetalle = null;
             _contactoSeleccionado = null;
@@ -331,16 +338,21 @@ namespace Advance_Control.ViewModels
             CargandoCliente = true;
             Contactos.Clear();
             ContactoSeleccionado = null;
+            LimpiarPersonal();
             try
             {
                 var detalleTask = _clienteService.GetClienteByIdAsync(idCliente);
                 var contactosTask = _contactoService.GetContactosAsync(new ContactoQueryDto { IdCliente = idCliente });
-                await Task.WhenAll(detalleTask, contactosTask);
+                var personalTask = CargarPersonalSeguroAsync(idCliente);
+                await Task.WhenAll(detalleTask, contactosTask, personalTask);
                 if (_clienteSeleccionado?.IdCliente != idCliente) return; // cambió la selección
 
                 ClienteDetalle = detalleTask.Result.FirstOrDefault();
                 foreach (var c in contactosTask.Result.OrderBy(c => c.NombreCompleto, StringComparer.CurrentCultureIgnoreCase))
                     Contactos.Add(c);
+                foreach (var p in personalTask.Result)
+                    ListaDeRol(p.Rol)?.Add(p);
+                NotificarPersonal();
             }
             catch (Exception ex)
             {
@@ -386,6 +398,86 @@ namespace Advance_Control.ViewModels
             if (i < 0) return;
             Contactos[i] = actualizado;
             ContactoSeleccionado = actualizado;
+        }
+
+        // ── Personal asignado: Técnicos, Supervisores y Administrativos (agentes) ──
+
+        public bool SinTecnicos => _clienteDetalle is not null && !_cargandoCliente && Tecnicos.Count == 0;
+        public bool SinSupervisores => _clienteDetalle is not null && !_cargandoCliente && Supervisores.Count == 0;
+        public bool SinAgentes => _clienteDetalle is not null && !_cargandoCliente && Agentes.Count == 0;
+
+        public ObservableCollection<PersonalClienteDto>? ListaDeRol(string? rol) => rol switch
+        {
+            PersonalClienteDto.RolTecnico => Tecnicos,
+            PersonalClienteDto.RolSupervisor => Supervisores,
+            PersonalClienteDto.RolAgente => Agentes,
+            _ => null
+        };
+
+        /// <summary>El personal se carga aparte: si falla no impide mostrar la ficha ni los contactos.</summary>
+        private async Task<List<PersonalClienteDto>> CargarPersonalSeguroAsync(int idCliente)
+        {
+            try
+            {
+                return await _personalService.GetPersonalAsync(idCliente);
+            }
+            catch (Exception ex)
+            {
+                await _logger.LogErrorAsync("Error al cargar el personal asignado", ex, nameof(ProCatalogosViewModel), nameof(CargarPersonalSeguroAsync));
+                return new();
+            }
+        }
+
+        private void LimpiarPersonal()
+        {
+            Tecnicos.Clear();
+            Supervisores.Clear();
+            Agentes.Clear();
+            NotificarPersonal();
+        }
+
+        private void NotificarPersonal()
+        {
+            OnPropertyChanged(nameof(SinTecnicos));
+            OnPropertyChanged(nameof(SinSupervisores));
+            OnPropertyChanged(nameof(SinAgentes));
+        }
+
+        /// <summary>Usuarios que pueden ocupar el rol y aún no están asignados a este cliente.</summary>
+        public async Task<List<PersonalClienteDto>> CandidatosAsync(string rol)
+        {
+            var asignados = ListaDeRol(rol)?.Select(p => p.CredencialId).ToHashSet() ?? new HashSet<long>();
+            var candidatos = await _personalService.GetCandidatosAsync(rol);
+            return candidatos.Where(c => !asignados.Contains(c.CredencialId)).ToList();
+        }
+
+        /// <summary>Asigna el usuario al cliente seleccionado en el rol (se guarda en el momento).</summary>
+        public async Task<string?> AsignarPersonalAsync(string rol, PersonalClienteDto usuario)
+        {
+            if (_clienteSeleccionado is null) return "No hay cliente seleccionado.";
+            var lista = ListaDeRol(rol);
+            if (lista is null) return "Rol no reconocido.";
+            if (lista.Any(p => p.CredencialId == usuario.CredencialId)) return "El usuario ya está asignado.";
+            var error = await _personalService.AsignarAsync(_clienteSeleccionado.IdCliente, usuario.CredencialId, rol);
+            if (error is not null) return error;
+            usuario.Rol = rol;
+            usuario.IdCliente = _clienteSeleccionado.IdCliente;
+            var i = 0;
+            while (i < lista.Count && string.Compare(lista[i].Nombre, usuario.Nombre, StringComparison.CurrentCultureIgnoreCase) < 0) i++;
+            lista.Insert(i, usuario);
+            NotificarPersonal();
+            return null;
+        }
+
+        /// <summary>Quita al usuario del rol en el cliente seleccionado.</summary>
+        public async Task<string?> QuitarPersonalAsync(PersonalClienteDto usuario)
+        {
+            if (_clienteSeleccionado is null || usuario.Rol is null) return null;
+            var error = await _personalService.QuitarAsync(_clienteSeleccionado.IdCliente, usuario.CredencialId, usuario.Rol);
+            if (error is not null) return error;
+            ListaDeRol(usuario.Rol)?.Remove(usuario);
+            NotificarPersonal();
+            return null;
         }
 
         // ── Área y ubicación ──────────────────────────────────────────────
@@ -610,6 +702,7 @@ namespace Advance_Control.ViewModels
         private void NotificarCliente()
         {
             OnPropertyChanged(nameof(SinContactos));
+            NotificarPersonal();
             foreach (var p in new[] { nameof(ClienteRazonSocial), nameof(ClienteNombreComercial), nameof(ClienteRfc),
                 nameof(ClienteRegimen), nameof(ClienteUsoCfdi), nameof(ClienteCodigoPostal), nameof(ClienteDiasCredito),
                 nameof(ClienteLimiteCredito), nameof(ClientePrioridad), nameof(ClienteEstatus), nameof(ClienteNotas) })

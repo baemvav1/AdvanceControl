@@ -24,7 +24,7 @@
         </Style>
     </Page.Resources>
 
-    <Grid Background="Red">
+    <Grid >
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="1*"/>
@@ -34,7 +34,7 @@
             <ColumnDefinition Width="1*"/>
             <ColumnDefinition Width="2*"/>
         </Grid.ColumnDefinitions>
-        <Grid Grid.Row="0" Grid.Column="0" Background="Purple" x:Name="Equipos">
+        <Grid Grid.Row="0" Grid.Column="0"  x:Name="Equipos">
 
             <!--  Vacío: botón "+" que abre el buscador de equipos  -->
             <Button
@@ -102,7 +102,7 @@
                 </Grid>
             </Border>
         </Grid>
-        <Grid Grid.Row="0" Grid.Column="1" Background="Green" x:Name="Clientes">
+        <Grid Grid.Row="0" Grid.Column="1"  x:Name="Clientes">
 
             <!--  Sin equipo: nada que mostrar  -->
             <TextBlock
@@ -182,7 +182,7 @@
                 </Grid>
             </Border>
         </Grid>
-        <Grid Grid.Column="0" Grid.Row="1" Background="Blue" x:Name="Areas">
+        <Grid Grid.Column="0" Grid.Row="1"  x:Name="Areas">
 
             <TextBlock
                 HorizontalAlignment="Center"
@@ -244,7 +244,7 @@
                 </Grid>
             </Border>
         </Grid>
-        <Grid Grid.Column="1" Grid.Row="1" Background="Pink" x:Name="Ubicaciones">
+        <Grid Grid.Column="1" Grid.Row="1" x:Name="Ubicaciones">
 
             <TextBlock
                 HorizontalAlignment="Center"
@@ -606,55 +606,248 @@
                         </Grid>
                     </StackPanel>
 
-                    <!--  Contactos: + para vincular, basura para desvincular el seleccionado  -->
-                    <Grid Grid.Row="1">
-                        <TextBlock
-                            VerticalAlignment="Center"
-                            FontSize="11"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="CONTACTOS" />
-                        <StackPanel
-                            HorizontalAlignment="Right"
-                            Orientation="Horizontal"
-                            Spacing="4">
+                    <!--  Contactos y personal asignado (técnicos, supervisores, administrativos)  -->
+                    <Grid Grid.Row="1" Grid.RowSpan="2" ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <!--  Contactos: + para vincular, basura para desvincular el seleccionado  -->
+                        <Grid Grid.Column="0" RowSpacing="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="CONTACTOS" />
+                            <StackPanel
+                                HorizontalAlignment="Right"
+                                Orientation="Horizontal"
+                                Spacing="4">
+                                <Button
+                                    Click="AgregarContacto_Click"
+                                    Style="{ThemeResource AccentButtonStyle}"
+                                    ToolTipService.ToolTip="Vincular contacto">
+                                    <FontIcon FontSize="14" Glyph="&#xE710;" />
+                                </Button>
+                                <Button
+                                    Click="DesvincularContacto_Click"
+                                    IsEnabled="{x:Bind ViewModel.HayContactoSeleccionado, Mode=OneWay}"
+                                    ToolTipService.ToolTip="Desvincular contacto seleccionado">
+                                    <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                                </Button>
+                            </StackPanel>
+                            <ListView
+                                Grid.Row="1"
+                                IsItemClickEnabled="True"
+                                ItemClick="Contacto_ItemClick"
+                                ItemsSource="{x:Bind ViewModel.Contactos}"
+                                SelectedItem="{x:Bind ViewModel.ContactoSeleccionado, Mode=TwoWay}"
+                                SelectionMode="Single">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ContactoDto">
+                                        <TextBlock Padding="0,6" Text="{x:Bind NombreCorto}" />
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <ProgressRing
+                                Grid.Row="1"
+                                Width="24"
+                                Height="24"
+                                IsActive="{x:Bind ViewModel.CargandoCliente, Mode=OneWay}" />
+                            <TextBlock
+                                Grid.Row="1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Sin contactos. Usa + para vincular uno."
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Visibility="{x:Bind ViewModel.SinContactos, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+
+                        <!--  Técnicos  -->
+                        <Grid Grid.Column="1" RowSpacing="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="TÉCNICOS" />
                             <Button
-                                Click="AgregarContacto_Click"
+                                HorizontalAlignment="Right"
+                                Click="AgregarPersonal_Click"
                                 Style="{ThemeResource AccentButtonStyle}"
-                                ToolTipService.ToolTip="Vincular contacto">
+                                Tag="tecnico"
+                                ToolTipService.ToolTip="Asignar técnico">
                                 <FontIcon FontSize="14" Glyph="&#xE710;" />
                             </Button>
-                            <Button
-                                Click="DesvincularContacto_Click"
-                                IsEnabled="{x:Bind ViewModel.HayContactoSeleccionado, Mode=OneWay}"
-                                ToolTipService.ToolTip="Desvincular contacto seleccionado">
-                                <FontIcon FontSize="14" Glyph="&#xE74D;" />
-                            </Button>
-                        </StackPanel>
-                    </Grid>
+                            <ListView
+                                Grid.Row="1"
+                                ItemsSource="{x:Bind ViewModel.Tecnicos}"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PersonalClienteDto">
+                                        <Grid ColumnSpacing="4" ToolTipService.ToolTip="{x:Bind NombreCompleto}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Padding="0,6"
+                                                VerticalAlignment="Center"
+                                                Text="{x:Bind NombreCorto}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <Button
+                                                Grid.Column="1"
+                                                Padding="6,4"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="QuitarPersonal_Click"
+                                                ToolTipService.ToolTip="Quitar">
+                                                <FontIcon FontSize="12" Glyph="&#xE74D;" />
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <TextBlock
+                                Grid.Row="1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Sin técnicos asignados."
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Visibility="{x:Bind ViewModel.SinTecnicos, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
 
-                    <Grid Grid.Row="2">
-                        <ListView
-                            IsItemClickEnabled="True"
-                            ItemClick="Contacto_ItemClick"
-                            ItemsSource="{x:Bind ViewModel.Contactos}"
-                            SelectedItem="{x:Bind ViewModel.ContactoSeleccionado, Mode=TwoWay}"
-                            SelectionMode="Single">
-                            <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="models:ContactoDto">
-                                    <TextBlock Padding="0,6" Text="{x:Bind NombreCorto}" />
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                        <ProgressRing
-                            Width="24"
-                            Height="24"
-                            IsActive="{x:Bind ViewModel.CargandoCliente, Mode=OneWay}" />
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="Sin contactos. Usa + para vincular uno."
-                            Visibility="{x:Bind ViewModel.SinContactos, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                        <!--  Supervisores  -->
+                        <Grid Grid.Column="2" RowSpacing="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="SUPERVISORES" />
+                            <Button
+                                HorizontalAlignment="Right"
+                                Click="AgregarPersonal_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Tag="supervisor"
+                                ToolTipService.ToolTip="Asignar supervisor">
+                                <FontIcon FontSize="14" Glyph="&#xE710;" />
+                            </Button>
+                            <ListView
+                                Grid.Row="1"
+                                ItemsSource="{x:Bind ViewModel.Supervisores}"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PersonalClienteDto">
+                                        <Grid ColumnSpacing="4" ToolTipService.ToolTip="{x:Bind NombreCompleto}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Padding="0,6"
+                                                VerticalAlignment="Center"
+                                                Text="{x:Bind NombreCorto}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <Button
+                                                Grid.Column="1"
+                                                Padding="6,4"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="QuitarPersonal_Click"
+                                                ToolTipService.ToolTip="Quitar">
+                                                <FontIcon FontSize="12" Glyph="&#xE74D;" />
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <TextBlock
+                                Grid.Row="1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Sin supervisores asignados."
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Visibility="{x:Bind ViewModel.SinSupervisores, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
+
+                        <!--  Administrativos  -->
+                        <Grid Grid.Column="3" RowSpacing="4">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="11"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="ADMINISTRATIVOS" />
+                            <Button
+                                HorizontalAlignment="Right"
+                                Click="AgregarPersonal_Click"
+                                Style="{ThemeResource AccentButtonStyle}"
+                                Tag="agente"
+                                ToolTipService.ToolTip="Asignar administrativo">
+                                <FontIcon FontSize="14" Glyph="&#xE710;" />
+                            </Button>
+                            <ListView
+                                Grid.Row="1"
+                                ItemsSource="{x:Bind ViewModel.Agentes}"
+                                SelectionMode="None">
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="models:PersonalClienteDto">
+                                        <Grid ColumnSpacing="4" ToolTipService.ToolTip="{x:Bind NombreCompleto}">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <TextBlock
+                                                Padding="0,6"
+                                                VerticalAlignment="Center"
+                                                Text="{x:Bind NombreCorto}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <Button
+                                                Grid.Column="1"
+                                                Padding="6,4"
+                                                Background="Transparent"
+                                                BorderThickness="0"
+                                                Click="QuitarPersonal_Click"
+                                                ToolTipService.ToolTip="Quitar">
+                                                <FontIcon FontSize="12" Glyph="&#xE74D;" />
+                                            </Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                            <TextBlock
+                                Grid.Row="1"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="Sin administrativos asignados."
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Visibility="{x:Bind ViewModel.SinAgentes, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
+                        </Grid>
                     </Grid>
                 </Grid>
             </Border>

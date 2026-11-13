@@ -310,6 +310,41 @@ namespace Advance_Control.Views.Pages
                 ViewModel.ReemplazarContacto(actualizado);
         }
 
+        // ── Personal asignado: técnicos, supervisores y administrativos ────
+
+        /// <summary>+ de una lista de personal: el rol viene en Tag (tecnico, supervisor, agente).</summary>
+        private async void AgregarPersonal_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is not string rol || ViewModel.ClienteSeleccionado is null) return;
+            var rolTexto = PersonalClienteDto.RolTexto(rol);
+
+            System.Collections.Generic.List<PersonalClienteDto> candidatos;
+            try
+            {
+                candidatos = await ViewModel.CandidatosAsync(rol);
+            }
+            catch (Exception ex)
+            {
+                await Avisar(ex.Message);
+                return;
+            }
+
+            var elegido = await ElegirDeListaAsync($"Asignar {rolTexto}", "Buscar por nombre o usuario", $"No hay más usuarios disponibles para {rolTexto}.",
+                candidatos.Select(c => new BuscadorListaItem(c, c.NombreCompleto, c.Detalle, $"{c.Nombre} {c.Usuario} {c.Correo}")));
+            if (elegido is PersonalClienteDto usuario)
+                await Avisar(await ViewModel.AsignarPersonalAsync(rol, usuario));
+        }
+
+        /// <summary>Basura de un renglón de personal: quita al usuario del rol en este cliente.</summary>
+        private async void QuitarPersonal_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.DataContext is not PersonalClienteDto usuario || ViewModel.ClienteSeleccionado is not { } cliente) return;
+            if (!await ConfirmarAsync("Quitar personal",
+                    $"¿Quitar a {usuario.NombreCompleto} como {PersonalClienteDto.RolTexto(usuario.Rol ?? "")} de {cliente.RazonSocial}?", "Quitar"))
+                return;
+            await Avisar(await ViewModel.QuitarPersonalAsync(usuario));
+        }
+
         // ── Utilidades ────────────────────────────────────────────────────
 
         private async Task<bool> ConfirmarAsync(string titulo, string mensaje, string textoBoton = "Desvincular")
