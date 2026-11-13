@@ -24,7 +24,32 @@
         </Style>
     </Page.Resources>
 
-    <Grid >
+    <Grid>
+
+    <!--  Sin equipo: solo el + al centro con su leyenda  -->
+    <StackPanel
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        Spacing="12"
+        Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
+        <Button
+            Width="56"
+            Height="56"
+            HorizontalAlignment="Center"
+            Click="AgregarEquipo_Click"
+            CornerRadius="28"
+            Style="{ThemeResource AccentButtonStyle}"
+            ToolTipService.ToolTip="Buscar equipo">
+            <FontIcon FontSize="20" Glyph="&#xE710;" />
+        </Button>
+        <TextBlock
+            HorizontalAlignment="Center"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            Text="Seleccionar equipo" />
+    </StackPanel>
+
+    <!--  Con equipo: tarjetas y Visor  -->
+    <Grid Visibility="{x:Bind ViewModel.HayEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
         <Grid.RowDefinitions>
             <RowDefinition Height="1*"/>
             <RowDefinition Height="1*"/>
@@ -35,20 +60,6 @@
             <ColumnDefinition Width="2*"/>
         </Grid.ColumnDefinitions>
         <Grid Grid.Row="0" Grid.Column="0"  x:Name="Equipos">
-
-            <!--  Vacío: botón "+" que abre el buscador de equipos  -->
-            <Button
-                Width="56"
-                Height="56"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Click="AgregarEquipo_Click"
-                CornerRadius="28"
-                Style="{ThemeResource AccentButtonStyle}"
-                ToolTipService.ToolTip="Buscar equipo"
-                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}">
-                <FontIcon FontSize="20" Glyph="&#xE710;" />
-            </Button>
 
             <!--  Con equipo: tarjeta + basura para limpiarla  -->
             <Border
@@ -104,13 +115,6 @@
         </Grid>
         <Grid Grid.Row="0" Grid.Column="1"  x:Name="Clientes">
 
-            <!--  Sin equipo: nada que mostrar  -->
-            <TextBlock
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Foreground="White"
-                Text="Elige un equipo"
-                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
 
             <!--  Tarjeta: clientes vinculados al equipo, + para vincular y basura para desvincular el seleccionado  -->
             <Border
@@ -184,12 +188,6 @@
         </Grid>
         <Grid Grid.Column="0" Grid.Row="1"  x:Name="Areas">
 
-            <TextBlock
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Foreground="White"
-                Text="Elige un equipo"
-                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
 
             <!--  Tarjeta de área: buscar o crear (sin basura); bloqueada si el equipo ya tiene ubicación  -->
             <Border
@@ -246,12 +244,6 @@
         </Grid>
         <Grid Grid.Column="1" Grid.Row="1" x:Name="Ubicaciones">
 
-            <TextBlock
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Foreground="White"
-                Text="Elige un equipo"
-                Visibility="{x:Bind ViewModel.SinEquipo, Mode=OneWay, Converter={StaticResource BoolToVis}}" />
 
             <!--  Bloqueada hasta que haya área  -->
             <Border
@@ -325,11 +317,12 @@
                 </Grid>
             </Border>
         </Grid>
-        <Grid Grid.Column="2" Grid.RowSpan="2" Background="DarkGray" x:Name="Visor">
+        <Grid Grid.Column="2" Grid.RowSpan="2" x:Name="Visor">
 
-            <!--  Mapa: desplegado desde el inicio; equipo y cliente se muestran encima  -->
+            <!--  Mapa: se crea al elegir equipo (x:Load) y se descarta al quitarlo; equipo y cliente se muestran encima  -->
             <controls:MapaVisorControl
                 x:Name="Mapa"
+                x:Load="{x:Bind ViewModel.HayEquipo, Mode=OneWay}"
                 GeoClic="Mapa_GeoClic"
                 MarcadorClic="Mapa_MarcadorClic"
                 PuntoClic="Mapa_PuntoClic" />
@@ -962,5 +955,6 @@
                 </StackPanel>
             </Border>
         </Grid>
+    </Grid>
     </Grid>
 </Page>

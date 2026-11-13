@@ -41,6 +41,8 @@ namespace Advance_Control.Views.Pages
         /// <summary>Dibuja en el mapa lo que corresponde al modo del Visor.</summary>
         private void ActualizarMapa()
         {
+            // El mapa solo existe con equipo elegido (x:Load); sin equipo no hay nada que dibujar.
+            if (Mapa is null) return;
             var modo = ViewModel.Modo;
             Mapa.ModoCrearArea(modo == ModoVisor.CrearArea);
             Mapa.ModoCrearUbicacion(modo == ModoVisor.CrearUbicacion);
