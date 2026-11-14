@@ -269,6 +269,157 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        /// <summary>
+        /// "Borrar por fechas": facturas emitidas entre dos fechas y/o el estado de cuenta de un mes.
+        /// Primero simula y muestra qué se borraría; solo con una segunda confirmación borra.
+        /// </summary>
+        private async void BtnBorrarPorFechas_Click(object sender, RoutedEventArgs e)
+        {
+            var hoy = DateTimeOffset.Now;
+            var inicioMes = new DateTimeOffset(hoy.Year, hoy.Month, 1, 0, 0, 0, hoy.Offset);
+
+            var chkFacturas = new CheckBox { Content = "Facturas emitidas entre", IsChecked = true };
+            var desde = new CalendarDatePicker { Header = "Desde", Date = inicioMes.AddMonths(-1), HorizontalAlignment = HorizontalAlignment.Stretch };
+            var hasta = new CalendarDatePicker { Header = "Hasta", Date = inicioMes.AddDays(-1), HorizontalAlignment = HorizontalAlignment.Stretch };
+            var rangoGrid = new Grid { ColumnSpacing = 12, Margin = new Thickness(28, 0, 0, 0) };
+            rangoGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            rangoGrid.ColumnDefinitions.Add(new ColumnDefinition());
+            Grid.SetColumn(hasta, 1);
+            rangoGrid.Children.Add(desde);
+            rangoGrid.Children.Add(hasta);
+
+            var chkEstado = new CheckBox { Content = "Movimientos del estado de cuenta de", IsChecked = false };
+            var mes = new DatePicker
+            {
+                DayVisible = false,
+                Date = inicioMes.AddMonths(-1),
+                MinYear = new DateTimeOffset(2020, 1, 1, 0, 0, 0, hoy.Offset),
+                MaxYear = hoy,
+                Margin = new Thickness(28, 0, 0, 0),
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+
+            void Sincronizar()
+            {
+                rangoGrid.Opacity = chkFacturas.IsChecked == true ? 1 : 0.4;
+                desde.IsEnabled = hasta.IsEnabled = chkFacturas.IsChecked == true;
+                mes.IsEnabled = chkEstado.IsChecked == true;
+                mes.Opacity = chkEstado.IsChecked == true ? 1 : 0.4;
+            }
+            chkFacturas.Checked += (_, _) => Sincronizar();
+            chkFacturas.Unchecked += (_, _) => Sincronizar();
+            chkEstado.Checked += (_, _) => Sincronizar();
+            chkEstado.Unchecked += (_, _) => Sincronizar();
+            Sincronizar();
+
+            var error = new InfoBar { Severity = InfoBarSeverity.Error, IsClosable = false, IsOpen = false };
+            var panel = new StackPanel { Spacing = 10, Width = 460 };
+            panel.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"],
+                Text = "Borra los pagos que la conciliación ligó a movimientos bancarios (también los heredados del motor " +
+                       "anterior) para volver a conciliar. Si marcas los dos filtros se borra lo que cumpla cualquiera. " +
+                       "Los pagos capturados a mano no se borran: solo se desligan del movimiento."
+            });
+            panel.Children.Add(chkFacturas);
+            panel.Children.Add(rangoGrid);
+            panel.Children.Add(chkEstado);
+            panel.Children.Add(mes);
+            panel.Children.Add(error);
+
+            ConciliacionBorrarRequestDto? request = null;
+            var dialogo = new ContentDialog
+            {
+                Title = "Borrar conciliaciones por fechas",
+                Content = panel,
+                PrimaryButtonText = "Ver qué se borraría",
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = XamlRoot
+            };
+            dialogo.PrimaryButtonClick += (_, args) =>
+            {
+                error.IsOpen = false;
+                var usaFacturas = chkFacturas.IsChecked == true;
+                var usaMes = chkEstado.IsChecked == true;
+                string? mensaje = null;
+                if (!usaFacturas && !usaMes)
+                    mensaje = "Marca al menos un filtro.";
+                else if (usaFacturas && (desde.Date == null || hasta.Date == null))
+                    mensaje = "Elige las dos fechas de facturas.";
+                else if (usaFacturas && desde.Date!.Value.Date > hasta.Date!.Value.Date)
+                    mensaje = "La fecha inicial es posterior a la final.";
+
+                if (mensaje != null)
+                {
+                    error.Message = mensaje;
+                    error.IsOpen = true;
+                    args.Cancel = true;
+                    return;
+                }
+
+                request = new ConciliacionBorrarRequestDto
+                {
+                    FacturaDesde = usaFacturas ? desde.Date!.Value.Date : null,
+                    FacturaHasta = usaFacturas ? hasta.Date!.Value.Date : null,
+                    MesEstadoCuenta = usaMes ? new DateTime(mes.Date.Year, mes.Date.Month, 1) : null,
+                    Simular = true
+                };
+            };
+
+            if (await dialogo.ShowAsync() != ContentDialogResult.Primary || request == null)
+                return;
+
+            ConciliacionBorrarResponseDto simulacion;
+            try
+            {
+                simulacion = await ViewModel.BorrarPorFechasAsync(request);
+            }
+            catch (Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudo calcular qué se borraría: {ex.Message}";
+                return;
+            }
+
+            var mx = new System.Globalization.CultureInfo("es-MX");
+            var filtros = new List<string>();
+            if (request.FacturaDesde.HasValue)
+                filtros.Add($"facturas emitidas del {request.FacturaDesde:dd/MM/yyyy} al {request.FacturaHasta:dd/MM/yyyy}");
+            if (request.MesEstadoCuenta.HasValue)
+                filtros.Add($"movimientos del estado de cuenta de {request.MesEstadoCuenta.Value.ToString("MMMM yyyy", mx)}");
+
+            if (simulacion.PagosBorrados + simulacion.IngresosDesligados == 0)
+            {
+                await ConfirmarAsync("Nada que borrar", $"No hay conciliaciones con {string.Join(" o ", filtros)}.", "Aceptar");
+                return;
+            }
+
+            var detalle = $"Con {string.Join(" o ", filtros)}:\n\n" +
+                          $"• Pagos de conciliación que se borran: {simulacion.PagosBorrados}\n" +
+                          $"• Pagos capturados a mano que solo se desligan del movimiento: {simulacion.IngresosDesligados}\n" +
+                          $"• Monto total: {simulacion.MontoTotal.ToString("C2", mx)}\n" +
+                          $"• Facturas que vuelven a quedar pendientes (o con menos abonado): {simulacion.FacturasAfectadas}\n" +
+                          $"• Movimientos que vuelven a quedar sin conciliar: {simulacion.MovimientosAfectados}\n" +
+                          (simulacion.ComplementosSoltados > 0
+                              ? $"• Complementos de pago timbrados que quedan sin ligar a su pago: {simulacion.ComplementosSoltados} (el CFDI sigue vigente)\n"
+                              : string.Empty) +
+                          "\nEsto no se puede deshacer con \"Deshacer\"; después hay que volver a conciliar.";
+
+            if (!await ConfirmarAsync("¿Borrar estas conciliaciones?", detalle, "Borrar"))
+                return;
+
+            request.Simular = false;
+            try
+            {
+                await ViewModel.BorrarPorFechasAsync(request);
+            }
+            catch (Exception ex)
+            {
+                ViewModel.ErrorMessage = $"No se pudieron borrar las conciliaciones: {ex.Message}";
+            }
+        }
+
         private async Task<bool> ConfirmarAsync(string titulo, string contenido, string textoAceptar)
         {
             var dialogo = new ContentDialog

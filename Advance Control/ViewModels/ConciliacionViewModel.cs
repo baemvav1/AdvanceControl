@@ -569,6 +569,33 @@ namespace Advance_Control.ViewModels
             await _notificacionService.MostrarAsync("Conciliación", string.IsNullOrWhiteSpace(resultado.Message) ? mensajeExito : resultado.Message);
         }
 
+        /// <summary>
+        /// Simula (Simular = true) o borra las conciliaciones de un rango de facturas y/o un mes de
+        /// estado de cuenta. Al borrar recarga las listas. Lanza la excepción del servicio si falla.
+        /// </summary>
+        public async Task<ConciliacionBorrarResponseDto> BorrarPorFechasAsync(ConciliacionBorrarRequestDto request)
+        {
+            IsLoading = true;
+            ErrorMessage = null;
+            ConciliacionBorrarResponseDto resultado;
+            try
+            {
+                resultado = await _facturaService.BorrarConciliacionesPorFechasAsync(request);
+            }
+            finally
+            {
+                IsLoading = false;
+            }
+
+            if (!request.Simular)
+            {
+                await CargarDatosAsync();
+                await _notificacionService.MostrarAsync("Conciliación",
+                    $"Se borraron {resultado.PagosBorrados} pago(s) de conciliación; ya se puede volver a conciliar.");
+            }
+            return resultado;
+        }
+
         // ---------------- Auxiliares de carga ----------------
 
         /// <summary>Metadatos "CLAVE: valor", uno por línea; vacío si el movimiento no trae.</summary>

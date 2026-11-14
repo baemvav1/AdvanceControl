@@ -273,6 +273,17 @@
                                         <FontIcon Glyph="&#xE777;" />
                                     </AppBarButton.Icon>
                                 </AppBarButton>
+                                <AppBarButton
+                                    x:Name="BtnBorrarPorFechas"
+                                    Width="100"
+                                    Click="BtnBorrarPorFechas_Click"
+                                    IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
+                                    Label="Borrar por fechas"
+                                    ToolTipService.ToolTip="Borra las conciliaciones de un rango de facturas y/o del estado de cuenta de un mes (también las heredadas del motor anterior) para volver a conciliar.">
+                                    <AppBarButton.Icon>
+                                        <FontIcon Foreground="{ThemeResource SystemFillColorCriticalBrush}" Glyph="&#xE74D;" />
+                                    </AppBarButton.Icon>
+                                </AppBarButton>
                             </StackPanel>
 
                         </StackPanel>

@@ -488,7 +488,23 @@ namespace Advance_Control.ViewModels
             sb.AppendLine($"• Nuevas integradas: {nuevas}" + (normalizadasUsd > 0 ? $" ({normalizadasUsd} en USD normalizadas)" : string.Empty));
             sb.AppendLine($"• Ya existían (omitidas): {consulta.Existentes + duplicadas}");
             sb.AppendLine($"• Cancelaciones aplicadas: {cancelaciones.Canceladas.Count} (ya estaban canceladas: {cancelaciones.YaCanceladas})");
+            AgregarDetalleCancelaciones(sb, cancelaciones);
 
+            if (errores.Count > 0)
+            {
+                sb.AppendLine();
+                sb.AppendLine("No se pudieron integrar:");
+                foreach (var e in errores)
+                    sb.AppendLine($"   – {e}");
+            }
+
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>Detalle de cancelaciones aplicadas, omitidas y no encontradas (importación y "Conciliación cancelaciones").</summary>
+        private static void AgregarDetalleCancelaciones(System.Text.StringBuilder sb, ImportacionAutomaticaCancelacionesResponseDto cancelaciones)
+        {
+            var mx = new CultureInfo("es-MX");
             foreach (var c in cancelaciones.Canceladas)
             {
                 var tipo = string.Equals(c.TipoDeComprobante, "P", StringComparison.OrdinalIgnoreCase) ? "Complemento" : "Factura";
@@ -520,16 +536,99 @@ namespace Advance_Control.ViewModels
                 foreach (var u in cancelaciones.NoEncontradas)
                     sb.AppendLine($"   – {u}");
             }
+        }
 
-            if (errores.Count > 0)
+        /// <summary>
+        /// "Conciliación cancelaciones": desde el mes de la factura más vieja hasta el mes actual,
+        /// revisa mes con mes en el portal FEL en Línea los comprobantes cancelados y cancela aquí
+        /// los que sigan vigentes (mismo paso 3 de la importación automática). No importa facturas
+        /// nuevas. Si un mes falla se detiene; lo ya aplicado se queda. Regresa el resumen.
+        /// </summary>
+        public async Task<string?> ConciliacionCancelacionesAsync(ImportacionAutomaticaRequestDto credenciales)
+        {
+            var mx = new CultureInfo("es-MX");
+            var total = new ImportacionAutomaticaCancelacionesResponseDto();
+            var mesesRevisados = new List<string>();
+            try
             {
-                sb.AppendLine();
-                sb.AppendLine("No se pudieron integrar:");
-                foreach (var e in errores)
-                    sb.AppendLine($"   – {e}");
-            }
+                IsLoading = true;
+                ErrorMessage = null;
+                SuccessMessage = "Buscando la factura más antigua…";
 
-            return sb.ToString().TrimEnd();
+                var primerMes = await _facturaService.ImportacionAutomaticaPrimerMesAsync();
+                if (primerMes == null)
+                {
+                    SuccessMessage = null;
+                    ErrorMessage = "No hay facturas en el sistema.";
+                    return null;
+                }
+
+                var mesActual = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+                var meses = new List<DateTime>();
+                for (var m = primerMes.Value; m <= mesActual; m = m.AddMonths(1))
+                    meses.Add(m);
+
+                string? error = null;
+                for (var i = 0; i < meses.Count; i++)
+                {
+                    var mes = meses[i];
+                    var nombreMes = mes.ToString("MMMM yyyy", mx);
+                    SuccessMessage = $"Conciliación cancelaciones: revisando {nombreMes} ({i + 1} de {meses.Count})…";
+                    try
+                    {
+                        var r = await _facturaService.ImportacionAutomaticaCancelacionesAsync(new ImportacionAutomaticaRequestDto
+                        {
+                            Anio = mes.Year,
+                            Mes = mes.Month,
+                            Usuario = credenciales.Usuario,
+                            Cuenta = credenciales.Cuenta,
+                            Password = credenciales.Password
+                        });
+                        total.CanceladasPortal += r.CanceladasPortal;
+                        total.YaCanceladas += r.YaCanceladas;
+                        total.Canceladas.AddRange(r.Canceladas);
+                        total.Omitidas.AddRange(r.Omitidas);
+                        total.NoEncontradas.AddRange(r.NoEncontradas);
+                        mesesRevisados.Add($"   – {nombreMes}: {r.CanceladasPortal} cancelado(s) en el portal, {r.Canceladas.Count} cancelado(s) aquí");
+                    }
+                    catch (Exception ex)
+                    {
+                        error = $"Se detuvo en {nombreMes}: {ex.Message}";
+                        break;
+                    }
+                }
+
+                await CargarFacturasAsync();
+
+                var sb = new System.Text.StringBuilder();
+                sb.AppendLine($"Meses revisados: {mesesRevisados.Count} de {meses.Count} ({meses[0].ToString("MMMM yyyy", mx)} a {mesActual.ToString("MMMM yyyy", mx)}).");
+                sb.AppendLine($"• Cancelados en el portal: {total.CanceladasPortal}");
+                sb.AppendLine($"• Cancelaciones aplicadas aquí: {total.Canceladas.Count} (ya estaban canceladas: {total.YaCanceladas})");
+                foreach (var linea in mesesRevisados)
+                    sb.AppendLine(linea);
+                AgregarDetalleCancelaciones(sb, total);
+                if (error != null)
+                {
+                    sb.AppendLine();
+                    sb.AppendLine(error);
+                }
+
+                SuccessMessage = $"Conciliación cancelaciones: {total.Canceladas.Count} cancelación(es) aplicada(s) en {mesesRevisados.Count} mes(es).";
+                ErrorMessage = error != null
+                    ? "La conciliación de cancelaciones no terminó; revisa el resumen."
+                    : total.Omitidas.Count > 0 ? $"{total.Omitidas.Count} cancelación(es) no se aplicaron; revisa el resumen." : null;
+                return sb.ToString().TrimEnd();
+            }
+            catch (Exception ex)
+            {
+                SuccessMessage = null;
+                ErrorMessage = $"Error en la conciliación de cancelaciones.\n\n{ex.Message}";
+                return null;
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
 
         private static void ValidarFacturaParaGuardado(GuardarFacturaRequestDto request)

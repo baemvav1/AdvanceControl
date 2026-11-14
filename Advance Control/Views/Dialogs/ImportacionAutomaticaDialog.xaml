@@ -17,6 +17,7 @@
 
     <StackPanel Width="480" Spacing="12">
         <TextBlock
+            x:Name="DescripcionText"
             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
             Text="Descarga del portal FEL en Línea todas las facturas del mes: integra las que no estén en el sistema, omite las que ya existen y aplica las cancelaciones que se hayan hecho en el portal."
             TextWrapping="WrapWholeWords" />

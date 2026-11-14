@@ -17,10 +17,26 @@ public sealed partial class ImportacionAutomaticaDialog : ContentDialog
 
     public ImportacionAutomaticaRequestDto? Resultado { get; private set; }
 
-    public ImportacionAutomaticaDialog(XamlRoot xamlRoot)
+    private readonly bool _sinMes;
+
+    /// <param name="sinMes">
+    /// "Conciliación cancelaciones": solo pide las credenciales; los meses se recorren solos
+    /// desde la factura más vieja hasta hoy.
+    /// </param>
+    public ImportacionAutomaticaDialog(XamlRoot xamlRoot, bool sinMes = false)
     {
         InitializeComponent();
         XamlRoot = xamlRoot;
+        _sinMes = sinMes;
+        if (sinMes)
+        {
+            Title = "Conciliación cancelaciones";
+            PrimaryButtonText = "Revisar cancelaciones";
+            DescripcionText.Text = "Revisa en el portal FEL en Línea, mes con mes desde la factura más antigua hasta hoy, " +
+                                   "los comprobantes cancelados y los cancela aquí (desliga sus pagos de los movimientos y " +
+                                   "desvincula su operación). No importa facturas nuevas.";
+            MesDatePicker.Visibility = Visibility.Collapsed;
+        }
 
         var hoy = DateTimeOffset.Now;
         MesDatePicker.MinYear = new DateTimeOffset(2009, 1, 1, 0, 0, 0, hoy.Offset);
@@ -49,7 +65,7 @@ public sealed partial class ImportacionAutomaticaDialog : ContentDialog
         string? error = null;
         if (usuario.Length == 0 || cuenta.Length == 0 || PasswordBox.Password.Length == 0)
             error = "Usuario, cuenta y contraseña son obligatorios.";
-        else if (new DateTime(mes.Year, mes.Month, 1) > DateTime.Today)
+        else if (!_sinMes && new DateTime(mes.Year, mes.Month, 1) > DateTime.Today)
             error = "No se puede importar un mes futuro.";
 
         if (error != null)
