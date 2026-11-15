@@ -32,6 +32,8 @@ namespace Advance_Control.Models
 
         public string AbonoTexto => Abono.ToString("C2", new CultureInfo("es-MX"));
         public string MontoRestanteTexto => MontoRestante.ToString("C2", new CultureInfo("es-MX"));
+        /// <summary>Valor del filtro y del portapapeles de la columna Abono (ordena como número).</summary>
+        public Views.Helpers.MontoFiltro MontoRestanteFiltro => new(decimal.Round(MontoRestante, 2));
         public bool TieneAbonoParcial => MontoRestante < Abono;
 
         /// <summary>

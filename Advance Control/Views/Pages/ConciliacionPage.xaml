@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:helpers="using:Advance_Control.Views.Helpers"
     xmlns:tv="using:WinUI.TableView"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
@@ -367,7 +368,7 @@
                 SelectionMode="Extended"
                 SizeChanged="TablaFacturasPendientes_SizeChanged">
                 <tv:TableView.Columns>
-                    <tv:TableViewTemplateColumn
+                    <helpers:TableViewTemplateColumnFiltrable
                         Width="90"
                         CanFilter="True"
                         ClipboardContentBinding="{Binding Folio}"
@@ -391,7 +392,7 @@
                                 </TextBlock>
                             </DataTemplate>
                         </tv:TableViewTemplateColumn.CellTemplate>
-                    </tv:TableViewTemplateColumn>
+                    </helpers:TableViewTemplateColumnFiltrable>
                     <tv:TableViewTextColumn
                         Width="130"
                         Binding="{Binding TotalTexto}"
@@ -440,10 +441,10 @@
                 SelectionMode="Extended"
                 SizeChanged="TablaMovimientosPendientes_SizeChanged">
                 <tv:TableView.Columns>
-                    <tv:TableViewTemplateColumn
+                    <helpers:TableViewTemplateColumnFiltrable
                         Width="130"
                         CanFilter="True"
-                        ClipboardContentBinding="{Binding MontoRestanteTexto}"
+                        ClipboardContentBinding="{Binding MontoRestanteFiltro}"
                         Header="Abono"
                         SortMemberPath="MontoRestante">
                         <tv:TableViewTemplateColumn.CellTemplate>
@@ -467,8 +468,8 @@
                                 </TextBlock>
                             </DataTemplate>
                         </tv:TableViewTemplateColumn.CellTemplate>
-                    </tv:TableViewTemplateColumn>
-                    <tv:TableViewTemplateColumn
+                    </helpers:TableViewTemplateColumnFiltrable>
+                    <helpers:TableViewTemplateColumnFiltrable
                         x:Name="ColumnaMetadatos"
                         Width="200"
                         CanFilter="True"
@@ -485,7 +486,7 @@
                                     ToolTipService.ToolTip="{Binding MetadatosTooltip}" />
                             </DataTemplate>
                         </tv:TableViewTemplateColumn.CellTemplate>
-                    </tv:TableViewTemplateColumn>
+                    </helpers:TableViewTemplateColumnFiltrable>
                     <tv:TableViewTextColumn
                         Width="140"
                         Binding="{Binding RfcReferencia}"
