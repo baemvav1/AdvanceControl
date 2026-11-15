@@ -11,7 +11,7 @@ namespace Advance_Control.Models
         public int IdMovimiento { get; set; }
     }
 
-    public class ConciliacionUnoAUnoPropuestasRequestDto
+    public class ConciliacionUnoAUnoPropuestasRequestDto : ConciliacionFiltroFechasDto
     {
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }

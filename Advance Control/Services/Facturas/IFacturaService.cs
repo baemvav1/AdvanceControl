@@ -94,8 +94,5 @@ namespace Advance_Control.Services.Facturas
 
         /// <summary>Mes de la factura más vieja del sistema (null si no hay facturas).</summary>
         Task<System.DateTime?> ImportacionAutomaticaPrimerMesAsync(CancellationToken cancellationToken = default);
-
-        /// <summary>Borra (o con Simular solo cuenta) las conciliaciones de un rango de facturas y/o un mes de estado de cuenta.</summary>
-        Task<ConciliacionBorrarResponseDto> BorrarConciliacionesPorFechasAsync(ConciliacionBorrarRequestDto request, CancellationToken cancellationToken = default);
     }
 }

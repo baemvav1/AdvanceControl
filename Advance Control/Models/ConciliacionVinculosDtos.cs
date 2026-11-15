@@ -14,7 +14,7 @@ namespace Advance_Control.Models
     }
 
     /// <summary>POST api/conciliacion/complementos|ingresos-manuales/propuestas</summary>
-    public class ConciliacionVinculosPropuestasRequestDto
+    public class ConciliacionVinculosPropuestasRequestDto : ConciliacionFiltroFechasDto
     {
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }

@@ -12,7 +12,7 @@ namespace Advance_Control.Models
     }
 
     /// <summary>Sin RFC: en Abonos la regla RFC siempre aplica en el servidor.</summary>
-    public class ConciliacionAbonosPropuestasRequestDto
+    public class ConciliacionAbonosPropuestasRequestDto : ConciliacionFiltroFechasDto
     {
         public bool Dtc { get; set; } = true;
         public List<ConciliacionAbonosCombinacionDto> CombinacionesVetadas { get; set; } = new();

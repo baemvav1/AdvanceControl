@@ -34,6 +34,12 @@ namespace Advance_Control.ViewModels
         private bool _usarRfcComoRegla;
         private bool _soloCheques;
         private int _operacionesConciliacionPendientes;
+        private List<ConciliacionFacturaFila> _facturasTodas = new();
+        private List<ConciliacionMovimientoFila> _movimientosTodos = new();
+        private bool _rangoActivo;
+        private DateTimeOffset _filtroFacturaDesde;
+        private DateTimeOffset _filtroFacturaHasta;
+        private DateTimeOffset _filtroMesEstadoCuenta;
 
         public ConciliacionViewModel(
             IFacturaService facturaService,
@@ -43,6 +49,13 @@ namespace Advance_Control.ViewModels
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
+
+            // Por defecto el mes anterior completo.
+            var hoy = DateTimeOffset.Now;
+            var inicioMes = new DateTimeOffset(hoy.Year, hoy.Month, 1, 0, 0, 0, hoy.Offset);
+            _filtroFacturaDesde = inicioMes.AddMonths(-1);
+            _filtroFacturaHasta = inicioMes.AddDays(-1);
+            _filtroMesEstadoCuenta = inicioMes.AddMonths(-1);
         }
 
         // ---------------- Datos ----------------
@@ -158,6 +171,110 @@ namespace Advance_Control.ViewModels
         /// <summary>Abonos se deshabilita con Cheques encendido.</summary>
         public bool PuedeConciliarAbonos => PuedeOperar && !_soloCheques;
 
+        // ---------------- Rango (botón Rangos de la cinta) ----------------
+
+        /// <summary>
+        /// Botón Rangos: despliega los selectores de fechas. Encendido, los grids y todos los
+        /// pasos automáticos se acotan a facturas emitidas entre Inicio y Fin y a movimientos del
+        /// estado de cuenta del mes elegido; apagado, las fechas se ignoran.
+        /// </summary>
+        public bool RangoActivo
+        {
+            get => _rangoActivo;
+            set
+            {
+                if (SetProperty(ref _rangoActivo, value))
+                {
+                    AplicarFiltroRango();
+                }
+            }
+        }
+
+        public DateTimeOffset FiltroFacturaDesde
+        {
+            get => _filtroFacturaDesde;
+            set
+            {
+                if (SetProperty(ref _filtroFacturaDesde, value) && _rangoActivo)
+                {
+                    AplicarFiltroRango();
+                }
+            }
+        }
+
+        public DateTimeOffset FiltroFacturaHasta
+        {
+            get => _filtroFacturaHasta;
+            set
+            {
+                if (SetProperty(ref _filtroFacturaHasta, value) && _rangoActivo)
+                {
+                    AplicarFiltroRango();
+                }
+            }
+        }
+
+        /// <summary>Mes del estado de cuenta (solo cuentan mes y año).</summary>
+        public DateTimeOffset FiltroMesEstadoCuenta
+        {
+            get => _filtroMesEstadoCuenta;
+            set
+            {
+                if (SetProperty(ref _filtroMesEstadoCuenta, value) && _rangoActivo)
+                {
+                    AplicarFiltroRango();
+                }
+            }
+        }
+
+        /// <summary>Filtro para los pasos automáticos; null con Rangos apagado.</summary>
+        public ConciliacionFiltroFechasDto? ObtenerFiltroFechas()
+        {
+            if (!_rangoActivo)
+            {
+                return null;
+            }
+
+            var (desde, hasta) = RangoFacturas();
+            return new ConciliacionFiltroFechasDto
+            {
+                FacturaDesde = desde,
+                FacturaHasta = hasta,
+                MesEstadoCuenta = new DateTime(_filtroMesEstadoCuenta.Year, _filtroMesEstadoCuenta.Month, 1)
+            };
+        }
+
+        /// <summary>Inicio y fin de facturas como días; si vienen al revés se intercambian.</summary>
+        private (DateTime Desde, DateTime Hasta) RangoFacturas()
+        {
+            var desde = _filtroFacturaDesde.Date;
+            var hasta = _filtroFacturaHasta.Date;
+            return desde <= hasta ? (desde, hasta) : (hasta, desde);
+        }
+
+        /// <summary>
+        /// Llena los grids con lo cargado, acotado por el rango si Rangos está encendido. Las
+        /// fechas de factura llegan con la hora local del CFDI etiquetada como UTC, así que su
+        /// día es el de la fecha tal cual (igual que en el servidor).
+        /// </summary>
+        private void AplicarFiltroRango()
+        {
+            IEnumerable<ConciliacionFacturaFila> facturas = _facturasTodas;
+            IEnumerable<ConciliacionMovimientoFila> movimientos = _movimientosTodos;
+
+            if (_rangoActivo)
+            {
+                var (desde, hasta) = RangoFacturas();
+                var anio = _filtroMesEstadoCuenta.Year;
+                var mes = _filtroMesEstadoCuenta.Month;
+                facturas = facturas.Where(fila => fila.Fecha.Date >= desde && fila.Fecha.Date <= hasta);
+                movimientos = movimientos.Where(fila => fila.EstadoCuenta.FechaCorte.Year == anio && fila.EstadoCuenta.FechaCorte.Month == mes);
+            }
+
+            FacturasPendientes = new ObservableCollection<ConciliacionFacturaFila>(facturas);
+            MovimientosPendientes = new ObservableCollection<ConciliacionMovimientoFila>(movimientos);
+        }
+
         // ---------------- Bitácora (Revertir) ----------------
 
         /// <summary>Operaciones registradas en bitacora_conciliacion que se pueden deshacer.</summary>
@@ -248,6 +365,7 @@ namespace Advance_Control.ViewModels
                     CargarFacturasPendientesAsync(),
                     CargarMovimientosPendientesAsync(),
                     ActualizarOperacionesPendientesAsync());
+                AplicarFiltroRango();
             }
             finally
             {
@@ -327,7 +445,7 @@ namespace Advance_Control.ViewModels
                         Factura = factura
                     });
 
-                FacturasPendientes = new ObservableCollection<ConciliacionFacturaFila>(filas);
+                _facturasTodas = filas.ToList();
             }
             catch (Exception ex)
             {
@@ -375,7 +493,7 @@ namespace Advance_Control.ViewModels
                         return fila;
                     });
 
-                MovimientosPendientes = new ObservableCollection<ConciliacionMovimientoFila>(filas);
+                _movimientosTodos = filas.ToList();
             }
             catch (Exception ex)
             {
@@ -567,33 +685,6 @@ namespace Advance_Control.ViewModels
             OperacionesConciliacionPendientes = resultado.OperacionesPendientes;
             await CargarDatosAsync();
             await _notificacionService.MostrarAsync("Conciliación", string.IsNullOrWhiteSpace(resultado.Message) ? mensajeExito : resultado.Message);
-        }
-
-        /// <summary>
-        /// Simula (Simular = true) o borra las conciliaciones de un rango de facturas y/o un mes de
-        /// estado de cuenta. Al borrar recarga las listas. Lanza la excepción del servicio si falla.
-        /// </summary>
-        public async Task<ConciliacionBorrarResponseDto> BorrarPorFechasAsync(ConciliacionBorrarRequestDto request)
-        {
-            IsLoading = true;
-            ErrorMessage = null;
-            ConciliacionBorrarResponseDto resultado;
-            try
-            {
-                resultado = await _facturaService.BorrarConciliacionesPorFechasAsync(request);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
-
-            if (!request.Simular)
-            {
-                await CargarDatosAsync();
-                await _notificacionService.MostrarAsync("Conciliación",
-                    $"Se borraron {resultado.PagosBorrados} pago(s) de conciliación; ya se puede volver a conciliar.");
-            }
-            return resultado;
         }
 
         // ---------------- Auxiliares de carga ----------------

@@ -11,7 +11,7 @@ namespace Advance_Control.Models
         public List<int> IdsFacturas { get; set; } = new();
     }
 
-    public class ConciliacionVariasAUnoPropuestasRequestDto
+    public class ConciliacionVariasAUnoPropuestasRequestDto : ConciliacionFiltroFechasDto
     {
         public bool Dtc { get; set; } = true;
         public bool Rfc { get; set; }

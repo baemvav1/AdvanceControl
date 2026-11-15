@@ -939,25 +939,6 @@ namespace Advance_Control.Services.Facturas
             return dto?.Anio is int anio && dto.Mes is int mes ? new DateTime(anio, mes, 1) : null;
         }
 
-        public async Task<ConciliacionBorrarResponseDto> BorrarConciliacionesPorFechasAsync(ConciliacionBorrarRequestDto request, CancellationToken cancellationToken = default)
-        {
-            ArgumentNullException.ThrowIfNull(request);
-            var url = _endpoints.GetEndpoint("api", "conciliacion", "borrar-por-fechas");
-            using var response = await _http.PostAsJsonAsync(url, request, cancellationToken).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
-                await _logger.LogErrorAsync($"Error al borrar conciliaciones por fechas. Status: {response.StatusCode}, Content: {errorContent}",
-                    null, "FacturaService", "BorrarConciliacionesPorFechasAsync");
-                throw new InvalidOperationException((int)response.StatusCode == 404
-                    ? "El servidor todavía no tiene esta función (falta actualizar el API)."
-                    : ExtraerMensajeError(errorContent));
-            }
-
-            return await response.Content.ReadFromJsonAsync<ConciliacionBorrarResponseDto>(_jsonOptions, cancellationToken).ConfigureAwait(false)
-                   ?? throw new InvalidOperationException("La API devolvió una respuesta vacía.");
-        }
-
         private async Task<T> PostImportacionAutomaticaAsync<T>(string paso, object request, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(request);

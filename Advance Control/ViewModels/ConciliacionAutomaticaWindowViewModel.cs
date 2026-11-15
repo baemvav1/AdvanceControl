@@ -65,6 +65,19 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
+        /// Rango de fechas de la cinta (botón Rangos encendido) que acota las propuestas de todos
+        /// los pasos; null = sin filtro.
+        /// </summary>
+        public ConciliacionFiltroFechasDto? Filtro { get; set; }
+
+        /// <summary>Copia el rango de la cinta a la petición de propuestas.</summary>
+        private T ConFiltro<T>(T request) where T : ConciliacionFiltroFechasDto
+        {
+            Filtro?.CopiarA(request);
+            return request;
+        }
+
+        /// <summary>
         /// Motivos de las conciliaciones 1 a 1 que el servidor rechazó en el último "Continuar"
         /// (p. ej. otro usuario ya usó el movimiento). Vacío si todas se aplicaron.
         /// </summary>
@@ -268,7 +281,7 @@ namespace Advance_Control.ViewModels
         /// </summary>
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasVinculosServidorAsync(ConciliacionAutomaticaModo modo, CancellationToken ct)
         {
-            var respuesta = await _conciliacionApiService.ProponerVinculosAsync(modo, new ConciliacionVinculosPropuestasRequestDto
+            var respuesta = await _conciliacionApiService.ProponerVinculosAsync(modo, ConFiltro(new ConciliacionVinculosPropuestasRequestDto
             {
                 Dtc = _aplicarDtc,
                 Rfc = _usarRfcComoRegla && !_soloCheques,
@@ -276,7 +289,7 @@ namespace Advance_Control.ViewModels
                 ParesVetados = ParesVetadosVinculo(modo)
                     .Select(par => new ConciliacionVinculoParDto { IdPago = par.IdPago, IdMovimiento = par.IdMovimiento })
                     .ToList()
-            }, ct);
+            }), ct);
 
             var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
             var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
@@ -359,7 +372,7 @@ namespace Advance_Control.ViewModels
         /// </summary>
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasUnoAUnoServidorAsync(CancellationToken ct)
         {
-            var respuesta = await _conciliacionApiService.ProponerUnoAUnoAsync(new ConciliacionUnoAUnoPropuestasRequestDto
+            var respuesta = await _conciliacionApiService.ProponerUnoAUnoAsync(ConFiltro(new ConciliacionUnoAUnoPropuestasRequestDto
             {
                 Dtc = _aplicarDtc,
                 Rfc = _usarRfcComoRegla && !_soloCheques,
@@ -367,7 +380,7 @@ namespace Advance_Control.ViewModels
                 ParesVetados = _paresVetadosUnoAUno
                     .Select(par => new ConciliacionParDto { IdFactura = par.IdFactura, IdMovimiento = par.IdMovimiento })
                     .ToList()
-            }, ct);
+            }), ct);
 
             var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
             var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
@@ -478,13 +491,13 @@ namespace Advance_Control.ViewModels
         /// </summary>
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasVariasAUnoServidorAsync(CancellationToken ct)
         {
-            var respuesta = await _conciliacionApiService.ProponerVariasAUnoAsync(new ConciliacionVariasAUnoPropuestasRequestDto
+            var respuesta = await _conciliacionApiService.ProponerVariasAUnoAsync(ConFiltro(new ConciliacionVariasAUnoPropuestasRequestDto
             {
                 Dtc = _aplicarDtc,
                 Rfc = _usarRfcComoRegla && !_soloCheques,
                 Cheques = _soloCheques,
                 CombinacionesVetadas = _combinacionesVetadasVariasAUno.ToList()
-            }, ct);
+            }), ct);
 
             var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
             var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
@@ -606,11 +619,11 @@ namespace Advance_Control.ViewModels
         /// </summary>
         private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasAbonosServidorAsync(CancellationToken ct)
         {
-            var respuesta = await _conciliacionApiService.ProponerAbonosAsync(new ConciliacionAbonosPropuestasRequestDto
+            var respuesta = await _conciliacionApiService.ProponerAbonosAsync(ConFiltro(new ConciliacionAbonosPropuestasRequestDto
             {
                 Dtc = _aplicarDtc,
                 CombinacionesVetadas = _combinacionesVetadasAbonos.ToList()
-            }, ct);
+            }), ct);
 
             var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
             var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
