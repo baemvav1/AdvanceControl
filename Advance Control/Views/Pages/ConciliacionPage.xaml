@@ -492,9 +492,9 @@
                         Binding="{Binding RfcReferencia}"
                         Header="RFC" />
                     <tv:TableViewTextColumn
-                        Width="110"
-                        Binding="{Binding Banco}"
-                        Header="Banco" />
+                        Width="150"
+                        Binding="{Binding TipoMovimiento}"
+                        Header="Tipo" />
                     <tv:TableViewTextColumn
                         Width="120"
                         Binding="{Binding FechaTexto}"

@@ -20,7 +20,11 @@ namespace Advance_Control.Models
         /// <summary>RFC del emisor; en cheques, el folio del cheque (metadato FOLIO_CHEQUE).</summary>
         public string RfcReferencia { get; set; } = string.Empty;
 
+        /// <summary>Banco emisor (de la CLABE); se muestra en el visor del movimiento.</summary>
         public string Banco { get; set; } = string.Empty;
+
+        /// <summary>Tipo de movimiento legible (SPEI, Cheque, Depósito en efectivo...).</summary>
+        public string TipoMovimiento { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
 
         /// <summary>Metadatos uno por línea, para el tooltip de la celda.</summary>

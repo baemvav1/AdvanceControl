@@ -481,6 +481,7 @@ namespace Advance_Control.ViewModels
                             MetadatosTooltip = FormatearMetadatosPorLinea(grupo),
                             RfcReferencia = ObtenerRfcOReferenciaCheque(grupo),
                             Banco = ObtenerBancoEmisor(grupo),
+                            TipoMovimiento = ObtenerTipoMovimiento(grupo),
                             Fecha = grupo.Fecha,
                             Grupo = grupo,
                             EstadoCuenta = detalle.EstadoCuenta!
@@ -710,8 +711,7 @@ namespace Advance_Control.ViewModels
         /// <summary>
         /// Banco del que salió el pago (no el del estado de cuenta, que es el nuestro). Solo los
         /// SPEI recibidos lo traen: se deduce de la CLABE del emisor (metadato CUENTA_EMISOR, o
-        /// CUENTA en estados viejos). Cheques, órdenes de pago y compensaciones no traen dato de
-        /// banco emisor y quedan en blanco.
+        /// CUENTA en estados viejos). Cheques, órdenes de pago y compensaciones quedan en blanco.
         /// </summary>
         private static string ObtenerBancoEmisor(EstadoCuentaGrupoDetalleDto grupo)
         {
@@ -720,6 +720,25 @@ namespace Advance_Control.ViewModels
                 : grupo.Metadatos.TryGetValue("CUENTA", out var cuenta) ? cuenta : null;
 
             return BancosMexico.ObtenerNombrePorClabe(clabe);
+        }
+
+        /// <summary>
+        /// Nombre legible del tipo de operación que trae el estado de cuenta, para filtrar en el
+        /// grid. DEPOSITO_SBC es el depósito de cheque (salvo buen cobro).
+        /// </summary>
+        private static string ObtenerTipoMovimiento(EstadoCuentaGrupoDetalleDto grupo)
+        {
+            var tipo = (grupo.TipoOperacion ?? grupo.TipoGrupo ?? string.Empty).Trim().ToUpperInvariant();
+            return tipo switch
+            {
+                "SPEI_RECIBIDO" => "SPEI",
+                "DEPOSITO_SBC" => "Cheque",
+                "DEPOSITO_EFECTIVO" => "Depósito en efectivo",
+                "COMPENSACION_SPEI" => "Compensación SPEI",
+                "ORDEN_PAGO_RECIBIDA" => "Orden de pago",
+                "" or "SIN_CLASIFICAR" => "Sin clasificar",
+                _ => CultureInfo.CurrentCulture.TextInfo.ToTitleCase(tipo.Replace('_', ' ').ToLowerInvariant())
+            };
         }
 
         private static string ObtenerRfcOReferenciaCheque(EstadoCuentaGrupoDetalleDto grupo)
