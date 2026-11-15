@@ -241,7 +241,7 @@ namespace Advance_Control.Views.Pages
                     ViewModel.AplicarDtc,
                     ViewModel.UsarRfcComoRegla,
                     ViewModel.SoloCheques,
-                    ViewModel.ObtenerFiltroFechas());
+                    ObtenerFiltroConciliacion());
                 ventana.Activate();
 
                 var aprobadas = await ventana.ResultTask;
@@ -254,6 +254,36 @@ namespace Advance_Control.Views.Pages
             {
                 ViewModel.IsConciliacionEnProceso = false;
             }
+        }
+
+        /// <summary>
+        /// Filtro de los pasos automáticos: el rango de Rangos (si está encendido) y, si alguna tabla
+        /// tiene filtros de columna, solo las facturas o movimientos que se ven en ella. Los renglones
+        /// fijados siempre se ven, así que también cuentan.
+        /// </summary>
+        private ConciliacionFiltroFechasDto? ObtenerFiltroConciliacion()
+        {
+            var filtro = ViewModel.ObtenerFiltroFechas();
+
+            if (TablaFacturasPendientes.FilterDescriptions.Count > 0)
+            {
+                filtro ??= new ConciliacionFiltroFechasDto();
+                filtro.IdsFacturas = TablaFacturasPendientes.CollectionView
+                    .OfType<ConciliacionFacturaFila>()
+                    .Select(fila => fila.IdFactura)
+                    .ToList();
+            }
+
+            if (TablaMovimientosPendientes.FilterDescriptions.Count > 0)
+            {
+                filtro ??= new ConciliacionFiltroFechasDto();
+                filtro.IdsMovimientos = TablaMovimientosPendientes.CollectionView
+                    .OfType<ConciliacionMovimientoFila>()
+                    .Select(fila => fila.IdMovimiento)
+                    .ToList();
+            }
+
+            return filtro;
         }
 
         // ---------------- Acciones ----------------
