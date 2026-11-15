@@ -34,8 +34,14 @@ namespace Advance_Control.Models
         public string MontoRestanteTexto => MontoRestante.ToString("C2", new CultureInfo("es-MX"));
         public bool TieneAbonoParcial => MontoRestante < Abono;
 
-        /// <summary>Tooltip del abono: solo si ya se aplicó en parte, muestra lo que queda disponible.</summary>
-        public string? AbonoTooltip => TieneAbonoParcial ? $"Disponible: {MontoRestanteTexto}" : null;
+        /// <summary>
+        /// La columna Abono del grid muestra lo que queda disponible; si ya se aplicó en parte,
+        /// el tooltip muestra el abono original del estado de cuenta y lo ya aplicado.
+        /// </summary>
+        public string? AbonoTooltip => TieneAbonoParcial
+            ? $"Abono original: {AbonoTexto}" + System.Environment.NewLine
+              + $"Ya aplicado: {(Abono - MontoRestante).ToString("C2", new CultureInfo("es-MX"))}"
+            : null;
         public string FechaTexto => Fecha.ToString("dd/MM/yyyy");
     }
 }

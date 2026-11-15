@@ -432,14 +432,14 @@
                     <tv:TableViewTemplateColumn
                         Width="130"
                         CanFilter="True"
-                        ClipboardContentBinding="{Binding AbonoTexto}"
+                        ClipboardContentBinding="{Binding MontoRestanteTexto}"
                         Header="Abono"
-                        SortMemberPath="Abono">
+                        SortMemberPath="MontoRestante">
                         <tv:TableViewTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock
                                     VerticalAlignment="Center"
-                                    Text="{Binding AbonoTexto}"
+                                    Text="{Binding MontoRestanteTexto}"
                                     ToolTipService.ToolTip="{Binding AbonoTooltip}">
                                     <TextBlock.ContextFlyout>
                                         <MenuFlyout>

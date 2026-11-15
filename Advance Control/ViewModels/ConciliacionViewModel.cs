@@ -562,7 +562,7 @@ namespace Advance_Control.ViewModels
         public string DescribirPlan(IReadOnlyList<ConciliacionAbonoPlaneado> plan)
         {
             var lineas = plan
-                .Select(abono => $"• Factura {abono.Factura.Folio} ← movimiento del {abono.Movimiento.FechaTexto} ({abono.Movimiento.AbonoTexto}): {abono.MontoTexto}")
+                .Select(abono => $"• Factura {abono.Factura.Folio} ← movimiento del {abono.Movimiento.FechaTexto} ({abono.Movimiento.MontoRestanteTexto} disponible): {abono.MontoTexto}")
                 .ToList();
 
             var aplicadoPorMovimiento = plan.GroupBy(abono => abono.Movimiento).ToDictionary(g => g.Key, g => g.Sum(abono => abono.Monto));
