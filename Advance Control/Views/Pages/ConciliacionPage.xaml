@@ -104,6 +104,17 @@
                                         </AppBarButton.Icon>
                                     </AppBarButton>
                                     <AppBarButton
+                                        x:Name="BtnCoincidencias"
+                                        Width="90"
+                                        Click="BtnCoincidencias_Click"
+                                        IsEnabled="{x:Bind ViewModel.PuedeOperar, Mode=OneWay}"
+                                        Label="Coincidencias"
+                                        ToolTipService.ToolTip="Busca en el concepto del pago los folios de factura que escribió el cliente (números sueltos, pegados a F, o pegados a A para la serie A) y propone el pago con esas facturas si la suma cuadra exacto. Los folios sin factura pendiente se ignoran.">
+                                        <AppBarButton.Icon>
+                                            <FontIcon Glyph="&#xE721;" />
+                                        </AppBarButton.Icon>
+                                    </AppBarButton>
+                                    <AppBarButton
                                         x:Name="BtnCombinacion"
                                         Width="84"
                                         Click="BtnCombinacion_Click"

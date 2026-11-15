@@ -31,6 +31,7 @@ namespace Advance_Control.Models
         /// </summary>
         public bool PermiteDescartarMovimientos { get; init; } = true;
         public const string TipoVariasAUno = "Varias a 1";
+        public const string TipoCoincidencia = "Coincidencia";
 
         public bool EsUnoAUno => string.Equals(Tipo, "1 a 1", StringComparison.OrdinalIgnoreCase);
         public bool EsVariasAUno => string.Equals(Tipo, TipoVariasAUno, StringComparison.OrdinalIgnoreCase);

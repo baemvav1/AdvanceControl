@@ -384,6 +384,7 @@ namespace Advance_Control.Views.Windows
             {
                 ConciliacionAutomaticaModo.Automatica => "Conciliación",
                 ConciliacionAutomaticaModo.Combinacional => "Varias a 1",
+                ConciliacionAutomaticaModo.Coincidencias => "Coincidencias (folios en el concepto)",
                 ConciliacionAutomaticaModo.Abonos => "Conciliación de abonos",
                 ConciliacionAutomaticaModo.Cheques => "Cheques (1 a 1, 1 a varios, varios a 1)",
                 _ => paso.Modo.ToString()

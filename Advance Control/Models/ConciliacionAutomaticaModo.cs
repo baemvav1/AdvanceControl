@@ -28,6 +28,12 @@ namespace Advance_Control.Models
         /// combina varios movimientos para cubrir el saldo total de una factura sin mirar
         /// abonos_factura.
         /// </summary>
-        IngresosManuales = 5
+        IngresosManuales = 5,
+
+        /// <summary>
+        /// Folios de factura escritos en el concepto del pago (números sueltos, pegados a F o, para
+        /// la serie A, pegados a A): propone el pago con esas facturas si la suma cuadra exacto.
+        /// </summary>
+        Coincidencias = 6
     }
 }

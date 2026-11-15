@@ -197,6 +197,9 @@ namespace Advance_Control.Views.Pages
         private async void BtnConciliacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Automatica);
 
+        private async void BtnCoincidencias_Click(object sender, RoutedEventArgs e) =>
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Coincidencias);
+
         private async void BtnCombinacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Combinacional);
 

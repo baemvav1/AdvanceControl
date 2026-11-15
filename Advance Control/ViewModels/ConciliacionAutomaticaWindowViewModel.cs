@@ -37,6 +37,8 @@ namespace Advance_Control.ViewModels
         private readonly HashSet<(int IdFactura, int IdMovimiento)> _paresVetadosUnoAUno = new();
         // Varias a 1 (motor del servidor): descartar veta solo esa combinación de facturas con ese pago.
         private readonly List<ConciliacionCombinacionDto> _combinacionesVetadasVariasAUno = new();
+        // Coincidencias: descartar veta ese pago con esas facturas.
+        private readonly List<ConciliacionCombinacionDto> _combinacionesVetadasCoincidencias = new();
         // Abonos (motor del servidor): descartar veta solo esa combinación de pagos con esa factura.
         private readonly List<ConciliacionAbonosCombinacionDto> _combinacionesVetadasAbonos = new();
         // Complementos / Ingresos manuales (motor del servidor): descartar veta solo el par pago-movimiento.
@@ -120,6 +122,7 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
                 ConciliacionAutomaticaModo.Complementos => await CrearPropuestasVinculosServidorAsync(modo, ct),
                 ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasVinculosServidorAsync(modo, ct),
+                ConciliacionAutomaticaModo.Coincidencias => await CrearPropuestasCoincidenciasServidorAsync(ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -146,6 +149,14 @@ namespace Advance_Control.ViewModels
             else if (modo == ConciliacionAutomaticaModo.Combinacional)
             {
                 _combinacionesVetadasVariasAUno.Add(new ConciliacionCombinacionDto
+                {
+                    IdMovimiento = propuestaDescartada.Movimiento.IdMovimiento,
+                    IdsFacturas = propuestaDescartada.Facturas.Select(factura => factura.IdFactura).ToList()
+                });
+            }
+            else if (modo == ConciliacionAutomaticaModo.Coincidencias)
+            {
+                _combinacionesVetadasCoincidencias.Add(new ConciliacionCombinacionDto
                 {
                     IdMovimiento = propuestaDescartada.Movimiento.IdMovimiento,
                     IdsFacturas = propuestaDescartada.Facturas.Select(factura => factura.IdFactura).ToList()
@@ -186,6 +197,7 @@ namespace Advance_Control.ViewModels
                 ConciliacionAutomaticaModo.Cheques => await CrearPropuestasChequesAsync(ct),
                 ConciliacionAutomaticaModo.Complementos => await CrearPropuestasVinculosServidorAsync(modo, ct),
                 ConciliacionAutomaticaModo.IngresosManuales => await CrearPropuestasVinculosServidorAsync(modo, ct),
+                ConciliacionAutomaticaModo.Coincidencias => await CrearPropuestasCoincidenciasServidorAsync(ct),
                 _ => Array.Empty<ConciliacionMatchPropuestaDto>()
             };
         }
@@ -233,6 +245,11 @@ namespace Advance_Control.ViewModels
             if (modo == ConciliacionAutomaticaModo.Combinacional)
             {
                 return await AplicarVariasAUnoServidorAsync(aprobadas);
+            }
+
+            if (modo == ConciliacionAutomaticaModo.Coincidencias)
+            {
+                return await AplicarCoincidenciasServidorAsync(aprobadas);
             }
 
             if (modo == ConciliacionAutomaticaModo.Abonos)
@@ -527,6 +544,88 @@ namespace Advance_Control.ViewModels
                 .ToList();
 
             return propuestas;
+        }
+
+        // ---------------- Coincidencias (motor del servidor) ----------------
+
+        /// <summary>
+        /// Propuestas de Coincidencias (api/conciliacion/coincidencias/propuestas): el pago con las
+        /// facturas cuyos folios escribió el cliente en el concepto, si la suma cuadra exacto. Las
+        /// reglas (lectura del concepto, DTC, RFC, Cheques, rango) viven en el servidor.
+        /// </summary>
+        private async Task<IReadOnlyList<ConciliacionMatchPropuestaDto>> CrearPropuestasCoincidenciasServidorAsync(CancellationToken ct)
+        {
+            var respuesta = await _conciliacionApiService.ProponerCoincidenciasAsync(ConFiltro(new ConciliacionVariasAUnoPropuestasRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                CombinacionesVetadas = _combinacionesVetadasCoincidencias.ToList()
+            }), ct);
+
+            var facturasPorId = _facturasTodasBase.ToDictionary(factura => factura.IdFactura);
+            var movimientosPorId = _movimientosPendientesBase.ToDictionary(movimiento => movimiento.IdMovimiento);
+            var propuestas = new List<ConciliacionMatchPropuestaDto>();
+
+            foreach (var item in respuesta.Propuestas)
+            {
+                // Si algo cambió entre la carga del cliente y el cálculo del servidor, se omite:
+                // al aplicar el servidor vuelve a validar todo de cualquier forma.
+                if (!movimientosPorId.TryGetValue(item.IdMovimiento, out var movimiento)
+                    || item.Facturas.Any(f => !facturasPorId.ContainsKey(f.IdFactura)))
+                {
+                    continue;
+                }
+
+                propuestas.Add(new ConciliacionMatchPropuestaDto
+                {
+                    Tipo = ConciliacionMatchPropuestaDto.TipoCoincidencia,
+                    Facturas = item.Facturas.Select(f => facturasPorId[f.IdFactura]).ToList(),
+                    Movimiento = movimiento,
+                    Observaciones = item.Observaciones
+                });
+            }
+
+            return propuestas;
+        }
+
+        /// <summary>
+        /// Aplica las Coincidencias aprobadas: el servidor revalida que las facturas sigan citadas
+        /// en el concepto, cumplan las reglas y sumen exacto. Los rechazados quedan en <see cref="UltimosRechazos"/>.
+        /// </summary>
+        private async Task<bool> AplicarCoincidenciasServidorAsync(IReadOnlyList<ConciliacionMatchPropuestaDto> aprobadas)
+        {
+            var respuesta = await _conciliacionApiService.AplicarCoincidenciasAsync(new ConciliacionVariasAUnoAplicarRequestDto
+            {
+                Dtc = _aplicarDtc,
+                Rfc = _usarRfcComoRegla && !_soloCheques,
+                Cheques = _soloCheques,
+                Combinaciones = aprobadas
+                    .Select(propuesta => new ConciliacionCombinacionDto
+                    {
+                        IdMovimiento = propuesta.Movimiento.IdMovimiento,
+                        IdsFacturas = propuesta.Facturas.Select(factura => factura.IdFactura).ToList()
+                    })
+                    .ToList()
+            });
+
+            var propuestaPorMovimiento = aprobadas
+                .GroupBy(propuesta => propuesta.Movimiento.IdMovimiento)
+                .ToDictionary(grupo => grupo.Key, grupo => grupo.First());
+
+            UltimosRechazos = respuesta.Resultados
+                .Where(resultado => !resultado.Aplicado)
+                .Select(resultado => propuestaPorMovimiento.TryGetValue(resultado.IdMovimiento, out var propuesta)
+                    ? $"Pago del {propuesta.Movimiento.FechaTexto} ({propuesta.Movimiento.AbonoTexto}), facturas {propuesta.FoliosTexto}: {resultado.Motivo}"
+                    : $"Movimiento {resultado.IdMovimiento}: {resultado.Motivo}")
+                .ToList();
+
+            var mensaje = respuesta.Rechazados == 0
+                ? $"Conciliacion por coincidencias completada. {respuesta.Aplicados} pago(s) conciliado(s)."
+                : $"Conciliacion por coincidencias: {respuesta.Aplicados} aplicada(s), {respuesta.Rechazados} rechazada(s) por el servidor.";
+            await _notificacionService.MostrarAsync("Conciliacion", mensaje);
+
+            return respuesta.Aplicados > 0;
         }
 
         /// <summary>
