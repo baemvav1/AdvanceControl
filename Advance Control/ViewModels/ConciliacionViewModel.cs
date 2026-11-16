@@ -37,8 +37,7 @@ namespace Advance_Control.ViewModels
         private List<ConciliacionFacturaFila> _facturasTodas = new();
         private List<ConciliacionMovimientoFila> _movimientosTodos = new();
         private bool _rangoActivo;
-        private DateTimeOffset _filtroFacturaDesde;
-        private DateTimeOffset _filtroFacturaHasta;
+        private DateTimeOffset _filtroMesFacturas;
         private DateTimeOffset _filtroMesEstadoCuenta;
 
         public ConciliacionViewModel(
@@ -50,11 +49,10 @@ namespace Advance_Control.ViewModels
             _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
 
-            // Por defecto el mes anterior completo.
+            // Por defecto el mes anterior.
             var hoy = DateTimeOffset.Now;
             var inicioMes = new DateTimeOffset(hoy.Year, hoy.Month, 1, 0, 0, 0, hoy.Offset);
-            _filtroFacturaDesde = inicioMes.AddMonths(-1);
-            _filtroFacturaHasta = inicioMes.AddDays(-1);
+            _filtroMesFacturas = inicioMes.AddMonths(-1);
             _filtroMesEstadoCuenta = inicioMes.AddMonths(-1);
         }
 
@@ -174,9 +172,9 @@ namespace Advance_Control.ViewModels
         // ---------------- Rango (botón Rangos de la cinta) ----------------
 
         /// <summary>
-        /// Botón Rangos: despliega los selectores de fechas. Encendido, los grids y todos los
-        /// pasos automáticos se acotan a facturas emitidas entre Inicio y Fin y a movimientos del
-        /// estado de cuenta del mes elegido; apagado, las fechas se ignoran.
+        /// Botón Rangos: despliega los selectores de mes. Encendido, los grids y todos los
+        /// pasos automáticos se acotan a facturas emitidas en el mes elegido y a movimientos del
+        /// estado de cuenta del mes elegido; apagado, los meses se ignoran.
         /// </summary>
         public bool RangoActivo
         {
@@ -190,24 +188,13 @@ namespace Advance_Control.ViewModels
             }
         }
 
-        public DateTimeOffset FiltroFacturaDesde
+        /// <summary>Mes de emisión de las facturas (solo cuentan mes y año).</summary>
+        public DateTimeOffset FiltroMesFacturas
         {
-            get => _filtroFacturaDesde;
+            get => _filtroMesFacturas;
             set
             {
-                if (SetProperty(ref _filtroFacturaDesde, value) && _rangoActivo)
-                {
-                    AplicarFiltroRango();
-                }
-            }
-        }
-
-        public DateTimeOffset FiltroFacturaHasta
-        {
-            get => _filtroFacturaHasta;
-            set
-            {
-                if (SetProperty(ref _filtroFacturaHasta, value) && _rangoActivo)
+                if (SetProperty(ref _filtroMesFacturas, value) && _rangoActivo)
                 {
                     AplicarFiltroRango();
                 }
@@ -244,12 +231,11 @@ namespace Advance_Control.ViewModels
             };
         }
 
-        /// <summary>Inicio y fin de facturas como días; si vienen al revés se intercambian.</summary>
+        /// <summary>Primer y último día del mes de facturas elegido.</summary>
         private (DateTime Desde, DateTime Hasta) RangoFacturas()
         {
-            var desde = _filtroFacturaDesde.Date;
-            var hasta = _filtroFacturaHasta.Date;
-            return desde <= hasta ? (desde, hasta) : (hasta, desde);
+            var desde = new DateTime(_filtroMesFacturas.Year, _filtroMesFacturas.Month, 1);
+            return (desde, desde.AddMonths(1).AddDays(-1));
         }
 
         /// <summary>

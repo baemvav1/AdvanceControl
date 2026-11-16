@@ -330,12 +330,11 @@
                     Orientation="Horizontal"
                     Spacing="10">
                     <StackPanel Orientation="Vertical" Spacing="10">
-                        <TextBlock HorizontalAlignment="Center" Text="Inicio Facturas" />
-                        <DatePicker x:Name="DpInicioFacturas" Date="{x:Bind ViewModel.FiltroFacturaDesde, Mode=TwoWay}" />
-                    </StackPanel>
-                    <StackPanel Orientation="Vertical" Spacing="10">
-                        <TextBlock HorizontalAlignment="Center" Text="Fin Facturas" />
-                        <DatePicker x:Name="DpFinFacturas" Date="{x:Bind ViewModel.FiltroFacturaHasta, Mode=TwoWay}" />
+                        <TextBlock HorizontalAlignment="Center" Text="Mes facturas" />
+                        <DatePicker
+                            x:Name="DpMesFacturas"
+                            Date="{x:Bind ViewModel.FiltroMesFacturas, Mode=TwoWay}"
+                            DayVisible="False" />
                     </StackPanel>
                     <StackPanel Orientation="Vertical" Spacing="10">
                         <TextBlock HorizontalAlignment="Center" Text="Mes edo. Cuenta" />
