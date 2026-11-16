@@ -21,6 +21,10 @@ namespace Advance_Control.Services.Conciliacion
         Task<ConciliacionVariasAUnoValidarResponseDto> ValidarVariasAUnoAsync(ConciliacionVariasAUnoValidarRequestDto request, CancellationToken ct = default);
         Task<ConciliacionVariasAUnoAplicarResponseDto> AplicarVariasAUnoAsync(ConciliacionVariasAUnoAplicarRequestDto request, CancellationToken ct = default);
 
+        /// <summary>Coincidencias: mismas peticiones y respuestas que Varias a 1.</summary>
+        Task<ConciliacionVariasAUnoPropuestasResponseDto> ProponerCoincidenciasAsync(ConciliacionVariasAUnoPropuestasRequestDto request, CancellationToken ct = default);
+        Task<ConciliacionVariasAUnoAplicarResponseDto> AplicarCoincidenciasAsync(ConciliacionVariasAUnoAplicarRequestDto request, CancellationToken ct = default);
+
         Task<ConciliacionAbonosPropuestasResponseDto> ProponerAbonosAsync(ConciliacionAbonosPropuestasRequestDto request, CancellationToken ct = default);
         Task<ConciliacionAbonosAplicarResponseDto> AplicarAbonosAsync(ConciliacionAbonosAplicarRequestDto request, CancellationToken ct = default);
 
@@ -35,6 +39,7 @@ namespace Advance_Control.Services.Conciliacion
         private const string UnoAUno = "uno-a-uno";
         private const string VariasAUno = "varias-a-uno";
         private const string Abonos = "abonos";
+        private const string Coincidencias = "coincidencias";
         private const string Complementos = "complementos";
         private const string IngresosManuales = "ingresos-manuales";
 
@@ -77,6 +82,13 @@ namespace Advance_Control.Services.Conciliacion
 
         public async Task<ConciliacionVariasAUnoAplicarResponseDto> AplicarVariasAUnoAsync(ConciliacionVariasAUnoAplicarRequestDto request, CancellationToken ct = default)
             => await PostAsync<ConciliacionVariasAUnoAplicarResponseDto>(VariasAUno, "aplicar", request, ct)
+                ?? throw new InvalidOperationException("El servidor no devolvió el resultado de la conciliación.");
+
+        public async Task<ConciliacionVariasAUnoPropuestasResponseDto> ProponerCoincidenciasAsync(ConciliacionVariasAUnoPropuestasRequestDto request, CancellationToken ct = default)
+            => await PostAsync<ConciliacionVariasAUnoPropuestasResponseDto>(Coincidencias, "propuestas", request, ct) ?? new ConciliacionVariasAUnoPropuestasResponseDto();
+
+        public async Task<ConciliacionVariasAUnoAplicarResponseDto> AplicarCoincidenciasAsync(ConciliacionVariasAUnoAplicarRequestDto request, CancellationToken ct = default)
+            => await PostAsync<ConciliacionVariasAUnoAplicarResponseDto>(Coincidencias, "aplicar", request, ct)
                 ?? throw new InvalidOperationException("El servidor no devolvió el resultado de la conciliación.");
 
         public async Task<ConciliacionAbonosPropuestasResponseDto> ProponerAbonosAsync(ConciliacionAbonosPropuestasRequestDto request, CancellationToken ct = default)

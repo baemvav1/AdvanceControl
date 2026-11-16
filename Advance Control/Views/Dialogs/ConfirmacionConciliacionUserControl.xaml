@@ -158,7 +158,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="40" />
                                 <ColumnDefinition Width="90" />
-                                <ColumnDefinition Width="100" />
+                                <ColumnDefinition Width="130" />
                                 <ColumnDefinition Width="85" />
                                 <ColumnDefinition Width="110" />
                                 <ColumnDefinition Width="220" />
@@ -195,7 +195,26 @@
 
                             <!--  Folio(s): clickeable en propuestas 1 a 1 y Varias a 1  -->
                             <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
-                            <Grid>
+                            <Grid ColumnSpacing="4">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" MaxWidth="96" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <!--  Abre el visor de la factura vigente de la propuesta (también después de reasignarla)  -->
+                                <Button
+                                    Grid.Column="1"
+                                    Width="26"
+                                    Height="26"
+                                    Padding="0"
+                                    VerticalAlignment="Center"
+                                    Background="Transparent"
+                                    BorderThickness="0"
+                                    Click="BtnVerFactura_Click"
+                                    Tag="{x:Bind}"
+                                    ToolTipService.ToolTip="Ver factura">
+                                    <FontIcon FontSize="14" Glyph="&#xE8A7;" />
+                                </Button>
 
                                 <!--  Texto plano para propuestas sin folio editable  -->
                                 <TextBlock

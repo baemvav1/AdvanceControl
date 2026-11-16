@@ -921,6 +921,24 @@ namespace Advance_Control.Services.Facturas
         public Task<ImportacionAutomaticaCancelacionesResponseDto> ImportacionAutomaticaCancelacionesAsync(ImportacionAutomaticaRequestDto request, CancellationToken cancellationToken = default)
             => PostImportacionAutomaticaAsync<ImportacionAutomaticaCancelacionesResponseDto>("cancelaciones", request, cancellationToken);
 
+        public async Task<DateTime?> ImportacionAutomaticaPrimerMesAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "factura", "importacion-automatica", "primer-mes");
+            using var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                await _logger.LogErrorAsync($"Error al obtener el primer mes con facturas. Status: {response.StatusCode}, Content: {errorContent}",
+                    null, "FacturaService", "ImportacionAutomaticaPrimerMesAsync");
+                throw new InvalidOperationException((int)response.StatusCode == 404
+                    ? "El servidor todavía no tiene esta función (falta actualizar el API)."
+                    : ExtraerMensajeError(errorContent));
+            }
+
+            var dto = await response.Content.ReadFromJsonAsync<ImportacionAutomaticaPrimerMesDto>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            return dto?.Anio is int anio && dto.Mes is int mes ? new DateTime(anio, mes, 1) : null;
+        }
+
         private async Task<T> PostImportacionAutomaticaAsync<T>(string paso, object request, CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(request);

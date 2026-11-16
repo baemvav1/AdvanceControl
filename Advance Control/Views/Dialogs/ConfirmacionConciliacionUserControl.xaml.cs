@@ -149,6 +149,40 @@ namespace Advance_Control.Views.Dialogs
 
         // ─── Reasignación de folio (solo propuestas 1 a 1) ──────────────────────
 
+        /// <summary>
+        /// Abre el visor de la factura que la propuesta tiene en ese momento: se lee al hacer clic,
+        /// así que si el folio se reasignó abre la nueva. Con varias facturas (Varias a 1) muestra
+        /// un menú para elegir cuál abrir.
+        /// </summary>
+        private void BtnVerFactura_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement { Tag: ConciliacionMatchPropuestaDto propuesta } boton)
+            {
+                return;
+            }
+
+            var facturas = propuesta.Facturas.Where(f => f != null).ToList();
+            if (facturas.Count == 1)
+            {
+                new Views.Windows.FacturaVisorWindow(facturas[0]).Activate();
+                return;
+            }
+
+            if (facturas.Count == 0)
+            {
+                return;
+            }
+
+            var menu = new MenuFlyout();
+            foreach (var factura in facturas)
+            {
+                var item = new MenuFlyoutItem { Text = $"Factura {factura.FolioTitulo}" };
+                item.Click += (_, _) => new Views.Windows.FacturaVisorWindow(factura).Activate();
+                menu.Items.Add(item);
+            }
+            menu.ShowAt(boton);
+        }
+
         private void BtnFolioReasignar_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not HyperlinkButton btn)

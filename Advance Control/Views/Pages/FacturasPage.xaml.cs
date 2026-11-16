@@ -162,6 +162,39 @@ namespace Advance_Control.Views.Pages
             await resumenDialogo.ShowAsync();
         }
 
+        private async void BtnConciliacionCancelaciones_Click(object sender, RoutedEventArgs e)
+        {
+            var dialogo = new ImportacionAutomaticaDialog(XamlRoot, sinMes: true);
+            if (await dialogo.ShowAsync() != ContentDialogResult.Primary || dialogo.Resultado == null)
+            {
+                return;
+            }
+
+            var resumen = await ViewModel.ConciliacionCancelacionesAsync(dialogo.Resultado);
+            var fallo = resumen == null;
+            if (fallo && string.IsNullOrEmpty(ViewModel.ErrorMessage))
+            {
+                return;
+            }
+
+            await new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = fallo ? "La conciliación de cancelaciones falló" : "Resultado de la conciliación de cancelaciones",
+                CloseButtonText = "Cerrar",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 480,
+                    Content = new TextBlock
+                    {
+                        Text = resumen ?? ViewModel.ErrorMessage,
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                }
+            }.ShowAsync();
+        }
+
         // --- Buscador ---
 
         private void BusquedaAutoSuggestBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)

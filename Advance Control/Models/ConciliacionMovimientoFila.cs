@@ -20,7 +20,11 @@ namespace Advance_Control.Models
         /// <summary>RFC del emisor; en cheques, el folio del cheque (metadato FOLIO_CHEQUE).</summary>
         public string RfcReferencia { get; set; } = string.Empty;
 
+        /// <summary>Banco emisor (de la CLABE); se muestra en el visor del movimiento.</summary>
         public string Banco { get; set; } = string.Empty;
+
+        /// <summary>Tipo de movimiento legible (SPEI, Cheque, Depósito en efectivo...).</summary>
+        public string TipoMovimiento { get; set; } = string.Empty;
         public DateTime Fecha { get; set; }
 
         /// <summary>Metadatos uno por línea, para el tooltip de la celda.</summary>
@@ -32,10 +36,18 @@ namespace Advance_Control.Models
 
         public string AbonoTexto => Abono.ToString("C2", new CultureInfo("es-MX"));
         public string MontoRestanteTexto => MontoRestante.ToString("C2", new CultureInfo("es-MX"));
+        /// <summary>Valor del filtro y del portapapeles de la columna Abono (ordena como número).</summary>
+        public Views.Helpers.MontoFiltro MontoRestanteFiltro => new(decimal.Round(MontoRestante, 2));
         public bool TieneAbonoParcial => MontoRestante < Abono;
 
-        /// <summary>Tooltip del abono: solo si ya se aplicó en parte, muestra lo que queda disponible.</summary>
-        public string? AbonoTooltip => TieneAbonoParcial ? $"Disponible: {MontoRestanteTexto}" : null;
+        /// <summary>
+        /// La columna Abono del grid muestra lo que queda disponible; si ya se aplicó en parte,
+        /// el tooltip muestra el abono original del estado de cuenta y lo ya aplicado.
+        /// </summary>
+        public string? AbonoTooltip => TieneAbonoParcial
+            ? $"Abono original: {AbonoTexto}" + System.Environment.NewLine
+              + $"Ya aplicado: {(Abono - MontoRestante).ToString("C2", new CultureInfo("es-MX"))}"
+            : null;
         public string FechaTexto => Fecha.ToString("dd/MM/yyyy");
     }
 }

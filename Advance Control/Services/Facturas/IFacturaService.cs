@@ -91,5 +91,8 @@ namespace Advance_Control.Services.Facturas
 
         /// <summary>Importación automática, paso 3: aplica las cancelaciones que reporta el portal.</summary>
         Task<ImportacionAutomaticaCancelacionesResponseDto> ImportacionAutomaticaCancelacionesAsync(ImportacionAutomaticaRequestDto request, CancellationToken cancellationToken = default);
+
+        /// <summary>Mes de la factura más vieja del sistema (null si no hay facturas).</summary>
+        Task<System.DateTime?> ImportacionAutomaticaPrimerMesAsync(CancellationToken cancellationToken = default);
     }
 }

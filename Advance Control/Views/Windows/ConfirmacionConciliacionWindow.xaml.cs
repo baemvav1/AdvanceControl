@@ -56,9 +56,12 @@ namespace Advance_Control.Views.Windows
             ConciliacionAutomaticaModo modo,
             bool aplicarDtc,
             bool usarRfcComoRegla,
-            bool soloCheques = false)
+            bool soloCheques = false,
+            ConciliacionFiltroFechasDto? filtro = null)
             : this(new[] { CrearPaso(modo, aplicarDtc, usarRfcComoRegla, soloCheques) })
         {
+            // Se asigna antes de que la ventana se active y calcule el primer paso.
+            _viewModel.Filtro = filtro;
         }
 
         // Abonos siempre lleva RFC y nunca cheques; con Cheques (1 a 1 / Varias a 1) el RFC no aplica.
@@ -381,6 +384,7 @@ namespace Advance_Control.Views.Windows
             {
                 ConciliacionAutomaticaModo.Automatica => "Conciliación",
                 ConciliacionAutomaticaModo.Combinacional => "Varias a 1",
+                ConciliacionAutomaticaModo.Coincidencias => "Coincidencias (folios en el concepto)",
                 ConciliacionAutomaticaModo.Abonos => "Conciliación de abonos",
                 ConciliacionAutomaticaModo.Cheques => "Cheques (1 a 1, 1 a varios, varios a 1)",
                 _ => paso.Modo.ToString()

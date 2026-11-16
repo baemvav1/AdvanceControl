@@ -123,6 +123,14 @@
                                             <SymbolIcon Symbol="Sync" />
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
+                                    <MenuFlyoutItem
+                                        Click="BtnConciliacionCancelaciones_Click"
+                                        Text="Conciliación cancelaciones"
+                                        ToolTipService.ToolTip="Revisa en el portal FEL en Línea, mes con mes desde la factura más antigua, las facturas canceladas y las cancela aquí">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon Glyph="&#xE711;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
                                 </MenuFlyout>
                             </SplitButton.Flyout>
                         </SplitButton>

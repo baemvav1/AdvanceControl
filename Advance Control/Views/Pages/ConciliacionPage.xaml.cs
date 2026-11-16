@@ -11,6 +11,7 @@ using Advance_Control.Views.Windows;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using WinUI.TableView;
 
@@ -58,6 +59,34 @@ namespace Advance_Control.Views.Pages
             TablaMovimientosPendientes.RegisterPropertyChangedCallback(
                 TableView.CellsHorizontalOffsetProperty,
                 (_, _) => AjustarColumnaElastica(TablaMovimientosPendientes, ColumnaMetadatos, AnchoMaximoMetadatos));
+            TablaMovimientosPendientes.ContainerContentChanging += TablaMovimientosPendientes_ContainerContentChanging;
+        }
+
+        // Resaltador amarillo tenue para movimientos ya aplicados en parte (alfa bajo para que el
+        // texto se lea igual en tema claro y oscuro).
+        private static readonly SolidColorBrush ResaltadoAlteradoClaro = new(global::Windows.UI.Color.FromArgb(0x73, 0xFF, 0xF1, 0x76));
+        private static readonly SolidColorBrush ResaltadoAlteradoOscuro = new(global::Windows.UI.Color.FromArgb(0x33, 0xFF, 0xEB, 0x3B));
+
+        /// <summary>
+        /// Movimientos alterados (con parte del abono ya aplicada a facturas) se pintan con fondo
+        /// amarillo tenue. Los contenedores se reciclan al hacer scroll, así que se reaplica (o se
+        /// quita) cada vez que un renglón recibe otro movimiento.
+        /// </summary>
+        private void TablaMovimientosPendientes_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs e)
+        {
+            if (e.ItemContainer is null)
+            {
+                return;
+            }
+
+            if (e.Item is ConciliacionMovimientoFila { TieneAbonoParcial: true })
+            {
+                e.ItemContainer.Background = ActualTheme == ElementTheme.Dark ? ResaltadoAlteradoOscuro : ResaltadoAlteradoClaro;
+            }
+            else
+            {
+                e.ItemContainer.ClearValue(Control.BackgroundProperty);
+            }
         }
 
         protected override async void OnNavigatedTo(NavigationEventArgs e)
@@ -168,6 +197,9 @@ namespace Advance_Control.Views.Pages
         private async void BtnConciliacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Automatica);
 
+        private async void BtnCoincidencias_Click(object sender, RoutedEventArgs e) =>
+            await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Coincidencias);
+
         private async void BtnCombinacion_Click(object sender, RoutedEventArgs e) =>
             await AbrirPasoConciliacionAsync(ConciliacionAutomaticaModo.Combinacional);
 
@@ -208,7 +240,8 @@ namespace Advance_Control.Views.Pages
                     modo,
                     ViewModel.AplicarDtc,
                     ViewModel.UsarRfcComoRegla,
-                    ViewModel.SoloCheques);
+                    ViewModel.SoloCheques,
+                    ObtenerFiltroConciliacion());
                 ventana.Activate();
 
                 var aprobadas = await ventana.ResultTask;
@@ -221,6 +254,36 @@ namespace Advance_Control.Views.Pages
             {
                 ViewModel.IsConciliacionEnProceso = false;
             }
+        }
+
+        /// <summary>
+        /// Filtro de los pasos automáticos: el rango de Rangos (si está encendido) y, si alguna tabla
+        /// tiene filtros de columna, solo las facturas o movimientos que se ven en ella. Los renglones
+        /// fijados siempre se ven, así que también cuentan.
+        /// </summary>
+        private ConciliacionFiltroFechasDto? ObtenerFiltroConciliacion()
+        {
+            var filtro = ViewModel.ObtenerFiltroFechas();
+
+            if (TablaFacturasPendientes.FilterDescriptions.Count > 0)
+            {
+                filtro ??= new ConciliacionFiltroFechasDto();
+                filtro.IdsFacturas = TablaFacturasPendientes.CollectionView
+                    .OfType<ConciliacionFacturaFila>()
+                    .Select(fila => fila.IdFactura)
+                    .ToList();
+            }
+
+            if (TablaMovimientosPendientes.FilterDescriptions.Count > 0)
+            {
+                filtro ??= new ConciliacionFiltroFechasDto();
+                filtro.IdsMovimientos = TablaMovimientosPendientes.CollectionView
+                    .OfType<ConciliacionMovimientoFila>()
+                    .Select(fila => fila.IdMovimiento)
+                    .ToList();
+            }
+
+            return filtro;
         }
 
         // ---------------- Acciones ----------------
@@ -286,6 +349,11 @@ namespace Advance_Control.Views.Pages
             };
 
             return await dialogo.ShowAsync() == ContentDialogResult.Primary;
+        }
+
+        private void TextBlock_Holding(object sender, HoldingRoutedEventArgs e)
+        {
+
         }
     }
 }
