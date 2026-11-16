@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:models="using:Advance_Control.Models"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
     mc:Ignorable="d">
 
@@ -177,10 +178,99 @@
 
             <!--
                 ══════════════════════════════════════════
-                Sección: Noticias / Tareas / Alarmas (próximamente)
+                Sección: Notificaciones / Noticias / Tareas / Alarmas
                 ══════════════════════════════════════════
             -->
             <Pivot Grid.Row="5" Margin="-12,0,0,0">
+                <!--  Chats con mensajes sin leer; la card se va al leerlos.  -->
+                <PivotItem Header="Notificaciones">
+                    <Grid Margin="12,16,0,0">
+                        <TextBlock
+                            x:Name="TxtSinNotificaciones"
+                            Margin="0,8,0,0"
+                            FontSize="13"
+                            FontStyle="Italic"
+                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                            Text="No tienes mensajes sin leer." />
+                        <GridView
+                            x:Name="GridNotificaciones"
+                            IsItemClickEnabled="True"
+                            ItemClick="GridNotificaciones_ItemClick"
+                            ItemsSource="{x:Bind ChatsNoLeidos}"
+                            SelectionMode="None">
+                            <GridView.ItemTemplate>
+                                <DataTemplate x:DataType="models:UsuarioChatDto">
+                                    <Border
+                                        Width="300"
+                                        Padding="14,12"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        BorderThickness="1"
+                                        CornerRadius="8"
+                                        ToolTipService.ToolTip="Abrir el chat">
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid
+                                                Width="40"
+                                                Height="40"
+                                                VerticalAlignment="Top">
+                                                <Ellipse Fill="{ThemeResource AccentFillColorDefaultBrush}" />
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="13"
+                                                    FontWeight="SemiBold"
+                                                    Foreground="White"
+                                                    Text="{x:Bind Iniciales}" />
+                                            </Grid>
+                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                <TextBlock
+                                                    FontSize="14"
+                                                    FontWeight="SemiBold"
+                                                    Text="{x:Bind NombreVisible}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <TextBlock
+                                                    MaxLines="2"
+                                                    FontSize="12"
+                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                    Text="{x:Bind UltimoMensaje, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <StackPanel
+                                                Grid.Column="2"
+                                                HorizontalAlignment="Right"
+                                                Spacing="6">
+                                                <TextBlock
+                                                    HorizontalAlignment="Right"
+                                                    FontSize="11"
+                                                    Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                                                    Text="{x:Bind UltimoEnTexto, Mode=OneWay}" />
+                                                <Border
+                                                    MinWidth="22"
+                                                    Padding="6,1"
+                                                    HorizontalAlignment="Right"
+                                                    Background="{ThemeResource SystemFillColorSuccessBrush}"
+                                                    CornerRadius="10">
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        FontSize="11"
+                                                        FontWeight="SemiBold"
+                                                        Foreground="White"
+                                                        Text="{x:Bind MensajesNoLeidos, Mode=OneWay}" />
+                                                </Border>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </GridView.ItemTemplate>
+                        </GridView>
+                    </Grid>
+                </PivotItem>
                 <PivotItem Header="Noticias">
                     <RichTextBlock
                         Margin="12,20,0,0"
