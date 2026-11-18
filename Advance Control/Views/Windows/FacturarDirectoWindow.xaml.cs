@@ -361,11 +361,11 @@ namespace Advance_Control.Views.Windows
                 FontWeight = FontWeights.SemiBold,
                 TextWrapping = TextWrapping.Wrap
             });
-            if (!string.IsNullOrWhiteSpace(cargo.DescripcionDetalle))
+            if (!string.IsNullOrWhiteSpace(cargo.DescripcionYCodigo))
             {
                 txtDescripcion.Children.Add(new TextBlock
                 {
-                    Text = cargo.DescripcionDetalle,
+                    Text = cargo.DescripcionYCodigo,
                     TextWrapping = TextWrapping.Wrap,
                     Foreground = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["TextFillColorSecondaryBrush"]
                 });
@@ -568,14 +568,14 @@ namespace Advance_Control.Views.Windows
         }
 
         /// <summary>
-        /// "Tipo - Nota" y, en un renglón aparte, lo que se cobra (descripción de la refacción o
-        /// concepto del servicio). El SAT permite hasta 1000 caracteres en Descripcion.
+        /// "Tipo - Nota" (título del cargo) y, en un renglón aparte, la descripción y el código de la
+        /// refacción (o el concepto del servicio). El SAT permite hasta 1000 caracteres en Descripcion.
         /// </summary>
         private static string DescripcionConcepto(CargoDto cargo)
         {
             var texto = $"{cargo.TipoCargo}{(string.IsNullOrWhiteSpace(cargo.Nota) ? "" : $" - {cargo.Nota}")}";
-            if (!string.IsNullOrWhiteSpace(cargo.DescripcionDetalle))
-                texto += "\n" + cargo.DescripcionDetalle;
+            if (!string.IsNullOrWhiteSpace(cargo.DescripcionYCodigo))
+                texto += "\n" + cargo.DescripcionYCodigo;
             texto = texto.Replace("|", "/");
             return texto.Length > 1000 ? texto[..1000] : texto;
         }

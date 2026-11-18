@@ -179,6 +179,25 @@ namespace Advance_Control.Models
             }
         }
 
+        /// <summary>Código de la refacción (línea 2 del detalle); null en servicios.</summary>
+        [JsonIgnore]
+        public string? CodigoDetalle => TieneSubdetalle && !string.IsNullOrWhiteSpace(DetalleLinea2) ? DetalleLinea2 : null;
+
+        /// <summary>
+        /// Segundo renglón del concepto de factura: descripción y código de la refacción
+        /// ("UNIDAD LCE - Código: KM713856G02"), o el concepto del servicio. Null si no hay detalle.
+        /// </summary>
+        [JsonIgnore]
+        public string? DescripcionYCodigo
+        {
+            get
+            {
+                var partes = new[] { DescripcionDetalle, CodigoDetalle == null ? null : $"Código: {CodigoDetalle}" };
+                var texto = string.Join(" - ", System.Linq.Enumerable.Where(partes, p => !string.IsNullOrWhiteSpace(p)));
+                return string.IsNullOrWhiteSpace(texto) ? null : texto;
+            }
+        }
+
         /// <summary>Línea 1 del detalle (marca para refacciones, concepto para servicios)</summary>
         [JsonIgnore]
         public string? DetalleLinea1 => GetDetalleLinea(0);
