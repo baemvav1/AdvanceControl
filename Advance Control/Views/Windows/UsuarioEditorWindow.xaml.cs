@@ -56,6 +56,8 @@ namespace Advance_Control.Views.Windows
             _usuario = usuario;
 
             InitializeComponent();
+            Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(CorreoTextBox);
+            Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(CorreoUsuarioTextBox);
             RootGrid.DataContext = this;
 
             Title = usuario == null ? "Nuevo usuario" : $"Editar usuario - {usuario.Usuario}";
@@ -252,6 +254,14 @@ namespace Advance_Control.Views.Windows
             if (_usuario == null && string.IsNullOrWhiteSpace(PasswordBox.Password))
             {
                 await _notificacionService.MostrarAsync("Validación", "La contraseña inicial es obligatoria.");
+                return;
+            }
+
+            var errorCorreo = Advance_Control.Utilities.CorreoValidacion.Error(CorreoTextBox.Text)
+                ?? Advance_Control.Utilities.CorreoValidacion.Error(CorreoUsuarioTextBox.Text, "correo de envío");
+            if (errorCorreo != null)
+            {
+                await _notificacionService.MostrarAsync("Validación", errorCorreo);
                 return;
             }
 

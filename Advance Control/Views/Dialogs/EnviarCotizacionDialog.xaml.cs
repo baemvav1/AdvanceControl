@@ -97,6 +97,9 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
         _correoUsuarioService = AppServices.Get<ICorreoUsuarioService>();
 
         this.InitializeComponent();
+        Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(ParaTextBox);
+        Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(CCManualTextBox, lista: true);
+        Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(CCOTextBox, lista: true);
         this.XamlRoot = xamlRoot;
         this.Title = $"Enviar {tipo.ToLowerInvariant()} por correo";
 
@@ -239,6 +242,15 @@ public sealed partial class EnviarCotizacionDialog : ContentDialog
             if (string.IsNullOrWhiteSpace(paraEmail))
             {
                 MostrarError("El campo \"Para\" es obligatorio.");
+                return;
+            }
+
+            var errorCorreos = Advance_Control.Utilities.CorreoValidacion.Error(paraEmail, "correo de \"Para\"")
+                ?? Advance_Control.Utilities.CorreoValidacion.ErrorLista(CCManualTextBox.Text, "CC")
+                ?? Advance_Control.Utilities.CorreoValidacion.ErrorLista(CCOTextBox.Text, "CCO");
+            if (errorCorreos != null)
+            {
+                MostrarError(errorCorreos);
                 return;
             }
 
