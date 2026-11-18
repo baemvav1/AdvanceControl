@@ -104,6 +104,18 @@ public class EmailService : IEmailService
     // Enviar correo
     // -------------------------------------------------------------------------
 
+    /// <summary>
+    /// Convierte un correo a dirección MIME; si está mal capturado (p. ej. "x@dominio,com")
+    /// avisa cuál es, en vez del "Unexpected token at offset N" de MimeKit.
+    /// </summary>
+    private static MailboxAddress Direccion(string correo, string rol)
+    {
+        var texto = correo?.Trim() ?? string.Empty;
+        if (MailboxAddress.TryParse(texto, out var direccion) && direccion.Address.Contains('@'))
+            return direccion;
+        throw new ArgumentException($"El correo del {rol} \"{correo}\" no es válido. Corrígelo (por ejemplo en el contacto) y vuelve a enviar.");
+    }
+
     public async Task SendEmailAsync(EmailMessage mensaje)
     {
         if (mensaje is null) throw new ArgumentNullException(nameof(mensaje));
@@ -115,16 +127,16 @@ public class EmailService : IEmailService
         var (usuario, password) = await ObtenerCredencialesAsync();
 
         var mime = new MimeMessage();
-        mime.From.Add(MailboxAddress.Parse(usuario));
+        mime.From.Add(Direccion(usuario, "remitente"));
 
         foreach (var para in mensaje.Para)
-            mime.To.Add(MailboxAddress.Parse(para));
+            mime.To.Add(Direccion(para, "destinatario"));
 
         foreach (var cc in mensaje.CC)
-            mime.Cc.Add(MailboxAddress.Parse(cc));
+            mime.Cc.Add(Direccion(cc, "copia (CC)"));
 
         foreach (var cco in mensaje.CCO)
-            mime.Bcc.Add(MailboxAddress.Parse(cco));
+            mime.Bcc.Add(Direccion(cco, "copia oculta (CCO)"));
 
         mime.Subject = mensaje.Asunto;
 
