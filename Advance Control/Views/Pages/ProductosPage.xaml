@@ -136,6 +136,10 @@
                                                     <Run Text="Final: $" />
                                                     <Run FontWeight="SemiBold" Text="{x:Bind CostoFinal}" />
                                                 </TextBlock>
+                                                <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}">
+                                                    <Run Text="Precio al: " />
+                                                    <Run FontWeight="SemiBold" Text="{x:Bind FechaEdicionTexto}" />
+                                                </TextBlock>
                                             </StackPanel>
                                         </StackPanel>
 
@@ -159,6 +163,7 @@
                                                         <ColumnDefinition Width="*" />
                                                     </Grid.ColumnDefinitions>
                                                     <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
                                                         <RowDefinition Height="Auto" />
@@ -220,7 +225,16 @@
                                                     </StackPanel>
 
                                                     <StackPanel
-                                                        Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,16,0,0" Orientation="Horizontal" Spacing="8">
+                                                        Grid.Row="3" Grid.Column="0" Margin="0,4,0,0">
+                                                        <TextBlock
+                                                            FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="Fecha de edición del precio:" />
+                                                        <TextBlock
+                                                            FontSize="13" Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                                            Text="{x:Bind FechaEdicionTexto}" />
+                                                    </StackPanel>
+
+                                                    <StackPanel
+                                                        Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Margin="0,16,0,0" Orientation="Horizontal" Spacing="8">
                                                         <Button
                                                             Background="DarkOrange" BorderThickness="0"
                                                             Click="EditarButton_Click" Content="Editar" Foreground="White"

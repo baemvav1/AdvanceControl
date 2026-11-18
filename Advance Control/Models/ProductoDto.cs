@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Text.Json.Serialization;
@@ -40,6 +41,14 @@ namespace Advance_Control.Models
 
         [JsonPropertyName("estatus")]
         public bool? Estatus { get; set; }
+
+        /// <summary>Cuándo se fijó el último precio (costo directo o % de utilidad).</summary>
+        [JsonPropertyName("fechaEdicion")]
+        public DateTimeOffset? FechaEdicion { get; set; }
+
+        /// <summary>Fecha del último precio en hora local, o "Sin precio".</summary>
+        [JsonIgnore]
+        public string FechaEdicionTexto => FechaEdicion?.ToLocalTime().ToString("dd/MM/yyyy") ?? "Sin precio";
 
         private bool _expand = false;
 

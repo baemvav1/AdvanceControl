@@ -667,6 +667,13 @@ namespace Advance_Control.ViewModels
             return await _reporteOperacionesService.GenerarReporteOperacionesPdfAsync(todas, ConstruirFiltrosReporte());
         }
 
+        /// <summary>Reporte de Pendientes (matriz operación × paso) del conjunto filtrado; devuelve la ruta del PDF.</summary>
+        public async Task<string> GenerarReportePendientesAsync(CancellationToken cancellationToken = default)
+        {
+            var todas = await ObtenerOperacionesFiltradasAsync(cancellationToken);
+            return await _reporteOperacionesService.GenerarReportePendientesPdfAsync(todas, ConstruirFiltrosReporte());
+        }
+
         /// <summary>
         /// Genera el "Reporte Ejecutivo de Operaciones" del conjunto filtrado: qué se realizó en cada
         /// operación (hojas de servicio, cargos sin precios, fotos, levantamientos, preventivos).

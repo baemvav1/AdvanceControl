@@ -14,5 +14,13 @@ namespace Advance_Control.Services.Reportes
         Task<string> GenerarReporteOperacionesPdfAsync(
             IReadOnlyList<OperacionDto> operaciones,
             OperacionesReporteFiltrosDto filtros);
+
+        /// <summary>
+        /// Genera el "Reporte de Pendientes": matriz con una fila por operación (de la más
+        /// reciente a la más antigua) y una columna por paso; "X" marca lo que falta.
+        /// </summary>
+        Task<string> GenerarReportePendientesPdfAsync(
+            IReadOnlyList<OperacionDto> operaciones,
+            OperacionesReporteFiltrosDto filtros);
     }
 }

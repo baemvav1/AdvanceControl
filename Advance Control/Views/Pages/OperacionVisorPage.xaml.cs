@@ -239,7 +239,12 @@ namespace Advance_Control.Views.Pages
 
             if (_operacion.CotFinalizada)
             {
-                await _notificaciones.MostrarAsync("Cotización cerrada", $"La cotización está cerrada; reábrela para {accion}.");
+                // Ofrece reabrirla aquí mismo (el botón del candado puede no verse en ventanas angostas).
+                // Tras reabrir se recarga el visor; el usuario repite la acción sobre los cargos nuevos.
+                if (await ReabrirCotizacionAsync($"La cotización está cerrada; para {accion} hay que reabrirla.\n\n"))
+                {
+                    await _notificaciones.MostrarAsync("Cotización reabierta", $"Ya puedes {accion}.");
+                }
                 return false;
             }
 
@@ -356,17 +361,8 @@ namespace Advance_Control.Views.Pages
                 }
                 else if (_operacion.CotFinalizada)
                 {
-                    var aprobada = _aprobacion?.Estado == "Aprobada";
-                    var mensaje = aprobada
-                        ? "La cotización ya fue aprobada por el cliente. Al reabrirla, esa aprobación queda como reemplazada y, cuando la vuelvas a cerrar, el cliente tendrá que aprobarla de nuevo.\n\nMientras esté abierta, la operación no aparecerá en el Portal de Clientes."
-                        : "Podrás modificar los cargos. Mientras esté abierta, la operación no aparecerá en el Portal de Clientes.";
-                    if (!await ConfirmarAsync("Reabrir cotización", mensaje, "Reabrir"))
-                    {
-                        return;
-                    }
-
-                    await _aprobaciones.ReabrirCotizacionAsync(_idOperacion);
-                    _actividad.Registrar("Operaciones", aprobada ? "Cotización aprobada reabierta" : "Cotización reabierta");
+                    await ReabrirCotizacionAsync();
+                    return;
                 }
                 else
                 {
@@ -380,6 +376,41 @@ namespace Advance_Control.Views.Pages
             }
 
             await CargarOperacionAsync(primeraVez: false);
+        }
+
+        /// <summary>
+        /// Confirma y reabre la cotización cerrada, luego recarga el visor. Lo usan el botón del
+        /// candado y el aviso al intentar modificar cargos. True si quedó reabierta.
+        /// </summary>
+        private async Task<bool> ReabrirCotizacionAsync(string prefijo = "")
+        {
+            if (_operacion is not { CotFinalizada: true })
+            {
+                return false;
+            }
+
+            var aprobada = _aprobacion?.Estado == "Aprobada";
+            var mensaje = prefijo + (aprobada
+                ? "La cotización ya fue aprobada por el cliente. Al reabrirla, esa aprobación queda como reemplazada y, cuando la vuelvas a cerrar, el cliente tendrá que aprobarla de nuevo.\n\nMientras esté abierta, la operación no aparecerá en el Portal de Clientes."
+                : "Podrás modificar los cargos. Mientras esté abierta, la operación no aparecerá en el Portal de Clientes.");
+            if (!await ConfirmarAsync("Reabrir cotización", mensaje, "Reabrir cotización"))
+            {
+                return false;
+            }
+
+            try
+            {
+                await _aprobaciones.ReabrirCotizacionAsync(_idOperacion);
+                _actividad.Registrar("Operaciones", aprobada ? "Cotización aprobada reabierta" : "Cotización reabierta");
+            }
+            catch (Exception ex)
+            {
+                await _notificaciones.MostrarAsync("Reabrir cotización", ex.Message);
+                return false;
+            }
+
+            await CargarOperacionAsync(primeraVez: false);
+            return true;
         }
 
         private async void FinalizarButton_Click(object sender, RoutedEventArgs e)
