@@ -48,6 +48,11 @@
                 Content="Generar Reporte"
                 ToolTipService.ToolTip="Genera un PDF con todas las operaciones que cumplen los filtros actuales y qué checks tiene marcados cada una" />
             <Button
+                x:Name="ReportePendientesButton"
+                Click="ReportePendientes_Click"
+                Content="Pendientes"
+                ToolTipService.ToolTip="Genera un PDF tipo ToDo con las operaciones de los filtros actuales (de la más reciente a la más antigua) y una X en cada paso que les falta: cotización, reporte, prefactura, factura..." />
+            <Button
                 x:Name="ReporteEjecutivoButton"
                 Click="ReporteEjecutivo_Click"
                 Content="Reporte ejecutivo"
@@ -217,27 +222,27 @@
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <CheckBox
                                 x:Name="MostrarAbiertasCheckBox"
+                                Checked="EstadoCheckBox_Changed"
                                 Content="Abiertas"
                                 IsChecked="{x:Bind ViewModel.MostrarAbiertas, Mode=TwoWay}"
-                                Checked="EstadoCheckBox_Changed"
                                 Unchecked="EstadoCheckBox_Changed" />
                             <CheckBox
                                 x:Name="MostrarTFinalizadasCheckBox"
+                                Checked="EstadoCheckBox_Changed"
                                 Content="T-Finalizado"
                                 IsChecked="{x:Bind ViewModel.MostrarTFinalizadas, Mode=TwoWay}"
-                                Checked="EstadoCheckBox_Changed"
                                 Unchecked="EstadoCheckBox_Changed" />
                             <CheckBox
                                 x:Name="MostrarFacturadasCheckBox"
+                                Checked="EstadoCheckBox_Changed"
                                 Content="Facturadas"
                                 IsChecked="{x:Bind ViewModel.MostrarFacturadas, Mode=TwoWay}"
-                                Checked="EstadoCheckBox_Changed"
                                 Unchecked="EstadoCheckBox_Changed" />
                             <CheckBox
                                 x:Name="MostrarAbiertasConOcCheckBox"
+                                Checked="EstadoCheckBox_Changed"
                                 Content="Abiertas con OC"
                                 IsChecked="{x:Bind ViewModel.MostrarAbiertasConOc, Mode=TwoWay}"
-                                Checked="EstadoCheckBox_Changed"
                                 Unchecked="EstadoCheckBox_Changed" />
                         </StackPanel>
                     </StackPanel>

@@ -184,6 +184,142 @@ namespace Advance_Control.Services.Reportes
             return Task.FromResult(rutaArchivo);
         }
 
+        /// <summary>Pasos de la operación, en el orden del flujo, para el reporte de pendientes.</summary>
+        private static readonly (string Titulo, Func<OperacionDto, bool> Hecho)[] Pasos =
+        {
+            ("Cotización generada", o => o.CkCotizacionGenerada),
+            ("Cotización enviada", o => o.CkCotizacionEnviada),
+            ("Orden de compra", o => o.CkOrdenCompraCargada),
+            ("Hoja de servicio", o => o.CkHojaServicioCargada),
+            ("Reporte generado", o => o.CkReporteGenerado),
+            ("Reporte enviado", o => o.CkReporteEnviado),
+            ("Prefactura", o => o.CkPrefacturaCargada),
+            ("Factura", o => o.CkFacturaCargada),
+        };
+
+        public Task<string> GenerarReportePendientesPdfAsync(
+            IReadOnlyList<OperacionDto> operaciones,
+            OperacionesReporteFiltrosDto filtros)
+        {
+            if (operaciones == null) throw new ArgumentNullException(nameof(operaciones));
+            if (filtros == null) throw new ArgumentNullException(nameof(filtros));
+            if (operaciones.Count == 0) throw new InvalidOperationException("No hay operaciones para el conjunto de filtros actual.");
+
+            var carpeta = ObtenerCarpetaReportes();
+            Directory.CreateDirectory(carpeta);
+            var rutaArchivo = Path.Combine(carpeta, ConstruirNombreArchivo(filtros).Replace("ReporteOperaciones_", "PendientesOperaciones_"));
+            var resumenFiltros = ConstruirResumenFiltros(filtros);
+            var cabeceraPath = Path.Combine(ObtenerCarpetaCabeceras(), "Reporte.png");
+
+            var filas = operaciones.OrderByDescending(o => o.IdOperacion ?? 0).ToList();
+            var faltantesPorPaso = Pasos.Select(p => filas.Count(o => !p.Hecho(o))).ToArray();
+            var completas = filas.Count(o => Pasos.All(p => p.Hecho(o)));
+
+            var documento = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Size(PageSizes.Letter.Landscape());
+                    page.Margin(1.2f, Unit.Centimetre);
+                    page.PageColor(Colors.White);
+                    page.DefaultTextStyle(x => x.FontSize(9));
+
+                    page.Header().ShowOnce().Column(column =>
+                    {
+                        if (File.Exists(cabeceraPath))
+                            column.Item().Image(cabeceraPath).FitWidth();
+
+                        column.Item().Text("Reporte de Pendientes por Operación")
+                            .FontSize(18).SemiBold().FontColor(Colors.Blue.Darken2);
+
+                        column.Item().Text($"Generado: {DateTime.Now.ToString("dd/MM/yyyy HH:mm", Cultura)}" +
+                                           (string.IsNullOrWhiteSpace(filtros.GeneradoPor) ? "" : $"  |  Por: {filtros.GeneradoPor}"))
+                            .FontSize(9).FontColor(Colors.Grey.Darken1);
+
+                        column.Item().PaddingTop(4).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(f =>
+                        {
+                            f.Spacing(2);
+                            f.Item().Text("Filtros aplicados").SemiBold().FontSize(8);
+                            foreach (var linea in resumenFiltros)
+                                f.Item().Text(linea).FontSize(8);
+                        });
+
+                        column.Item().PaddingTop(4).PaddingBottom(8).Border(1).BorderColor(Colors.Grey.Lighten1).Padding(6).Column(r =>
+                        {
+                            r.Item().Text($"{filas.Count} operación(es)  |  Completas: {completas}  |  Con pendientes: {filas.Count - completas}").FontSize(8);
+                            r.Item().Text("\"X\" = paso pendiente. Celda vacía = paso realizado.").FontSize(7).FontColor(Colors.Grey.Darken1);
+                        });
+                    });
+
+                    page.Content().Table(tabla =>
+                    {
+                        tabla.ColumnsDefinition(columnas =>
+                        {
+                            columnas.ConstantColumn(48);   // Operación
+                            columnas.RelativeColumn(1.4f); // Atiende
+                            foreach (var _ in Pasos)
+                                columnas.RelativeColumn(1);
+                            columnas.ConstantColumn(52);   // Faltan
+                        });
+
+                        tabla.Header(header =>
+                        {
+                            header.Cell().Element(EstiloCeldaEncabezado).AlignMiddle().Text("Operación");
+                            header.Cell().Element(EstiloCeldaEncabezado).AlignMiddle().Text("Atiende");
+                            foreach (var paso in Pasos)
+                                header.Cell().Element(EstiloCeldaEncabezado).AlignMiddle().Text(t => { t.AlignCenter(); t.Span(paso.Titulo); });
+                            header.Cell().Element(EstiloCeldaEncabezado).AlignMiddle().Text(t => { t.AlignCenter(); t.Span("Faltan"); });
+                        });
+
+                        var par = false;
+                        foreach (var op in filas)
+                        {
+                            var fondo = par ? Colors.Grey.Lighten4 : Colors.White;
+                            par = !par;
+                            var faltan = Pasos.Count(p => !p.Hecho(op));
+
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c.Background(fondo))).Text(string.IsNullOrEmpty(op.FolioTexto) ? "—" : op.FolioTexto).SemiBold().FontSize(8);
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c.Background(fondo))).Text(string.IsNullOrWhiteSpace(op.Atiende) ? "Sin asignar" : op.Atiende).FontSize(8);
+                            foreach (var paso in Pasos)
+                            {
+                                var hecho = paso.Hecho(op);
+                                tabla.Cell().Element(c => EstiloCeldaDatos(c.Background(fondo))).Text(t =>
+                                {
+                                    t.AlignCenter();
+                                    if (!hecho)
+                                        t.Span("X").FontColor(Colors.Red.Darken1).Bold().FontSize(9);
+                                });
+                            }
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c.Background(fondo))).Text(t =>
+                            {
+                                t.AlignCenter();
+                                var span = t.Span(faltan.ToString()).FontSize(8).SemiBold();
+                                if (faltan == 0) span.FontColor(Colors.Green.Darken2);
+                            });
+                        }
+
+                        // Totales: cuántas operaciones tienen pendiente cada paso.
+                        tabla.Cell().ColumnSpan(2).Element(c => EstiloCeldaDatos(c.Background(Colors.Grey.Lighten2))).Text("Pendientes por paso").SemiBold().FontSize(8);
+                        foreach (var total in faltantesPorPaso)
+                            tabla.Cell().Element(c => EstiloCeldaDatos(c.Background(Colors.Grey.Lighten2))).Text(t => { t.AlignCenter(); t.Span(total.ToString()).SemiBold().FontSize(8); });
+                        tabla.Cell().Element(c => EstiloCeldaDatos(c.Background(Colors.Grey.Lighten2))).Text(t => { t.AlignCenter(); t.Span(faltantesPorPaso.Sum().ToString()).SemiBold().FontSize(8); });
+                    });
+
+                    page.Footer().Text(text =>
+                    {
+                        text.AlignRight();
+                        text.Span("Página ");
+                        text.CurrentPageNumber();
+                        text.Span(" de ");
+                        text.TotalPages();
+                    });
+                });
+            });
+
+            documento.GeneratePdf(rutaArchivo);
+            return Task.FromResult(rutaArchivo);
+        }
+
         internal static string TextoEstado(OperacionDto op)
         {
             if (op.EstaFacturada)

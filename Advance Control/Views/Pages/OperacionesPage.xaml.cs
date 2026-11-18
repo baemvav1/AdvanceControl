@@ -123,6 +123,33 @@ namespace Advance_Control.Views.Pages
             }
         }
 
+        private async void ReportePendientes_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button boton) return;
+
+            try
+            {
+                boton.IsEnabled = false;
+                var rutaArchivo = await ViewModel.GenerarReportePendientesAsync();
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(rutaArchivo)
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (InvalidOperationException ex)
+            {
+                await _notificacionService.MostrarAsync("Sin operaciones", ex.Message);
+            }
+            catch (Exception ex)
+            {
+                await _notificacionService.MostrarAsync("Error al generar reporte", $"No se pudo generar el reporte: {ex.Message}");
+            }
+            finally
+            {
+                boton.IsEnabled = true;
+            }
+        }
+
         private async void ReporteEjecutivo_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not Button boton) return;
