@@ -100,6 +100,7 @@ namespace Advance_Control.Views.Pages
                 PlaceholderText = "Correo electrónico",
                 Margin = new Thickness(0, 0, 0, 8)
             };
+            Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(correoTextBox);
 
             var telefonoTextBox = new TextBox
             {
@@ -202,6 +203,11 @@ namespace Advance_Control.Views.Pages
                 if (string.IsNullOrWhiteSpace(nombreTextBox.Text))
                 {
                     await _notificacionService.MostrarAsync("Validación", "El nombre es obligatorio");
+                    return;
+                }
+                if (Advance_Control.Utilities.CorreoValidacion.Error(correoTextBox.Text) is string errorCorreoAlta)
+                {
+                    await _notificacionService.MostrarAsync("Validación", errorCorreoAlta);
                     return;
                 }
 
@@ -467,6 +473,7 @@ namespace Advance_Control.Views.Pages
                 Text = contacto.Correo ?? "",
                 Margin = new Thickness(0, 0, 0, 8)
             };
+            Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(correoTextBox);
 
             var telefonoTextBox = new TextBox
             {
@@ -574,6 +581,11 @@ namespace Advance_Control.Views.Pages
                 if (string.IsNullOrWhiteSpace(nombreTextBox.Text))
                 {
                     await _notificacionService.MostrarAsync("Validación", "El nombre es obligatorio");
+                    return;
+                }
+                if (Advance_Control.Utilities.CorreoValidacion.Error(correoTextBox.Text) is string errorCorreoEdicion)
+                {
+                    await _notificacionService.MostrarAsync("Validación", errorCorreoEdicion);
                     return;
                 }
 

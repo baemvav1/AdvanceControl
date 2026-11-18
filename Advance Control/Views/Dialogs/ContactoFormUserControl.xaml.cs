@@ -14,6 +14,7 @@ namespace Advance_Control.Views.Dialogs
             InitializeComponent();
             if (contacto is not null)
                 Cargar(contacto);
+            Advance_Control.Utilities.CorreoValidacion.ValidarEnVivo(CorreoTextBox);
             Loaded += (_, _) => NombreTextBox.Focus(FocusState.Programmatic);
         }
 
@@ -38,6 +39,12 @@ namespace Advance_Control.Views.Dialogs
             if (string.IsNullOrWhiteSpace(NombreTextBox.Text))
             {
                 MostrarError("El nombre es obligatorio.");
+                return false;
+            }
+            var errorCorreo = Advance_Control.Utilities.CorreoValidacion.Error(CorreoTextBox.Text);
+            if (errorCorreo != null)
+            {
+                MostrarError(errorCorreo);
                 return false;
             }
             ErrorText.Visibility = Visibility.Collapsed;
