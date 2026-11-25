@@ -197,9 +197,18 @@
                             </NavigationViewItem.Icon>
                             <NavigationViewItem.MenuItems>
                                 <NavigationViewItem
-                                    Content="Equipos"
+                                    Content="Elevadores"
                                     Icon="AllApps"
-                                    Tag="AsistenteEquipos" />
+                                    SelectsOnInvoked="False">
+                                    <NavigationViewItem.MenuItems>
+                                        <!--  Abre en ventana propia (MainViewModel.OnNavigationItemInvoked); no navega en la principal  -->
+                                        <NavigationViewItem
+                                            Content="Gestionar"
+                                            Icon="Edit"
+                                            SelectsOnInvoked="False"
+                                            Tag="AsistenteEquipos" />
+                                    </NavigationViewItem.MenuItems>
+                                </NavigationViewItem>
                             </NavigationViewItem.MenuItems>
                         </NavigationViewItem>
 

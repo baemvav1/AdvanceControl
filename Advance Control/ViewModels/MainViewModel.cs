@@ -236,6 +236,13 @@ namespace Advance_Control.ViewModels
                         return;
                     }
 
+                    // Opciones que abren su propia ventana: no tocan el frame ni el título de la principal.
+                    if (string.Equals(tag, "AsistenteEquipos", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Views.Windows.AsistenteEquiposWindow.Open();
+                        return;
+                    }
+
                     _navigationService.Navigate(tag);
                     Title = $"Advance Control : {item.Content}";
                 }
