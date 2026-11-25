@@ -105,6 +105,8 @@ namespace Advance_Control.Services.Entidades
             string? colonia = null,
             string? apoderado = null,
             string? regimenFiscal = null,
+            bool? esPredeterminada = null,
+            string? serieFacturas = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -126,6 +128,8 @@ namespace Advance_Control.Services.Entidades
                     .Add("colonia", colonia)
                     .Add("apoderado", apoderado)
                     .Add("regimenFiscal", regimenFiscal)
+                    .Add("esPredeterminada", esPredeterminada)
+                    .Add("serieFacturas", serieFacturas)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Creando entidad en: {url}", "EntidadService", "CreateEntidadAsync");
@@ -179,6 +183,8 @@ namespace Advance_Control.Services.Entidades
             string? colonia = null,
             string? apoderado = null,
             string? regimenFiscal = null,
+            bool? esPredeterminada = null,
+            string? serieFacturas = null,
             CancellationToken cancellationToken = default)
         {
             try
@@ -200,6 +206,8 @@ namespace Advance_Control.Services.Entidades
                     .Add("colonia", colonia)
                     .Add("apoderado", apoderado)
                     .Add("regimenFiscal", regimenFiscal)
+                    .Add("esPredeterminada", esPredeterminada)
+                    .Add("serieFacturas", serieFacturas)
                     .Build(url);
 
                 await _logger.LogInformationAsync($"Actualizando entidad en: {url}", "EntidadService", "UpdateEntidadAsync");
@@ -289,7 +297,8 @@ namespace Advance_Control.Services.Entidades
                 var query = new EntidadQueryDto { Estatus = true };
                 var entidades = await GetEntidadesAsync(query, cancellationToken);
 
-                var entidadActiva = entidades?.FirstOrDefault();
+                // La API regresa la predeterminada primero; se busca explícitamente por si acaso.
+                var entidadActiva = entidades?.FirstOrDefault(e => e.EsPredeterminada) ?? entidades?.FirstOrDefault();
 
                 if (entidadActiva != null)
                 {
@@ -307,6 +316,126 @@ namespace Advance_Control.Services.Entidades
                 await _logger.LogErrorAsync("Error al obtener entidad activa", ex, "EntidadService", "GetActiveEntidadAsync");
                 return null;
             }
+        }
+
+        public async Task<EntidadDto?> GetEntidadPorRfcAsync(string? rfc, CancellationToken cancellationToken = default)
+        {
+            if (string.IsNullOrWhiteSpace(rfc)) return null;
+            var limpio = rfc.Trim();
+            var entidades = await GetEntidadesAsync(new EntidadQueryDto { RFC = limpio, Estatus = true }, cancellationToken);
+            return entidades?.FirstOrDefault(e => string.Equals(e.RFC?.Trim(), limpio, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public async Task<List<EntidadCuentaBancariaDto>> GetCuentasBancariasAsync(int? idEntidad = null, CancellationToken cancellationToken = default)
+        {
+            var url = new ApiQueryBuilder()
+                .Add("idEntidad", idEntidad)
+                .Build(_endpoints.GetEndpoint("api", "entidad", "cuentas"));
+            try
+            {
+                var lista = await _http.GetFromJsonAsync<List<EntidadCuentaBancariaDto>>(url, cancellationToken).ConfigureAwait(false);
+                return lista ?? new List<EntidadCuentaBancariaDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar cuentas bancarias de entidades", ex, "EntidadService", "GetCuentasBancariasAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar las cuentas bancarias", ex);
+            }
+        }
+
+        public async Task<ApiResponse> CrearCuentaBancariaAsync(int idEntidad, string numeroCuenta, string? clabe, string? banco, CancellationToken cancellationToken = default)
+        {
+            var url = $"{_endpoints.GetEndpoint("api", "entidad")}/{idEntidad}/cuentas";
+            try
+            {
+                using var response = await _http.PostAsJsonAsync(url, new { numeroCuenta, clabe, banco }, cancellationToken).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = true, Message = "Cuenta registrada" };
+                return new ApiResponse { Success = false, Message = await LeerMensajeErrorAsync(response, "No se pudo registrar la cuenta.", cancellationToken) };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al registrar cuenta bancaria", ex, "EntidadService", "CrearCuentaBancariaAsync");
+                return new ApiResponse { Success = false, Message = "Error de comunicación con el servidor." };
+            }
+        }
+
+        public async Task<ApiResponse> EliminarCuentaBancariaAsync(int idCuenta, CancellationToken cancellationToken = default)
+        {
+            var url = $"{_endpoints.GetEndpoint("api", "entidad", "cuentas")}/{idCuenta}";
+            try
+            {
+                using var response = await _http.DeleteAsync(url, cancellationToken).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = true, Message = "Cuenta dada de baja" };
+                return new ApiResponse { Success = false, Message = await LeerMensajeErrorAsync(response, "No se pudo dar de baja la cuenta.", cancellationToken) };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al dar de baja cuenta bancaria", ex, "EntidadService", "EliminarCuentaBancariaAsync");
+                return new ApiResponse { Success = false, Message = "Error de comunicación con el servidor." };
+            }
+        }
+
+        public async Task<EntidadFacturacionClienteDto?> GetEntidadFacturacionClienteAsync(int? idCliente = null, int? idOperacion = null, int? idContrato = null, string? rfc = null, CancellationToken cancellationToken = default)
+        {
+            var url = new ApiQueryBuilder()
+                .Add("idCliente", idCliente)
+                .Add("idOperacion", idOperacion)
+                .Add("idContrato", idContrato)
+                .Add("rfc", rfc)
+                .Build(_endpoints.GetEndpoint("api", "entidad", "facturacion-cliente"));
+            try
+            {
+                return await _http.GetFromJsonAsync<EntidadFacturacionClienteDto>(url, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or System.Text.Json.JsonException)
+            {
+                // No es crítico: el timbrado propone la predeterminada.
+                await _logger.LogWarningAsync($"No se pudo consultar la entidad de facturación del cliente: {ex.Message}", "EntidadService", "GetEntidadFacturacionClienteAsync");
+                return null;
+            }
+        }
+
+        public async Task<List<EntidadFacturacionClienteDto>> GetEntidadesFacturacionClientesAsync(CancellationToken cancellationToken = default)
+        {
+            var url = _endpoints.GetEndpoint("api", "entidad", "facturacion-clientes");
+            try
+            {
+                var lista = await _http.GetFromJsonAsync<List<EntidadFacturacionClienteDto>>(url, cancellationToken).ConfigureAwait(false);
+                return lista ?? new List<EntidadFacturacionClienteDto>();
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al consultar la entidad de facturación de los clientes", ex, "EntidadService", "GetEntidadesFacturacionClientesAsync");
+                throw new InvalidOperationException("Error de comunicación con el servidor al consultar la entidad de facturación de los clientes", ex);
+            }
+        }
+
+        public async Task<EntidadDto?> GetEntidadParaClienteAsync(int? idCliente = null, int? idOperacion = null, CancellationToken cancellationToken = default)
+        {
+            var sugerida = await GetEntidadFacturacionClienteAsync(idCliente, idOperacion, null, null, cancellationToken);
+            if (sugerida?.IdEntidad is int idEntidad)
+            {
+                var entidades = await GetEntidadesAsync(new EntidadQueryDto { Estatus = true }, cancellationToken);
+                var entidad = entidades?.FirstOrDefault(e => e.IdEntidad == idEntidad);
+                if (entidad != null)
+                    return entidad;
+            }
+            return await GetActiveEntidadAsync(cancellationToken);
+        }
+
+        private static async Task<string> LeerMensajeErrorAsync(HttpResponseMessage response, string porDefecto, CancellationToken cancellationToken)
+        {
+            var contenido = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(contenido);
+                if (doc.RootElement.TryGetProperty("message", out var msg) && msg.GetString() is { Length: > 0 } texto)
+                    return texto;
+            }
+            catch (System.Text.Json.JsonException) { }
+            return porDefecto;
         }
     }
 }

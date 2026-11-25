@@ -61,6 +61,68 @@ namespace Advance_Control.Models
         [JsonPropertyName("regimenFiscal")]
         public string? RegimenFiscal { get; set; }
 
+        /// <summary>Emisor por omisión (siempre hay exactamente una).</summary>
+        [JsonPropertyName("esPredeterminada")]
+        public bool EsPredeterminada { get; set; }
+
+        /// <summary>Serie de los CFDI que timbra la app para esta entidad.</summary>
+        [JsonPropertyName("serieFacturas")]
+        public string? SerieFacturas { get; set; }
+
+        [JsonPropertyName("ultimoFolio")]
+        public long UltimoFolio { get; set; }
+
+        /// <summary>Usuario de timbrado Bilkon (la contraseña nunca llega al cliente).</summary>
+        [JsonPropertyName("felUsuario")]
+        public string? FelUsuario { get; set; }
+
+        [JsonPropertyName("felConfigurada")]
+        public bool FelConfigurada { get; set; }
+
+        /// <summary>Texto para ComboBox de entidad: "ADVANCE ELEVADORES (AEC210405PS8)".</summary>
+        [JsonIgnore]
+        public string Descripcion => $"{(string.IsNullOrWhiteSpace(RazonSocial) ? NombreComercial : RazonSocial)} ({RFC})";
+
+        [JsonIgnore]
+        public string SerieFolioTexto => $"Serie {SerieFacturas ?? "A"} · último folio {UltimoFolio}";
+
+        [JsonIgnore]
+        public string FelIndicadorTexto => FelConfigurada
+            ? $"Bilkon: {FelUsuario}"
+            : (EsPredeterminada ? "Bilkon: cuenta del servidor" : "Sin cuenta Bilkon");
+
+        [JsonIgnore]
+        public bool FelLista => FelConfigurada || EsPredeterminada;
+
+        private int _cuentasBancarias;
+        /// <summary>Cuentas bancarias registradas (lo calcula EntidadesViewModel).</summary>
+        [JsonIgnore]
+        public int CuentasBancarias
+        {
+            get => _cuentasBancarias;
+            set
+            {
+                if (_cuentasBancarias != value)
+                {
+                    _cuentasBancarias = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(CuentasIndicadorTexto));
+                    OnPropertyChanged(nameof(TieneCuentas));
+                }
+            }
+        }
+
+        [JsonIgnore]
+        public bool TieneCuentas => CuentasBancarias > 0;
+
+        [JsonIgnore]
+        public string CuentasIndicadorTexto => CuentasBancarias switch
+        {
+            0 => "Sin cuentas bancarias",
+            1 => "1 cuenta bancaria",
+            _ => $"{CuentasBancarias} cuentas bancarias"
+        };
+
         private bool _expand = false;
 
         /// <summary>

@@ -43,6 +43,9 @@ namespace Advance_Control.Views.Windows
         /// <summary>True si el emisor está configurado y su CSD está vigente -- se puede timbrar.</summary>
         private bool _emisorListo;
 
+        /// <summary>ComboBox "Emitir como": razón social que timbra.</summary>
+        private readonly SelectorEntidadEmisora _selectorEmisor;
+
         /// <summary>
         /// Panel de depuración (muestra las respuestas crudas del API dentro de la ventana).
         /// Flag hardcodeada a propósito -- cámbiala a false para apagarlo sin quitar el código.
@@ -75,6 +78,8 @@ namespace Advance_Control.Views.Windows
 
             InitializeComponent();
             AjustarTamano(900, 700);
+            _selectorEmisor = new SelectorEntidadEmisora(CmbEntidadEmisora);
+            _selectorEmisor.EntidadCambiada += CargarEmisorAsync;
             PanelDepuracion.Visibility = MostrarPanelDepuracion ? Visibility.Visible : Visibility.Collapsed;
 
             Title = "Facturar";
@@ -91,6 +96,7 @@ namespace Advance_Control.Views.Windows
         private async void FacturarDirectoWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
             Activated -= FacturarDirectoWindow_Activated;
+            await _selectorEmisor.InicializarAsync(idOperacion: Operacion.IdOperacion, rfc: Operacion.RfcCliente);
             await CargarEmisorAsync();
             await CargarCatalogosCfdiAsync();
             await CargarReceptorAsync();
@@ -130,41 +136,27 @@ namespace Advance_Control.Views.Windows
             EmisorProgressRing.IsActive = true;
             try
             {
-                var configuracion = await _configuracionEmisorService.ObtenerConfiguracionAsync();
-                RegistrarDebug("ConfiguracionEmisorService.ObtenerConfiguracionAsync", configuracion);
+                var evaluacion = await _selectorEmisor.EvaluarAsync();
+                RegistrarDebug("SelectorEntidadEmisora.EvaluarAsync", evaluacion);
+                var configuracion = evaluacion.Configuracion;
 
                 if (configuracion == null)
                 {
                     EmisorDatosGrid.Visibility = Visibility.Collapsed;
-                    EmisorInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Error;
-                    EmisorInfoBar.Message = "No hay datos del emisor configurados. Configura el emisor y el CSD antes de timbrar.";
-                    EmisorInfoBar.IsOpen = true;
-                    _emisorListo = false;
-                    return;
-                }
-
-                TxtEmisorRfc.Text = configuracion.Rfc;
-                TxtEmisorRazonSocial.Text = configuracion.RazonSocial;
-                TxtEmisorRegimenFiscal.Text = configuracion.RegimenFiscal;
-                TxtEmisorLugarExpedicion.Text = configuracion.LugarExpedicion;
-                EmisorDatosGrid.Visibility = Visibility.Visible;
-
-                var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync();
-                RegistrarDebug("ConfiguracionEmisorService.ObtenerEstadoCsdAsync", estadoCsd);
-                if (!estadoCsd.Vigente)
-                {
-                    EmisorInfoBar.Severity = Microsoft.UI.Xaml.Controls.InfoBarSeverity.Warning;
-                    EmisorInfoBar.Message = estadoCsd.Cargado
-                        ? "El CSD cargado ya no está vigente. No podrás timbrar hasta actualizarlo."
-                        : "No hay un CSD cargado. No podrás timbrar hasta configurarlo.";
-                    EmisorInfoBar.IsOpen = true;
-                    _emisorListo = false;
                 }
                 else
                 {
-                    EmisorInfoBar.IsOpen = false;
-                    _emisorListo = true;
+                    TxtEmisorRfc.Text = configuracion.Rfc;
+                    TxtEmisorRazonSocial.Text = configuracion.RazonSocial;
+                    TxtEmisorRegimenFiscal.Text = configuracion.RegimenFiscal;
+                    TxtEmisorLugarExpedicion.Text = configuracion.LugarExpedicion;
+                    EmisorDatosGrid.Visibility = Visibility.Visible;
                 }
+
+                EmisorInfoBar.Severity = evaluacion.Severidad;
+                EmisorInfoBar.Message = evaluacion.Aviso ?? string.Empty;
+                EmisorInfoBar.IsOpen = evaluacion.Aviso != null;
+                _emisorListo = evaluacion.Listo;
             }
             finally
             {
@@ -627,6 +619,7 @@ namespace Advance_Control.Views.Windows
 
                 var request = new CfdiTimbrarRequestDto
                 {
+                    IdEntidad = _selectorEmisor.IdEntidadSeleccionada,
                     Serie = string.IsNullOrWhiteSpace(TxtSerie.Text) ? null : TxtSerie.Text.Trim(),
                     Folio = string.IsNullOrWhiteSpace(TxtFolio.Text) ? null : TxtFolio.Text.Trim(),
                     ReceptorRfc = TxtReceptorRfc.Text.Trim(),

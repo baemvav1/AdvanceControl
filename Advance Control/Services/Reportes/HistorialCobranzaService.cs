@@ -72,6 +72,7 @@ namespace Advance_Control.Services.Reportes
             DateTimeOffset fechaFin,
             string? dirigidoA,
             HistorialCobranzaEstadosDto estados,
+            EntidadFiltroItem? entidad = null,
             IProgress<string>? progreso = null,
             CancellationToken cancellationToken = default)
         {
@@ -98,13 +99,20 @@ namespace Advance_Control.Services.Reportes
 
             var resultado = new HistorialCobranzaResultadoDto { CarpetaHistorial = carpetaRaiz };
 
+            if (entidad is { EsTodas: true })
+                entidad = null;
+
             string? nombreEmpresa = null;
             string? apoderadoNombre = null;
+            int? idEntidadCliente = null;
             try
             {
-                var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
+                // Encabezados con la razón social elegida; si no se eligió, la del cliente.
+                var entidadActiva = entidad?.Entidad
+                    ?? await _entidadService.GetEntidadParaClienteAsync(idCliente: idCliente, cancellationToken: cancellationToken);
                 nombreEmpresa = entidadActiva?.NombreComercial;
                 apoderadoNombre = entidadActiva?.Apoderado;
+                idEntidadCliente = (await _entidadService.GetEntidadFacturacionClienteAsync(idCliente: idCliente, cancellationToken: cancellationToken))?.IdEntidad;
             }
             catch (Exception ex)
             {
@@ -143,13 +151,21 @@ namespace Advance_Control.Services.Reportes
 
             // fn_operaciones_facturadas no excluye facturas canceladas: sin esto, una operación con su
             // factura cancelada caería en "Pendientes" (abonado 0 < total).
-            var idsCanceladas = (await _facturaService.ObtenerFacturasAsync(cancellationToken))
+            var todasLasFacturas = await _facturaService.ObtenerFacturasAsync(cancellationToken);
+            var idsCanceladas = todasLasFacturas
                 .Where(f => f.Cancelada)
                 .Select(f => f.IdFactura)
                 .ToHashSet();
+            var emisorPorFactura = todasLasFacturas.ToDictionary(f => f.IdFactura, f => f.EmisorRfc);
 
-            var facturasPorOperacion = (operacionesFacturadas ?? new List<OperacionFacturadaDto>())
+            var facturasVigentes = (operacionesFacturadas ?? new List<OperacionFacturadaDto>())
                 .Where(f => !idsCanceladas.Contains(f.IdFactura))
+                .ToList();
+            var operacionesConFactura = facturasVigentes.Select(f => f.IdOperacion).ToHashSet();
+
+            // Con entidad elegida: solo las facturas que emitió esa razón social.
+            var facturasPorOperacion = facturasVigentes
+                .Where(f => entidad == null || entidad.CoincideRfc(emisorPorFactura.GetValueOrDefault(f.IdFactura)))
                 .GroupBy(f => f.IdOperacion)
                 .ToDictionary(g => g.Key, g => g.ToList());
 
@@ -170,6 +186,21 @@ namespace Advance_Control.Services.Reportes
                     progreso?.Report($"Procesando operación #{idOperacion}...");
 
                     facturasPorOperacion.TryGetValue(idOperacion, out var facturas);
+
+                    // Separación por entidad: una operación facturada es de quien emitió su factura;
+                    // una sin factura, de la entidad de facturación del cliente.
+                    if (entidad != null)
+                    {
+                        var esDeEntidad = operacionesConFactura.Contains(idOperacion)
+                            ? facturas is { Count: > 0 }
+                            : idEntidadCliente == entidad.IdEntidad;
+                        if (!esDeEntidad)
+                        {
+                            resultado.OperacionesExcluidas++;
+                            continue;
+                        }
+                    }
+
                     var categoria = Clasificar(operacion, facturas);
                     if (categoria is null || !EstaMarcada(categoria.Value, estados))
                     {
@@ -273,7 +304,7 @@ namespace Advance_Control.Services.Reportes
             progreso?.Report("Generando reporte de cobranza...");
             try
             {
-                var items = await _reporteService.ObtenerReporteCobranzaAsync(rfc, null, null, fechaInicio, fechaFin, cancellationToken);
+                var items = await _reporteService.ObtenerReporteCobranzaAsync(rfc, null, null, fechaInicio, fechaFin, entidad?.Rfc, cancellationToken);
                 if (items != null && items.Count > 0)
                 {
                     var rutaReporteCobranza = await _exportService.GenerarReporteCobranzaPdfAsync(items, rfc, null, fechaInicio, fechaFin, null);

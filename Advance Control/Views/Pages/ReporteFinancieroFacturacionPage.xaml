@@ -75,10 +75,17 @@
                         IsEnabled="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolNegationConverter}}" />
                 </Grid>
 
-                <TextBox
-                    Grid.Row="1"
-                    PlaceholderText="Buscar por RFC o nombre..."
-                    Text="{x:Bind ViewModel.BusquedaCliente, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                <StackPanel Grid.Row="1" Spacing="8">
+                    <!--  Razón social cuya cobranza se ve (saldos y vencidos se calculan por entidad)  -->
+                    <ComboBox
+                        x:Name="EntidadFiltroComboBox"
+                        HorizontalAlignment="Stretch"
+                        PlaceholderText="Entidad"
+                        ToolTipService.ToolTip="Razón social (entidad) cuya cobranza se muestra" />
+                    <TextBox
+                        PlaceholderText="Buscar por RFC o nombre..."
+                        Text="{x:Bind ViewModel.BusquedaCliente, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </StackPanel>
 
                 <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="12">
                     <CheckBox Content="Solo con saldo" IsChecked="{x:Bind ViewModel.SoloConSaldo, Mode=TwoWay}" />

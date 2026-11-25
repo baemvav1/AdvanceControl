@@ -20,6 +20,7 @@ namespace Advance_Control.Services.Reportes
             DateTimeOffset fechaFin,
             string? dirigidoA,
             HistorialCobranzaEstadosDto estados,
+            EntidadFiltroItem? entidad = null,
             IProgress<string>? progreso = null,
             CancellationToken cancellationToken = default);
     }

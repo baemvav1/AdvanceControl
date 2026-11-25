@@ -38,6 +38,25 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
             await ViewModel.CargarReporteAsync();
+            ConectarFiltroEntidad();
+        }
+
+        private bool _filtroEntidadConectado;
+
+        /// <summary>Llena el ComboBox de entidad y recarga la cobranza (la calcula la API por entidad) al cambiarlo.</summary>
+        private void ConectarFiltroEntidad()
+        {
+            if (_filtroEntidadConectado) return;
+            _filtroEntidadConectado = true;
+            EntidadFiltroComboBox.ItemsSource = ViewModel.EntidadesFiltro;
+            EntidadFiltroComboBox.SelectedItem = ViewModel.EntidadFiltro;
+            EntidadFiltroComboBox.Visibility = ViewModel.EntidadesFiltro.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            EntidadFiltroComboBox.SelectionChanged += async (_, _) =>
+            {
+                ViewModel.EntidadFiltro = EntidadFiltroComboBox.SelectedItem as EntidadFiltroItem;
+                await ViewModel.CargarReporteAsync();
+                ClientesListView.SelectedItem = ViewModel.ClienteSeleccionado;
+            };
         }
 
         private async void BtnActualizar_Click(object sender, RoutedEventArgs e)

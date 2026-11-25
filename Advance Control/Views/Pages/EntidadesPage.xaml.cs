@@ -168,6 +168,20 @@ namespace Advance_Control.Views.Pages
                 Margin = new Thickness(0, 0, 0, 8)
             };
 
+            var serieTextBox = new TextBox
+            {
+                PlaceholderText = "Serie de facturas, ej. B (por omisión A)",
+                MaxLength = 10,
+                CharacterCasing = CharacterCasing.Upper,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var predeterminadaCheckBox = new CheckBox
+            {
+                Content = "Entidad predeterminada (emisor por omisión)",
+                IsChecked = ViewModel.Entidades.Count == 0
+            };
+
             var dialogContent = new ScrollViewer
             {
                 Content = new StackPanel
@@ -183,6 +197,9 @@ namespace Advance_Control.Views.Pages
                         rfcTextBox,
                         new TextBlock { Text = "Régimen Fiscal:" },
                         regimenFiscalTextBox,
+                        new TextBlock { Text = "Serie de facturas:" },
+                        serieTextBox,
+                        predeterminadaCheckBox,
                         new TextBlock { Text = "Calle:" },
                         calleTextBox,
                         new TextBlock { Text = "Número Exterior:" },
@@ -248,16 +265,18 @@ namespace Advance_Control.Views.Pages
                         numInt: string.IsNullOrWhiteSpace(numIntTextBox.Text) ? null : numIntTextBox.Text.Trim(),
                         colonia: string.IsNullOrWhiteSpace(coloniaTextBox.Text) ? null : coloniaTextBox.Text.Trim(),
                         apoderado: string.IsNullOrWhiteSpace(apoderadoTextBox.Text) ? null : apoderadoTextBox.Text.Trim(),
-                        regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim()
+                        regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim(),
+                        esPredeterminada: predeterminadaCheckBox.IsChecked == true ? true : null,
+                        serieFacturas: string.IsNullOrWhiteSpace(serieTextBox.Text) ? null : serieTextBox.Text.Trim()
                     );
 
                     if (success)
                     {
-                        await _notificacionService.MostrarAsync("Entidad creada", $"Entidad \"{nombreComercialTextBox.Text.Trim()}\" creada correctamente");
+                        await _notificacionService.MostrarAsync("Entidad creada", $"Entidad \"{nombreComercialTextBox.Text.Trim()}\" creada correctamente. Registra sus cuentas bancarias, su CSD y su cuenta de timbrado Bilkon antes de facturar con ella.");
                     }
                     else
                     {
-                        await _notificacionService.MostrarAsync("Error", "No se pudo crear la entidad. Verifique los datos e intente nuevamente.");
+                        await _notificacionService.MostrarAsync("Error", ViewModel.UltimoError ?? "No se pudo crear la entidad. Verifique los datos e intente nuevamente.");
                     }
                 }
                 catch (Exception ex)
@@ -311,6 +330,26 @@ namespace Advance_Control.Views.Pages
                 Text = entidad.RegimenFiscal ?? "",
                 PlaceholderText = "Régimen fiscal SAT, ej. 601 (opcional)",
                 Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            var serieTextBox = new TextBox
+            {
+                Text = entidad.SerieFacturas ?? "A",
+                PlaceholderText = "Serie de facturas, ej. B",
+                MaxLength = 10,
+                CharacterCasing = CharacterCasing.Upper,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+
+            // Siempre debe haber una predeterminada: a la actual no se le puede quitar la marca,
+            // se cambia marcando otra.
+            var predeterminadaCheckBox = new CheckBox
+            {
+                Content = entidad.EsPredeterminada
+                    ? "Entidad predeterminada (para cambiarla, marca otra entidad)"
+                    : "Hacer predeterminada (emisor por omisión)",
+                IsChecked = entidad.EsPredeterminada,
+                IsEnabled = !entidad.EsPredeterminada
             };
 
             var calleTextBox = new TextBox
@@ -392,6 +431,9 @@ namespace Advance_Control.Views.Pages
                         rfcTextBox,
                         new TextBlock { Text = "Régimen Fiscal:" },
                         regimenFiscalTextBox,
+                        new TextBlock { Text = "Serie de facturas:" },
+                        serieTextBox,
+                        predeterminadaCheckBox,
                         new TextBlock { Text = "Calle:" },
                         calleTextBox,
                         new TextBlock { Text = "Número Exterior:" },
@@ -458,7 +500,9 @@ namespace Advance_Control.Views.Pages
                     numInt: string.IsNullOrWhiteSpace(numIntTextBox.Text) ? null : numIntTextBox.Text.Trim(),
                     colonia: string.IsNullOrWhiteSpace(coloniaTextBox.Text) ? null : coloniaTextBox.Text.Trim(),
                     apoderado: string.IsNullOrWhiteSpace(apoderadoTextBox.Text) ? null : apoderadoTextBox.Text.Trim(),
-                    regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim()
+                    regimenFiscal: string.IsNullOrWhiteSpace(regimenFiscalTextBox.Text) ? null : regimenFiscalTextBox.Text.Trim(),
+                    esPredeterminada: !entidad.EsPredeterminada && predeterminadaCheckBox.IsChecked == true ? true : null,
+                    serieFacturas: string.IsNullOrWhiteSpace(serieTextBox.Text) ? null : serieTextBox.Text.Trim()
                 );
 
                 if (success)
@@ -467,7 +511,7 @@ namespace Advance_Control.Views.Pages
                 }
                 else
                 {
-                    await _notificacionService.MostrarAsync("Error", "No se pudo actualizar la entidad. Verifique los datos e intente nuevamente.");
+                    await _notificacionService.MostrarAsync("Error", ViewModel.UltimoError ?? "No se pudo actualizar la entidad. Verifique los datos e intente nuevamente.");
                 }
             }
             catch (Exception ex)
@@ -479,6 +523,9 @@ namespace Advance_Control.Views.Pages
 
         private async void CertificadoButton_Click(object sender, RoutedEventArgs e)
         {
+            if (sender is not FrameworkElement elementoCsd || elementoCsd.Tag is not Models.EntidadDto entidadCsd)
+                return;
+
             StorageFile? archivoCer = null;
             StorageFile? archivoKey = null;
 
@@ -486,7 +533,7 @@ namespace Advance_Control.Views.Pages
 
             async Task ActualizarEstadoAsync()
             {
-                var estado = await _configuracionEmisorService.ObtenerEstadoCsdAsync();
+                var estado = await _configuracionEmisorService.ObtenerEstadoCsdAsync(entidadCsd.IdEntidad);
                 if (!estado.Cargado)
                 {
                     estadoTextBlock.Text = "⚠️ No hay CSD cargado.";
@@ -550,7 +597,7 @@ namespace Advance_Control.Views.Pages
 
             var dialog = new ContentDialog
             {
-                Title = "Certificado de Sello Digital (CSD)",
+                Title = $"CSD de {entidadCsd.Descripcion}",
                 Content = dialogContent,
                 PrimaryButtonText = "Cargar",
                 CloseButtonText = "Cerrar",
@@ -581,7 +628,7 @@ namespace Advance_Control.Views.Pages
                 var certBytes = await ReadAllBytesAsync(archivoCer);
                 var keyBytes = await ReadAllBytesAsync(archivoKey);
 
-                var resultado = await _configuracionEmisorService.GuardarCsdAsync(certBytes, keyBytes, passwordBox.Password);
+                var resultado = await _configuracionEmisorService.GuardarCsdAsync(entidadCsd.IdEntidad, certBytes, keyBytes, passwordBox.Password);
 
                 if (resultado.Success)
                 {
@@ -607,7 +654,10 @@ namespace Advance_Control.Views.Pages
         /// </summary>
         private async void PfxButton_Click(object sender, RoutedEventArgs e)
         {
-            var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync();
+            if (sender is not FrameworkElement elementoPfx || elementoPfx.Tag is not Models.EntidadDto entidadPfx)
+                return;
+
+            var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync(entidadPfx.IdEntidad);
             if (!estadoCsd.Cargado)
             {
                 await _notificacionService.MostrarAsync(
@@ -623,7 +673,7 @@ namespace Advance_Control.Views.Pages
 
             async Task ActualizarEstadoAsync()
             {
-                var estado = await _configuracionEmisorService.ObtenerEstadoFielAsync();
+                var estado = await _configuracionEmisorService.ObtenerEstadoFielAsync(entidadPfx.IdEntidad);
                 if (!estado.Cargado)
                 {
                     estadoTextBlock.Text = "⚠️ No hay PFX generado todavía.";
@@ -688,7 +738,7 @@ namespace Advance_Control.Views.Pages
 
             var dialog = new ContentDialog
             {
-                Title = "Generar y guardar PFX (FIEL)",
+                Title = $"PFX (FIEL) de {entidadPfx.Descripcion}",
                 Content = dialogContent,
                 PrimaryButtonText = "Generar y guardar",
                 CloseButtonText = "Cerrar",
@@ -719,7 +769,7 @@ namespace Advance_Control.Views.Pages
                 var certBytes = await ReadAllBytesAsync(archivoCer);
                 var keyBytes = await ReadAllBytesAsync(archivoKey);
 
-                var resultado = await _configuracionEmisorService.GuardarFielAsync(certBytes, keyBytes, passwordBox.Password);
+                var resultado = await _configuracionEmisorService.GuardarFielAsync(entidadPfx.IdEntidad, certBytes, keyBytes, passwordBox.Password);
 
                 if (resultado.Success)
                 {
@@ -735,6 +785,208 @@ namespace Advance_Control.Views.Pages
             {
                 await _loggingService.LogErrorAsync("Error al generar el PFX desde la UI", ex, "EntidadesPage", "PfxButton_Click");
                 await _notificacionService.MostrarAsync("Error", "Ocurrió un error al generar el PFX. Por favor, intente nuevamente.");
+            }
+        }
+
+        /// <summary>
+        /// Cuentas bancarias de la entidad. Cada estado de cuenta que se carga queda ligado a la
+        /// entidad dueña de su número de cuenta/CLABE; si la cuenta no está registrada, la carga se
+        /// rechaza.
+        /// </summary>
+        private async void CuentasButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.EntidadDto entidad)
+                return;
+
+            var listaPanel = new StackPanel { Spacing = 6 };
+            var mensajeTextBlock = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.IndianRed) };
+
+            async Task RecargarAsync()
+            {
+                listaPanel.Children.Clear();
+                List<EntidadCuentaBancariaDto> cuentas;
+                try
+                {
+                    cuentas = await ViewModel.ObtenerCuentasAsync(entidad.IdEntidad);
+                }
+                catch (Exception ex)
+                {
+                    mensajeTextBlock.Text = $"No se pudieron cargar las cuentas: {ex.Message}";
+                    return;
+                }
+
+                if (cuentas.Count == 0)
+                {
+                    listaPanel.Children.Add(new TextBlock
+                    {
+                        Text = "Sin cuentas registradas. Los estados de cuenta de esta entidad no se podrán cargar hasta registrar su cuenta.",
+                        TextWrapping = TextWrapping.Wrap,
+                        Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray)
+                    });
+                }
+
+                foreach (var cuenta in cuentas)
+                {
+                    var fila = new Grid { ColumnSpacing = 8 };
+                    fila.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    fila.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+                    var detalle = new StackPanel();
+                    detalle.Children.Add(new TextBlock { Text = $"Cuenta {cuenta.NumeroCuenta}", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold });
+                    var extra = string.Join(" · ", new[]
+                    {
+                        string.IsNullOrWhiteSpace(cuenta.Clabe) ? null : $"CLABE {cuenta.Clabe}",
+                        cuenta.Banco,
+                        $"{cuenta.EstadosCuenta} estado(s) de cuenta"
+                    }.Where(t => !string.IsNullOrWhiteSpace(t)));
+                    detalle.Children.Add(new TextBlock { Text = extra, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray) });
+                    fila.Children.Add(detalle);
+
+                    var quitar = new Button { Content = new SymbolIcon(Symbol.Delete), Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent), BorderThickness = new Thickness(0), VerticalAlignment = VerticalAlignment.Center };
+                    ToolTipService.SetToolTip(quitar, "Dar de baja la cuenta");
+                    var idCuenta = cuenta.IdCuenta;
+                    quitar.Click += async (_, _) =>
+                    {
+                        var r = await ViewModel.EliminarCuentaAsync(idCuenta);
+                        mensajeTextBlock.Text = r.Success ? string.Empty : (r.Message ?? "No se pudo dar de baja la cuenta.");
+                        await RecargarAsync();
+                    };
+                    Grid.SetColumn(quitar, 1);
+                    fila.Children.Add(quitar);
+                    listaPanel.Children.Add(fila);
+                }
+            }
+
+            var numeroTextBox = new TextBox { PlaceholderText = "Número de cuenta (requerido)", MaxLength = 30 };
+            var clabeTextBox = new TextBox { PlaceholderText = "CLABE de 18 dígitos (opcional)", MaxLength = 18 };
+            var bancoTextBox = new TextBox { PlaceholderText = "Banco (opcional)" };
+            var agregarButton = new Button { Content = "Agregar cuenta" };
+            agregarButton.Click += async (_, _) =>
+            {
+                if (string.IsNullOrWhiteSpace(numeroTextBox.Text))
+                {
+                    mensajeTextBlock.Text = "Escribe el número de cuenta.";
+                    return;
+                }
+                agregarButton.IsEnabled = false;
+                try
+                {
+                    var r = await ViewModel.CrearCuentaAsync(entidad.IdEntidad, numeroTextBox.Text.Trim(),
+                        string.IsNullOrWhiteSpace(clabeTextBox.Text) ? null : clabeTextBox.Text.Trim(),
+                        string.IsNullOrWhiteSpace(bancoTextBox.Text) ? null : bancoTextBox.Text.Trim());
+                    if (r.Success)
+                    {
+                        numeroTextBox.Text = clabeTextBox.Text = bancoTextBox.Text = string.Empty;
+                        mensajeTextBlock.Text = string.Empty;
+                    }
+                    else
+                    {
+                        mensajeTextBlock.Text = r.Message ?? "No se pudo registrar la cuenta.";
+                    }
+                    await RecargarAsync();
+                }
+                finally
+                {
+                    agregarButton.IsEnabled = true;
+                }
+            };
+
+            var contenido = new ScrollViewer
+            {
+                MaxHeight = 500,
+                Content = new StackPanel
+                {
+                    Spacing = 8,
+                    MinWidth = 420,
+                    Children =
+                    {
+                        listaPanel,
+                        new TextBlock { Text = "Nueva cuenta:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 12, 0, 0) },
+                        numeroTextBox,
+                        clabeTextBox,
+                        bancoTextBox,
+                        agregarButton,
+                        mensajeTextBlock
+                    }
+                }
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Cuentas bancarias de {entidad.Descripcion}",
+                Content = contenido,
+                CloseButtonText = "Cerrar",
+                XamlRoot = this.XamlRoot
+            };
+
+            await RecargarAsync();
+            await dialog.ShowAsync();
+            await ViewModel.LoadEntidadesAsync();
+        }
+
+        /// <summary>
+        /// Cuenta de timbrado Bilkon de la entidad (cada RFC timbra con la suya). La contraseña se
+        /// guarda cifrada en el servidor y nunca se vuelve a mostrar.
+        /// </summary>
+        private async void BilkonButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not FrameworkElement element || element.Tag is not Models.EntidadDto entidad)
+                return;
+
+            var usuarioTextBox = new TextBox { Text = entidad.FelUsuario ?? string.Empty, PlaceholderText = "Usuario de timbrado (normalmente el RFC)" };
+            var passwordBox = new PasswordBox { PlaceholderText = entidad.FelConfigurada ? "Contraseña (escríbela de nuevo para cambiarla)" : "Contraseña de timbrado" };
+
+            var nota = entidad.EsPredeterminada
+                ? "Si lo dejas vacío, esta entidad sigue timbrando con la cuenta configurada en el servidor."
+                : "Sin esta cuenta no se puede timbrar ni cancelar con esta entidad. Es el usuario de la API de timbrado (WSTFD), no el del portal FEL en Línea.";
+
+            var contenido = new StackPanel
+            {
+                Spacing = 8,
+                MinWidth = 380,
+                Children =
+                {
+                    new TextBlock { Text = entidad.FelConfigurada ? $"✅ Cuenta guardada: {entidad.FelUsuario}" : "⚠️ Sin cuenta guardada.", TextWrapping = TextWrapping.Wrap },
+                    new TextBlock { Text = "Usuario:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 0) },
+                    usuarioTextBox,
+                    new TextBlock { Text = "Contraseña:", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Margin = new Thickness(0, 8, 0, 0) },
+                    passwordBox,
+                    new TextBlock { Text = nota, TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Gray) }
+                }
+            };
+
+            var dialog = new ContentDialog
+            {
+                Title = $"Cuenta de timbrado Bilkon de {entidad.Descripcion}",
+                Content = contenido,
+                PrimaryButtonText = "Guardar",
+                SecondaryButtonText = entidad.FelConfigurada ? "Borrar cuenta" : string.Empty,
+                CloseButtonText = "Cancelar",
+                DefaultButton = ContentDialogButton.Primary,
+                XamlRoot = this.XamlRoot
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result == ContentDialogResult.None)
+                return;
+
+            string? usuario = result == ContentDialogResult.Secondary ? null : usuarioTextBox.Text.Trim();
+            string? password = result == ContentDialogResult.Secondary ? null : passwordBox.Password;
+            if (result == ContentDialogResult.Primary && !string.IsNullOrWhiteSpace(usuario) && string.IsNullOrEmpty(password))
+            {
+                await _notificacionService.MostrarAsync("Validación", "Escribe la contraseña de timbrado.");
+                return;
+            }
+
+            var respuesta = await _configuracionEmisorService.GuardarCredencialesFelAsync(entidad.IdEntidad, usuario, password);
+            if (respuesta.Success)
+            {
+                await _notificacionService.MostrarAsync("Cuenta de timbrado", string.IsNullOrWhiteSpace(usuario) ? "Se borró la cuenta de timbrado de la entidad." : "Cuenta de timbrado guardada.");
+                await ViewModel.LoadEntidadesAsync();
+            }
+            else
+            {
+                await _notificacionService.MostrarAsync("Error", respuesta.Message ?? "No se pudo guardar la cuenta de timbrado.");
             }
         }
 

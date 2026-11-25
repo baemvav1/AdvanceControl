@@ -42,6 +42,9 @@ namespace Advance_Control.Views.Windows
         /// <summary>True si el emisor está configurado y su CSD está vigente -- se puede timbrar.</summary>
         private bool _emisorListo;
 
+        /// <summary>ComboBox "Emitir como": razón social que timbra.</summary>
+        private readonly SelectorEntidadEmisora _selectorEmisor;
+
         /// <summary>True una vez timbrada: la ventana queda de solo lectura para no timbrar dos veces.</summary>
         private bool _timbrada;
 
@@ -69,6 +72,8 @@ namespace Advance_Control.Views.Windows
 
             InitializeComponent();
             AjustarTamano(980, 820);
+            _selectorEmisor = new SelectorEntidadEmisora(CmbEntidadEmisora);
+            _selectorEmisor.EntidadCambiada += CargarEmisorAsync;
 
             Title = "Nueva factura";
 
@@ -84,6 +89,7 @@ namespace Advance_Control.Views.Windows
         private async void NuevaFacturaWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
             Activated -= NuevaFacturaWindow_Activated;
+            await _selectorEmisor.InicializarAsync();
             await CargarEmisorAsync();
             await CargarCatalogosAsync();
             await CargarClientesAsync();
@@ -104,33 +110,16 @@ namespace Advance_Control.Views.Windows
             EmisorProgressRing.IsActive = true;
             try
             {
-                var configuracion = await _configuracionEmisorService.ObtenerConfiguracionAsync();
-                if (configuracion == null)
-                {
-                    EmisorInfoBar.Severity = InfoBarSeverity.Error;
-                    EmisorInfoBar.Message = "No hay datos del emisor configurados. Configura el emisor y el CSD antes de timbrar.";
-                    EmisorInfoBar.IsOpen = true;
-                    _emisorListo = false;
-                    return;
-                }
+                var evaluacion = await _selectorEmisor.EvaluarAsync();
+                var configuracion = evaluacion.Configuracion;
+                TxtEmisorResumen.Text = configuracion == null
+                    ? string.Empty
+                    : $"{configuracion.RazonSocial} ({configuracion.Rfc}) — Régimen {configuracion.RegimenFiscal} — Lugar de expedición {configuracion.LugarExpedicion}";
 
-                TxtEmisorResumen.Text = $"{configuracion.RazonSocial} ({configuracion.Rfc}) — Régimen {configuracion.RegimenFiscal} — Lugar de expedición {configuracion.LugarExpedicion}";
-
-                var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync();
-                if (!estadoCsd.Vigente)
-                {
-                    EmisorInfoBar.Severity = InfoBarSeverity.Warning;
-                    EmisorInfoBar.Message = estadoCsd.Cargado
-                        ? "El CSD cargado ya no está vigente. No podrás timbrar hasta actualizarlo."
-                        : "No hay un CSD cargado. No podrás timbrar hasta configurarlo.";
-                    EmisorInfoBar.IsOpen = true;
-                    _emisorListo = false;
-                }
-                else
-                {
-                    EmisorInfoBar.IsOpen = false;
-                    _emisorListo = true;
-                }
+                EmisorInfoBar.Severity = evaluacion.Severidad;
+                EmisorInfoBar.Message = evaluacion.Aviso ?? string.Empty;
+                EmisorInfoBar.IsOpen = evaluacion.Aviso != null;
+                _emisorListo = evaluacion.Listo;
             }
             finally
             {
@@ -234,6 +223,9 @@ namespace Advance_Control.Views.Windows
         private void SeleccionarCliente(CustomerDto cliente)
         {
             _clienteSeleccionado = cliente;
+
+            // Propone la razón social con la que ya se le facturó a este cliente.
+            _ = _selectorEmisor.SugerirParaClienteAsync(idCliente: cliente.IdCliente);
 
             TxtReceptorRfc.Text = cliente.Rfc;
             TxtReceptorRazonSocial.Text = cliente.RazonSocial;
@@ -710,7 +702,7 @@ namespace Advance_Control.Views.Windows
             var confirmacion = new ContentDialog
             {
                 Title = "¿Timbrar factura?",
-                Content = $"Se emitirá un CFDI a {cliente.RazonSocial} ({cliente.Rfc}) por {TxtTotalGeneral.Text} con {_conceptoRows.Count} concepto(s).\n\n" +
+                Content = $"Emisor: {_selectorEmisor.Seleccionada?.Descripcion}\n\nSe emitirá un CFDI a {cliente.RazonSocial} ({cliente.Rfc}) por {TxtTotalGeneral.Text} con {_conceptoRows.Count} concepto(s).\n\n" +
                           "Timbrar consume un timbre y el comprobante queda registrado ante el SAT; para revertirlo habría que cancelarlo.",
                 PrimaryButtonText = "Timbrar",
                 CloseButtonText = "Revisar",
@@ -726,6 +718,8 @@ namespace Advance_Control.Views.Windows
             {
                 var request = new CfdiTimbrarRequestDto
                 {
+                    IdEntidad = _selectorEmisor.IdEntidadSeleccionada,
+                    IdCliente = cliente.IdCliente,
                     ReceptorRfc = cliente.Rfc.Trim(),
                     ReceptorRazonSocial = cliente.RazonSocial.Trim(),
                     ReceptorCodigoPostal = cliente.CodigoPostal?.Trim() ?? string.Empty,

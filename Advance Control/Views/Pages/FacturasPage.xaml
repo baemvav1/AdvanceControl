@@ -68,6 +68,13 @@
                             VerticalAlignment="Center"
                             Style="{StaticResource TitleTextBlockStyle}"
                             Text="Facturas CFDI" />
+                        <!--  Razón social sobre la que se trabaja (filtra por RFC emisor)  -->
+                        <ComboBox
+                            x:Name="EntidadFiltroComboBox"
+                            Width="260"
+                            VerticalAlignment="Center"
+                            PlaceholderText="Entidad"
+                            ToolTipService.ToolTip="Razón social (entidad) cuyas facturas se muestran" />
                         <!--  El texto se busca solo en el campo elegido; la selección inicial se pone en el constructor  -->
                         <ComboBox
                             x:Name="CampoBusquedaComboBox"

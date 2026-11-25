@@ -84,6 +84,27 @@
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="10">
+                    <!--  Razón social sobre la que se concilia: sus facturas y los movimientos de sus cuentas  -->
+                    <Grid x:Name="GrupoEntidad">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="60" />
+                            <RowDefinition Height="20" />
+                        </Grid.RowDefinitions>
+                        <ComboBox
+                            x:Name="EntidadFiltroComboBox"
+                            Grid.Row="0"
+                            Width="240"
+                            VerticalAlignment="Center"
+                            PlaceholderText="Entidad"
+                            ToolTipService.ToolTip="Razón social sobre la que se concilia: solo sus facturas y los movimientos de sus cuentas bancarias." />
+                        <Grid Grid.Row="1">
+                            <TextBlock
+                                HorizontalAlignment="Center"
+                                FontSize="12"
+                                Text="Entidad" />
+                        </Grid>
+                    </Grid>
+                    <AppBarSeparator />
                     <Grid x:Name="BtnsConciliacion">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="60" />

@@ -64,14 +64,46 @@ namespace Advance_Control.ViewModels
         private bool _historialFinalizadaSinOrden = true;
         private bool _historialPendientes = true;
 
+        private readonly Services.Entidades.IEntidadService _entidadService;
+
+        // ---------------- Entidad (razón social) sobre la que se trabaja ----------------
+
+        public List<EntidadFiltroItem> EntidadesFiltro { get; private set; } = new();
+
+        private EntidadFiltroItem? _entidadFiltro;
+        public EntidadFiltroItem? EntidadFiltro
+        {
+            get => _entidadFiltro;
+            set => SetProperty(ref _entidadFiltro, value);
+        }
+
+        /// <summary>Carga las opciones del ComboBox la primera vez (predeterminada seleccionada).</summary>
+        public async Task AsegurarEntidadesFiltroAsync(bool incluirTodas)
+        {
+            if (EntidadesFiltro.Count > 0) return;
+            try
+            {
+                var (opciones, inicial) = await EntidadFiltroItem.CargarAsync(_entidadService, incluirTodas);
+                EntidadesFiltro = opciones;
+                OnPropertyChanged(nameof(EntidadesFiltro));
+                EntidadFiltro ??= inicial;
+            }
+            catch
+            {
+                // Sin entidades no se filtra: se ve todo, como antes.
+            }
+        }
+
         public RPTFinancieroFacturacionViewModel(
             IReporteFinancieroFacturacionService reporteService,
             IReporteFinancieroFacturacionExportService exportService,
             IHistorialCobranzaService historialService,
             IEmailService emailService,
             IClienteService clienteService,
-            IOperacionService operacionService)
+            IOperacionService operacionService,
+            Services.Entidades.IEntidadService entidadService)
         {
+            _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
             _reporteService = reporteService ?? throw new ArgumentNullException(nameof(reporteService));
             _exportService = exportService ?? throw new ArgumentNullException(nameof(exportService));
             _historialService = historialService ?? throw new ArgumentNullException(nameof(historialService));
@@ -279,7 +311,8 @@ namespace Advance_Control.ViewModels
                 ErrorMessage = null;
                 SuccessMessage = null;
 
-                var resultado = await _reporteService.ObtenerReporteAsync(null, null, null, null, null);
+                await AsegurarEntidadesFiltroAsync(incluirTodas: true);
+                var resultado = await _reporteService.ObtenerReporteAsync(null, null, null, null, null, EntidadFiltro?.Rfc);
 
                 _cabecerasBase.Clear();
                 _cabecerasBase.AddRange(resultado.Cabeceras);
@@ -531,7 +564,7 @@ namespace Advance_Control.ViewModels
                 SuccessMessage = null;
 
                 var resultado = await _reporteService.ObtenerReporteAsync(
-                    cliente.ReceptorRfc, FiniquitoDocumentos, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro);
+                    cliente.ReceptorRfc, FiniquitoDocumentos, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro, EntidadFiltro?.Rfc);
 
                 var cabeceras = resultado.Cabeceras.Where(c => MismoRfc(c.ReceptorRfc, cliente.ReceptorRfc)).ToList();
                 var detalles = resultado.Detalles.Where(d => MismoRfc(d.ReceptorRfc, cliente.ReceptorRfc))
@@ -577,7 +610,7 @@ namespace Advance_Control.ViewModels
                 SuccessMessage = null;
 
                 var items = await _reporteService.ObtenerReporteCobranzaAsync(
-                    cliente.ReceptorRfc, FiniquitoDocumentos, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro);
+                    cliente.ReceptorRfc, FiniquitoDocumentos, ReferenciaDocumentos, FechaInicioFiltro, FechaFinFiltro, EntidadFiltro?.Rfc);
 
                 if (items.Count == 0)
                 {
@@ -811,6 +844,7 @@ namespace Advance_Control.ViewModels
                     FechaFinFiltro.Value,
                     dirigidoA,
                     EstadosHistorial,
+                    EntidadFiltro,
                     progreso);
 
                 HistorialResultado = resultado;

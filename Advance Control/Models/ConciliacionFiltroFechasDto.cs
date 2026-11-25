@@ -20,6 +20,9 @@ namespace Advance_Control.Models
         /// <summary>Movimientos visibles en el grid con los filtros de columna; null = sin filtro.</summary>
         public List<int>? IdsMovimientos { get; set; }
 
+        /// <summary>Razón social sobre la que se concilia (sus facturas y los movimientos de sus cuentas).</summary>
+        public int? IdEntidad { get; set; }
+
         public void CopiarA(ConciliacionFiltroFechasDto destino)
         {
             destino.FacturaDesde = FacturaDesde;
@@ -27,6 +30,7 @@ namespace Advance_Control.Models
             destino.MesEstadoCuenta = MesEstadoCuenta;
             destino.IdsFacturas = IdsFacturas;
             destino.IdsMovimientos = IdsMovimientos;
+            destino.IdEntidad = IdEntidad;
         }
     }
 }
