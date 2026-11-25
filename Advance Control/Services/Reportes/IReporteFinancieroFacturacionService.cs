@@ -14,6 +14,7 @@ namespace Advance_Control.Services.Reportes
             string? referencia,
             DateTimeOffset? fechaInicio,
             DateTimeOffset? fechaFin,
+            string? emisorRfc = null,
             CancellationToken cancellationToken = default);
 
         Task<List<ReporteCobranzaItemDto>> ObtenerReporteCobranzaAsync(
@@ -22,6 +23,7 @@ namespace Advance_Control.Services.Reportes
             string? referencia,
             DateTimeOffset? fechaInicio,
             DateTimeOffset? fechaFin,
+            string? emisorRfc = null,
             CancellationToken cancellationToken = default);
 
         Task<List<CobranzaSeguimientoDto>> ObtenerSeguimientosAsync(

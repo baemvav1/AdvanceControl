@@ -23,11 +23,11 @@ namespace Advance_Control.Services.ConfiguracionEmisor
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<ConfiguracionEmisorDto?> ObtenerConfiguracionAsync(CancellationToken cancellationToken = default)
+        public async Task<ConfiguracionEmisorDto?> ObtenerConfiguracionAsync(int? idEntidad = null, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = _endpoints.GetEndpoint("api", "configuracion-emisor");
+                var url = ConEntidad(_endpoints.GetEndpoint("api", "configuracion-emisor"), idEntidad);
                 var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (response.StatusCode == HttpStatusCode.NotFound)
@@ -55,11 +55,11 @@ namespace Advance_Control.Services.ConfiguracionEmisor
             }
         }
 
-        public async Task<CsdEmisorEstadoDto> ObtenerEstadoCsdAsync(CancellationToken cancellationToken = default)
+        public async Task<CsdEmisorEstadoDto> ObtenerEstadoCsdAsync(int? idEntidad = null, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = _endpoints.GetEndpoint("api", "configuracion-emisor", "csd");
+                var url = ConEntidad(_endpoints.GetEndpoint("api", "configuracion-emisor", "csd"), idEntidad);
                 var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -83,11 +83,11 @@ namespace Advance_Control.Services.ConfiguracionEmisor
             }
         }
 
-        public async Task<CsdUploadResultDto> GuardarCsdAsync(byte[] certificado, byte[] llavePrivada, string password, CancellationToken cancellationToken = default)
+        public async Task<CsdUploadResultDto> GuardarCsdAsync(int idEntidad, byte[] certificado, byte[] llavePrivada, string password, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = _endpoints.GetEndpoint("api", "configuracion-emisor", "csd");
+                var url = ConEntidad(_endpoints.GetEndpoint("api", "configuracion-emisor", "csd"), idEntidad);
 
                 using var form = new MultipartFormDataContent();
                 var certContent = new ByteArrayContent(certificado);
@@ -133,11 +133,11 @@ namespace Advance_Control.Services.ConfiguracionEmisor
             }
         }
 
-        public async Task<FielEmisorEstadoDto> ObtenerEstadoFielAsync(CancellationToken cancellationToken = default)
+        public async Task<FielEmisorEstadoDto> ObtenerEstadoFielAsync(int? idEntidad = null, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = _endpoints.GetEndpoint("api", "configuracion-emisor", "fiel");
+                var url = ConEntidad(_endpoints.GetEndpoint("api", "configuracion-emisor", "fiel"), idEntidad);
                 var response = await _http.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                 if (!response.IsSuccessStatusCode)
@@ -161,11 +161,11 @@ namespace Advance_Control.Services.ConfiguracionEmisor
             }
         }
 
-        public async Task<FielUploadResultDto> GuardarFielAsync(byte[] certificado, byte[] llavePrivada, string password, CancellationToken cancellationToken = default)
+        public async Task<FielUploadResultDto> GuardarFielAsync(int idEntidad, byte[] certificado, byte[] llavePrivada, string password, CancellationToken cancellationToken = default)
         {
             try
             {
-                var url = _endpoints.GetEndpoint("api", "configuracion-emisor", "fiel");
+                var url = ConEntidad(_endpoints.GetEndpoint("api", "configuracion-emisor", "fiel"), idEntidad);
 
                 using var form = new MultipartFormDataContent();
                 var certContent = new ByteArrayContent(certificado);
@@ -208,6 +208,36 @@ namespace Advance_Control.Services.ConfiguracionEmisor
             {
                 await _logger.LogErrorAsync("Error de red al cargar la FIEL", ex, "ConfiguracionEmisorService", "GuardarFielAsync");
                 return new FielUploadResultDto { Success = false, Message = "Error de comunicación con el servidor." };
+            }
+        }
+
+        private static string ConEntidad(string url, int? idEntidad)
+            => new Utilities.ApiQueryBuilder().Add("idEntidad", idEntidad).Build(url);
+
+        public async Task<ApiResponse> GuardarCredencialesFelAsync(int idEntidad, string? usuario, string? password, CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = ConEntidad(_endpoints.GetEndpoint("api", "configuracion-emisor", "fel"), idEntidad);
+                using var response = await _http.PutAsJsonAsync(url, new { usuario, password }, cancellationToken).ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                    return new ApiResponse { Success = true, Message = "Cuenta de timbrado guardada" };
+
+                var errorContent = await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(false);
+                var mensaje = "No se pudo guardar la cuenta de timbrado.";
+                try
+                {
+                    using var errorDoc = System.Text.Json.JsonDocument.Parse(errorContent);
+                    if (errorDoc.RootElement.TryGetProperty("message", out var msgProp))
+                        mensaje = msgProp.GetString() ?? mensaje;
+                }
+                catch (System.Text.Json.JsonException) { }
+                return new ApiResponse { Success = false, Message = mensaje };
+            }
+            catch (HttpRequestException ex)
+            {
+                await _logger.LogErrorAsync("Error de red al guardar la cuenta de timbrado", ex, "ConfiguracionEmisorService", "GuardarCredencialesFelAsync");
+                return new ApiResponse { Success = false, Message = "Error de comunicación con el servidor." };
             }
         }
     }

@@ -43,6 +43,13 @@
                                 Width="18"
                                 Height="18"
                                 Margin="4,4,0,0" />
+                            <ComboBox
+                                x:Name="CmbEntidadEmisora"
+                                MinWidth="320"
+                                Margin="16,0,0,0"
+                                VerticalAlignment="Center"
+                                PlaceholderText="Emitir como..."
+                                ToolTipService.ToolTip="Razón social que emite el CFDI. Se propone la que ya se usó con este cliente." />
                         </StackPanel>
                         <InfoBar x:Name="EmisorInfoBar" IsOpen="False" />
                         <TextBlock x:Name="TxtEmisorResumen" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />

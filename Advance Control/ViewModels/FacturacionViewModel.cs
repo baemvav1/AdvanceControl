@@ -22,13 +22,79 @@ namespace Advance_Control.ViewModels
         private string? _errorMessage;
         private string? _successMessage;
 
-        public FacturacionViewModel(IFacturaService facturaService, FacturaOperacionMatchingEngine matchingEngine)
+        private readonly Services.Entidades.IEntidadService _entidadService;
+
+        /// <summary>RFC de cliente -> entidades de facturación de los clientes con ese RFC.</summary>
+        private Dictionary<string, HashSet<int>> _entidadesPorRfcCliente = new(StringComparer.OrdinalIgnoreCase);
+        private int? _idEntidadPredeterminada;
+
+        public FacturacionViewModel(IFacturaService facturaService, FacturaOperacionMatchingEngine matchingEngine, Services.Entidades.IEntidadService entidadService)
         {
+            _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _matchingEngine = matchingEngine ?? throw new ArgumentNullException(nameof(matchingEngine));
             _operacionesSinFactura = new ObservableCollection<OperacionSinFacturaDto>();
             _operacionesFacturadas = new ObservableCollection<OperacionFacturadaDto>();
         }
+
+        // ---------------- Entidad (razón social) sobre la que se trabaja ----------------
+
+        public List<EntidadFiltroItem> EntidadesFiltro { get; private set; } = new();
+
+        private EntidadFiltroItem? _entidadFiltro;
+        public EntidadFiltroItem? EntidadFiltro
+        {
+            get => _entidadFiltro;
+            set => SetProperty(ref _entidadFiltro, value);
+        }
+
+        private async Task AsegurarEntidadesFiltroAsync()
+        {
+            if (EntidadesFiltro.Count > 0) return;
+            try
+            {
+                var (opciones, inicial) = await EntidadFiltroItem.CargarAsync(_entidadService, incluirTodas: true);
+                EntidadesFiltro = opciones;
+                EntidadFiltro ??= inicial;
+                _idEntidadPredeterminada = opciones.FirstOrDefault(o => o.Entidad?.EsPredeterminada == true)?.IdEntidad;
+            }
+            catch
+            {
+                // Sin entidades no se filtra: se ve todo, como antes.
+            }
+        }
+
+        private async Task CargarEntidadesClientesAsync()
+        {
+            try
+            {
+                _entidadesPorRfcCliente = (await _entidadService.GetEntidadesFacturacionClientesAsync())
+                    .Where(c => !string.IsNullOrWhiteSpace(c.Rfc) && c.IdEntidad.HasValue)
+                    .GroupBy(c => c.Rfc!.Trim(), StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(g => g.Key, g => g.Select(c => c.IdEntidad!.Value).ToHashSet(), StringComparer.OrdinalIgnoreCase);
+            }
+            catch
+            {
+                _entidadesPorRfcCliente = new(StringComparer.OrdinalIgnoreCase);
+            }
+        }
+
+        /// <summary>Operación sin factura: es de la entidad de facturación de su cliente (o de la predeterminada).</summary>
+        private bool SinFacturaEsDeEntidad(OperacionSinFacturaDto operacion)
+        {
+            if (EntidadFiltro is not { EsTodas: false } entidad) return true;
+            var rfc = operacion.RfcCliente?.Trim();
+            if (!string.IsNullOrEmpty(rfc) && _entidadesPorRfcCliente.TryGetValue(rfc, out var entidades))
+                return entidades.Contains(entidad.IdEntidad!.Value);
+            return entidad.IdEntidad == _idEntidadPredeterminada;
+        }
+
+        /// <summary>Facturas sin operación de la entidad elegida (candidatas para vincular).</summary>
+        private List<FacturaResumenDto> FacturasSinOperacionDeEntidad(IEnumerable<FacturaResumenDto> todas)
+            => todas
+                .Where(factura => !factura.IdOperacion.HasValue || factura.IdOperacion.Value <= 0)
+                .Where(factura => EntidadFiltro?.CoincideRfc(factura.EmisorRfc) ?? true)
+                .ToList();
 
         public ObservableCollection<OperacionSinFacturaDto> OperacionesSinFactura
         {
@@ -70,13 +136,21 @@ namespace Advance_Control.ViewModels
                 IsLoading = true;
                 ErrorMessage = null;
 
-                var sinFactura = await _facturaService.ObtenerOperacionesSinFacturaAsync();
-                var facturadas = await _facturaService.ObtenerOperacionesFacturadasAsync();
-                var todasLasFacturas = await _facturaService.ObtenerFacturasAsync();
+                await AsegurarEntidadesFiltroAsync();
+                await CargarEntidadesClientesAsync();
 
-                var facturasSinOperacion = todasLasFacturas
-                    .Where(factura => !factura.IdOperacion.HasValue || factura.IdOperacion.Value <= 0)
+                var todasLasFacturas = await _facturaService.ObtenerFacturasAsync();
+                var emisorPorFactura = todasLasFacturas.ToDictionary(f => f.IdFactura, f => f.EmisorRfc);
+
+                // Sin factura: por la entidad del cliente. Facturadas: por quien emitió la factura.
+                var sinFactura = (await _facturaService.ObtenerOperacionesSinFacturaAsync())
+                    .Where(SinFacturaEsDeEntidad)
                     .ToList();
+                var facturadas = (await _facturaService.ObtenerOperacionesFacturadasAsync())
+                    .Where(o => EntidadFiltro?.CoincideRfc(emisorPorFactura.GetValueOrDefault(o.IdFactura)) ?? true)
+                    .ToList();
+
+                var facturasSinOperacion = FacturasSinOperacionDeEntidad(todasLasFacturas);
 
                 foreach (var operacion in sinFactura)
                 {
@@ -137,11 +211,13 @@ namespace Advance_Control.ViewModels
         /// </summary>
         public async Task<IReadOnlyList<FacturaOperacionPropuestaDto>> CargarPropuestasVinculacionAsync()
         {
-            var sinFactura = await _facturaService.ObtenerOperacionesSinFacturaAsync();
-            var todasLasFacturas = await _facturaService.ObtenerFacturasAsync();
-            var facturasSinOperacion = todasLasFacturas
-                .Where(factura => !factura.IdOperacion.HasValue || factura.IdOperacion.Value <= 0)
+            await AsegurarEntidadesFiltroAsync();
+            await CargarEntidadesClientesAsync();
+            var sinFactura = (await _facturaService.ObtenerOperacionesSinFacturaAsync())
+                .Where(SinFacturaEsDeEntidad)
                 .ToList();
+            var todasLasFacturas = await _facturaService.ObtenerFacturasAsync();
+            var facturasSinOperacion = FacturasSinOperacionDeEntidad(todasLasFacturas);
 
             var propuestas = new List<FacturaOperacionPropuestaDto>();
             foreach (var operacion in sinFactura)

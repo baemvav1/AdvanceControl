@@ -49,6 +49,8 @@ namespace Advance_Control.Services.Entidades
             string? colonia = null,
             string? apoderado = null,
             string? regimenFiscal = null,
+            bool? esPredeterminada = null,
+            string? serieFacturas = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -84,6 +86,8 @@ namespace Advance_Control.Services.Entidades
             string? colonia = null,
             string? apoderado = null,
             string? regimenFiscal = null,
+            bool? esPredeterminada = null,
+            string? serieFacturas = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -100,5 +104,27 @@ namespace Advance_Control.Services.Entidades
         /// <param name="cancellationToken">Token de cancelación</param>
         /// <returns>La primera entidad activa o null si no existe</returns>
         Task<EntidadDto?> GetActiveEntidadAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Entidad activa con ese RFC exacto (p. ej. el emisor de una factura); null si no hay.</summary>
+        Task<EntidadDto?> GetEntidadPorRfcAsync(string? rfc, CancellationToken cancellationToken = default);
+
+        /// <summary>Cuentas bancarias de una entidad, o de todas si idEntidad es null.</summary>
+        Task<List<EntidadCuentaBancariaDto>> GetCuentasBancariasAsync(int? idEntidad = null, CancellationToken cancellationToken = default);
+
+        Task<ApiResponse> CrearCuentaBancariaAsync(int idEntidad, string numeroCuenta, string? clabe, string? banco, CancellationToken cancellationToken = default);
+
+        Task<ApiResponse> EliminarCuentaBancariaAsync(int idCuenta, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Entidad (razón social) que atiende a un cliente: la última con la que se le timbró o,
+        /// si nunca, la predeterminada. Para encabezados de cotizaciones, reportes e historiales.
+        /// </summary>
+        Task<EntidadDto?> GetEntidadParaClienteAsync(int? idCliente = null, int? idOperacion = null, CancellationToken cancellationToken = default);
+
+        /// <summary>Entidad de facturación de todos los clientes activos (guardada o predeterminada).</summary>
+        Task<List<EntidadFacturacionClienteDto>> GetEntidadesFacturacionClientesAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>Entidad con la que se le factura a un cliente (la guardada al timbrar, o la predeterminada).</summary>
+        Task<EntidadFacturacionClienteDto?> GetEntidadFacturacionClienteAsync(int? idCliente = null, int? idOperacion = null, int? idContrato = null, string? rfc = null, CancellationToken cancellationToken = default);
     }
 }

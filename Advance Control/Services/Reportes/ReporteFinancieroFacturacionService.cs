@@ -37,6 +37,7 @@ namespace Advance_Control.Services.Reportes
             string? referencia,
             DateTimeOffset? fechaInicio,
             DateTimeOffset? fechaFin,
+            string? emisorRfc = null,
             CancellationToken cancellationToken = default)
         {
             var url = new ApiQueryBuilder()
@@ -45,6 +46,7 @@ namespace Advance_Control.Services.Reportes
                 .Add("referencia", referencia)
                 .Add("fechaInicio", fechaInicio?.Date.ToString("O", CultureInfo.InvariantCulture))
                 .Add("fechaFin", fechaFin?.Date.AddDays(1).AddTicks(-1).ToString("O", CultureInfo.InvariantCulture))
+                .Add("emisorRfc", emisorRfc)
                 .Build(_endpoints.GetEndpoint("api", "reportefinancierofacturacion"));
 
             try
@@ -71,6 +73,7 @@ namespace Advance_Control.Services.Reportes
             string? referencia,
             DateTimeOffset? fechaInicio,
             DateTimeOffset? fechaFin,
+            string? emisorRfc = null,
             CancellationToken cancellationToken = default)
         {
             var url = new ApiQueryBuilder()
@@ -79,6 +82,7 @@ namespace Advance_Control.Services.Reportes
                 .Add("referencia", referencia)
                 .Add("fechaInicio", fechaInicio?.Date.ToString("O", CultureInfo.InvariantCulture))
                 .Add("fechaFin", fechaFin?.Date.AddDays(1).AddTicks(-1).ToString("O", CultureInfo.InvariantCulture))
+                .Add("emisorRfc", emisorRfc)
                 .Build(_endpoints.GetEndpoint("api", "reportecobranza"));
 
             try

@@ -34,6 +34,7 @@ namespace Advance_Control.ViewModels
         private bool _usarRfcComoRegla;
         private bool _soloCheques;
         private int _operacionesConciliacionPendientes;
+        private readonly Services.Entidades.IEntidadService _entidadService;
         private List<ConciliacionFacturaFila> _facturasTodas = new();
         private List<ConciliacionMovimientoFila> _movimientosTodos = new();
         private bool _rangoActivo;
@@ -43,8 +44,10 @@ namespace Advance_Control.ViewModels
         public ConciliacionViewModel(
             IFacturaService facturaService,
             IEstadoCuentaXmlService estadoCuentaXmlService,
-            INotificacionService notificacionService)
+            INotificacionService notificacionService,
+            Services.Entidades.IEntidadService entidadService)
         {
+            _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _estadoCuentaXmlService = estadoCuentaXmlService ?? throw new ArgumentNullException(nameof(estadoCuentaXmlService));
             _notificacionService = notificacionService ?? throw new ArgumentNullException(nameof(notificacionService));
@@ -214,6 +217,42 @@ namespace Advance_Control.ViewModels
             }
         }
 
+
+        // ---------------- Entidad (razón social) sobre la que se trabaja ----------------
+
+        public List<EntidadFiltroItem> EntidadesFiltro { get; private set; } = new();
+
+        private EntidadFiltroItem? _entidadFiltro;
+        public EntidadFiltroItem? EntidadFiltro
+        {
+            get => _entidadFiltro;
+            set => SetProperty(ref _entidadFiltro, value);
+        }
+
+        /// <summary>Carga las opciones del ComboBox la primera vez (predeterminada seleccionada).</summary>
+        public async Task AsegurarEntidadesFiltroAsync(bool incluirTodas)
+        {
+            if (EntidadesFiltro.Count > 0) return;
+            try
+            {
+                var (opciones, inicial) = await EntidadFiltroItem.CargarAsync(_entidadService, incluirTodas);
+                EntidadesFiltro = opciones;
+                OnPropertyChanged(nameof(EntidadesFiltro));
+                EntidadFiltro ??= inicial;
+            }
+            catch
+            {
+                // Sin entidades no se filtra: se ve todo, como antes.
+            }
+        }
+
+        /// <summary>Cambia la entidad y vuelve a llenar los grids con sus facturas y movimientos.</summary>
+        public void CambiarEntidad(EntidadFiltroItem? entidad)
+        {
+            EntidadFiltro = entidad;
+            AplicarFiltroRango();
+        }
+
         /// <summary>Filtro para los pasos automáticos; null con Rangos apagado.</summary>
         public ConciliacionFiltroFechasDto? ObtenerFiltroFechas()
         {
@@ -247,6 +286,13 @@ namespace Advance_Control.ViewModels
         {
             IEnumerable<ConciliacionFacturaFila> facturas = _facturasTodas;
             IEnumerable<ConciliacionMovimientoFila> movimientos = _movimientosTodos;
+
+            // Solo las facturas de la razón social elegida y los movimientos de sus cuentas.
+            if (EntidadFiltro is { EsTodas: false } entidad)
+            {
+                facturas = facturas.Where(fila => entidad.CoincideRfc(fila.Factura.EmisorRfc));
+                movimientos = movimientos.Where(fila => entidad.CoincideCuenta(fila.EstadoCuenta.NumeroCuenta, fila.EstadoCuenta.Clabe));
+            }
 
             if (_rangoActivo)
             {
@@ -347,6 +393,8 @@ namespace Advance_Control.ViewModels
             ErrorMessage = null;
             try
             {
+                // En conciliación siempre se trabaja sobre una sola razón social (sin "Todas").
+                await AsegurarEntidadesFiltroAsync(incluirTodas: false);
                 await Task.WhenAll(
                     CargarFacturasPendientesAsync(),
                     CargarMovimientosPendientesAsync(),

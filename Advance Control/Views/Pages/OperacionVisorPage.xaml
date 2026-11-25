@@ -65,15 +65,12 @@
             <RowDefinition Height="1*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <Grid
-            x:Name="header"
-            Grid.Row="0"
-            Background="Transparent">
+        <Grid x:Name="header" Grid.Row="0">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*" />
-                <ColumnDefinition Width="1*" />
+                <ColumnDefinition Width="3*" />
+                <ColumnDefinition Width="7*" />
             </Grid.ColumnDefinitions>
-            <Grid Grid.Column="0"  Margin="10,0,0,0">
+            <Grid Grid.Column="0" Margin="10,0,0,0">
                 <StackPanel
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
@@ -176,12 +173,12 @@
                 x:Name="TablaCargos"
                 Grid.Column="0"
                 Margin="10,5,5,5"
-                CornerRadius="8"
                 AutoGenerateColumns="False"
                 BeginningEdit="TablaCargos_BeginningEdit"
                 CanFilterColumns="True"
                 CanSortColumns="True"
                 CellEditEnding="TablaCargos_CellEditEnding"
+                CornerRadius="8"
                 IsReadOnly="False"
                 PreparingCellForEdit="TablaCargos_PreparingCellForEdit"
                 RowMinHeight="56"
@@ -269,7 +266,7 @@
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8">
-                    <Grid >
+                    <Grid>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
@@ -277,7 +274,7 @@
                         </Grid.RowDefinitions>
 
                         <!--  Galería: mismos botones que la pestaña Documentos del visor  -->
-                        <CommandBar 
+                        <CommandBar
                             x:Name="GaleriaAcciones"
                             Grid.Row="0"
                             HorizontalAlignment="Center"

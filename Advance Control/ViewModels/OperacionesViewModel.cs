@@ -550,7 +550,8 @@ namespace Advance_Control.ViewModels
 
                 var query = new OperacionQueryDto
                 {
-                    IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+                    IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+
                     IdTrasladado = int.TryParse(IdOperacionFilter, out _) ? null : IdOperacionFilter,
                     IdTipo = IdTipoFilter,
                     IdCliente = IdClienteFilter,
@@ -694,7 +695,8 @@ namespace Advance_Control.ViewModels
         {
             var query = new OperacionQueryDto
             {
-                IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+                IdOperacion = int.TryParse(IdOperacionFilter, out var idOp) ? idOp : 0,
+
                 IdTrasladado = int.TryParse(IdOperacionFilter, out _) ? null : IdOperacionFilter,
                 IdTipo = IdTipoFilter,
                 IdCliente = IdClienteFilter,
@@ -933,7 +935,8 @@ namespace Advance_Control.ViewModels
                 string? apoderadoNombre = null;
                 try
                 {
-                    var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
+                    // Razón social que atiende al cliente de la operación (la de su facturación, o la predeterminada).
+                    var entidadActiva = await _entidadService.GetEntidadParaClienteAsync(idOperacion: operacion.IdOperacion, cancellationToken: cancellationToken);
                     nombreEmpresa = entidadActiva?.NombreComercial;
                     apoderadoNombre = entidadActiva?.Apoderado;
                     if (!string.IsNullOrWhiteSpace(nombreEmpresa))
@@ -1037,7 +1040,8 @@ namespace Advance_Control.ViewModels
                 string? nombreEmpresa = null;
                 try
                 {
-                    var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
+                    // Razón social que atiende al cliente de la operación (la de su facturación, o la predeterminada).
+                    var entidadActiva = await _entidadService.GetEntidadParaClienteAsync(idOperacion: operacion.IdOperacion, cancellationToken: cancellationToken);
                     nombreEmpresa = entidadActiva?.NombreComercial;
                     if (!string.IsNullOrWhiteSpace(nombreEmpresa))
                     {
@@ -1120,7 +1124,8 @@ namespace Advance_Control.ViewModels
                 string? apoderadoNombre = null;
                 try
                 {
-                    var entidadActiva = await _entidadService.GetActiveEntidadAsync(cancellationToken);
+                    // Razón social que atiende al cliente de la operación (la de su facturación, o la predeterminada).
+                    var entidadActiva = await _entidadService.GetEntidadParaClienteAsync(idOperacion: operacion.IdOperacion, cancellationToken: cancellationToken);
                     nombreEmpresa = entidadActiva?.NombreComercial;
                     apoderadoNombre = entidadActiva?.Apoderado;
                 }

@@ -99,7 +99,8 @@ namespace Advance_Control.Services.Facturas
 
                 // Domicilios completos (no vienen en el CFDI -- el XML solo trae el CP de cada uno)
                 // y descripciones de catálogo SAT, para replicar el formato del portal web.
-                var entidadEmisor = await _entidadService.GetActiveEntidadAsync();
+                // Domicilio de la razón social que emitió ESTA factura (puede no ser la predeterminada).
+                var entidadEmisor = await _entidadService.GetEntidadPorRfcAsync(factura.EmisorRfc) ?? await _entidadService.GetActiveEntidadAsync();
                 var entidadesReceptor = await _entidadService.GetEntidadesAsync(new EntidadQueryDto { RFC = factura.ReceptorRfc });
                 var entidadReceptor = entidadesReceptor.FirstOrDefault(e => string.Equals(e.RFC, factura.ReceptorRfc, StringComparison.OrdinalIgnoreCase));
                 var regimenesFiscales = await _satCatalogoService.ListarRegimenFiscalAsync(incluirInactivos: true);

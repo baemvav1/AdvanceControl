@@ -93,6 +93,7 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
             await ViewModel.CargarDatosAsync();
+            ConectarFiltroEntidad();
         }
 
         private void AbrirFactura_Click(object sender, RoutedEventArgs e)
@@ -283,7 +284,31 @@ namespace Advance_Control.Views.Pages
                     .ToList();
             }
 
+            // Los pasos automáticos trabajan solo con la razón social elegida.
+            if (ViewModel.EntidadFiltro?.IdEntidad is int idEntidad)
+            {
+                filtro ??= new ConciliacionFiltroFechasDto();
+                filtro.IdEntidad = idEntidad;
+            }
+
             return filtro;
+        }
+
+        private bool _filtroEntidadConectado;
+
+        /// <summary>Llena el ComboBox de entidad (lo carga el ViewModel) y re-filtra al cambiarlo.</summary>
+        private void ConectarFiltroEntidad()
+        {
+            if (_filtroEntidadConectado || ViewModel.EntidadesFiltro.Count == 0) return;
+            _filtroEntidadConectado = true;
+            EntidadFiltroComboBox.ItemsSource = ViewModel.EntidadesFiltro;
+            EntidadFiltroComboBox.SelectedItem = ViewModel.EntidadFiltro;
+            EntidadFiltroComboBox.IsEnabled = ViewModel.EntidadesFiltro.Count > 1;
+            EntidadFiltroComboBox.SelectionChanged += (_, _) =>
+            {
+                LimpiarSeleccion();
+                ViewModel.CambiarEntidad(EntidadFiltroComboBox.SelectedItem as EntidadFiltroItem);
+            };
         }
 
         // ---------------- Acciones ----------------

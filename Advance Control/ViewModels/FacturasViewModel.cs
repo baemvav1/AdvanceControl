@@ -46,13 +46,45 @@ namespace Advance_Control.ViewModels
 
         private int _paginaActual = 1;
 
-        public FacturasViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IClienteService clienteService)
+        private readonly Services.Entidades.IEntidadService _entidadService;
+
+        public FacturasViewModel(IFacturaService facturaService, IFacturaPdfService facturaPdfService, IClienteService clienteService, Services.Entidades.IEntidadService entidadService)
         {
+            _entidadService = entidadService ?? throw new ArgumentNullException(nameof(entidadService));
             _facturaService = facturaService ?? throw new ArgumentNullException(nameof(facturaService));
             _facturaPdfService = facturaPdfService ?? throw new ArgumentNullException(nameof(facturaPdfService));
             _clienteService = clienteService ?? throw new ArgumentNullException(nameof(clienteService));
             _facturasPagina = new ObservableCollection<FacturaResumenDto>();
             _sugerencias = new ObservableCollection<string>();
+        }
+
+
+        // ---------------- Entidad (razón social) sobre la que se trabaja ----------------
+
+        public List<EntidadFiltroItem> EntidadesFiltro { get; private set; } = new();
+
+        private EntidadFiltroItem? _entidadFiltro;
+        public EntidadFiltroItem? EntidadFiltro
+        {
+            get => _entidadFiltro;
+            set => SetProperty(ref _entidadFiltro, value);
+        }
+
+        /// <summary>Carga las opciones del ComboBox la primera vez (predeterminada seleccionada).</summary>
+        public async Task AsegurarEntidadesFiltroAsync(bool incluirTodas)
+        {
+            if (EntidadesFiltro.Count > 0) return;
+            try
+            {
+                var (opciones, inicial) = await EntidadFiltroItem.CargarAsync(_entidadService, incluirTodas);
+                EntidadesFiltro = opciones;
+                OnPropertyChanged(nameof(EntidadesFiltro));
+                EntidadFiltro ??= inicial;
+            }
+            catch
+            {
+                // Sin entidades no se filtra: se ve todo, como antes.
+            }
         }
 
         public ObservableCollection<FacturaResumenDto> FacturasPagina
@@ -175,6 +207,7 @@ namespace Advance_Control.ViewModels
                 IsLoading = true;
                 ErrorMessage = null;
 
+                await AsegurarEntidadesFiltroAsync(incluirTodas: true);
                 var facturasTask = _facturaService.ObtenerFacturasAsync();
                 var nombresTask = CargarNombresComercialesAsync();
                 var facturas = await facturasTask;
@@ -652,6 +685,18 @@ namespace Advance_Control.ViewModels
         private async Task<GuardarFacturaResponseDto> ValidarYGuardarFacturaAsync(GuardarFacturaRequestDto request)
         {
             ValidarFacturaParaGuardado(request);
+
+            // Solo se guardan CFDI emitidos por una de las razones sociales dadas de alta en Entidades.
+            var rfcsPropios = EntidadesFiltro.Where(e => !e.EsTodas).Select(e => e.Rfc).ToList();
+            if (rfcsPropios.Count > 0 && !rfcsPropios.Any(r => string.Equals(r, request.EmisorRfc?.Trim(), StringComparison.OrdinalIgnoreCase)))
+            {
+                return new GuardarFacturaResponseDto
+                {
+                    Success = false,
+                    Message = $"La factura la emitió {request.EmisorRfc}, que no es ninguna de las entidades registradas. Dala de alta en Entidades si es una razón social propia."
+                };
+            }
+
             return await _facturaService.GuardarFacturaAsync(request);
         }
 
@@ -1011,6 +1056,7 @@ namespace Advance_Control.ViewModels
             }
 
             _facturasFiltradas = _todasLasFacturas
+                .Where(f => EntidadFiltro?.CoincideRfc(f.EmisorRfc) ?? true)
                 .Where(f => FacturaBuscador.Coincide(f, CampoBusqueda, texto, _nombresComercialesPorRfc))
                 .Where(f => !desde.HasValue || f.Fecha.Date >= desde.Value)
                 .Where(f => !hasta.HasValue || f.Fecha.Date <= hasta.Value)

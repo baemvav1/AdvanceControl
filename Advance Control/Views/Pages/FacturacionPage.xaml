@@ -29,6 +29,13 @@
                 VerticalAlignment="Center"
                 Style="{StaticResource TitleTextBlockStyle}"
                 Text="Por facturar" />
+            <!--  Razón social: operaciones sin factura por la entidad del cliente; facturadas por quien emitió  -->
+            <ComboBox
+                x:Name="EntidadFiltroComboBox"
+                Width="260"
+                VerticalAlignment="Center"
+                PlaceholderText="Entidad"
+                ToolTipService.ToolTip="Razón social: las operaciones sin factura se asignan por la entidad de facturación del cliente; las facturadas, por la entidad que emitió la factura" />
             <Button
                 x:Name="BtnActualizar"
                 Click="BtnActualizar_Click"

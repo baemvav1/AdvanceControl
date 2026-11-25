@@ -33,6 +33,24 @@ namespace Advance_Control.Views.Pages
         {
             base.OnNavigatedTo(e);
             await ViewModel.CargarAsync();
+            ConectarFiltroEntidad();
+        }
+
+        private bool _filtroEntidadConectado;
+
+        /// <summary>Llena el ComboBox de entidad (lo carga el ViewModel) y recarga al cambiarlo.</summary>
+        private void ConectarFiltroEntidad()
+        {
+            if (_filtroEntidadConectado) return;
+            _filtroEntidadConectado = true;
+            EntidadFiltroComboBox.ItemsSource = ViewModel.EntidadesFiltro;
+            EntidadFiltroComboBox.SelectedItem = ViewModel.EntidadFiltro;
+            EntidadFiltroComboBox.Visibility = ViewModel.EntidadesFiltro.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            EntidadFiltroComboBox.SelectionChanged += async (_, _) =>
+            {
+                ViewModel.EntidadFiltro = EntidadFiltroComboBox.SelectedItem as Models.EntidadFiltroItem;
+                await ViewModel.CargarAsync();
+            };
         }
 
         private async void BtnActualizar_Click(object sender, RoutedEventArgs e)

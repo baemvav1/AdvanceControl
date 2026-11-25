@@ -8,6 +8,12 @@ namespace Advance_Control.Models
         public string? Serie { get; set; }
         public string? Folio { get; set; }
 
+        /// <summary>Razón social (entidad) que emite. Null = la del cliente o la predeterminada.</summary>
+        public int? IdEntidad { get; set; }
+
+        /// <summary>Cliente receptor (la API le guarda la entidad usada).</summary>
+        public int? IdCliente { get; set; }
+
         public string ReceptorRfc { get; set; } = string.Empty;
         public string ReceptorRazonSocial { get; set; } = string.Empty;
         public string ReceptorCodigoPostal { get; set; } = string.Empty;

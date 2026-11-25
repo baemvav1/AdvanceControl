@@ -36,6 +36,24 @@ namespace Advance_Control.Views.Pages
             base.OnNavigatedTo(e);
             PestanaComplementos.Visibility = PuedeVerComplementos() ? Visibility.Visible : Visibility.Collapsed;
             await ViewModel.CargarFacturasAsync();
+            ConectarFiltroEntidad();
+        }
+
+        private bool _filtroEntidadConectado;
+
+        /// <summary>Llena el ComboBox de entidad (lo carga el ViewModel) y filtra al cambiarlo.</summary>
+        private void ConectarFiltroEntidad()
+        {
+            if (_filtroEntidadConectado) return;
+            _filtroEntidadConectado = true;
+            EntidadFiltroComboBox.ItemsSource = ViewModel.EntidadesFiltro;
+            EntidadFiltroComboBox.SelectedItem = ViewModel.EntidadFiltro;
+            EntidadFiltroComboBox.Visibility = ViewModel.EntidadesFiltro.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
+            EntidadFiltroComboBox.SelectionChanged += (_, _) =>
+            {
+                ViewModel.EntidadFiltro = EntidadFiltroComboBox.SelectedItem as EntidadFiltroItem;
+                ViewModel.Buscar();
+            };
         }
 
         // --- Pestañas: Facturas | Complementos de pago ---

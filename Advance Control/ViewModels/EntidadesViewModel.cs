@@ -179,38 +179,56 @@ namespace Advance_Control.ViewModels
         }
 
         /// <summary>
-        /// Marca en cada <see cref="EntidadDto"/> si tiene CSD/PFX cargado, cruzando por RFC contra
-        /// el CSD/FIEL activo (la API no liga estos endpoints a un id_entidad, solo a un RFC -- ver
-        /// ConfiguracionEmisorService en el API). Si ninguna entidad coincide con el RFC del CSD/FIEL
-        /// cargado (por ejemplo, si aún no hay ninguno), todas quedan sin marcar.
+        /// Marca en cada <see cref="EntidadDto"/> su CSD/PFX (cada entidad tiene el suyo) y cuántas
+        /// cuentas bancarias tiene registradas.
         /// </summary>
         private async Task AplicarEstadoCsdFielAsync(CancellationToken cancellationToken = default)
         {
             try
             {
-                var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync(cancellationToken);
-                var estadoFiel = await _configuracionEmisorService.ObtenerEstadoFielAsync(cancellationToken);
-
-                foreach (var entidad in Entidades)
+                var cuentas = await _entidadService.GetCuentasBancariasAsync(null, cancellationToken);
+                foreach (var entidad in Entidades.ToList())
                 {
-                    var rfcEntidad = entidad.RFC?.Trim();
+                    var estadoCsd = await _configuracionEmisorService.ObtenerEstadoCsdAsync(entidad.IdEntidad, cancellationToken);
+                    var estadoFiel = await _configuracionEmisorService.ObtenerEstadoFielAsync(entidad.IdEntidad, cancellationToken);
 
-                    var coincideCsd = estadoCsd.Cargado && !string.IsNullOrWhiteSpace(rfcEntidad)
-                        && string.Equals(rfcEntidad, estadoCsd.Rfc?.Trim(), StringComparison.OrdinalIgnoreCase);
-                    entidad.CsdCargado = coincideCsd;
-                    entidad.CsdVigente = coincideCsd && estadoCsd.Vigente;
-
-                    var coincideFiel = estadoFiel.Cargado && !string.IsNullOrWhiteSpace(rfcEntidad)
-                        && string.Equals(rfcEntidad, estadoFiel.Rfc?.Trim(), StringComparison.OrdinalIgnoreCase);
-                    entidad.PfxCargado = coincideFiel;
-                    entidad.PfxVigente = coincideFiel && estadoFiel.Vigente;
+                    entidad.CsdCargado = estadoCsd.Cargado;
+                    entidad.CsdVigente = estadoCsd.Cargado && estadoCsd.Vigente;
+                    entidad.PfxCargado = estadoFiel.Cargado;
+                    entidad.PfxVigente = estadoFiel.Cargado && estadoFiel.Vigente;
+                    entidad.CuentasBancarias = cuentas.Count(c => c.IdEntidad == entidad.IdEntidad);
                 }
             }
             catch (Exception ex)
             {
-                // No es crítico para mostrar el listado -- solo se pierde el indicador visual.
-                await _logger.LogWarningAsync($"No se pudo consultar el estado de CSD/FIEL: {ex.Message}", "EntidadesViewModel", "AplicarEstadoCsdFielAsync");
+                // No es crítico para mostrar el listado -- solo se pierden los indicadores visuales.
+                await _logger.LogWarningAsync($"No se pudo consultar el estado de CSD/FIEL/cuentas: {ex.Message}", "EntidadesViewModel", "AplicarEstadoCsdFielAsync");
             }
+        }
+
+        public Task<List<EntidadCuentaBancariaDto>> ObtenerCuentasAsync(int idEntidad)
+            => _entidadService.GetCuentasBancariasAsync(idEntidad);
+
+        public Task<ApiResponse> CrearCuentaAsync(int idEntidad, string numeroCuenta, string? clabe, string? banco)
+            => _entidadService.CrearCuentaBancariaAsync(idEntidad, numeroCuenta, clabe, banco);
+
+        public Task<ApiResponse> EliminarCuentaAsync(int idCuenta)
+            => _entidadService.EliminarCuentaBancariaAsync(idCuenta);
+
+        /// <summary>Último mensaje de error de crear/editar (p. ej. "El RFC ya existe").</summary>
+        public string? UltimoError { get; private set; }
+
+        private static string? ExtraerMensaje(string? contenido)
+        {
+            if (string.IsNullOrWhiteSpace(contenido)) return null;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(contenido);
+                if (doc.RootElement.TryGetProperty("message", out var msg))
+                    return msg.GetString();
+            }
+            catch (System.Text.Json.JsonException) { }
+            return contenido;
         }
 
         /// <summary>
@@ -252,10 +270,13 @@ namespace Advance_Control.ViewModels
             string? colonia = null,
             string? apoderado = null,
             string? regimenFiscal = null,
+            bool? esPredeterminada = null,
+            string? serieFacturas = null,
             CancellationToken cancellationToken = default)
         {
             try
             {
+                UltimoError = null;
                 await _logger.LogInformationAsync($"Creando entidad: {nombreComercial}", "EntidadesViewModel", "CreateEntidadAsync");
 
                 var response = await _entidadService.CreateEntidadAsync(
@@ -272,6 +293,8 @@ namespace Advance_Control.ViewModels
                     colonia,
                     apoderado,
                     regimenFiscal,
+                    esPredeterminada,
+                    serieFacturas,
                     cancellationToken);
 
                 if (response.Success)
@@ -284,6 +307,7 @@ namespace Advance_Control.ViewModels
                 }
                 else
                 {
+                    UltimoError = ExtraerMensaje(response.Message);
                     await _logger.LogWarningAsync($"No se pudo crear la entidad: {response.Message}", "EntidadesViewModel", "CreateEntidadAsync");
                     return false;
                 }
@@ -313,10 +337,13 @@ namespace Advance_Control.ViewModels
             string? colonia = null,
             string? apoderado = null,
             string? regimenFiscal = null,
+            bool? esPredeterminada = null,
+            string? serieFacturas = null,
             CancellationToken cancellationToken = default)
         {
             try
             {
+                UltimoError = null;
                 await _logger.LogInformationAsync($"Actualizando entidad: {nombreComercial}", "EntidadesViewModel", "UpdateEntidadAsync");
 
                 var response = await _entidadService.UpdateEntidadAsync(
@@ -334,6 +361,8 @@ namespace Advance_Control.ViewModels
                     colonia,
                     apoderado,
                     regimenFiscal,
+                    esPredeterminada,
+                    serieFacturas,
                     cancellationToken);
 
                 if (response.Success)
@@ -346,6 +375,7 @@ namespace Advance_Control.ViewModels
                 }
                 else
                 {
+                    UltimoError = ExtraerMensaje(response.Message);
                     await _logger.LogWarningAsync($"No se pudo actualizar la entidad: {response.Message}", "EntidadesViewModel", "UpdateEntidadAsync");
                     return false;
                 }
